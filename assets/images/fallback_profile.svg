@@ -1,0 +1,14 @@
+<svg width="185" height="278" viewBox="0 0 185 278" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="185" height="278" fill="#1a1a1a"/>
+  <rect x="10" y="10" width="165" height="258" rx="8" fill="#2a2a2a" stroke="#404040" stroke-width="2"/>
+  
+  <!-- Person icon -->
+  <g transform="translate(67.5, 100)">
+    <circle cx="25" cy="20" r="15" fill="#404040"/>
+    <path d="M5 55 C5 40, 15 35, 25 35 C35 35, 45 40, 45 55 L45 65 L5 65 Z" fill="#404040"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="92.5" y="200" text-anchor="middle" fill="#666666" font-family="Arial, sans-serif" font-size="12" font-weight="500">Perfil no disponible</text>
+  <text x="92.5" y="220" text-anchor="middle" fill="#555555" font-family="Arial, sans-serif" font-size="10">Error de conexión</text>
+</svg>

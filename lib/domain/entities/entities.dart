@@ -1,0 +1,16 @@
+export 'actor.dart';
+export 'movie.dart';
+export 'movie_filter.dart';
+export 'video.dart';
+export 'watch_provider.dart';
+export 'watch_providers.dart';
+export 'achievement.dart';
+export 'watched_movie.dart';
+export 'recommendation.dart';
+export 'discovery_category.dart';
+export 'custom_list.dart';
+export 'user_stats.dart';
+export 'genre_analysis.dart';
+export 'temporal_analysis.dart';
+export 'rating_analysis.dart';
+export 'activity_patterns.dart';
