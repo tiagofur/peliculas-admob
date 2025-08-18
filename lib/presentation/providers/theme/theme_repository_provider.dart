@@ -1,8 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:peliculas/domain/datasources/theme_datasource.dart';
-import 'package:peliculas/domain/repositories/theme_repository.dart';
-import 'package:peliculas/infrastructure/datasources/theme_shared_preferences_datasource.dart';
-import 'package:peliculas/infrastructure/repositories/theme_repository_impl.dart';
+
+import '../../../domain/datasources/theme_datasource.dart';
+import '../../../domain/repositories/theme_repository.dart';
+import '../../../infrastructure/datasources/theme_shared_preferences_datasource.dart';
+import '../../../infrastructure/repositories/theme_repository_impl.dart';
 
 final themeDatasourceProvider = Provider<ThemeDatasource>((ref) {
   return ThemeSharedPreferencesDatasource();

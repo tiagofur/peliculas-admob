@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -488,7 +489,11 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
   }
 
   void _navigateToListDetail(CustomList list) {
-    context.push('/lists/${list.id}');
+    if (kIsWeb) {
+      context.go('/my-library/lists/${list.id}');
+    } else {
+      context.push('/my-library/lists/${list.id}');
+    }
   }
 
   void _showCreateListDialog(BuildContext context) {

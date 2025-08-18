@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/entities.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
@@ -89,7 +90,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
     final defaultLists = [
       CustomList(
-        id: 1,
+        id: 'quiero-ver',
         name: 'Quiero Ver',
         description: 'Películas que quiero ver próximamente',
         emoji: '🍿',
@@ -100,7 +101,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'blue',
       ),
       CustomList(
-        id: 2,
+        id: 'para-el-fin-de-semana',
         name: 'Para el Fin de Semana',
         description: 'Películas perfectas para relajarse',
         emoji: '🛋️',
@@ -111,7 +112,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'green',
       ),
       CustomList(
-        id: 3,
+        id: 'noche-de-citas',
         name: 'Noche de Citas',
         description: 'Películas románticas para ver en pareja',
         emoji: '💕',
@@ -122,7 +123,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'pink',
       ),
       CustomList(
-        id: 4,
+        id: 'con-amigos',
         name: 'Con Amigos',
         description: 'Películas divertidas para ver en grupo',
         emoji: '👥',
@@ -133,7 +134,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'orange',
       ),
       CustomList(
-        id: 5,
+        id: 'clasicos-pendientes',
         name: 'Clásicos Pendientes',
         description: 'Películas clásicas que debo ver',
         emoji: '🎭',
@@ -144,7 +145,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'purple',
       ),
       CustomList(
-        id: 6,
+        id: 'accion-y-aventura',
         name: 'Acción y Aventura',
         description: 'Para cuando quiero adrenalina',
         emoji: '💥',
@@ -155,7 +156,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'red',
       ),
       CustomList(
-        id: 7,
+        id: 'documentales',
         name: 'Documentales',
         description: 'Para aprender algo nuevo',
         emoji: '📚',
@@ -166,7 +167,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         color: 'teal',
       ),
       CustomList(
-        id: 8,
+        id: 'cuando-llueve',
         name: 'Cuando Llueve',
         description: 'Películas perfectas para días lluviosos',
         emoji: '🌧️',
@@ -184,7 +185,6 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     );
   }
 
-  // Crear una nueva lista personalizada
   void createList({
     required String name,
     required String description,
@@ -192,10 +192,8 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     String color = 'blue',
   }) {
     final now = DateTime.now();
-    final allLists = state.allLists;
-    final newId = allLists.isEmpty
-        ? 100
-        : allLists.map((l) => l.id).reduce((a, b) => a > b ? a : b) + 1;
+    const uuid = Uuid();
+    final newId = uuid.v4();
 
     final newList = CustomList(
       id: newId,
@@ -217,7 +215,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
   // Actualizar una lista existente
   void updateList(
-    int listId, {
+    String listId, {
     String? name,
     String? description,
     String? emoji,
@@ -259,7 +257,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Eliminar una lista personalizada (solo listas no predefinidas)
-  void deleteList(int listId) {
+  void deleteList(String listId) {
     final updatedCustomLists =
         state.customLists.where((list) => list.id != listId).toList();
     state = state.copyWith(customLists: updatedCustomLists);
@@ -267,7 +265,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Añadir película a una lista
-  void addMovieToList(int listId, int movieId) {
+  void addMovieToList(String listId, int movieId) {
     final updatedCustomLists = state.customLists.map((list) {
       if (list.id == listId && !list.movieIds.contains(movieId)) {
         final updatedMovieIds = [...list.movieIds, movieId];
@@ -298,7 +296,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Remover película de una lista
-  void removeMovieFromList(int listId, int movieId) {
+  void removeMovieFromList(String listId, int movieId) {
     final updatedCustomLists = state.customLists.map((list) {
       if (list.id == listId) {
         final updatedMovieIds =
@@ -331,7 +329,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Alternar película en una lista (añadir si no está, remover si está)
-  void toggleMovieInList(int listId, int movieId) {
+  void toggleMovieInList(String listId, int movieId) {
     final allLists = state.allLists;
     final list = allLists.firstWhere((l) => l.id == listId);
     if (list.movieIds.contains(movieId)) {
@@ -342,7 +340,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Reordenar películas en una lista
-  void reorderMoviesInList(int listId, int oldIndex, int newIndex) {
+  void reorderMoviesInList(String listId, int oldIndex, int newIndex) {
     final updatedCustomLists = state.customLists.map((list) {
       if (list.id == listId) {
         final movieIds = [...list.movieIds];
@@ -379,11 +377,12 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Duplicar una lista
-  void duplicateList(int listId, String newName) {
+  void duplicateList(String listId, String newName) {
     final allLists = state.allLists;
     final originalList = allLists.firstWhere((l) => l.id == listId);
     final now = DateTime.now();
-    final newId = allLists.map((l) => l.id).reduce((a, b) => a > b ? a : b) + 1;
+    const uuid = Uuid();
+    final newId = uuid.v4();
 
     final duplicatedList = CustomList(
       id: newId,
@@ -404,7 +403,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   }
 
   // Limpiar todas las películas de una lista
-  void clearList(int listId) {
+  void clearList(String listId) {
     final updatedCustomLists = state.customLists.map((list) {
       if (list.id == listId) {
         return list.copyWith(
@@ -464,7 +463,7 @@ final defaultListsProvider = Provider<List<CustomList>>((ref) {
 });
 
 // Provider para obtener una lista específica por ID
-final listByIdProvider = Provider.family<CustomList?, int>((ref, listId) {
+final listByIdProvider = Provider.family<CustomList?, String>((ref, listId) {
   final allLists = ref.watch(listsProvider);
 
   for (final list in allLists) {
@@ -476,7 +475,7 @@ final listByIdProvider = Provider.family<CustomList?, int>((ref, listId) {
 
 // Provider para verificar si una película está en una lista específica
 final isMovieInListProvider =
-    Provider.family<bool, ({int movieId, int listId})>((ref, params) {
+    Provider.family<bool, ({int movieId, String listId})>((ref, params) {
   final list = ref.watch(listByIdProvider(params.listId));
   return list?.movieIds.contains(params.movieId) ?? false;
 });

@@ -57,7 +57,7 @@ class _RecommendationShareContent extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.7),
+                  Colors.black.withAlpha(179),
                   Colors.transparent,
                 ],
               ),
@@ -75,14 +75,13 @@ class _RecommendationShareContent extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withOpacity(0.7),
+                          Theme.of(context).primaryColor.withAlpha(179),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.3),
+                          color: Theme.of(context).primaryColor.withAlpha(77),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -148,13 +147,13 @@ class _RecommendationShareContent extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.8),
+                        Theme.of(context).primaryColor.withAlpha(179),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        color: Theme.of(context).primaryColor.withAlpha(77),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -310,7 +309,8 @@ class _RecommendationShareContent extends StatelessWidget {
 
   void _shareRecommendation(BuildContext context) async {
     try {
-      await ShareService.shareRecommendation(context: context, 
+      await ShareService.shareRecommendation(
+        context: context,
         recommendationType: type,
         recommendationId: id,
         title: _getRecommendationTitle(),
@@ -357,7 +357,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withAlpha(179),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -486,7 +486,7 @@ class _FeatureItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withAlpha(179),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

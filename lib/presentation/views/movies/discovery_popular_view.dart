@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
-import '../../providers/user_stats_provider.dart' as stats;
+
 import '../../widgets/widgets.dart';
 
 class DiscoveryPopularView extends ConsumerStatefulWidget {
@@ -63,18 +63,14 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
   Widget _buildForYouTab() {
     final personalizedRecommendations = ref.watch(personalizedRecommendationsProvider);
     final discoveryCategories = ref.watch(discoveryCategoriesProvider);
-    final userStatsAsync = ref.watch(stats.userStatsProvider);
+    final userStats = ref.watch(basicUserStatsProvider);
     
     return personalizedRecommendations.when(
       data: (recommendations) => discoveryCategories.when(
-        data: (categories) => userStatsAsync.when(
-          data: (userStats) => _buildForYouContent(
-            recommendations, 
-            categories, 
-            userStats
-          ),
-          loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          error: (error, stack) => _buildErrorState(),
+        data: (categories) => _buildForYouContent(
+          recommendations, 
+          categories, 
+          userStats
         ),
         loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         error: (error, stack) => _buildErrorState(),
@@ -87,7 +83,7 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
   Widget _buildForYouContent(
     List<Recommendation> recommendations,
     List<RecommendationCategory> categories,
-    UserStats userStats,
+    BasicUserStats userStats,
   ) {
     return CustomScrollView(
       slivers: [
@@ -123,7 +119,7 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
     );
   }
 
-  Widget _buildUserStatsSection(UserStats userStats) {
+  Widget _buildUserStatsSection(BasicUserStats userStats) {
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.all(16),

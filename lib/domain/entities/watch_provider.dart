@@ -4,24 +4,8 @@ part 'watch_provider.g.dart';
 
 @HiveType(typeId: 10)
 class WatchProvider {
-  @HiveField(0)
-  final int providerId;
-  
-  @HiveField(1)
-  final String providerName;
-  
-  @HiveField(2)
-  final String logoPath;
-  
-  @HiveField(3)
-  final int displayPriority;
-  
-  @HiveField(4)
-  final String? link;
-  
-  @HiveField(5)
-  final String? presentationType; // 'flatrate', 'rent', 'buy'
-  
+  // 'flatrate', 'rent', 'buy'
+
   WatchProvider({
     required this.providerId,
     required this.providerName,
@@ -30,7 +14,7 @@ class WatchProvider {
     this.link,
     this.presentationType,
   });
-  
+
   factory WatchProvider.fromJson(Map<String, dynamic> json) {
     return WatchProvider(
       providerId: json['provider_id'] ?? 0,
@@ -41,7 +25,24 @@ class WatchProvider {
       presentationType: json['presentation_type'],
     );
   }
-  
+  @HiveField(0)
+  final int providerId;
+
+  @HiveField(1)
+  final String providerName;
+
+  @HiveField(2)
+  final String logoPath;
+
+  @HiveField(3)
+  final int displayPriority;
+
+  @HiveField(4)
+  final String? link;
+
+  @HiveField(5)
+  final String? presentationType;
+
   Map<String, dynamic> toJson() {
     return {
       'provider_id': providerId,
@@ -52,7 +53,7 @@ class WatchProvider {
       'presentation_type': presentationType,
     };
   }
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -60,10 +61,10 @@ class WatchProvider {
         other.providerId == providerId &&
         other.providerName == providerName;
   }
-  
+
   @override
   int get hashCode => providerId.hashCode ^ providerName.hashCode;
-  
+
   @override
   String toString() {
     return 'WatchProvider(providerId: $providerId, providerName: $providerName, logoPath: $logoPath)';

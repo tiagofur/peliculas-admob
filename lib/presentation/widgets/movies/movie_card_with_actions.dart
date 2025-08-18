@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,13 @@ class MovieCardWithActions extends ConsumerWidget {
         children: [
           // Imagen principal
           GestureDetector(
-            onTap: () => context.push('/movie/${movie.id}'),
+            onTap: () {
+              if (kIsWeb) {
+                context.go('/movie/${movie.id}');
+              } else {
+                context.push('/movie/${movie.id}');
+              }
+            },
             child: AspectRatio(
               aspectRatio: 2 / 3, // Relación de aspecto típica de poster de película
               child: ClipRRect(

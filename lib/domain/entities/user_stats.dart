@@ -1,128 +1,163 @@
-import 'movie.dart';
-import 'watched_movie.dart';
-import 'custom_list.dart';
-
 class UserStats {
-  UserStats({
-    required this.totalFavorites,
-    required this.totalWatched,
-    required this.totalLists,
-    required this.totalMoviesInLists,
-    required this.averageRating,
-    required this.mostActiveMonth,
-    required this.preferredDecade,
-    required this.topGenres,
-    required this.moviesThisMonth,
-    required this.moviesThisYear,
-    required this.discoveryRate,
-    required this.userType,
+  final String id;
+  final String userId;
+  final int moviesWatched;
+  final int favoritesCount;
+  final int listsCount;
+  final DateTime lastActivity;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const UserStats({
+    required this.id,
+    required this.userId,
+    required this.moviesWatched,
+    required this.favoritesCount,
+    required this.listsCount,
+    required this.lastActivity,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
+  // Factory constructor para crear UserStats desde listas de películas
   factory UserStats.fromMovies({
-    required List<Movie> favoriteMovies,
-    required List<WatchedMovie> watchedMovies,
-    required List<CustomList> customLists,
-    required List<CustomList> defaultLists,
+    required List favoriteMovies,
+    required List watchedMovies,
+    required List customLists,
+    required List defaultLists,
   }) {
-    final totalFavorites = favoriteMovies.length;
-    final totalWatched = watchedMovies.length;
-    final totalLists = customLists.length + defaultLists.length;
-    final totalMoviesInLists = customLists.fold(0, (sum, list) => sum + list.movieIds.length) +
-                              defaultLists.fold(0, (sum, list) => sum + list.movieIds.length);
-    
-    // Calcular calificación promedio de favoritas
-    final averageRating = favoriteMovies.isEmpty 
-        ? 0.0 
-        : favoriteMovies.map((m) => m.voteAverage).reduce((a, b) => a + b) / favoriteMovies.length;
-    
-    // Mes más activo (simulado)
-    final monthCounts = <int, int>{};
-    for (final movie in watchedMovies) {
-      final month = movie.watchedDate.month;
-      monthCounts[month] = (monthCounts[month] ?? 0) + 1;
-    }
-    final mostActiveMonth = monthCounts.isEmpty 
-        ? 'N/A' 
-        : getMonthName(monthCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key);
-    
-    // Década preferida
-    final decadeCounts = <String, int>{};
-    for (final movie in favoriteMovies) {
-      final decade = '${(movie.releaseDate.year ~/ 10) * 10}s';
-      decadeCounts[decade] = (decadeCounts[decade] ?? 0) + 1;
-    }
-    final preferredDecade = decadeCounts.isEmpty 
-        ? 'N/A' 
-        : decadeCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-    
-    // Géneros principales
-    final genreCounts = <String, int>{};
-    for (final movie in favoriteMovies) {
-      for (final genre in movie.genreIds) {
-        genreCounts[genre] = (genreCounts[genre] ?? 0) + 1;
-      }
-    }
-    final topGenres = genreCounts.entries
-        .toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-    final topGenresList = topGenres.take(3).map((e) => e.key).toList();
-    
-    // Películas este mes y año (simulado)
     final now = DateTime.now();
-    final moviesThisMonth = watchedMovies.where((m) => 
-        m.watchedDate.year == now.year && m.watchedDate.month == now.month).length;
-    final moviesThisYear = watchedMovies.where((m) => 
-        m.watchedDate.year == now.year).length;
-    
-    // Tasa de descubrimiento
-    final discoveryRate = totalWatched == 0 ? 0.0 : (totalFavorites / totalWatched) * 100;
-    
-    // Tipo de usuario
-    String userType;
-    if (totalFavorites > 50) {
-      userType = 'Cinéfilo';
-    } else if (totalFavorites > 20) {
-      userType = 'Entusiasta';
-    } else if (totalFavorites > 5) {
-      userType = 'Aficionado';
-    } else {
-      userType = 'Casual';
-    }
-    
     return UserStats(
-      totalFavorites: totalFavorites,
-      totalWatched: totalWatched,
-      totalLists: totalLists,
-      totalMoviesInLists: totalMoviesInLists.toInt(),
-      averageRating: averageRating,
-      mostActiveMonth: mostActiveMonth,
-      preferredDecade: preferredDecade,
-      topGenres: topGenresList,
-      moviesThisMonth: moviesThisMonth,
-      moviesThisYear: moviesThisYear,
-      discoveryRate: discoveryRate,
-      userType: userType,
+      id: 'temp-id',
+      userId: 'temp-user-id',
+      moviesWatched: watchedMovies.length,
+      favoritesCount: favoriteMovies.length,
+      listsCount: customLists.length + defaultLists.length,
+      lastActivity: now,
+      createdAt: now,
+      updatedAt: now,
     );
   }
 
-  final int totalFavorites;
-  final int totalWatched;
-  final int totalLists;
-  final int totalMoviesInLists;
-  final double averageRating;
-  final String mostActiveMonth;
-  final String preferredDecade;
-  final List<String> topGenres;
-  final int moviesThisMonth;
-  final int moviesThisYear;
-  final double discoveryRate;
-  final String userType;
+  UserStats copyWith({
+    String? id,
+    String? userId,
+    int? moviesWatched,
+    int? favoritesCount,
+    int? listsCount,
+    DateTime? lastActivity,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserStats(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      moviesWatched: moviesWatched ?? this.moviesWatched,
+      favoritesCount: favoritesCount ?? this.favoritesCount,
+      listsCount: listsCount ?? this.listsCount,
+      lastActivity: lastActivity ?? this.lastActivity,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
+  UserStats incrementMoviesWatched() {
+    return copyWith(
+      moviesWatched: moviesWatched + 1,
+      lastActivity: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  UserStats incrementFavorites() {
+    return copyWith(
+      favoritesCount: favoritesCount + 1,
+      lastActivity: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  UserStats decrementFavorites() {
+    return copyWith(
+      favoritesCount: favoritesCount > 0 ? favoritesCount - 1 : 0,
+      lastActivity: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  UserStats incrementLists() {
+    return copyWith(
+      listsCount: listsCount + 1,
+      lastActivity: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  UserStats decrementLists() {
+    return copyWith(
+      listsCount: listsCount > 0 ? listsCount - 1 : 0,
+      lastActivity: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  UserStats updateActivity() {
+    return copyWith(
+      lastActivity: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  // Getters útiles
+  bool get isActiveUser => moviesWatched > 0 || favoritesCount > 0;
+  bool get hasActivity => lastActivity.isAfter(DateTime.now().subtract(const Duration(days: 30)));
+  int get totalInteractions => moviesWatched + favoritesCount + listsCount;
+
+  // Método estático para obtener nombres de meses en español
   static String getMonthName(int month) {
-    const months = [
-      '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    const monthNames = [
+      '', // Índice 0 no se usa
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
-    return months[month];
+    
+    if (month < 1 || month > 12) {
+      return 'Mes desconocido';
+    }
+    
+    return monthNames[month];
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is UserStats &&
+        other.id == id &&
+        other.userId == userId &&
+        other.moviesWatched == moviesWatched &&
+        other.favoritesCount == favoritesCount &&
+        other.listsCount == listsCount &&
+        other.lastActivity == lastActivity &&
+        other.createdAt == createdAt &&
+        other.updatedAt == updatedAt;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      id,
+      userId,
+      moviesWatched,
+      favoritesCount,
+      listsCount,
+      lastActivity,
+      createdAt,
+      updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'UserStats(id: $id, userId: $userId, moviesWatched: $moviesWatched, favoritesCount: $favoritesCount, listsCount: $listsCount, lastActivity: $lastActivity, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

@@ -28,7 +28,6 @@ class MovieMapNotifier extends StateNotifier<Map<String, Movie>> {
   final GetMovieCallback getMovie;
 
   Future<void> loadMovie(String movieId) async {
-    if (state[movieId] != null) return;
     
     // Validar que el movieId sea válido
     if (movieId == 'no-id' || movieId.isEmpty) {

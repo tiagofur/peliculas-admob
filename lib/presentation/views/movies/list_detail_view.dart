@@ -19,7 +19,7 @@ class ListDetailView extends ConsumerStatefulWidget {
 class _ListDetailViewState extends ConsumerState<ListDetailView> {
   @override
   Widget build(BuildContext context) {
-    final customList = ref.watch(listByIdProvider(int.parse(widget.listId)));
+    final customList = ref.watch(listByIdProvider(widget.listId));
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -844,16 +844,13 @@ class _AddMovieDialogState extends ConsumerState<_AddMovieDialog> {
                         trailing: IconButton(
                           icon: const Icon(Icons.add),
                           onPressed: () async {
-                            // Asegurar que movieInfoProvider tenga la información de la película
-                            await ref
-                                .read(movieInfoProvider.notifier)
-                                .loadMovie(movie.id.toString());
-
                             ref.read(allListsProvider.notifier).addMovieToList(
-                                  int.parse(widget.listId),
+                                  widget.listId,
                                   movie.id,
                                 );
-                            Navigator.of(context).pop();
+                            // Invalidate the listByIdProvider to force a rebuild of ListDetailView
+                            ref.invalidate(listByIdProvider(widget.listId));
+                            // No need to invalidate movieInfoProvider here, as loadMovie already updates its state
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(

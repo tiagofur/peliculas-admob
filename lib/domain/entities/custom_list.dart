@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class CustomList {
   CustomList({
     required this.id,
@@ -13,7 +15,7 @@ class CustomList {
 
   factory CustomList.fromJson(Map<String, dynamic> json) {
     return CustomList(
-      id: json['id'] ?? 0,
+      id: json['id'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       emoji: json['emoji'] ?? '📝',
@@ -31,7 +33,7 @@ class CustomList {
     );
   }
 
-  final int id;
+  final String id;
   final String name;
   final String description;
   final String emoji;
@@ -42,7 +44,7 @@ class CustomList {
   final String color;
 
   CustomList copyWith({
-    int? id,
+    String? id,
     String? name,
     String? description,
     String? emoji,
@@ -82,11 +84,30 @@ class CustomList {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is CustomList && other.id == id;
+    return other is CustomList &&
+        other.id == id &&
+        other.name == name &&
+        other.description == description &&
+        other.emoji == emoji &&
+        listEquals(other.movieIds, movieIds) && // Use listEquals for List comparison
+        other.createdAt == createdAt &&
+        other.updatedAt == updatedAt &&
+        other.isDefault == isDefault &&
+        other.color == color;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => Object.hash(
+        id,
+        name,
+        description,
+        emoji,
+        Object.hashAll(movieIds),
+        createdAt,
+        updatedAt,
+        isDefault,
+        color,
+      );
 
   @override
   String toString() {

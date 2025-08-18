@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/entities.dart';
 
 import '../../providers/providers.dart';
-import '../../providers/user_stats_provider.dart' as stats;
+
 
 class DiscoveryView extends ConsumerStatefulWidget {
   const DiscoveryView({super.key});
@@ -20,34 +20,14 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
     super.build(context);
     
     final sections = ref.watch(discoverySections);
-    final userStatsAsync = ref.watch(stats.userStatsProvider);
+    final userStats = ref.watch(basicUserStatsProvider);
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           // Header con estadísticas del usuario
           SliverToBoxAdapter(
-            child: userStatsAsync.when(
-              data: (userStats) => _buildUserStatsHeader(userStats),
-              loading: () => Container(
-                height: 200,
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              error: (error, stack) => Container(
-                height: 100,
-                margin: const EdgeInsets.all(16),
-                child: Center(
-                  child: Text('Error: $error'),
-                ),
-              ),
-            ),
+            child: _buildUserStatsHeader(userStats),
           ),
           
           // Secciones de descubrimiento
@@ -62,7 +42,7 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
     );
   }
 
-  Widget _buildUserStatsHeader(UserStats userStats) {
+  Widget _buildUserStatsHeader(BasicUserStats userStats) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),

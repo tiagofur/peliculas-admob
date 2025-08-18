@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -62,7 +63,7 @@ class _MovieHorizontalListviewState extends State<MovieHorizontalListview> {
             controller: scrollController,
             itemCount: widget.movies.length,
             scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
+            physics: const AlwaysScrollableScrollPhysics(),
             itemBuilder: (context, index) {
               return FadeInRight(
                 delay: Duration(milliseconds: index * 100),
@@ -189,7 +190,13 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
               children: [
                 //* Imagen con micro-interacciones
                 GestureDetector(
-                  onTap: () => context.push('/movie/${widget.movie.id}'),
+                  onTap: () {
+                    if (kIsWeb) {
+                      context.go('/movie/${widget.movie.id}');
+                    } else {
+                      context.push('/movie/${widget.movie.id}');
+                    }
+                  },
                   child: MouseRegion(
                     onEnter: (_) => _onHover(true),
                     onExit: (_) => _onHover(false),

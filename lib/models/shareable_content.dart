@@ -1,12 +1,5 @@
 /// Model for shareable content that can be shared across different platforms
 class ShareableContent {
-  final String title;
-  final String description;
-  final String url;
-  final String? imageUrl;
-  final ShareableContentType type;
-  final Map<String, dynamic>? metadata;
-
   const ShareableContent({
     required this.title,
     required this.description,
@@ -26,10 +19,10 @@ class ShareableContent {
   }) {
     return ShareableContent(
       title: '🎬 $movieTitle',
-      description: movieDescription.length > 100 
+      description: movieDescription.length > 100
           ? '${movieDescription.substring(0, 100)}...'
           : movieDescription,
-      url: 'https://peliculas.creapolis.dev/movie/$movieId/share',
+      url: 'https://peliculas.creapolis.dev/movie/$movieId',
       imageUrl: posterUrl,
       type: ShareableContentType.movie,
       metadata: {
@@ -76,7 +69,8 @@ class ShareableContent {
     return ShareableContent(
       title: '⭐ $title',
       description: description,
-      url: 'https://peliculas.creapolis.dev/recommendations/$recommendationType/$recommendationId/share',
+      url:
+          'https://peliculas.creapolis.dev/recommendations/$recommendationType/$recommendationId/share',
       imageUrl: imageUrl,
       type: ShareableContentType.recommendation,
       metadata: {
@@ -86,6 +80,12 @@ class ShareableContent {
       },
     );
   }
+  final String title;
+  final String description;
+  final String url;
+  final String? imageUrl;
+  final ShareableContentType type;
+  final Map<String, dynamic>? metadata;
 
   /// Generates the text content for sharing
   String get shareText {
@@ -98,7 +98,7 @@ class ShareableContent {
     buffer.writeln();
     buffer.writeln('📱 Descarga la app Películas para más contenido:');
     buffer.writeln('https://peliculas.creapolis.dev');
-    
+
     return buffer.toString();
   }
 
@@ -113,7 +113,7 @@ class ShareableContent {
     buffer.writeln();
     buffer.writeln('📱 Descarga la app Películas:');
     buffer.writeln('https://peliculas.creapolis.dev');
-    
+
     return buffer.toString();
   }
 

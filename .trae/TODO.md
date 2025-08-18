@@ -1,7 +1,5 @@
 # TODO:
 
-- [x] 1: Agregar dependencia url_launcher al pubspec.yaml (priority: High)
-- [x] 2: Implementar función _launchURL en enhanced_movie_info.dart (priority: High)
-- [x] 3: Reemplazar TODO con llamada a _launchURL en el onTap del InkWell (priority: High)
-- [x] 4: Ejecutar flutter pub get para instalar nueva dependencia (priority: Medium)
-- [x] 5: Probar funcionalidad de abrir URL del sitio oficial de la película (priority: Medium)
+- [x] fix-sync-models-duplicates: Eliminar método copyWith duplicado en SyncableWatchedMovie (líneas 127-149) (priority: High)
+- [x] fix-syncable-favorite-watchedat: Corregir referencia 'watchedAt' por 'createdAt' en SyncableFavorite línea 152 (priority: High)
+- [x] verify-no-other-duplicates: Verificar que no haya otros métodos duplicados o propiedades indefinidas en sync_models.dart (priority: Medium)

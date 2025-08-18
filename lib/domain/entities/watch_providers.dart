@@ -1,44 +1,49 @@
 import 'package:hive/hive.dart';
+
 import 'watch_provider.dart';
 
 part 'watch_providers.g.dart';
 
 @HiveType(typeId: 11)
 class WatchProviders {
-  @HiveField(0)
-  final String? link;
-  
-  @HiveField(1)
-  final List<WatchProvider> flatrate; // Streaming platforms
-  
-  @HiveField(2)
-  final List<WatchProvider> rent; // Rental platforms
-  
-  @HiveField(3)
-  final List<WatchProvider> buy; // Purchase platforms
-  
+  // Purchase platforms
+
   WatchProviders({
     this.link,
     this.flatrate = const [],
     this.rent = const [],
     this.buy = const [],
   });
-  
+
   factory WatchProviders.fromJson(Map<String, dynamic> json) {
     return WatchProviders(
       link: json['link'],
       flatrate: (json['flatrate'] as List<dynamic>?)
-          ?.map((provider) => WatchProvider.fromJson(provider))
-          .toList() ?? [],
+              ?.map((provider) => WatchProvider.fromJson(provider))
+              .toList() ??
+          [],
       rent: (json['rent'] as List<dynamic>?)
-          ?.map((provider) => WatchProvider.fromJson(provider))
-          .toList() ?? [],
+              ?.map((provider) => WatchProvider.fromJson(provider))
+              .toList() ??
+          [],
       buy: (json['buy'] as List<dynamic>?)
-          ?.map((provider) => WatchProvider.fromJson(provider))
-          .toList() ?? [],
+              ?.map((provider) => WatchProvider.fromJson(provider))
+              .toList() ??
+          [],
     );
   }
-  
+  @HiveField(0)
+  final String? link;
+
+  @HiveField(1)
+  final List<WatchProvider> flatrate; // Streaming platforms
+
+  @HiveField(2)
+  final List<WatchProvider> rent; // Rental platforms
+
+  @HiveField(3)
+  final List<WatchProvider> buy;
+
   Map<String, dynamic> toJson() {
     return {
       'link': link,
@@ -47,17 +52,17 @@ class WatchProviders {
       'buy': buy.map((provider) => provider.toJson()).toList(),
     };
   }
-  
+
   /// Get all providers combined
   List<WatchProvider> get allProviders {
     return [...flatrate, ...rent, ...buy];
   }
-  
+
   /// Check if any providers are available
   bool get hasProviders {
     return flatrate.isNotEmpty || rent.isNotEmpty || buy.isNotEmpty;
   }
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -67,15 +72,12 @@ class WatchProviders {
         other.rent == rent &&
         other.buy == buy;
   }
-  
+
   @override
   int get hashCode {
-    return link.hashCode ^
-        flatrate.hashCode ^
-        rent.hashCode ^
-        buy.hashCode;
+    return link.hashCode ^ flatrate.hashCode ^ rent.hashCode ^ buy.hashCode;
   }
-  
+
   @override
   String toString() {
     return 'WatchProviders(flatrate: ${flatrate.length}, rent: ${rent.length}, buy: ${buy.length})';

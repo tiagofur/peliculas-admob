@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -7,7 +8,6 @@ import '../admob/ad_integration_helper.dart';
 import '../admob/full_width_ad_widget.dart';
 import '../admob/grid_ad_widget.dart';
 import 'movie_card_with_actions.dart';
-import 'movie_poster_link.dart';
 
 /// Versión mejorada de MovieMasonry que integra anuncios
 /// tanto como tarjetas individuales como líneas completas
@@ -17,7 +17,8 @@ class MovieMasonryWithAds extends StatefulWidget {
     required this.movies,
     required this.loadNextPage,
     this.gridAdFrequency = 9, // Anuncio de tarjeta cada 9 películas
-    this.fullWidthAdFrequency = 15, // Anuncio de línea completa cada 15 películas
+    this.fullWidthAdFrequency =
+        15, // Anuncio de línea completa cada 15 películas
     this.enableGridAds = true,
     this.enableFullWidthAds = true,
   });
@@ -88,17 +89,17 @@ class _MovieMasonryWithAdsState extends State<MovieMasonryWithAds> {
       ),
       itemBuilder: (context, index) {
         final item = _mixedItems[index];
-        
+
         switch (item.type) {
           case AdItemType.movie:
             return _MovieCard(movie: item.movie!);
-            
+
           case AdItemType.gridAd:
             return const _GridAdCard();
-            
+
           case AdItemType.fullWidthAd:
             return const _FullWidthAdCard();
-            
+
           default:
             return const SizedBox.shrink();
         }
@@ -230,7 +231,7 @@ class ConservativeMovieMasonryWithAds extends StatelessWidget {
 }
 
 /// Widget unificado para mostrar anuncios en cualquier lista de películas
-/// Estrategia: Sin anuncios para <4 películas, 1 anuncio al final para 4-6 películas, 
+/// Estrategia: Sin anuncios para <4 películas, 1 anuncio al final para 4-6 películas,
 /// para 7+ películas: primer anuncio en posiciones 4-6, luego cada 8-10 películas con posicionamiento aleatorio
 class MasonryWithAds extends StatefulWidget {
   const MasonryWithAds({
@@ -288,17 +289,17 @@ class _MasonryWithAdsState extends State<MasonryWithAds> {
   List<AdListItem> _createAdList() {
     final List<AdListItem> mixedList = [];
     final movieCount = widget.movies.length;
-    
+
     if (movieCount == 0) {
       return mixedList;
     }
-    
+
     // Usar Random con seed basado en el número de películas para consistencia
     final random = Random(movieCount);
-    
+
     // Calcular posiciones de anuncios con lógica simplificada y robusta
     final Set<int> adPositions = <int>{};
-    
+
     if (movieCount < 4) {
       // Para menos de 4 películas: no mostrar anuncios (muy pocas películas)
       // No se agregan posiciones de anuncios
@@ -307,24 +308,25 @@ class _MasonryWithAdsState extends State<MasonryWithAds> {
       adPositions.add(movieCount - 1); // Último índice
     } else {
       // Para 7+ películas: primer anuncio entre posiciones 4-6, luego cada 8-10 películas
-      int currentPos = 3 + random.nextInt(3); // índices 3, 4, 5 (posiciones 4, 5, 6)
-      
+      int currentPos =
+          3 + random.nextInt(3); // índices 3, 4, 5 (posiciones 4, 5, 6)
+
       while (currentPos < movieCount) {
         adPositions.add(currentPos);
         // Siguiente anuncio en intervalo aleatorio de 8-10 posiciones
         currentPos += 8 + random.nextInt(3);
       }
     }
-    
+
     // Agregar películas y anuncios en las posiciones calculadas
     for (int i = 0; i < movieCount; i++) {
       mixedList.add(AdListItem.movie(widget.movies[i]));
-      
+
       if (adPositions.contains(i)) {
         mixedList.add(AdListItem.gridAd());
       }
     }
-    
+
     return mixedList;
   }
 
@@ -349,14 +351,14 @@ class _MasonryWithAdsState extends State<MasonryWithAds> {
       ),
       itemBuilder: (context, index) {
         final item = _mixedItems[index];
-        
+
         switch (item.type) {
           case AdItemType.movie:
             return _MovieCard(movie: item.movie!);
-            
+
           case AdItemType.gridAd:
             return const _GridAdCard();
-            
+
           default:
             return const SizedBox.shrink();
         }
@@ -367,8 +369,6 @@ class _MasonryWithAdsState extends State<MasonryWithAds> {
 
 /// Alias para compatibilidad con código existente
 typedef CustomListMasonryWithAds = MasonryWithAds;
-
-
 
 /// Alias para compatibilidad con código existente
 typedef WatchedMasonryWithAds = MasonryWithAds;

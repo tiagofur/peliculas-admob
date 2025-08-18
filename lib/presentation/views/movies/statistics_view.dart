@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class StatisticsView extends StatefulWidget {
-  final StatefulNavigationShell navigationShell;
-
   const StatisticsView({super.key, required this.navigationShell});
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<StatisticsView> createState() => _StatisticsViewState();
@@ -27,7 +26,8 @@ class _StatisticsViewState extends State<StatisticsView>
       if (_tabController.indexIsChanging) {
         widget.navigationShell.goBranch(
           _tabController.index,
-          initialLocation: _tabController.index == widget.navigationShell.currentIndex,
+          initialLocation:
+              _tabController.index == widget.navigationShell.currentIndex,
         );
       }
     });

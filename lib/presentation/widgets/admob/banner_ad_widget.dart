@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -21,6 +22,11 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadBannerAd() {
+    // No cargar anuncios en web
+    if (kIsWeb) {
+      return;
+    }
+    
     _bannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,
       request: const AdRequest(),
@@ -32,7 +38,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           });
         },
         onAdFailedToLoad: (ad, err) {
-          print('Error al cargar banner: ${err.message}');
+          //print('Error al cargar banner: ${err.message}');
           _isBannerAdReady = false;
           ad.dispose();
         },
@@ -44,6 +50,11 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // No mostrar anuncios en web
+    if (kIsWeb) {
+      return const SizedBox.shrink();
+    }
+    
     if (_isBannerAdReady && _bannerAd != null) {
       return Container(
         width: _bannerAd!.size.width.toDouble(),

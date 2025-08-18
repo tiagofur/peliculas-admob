@@ -116,11 +116,11 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
               child: _buildAdContent(colors, textStyles),
             ),
           ),
-          
+
           // Espacio y etiqueta opcional
           if (widget.showLabel) ...[
             const SizedBox(height: 5),
-            Container(
+            SizedBox(
               width: widget.width,
               child: Row(
                 children: [
@@ -152,11 +152,11 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
     if (_isAdLoaded && _nativeAd != null) {
       return AdWidget(ad: _nativeAd!);
     }
-    
+
     if (_isAdFailed) {
       return _buildErrorState(colors, textStyles);
     }
-    
+
     return _buildLoadingState(colors);
   }
 

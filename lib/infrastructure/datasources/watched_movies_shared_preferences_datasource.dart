@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../domain/datasources/watched_movies_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watched_movie.dart';
@@ -11,7 +13,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
   Future<void> markAsWatched(Movie movie) async {
     final prefs = await SharedPreferences.getInstance();
     final watchedMoviesJson = prefs.getStringList(_watchedMoviesKey) ?? [];
-    
+
     // Verificar si ya está marcada como vista
     final alreadyWatched = watchedMoviesJson.any((watchedJson) {
       final watchedData = jsonDecode(watchedJson);
@@ -32,7 +34,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
   Future<void> removeFromWatched(int movieId) async {
     final prefs = await SharedPreferences.getInstance();
     final watchedMoviesJson = prefs.getStringList(_watchedMoviesKey) ?? [];
-    
+
     watchedMoviesJson.removeWhere((watchedJson) {
       final watchedData = jsonDecode(watchedJson);
       return watchedData['movie']['id'] == movieId;
@@ -45,7 +47,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
   Future<bool> isMovieWatched(int movieId) async {
     final prefs = await SharedPreferences.getInstance();
     final watchedMoviesJson = prefs.getStringList(_watchedMoviesKey) ?? [];
-    
+
     return watchedMoviesJson.any((watchedJson) {
       final watchedData = jsonDecode(watchedJson);
       return watchedData['movie']['id'] == movieId;
@@ -53,21 +55,22 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
   }
 
   @override
-  Future<List<WatchedMovie>> loadWatchedMovies({int limit = 10, int offset = 0}) async {
+  Future<List<WatchedMovie>> loadWatchedMovies(
+      {int limit = 10, int offset = 0}) async {
     final prefs = await SharedPreferences.getInstance();
     final watchedMoviesJson = prefs.getStringList(_watchedMoviesKey) ?? [];
-    
+
     final allWatchedMovies = watchedMoviesJson
         .map((watchedJson) => _watchedMovieFromJson(jsonDecode(watchedJson)))
         .toList();
-    
+
     // Ordenar por fecha de visualización (más recientes primero)
     allWatchedMovies.sort((a, b) => b.watchedDate.compareTo(a.watchedDate));
-    
+
     final endIndex = (offset + limit).clamp(0, allWatchedMovies.length);
-    
+
     if (offset >= allWatchedMovies.length) return [];
-    
+
     return allWatchedMovies.sublist(offset, endIndex);
   }
 
@@ -97,7 +100,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
       'overview': movie.overview,
       'popularity': movie.popularity,
       'posterPath': movie.posterPath,
-      'releaseDate': movie.releaseDate?.toIso8601String(),
+      'releaseDate': movie.releaseDate.toIso8601String(),
       'title': movie.title,
       'video': movie.video,
       'voteAverage': movie.voteAverage,
@@ -116,7 +119,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
       overview: json['overview'] as String,
       popularity: (json['popularity'] as num).toDouble(),
       posterPath: json['posterPath'] as String,
-      releaseDate: json['releaseDate'] != null 
+      releaseDate: json['releaseDate'] != null
           ? DateTime.parse(json['releaseDate'] as String)
           : DateTime(1900),
       title: json['title'] as String,

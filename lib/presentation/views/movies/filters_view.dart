@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 
@@ -168,7 +169,8 @@ class _CriteriaTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildYearRangeSection(MovieFilter filter, MovieFiltersNotifier notifier) {
+  Widget _buildYearRangeSection(
+      MovieFilter filter, MovieFiltersNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,7 +216,8 @@ class _CriteriaTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildRatingRangeSection(MovieFilter filter, MovieFiltersNotifier notifier) {
+  Widget _buildRatingRangeSection(
+      MovieFilter filter, MovieFiltersNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,7 +245,8 @@ class _CriteriaTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildDurationRangeSection(MovieFilter filter, MovieFiltersNotifier notifier) {
+  Widget _buildDurationRangeSection(
+      MovieFilter filter, MovieFiltersNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -273,7 +277,8 @@ class _CriteriaTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildLanguageSection(MovieFilter filter, MovieFiltersNotifier notifier) {
+  Widget _buildLanguageSection(
+      MovieFilter filter, MovieFiltersNotifier notifier) {
     final languages = [
       {'code': null, 'name': 'Todos los idiomas'},
       {'code': 'es', 'name': 'Español'},
@@ -294,7 +299,7 @@ class _CriteriaTab extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String?>(
-          value: filter.language,
+          initialValue: filter.language,
           decoration: const InputDecoration(
             border: OutlineInputBorder(),
           ),
@@ -312,7 +317,8 @@ class _CriteriaTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildAdultContentSection(MovieFilter filter, MovieFiltersNotifier notifier) {
+  Widget _buildAdultContentSection(
+      MovieFilter filter, MovieFiltersNotifier notifier) {
     return Row(
       children: [
         const Expanded(
@@ -373,7 +379,8 @@ class _MoodTab extends ConsumerWidget {
                     title: Text(
                       mood.name,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     subtitle: Text(mood.description),
@@ -433,7 +440,8 @@ class _SortTab extends ConsumerWidget {
                     title: Text(
                       option.label,
                       style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     subtitle: Text(option.description),

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class MyLibraryView extends StatefulWidget {
-  final StatefulNavigationShell navigationShell;
-
   const MyLibraryView({super.key, required this.navigationShell});
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<MyLibraryView> createState() => _MyLibraryViewState();
@@ -27,7 +26,8 @@ class _MyLibraryViewState extends State<MyLibraryView>
       if (_tabController.indexIsChanging) {
         widget.navigationShell.goBranch(
           _tabController.index,
-          initialLocation: _tabController.index == widget.navigationShell.currentIndex,
+          initialLocation:
+              _tabController.index == widget.navigationShell.currentIndex,
         );
       }
     });

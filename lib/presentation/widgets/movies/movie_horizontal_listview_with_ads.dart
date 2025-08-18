@@ -1,8 +1,10 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../domain/entities/movie.dart';
 import '../../providers/providers.dart';
 import '../../screens/movies/movie_screen.dart';
@@ -92,32 +94,35 @@ class _MovieHorizontalListviewWithAdsState
           if (widget.title != null || widget.subTitle != null)
             _Title(title: widget.title, subTitle: widget.subTitle),
           Expanded(
-            child: ListView.builder(
-              controller: scrollController,
-              itemCount: _mixedItems.length,
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemBuilder: (context, index) {
-                final item = _mixedItems[index];
-                
-                if (item.type == AdItemType.horizontalAd) {
-                  return FadeInRight(
-                    delay: Duration(milliseconds: index * 100),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: MovieCardAdWidget(),
-                    ),
-                  );
-                } else {
-                  return FadeInRight(
-                    delay: Duration(milliseconds: index * 100),
-                    child: _Slide(
-                      movie: item.movie!,
-                      index: index,
-                    ),
-                  );
-                }
-              },
+            child: ScrollConfiguration(
+              behavior: CustomScrollBehavior(),
+              child: ListView.builder(
+                controller: scrollController,
+                itemCount: _mixedItems.length,
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final item = _mixedItems[index];
+                  
+                  if (item.type == AdItemType.horizontalAd) {
+                    return FadeInRight(
+                      delay: Duration(milliseconds: index * 100),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 4),
+                        child: MovieCardAdWidget(),
+                      ),
+                    );
+                  } else {
+                    return FadeInRight(
+                      delay: Duration(milliseconds: index * 100),
+                      child: _Slide(
+                        movie: item.movie!,
+                        index: index,
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
           ),
         ],
@@ -239,7 +244,13 @@ class _SlideState extends ConsumerState<_Slide>
               children: [
                 //* Imagen con micro-interacciones
                 GestureDetector(
-                  onTap: () => context.push('/movie/${widget.movie.id}'),
+                  onTap: () {
+                    if (kIsWeb) {
+                      context.go('/movie/${widget.movie.id}');
+                    } else {
+                      context.push('/movie/${widget.movie.id}');
+                    }
+                  },
                   child: MouseRegion(
                     onEnter: (_) => _onHover(true),
                     onExit: (_) => _onHover(false),

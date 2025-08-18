@@ -16,7 +16,7 @@ class MovieListItem extends ConsumerStatefulWidget {
   });
 
   final Movie movie;
-  final int listId;
+  final String listId;
   final VoidCallback? onRemove;
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../widgets/shared/custom_bottom_navigation.dart';
+import '../../widgets/custom_drawer.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.navigationShell});
@@ -13,13 +14,14 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const CustomDrawer(),
       body: navigationShell,
       bottomNavigationBar: CustomBottomNavigation(
         currentIndex: navigationShell.currentIndex,
         onItemTapped: (index) {
           navigationShell.goBranch(
             index,
-            initialLocation: index == navigationShell.currentIndex,
+            initialLocation: index == 1, // Reset My Library tab
           );
         },
       ),

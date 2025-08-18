@@ -7,7 +7,7 @@ abstract class CustomListsDatasource {
   Future<void> saveCustomLists(List<CustomList> lists);
   Future<void> addCustomList(CustomList list);
   Future<void> updateCustomList(CustomList list);
-  Future<void> deleteCustomList(int listId);
+  Future<void> deleteCustomList(String listId);
   Future<void> clearAllCustomLists();
   
   // Métodos para listas predeterminadas
@@ -58,7 +58,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
   }
 
   @override
-  Future<void> deleteCustomList(int listId) async {
+  Future<void> deleteCustomList(String listId) async {
     final currentLists = await getCustomLists();
     currentLists.removeWhere((list) => list.id == listId);
     await saveCustomLists(currentLists);
@@ -107,7 +107,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
 
   CustomList _customListFromJson(Map<String, dynamic> json) {
     return CustomList(
-      id: json['id'] as int,
+      id: json['id'].toString(),
       name: json['name'] as String,
       description: json['description'] as String,
       emoji: json['emoji'] as String,

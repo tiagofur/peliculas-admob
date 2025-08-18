@@ -7,6 +7,7 @@ import '../../../domain/entities/rating_analysis.dart';
 import '../../../domain/entities/temporal_analysis.dart';
 import '../../../domain/entities/user_stats.dart';
 import '../../providers/user_stats_provider.dart';
+import '../../providers/recommendations/recommendations_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 
@@ -16,6 +17,7 @@ class CombinedStatsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userStats = ref.watch(userStatsProvider);
+    final basicStats = ref.watch(basicUserStatsProvider);
     final genreAnalysis = ref.watch(genreAnalysisProvider);
     final temporalAnalysis = ref.watch(temporalAnalysisProvider);
     final ratingAnalysis = ref.watch(ratingAnalysisProvider);
@@ -38,7 +40,7 @@ class CombinedStatsView extends ConsumerWidget {
                   children: [
                     _buildUserTypeCard(stats, colors, textStyles),
                     const SizedBox(height: 16),
-                    _buildGeneralStatsSection(stats, colors, textStyles),
+                    _buildGeneralStatsSection(basicStats, stats, colors, textStyles),
                   ],
                 ),
               ),
@@ -121,26 +123,23 @@ class CombinedStatsView extends ConsumerWidget {
     IconData typeIcon;
     String typeDescription;
 
-    switch (stats.userType) {
-      case 'Casual':
-        typeColor = Colors.green;
-        typeIcon = Icons.movie;
-        typeDescription = 'Disfrutas del cine ocasionalmente';
-        break;
-      case 'Enthusiast':
-        typeColor = Colors.orange;
-        typeIcon = Icons.local_movies;
-        typeDescription = 'Eres un verdadero amante del cine';
-        break;
-      case 'Cinephile':
-        typeColor = Colors.purple;
-        typeIcon = Icons.theaters;
-        typeDescription = 'Eres un cinéfilo experimentado';
-        break;
-      default:
-        typeColor = colors.primary;
-        typeIcon = Icons.person;
-        typeDescription = 'Tu perfil cinematográfico';
+    // Determinar tipo de usuario basado en estadísticas
+    String userType;
+    if (stats.moviesWatched >= 100) {
+      userType = 'Cinephile';
+      typeColor = Colors.purple;
+      typeIcon = Icons.theaters;
+      typeDescription = 'Eres un cinéfilo experimentado';
+    } else if (stats.moviesWatched >= 25) {
+      userType = 'Enthusiast';
+      typeColor = Colors.orange;
+      typeIcon = Icons.local_movies;
+      typeDescription = 'Eres un verdadero amante del cine';
+    } else {
+      userType = 'Casual';
+      typeColor = Colors.green;
+      typeIcon = Icons.movie;
+      typeDescription = 'Disfrutas del cine ocasionalmente';
     }
 
     return Container(
@@ -173,7 +172,7 @@ class CombinedStatsView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  stats.userType,
+                  userType,
                   style: textStyles.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: typeColor,
@@ -194,7 +193,7 @@ class CombinedStatsView extends ConsumerWidget {
   }
 
   Widget _buildGeneralStatsSection(
-      UserStats stats, ColorScheme colors, TextTheme textStyles) {
+      BasicUserStats basicStats, UserStats stats, ColorScheme colors, TextTheme textStyles) {
     return _buildSection(
       title: 'Resumen General',
       icon: Icons.analytics,
@@ -207,7 +206,7 @@ class CombinedStatsView extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   title: 'Favoritas',
-                  value: stats.totalFavorites.toString(),
+                  value: basicStats.totalFavorites.toString(),
                   icon: Icons.favorite,
                   color: Colors.red,
                 ),
@@ -216,7 +215,7 @@ class CombinedStatsView extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   title: 'Vistas',
-                  value: stats.totalWatched.toString(),
+                  value: basicStats.totalWatched.toString(),
                   icon: Icons.visibility,
                   color: Colors.green,
                 ),
@@ -229,7 +228,7 @@ class CombinedStatsView extends ConsumerWidget {
               Expanded(
                 child: _buildStatCard(
                   title: 'Listas',
-                  value: stats.totalLists.toString(),
+                  value: stats.listsCount.toString(),
                   icon: Icons.list_alt,
                   color: Colors.blue,
                 ),
@@ -237,9 +236,9 @@ class CombinedStatsView extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildStatCard(
-                  title: 'Este Año',
-                  value: stats.moviesThisYear.toString(),
-                  icon: Icons.calendar_today,
+                  title: 'Interacciones',
+                  value: stats.totalInteractions.toString(),
+                  icon: Icons.touch_app,
                   color: Colors.orange,
                 ),
               ),
@@ -248,15 +247,15 @@ class CombinedStatsView extends ConsumerWidget {
           const SizedBox(height: 16),
           _buildProgressIndicator(
             label: 'Calificación Promedio',
-            value: stats.averageRating,
+            value: basicStats.averageRating,
             maxValue: 10.0,
             color: Colors.amber,
             suffix: '/10',
           ),
           const SizedBox(height: 8),
           _buildProgressIndicator(
-            label: 'Tasa de Descubrimiento',
-            value: stats.discoveryRate,
+            label: 'Actividad Reciente',
+            value: stats.hasActivity ? 100.0 : 0.0,
             maxValue: 100.0,
             color: Colors.teal,
             suffix: '%',

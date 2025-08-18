@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -32,6 +33,11 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
   }
 
   void _loadNativeAd() {
+    if (kIsWeb) {
+      // AdMob no es compatible con web
+      return;
+    }
+    
     _nativeAd = NativeAd(
       adUnitId: AdHelper.nativeAdUnitId,
       factoryId: 'listTile',
@@ -43,7 +49,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
           });
         },
         onAdFailedToLoad: (ad, error) {
-          print('Error al cargar anuncio nativo: ${error.message}');
+          //print('Error al cargar anuncio nativo: ${error.message}');
           ad.dispose();
         },
       ),
@@ -53,10 +59,16 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      // AdMob no es compatible con web
+      return const SizedBox.shrink();
+    }
+    
     if (_nativeAdIsLoaded && _nativeAd != null) {
       final adWidget = Container(
         height: widget.height,
-        margin: widget.margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: widget.margin ??
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           color: Theme.of(context)
@@ -79,8 +91,11 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
               child: Text(
                 'Publicidad',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
               ),
             ),
             adWidget,

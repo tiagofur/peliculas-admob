@@ -8,17 +8,16 @@ import '../widgets/shared/custom_appbar.dart';
 
 /// Web view for sharing movie lists with download prompts and deep links
 class ListShareWebView extends ConsumerWidget {
-  final String listId;
-  
   const ListShareWebView({super.key, required this.listId});
-  
+  final String listId;
+
   static const name = 'list-share-web';
-  
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // For now, we'll create a placeholder since we don't have list providers yet
     // This will be updated when list management is fully implemented
-    
+
     return Scaffold(
       appBar: const CustomAppbar(),
       body: _ListShareContent(listId: listId),
@@ -27,14 +26,13 @@ class ListShareWebView extends ConsumerWidget {
 }
 
 class _ListShareContent extends StatelessWidget {
-  final String listId;
-  
   const _ListShareContent({required this.listId});
-  
+  final String listId;
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    
+
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -46,7 +44,7 @@ class _ListShareContent extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.7),
+                  Colors.black.withAlpha(179),
                   Colors.transparent,
                 ],
               ),
@@ -61,7 +59,7 @@ class _ListShareContent extends StatelessWidget {
                     height: size.height * 0.2,
                     width: size.height * 0.2,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.2),
+                      color: Theme.of(context).primaryColor.withAlpha(179),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: Theme.of(context).primaryColor,
@@ -79,9 +77,9 @@ class _ListShareContent extends StatelessWidget {
                   Text(
                     '📋 Lista de Películas',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
@@ -89,8 +87,8 @@ class _ListShareContent extends StatelessWidget {
                   Text(
                     'Descubre esta increíble colección de películas seleccionadas especialmente para ti.',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white70,
-                    ),
+                          color: Colors.white70,
+                        ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
@@ -112,9 +110,9 @@ class _ListShareContent extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 40),
-          
+
           // Call to action section
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -128,13 +126,13 @@ class _ListShareContent extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withOpacity(0.8),
+                        Theme.of(context).primaryColor.withAlpha(179),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withOpacity(0.3),
+                        color: Theme.of(context).primaryColor.withAlpha(77),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -150,18 +148,19 @@ class _ListShareContent extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         '📱 ¡Descarga la app Películas!',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Accede a todas las listas y descubre más películas',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white70,
-                        ),
+                              color: Colors.white70,
+                            ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 20),
@@ -189,9 +188,9 @@ class _ListShareContent extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Share buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -208,12 +207,12 @@ class _ListShareContent extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 30),
-                
+
                 // Features section
                 _FeaturesSection(),
-                
+
                 const SizedBox(height: 40),
               ],
             ),
@@ -222,10 +221,10 @@ class _ListShareContent extends StatelessWidget {
       ),
     );
   }
-  
+
   void _openAppOrStore(BuildContext context) async {
     final deepLink = ShareService.generateListDeepLink(listId);
-    
+
     try {
       final uri = Uri.parse(deepLink);
       if (await canLaunchUrl(uri)) {
@@ -242,10 +241,11 @@ class _ListShareContent extends StatelessWidget {
       }
     }
   }
-  
+
   void _shareList(BuildContext context) async {
     try {
-      await ShareService.shareMovieList(context: context, 
+      await ShareService.shareMovieList(
+        context: context,
         listId: listId,
         listName: 'Lista de Películas',
         listDescription: 'Una increíble colección de películas seleccionadas',
@@ -262,10 +262,10 @@ class _ListShareContent extends StatelessWidget {
       }
     }
   }
-  
+
   void _copyLink(BuildContext context) async {
     final shareUrl = ShareService.generateListShareUrl(listId);
-    
+
     // Note: For web, we would need to use a different approach
     // This is a placeholder for the copy functionality
     if (context.mounted) {
@@ -280,20 +280,19 @@ class _ListShareContent extends StatelessWidget {
 }
 
 class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  
   const _InfoChip({
     required this.icon,
     required this.label,
   });
-  
+  final IconData icon;
+  final String label;
+
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withAlpha(179),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -315,16 +314,15 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _ShareButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onPressed;
-  
   const _ShareButton({
     required this.icon,
     required this.label,
     required this.onPressed,
   });
-  
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
@@ -350,8 +348,8 @@ class _FeaturesSection extends StatelessWidget {
         Text(
           '✨ Con la app Películas puedes:',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 16),
         _FeatureItem(
@@ -380,16 +378,15 @@ class _FeaturesSection extends StatelessWidget {
 }
 
 class _FeatureItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  
   const _FeatureItem({
     required this.icon,
     required this.title,
     required this.description,
   });
-  
+  final IconData icon;
+  final String title;
+  final String description;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -400,7 +397,7 @@ class _FeatureItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              color: Theme.of(context).primaryColor.withAlpha(179),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -417,15 +414,15 @@ class _FeatureItem extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                        color: Colors.grey[600],
+                      ),
                 ),
               ],
             ),

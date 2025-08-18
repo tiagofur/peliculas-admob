@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
-import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
+import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
+import '../../widgets/guest_mode_banner.dart';
 import '../../widgets/widgets.dart';
 
 class HomeView extends ConsumerStatefulWidget {
@@ -66,6 +66,12 @@ class HomeViewState extends ConsumerState<HomeView>
 
               MoviesSlideshow(movies: slideShowMovies),
 
+              // Banner de modo guest (solo se muestra en modo guest)
+              const GuestModeBanner(),
+
+              // Indicador de datos locales
+              const LocalDataIndicator(),
+
               // Banner discreto después del slideshow
               const BannerAdWidget(),
 
@@ -109,12 +115,12 @@ class HomeViewState extends ConsumerState<HomeView>
 
               // Nueva sección de Tendencias
               MovieHorizontalListviewWithAds(
-                  movies: popularMovies,
-                  title: 'Tendencias',
-                  subTitle: 'Lo más popular ahora',
-                  loadNextPage: () => ref
-                      .read(popularMoviesProvider.notifier)
-                      .loadNextPage()),
+                movies: popularMovies,
+                title: 'Tendencias',
+                subTitle: 'Lo más popular ahora',
+                loadNextPage: () =>
+                    ref.read(popularMoviesProvider.notifier).loadNextPage(),
+              ),
 
               // Mostrar error si existe
               if (popularState.state == MoviesState.error)
@@ -137,9 +143,8 @@ class HomeViewState extends ConsumerState<HomeView>
                         ),
                       ),
                       TextButton(
-                        onPressed: () => ref
-                            .read(popularMoviesProvider.notifier)
-                            .refresh(),
+                        onPressed: () =>
+                            ref.read(popularMoviesProvider.notifier).refresh(),
                         child: const Text('Reintentar'),
                       ),
                     ],
@@ -153,11 +158,12 @@ class HomeViewState extends ConsumerState<HomeView>
               ),
 
               MovieHorizontalListviewWithAds(
-                  movies: upcomingMovies,
-                  title: 'Próximamente',
-                  subTitle: 'En este mes',
-                  loadNextPage: () =>
-                      ref.read(upcomingMoviesProvider.notifier).loadNextPage()),
+                movies: upcomingMovies,
+                title: 'Próximamente',
+                subTitle: 'En este mes',
+                loadNextPage: () =>
+                    ref.read(upcomingMoviesProvider.notifier).loadNextPage(),
+              ),
 
               // Mostrar error si existe
               if (upcomingState.state == MoviesState.error)

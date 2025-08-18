@@ -12,6 +12,8 @@ dependencies:
   dio: ^5.7.0
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
   flutter_dotenv: ^5.1.0
   flutter_native_splash: ^2.4.2
   flutter_riverpod: ^2.6.1
@@ -31,6 +33,13 @@ dependencies:
   share_plus: ^11.1.0
   flutter_in_app_pip: ^1.7.4
   url_launcher: ^6.3.2
+  uuid: ^4.4.0
+  # Supabase dependencies
+  supabase_flutter: ^2.9.1
+  image_picker: ^1.0.0
+  image_cropper: ^8.0.2
+  cached_network_image: ^3.3.0
+  connectivity_plus: ^6.0.5
 
 dev_dependencies:
   build_runner: ^2.4.13
@@ -43,7 +52,7 @@ flutter_native_splash:
   color: "#EEBEB8"
   image: web/icons/Icon-192.png
   web: true
-  
+
   android_12:
     color: "#EEBEB8"
 

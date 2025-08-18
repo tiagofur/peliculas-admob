@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../models/shareable_content.dart';
+
 import '../domain/entities/movie.dart';
 import '../infrastructure/models/moviedb/movie_moviedb.dart';
+import '../models/shareable_content.dart';
 
 /// Service for handling sharing functionality across the app
 class ShareService {
   static const String _baseUrl = 'https://peliculas.creapolis.dev';
   static const String _appName = 'Películas';
-  static const String _appDescription = 'Descubre, organiza y comparte tus películas favoritas';
+  static const String _appDescription =
+      'Descubre, organiza y comparte tus películas favoritas';
 
   /// Shares a movie with its details
   static Future<void> shareMovie({
@@ -105,7 +107,10 @@ class ShareService {
     required ShareableContent content,
   }) async {
     try {
-      final result = await Share.share(content.shareText);
+      final result = await SharePlus.instance.share(ShareParams(
+        subject: _appName,
+        text: content.shareText,
+      ));
 
       if (result.status == ShareResultStatus.unavailable) {
         _showFallbackShareSheet(context, content);
@@ -194,10 +199,15 @@ class ShareService {
     try {
       final message = customMessage ??
           '📱 ¡Descarga $_appName!\n\n'
-          '$_appDescription\n\n'
-          '🔗 $_baseUrl';
+              '$_appDescription\n\n'
+              '🔗 $_baseUrl';
 
-      await Share.share(message);
+      await SharePlus.instance.share(
+        ShareParams(
+          subject: _appName,
+          text: message,
+        ),
+      );
     } catch (e) {
       throw ShareException('Error al compartir app: $e');
     }
@@ -240,7 +250,7 @@ class ShareService {
 
   /// Generates a shareable URL for a movie
   static String generateMovieShareUrl(int movieId) {
-    return '$_baseUrl/movie/$movieId/share';
+    return '$_baseUrl/movie/$movieId';
   }
 
   /// Generates a shareable URL for a movie list

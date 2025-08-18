@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../domain/entities/watch_providers.dart';
+
 import '../../domain/entities/watch_provider.dart';
+import '../../domain/entities/watch_providers.dart';
 import '../../domain/services/affiliate_service.dart';
 
 class WatchProvidersWidget extends StatelessWidget {
-  final WatchProviders? watchProviders;
-  final String? movieTitle;
-  final String? imdbId;
-  final String country;
-
   const WatchProvidersWidget({
-    Key? key,
+    super.key,
     required this.watchProviders,
     this.movieTitle,
     this.imdbId,
     this.country = 'MX',
-  }) : super(key: key);
+  });
+  final WatchProviders? watchProviders;
+  final String? movieTitle;
+  final String? imdbId;
+  final String country;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +39,7 @@ class WatchProvidersWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             // Streaming platforms (flatrate)
             if (watchProviders!.flatrate.isNotEmpty)
               _buildProviderSection(
@@ -48,7 +48,7 @@ class WatchProvidersWidget extends StatelessWidget {
                 Icons.play_circle_fill,
                 Colors.green,
               ),
-            
+
             // Rental platforms
             if (watchProviders!.rent.isNotEmpty)
               _buildProviderSection(
@@ -57,7 +57,7 @@ class WatchProvidersWidget extends StatelessWidget {
                 Icons.movie_filter,
                 Colors.orange,
               ),
-            
+
             // Purchase platforms
             if (watchProviders!.buy.isNotEmpty)
               _buildProviderSection(
@@ -66,9 +66,9 @@ class WatchProvidersWidget extends StatelessWidget {
                 Icons.shopping_cart,
                 Colors.blue,
               ),
-            
+
             const SizedBox(height: 16),
-            
+
             // JustWatch attribution
             _buildAttribution(),
           ],
@@ -104,7 +104,9 @@ class WatchProvidersWidget extends StatelessWidget {
         Wrap(
           spacing: 12,
           runSpacing: 8,
-          children: providers.map((provider) => _buildProviderChip(provider)).toList(),
+          children: providers
+              .map((provider) => _buildProviderChip(provider))
+              .toList(),
         ),
         const SizedBox(height: 16),
       ],
@@ -112,8 +114,9 @@ class WatchProvidersWidget extends StatelessWidget {
   }
 
   Widget _buildProviderChip(WatchProvider provider) {
-    final hasAffiliate = AffiliateService.hasAffiliateSupport(provider.providerId);
-    
+    final hasAffiliate =
+        AffiliateService.hasAffiliateSupport(provider.providerId);
+
     return GestureDetector(
       onTap: () => _launchProvider(provider),
       child: Container(
@@ -122,7 +125,9 @@ class WatchProvidersWidget extends StatelessWidget {
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: hasAffiliate ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
+            color: hasAffiliate
+                ? Colors.green.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -149,7 +154,7 @@ class WatchProvidersWidget extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 8),
-            
+
             // Provider name
             Flexible(
               child: Text(
@@ -161,14 +166,16 @@ class WatchProvidersWidget extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            
+
             // Affiliate indicator
-            if (hasAffiliate) ...[const SizedBox(width: 4),
+            if (hasAffiliate) ...[
+              const SizedBox(width: 4),
               Icon(
                 Icons.link,
                 size: 16,
                 color: Colors.green[600],
-              ),]
+              ),
+            ]
           ],
         ),
       ),
@@ -193,7 +200,8 @@ class WatchProvidersWidget extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: GestureDetector(
-              onTap: () => _launchUrl(AffiliateService.getJustWatchAttributionLink()),
+              onTap: () =>
+                  _launchUrl(AffiliateService.getJustWatchAttributionLink()),
               child: Text(
                 AffiliateService.getAttributionText(),
                 style: TextStyle(
@@ -216,7 +224,7 @@ class WatchProvidersWidget extends StatelessWidget {
       imdbId: imdbId,
       country: country,
     );
-    
+
     _launchUrl(affiliateLink);
   }
 

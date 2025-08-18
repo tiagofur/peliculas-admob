@@ -6,7 +6,7 @@ abstract class CustomListsRepository {
   Future<void> saveCustomLists(List<CustomList> lists);
   Future<void> addCustomList(CustomList list);
   Future<void> updateCustomList(CustomList list);
-  Future<void> deleteCustomList(int listId);
+  Future<void> deleteCustomList(String listId);
   Future<void> clearAllCustomLists();
   
   // Métodos para listas predeterminadas
@@ -40,7 +40,7 @@ class CustomListsRepositoryImpl extends CustomListsRepository {
   }
 
   @override
-  Future<void> deleteCustomList(int listId) {
+  Future<void> deleteCustomList(String listId) {
     return datasource.deleteCustomList(listId);
   }
 

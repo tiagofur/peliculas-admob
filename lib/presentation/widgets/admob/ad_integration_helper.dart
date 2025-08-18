@@ -5,12 +5,13 @@ import '../../../domain/entities/movie.dart';
 class AdIntegrationHelper {
   /// Frecuencia de anuncios en listas horizontales (cada X películas)
   static const int horizontalAdFrequency = 6;
-  
+
   /// Frecuencia de anuncios en grids verticales (cada X películas, múltiplo de 3)
   static const int verticalAdFrequency = 15;
-  
+
   /// Frecuencia de anuncios de línea completa en grids (cada X películas)
-  static const int fullWidthAdFrequency = 9; // Múltiplo de 3 para grids de 3 columnas
+  static const int fullWidthAdFrequency =
+      9; // Múltiplo de 3 para grids de 3 columnas
 
   /// Calcula si debe mostrar un anuncio en la posición dada para listas horizontales
   static bool shouldShowHorizontalAd(int index) {
@@ -49,7 +50,7 @@ class AdIntegrationHelper {
       // Para grids verticales, consideramos ambos tipos de anuncios
       int movieIndex = listIndex;
       int adsCount = 0;
-      
+
       // Contar anuncios de grid
       for (int i = 0; i <= listIndex; i++) {
         if (shouldShowGridAd(i - adsCount)) {
@@ -61,7 +62,7 @@ class AdIntegrationHelper {
           movieIndex--;
         }
       }
-      
+
       return movieIndex;
     }
   }
@@ -69,10 +70,12 @@ class AdIntegrationHelper {
   /// Determina el tipo de elemento en una posición dada
   static AdItemType getItemType(int index, {bool isHorizontal = true}) {
     if (isHorizontal) {
-      return shouldShowHorizontalAd(index) ? AdItemType.horizontalAd : AdItemType.movie;
+      return shouldShowHorizontalAd(index)
+          ? AdItemType.horizontalAd
+          : AdItemType.movie;
     } else {
       final movieIndex = getMovieIndex(index, isHorizontal: false);
-      
+
       if (shouldShowFullWidthAd(movieIndex)) {
         return AdItemType.fullWidthAd;
       } else if (shouldShowGridAd(movieIndex)) {
@@ -86,28 +89,28 @@ class AdIntegrationHelper {
   /// Crea una lista mixta de películas y anuncios para listas horizontales
   static List<AdListItem> createHorizontalAdList(List<Movie> movies) {
     final List<AdListItem> items = [];
-    
+
     for (int i = 0; i < movies.length; i++) {
       // Agregar película
       items.add(AdListItem.movie(movies[i]));
-      
+
       // Agregar anuncio si corresponde
       if (shouldShowHorizontalAd(i)) {
         items.add(AdListItem.horizontalAd());
       }
     }
-    
+
     return items;
   }
 
   /// Crea una lista mixta de películas y anuncios para grids verticales
   static List<AdListItem> createGridAdList(List<Movie> movies) {
     final List<AdListItem> items = [];
-    
+
     for (int i = 0; i < movies.length; i++) {
       // Agregar película
       items.add(AdListItem.movie(movies[i]));
-      
+
       // Agregar anuncio de línea completa si corresponde (prioridad)
       if (shouldShowFullWidthAd(i)) {
         items.add(AdListItem.fullWidthAd());
@@ -117,7 +120,7 @@ class AdIntegrationHelper {
         items.add(AdListItem.gridAd());
       }
     }
-    
+
     return items;
   }
 }
@@ -132,28 +135,27 @@ enum AdItemType {
 
 /// Clase que representa un elemento en la lista (película o anuncio)
 class AdListItem {
+  factory AdListItem.movie(Movie movie) => AdListItem._(
+        type: AdItemType.movie,
+        movie: movie,
+      );
+
+  const AdListItem._({required this.type, this.movie});
+
+  factory AdListItem.horizontalAd() => const AdListItem._(
+        type: AdItemType.horizontalAd,
+      );
+
+  factory AdListItem.gridAd() => const AdListItem._(
+        type: AdItemType.gridAd,
+      );
+
+  factory AdListItem.fullWidthAd() => const AdListItem._(
+        type: AdItemType.fullWidthAd,
+      );
   final AdItemType type;
   final Movie? movie;
-  
-  const AdListItem._({required this.type, this.movie});
-  
-  factory AdListItem.movie(Movie movie) => AdListItem._(
-    type: AdItemType.movie,
-    movie: movie,
-  );
-  
-  factory AdListItem.horizontalAd() => const AdListItem._(
-    type: AdItemType.horizontalAd,
-  );
-  
-  factory AdListItem.gridAd() => const AdListItem._(
-    type: AdItemType.gridAd,
-  );
-  
-  factory AdListItem.fullWidthAd() => const AdListItem._(
-    type: AdItemType.fullWidthAd,
-  );
-  
+
   bool get isMovie => type == AdItemType.movie;
   bool get isHorizontalAd => type == AdItemType.horizontalAd;
   bool get isGridAd => type == AdItemType.gridAd;

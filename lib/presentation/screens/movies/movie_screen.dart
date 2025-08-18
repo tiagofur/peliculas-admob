@@ -1,16 +1,13 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../domain/entities/movie.dart';
-import '../../providers/providers.dart';
-import '../../widgets/widgets.dart';
 import '../../../services/share_service.dart';
-import '../../widgets/admob/native_ad_widget.dart';
-import '../../widgets/admob/full_width_ad_widget.dart';
+import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
-import '../../widgets/movies/enhanced_movie_info.dart';
+import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/widgets.dart';
 
 class MovieScreen extends ConsumerStatefulWidget {
   const MovieScreen({super.key, required this.movieId});
@@ -73,19 +70,19 @@ class _MovieDetails extends StatelessWidget {
             children: [
               // Información básica, sinopsis, detalles técnicos, etc.
               _MovieInfoBeforeCast(movie: movie),
-              
+
               //* 1. Banner antes de 'Reparto Principal'
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
                 child: BannerAdWidget(),
               ),
-              
+
               // Reparto Principal
               _CastSection(movie: movie),
-              
+
               // Estadísticas
               _StatsSection(movie: movie),
-              
+
               //* 2. Anuncio nativo entre estadísticas y 'Mis Listas'
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
@@ -155,8 +152,6 @@ class _Genres extends StatelessWidget {
   }
 }
 
-
-
 final isFavoriteProvider =
     Provider.family.autoDispose<bool, int>((ref, int movieId) {
   final favoriteMovies = ref.watch(favoriteMoviesProvider);
@@ -166,7 +161,8 @@ final isFavoriteProvider =
 final isWatchedProvider =
     Provider.family.autoDispose<bool, int>((ref, int movieId) {
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
-  return watchedMoviesState.movies.any((watchedMovie) => watchedMovie.movie.id == movieId);
+  return watchedMoviesState.movies
+      .any((watchedMovie) => watchedMovie.movie.id == movieId);
 });
 
 class _CustomSliverAppBar extends ConsumerWidget {
@@ -200,13 +196,20 @@ class _CustomSliverAppBar extends ConsumerWidget {
         // Botón de marcar como vista con animación
         _AnimatedActionButton(
           onPressed: () async {
-            final isWatched = await ref.read(watchedMoviesRepositoryProvider).isMovieWatched(movie.id);
-            final achievementsNotifier = ref.read(achievementsProvider.notifier);
-            
+            final isWatched = await ref
+                .read(watchedMoviesRepositoryProvider)
+                .isMovieWatched(movie.id);
+            final achievementsNotifier =
+                ref.read(achievementsProvider.notifier);
+
             if (isWatched) {
-              await ref.read(watchedMoviesProvider.notifier).removeFromWatched(movie.id);
+              await ref
+                  .read(watchedMoviesProvider.notifier)
+                  .removeFromWatched(movie.id);
             } else {
-              await ref.read(watchedMoviesProvider.notifier).markAsWatched(movie);
+              await ref
+                  .read(watchedMoviesProvider.notifier)
+                  .markAsWatched(movie);
               // Track achievement cuando se marca como vista
               achievementsNotifier.trackMovieWatched(movie);
             }
@@ -222,13 +225,16 @@ class _CustomSliverAppBar extends ConsumerWidget {
         // Botón de favoritos con animación
         _AnimatedActionButton(
           onPressed: () async {
-            final isFavorite = await ref.read(localStorageRepositoryProvider).isMovieFavorite(movie.id);
-            final achievementsNotifier = ref.read(achievementsProvider.notifier);
-            
+            final isFavorite = await ref
+                .read(localStorageRepositoryProvider)
+                .isMovieFavorite(movie.id);
+            final achievementsNotifier =
+                ref.read(achievementsProvider.notifier);
+
             await ref
                 .read(favoriteMoviesProvider.notifier)
                 .toggleFavorite(movie);
-            
+
             // Track achievement solo cuando se agrega a favoritos (no cuando se quita)
             if (!isFavorite) {
               achievementsNotifier.trackMovieFavorited();
@@ -380,12 +386,12 @@ class _AnimatedActionButtonState extends State<_AnimatedActionButton>
   @override
   void initState() {
     super.initState();
-    
+
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 600),
       vsync: this,
     );
-    
+
     _scaleController = AnimationController(
       duration: const Duration(milliseconds: 150),
       vsync: this,
@@ -433,11 +439,11 @@ class _AnimatedActionButtonState extends State<_AnimatedActionButton>
     _scaleController.forward().then((_) {
       _scaleController.reverse();
     });
-    
+
     _pulseController.forward().then((_) {
       _pulseController.reverse();
     });
-    
+
     widget.onPressed();
   }
 
