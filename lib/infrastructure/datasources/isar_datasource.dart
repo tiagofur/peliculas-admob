@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
@@ -8,57 +8,150 @@ class HiveDatasource extends LocalStorageDatasource {
   HiveDatasource() {
     _initHive();
   }
-  
+
   Box<Movie>? _moviesBox;
+  bool _isInitialized = false;
 
   Future<void> _initHive() async {
-    final dir = await getApplicationDocumentsDirectory();
-    await Hive.initFlutter(dir.path);
-    
-    // Registrar adaptador si no está registrado
-    if (!Hive.isAdapterRegistered(0)) {
-      Hive.registerAdapter(MovieAdapter());
+    if (_isInitialized) return;
+
+    try {
+      // Inicializar Hive de manera compatible con Web
+      if (kIsWeb) {
+        // En Web, Hive usa IndexedDB automáticamente
+        await Hive.initFlutter();
+      } else {
+        // En plataformas nativas, usar el directorio por defecto
+        await Hive.initFlutter();
+      }
+
+      // Registrar adaptador si no está registrado
+      if (!Hive.isAdapterRegistered(0)) {
+        Hive.registerAdapter(MovieAdapter());
+      }
+
+      _moviesBox = await Hive.openBox<Movie>('movies');
+      _isInitialized = true;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error inicializando Hive: $e');
+      }
+      // En caso de error, intentar con un nombre de box diferente
+      try {
+        _moviesBox = await Hive.openBox<Movie>('movies_fallback');
+        _isInitialized = true;
+      } catch (e2) {
+        if (kDebugMode) {
+          print('Error inicializando Hive con fallback: $e2');
+        }
+        rethrow;
+      }
     }
-    
-    _moviesBox = await Hive.openBox<Movie>('movies');
   }
 
   @override
   Future<bool> isMovieFavorite(int movieId) async {
-    if (_moviesBox == null) await _initHive();
-    
-    final movies = _moviesBox!.values.where((movie) => movie.id == movieId);
-    return movies.isNotEmpty;
+    try {
+      if (!_isInitialized) await _initHive();
+      if (_moviesBox == null) return false;
+
+      final movies = _moviesBox!.values.where((movie) => movie.id == movieId);
+      return movies.isNotEmpty;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking if movie is favorite: $e');
+      }
+      return false;
+    }
   }
 
   @override
   Future<void> toggleFavorite(Movie movie) async {
-    if (_moviesBox == null) await _initHive();
-    
-    final existingMovieKey = _moviesBox!.keys.cast<int>().firstWhere(
-      (key) => _moviesBox!.get(key)?.id == movie.id,
-      orElse: () => -1,
-    );
+    try {
+      if (!_isInitialized) await _initHive();
+      if (_moviesBox == null) throw Exception('Movies box not available');
 
-    if (existingMovieKey != -1) {
-      // Borrar
-      await _moviesBox!.delete(existingMovieKey);
-      return;
+      final existingMovieKey = _moviesBox!.keys.cast<int>().firstWhere(
+            (key) => _moviesBox!.get(key)?.id == movie.id,
+            orElse: () => -1,
+          );
+
+      if (existingMovieKey != -1) {
+        // Borrar
+        await _moviesBox!.delete(existingMovieKey);
+        return;
+      }
+
+      // Insertar
+      await _moviesBox!.add(movie);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error toggling favorite: $e');
+      }
+      rethrow;
     }
-
-    // Insertar
-    await _moviesBox!.add(movie);
   }
 
   @override
   Future<List<Movie>> loadMovies({int limit = 10, offset = 0}) async {
-    if (_moviesBox == null) await _initHive();
-    
-    final allMovies = _moviesBox!.values.toList();
-    final endIndex = (offset + limit).clamp(0, allMovies.length);
-    
-    if (offset >= allMovies.length) return [];
-    
-    return allMovies.sublist(offset, endIndex);
+    try {
+      if (!_isInitialized) {
+        print('🔄 HiveDatasource no inicializado, inicializando...');
+        await _initHive();
+      }
+
+      if (_moviesBox == null) {
+        print('❌ MoviesBox es null, retornando lista vacía');
+        return [];
+      }
+
+      final allMovies = _moviesBox!.values.toList();
+      print('📊 HiveDatasource: Total películas en box: ${allMovies.length}');
+      print('📊 HiveDatasource: Solicitado limit=$limit, offset=$offset');
+
+      final endIndex = (offset + limit).clamp(0, allMovies.length);
+
+      if (offset >= allMovies.length) {
+        print('📊 HiveDatasource: Offset mayor que total, retornando vacío');
+        return [];
+      }
+
+      final result = allMovies.sublist(offset, endIndex);
+      print('📊 HiveDatasource: Retornando ${result.length} películas');
+      return result;
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error loading movies: $e');
+      }
+      return [];
+    }
+  }
+
+  // Método para limpiar todos los datos
+  Future<void> clearAll() async {
+    try {
+      if (!_isInitialized) await _initHive();
+      if (_moviesBox != null) {
+        await _moviesBox!.clear();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error clearing all data: $e');
+      }
+    }
+  }
+
+  // Método para cerrar la base de datos
+  Future<void> close() async {
+    try {
+      if (_moviesBox?.isOpen == true) {
+        await _moviesBox!.close();
+      }
+      _isInitialized = false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error closing database: $e');
+      }
+    }
   }
 }

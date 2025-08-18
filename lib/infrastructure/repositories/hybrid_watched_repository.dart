@@ -1,14 +1,15 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../domain/entities/movie.dart';
-import '../../domain/entities/watched_movie.dart';
 import '../../domain/entities/sync_models.dart';
+import '../../domain/entities/watched_movie.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../datasources/watched_movies_hive_datasource.dart';
 import '../services/conflict_resolver.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/persistent_sync_queue.dart';
 
 // Repositorio híbrido que maneja películas vistas localmente y sincroniza con Supabase
@@ -101,12 +102,16 @@ class HybridWatchedRepository
           'movie_vote_average': movie.voteAverage,
           'watched_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
+          'deleted_at': null, // ✅ Marcar como activo
         });
       } else {
-        // Remover de películas vistas en Supabase
+        // ✅ Soft delete en lugar de hard delete
         await _supabase
             .from('user_watched_movies')
-            .delete()
+            .update({
+              'deleted_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            })
             .eq('user_id', userId)
             .eq('movie_id', movie.id);
       }
@@ -193,7 +198,8 @@ class HybridWatchedRepository
       final response = await _supabase
           .from('user_watched_movies')
           .select()
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .isFilter('deleted_at', null); // ✅ Solo obtener películas activas
 
       return (response as List).map((data) => _mapFromSupabase(data)).toList();
     } on PostgrestException catch (e) {
@@ -409,12 +415,12 @@ class HybridWatchedRepository
 
   @override
   Future<bool> hasPendingSync() async {
-    return !_syncQueue.isEmpty;
+    return !(await _syncQueue.isEmpty);
   }
 
   @override
   Future<List<String>> getPendingSyncItems() async {
-    return _syncQueue.getItems();
+    return await _syncQueue.getItems();
   }
 
   @override

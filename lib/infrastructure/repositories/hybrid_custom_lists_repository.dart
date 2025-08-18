@@ -173,6 +173,7 @@ class HybridCustomListsRepository
           'is_public': false,
           'created_at': list.createdAt.toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
+          'deleted_at': null, // ✅ Marcar como activo (no eliminado)
         });
 
         // Sincronizar elementos de la lista
@@ -194,13 +195,19 @@ class HybridCustomListsRepository
     if (userId == null) return;
 
     try {
-      // Eliminar elementos de la lista primero
-      await _supabase.from('user_list_items').delete().eq('list_id', listId);
+      // ✅ Soft delete de elementos de la lista
+      await _supabase.from('user_list_items').update({
+        'deleted_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('list_id', listId);
 
-      // Eliminar la lista
+      // ✅ Soft delete de la lista
       await _supabase
           .from('user_lists')
-          .delete()
+          .update({
+            'deleted_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
           .eq('id', listId)
           .eq('user_id', userId);
 
@@ -237,6 +244,7 @@ class HybridCustomListsRepository
           'order_index': i,
           'added_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
+          'deleted_at': null, // ✅ Marcar como activo
         });
       }
     } on PostgrestException catch (e) {
@@ -270,17 +278,21 @@ class HybridCustomListsRepository
 
     try {
       await _checkOnline();
-      final response =
-          await _supabase.from('user_lists').select().eq('user_id', userId);
+      final response = await _supabase
+          .from('user_lists')
+          .select()
+          .eq('user_id', userId)
+          .isFilter('deleted_at', null); // ✅ Solo obtener listas activas
 
       List<SyncableCustomList> remoteLists = [];
 
       for (final data in response as List) {
-        // Obtener elementos de la lista
+        // Obtener elementos de la lista (solo activos)
         final itemsResponse = await _supabase
             .from('user_list_items')
             .select()
             .eq('list_id', data['id'])
+            .isFilter('deleted_at', null) // ✅ Solo elementos activos
             .order('order_index');
 
         final movieIds = (itemsResponse as List)
@@ -305,12 +317,12 @@ class HybridCustomListsRepository
 
   @override
   Future<bool> hasPendingSync() async {
-    return !_syncQueue.isEmpty;
+    return !(await _syncQueue.isEmpty);
   }
 
   @override
   Future<List<String>> getPendingSyncItems() async {
-    return _syncQueue.getItems();
+    return await _syncQueue.getItems();
   }
 
   @override

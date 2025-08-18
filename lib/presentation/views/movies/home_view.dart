@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,8 +6,13 @@ import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
-import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
+import '../../widgets/auth_debug_widget.dart';
 import '../../widgets/guest_mode_banner.dart';
+import '../../widgets/local_storage_debug_widget.dart';
+import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
+import '../../widgets/multidevice_debug_widget.dart';
+import '../../widgets/sync_test_widget.dart';
+import '../../widgets/test_login_widget.dart';
 import '../../widgets/widgets.dart';
 
 class HomeView extends ConsumerStatefulWidget {
@@ -23,12 +29,14 @@ class HomeViewState extends ConsumerState<HomeView>
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
-      ref.read(popularMoviesProvider.notifier).loadNextPage();
-      ref.read(topRatedMoviesProvider.notifier).loadNextPage();
-      ref.read(upcomingMoviesProvider.notifier).loadNextPage();
-      // Cargar favoritos al iniciar la app
-      ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+      if (mounted) {
+        ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
+        ref.read(popularMoviesProvider.notifier).loadNextPage();
+        ref.read(topRatedMoviesProvider.notifier).loadNextPage();
+        ref.read(upcomingMoviesProvider.notifier).loadNextPage();
+        // Cargar favoritos al iniciar la app
+        ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+      }
     });
   }
 
@@ -237,6 +245,15 @@ class HomeViewState extends ConsumerState<HomeView>
                 showLabel: true,
                 borderRadius: 12,
               ),
+
+              // Widget de prueba de sincronización (solo en debug)
+              if (kDebugMode) ...[
+                const AuthDebugWidget(),
+                const TestLoginWidget(),
+                const SyncTestWidget(),
+                const LocalStorageDebugWidget(),
+                const MultiDeviceDebugWidget(),
+              ],
 
               const SizedBox(height: 20),
             ],

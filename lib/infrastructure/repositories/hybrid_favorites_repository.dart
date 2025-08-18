@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
+import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/sync_models.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
-import '../datasources/isar_datasource.dart';
 import '../services/conflict_resolver.dart';
 import '../services/persistent_sync_queue.dart';
 import '../services/sync_manager.dart';
@@ -16,13 +16,13 @@ import '../services/sync_manager.dart';
 class HybridFavoritesRepository
     implements SyncableRepository<SyncableFavorite> {
   HybridFavoritesRepository({
-    required HiveDatasource hiveDatasource,
+    required LocalStorageDatasource datasource,
     required Ref ref,
-  })  : _hiveDatasource = hiveDatasource,
+  })  : _datasource = datasource,
         _ref = ref {
     _syncQueue.init();
   }
-  final HiveDatasource _hiveDatasource;
+  final LocalStorageDatasource _datasource;
   final Ref _ref;
   final SupabaseClient _supabase = Supabase.instance.client;
   final PersistentSyncQueue _syncQueue = PersistentSyncQueue();
@@ -62,7 +62,7 @@ class HybridFavoritesRepository
 
     try {
       // Obtener datos locales
-      final moviesList = await _hiveDatasource.loadMovies();
+      final moviesList = await _datasource.loadMovies();
       return {for (var movie in moviesList) movie.id: movie};
     } catch (e) {
       throw LocalStorageException(
@@ -72,65 +72,98 @@ class HybridFavoritesRepository
 
   // Agregar/quitar película de favoritos
   Future<void> toggleFavorite(Movie movie) async {
+    print('🎬 TOGGLE FAVORITE llamado para: ${movie.title}');
+
     try {
       // 1. Actualizar localmente primero (Local First)
-      await _hiveDatasource.toggleFavorite(movie);
+      print('💾 Actualizando favorito localmente: ${movie.title}');
+      await _datasource.toggleFavorite(movie);
+      print('✅ Favorito actualizado localmente: ${movie.title}');
     } catch (e) {
+      print('❌ Error al actualizar favorito localmente: $e');
       throw LocalStorageException('Error al cambiar el estado de favorito: $e');
     }
 
     // 2. Marcar para sincronización
     final userId = _getCurrentUserId();
     if (userId != null) {
+      print('📝 Marcando para sincronización: ${userId}_${movie.id}');
       await markForSync('${userId}_${movie.id}');
+    } else {
+      print('❌ No hay usuario para marcar sincronización');
     }
 
     // 3. Sincronizar si está online y autenticado
     try {
+      print('🌐 Verificando conectividad...');
       await _checkOnline();
       if (_isAuthenticated()) {
+        print('🔑 Usuario autenticado, iniciando sincronización individual...');
         await _syncSingleItem(movie);
+      } else {
+        print('❌ Usuario no autenticado, saltando sincronización');
       }
     } on SyncException catch (e) {
       // Si falla, se sincronizará más tarde
-      print('Error sincronizando favorito: $e');
+      print('❌ Error sincronizando favorito: $e');
+    } catch (e) {
+      print('❌ Error inesperado en sincronización: $e');
     }
+
+    print('🏁 TOGGLE FAVORITE completado para: ${movie.title}');
   }
 
   // Sincronizar un elemento individual
   Future<void> _syncSingleItem(Movie movie) async {
-    final userId = _getCurrentUserId();
-    if (userId == null) return;
+    print('🔄 Iniciando sincronización individual de: ${movie.title}');
 
-    final isFavorite = await _hiveDatasource.isMovieFavorite(movie.id);
+    final userId = _getCurrentUserId();
+    if (userId == null) {
+      print('❌ No hay usuario autenticado para sincronizar ${movie.title}');
+      return;
+    }
+
+    final isFavorite = await _datasource.isMovieFavorite(movie.id);
     final favoriteId = '${userId}_${movie.id}';
+
+    print(
+        '📊 Estado de ${movie.title}: ${isFavorite ? "FAVORITO" : "NO FAVORITO"}');
 
     try {
       if (isFavorite) {
-        // Agregar a Supabase
+        print('⬆️ Agregando ${movie.title} a Supabase...');
+        // Agregar a Supabase - usar upsert basado en user_id y movie_id
         await _supabase.from('user_favorites').upsert({
-          'id': favoriteId,
           'user_id': userId,
           'movie_id': movie.id,
           'movie_title': movie.title,
           'movie_poster_path': movie.posterPath,
           'movie_backdrop_path': movie.backdropPath,
           'movie_overview': movie.overview,
-          'movie_release_date': movie.releaseDate.toIso8601String(),
+          'movie_release_date':
+              movie.releaseDate.toIso8601String().split('T')[0], // Solo fecha
           'movie_vote_average': movie.voteAverage,
           'updated_at': DateTime.now().toIso8601String(),
-        });
+          'deleted_at': null, // ✅ Marcar como activo (no eliminado)
+        }, onConflict: 'user_id,movie_id');
+        print('✅ ${movie.title} agregado a Supabase exitosamente');
       } else {
-        // Remover de Supabase
+        print('⬇️ Soft delete de ${movie.title} en Supabase...');
+        // ✅ Soft delete en lugar de hard delete
         await _supabase
             .from('user_favorites')
-            .delete()
+            .update({
+              'deleted_at': DateTime.now().toIso8601String(),
+              'updated_at': DateTime.now().toIso8601String(),
+            })
             .eq('user_id', userId)
             .eq('movie_id', movie.id);
+        print('✅ ${movie.title} marcado como eliminado en Supabase');
       }
 
       // Limpiar marcador de sincronización
       await clearSyncMarker(favoriteId);
+      print('🧹 Marcador de sincronización limpiado para ${movie.title}');
     } on PostgrestException catch (e) {
       throw SupabaseSyncException(e.message, code: e.code);
     } catch (e) {
@@ -142,7 +175,7 @@ class HybridFavoritesRepository
   Future<bool> isMovieFavorite(int movieId) async {
     // Siempre usar datos locales para respuesta inmediata
     try {
-      return await _hiveDatasource.isMovieFavorite(movieId);
+      return await _datasource.isMovieFavorite(movieId);
     } catch (e) {
       throw LocalStorageException(
           'Error al verificar si la película es favorita: $e');
@@ -153,17 +186,36 @@ class HybridFavoritesRepository
   @override
   Future<List<SyncableFavorite>> getLocalData() async {
     try {
-      final moviesList = await _hiveDatasource.loadMovies();
-      final userId = _getCurrentUserId();
-      if (userId == null) return [];
+      print('🔍 Obteniendo datos locales...');
+      // Obtener TODAS las películas, no solo las primeras 10
+      final moviesList = await _datasource.loadMovies(limit: 10000, offset: 0);
+      print('🔍 HiveDatasource retornó: ${moviesList.length} películas');
 
-      return moviesList
+      final userId = _getCurrentUserId();
+      if (userId == null) {
+        print('❌ No hay usuario para obtener datos locales de favoritos');
+        return [];
+      }
+      print('🔍 Usuario actual: $userId');
+
+      final localFavorites = moviesList
           .map((movie) => SyncableFavorite.fromMovie(
                 userId: userId,
                 movie: movie,
               ))
           .toList();
+
+      print('📱 Favoritos locales encontrados: ${localFavorites.length}');
+      if (localFavorites.isNotEmpty) {
+        print('📱 Primeros favoritos locales:');
+        for (int i = 0; i < localFavorites.length.clamp(0, 3); i++) {
+          final fav = localFavorites[i];
+          print('   - ${fav.movieTitle} (ID: ${fav.movieId})');
+        }
+      }
+      return localFavorites;
     } catch (e) {
+      print('❌ Error obteniendo favoritos locales: $e');
       throw LocalStorageException(
           'Error al obtener los datos locales de favoritos: $e');
     }
@@ -172,20 +224,34 @@ class HybridFavoritesRepository
   @override
   Future<List<SyncableFavorite>> getRemoteData() async {
     final userId = _getCurrentUserId();
-    if (userId == null) return [];
+    if (userId == null) {
+      print('❌ No hay usuario para obtener datos remotos de favoritos');
+      return [];
+    }
 
     try {
       await _checkOnline();
+      print('☁️ Obteniendo favoritos remotos para usuario: $userId');
+
       final response = await _supabase
           .from('user_favorites')
           .select()
           .eq('user_id', userId)
+          .isFilter('deleted_at',
+              null) // ✅ Solo obtener favoritos activos (no eliminados)
           .order('added_at', ascending: false);
 
-      return (response as List).map((data) => _mapFromSupabase(data)).toList();
+      final remoteFavorites =
+          (response as List).map((data) => _mapFromSupabase(data)).toList();
+      print('☁️ Favoritos remotos encontrados: ${remoteFavorites.length}');
+
+      return remoteFavorites;
     } on PostgrestException catch (e) {
+      print(
+          '❌ Error PostgreSQL obteniendo favoritos remotos: ${e.message} (${e.code})');
       throw SupabaseSyncException(e.message, code: e.code);
     } catch (e) {
+      print('❌ Error obteniendo favoritos remotos: $e');
       throw SupabaseSyncException('Error obteniendo favoritos remotos: $e');
     }
   }
@@ -193,7 +259,8 @@ class HybridFavoritesRepository
   // Mapear datos de Supabase a SyncableFavorite
   SyncableFavorite _mapFromSupabase(Map<String, dynamic> data) {
     return SyncableFavorite(
-      id: data['id'],
+      id: data['id'] ??
+          '${data['user_id']}_${data['movie_id']}', // Usar UUID o generar ID
       userId: data['user_id'],
       movieId: data['movie_id'],
       movieTitle: data['movie_title'],
@@ -212,44 +279,64 @@ class HybridFavoritesRepository
 
   @override
   Future<void> syncWithSupabase() async {
-    if (!_isAuthenticated()) return;
+    if (!_isAuthenticated()) {
+      print('❌ Usuario no autenticado, saltando sincronización de favoritos');
+      return;
+    }
 
+    print('🔄 Iniciando sincronización de favoritos...');
     final syncManager = SyncManager<SyncableFavorite>(this);
     try {
       final result = await syncManager.sync();
-      print('Sincronización de favoritos completada: $result');
+      print('✅ Sincronización de favoritos completada: $result');
     } on SyncException catch (e) {
-      print('Error en sincronización de favoritos: $e');
+      print('❌ Error en sincronización de favoritos: $e');
       rethrow;
     }
   }
 
   @override
   Future<void> upload(List<SyncableFavorite> favorites) async {
+    print('⬆️ UPLOAD iniciado para ${favorites.length} favoritos');
+
+    if (favorites.isEmpty) {
+      print('⬆️ No hay favoritos para subir');
+      return;
+    }
+
     for (final favorite in favorites) {
       try {
+        print(
+            '⬆️ Subiendo ${favorite.movieTitle} (ID: ${favorite.movieId})...');
+
         await _supabase.from('user_favorites').upsert({
-          'id': favorite.id,
           'user_id': favorite.userId,
           'movie_id': favorite.movieId,
           'movie_title': favorite.movieTitle,
           'movie_poster_path': favorite.moviePosterPath,
           'movie_backdrop_path': favorite.movieBackdropPath,
           'movie_overview': favorite.movieOverview,
-          'movie_release_date': favorite.movieReleaseDate?.toIso8601String(),
+          'movie_release_date':
+              favorite.movieReleaseDate?.toIso8601String().split('T')[0],
           'movie_vote_average': favorite.movieVoteAverage,
-          'added_at': favorite.addedAt.toIso8601String(),
-          'updated_at': favorite.updatedAt.toIso8601String(),
-        });
+          'updated_at': DateTime.now().toIso8601String(),
+        }, onConflict: 'user_id,movie_id');
+
+        print('✅ ${favorite.movieTitle} subido exitosamente');
       } on PostgrestException catch (e) {
+        print(
+            '❌ Error PostgreSQL subiendo ${favorite.movieTitle}: ${e.message}');
         throw SupabaseSyncException(
-            'Error subiendo favorito ${favorite.id}: ${e.message}',
+            'Error subiendo favorito ${favorite.movieTitle}: ${e.message}',
             code: e.code);
       } catch (e) {
+        print('❌ Error general subiendo ${favorite.movieTitle}: $e');
         throw SupabaseSyncException(
-            'Error subiendo favorito ${favorite.id}: $e');
+            'Error subiendo favorito ${favorite.movieTitle}: $e');
       }
     }
+
+    print('🎉 Upload de ${favorites.length} favoritos completado');
   }
 
   @override
@@ -257,7 +344,7 @@ class HybridFavoritesRepository
     for (final favorite in favorites) {
       try {
         final movie = favorite.toMovie();
-        await _hiveDatasource.toggleFavorite(movie);
+        await _datasource.toggleFavorite(movie);
       } catch (e) {
         throw LocalStorageException(
             'Error descargando favorito ${favorite.id}: $e');
@@ -278,7 +365,7 @@ class HybridFavoritesRepository
 
         // Aplicar resolución localmente
         final movie = resolved.toMovie();
-        await _hiveDatasource.toggleFavorite(movie);
+        await _datasource.toggleFavorite(movie);
 
         // Aplicar resolución remotamente
         await _supabase.from('user_favorites').upsert({
@@ -312,12 +399,12 @@ class HybridFavoritesRepository
 
   @override
   Future<bool> hasPendingSync() async {
-    return !_syncQueue.isEmpty;
+    return !(await _syncQueue.isEmpty);
   }
 
   @override
   Future<List<String>> getPendingSyncItems() async {
-    return _syncQueue.getItems();
+    return await _syncQueue.getItems();
   }
 
   @override
@@ -328,9 +415,9 @@ class HybridFavoritesRepository
   // Limpiar datos locales (útil para logout)
   Future<void> clearLocalData() async {
     // Limpiar todas las películas favoritas una por una
-    final allFavorites = await _hiveDatasource.loadMovies();
+    final allFavorites = await _datasource.loadMovies();
     for (final favorite in allFavorites) {
-      await _hiveDatasource.toggleFavorite(favorite);
+      await _datasource.toggleFavorite(favorite);
     }
     await _syncQueue.clear();
   }

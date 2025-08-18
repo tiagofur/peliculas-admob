@@ -9,6 +9,7 @@ abstract class SyncableEntity implements Syncable, Identifiable, Timestamped {
     required this.id,
     required this.updatedAt,
     required this.createdAt,
+    this.deletedAt, // ✅ Soft delete support
     this.syncStatus = SyncStatus.synced,
   });
   @override
@@ -18,6 +19,11 @@ abstract class SyncableEntity implements Syncable, Identifiable, Timestamped {
   @override
   final SyncStatus syncStatus;
   final DateTime createdAt;
+  final DateTime? deletedAt; // ✅ Soft delete timestamp
+
+  // ✅ Helper methods for soft delete
+  bool get isDeleted => deletedAt != null;
+  bool get isActive => deletedAt == null;
 }
 
 // Modelo para favoritos con información de sincronización
@@ -26,6 +32,7 @@ class SyncableFavorite extends SyncableEntity {
     required super.id,
     required super.updatedAt,
     required super.createdAt,
+    super.deletedAt, // ✅ Pass to parent
     required this.userId,
     required this.movieId,
     required this.movieTitle,
@@ -43,6 +50,9 @@ class SyncableFavorite extends SyncableEntity {
     required String userId,
     required Movie movie,
     String? customId,
+    DateTime? addedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     final now = DateTime.now();
     return SyncableFavorite(
@@ -55,9 +65,9 @@ class SyncableFavorite extends SyncableEntity {
       movieOverview: movie.overview,
       movieReleaseDate: movie.releaseDate,
       movieVoteAverage: movie.voteAverage,
-      addedAt: now,
-      createdAt: now,
-      updatedAt: now,
+      addedAt: addedAt ?? now, // Usar timestamp real si está disponible
+      createdAt: createdAt ?? now,
+      updatedAt: updatedAt ?? now,
     );
   }
   final String userId;
@@ -83,6 +93,7 @@ class SyncableFavorite extends SyncableEntity {
     DateTime? addedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? deletedAt, // ✅ Incluir deletedAt
     SyncStatus? syncStatus,
   }) {
     return SyncableFavorite(
@@ -98,6 +109,7 @@ class SyncableFavorite extends SyncableEntity {
       addedAt: addedAt ?? this.addedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt, // ✅ Incluir deletedAt
       syncStatus: syncStatus ?? this.syncStatus,
     );
   }
@@ -129,6 +141,7 @@ class SyncableCustomList extends SyncableEntity {
     required super.id,
     required super.updatedAt,
     required super.createdAt,
+    super.deletedAt, // ✅ Soft delete support
     required this.userId,
     required this.name,
     required this.description,
@@ -188,6 +201,7 @@ class SyncableCustomList extends SyncableEntity {
     bool? isPublic,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? deletedAt, // ✅ Include deletedAt
     SyncStatus? syncStatus,
   }) {
     return SyncableCustomList(
@@ -201,6 +215,7 @@ class SyncableCustomList extends SyncableEntity {
       isPublic: isPublic ?? this.isPublic,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt, // ✅ Include deletedAt
       syncStatus: syncStatus ?? this.syncStatus,
     );
   }
@@ -212,6 +227,7 @@ class SyncableWatchedMovie extends SyncableEntity {
     required super.id,
     required super.updatedAt,
     required super.createdAt,
+    super.deletedAt, // ✅ Soft delete support
     required this.userId,
     required this.movieId,
     required this.movieTitle,
@@ -317,6 +333,7 @@ class SyncableWatchedMovie extends SyncableEntity {
     DateTime? watchedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? deletedAt, // ✅ Include deletedAt
     SyncStatus? syncStatus,
   }) {
     return SyncableWatchedMovie(
@@ -332,6 +349,7 @@ class SyncableWatchedMovie extends SyncableEntity {
       watchedAt: watchedAt ?? this.watchedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt, // ✅ Include deletedAt
       syncStatus: syncStatus ?? this.syncStatus,
     );
   }

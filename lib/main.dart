@@ -13,6 +13,8 @@ import 'config/router/app_router.dart';
 import 'config/theme/app_theme.dart';
 import 'config/theme/custom_scroll_behavior.dart';
 import 'core/config/supabase_config.dart';
+import 'infrastructure/services/cross_platform_init_service.dart';
+import 'presentation/providers/sync_init_provider.dart';
 import 'presentation/providers/theme/theme_provider.dart';
 
 Future<void> main() async {
@@ -29,25 +31,41 @@ Future<void> main() async {
     usePathUrlStrategy();
   }
 
-  await Environment.load();
+  try {
+    // Cargar variables de entorno
+    await Environment.load();
 
-  // INICIALIZAR SUPABASE
-  await SupabaseConfig.initialize();
+    // INICIALIZAR SERVICIOS MULTIPLATAFORMA (Hive, Storage, etc.)
+    await CrossPlatformInitService.instance.initialize();
 
-  // INICIALIZAR ADMOB solo en plataformas móviles
-  if (!kIsWeb) {
-    try {
-      await MobileAds.instance.initialize();
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error initializing MobileAds: $e');
+    // INICIALIZAR SUPABASE
+    await SupabaseConfig.initialize();
+
+    // INICIALIZAR ADMOB solo en plataformas móviles
+    if (!kIsWeb) {
+      try {
+        await MobileAds.instance.initialize();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Error initializing MobileAds: $e');
+        }
       }
     }
-  }
 
-  // Habilitar edge-to-edge para Android 15 (SDK 35)
-  if (!kIsWeb) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Habilitar edge-to-edge para Android 15 (SDK 35)
+    if (!kIsWeb) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+
+    if (kDebugMode) {
+      print(
+          '✅ Aplicación inicializada correctamente para ${kIsWeb ? 'Web' : 'plataforma nativa'}');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('❌ Error durante la inicialización: $e');
+    }
+    // Continuar con la ejecución aunque haya errores de inicialización
   }
 
   runApp(const ProviderScope(child: MainApp()));
@@ -59,6 +77,9 @@ class MainApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     initializeDateFormatting();
+
+    // INICIALIZAR SYNC LISTENER - Esto es CRÍTICO para que funcione la sincronización automática
+    ref.watch(authSyncListenerProvider);
 
     // Remover el splash screen solo en plataformas móviles
     if (!kIsWeb) {
@@ -72,14 +93,14 @@ class MainApp extends ConsumerWidget {
         }
       });
     }
-    
+
     final AppTheme appTheme = ref.watch(themeNotifierProvider.select(
       (theme) => AppTheme(
         selectedColor: theme.selectedColor,
         isDarkMode: theme.isDarkMode,
       ),
     ));
-    
+
     // Usar el router provider con autenticación
     final router = ref.watch(appRouterProvider);
 

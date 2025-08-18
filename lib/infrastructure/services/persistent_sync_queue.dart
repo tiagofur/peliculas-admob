@@ -1,29 +1,97 @@
+import 'package:flutter/foundation.dart';
 
-import 'package:hive/hive.dart';
+import 'web_safe_storage_service.dart';
 
 class PersistentSyncQueue {
-  static const String _boxName = 'sync_queue';
-  late Box<String> _box;
+  static const String _keyPrefix = 'sync_queue_';
+  static const String _itemsListKey = 'sync_queue_items';
+
+  final WebSafeStorageService _storage = WebSafeStorageService.instance;
 
   Future<void> init() async {
-    _box = await Hive.openBox<String>(_boxName);
+    // No necesita inicialización específica con SharedPreferences
+    if (kDebugMode) {
+      print(
+          'PersistentSyncQueue inicializado para ${kIsWeb ? 'Web' : 'nativo'}');
+    }
   }
 
   Future<void> addItem(String itemId) async {
-    await _box.put(itemId, itemId);
+    try {
+      final currentItems = await getItems();
+      if (!currentItems.contains(itemId)) {
+        currentItems.add(itemId);
+        await _saveItems(currentItems);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error agregando item a sync queue: $e');
+      }
+    }
   }
 
   Future<void> removeItem(String itemId) async {
-    await _box.delete(itemId);
+    try {
+      final currentItems = await getItems();
+      if (currentItems.remove(itemId)) {
+        await _saveItems(currentItems);
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error removiendo item de sync queue: $e');
+      }
+    }
   }
 
-  List<String> getItems() {
-    return _box.values.toList();
+  Future<List<String>> getItems() async {
+    try {
+      final itemsJson = await _storage.getJsonList(_itemsListKey);
+      return itemsJson.map((item) => item['id'] as String).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error obteniendo items de sync queue: $e');
+      }
+      return [];
+    }
   }
 
-  bool get isEmpty => _box.isEmpty;
+  Future<bool> get isEmpty async {
+    final items = await getItems();
+    return items.isEmpty;
+  }
 
   Future<void> clear() async {
-    await _box.clear();
+    try {
+      await _storage.remove(_itemsListKey);
+      await _storage.clearWithPrefix(_keyPrefix);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error limpiando sync queue: $e');
+      }
+    }
+  }
+
+  // Método privado para guardar la lista de items
+  Future<void> _saveItems(List<String> items) async {
+    try {
+      final itemsJson = items.map((id) => {'id': id}).toList();
+      await _storage.saveJsonList(_itemsListKey, itemsJson);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error guardando items en sync queue: $e');
+      }
+    }
+  }
+
+  // Método para obtener el tamaño de la cola
+  Future<int> get size async {
+    final items = await getItems();
+    return items.length;
+  }
+
+  // Método para verificar si un item específico está en la cola
+  Future<bool> contains(String itemId) async {
+    final items = await getItems();
+    return items.contains(itemId);
   }
 }
