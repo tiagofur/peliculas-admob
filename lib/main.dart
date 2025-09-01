@@ -217,7 +217,7 @@ class MainApp extends ConsumerWidget {
     final AppTheme appTheme = ref.watch(themeNotifierProvider.select(
       (theme) => AppTheme(
         selectedColor: theme.selectedColor,
-        isDarkMode: theme.isDarkMode,
+        themeMode: theme.themeMode,
       ),
     ));
 
@@ -232,6 +232,11 @@ class MainApp extends ConsumerWidget {
           routerConfig: router,
           debugShowCheckedModeBanner: false,
           theme: appTheme.getTheme(),
+          builder: (context, child) {
+            // Actualizar la UI del sistema cuando cambie el tema
+            appTheme.updateSystemUIOverlay(context);
+            return child ?? const SizedBox.shrink();
+          },
         ),
       );
     }
@@ -240,6 +245,11 @@ class MainApp extends ConsumerWidget {
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       theme: appTheme.getTheme(),
+      builder: (context, child) {
+        // Actualizar la UI del sistema cuando cambie el tema
+        appTheme.updateSystemUIOverlay(context);
+        return child ?? const SizedBox.shrink();
+      },
       pipParams: PiPParams(
         pipWindowHeight: 200,
         pipWindowWidth: 300,
