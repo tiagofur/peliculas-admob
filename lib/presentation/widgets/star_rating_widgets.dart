@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/accessibility_service.dart';
 
 class StarRatingInput extends StatefulWidget {
   const StarRatingInput({
@@ -54,26 +55,43 @@ class _StarRatingInputState extends State<StarRatingInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(widget.maxRating, (index) {
-        final starNumber = index + 1;
-        return GestureDetector(
-          onTap: () => _updateRating(starNumber),
-          child: Container(
-            padding: EdgeInsets.all(widget.spacing),
-            child: Icon(
-              starNumber <= _currentRating
-                  ? Icons.star
-                  : Icons.star_border,
-              size: widget.size,
-              color: starNumber <= _currentRating
-                  ? widget.color
-                  : (widget.borderColor ?? widget.color.withOpacity(0.3)),
+    final accessibleSize = AccessibilityService.getAccessibleButtonSize(context);
+    final semanticLabel = AccessibilityService.getStarRatingSemantics(_currentRating, widget.maxRating);
+    
+    return Semantics(
+      label: 'Calificación interactiva. $semanticLabel. Toque las estrellas para calificar.',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(widget.maxRating, (index) {
+          final starNumber = index + 1;
+          return Semantics(
+            button: true,
+            label: 'Calificar con $starNumber de ${widget.maxRating} estrellas',
+            onTap: () => _updateRating(starNumber),
+            child: GestureDetector(
+              onTap: () => _updateRating(starNumber),
+              child: Container(
+                padding: EdgeInsets.all(widget.spacing),
+                constraints: BoxConstraints(
+                  minWidth: accessibleSize,
+                  minHeight: accessibleSize,
+                ),
+                child: Center(
+                  child: Icon(
+                    starNumber <= _currentRating
+                        ? Icons.star
+                        : Icons.star_border,
+                    size: widget.size,
+                    color: starNumber <= _currentRating
+                        ? widget.color
+                        : (widget.borderColor ?? widget.color.withOpacity(0.3)),
+                  ),
+                ),
+              ),
             ),
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 }
@@ -100,34 +118,44 @@ class StarRatingDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ...List.generate(maxRating, (index) {
-          final starNumber = index + 1;
-          return Padding(
-            padding: EdgeInsets.only(
-              right: index < maxRating - 1 ? spacing : 0,
+    final semanticLabel = AccessibilityService.getStarRatingSemantics(rating, maxRating);
+    
+    return Semantics(
+      label: semanticLabel,
+      readOnly: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...List.generate(maxRating, (index) {
+            final starNumber = index + 1;
+            return Padding(
+              padding: EdgeInsets.only(
+                right: index < maxRating - 1 ? spacing : 0,
+              ),
+              child: Icon(
+                starNumber <= rating
+                    ? Icons.star
+                    : Icons.star_border,
+                size: size,
+                color: starNumber <= rating
+                    ? color
+                    : color.withOpacity(0.3),
+                semanticLabel: starNumber <= rating ? 'Estrella llena' : 'Estrella vacía',
+              ),
+            );
+          }),
+          if (showValue) ...[
+            SizedBox(width: spacing * 2),
+            Semantics(
+              label: 'Valor numérico: $rating de $maxRating',
+              child: Text(
+                '$rating/$maxRating',
+                style: valueStyle ?? Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
-            child: Icon(
-              starNumber <= rating
-                  ? Icons.star
-                  : Icons.star_border,
-              size: size,
-              color: starNumber <= rating
-                  ? color
-                  : color.withOpacity(0.3),
-            ),
-          );
-        }),
-        if (showValue) ...[
-          SizedBox(width: spacing * 2),
-          Text(
-            '$rating/$maxRating',
-            style: valueStyle ?? Theme.of(context).textTheme.bodyMedium,
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -207,47 +235,71 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
   @override
   Widget build(BuildContext context) {
     final displayRating = _hoverRating > 0 ? _hoverRating : _currentRating;
+    final accessibleSize = AccessibilityService.getAccessibleButtonSize(context);
+    final semanticLabel = AccessibilityService.getStarRatingSemantics(_currentRating, widget.maxRating);
     
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(widget.maxRating, (index) {
-            final starNumber = index + 1;
-            return MouseRegion(
-              onEnter: widget.enabled ? (_) => setState(() => _hoverRating = starNumber) : null,
-              onExit: widget.enabled ? (_) => setState(() => _hoverRating = 0) : null,
-              child: GestureDetector(
+    return Semantics(
+      label: widget.enabled 
+          ? 'Calificación interactiva. $semanticLabel. Seleccione una estrella para calificar.'
+          : 'Calificación no editable. $semanticLabel',
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(widget.maxRating, (index) {
+              final starNumber = index + 1;
+              return Semantics(
+                button: widget.enabled,
+                enabled: widget.enabled,
+                label: widget.enabled 
+                    ? 'Calificar con $starNumber de ${widget.maxRating} estrellas - ${_getRatingLabel(starNumber)}'
+                    : 'Estrella $starNumber de ${widget.maxRating}',
                 onTap: widget.enabled ? () => _updateRating(starNumber) : null,
-                child: Container(
-                  padding: EdgeInsets.all(widget.spacing),
-                  child: Icon(
-                    starNumber <= displayRating
-                        ? Icons.star
-                        : Icons.star_border,
-                    size: widget.size,
-                    color: widget.enabled
-                        ? (starNumber <= displayRating
-                            ? widget.color
-                            : widget.color.withOpacity(0.3))
-                        : Colors.grey,
+                child: MouseRegion(
+                  onEnter: widget.enabled ? (_) => setState(() => _hoverRating = starNumber) : null,
+                  onExit: widget.enabled ? (_) => setState(() => _hoverRating = 0) : null,
+                  child: GestureDetector(
+                    onTap: widget.enabled ? () => _updateRating(starNumber) : null,
+                    child: Container(
+                      padding: EdgeInsets.all(widget.spacing),
+                      constraints: BoxConstraints(
+                        minWidth: accessibleSize,
+                        minHeight: accessibleSize,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          starNumber <= displayRating
+                              ? Icons.star
+                              : Icons.star_border,
+                          size: widget.size,
+                          color: widget.enabled
+                              ? (starNumber <= displayRating
+                                  ? widget.color
+                                  : widget.color.withOpacity(0.3))
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
-        ),
-        if (widget.showLabels) ...[
-          const SizedBox(height: 8),
-          Text(
-            _getRatingLabel(displayRating),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: widget.enabled ? null : Colors.grey,
-            ),
+              );
+            }),
           ),
+          if (widget.showLabels) ...[
+            const SizedBox(height: 8),
+            Semantics(
+              label: 'Etiqueta de calificación: ${_getRatingLabel(displayRating)}',
+              child: Text(
+                _getRatingLabel(displayRating),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: widget.enabled ? null : Colors.grey,
+                ),
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

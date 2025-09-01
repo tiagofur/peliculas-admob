@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/sync_status_provider.dart';
+import '../../../services/accessibility_service.dart';
 
 /// Widget indicador de estado de sincronización
 class SyncStatusIndicator extends ConsumerWidget {
@@ -78,11 +79,17 @@ class SyncStatusIndicator extends ConsumerWidget {
 
     return Tooltip(
       message: _getTooltipMessage(syncState),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        child: IconTheme(
-          data: IconThemeData(color: iconColor),
-          child: icon,
+      child: Semantics(
+        label: AccessibilityService.getSyncStatusSemantics(
+          _getStatusText(syncState.status),
+          syncState.message,
+        ),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          child: IconTheme(
+            data: IconThemeData(color: iconColor),
+            child: icon,
+          ),
         ),
       ),
     );

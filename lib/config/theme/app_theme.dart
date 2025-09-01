@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../services/accessibility_service.dart';
 
 const colorList = <Color>[
   Colors.blue,
@@ -45,15 +46,103 @@ class AppTheme {
 
   ThemeData getTheme([BuildContext? context]) {
     final isDark = _shouldUseDarkMode(context);
+    final isHighContrast = context != null && AccessibilityService.isHighContrastEnabled(context);
+    
+    ColorScheme colorScheme;
+    
+    if (isHighContrast) {
+      // High contrast theme for WCAG AA compliance
+      colorScheme = isDark
+          ? const ColorScheme.dark(
+              primary: Colors.white,
+              onPrimary: Colors.black,
+              secondary: Colors.white,
+              onSecondary: Colors.black,
+              surface: Colors.black,
+              onSurface: Colors.white,
+              background: Colors.black,
+              onBackground: Colors.white,
+              error: Colors.red,
+              onError: Colors.white,
+            )
+          : const ColorScheme.light(
+              primary: Colors.black,
+              onPrimary: Colors.white,
+              secondary: Colors.black,
+              onSecondary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+              background: Colors.white,
+              onBackground: Colors.black,
+              error: Colors.red,
+              onError: Colors.white,
+            );
+    } else {
+      colorScheme = ColorScheme.fromSeed(
+        seedColor: colorList[selectedColor],
+        brightness: isDark ? Brightness.dark : Brightness.light,
+      );
+    }
     
     return ThemeData(
       useMaterial3: true,
       brightness: isDark ? Brightness.dark : Brightness.light,
-      colorSchemeSeed: colorList[selectedColor],
+      colorScheme: colorScheme,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
       ),
+      // Enhanced button theme for accessibility
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(44, 44), // WCAG AA minimum touch target
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          minimumSize: const Size(44, 44), // WCAG AA minimum touch target
+        ),
+      ),
+      // Enhanced text theme for better readability
+      textTheme: _buildAccessibleTextTheme(isDark, isHighContrast),
     );
+  }
+
+  /// Build text theme with accessibility enhancements
+  TextTheme _buildAccessibleTextTheme(bool isDark, bool isHighContrast) {
+    final baseTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+    
+    if (isHighContrast) {
+      // Enhanced contrast and weight for high contrast mode
+      return baseTheme.copyWith(
+        bodyLarge: baseTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        bodyMedium: baseTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        bodySmall: baseTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        titleLarge: baseTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        titleMedium: baseTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+        titleSmall: baseTheme.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : Colors.black,
+        ),
+      );
+    }
+    
+    return baseTheme;
   }
 
   // Configurar el color de la barra de estado
