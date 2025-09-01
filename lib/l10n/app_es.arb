@@ -17,5 +17,21 @@
   "selectLanguage": "Seleccionar idioma",
   "spanish": "Español",
   "english": "Inglés",
-  "languageDescription": "Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma."
+  "languageDescription": "Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.",
+  "home": "Inicio",
+  "favorites": "Favoritos",
+  "watchlist": "Lista de seguimiento",
+  "profile": "Perfil",
+  "noFavorites": "¡Ohhh no!",
+  "noFavoritesMessage": "No tienes películas favoritas",
+  "startSearching": "Empieza a buscar",
+  "notWatchedYet": "¡Aún no has visto nada!",
+  "noWatchedMessage": "No tienes películas marcadas como vistas",
+  "startExploring": "Empieza a explorar",
+  "login": "Iniciar sesión",
+  "register": "Registrarse",
+  "streaming": "Streaming",
+  "myLibrary": "Mi Biblioteca",
+  "statistics": "Estadísticas",
+  "challenges": "Desafíos"
 }

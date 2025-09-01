@@ -49,6 +49,22 @@ abstract class AppLocalizations {
   String get spanish => 'Spanish';
   String get english => 'English';
   String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
+  String get home => 'Home';
+  String get favorites => 'Favorites';
+  String get watchlist => 'Watchlist';
+  String get profile => 'Profile';
+  String get noFavorites => 'Ohhh no!!';
+  String get noFavoritesMessage => 'You don\'t have any favorite movies';
+  String get startSearching => 'Start searching';
+  String get notWatchedYet => 'You haven\'t watched anything yet!';
+  String get noWatchedMessage => 'You don\'t have any movies marked as watched';
+  String get startExploring => 'Start exploring';
+  String get login => 'Login';
+  String get register => 'Register';
+  String get streaming => 'Streaming';
+  String get myLibrary => 'My Library';
+  String get statistics => 'Statistics';
+  String get challenges => 'Challenges';
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
@@ -118,6 +134,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get english => 'English';
   @override
   String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
+  @override
+  String get home => 'Home';
+  @override
+  String get favorites => 'Favorites';
+  @override
+  String get watchlist => 'Watchlist';
+  @override
+  String get profile => 'Profile';
+  @override
+  String get noFavorites => 'Ohhh no!!';
+  @override
+  String get noFavoritesMessage => 'You don\'t have any favorite movies';
+  @override
+  String get startSearching => 'Start searching';
+  @override
+  String get notWatchedYet => 'You haven\'t watched anything yet!';
+  @override
+  String get noWatchedMessage => 'You don\'t have any movies marked as watched';
+  @override
+  String get startExploring => 'Start exploring';
+  @override
+  String get login => 'Login';
+  @override
+  String get register => 'Register';
+  @override
+  String get streaming => 'Streaming';
+  @override
+  String get myLibrary => 'My Library';
+  @override
+  String get statistics => 'Statistics';
+  @override
+  String get challenges => 'Challenges';
 }
 
 // Spanish localizations
@@ -160,4 +208,36 @@ class AppLocalizationsEs extends AppLocalizations {
   String get english => 'Inglés';
   @override
   String get languageDescription => 'Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.';
+  @override
+  String get home => 'Inicio';
+  @override
+  String get favorites => 'Favoritos';
+  @override
+  String get watchlist => 'Lista de seguimiento';
+  @override
+  String get profile => 'Perfil';
+  @override
+  String get noFavorites => '¡Ohhh no!';
+  @override
+  String get noFavoritesMessage => 'No tienes películas favoritas';
+  @override
+  String get startSearching => 'Empieza a buscar';
+  @override
+  String get notWatchedYet => '¡Aún no has visto nada!';
+  @override
+  String get noWatchedMessage => 'No tienes películas marcadas como vistas';
+  @override
+  String get startExploring => 'Empieza a explorar';
+  @override
+  String get login => 'Iniciar sesión';
+  @override
+  String get register => 'Registrarse';
+  @override
+  String get streaming => 'Streaming';
+  @override
+  String get myLibrary => 'Mi Biblioteca';
+  @override
+  String get statistics => 'Estadísticas';
+  @override
+  String get challenges => 'Desafíos';
 }
