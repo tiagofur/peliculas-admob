@@ -10,6 +10,7 @@ import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
 import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
 import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
+import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
 
 
 
@@ -68,4 +69,22 @@ final hybridCustomListsRepositoryProvider =
 final customListsLocalDatasourceProvider =
     Provider<CustomListsSharedPreferencesDatasource>((ref) {
   return CustomListsSharedPreferencesDatasource();
+});
+
+// Provider para el repositorio híbrido de watchlist
+final hybridWatchlistRepositoryProvider =
+    Provider<HybridWatchlistRepository>((ref) {
+  // Usar el mismo datasource que favoritos para consistencia
+  LocalStorageDatasource datasource;
+
+  if (kIsWeb) {
+    datasource = FavoriteMoviesSharedPreferencesDatasource();
+  } else {
+    datasource = HiveDatasource();
+  }
+
+  return HybridWatchlistRepository(
+    datasource: datasource,
+    ref: ref,
+  );
 });
