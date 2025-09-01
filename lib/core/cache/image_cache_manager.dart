@@ -11,18 +11,22 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 
 import '../logging/logger_factory.dart';
+import 'adaptive_cache_config.dart';
+import 'image_cache_performance_metrics.dart';
+import 'network_aware_strategy.dart';
 
-/// Gestor avanzado de caché de imágenes con estrategias inteligentes
+/// Gestor avanzado de caché de imágenes con estrategias adaptativas
 class ImageCacheManager {
   ImageCacheManager._();
   static ImageCacheManager? _instance;
   static ImageCacheManager get instance => _instance ??= ImageCacheManager._();
 
-  static const int maxMemoryCache = 100 * 1024 * 1024; // 100MB
-  static const int maxDiskCache = 500 * 1024 * 1024; // 500MB
-  static const Duration cacheExpiry = Duration(days: 7);
-  static const int maxConcurrentDownloads = 3;
-  static const Duration downloadTimeout = Duration(seconds: 30);
+  // Configuración adaptativa (se inicializa dinámicamente)
+  int _maxMemoryCache = 50 * 1024 * 1024; // 50MB default
+  int _maxDiskCache = 250 * 1024 * 1024; // 250MB default
+  int _maxConcurrentDownloads = 2; // default
+  Duration _downloadTimeout = const Duration(seconds: 30); // default
+  Duration _cacheExpiry = const Duration(days: 7); // default
 
   final _logger = LoggerFactory.logger;
 
@@ -38,64 +42,118 @@ class ImageCacheManager {
   // Directorio de caché en disco
   Directory? _cacheDirectory;
 
-  /// Inicializa el gestor de caché
+  /// Inicializa el gestor de caché con configuración adaptativa
   Future<void> initialize() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-      _cacheDirectory = Directory('${appDir.path}/image_cache');
+      _logger.info('🚀 Inicializando ImageCacheManager adaptativo...');
 
-      if (!await _cacheDirectory!.exists()) {
-        await _cacheDirectory!.create(recursive: true);
-      }
+      // Inicializar configuración adaptativa
+      await AdaptiveCacheConfig.instance.initialize();
+      final config = AdaptiveCacheConfig.instance.configuration;
+
+      // Aplicar configuración adaptativa
+      _maxMemoryCache = config.memoryCacheSize;
+      _maxDiskCache = config.diskCacheSize;
+      _maxConcurrentDownloads = config.maxConcurrentDownloads;
+      _downloadTimeout = config.downloadTimeout;
+      _cacheExpiry = config.cacheExpiry;
+
+      // Inicializar estrategia de red
+      await NetworkAwareStrategy.instance.initialize();
+
+      // Inicializar métricas de rendimiento
+      ImageCachePerformanceMetrics.instance.initialize();
+
+      // Configurar directorio de caché
+      await _setupCacheDirectory();
 
       // Limpiar caché expirado al inicializar
       await _cleanExpiredCache();
 
-      _logger.info('ImageCacheManager inicializado correctamente');
+      _logger.info('✅ ImageCacheManager inicializado con configuración adaptativa: '
+          'memoria=${(_maxMemoryCache / 1024 / 1024).toStringAsFixed(1)}MB, '
+          'disco=${(_maxDiskCache / 1024 / 1024).toStringAsFixed(1)}MB, '
+          'concurrent=$_maxConcurrentDownloads');
     } catch (e) {
-      _logger.error('Error inicializando ImageCacheManager: $e');
+      _logger.error('❌ Error inicializando ImageCacheManager: $e');
     }
   }
 
-  /// Obtiene una imagen del caché o la descarga
+  /// Configura el directorio de caché
+  Future<void> _setupCacheDirectory() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    _cacheDirectory = Directory('${appDir.path}/image_cache');
+
+    if (!await _cacheDirectory!.exists()) {
+      await _cacheDirectory!.create(recursive: true);
+    }
+  }
+
+  /// Obtiene una imagen del caché o la descarga con estrategia adaptativa
   Future<ImageProvider?> getCachedImage(String url) async {
     if (url.isEmpty) return null;
+
+    final stopwatch = Stopwatch()..start();
+    ImageCachePerformanceMetrics.instance.recordImageRequest();
 
     try {
       // Verificar si la URL ha fallado recientemente
       if (_failedUrls.contains(url)) {
+        ImageCachePerformanceMetrics.instance.recordFailedRequest();
         return null;
       }
 
       final cacheKey = _generateCacheKey(url);
 
       // 1. Verificar caché en memoria
+      final memoryStopwatch = Stopwatch()..start();
       final memoryEntry = _getFromMemoryCache(cacheKey);
+      memoryStopwatch.stop();
+      
       if (memoryEntry != null) {
-        _logger.debug('Imagen encontrada en caché de memoria: $url');
+        stopwatch.stop();
+        ImageCachePerformanceMetrics.instance.recordMemoryCacheHit(memoryStopwatch.elapsed);
+        ImageCachePerformanceMetrics.instance.recordLoadTime(stopwatch.elapsed);
+        _logger.debug('✅ Imagen encontrada en caché de memoria: $url');
         return MemoryImage(memoryEntry);
       }
 
       // 2. Verificar caché en disco
+      final diskStopwatch = Stopwatch()..start();
       final diskData = await _getFromDiskCache(cacheKey);
+      diskStopwatch.stop();
+      
       if (diskData != null) {
-        _logger.debug('Imagen encontrada en caché de disco: $url');
+        stopwatch.stop();
+        ImageCachePerformanceMetrics.instance.recordDiskCacheHit(diskStopwatch.elapsed);
+        ImageCachePerformanceMetrics.instance.recordLoadTime(stopwatch.elapsed);
         _addToMemoryCache(cacheKey, diskData);
+        _logger.debug('💾 Imagen encontrada en caché de disco: $url');
         return MemoryImage(diskData);
       }
 
-      // 3. Descargar imagen
-      final downloadedData = await _downloadImage(url);
+      // 3. Descargar imagen con estrategia adaptativa
+      final downloadStopwatch = Stopwatch()..start();
+      final downloadedData = await _downloadImageAdaptive(url);
+      downloadStopwatch.stop();
+      
       if (downloadedData != null) {
-        _logger.debug('Imagen descargada exitosamente: $url');
+        stopwatch.stop();
+        ImageCachePerformanceMetrics.instance.recordNetworkDownload(downloadStopwatch.elapsed);
+        ImageCachePerformanceMetrics.instance.recordLoadTime(stopwatch.elapsed);
         await _saveToDiskCache(cacheKey, downloadedData);
         _addToMemoryCache(cacheKey, downloadedData);
+        _logger.debug('🌐 Imagen descargada exitosamente: $url');
         return MemoryImage(downloadedData);
       }
 
+      stopwatch.stop();
+      ImageCachePerformanceMetrics.instance.recordFailedRequest();
       return null;
     } catch (e) {
-      _logger.error('Error obteniendo imagen $url: $e');
+      stopwatch.stop();
+      ImageCachePerformanceMetrics.instance.recordFailedRequest();
+      _logger.error('❌ Error obteniendo imagen $url: $e');
       _failedUrls.add(url);
       return null;
     }
@@ -152,28 +210,151 @@ class ImageCacheManager {
     }
   }
 
-  /// Obtiene estadísticas del caché
-  Future<CacheStats> getStats() async {
-    int diskCacheSize = 0;
-    int diskCacheFiles = 0;
+  /// Obtiene estadísticas del caché con métricas de rendimiento
+  Future<EnhancedCacheStats> getEnhancedStats() async {
+    final basicStats = await getStats();
+    final performanceStats = ImageCachePerformanceMetrics.instance.getStats();
+    final performanceAssessment = ImageCachePerformanceMetrics.instance.assessPerformance();
+    final networkStatus = NetworkAwareStrategy.instance.getNetworkStatus();
+    final deviceCapabilities = AdaptiveCacheConfig.instance.deviceCapabilities;
 
-    if (_cacheDirectory != null && await _cacheDirectory!.exists()) {
-      await for (final file in _cacheDirectory!.list()) {
-        if (file is File) {
-          diskCacheFiles++;
-          final stat = await file.stat();
-          diskCacheSize += stat.size;
+    return EnhancedCacheStats(
+      // Estadísticas básicas
+      memoryCacheSize: basicStats.memoryCacheSize,
+      memoryCacheEntries: basicStats.memoryCacheEntries,
+      diskCacheSize: basicStats.diskCacheSize,
+      diskCacheFiles: basicStats.diskCacheFiles,
+      failedUrls: basicStats.failedUrls,
+      
+      // Métricas de rendimiento
+      performanceStats: performanceStats,
+      performanceAssessment: performanceAssessment,
+      
+      // Estado de red
+      networkCondition: NetworkAwareStrategy.instance.currentCondition,
+      networkStatus: networkStatus,
+      
+      // Configuración del dispositivo
+      deviceCapabilities: deviceCapabilities,
+      
+      // Configuración actual
+      currentConfig: AdaptiveCacheConfig.instance.configuration,
+    );
+  }
+
+  /// Genera reporte completo de rendimiento
+  String generatePerformanceReport() {
+    final buffer = StringBuffer();
+    
+    buffer.writeln('=== REPORTE COMPLETO DE RENDIMIENTO DEL CACHÉ ===');
+    buffer.writeln('Timestamp: ${DateTime.now().toIso8601String()}');
+    buffer.writeln();
+    
+    // Métricas de rendimiento
+    buffer.writeln(ImageCachePerformanceMetrics.instance.generateReport());
+    buffer.writeln();
+    
+    // Estado de red
+    buffer.writeln('ESTADO DE RED:');
+    final networkStatus = NetworkAwareStrategy.instance.getNetworkStatus();
+    networkStatus.forEach((key, value) {
+      buffer.writeln('  $key: $value');
+    });
+    buffer.writeln();
+    
+    // Configuración del dispositivo
+    buffer.writeln('CONFIGURACIÓN DEL DISPOSITIVO:');
+    final deviceCapabilities = AdaptiveCacheConfig.instance.deviceCapabilities;
+    buffer.writeln('  $deviceCapabilities');
+    buffer.writeln();
+    
+    // Configuración actual del caché
+    buffer.writeln('CONFIGURACIÓN ACTUAL DEL CACHÉ:');
+    final currentConfig = AdaptiveCacheConfig.instance.configuration;
+    buffer.writeln('  $currentConfig');
+    
+    return buffer.toString();
+  }
+
+  /// Fuerza la re-evaluación de la configuración adaptativa
+  Future<void> refreshAdaptiveConfiguration() async {
+    _logger.info('🔄 Refrescando configuración adaptativa...');
+    
+    try {
+      // Re-evaluar red
+      await NetworkAwareStrategy.instance.refreshNetworkCondition();
+      
+      // Obtener nueva configuración
+      final config = AdaptiveCacheConfig.instance.configuration;
+      
+      // Aplicar nuevos límites
+      _maxMemoryCache = config.memoryCacheSize;
+      _maxDiskCache = config.diskCacheSize;
+      _maxConcurrentDownloads = config.maxConcurrentDownloads;
+      _downloadTimeout = config.downloadTimeout;
+      _cacheExpiry = config.cacheExpiry;
+      
+      // Limpiar caché si excede nuevos límites
+      await _enforceNewLimits();
+      
+      _logger.info('✅ Configuración adaptativa actualizada');
+    } catch (e) {
+      _logger.error('❌ Error refrescando configuración: $e');
+    }
+  }
+
+  /// Aplica nuevos límites al caché existente
+  Future<void> _enforceNewLimits() async {
+    // Limpiar memoria si excede nuevo límite
+    while (_memoryCacheSize > _maxMemoryCache && _lruOrder.isNotEmpty) {
+      final oldestKey = _lruOrder.first;
+      _removeFromMemoryCache(oldestKey);
+    }
+    
+    // Verificar límite de disco (simplificado)
+    final stats = await getStats();
+    if (stats.diskCacheSize > _maxDiskCache) {
+      _logger.info('💾 Disco excede límite, iniciando limpieza...');
+      await _cleanOldestDiskFiles();
+    }
+  }
+
+  /// Limpia archivos más antiguos del disco
+  Future<void> _cleanOldestDiskFiles() async {
+    if (_cacheDirectory == null) return;
+
+    try {
+      final files = <File>[];
+      await for (final entity in _cacheDirectory!.list()) {
+        if (entity is File) {
+          files.add(entity);
         }
       }
-    }
 
-    return CacheStats(
-      memoryCacheSize: _memoryCacheSize,
-      memoryCacheEntries: _memoryCache.length,
-      diskCacheSize: diskCacheSize,
-      diskCacheFiles: diskCacheFiles,
-      failedUrls: _failedUrls.length,
-    );
+      // Ordenar por fecha de modificación (más antiguos primero)
+      files.sort((a, b) {
+        return a.statSync().modified.compareTo(b.statSync().modified);
+      });
+
+      // Eliminar hasta alcanzar límite
+      int currentSize = files.fold(0, (sum, file) => sum + file.statSync().size);
+      int deletedFiles = 0;
+
+      for (final file in files) {
+        if (currentSize <= _maxDiskCache) break;
+        
+        final fileSize = file.statSync().size;
+        await file.delete();
+        currentSize -= fileSize;
+        deletedFiles++;
+      }
+
+      if (deletedFiles > 0) {
+        _logger.info('🧹 Eliminados $deletedFiles archivos antiguos del caché de disco');
+      }
+    } catch (e) {
+      _logger.error('❌ Error limpiando archivos antiguos: $e');
+    }
   }
 
   // Métodos privados
@@ -201,14 +382,15 @@ class ImageCacheManager {
     return entry.data;
   }
 
+  /// Verificar límite de memoria adaptativo
   void _addToMemoryCache(String cacheKey, Uint8List data) {
     // Verificar si ya existe
     if (_memoryCache.containsKey(cacheKey)) {
       _removeFromMemoryCache(cacheKey);
     }
 
-    // Verificar límite de memoria
-    while (_memoryCacheSize + data.length > maxMemoryCache &&
+    // Verificar límite de memoria adaptativo
+    while (_memoryCacheSize + data.length > _maxMemoryCache &&
         _lruOrder.isNotEmpty) {
       final oldestKey = _lruOrder.first;
       _removeFromMemoryCache(oldestKey);
@@ -217,7 +399,7 @@ class ImageCacheManager {
     // Agregar nueva entrada
     final entry = _CacheEntry(
       data: data,
-      expiryDate: DateTime.now().add(cacheExpiry),
+      expiryDate: DateTime.now().add(_cacheExpiry),
     );
 
     _memoryCache[cacheKey] = entry;
@@ -240,10 +422,10 @@ class ImageCacheManager {
       final file = File('${_cacheDirectory!.path}/$cacheKey');
       if (!await file.exists()) return null;
 
-      // Verificar expiración
+      // Verificar expiración con duración adaptativa
       final stat = await file.stat();
       final age = DateTime.now().difference(stat.modified);
-      if (age > cacheExpiry) {
+      if (age > _cacheExpiry) {
         await file.delete();
         return null;
       }
@@ -266,19 +448,30 @@ class ImageCacheManager {
     }
   }
 
-  Future<Uint8List?> _downloadImage(String url) async {
+  /// Descarga imagen con estrategia adaptativa
+  Future<Uint8List?> _downloadImageAdaptive(String url) async {
+    // Obtener estrategia de red actual
+    final strategy = NetworkAwareStrategy.instance.getDownloadStrategy();
+    
+    // Verificar si debemos descargar según las condiciones de red
+    if (strategy.concurrentDownloads == 0) {
+      _logger.debug('🚫 Red offline, no descargando: $url');
+      return null;
+    }
+
     // Verificar si ya hay una descarga en progreso
     if (_activeDownloads.containsKey(url)) {
       return await _activeDownloads[url];
     }
 
-    // Limitar descargas concurrentes
-    if (_activeDownloads.length >= maxConcurrentDownloads) {
+    // Limitar descargas concurrentes según estrategia
+    if (_activeDownloads.length >= strategy.concurrentDownloads) {
+      _logger.debug('⏳ Esperando slot de descarga para: $url');
       await Future.any(_activeDownloads.values);
     }
 
     // Iniciar descarga
-    final downloadFuture = _performDownload(url);
+    final downloadFuture = _performDownloadAdaptive(url, strategy);
     _activeDownloads[url] = downloadFuture;
 
     try {
@@ -289,25 +482,46 @@ class ImageCacheManager {
     }
   }
 
-  Future<Uint8List?> _performDownload(String url) async {
-    try {
-      final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'User-Agent': 'PeliculasApp/1.0',
-        },
-      ).timeout(downloadTimeout);
+  /// Realiza la descarga con configuración adaptativa
+  Future<Uint8List?> _performDownloadAdaptive(String url, DownloadStrategy strategy) async {
+    int attempts = 0;
+    Exception? lastException;
 
-      if (response.statusCode == 200) {
-        return response.bodyBytes;
-      } else {
-        _logger.warning('Error HTTP ${response.statusCode} descargando $url');
-        return null;
+    while (attempts <= strategy.retryAttempts) {
+      try {
+        _logger.debug('📡 Descargando imagen (intento ${attempts + 1}): $url');
+        
+        final response = await http.get(
+          Uri.parse(url),
+          headers: {
+            'User-Agent': 'PeliculasApp/1.0',
+            'Accept': 'image/*',
+            if (strategy.qualityPreference == ImageQuality.thumbnail) 
+              'Accept': 'image/webp,image/jpeg;q=0.8,image/png;q=0.6',
+          },
+        ).timeout(strategy.downloadTimeout);
+
+        if (response.statusCode == 200) {
+          final data = response.bodyBytes;
+          _logger.debug('✅ Descarga exitosa: $url (${data.length} bytes)');
+          return data;
+        } else {
+          throw HttpException('HTTP ${response.statusCode}: ${response.reasonPhrase}');
+        }
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        attempts++;
+        
+        if (attempts <= strategy.retryAttempts) {
+          _logger.warning('⚠️ Reintentando descarga de $url en ${strategy.retryDelay.inSeconds}s (error: $e)');
+          await Future.delayed(strategy.retryDelay);
+        } else {
+          _logger.error('❌ Descarga fallida después de $attempts intentos: $url (error: $e)');
+        }
       }
-    } catch (e) {
-      _logger.error('Error descargando imagen $url: $e');
-      return null;
     }
+
+    throw lastException ?? Exception('Download failed for unknown reason');
   }
 
   Future<void> _cleanExpiredCache() async {
@@ -322,7 +536,7 @@ class ImageCacheManager {
           final stat = await file.stat();
           final age = now.difference(stat.modified);
 
-          if (age > cacheExpiry) {
+          if (age > _cacheExpiry) {
             await file.delete();
             deletedFiles++;
           }
@@ -368,6 +582,54 @@ class CacheStats {
     return 'CacheStats(memory: ${(memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB/$memoryCacheEntries, '
         'disk: ${(diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB/$diskCacheFiles, '
         'failed: $failedUrls)';
+  }
+}
+
+/// Estadísticas mejoradas del caché con métricas de rendimiento
+class EnhancedCacheStats {
+  const EnhancedCacheStats({
+    required this.memoryCacheSize,
+    required this.memoryCacheEntries,
+    required this.diskCacheSize,
+    required this.diskCacheFiles,
+    required this.failedUrls,
+    required this.performanceStats,
+    required this.performanceAssessment,
+    required this.networkCondition,
+    required this.networkStatus,
+    required this.deviceCapabilities,
+    required this.currentConfig,
+  });
+
+  // Estadísticas básicas
+  final int memoryCacheSize;
+  final int memoryCacheEntries;
+  final int diskCacheSize;
+  final int diskCacheFiles;
+  final int failedUrls;
+  
+  // Métricas de rendimiento
+  final PerformanceStats performanceStats;
+  final PerformanceAssessment performanceAssessment;
+  
+  // Estado de red
+  final NetworkCondition networkCondition;
+  final Map<String, dynamic> networkStatus;
+  
+  // Configuración del dispositivo
+  final DeviceCapabilities deviceCapabilities;
+  
+  // Configuración actual
+  final CacheConfiguration currentConfig;
+
+  @override
+  String toString() {
+    return 'EnhancedCacheStats('
+        'memory: ${(memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB/$memoryCacheEntries, '
+        'disk: ${(diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB/$diskCacheFiles, '
+        'network: $networkCondition, '
+        'performance: ${performanceAssessment.healthStatus}, '
+        'device: ${deviceCapabilities.performanceTier})';
   }
 }
 

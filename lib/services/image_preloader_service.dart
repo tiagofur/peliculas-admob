@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:logging/logging.dart';
 
 import '../core/cache/image_cache_manager.dart';
+import '../core/cache/network_aware_strategy.dart';
 import '../domain/entities/movie.dart';
 
 /// Servicio de precarga de imágenes en segundo plano
@@ -34,7 +35,7 @@ class ImagePreloaderService {
         'ImagePreloader configured: enabled=$_isPreloadingEnabled, maxConcurrent=$_maxConcurrentPreloads');
   }
 
-  /// Precarga una lista de películas populares
+  /// Precarga una lista de películas populares con estrategia adaptativa
   Future<void> preloadPopularMovies(
     List<Movie> movies, {
     int priority = 1,
@@ -42,22 +43,34 @@ class ImagePreloaderService {
   }) async {
     if (!_isPreloadingEnabled || movies.isEmpty) return;
 
-    _logger.info('Starting preload for ${movies.length} popular movies');
+    // Verificar condiciones de red antes de precargar
+    final networkStrategy = NetworkAwareStrategy.instance.getDownloadStrategy();
+    if (!networkStrategy.enablePreloading) {
+      _logger.info('Precarga deshabilitada por condiciones de red');
+      return;
+    }
+
+    _logger.info('Starting adaptive preload for ${movies.length} popular movies');
 
     // Ordenar por popularidad (voteAverage * voteCount)
     final sortedMovies = List<Movie>.from(movies)
       ..sort((a, b) =>
           (b.voteAverage * b.voteCount).compareTo(a.voteAverage * a.voteCount));
 
-    // Tomar solo las más populares para precargar
-    final moviesToPreload = sortedMovies.take(10).toList();
+    // Ajustar cantidad según estrategia de red
+    final maxToPreload = (networkStrategy.preloadDistance * 2).clamp(5, 20);
+    final moviesToPreload = sortedMovies.take(maxToPreload).toList();
 
     for (int i = 0; i < moviesToPreload.length; i++) {
       final movie = moviesToPreload[i];
 
-      // Esperar antes de la siguiente precarga para no saturar
+      // Ajustar delay según condiciones de red
+      final adaptiveDelay = Duration(
+        milliseconds: (delay.inMilliseconds * (networkStrategy.retryDelay.inSeconds / 3)).round(),
+      );
+
       if (i > 0) {
-        await Future.delayed(delay);
+        await Future.delayed(adaptiveDelay);
       }
 
       await _preloadMovieImages(movie, priority: priority);
