@@ -134,6 +134,94 @@ SUPABASE_URL=tu_supabase_url
 SUPABASE_ANON_KEY=tu_supabase_key
 ```
 
+### Error Reporting y Monitoreo
+
+La aplicación incluye un sistema de **error reporting** integrado con **Firebase Crashlytics** para detectar y analizar fallos en producción:
+
+#### 🚨 Características del Error Reporting
+
+- **Captura automática de crashes**: Detecta errores fatales y no fatales automáticamente
+- **Contexto de usuario**: Asocia errores con información del usuario (cuando está autenticado)
+- **Información detallada**: Incluye stack traces, datos de contexto y metadata
+- **Configuración por entorno**: Habilitado en producción, configurable en desarrollo
+- **Integración con logging**: Se conecta con el sistema de logging existente
+
+#### 🔧 Configuración del Error Reporting
+
+**Automática en producción:**
+- Se habilita automáticamente en builds de release
+- Los errores se envían a Firebase Crashlytics
+- Los usuarios pueden optar por no participar en configuración
+
+**Manual en desarrollo:**
+```dart
+// Habilitar manualmente para testing
+await ErrorReportingService.instance.initialize(enabled: true);
+
+// Reportar error personalizado
+await ErrorReportingService.instance.reportError(
+  error,
+  stackTrace,
+  reason: 'Custom error context',
+  data: {'additional': 'context'},
+  fatal: false,
+);
+
+// Simular crash para testing (solo en debug)
+await ErrorReportingService.instance.testCrash();
+```
+
+#### 📱 Uso en Providers y Pantallas
+
+Los providers críticos incluyen automáticamente error reporting:
+
+```dart
+// StateNotifier con error reporting
+class MoviesNotifier extends StateNotifier<MoviesStateData> 
+    with ErrorReportingMixin<MoviesStateData> {
+  
+  Future<void> loadMovies() async {
+    await runWithErrorReporting(
+      () async {
+        // Lógica que puede fallar
+        final movies = await fetchMovies();
+        state = state.copyWith(movies: movies);
+      },
+      operationName: 'loadMovies',
+      customData: {'page': currentPage},
+    );
+  }
+}
+```
+
+#### 🔍 Dashboard y Alertas
+
+**Firebase Crashlytics Dashboard:**
+- Acceso en: [Firebase Console](https://console.firebase.google.com)
+- Métricas de crash-free users
+- Análisis de tendencias de errores
+- Alertas automáticas para nuevos crashes
+
+**Información Reportada:**
+- Stack traces completos
+- Device y OS información
+- User context (si está autenticado)
+- Custom keys y datos adicionales
+- Breadcrumbs de navegación
+
+#### ⚙️ Configuración de Usuario
+
+Los usuarios pueden controlar el error reporting en:
+- Configuraciones de la app
+- Primera ejecución (opt-in/opt-out)
+- Ajustes de privacidad
+
+```dart
+// Configurar preferencias de usuario
+await ErrorReportingConfig.instance.setUserOptIn(false); // Deshabilitar
+await ErrorReportingConfig.instance.setUserOptIn(true);  // Habilitar
+```
+
 ### Plataformas Soportadas
 - ✅ Android
 - ✅ iOS  

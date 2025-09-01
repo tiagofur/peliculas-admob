@@ -1,5 +1,6 @@
 import 'base_logger.dart';
 import 'noop_logger.dart';
+import '../error_reporting/error_reporting_service.dart';
 
 /// Factory para gestionar instancias de logger con fallback automático
 /// Permite usar logging sin necesidad de configuración previa,
@@ -71,6 +72,17 @@ class LoggerFactory {
   }) async {
     await logger.error(message,
         category: category, data: data, stackTrace: stackTrace);
+    
+    // Also report to error reporting service if it's a significant error
+    if (category == LogCategory.error || stackTrace != null) {
+      await ErrorReportingService.instance.reportError(
+        message,
+        stackTrace,
+        reason: 'Logger error: ${category.name}',
+        data: data,
+        fatal: false,
+      );
+    }
   }
 
   static Future<void> debug(
@@ -83,7 +95,43 @@ class LoggerFactory {
 
 
 
-  static Future<void> batchProcessed({
+  /// Report a critical error that should be tracked in crash reporting
+  static Future<void> reportCriticalError(
+    dynamic error,
+    StackTrace? stackTrace, {
+    String? context,
+    Map<String, dynamic>? data,
+    bool fatal = false,
+  }) async {
+    final message = 'Critical error${context != null ? ' in $context' : ''}: $error';
+    
+    // Log locally
+    await logger.error(
+      message,
+      category: LogCategory.error,
+      data: data,
+      stackTrace: stackTrace,
+    );
+    
+    // Report to error reporting service
+    await ErrorReportingService.instance.reportError(
+      error,
+      stackTrace,
+      reason: message,
+      data: data,
+      fatal: fatal,
+    );
+  }
+
+  /// Set user context for error reporting
+  static Future<void> setUserContext(String userId) async {
+    await ErrorReportingService.instance.setUserId(userId);
+  }
+
+  /// Set custom context for error reporting
+  static Future<void> setCustomContext(String key, dynamic value) async {
+    await ErrorReportingService.instance.setCustomKey(key, value);
+  }
     required String tableName,
     required int batchNumber,
     required int batchSize,
