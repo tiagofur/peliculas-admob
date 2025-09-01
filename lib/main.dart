@@ -11,6 +11,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'config/constants/environment.dart';
+import 'config/deep_links/deep_link_handler.dart';
 import 'config/router/app_router.dart';
 import 'config/theme/app_theme.dart';
 import 'config/theme/custom_scroll_behavior.dart';
@@ -248,6 +249,13 @@ class MainApp extends ConsumerWidget {
 
     // Usar el router provider con autenticación
     final router = ref.watch(appRouterProvider);
+
+    // Initialize deep link handler for web
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        DeepLinkHandler.initialize(router);
+      });
+    }
 
     // Usar MaterialApp regular para web para evitar problemas de compatibilidad
     if (kIsWeb) {

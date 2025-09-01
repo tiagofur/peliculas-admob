@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../config/deep_links/deep_link_handler.dart';
 import '../core/analytics/analytics_service.dart';
-
 import '../domain/entities/movie.dart';
 import '../infrastructure/models/moviedb/movie_moviedb.dart';
 import '../models/shareable_content.dart';
@@ -247,22 +247,40 @@ class ShareService {
     }
   }
 
-  /// Generates a deep link URL for a movie
+  /// Generates a deep link URL for a movie (web URL format)
   static String generateMovieDeepLink(int movieId) {
     return '$_baseUrl/movie/$movieId';
   }
 
-  /// Generates a deep link URL for a movie list
+  /// Generates an app deep link URL for a movie (app scheme format)
+  static String generateMovieAppDeepLink(int movieId) {
+    return DeepLinkHandler.generateMovieDeepLink(movieId.toString());
+  }
+
+  /// Generates a deep link URL for a movie list (web URL format)
   static String generateListDeepLink(String listId) {
     return '$_baseUrl/list/$listId';
   }
 
-  /// Generates a deep link URL for recommendations
+  /// Generates an app deep link URL for a movie list (app scheme format)
+  static String generateListAppDeepLink(String listId) {
+    return DeepLinkHandler.generateListDeepLink(listId);
+  }
+
+  /// Generates a deep link URL for recommendations (web URL format)
   static String generateRecommendationDeepLink(
     String type,
     String id,
   ) {
     return '$_baseUrl/recommendations/$type/$id';
+  }
+
+  /// Generates an app deep link URL for recommendations (app scheme format)
+  static String generateRecommendationAppDeepLink(
+    String type,
+    String id,
+  ) {
+    return DeepLinkHandler.generateRecommendationDeepLink(type, id);
   }
 
   /// Generates a shareable URL for a movie
