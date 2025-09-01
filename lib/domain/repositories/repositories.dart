@@ -1,0 +1,13 @@
+export 'achievements_repository.dart';
+export 'actors_repository.dart';
+export 'auth_repository.dart';
+export 'custom_lists_repository.dart';
+export 'favorites_repository.dart';
+export 'local_storage_repository.dart';
+export 'movies_repository.dart';
+export 'recommendations_repository.dart';
+export 'syncable_repository.dart';
+export 'theme_repository.dart';
+export 'user_movie_ratings_repository.dart';
+export 'watched_movies_repository.dart';
+export 'watchlist_repository.dart';
