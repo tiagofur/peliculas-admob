@@ -24,22 +24,27 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
   final ThemeRepository themeRepository;
 
   Future<void> _loadTheme() async {
-    final (isDarkMode, selectedColor) = await themeRepository.getTheme();
+    final (themeMode, selectedColor) = await themeRepository.getTheme();
     state = state.copyWith(
-      isDarkMode: isDarkMode,
+      themeMode: themeMode,
       selectedColor: selectedColor,
     );
   }
 
+  Future<void> setThemeMode(ThemeMode themeMode) async {
+    state = state.copyWith(themeMode: themeMode);
+    await themeRepository.saveTheme(themeMode, state.selectedColor);
+  }
+
   Future<void> toggleDarkMode() async {
-    final newDarkMode = !state.isDarkMode;
-    state = state.copyWith(isDarkMode: newDarkMode);
-    await themeRepository.saveTheme(newDarkMode, state.selectedColor);
+    // Para mantener compatibilidad con el comportamiento anterior
+    final newMode = state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    await setThemeMode(newMode);
   }
 
   Future<void> changeColorIndex(int colorIndex) async {
     state = state.copyWith(selectedColor: colorIndex);
-    await themeRepository.saveTheme(state.isDarkMode, colorIndex);
+    await themeRepository.saveTheme(state.themeMode, colorIndex);
   }
 
   @override
@@ -52,19 +57,35 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 // State class for the theme
 class ThemeState {
   ThemeState({
-    this.isDarkMode = false,
+    this.themeMode = ThemeMode.system,
     this.selectedColor = 0,
   });
-  final bool isDarkMode;
+  
+  final ThemeMode themeMode;
   final int selectedColor;
 
+  // Compatibilidad con la implementación anterior
+  bool get isDarkMode => themeMode == ThemeMode.dark;
+
   ThemeState copyWith({
-    bool? isDarkMode,
+    ThemeMode? themeMode,
     int? selectedColor,
   }) {
     return ThemeState(
-      isDarkMode: isDarkMode ?? this.isDarkMode,
+      themeMode: themeMode ?? this.themeMode,
       selectedColor: selectedColor ?? this.selectedColor,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    
+    return other is ThemeState &&
+      other.themeMode == themeMode &&
+      other.selectedColor == selectedColor;
+  }
+
+  @override
+  int get hashCode => themeMode.hashCode ^ selectedColor.hashCode;
 }

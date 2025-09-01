@@ -7,6 +7,7 @@ import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/screens.dart';
+import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/watchlist_screen.dart';
 import '../../presentation/views/list_share_web_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
@@ -610,6 +611,24 @@ final appRouter = GoRouter(
         return CustomTransitionPage(
           key: state.pageKey,
           child: const ProfileScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return CinematicPageTransitions.slideUpTransition(
+              page: child,
+              duration: const Duration(milliseconds: 500),
+            ).transitionsBuilder(context, animation, secondaryAnimation, child);
+          },
+        );
+      },
+    ),
+
+    // Ruta de configuración
+    GoRoute(
+      path: '/settings',
+      name: 'settings',
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const SettingsScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return CinematicPageTransitions.slideUpTransition(
               page: child,

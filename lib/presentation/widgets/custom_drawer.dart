@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../config/theme/app_theme.dart' as app_theme;
 import '../providers/auth_provider.dart';
+import '../providers/theme/theme_provider.dart';
 import 'profile_avatar.dart';
 
 class CustomDrawer extends ConsumerWidget {
@@ -340,9 +342,58 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Configuración'),
         onTap: () {
           Navigator.of(context).pop();
-          // TODO: Implementar pantalla de configuración
+          context.push('/settings');
         },
       ),
+      
+      // Quick theme toggle
+      Consumer(
+        builder: (context, ref, child) {
+          final themeState = ref.watch(themeNotifierProvider);
+          final isDark = themeState.themeMode == app_theme.ThemeMode.dark;
+          final isSystem = themeState.themeMode == app_theme.ThemeMode.system;
+          
+          String subtitle;
+          IconData icon;
+          
+          if (isSystem) {
+            subtitle = 'Siguiendo el sistema';
+            icon = Icons.brightness_auto;
+          } else if (isDark) {
+            subtitle = 'Modo oscuro activo';
+            icon = Icons.dark_mode;
+          } else {
+            subtitle = 'Modo claro activo';
+            icon = Icons.light_mode;
+          }
+          
+          return ListTile(
+            leading: Icon(icon),
+            title: const Text('Tema'),
+            subtitle: Text(subtitle),
+            trailing: IconButton(
+              icon: Icon(
+                isDark ? Icons.light_mode : Icons.dark_mode,
+                size: 20,
+              ),
+              onPressed: () {
+                final notifier = ref.read(themeNotifierProvider.notifier);
+                if (themeState.themeMode == app_theme.ThemeMode.dark) {
+                  notifier.setThemeMode(app_theme.ThemeMode.light);
+                } else {
+                  notifier.setThemeMode(app_theme.ThemeMode.dark);
+                }
+              },
+              tooltip: isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
+            ),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.push('/settings');
+            },
+          );
+        },
+      ),
+      
       ListTile(
         leading: const Icon(Icons.help),
         title: const Text('Ayuda'),
