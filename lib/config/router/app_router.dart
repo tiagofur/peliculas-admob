@@ -200,6 +200,29 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Ruta principal de recomendaciones
+      GoRoute(
+        path: '/recommendations',
+        name: 'recommendations',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const RecommendationsView(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              );
+            },
+          );
+        },
+      ),
+
       // Rutas para recomendaciones (se mantienen igual)
       GoRoute(
         path: '/recommendations/category/:categoryId',
