@@ -45,3 +45,26 @@ app.*.map.json
 /android/app/release
 
 key.properties
+
+# CI/CD artifacts
+coverage/
+test-results/
+*.lcov
+release-artifacts/
+web-release.tar.gz
+outdated.json
+
+# Environment files
+.env.local
+.env.production
+.env.staging
+
+# Temporary files created during development
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db

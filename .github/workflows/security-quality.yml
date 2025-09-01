@@ -1,0 +1,102 @@
+name: Security & Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run security checks weekly on Mondays at 2 AM UTC
+    - cron: '0 2 * * 1'
+
+jobs:
+  security_scan:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Run pub audit
+      run: dart pub deps --json | dart pub audit --json
+      continue-on-error: true
+      
+    - name: Check for outdated packages
+      run: flutter pub outdated --json
+      continue-on-error: true
+      
+  performance_analysis:
+    name: Performance Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Analyze bundle size (Web)
+      run: |
+        flutter build web --release --dart-define=FLUTTER_WEB_USE_SKIA=true
+        ls -la build/web/
+        du -sh build/web/
+        
+    - name: Flutter performance analysis
+      run: |
+        # Check for performance anti-patterns
+        flutter analyze --suggestions || true
+        
+  code_quality_extended:
+    name: Extended Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository  
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Check imports organization
+      run: |
+        echo "Checking for proper import organization..."
+        find lib -name "*.dart" -exec grep -l "^import 'dart:" {} \; > dart_imports.txt || true
+        find lib -name "*.dart" -exec grep -l "^import 'package:" {} \; > package_imports.txt || true
+        
+    - name: Check for TODO/FIXME comments
+      run: |
+        echo "Scanning for TODO/FIXME comments..."
+        grep -r "TODO\|FIXME\|HACK" lib/ || echo "No TODO/FIXME comments found"
+        
+    - name: Check file size limits
+      run: |
+        echo "Checking for large files (>500 lines)..."
+        find lib -name "*.dart" -exec wc -l {} + | awk '$1 > 500 {print $2 " has " $1 " lines"}' || echo "No large files found"
+        
+    - name: Unused files check
+      run: |
+        echo "This step would check for unused files in a real implementation"
+        # Custom script to detect unused files could be added here

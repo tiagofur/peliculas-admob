@@ -1,17 +1,171 @@
-# peliculas
+# Películas - Flutter App
 
-Aplicacion de Peliculas.
+[![CI Pipeline](https://github.com/tiagofur/peliculas-admob/actions/workflows/ci.yml/badge.svg)](https://github.com/tiagofur/peliculas-admob/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/tiagofur/peliculas-admob/branch/main/graph/badge.svg)](https://codecov.io/gh/tiagofur/peliculas-admob)
 
-## Getting Started
+Aplicación Flutter para explorar y gestionar películas con integración de Supabase, gamificación y sincronización offline.
 
-This project is a starting point for a Flutter application.
+## 🚀 Getting Started
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisitos
+- Flutter SDK (>=3.0.0 <4.0.0)
+- Dart SDK
+- Android Studio / VS Code
+- Git
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+### Instalación
+```bash
+# Clonar el repositorio
+git clone https://github.com/tiagofur/peliculas-admob.git
+cd peliculas-admob
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-"# peliculas" 
+# Instalar dependencias
+flutter pub get
+
+# Ejecutar la aplicación
+flutter run
+```
+
+## 🔧 Pipeline de Calidad
+
+Este proyecto implementa un pipeline de integración continua que garantiza la calidad del código:
+
+### ✅ Validaciones Automáticas
+
+El CI ejecuta las siguientes validaciones en cada push y pull request:
+
+1. **Formato de código**: `dart format --set-exit-if-changed`
+2. **Análisis estático**: `flutter analyze --fatal-infos --fatal-warnings`  
+3. **Tests automáticos**: `flutter test --coverage`
+4. **Build validation**: Validación de build para web y Android
+
+### 🏗️ Comandos de Desarrollo
+
+Antes de hacer commit, ejecuta localmente:
+
+```bash
+# Verificar formato
+dart format --output=none --set-exit-if-changed .
+
+# Analizar código
+flutter analyze
+
+# Ejecutar tests
+flutter test
+
+# Generar cobertura
+flutter test --coverage
+
+# Build para diferentes plataformas
+flutter build web --release
+flutter build apk --release
+```
+
+### 📋 Reglas de Calidad
+
+- **Formato**: Código debe estar formateado con `dart format`
+- **Análisis**: Zero warnings/errors permitidos (configurado como fatal)
+- **Tests**: Todos los tests deben pasar
+- **Cobertura**: Se trackea cobertura de código (objetivo: >80%)
+- **Build**: Build debe ser exitoso para web y Android
+
+### 🚫 Bloqueo de Merge
+
+Los PRs serán **automáticamente bloqueados** si:
+- ❌ El formato no es correcto
+- ❌ Hay warnings o errors en el análisis
+- ❌ Algún test falla  
+- ❌ El build falla
+
+### 🔄 Proceso de Desarrollo
+
+1. **Crear rama**: `git checkout -b feature/nueva-funcionalidad`
+2. **Desarrollar**: Implementar cambios
+3. **Validar localmente**: Ejecutar comandos de calidad
+4. **Commit**: `git commit -m "feat: descripción del cambio"`
+5. **Push**: `git push origin feature/nueva-funcionalidad`
+6. **PR**: Crear Pull Request (use el template)
+7. **CI**: Esperar validación automática ✅
+8. **Review**: Code review del equipo
+9. **Merge**: Solo si CI pasa y tiene aprobación
+
+### 📊 Métricas de Calidad
+
+- **Build Status**: ![CI](https://github.com/tiagofur/peliculas-admob/actions/workflows/ci.yml/badge.svg)
+- **Code Coverage**: Reportado por Codecov
+- **Dependencies**: Mantenidas automáticamente por Dependabot
+
+## 🧪 Testing
+
+### Tipos de Tests Disponibles
+
+```bash
+# Tests unitarios
+flutter test test/
+
+# Tests de integración  
+flutter test integration_test/
+
+# Tests específicos
+flutter test test/error_handling_test.dart
+flutter test test/sync_integration_test.dart
+flutter test test/offline_functionality_test.dart
+```
+
+### Estructura de Tests
+- `test/`: Tests unitarios y de widgets
+- `integration_test/`: Tests de integración end-to-end
+- Cobertura mínima esperada: 80%
+
+## 📱 Arquitectura
+
+- **Domain-driven design**: Separación clara de capas
+- **Riverpod**: Gestión de estado
+- **Supabase**: Backend y sincronización
+- **Hive/Isar**: Storage local
+- **Gamificación**: Sistema de logros y desafíos
+
+## 🔧 Configuración
+
+### Variables de Entorno
+Crea un archivo `.env` en la raíz:
+```env
+SUPABASE_URL=tu_supabase_url
+SUPABASE_ANON_KEY=tu_supabase_key
+```
+
+### Plataformas Soportadas
+- ✅ Android
+- ✅ iOS  
+- ✅ Web
+- ✅ Linux
+- ✅ macOS
+- ✅ Windows
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crea tu rama (`git checkout -b feature/AmazingFeature`)
+3. **Asegurate que el CI pase localmente**
+4. Commit tus cambios (`git commit -m 'feat: Add some AmazingFeature'`)
+5. Push a la rama (`git push origin feature/AmazingFeature`)
+6. Abre un Pull Request usando el template
+
+### Convenciones de Commit
+- `feat:` Nueva funcionalidad
+- `fix:` Corrección de bug  
+- `docs:` Cambios en documentación
+- `style:` Cambios de formato
+- `refactor:` Refactoring de código
+- `test:` Añadir o modificar tests
+- `ci:` Cambios en CI/CD
+
+## 📚 Recursos
+
+- [Flutter Documentation](https://flutter.dev/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Proyecto Arquitectura](.trae/documents/)
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles. 

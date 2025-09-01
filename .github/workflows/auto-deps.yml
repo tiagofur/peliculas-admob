@@ -1,0 +1,124 @@
+name: Auto Dependency Updates
+
+on:
+  schedule:
+    # Run daily at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update_dependencies:
+    name: Update Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        cache: true
+        
+    - name: Get current dependencies
+      run: flutter pub get
+      
+    - name: Check for updates
+      id: updates
+      run: |
+        # Check for outdated packages
+        flutter pub outdated --json > outdated.json || true
+        
+        # Check if there are updates available
+        if [ -s outdated.json ]; then
+          echo "has_updates=true" >> $GITHUB_OUTPUT
+          echo "Updates available:"
+          cat outdated.json
+        else
+          echo "has_updates=false" >> $GITHUB_OUTPUT
+          echo "No updates available"
+        fi
+        
+    - name: Create update branch
+      if: steps.updates.outputs.has_updates == 'true'
+      run: |
+        # Create a new branch for updates
+        BRANCH_NAME="auto-deps/$(date +%Y%m%d-%H%M%S)"
+        git checkout -b "$BRANCH_NAME"
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+        
+    - name: Update dependencies
+      if: steps.updates.outputs.has_updates == 'true'
+      run: |
+        # Update dependencies
+        flutter pub upgrade
+        
+        # Run tests to ensure everything still works
+        flutter pub get
+        flutter analyze --fatal-infos --fatal-warnings
+        flutter test
+        
+    - name: Commit changes
+      if: steps.updates.outputs.has_updates == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if git diff --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        
+        git add pubspec.lock
+        git commit -m "deps: Update Flutter dependencies
+        
+        - Auto-updated by GitHub Actions
+        - All tests passing
+        - Analysis clean"
+        
+    - name: Push changes
+      if: steps.updates.outputs.has_updates == 'true'
+      run: |
+        git push origin "$BRANCH_NAME"
+        
+    - name: Create Pull Request
+      if: steps.updates.outputs.has_updates == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { repo, owner } = context.repo;
+          const result = await github.rest.pulls.create({
+            title: '🔄 Auto: Update Flutter dependencies',
+            owner,
+            repo,
+            head: process.env.BRANCH_NAME,
+            base: 'main',
+            body: [
+              '## 🤖 Automated Dependency Update',
+              '',
+              'This PR automatically updates Flutter dependencies to their latest versions.',
+              '',
+              '### ✅ Automated Checks Performed:',
+              '- Dependencies updated via `flutter pub upgrade`',
+              '- Static analysis passed (`flutter analyze`)',
+              '- All tests passed (`flutter test`)',
+              '',
+              '### 📋 Next Steps:',
+              '- Review the changes',
+              '- Test manually if needed',
+              '- Merge if everything looks good',
+              '',
+              '---',
+              '*This PR was created automatically by GitHub Actions*'
+            ].join('\n')
+          });
+          
+          github.rest.issues.addLabels({
+            owner,
+            repo,
+            issue_number: result.data.number,
+            labels: ['dependencies', 'automated']
+          });
