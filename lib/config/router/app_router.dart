@@ -7,6 +7,7 @@ import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/screens.dart';
+import '../../presentation/screens/watchlist_screen.dart';
 import '../../presentation/views/list_share_web_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
@@ -121,6 +122,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                             },
                           ),
                         ],
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
+                        path: '/my-library/watchlist',
+                        name: 'watchlist',
+                        builder: (context, state) => const WatchlistScreen(),
                       ),
                     ],
                   ),

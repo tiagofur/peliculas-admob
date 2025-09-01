@@ -17,7 +17,7 @@ class _MyLibraryViewState extends State<MyLibraryView>
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 3, // 3 tabs: favorites, watched, lists
+      length: 4, // 4 tabs: favorites, watched, lists, watchlist
       vsync: this,
       initialIndex: widget.navigationShell.currentIndex,
     );
@@ -96,6 +96,10 @@ class _MyLibraryViewState extends State<MyLibraryView>
                     Tab(
                       icon: Icon(Icons.list_alt, size: 20),
                       text: 'Listas',
+                    ),
+                    Tab(
+                      icon: Icon(Icons.bookmark_outline, size: 20),
+                      text: 'Watchlist',
                     ),
                   ],
                 ),

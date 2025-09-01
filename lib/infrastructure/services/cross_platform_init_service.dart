@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watched_movie.dart';
+import '../../domain/entities/watchlist_movie.dart';
 import 'web_safe_storage_service.dart';
 
 /// Servicio de inicialización multiplataforma que funciona en Web y nativo
@@ -117,6 +118,22 @@ class CrossPlatformInitService {
           LoggerFactory.info('👁️ WatchedMovieAdapter registrado (ID: 1)');
         }
       }
+
+      // Registrar adaptador de WatchlistPriority si no está registrado
+      if (!Hive.isAdapterRegistered(100)) {
+        Hive.registerAdapter(WatchlistPriorityAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('⭐ WatchlistPriorityAdapter registrado (ID: 100)');
+        }
+      }
+
+      // Registrar adaptador de WatchlistMovie si no está registrado
+      if (!Hive.isAdapterRegistered(101)) {
+        Hive.registerAdapter(WatchlistMovieAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('📖 WatchlistMovieAdapter registrado (ID: 101)');
+        }
+      }
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error('❌ Error registrando adaptadores de Hive: $e');
@@ -144,6 +161,11 @@ class CrossPlatformInitService {
       if (Hive.isBoxOpen('watched_movies')) {
         final watchedBox = Hive.box<WatchedMovie>('watched_movies');
         await watchedBox.clear();
+      }
+
+      if (Hive.isBoxOpen('watchlist_movies')) {
+        final watchlistBox = Hive.box<WatchlistMovie>('watchlist_movies');
+        await watchlistBox.clear();
       }
 
       // Limpiar SharedPreferences
