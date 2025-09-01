@@ -1,12 +1,18 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
+import '../../domain/entities/watchlist_movie.dart';
+import 'watchlist_hive_datasource.dart';
 
 class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   static const String _favoriteMoviesKey = 'favorite_movies';
+  
+  // Usamos el datasource de Hive para watchlist
+  final WatchlistHiveDatasource _watchlistDatasource = WatchlistHiveDatasource();
 
   @override
   Future<bool> isMovieFavorite(int movieId) async {
@@ -95,5 +101,49 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
       voteAverage: (json['voteAverage'] as num).toDouble(),
       voteCount: json['voteCount'] as int,
     );
+  }
+
+  // Implementación de métodos de watchlist usando Hive
+  @override
+  Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) async {
+    await _watchlistDatasource.addToWatchlist(movie, priority);
+  }
+
+  @override
+  Future<void> removeFromWatchlist(int movieId) async {
+    await _watchlistDatasource.removeFromWatchlist(movieId);
+  }
+
+  @override
+  Future<void> updateWatchlistPriority(int movieId, WatchlistPriority priority) async {
+    await _watchlistDatasource.updateWatchlistPriority(movieId, priority);
+  }
+
+  @override
+  Future<bool> isMovieInWatchlist(int movieId) async {
+    return await _watchlistDatasource.isMovieInWatchlist(movieId);
+  }
+
+  @override
+  Future<List<WatchlistMovie>> loadWatchlistMovies({
+    int limit = 10,
+    int offset = 0,
+    WatchlistPriority? priority,
+  }) async {
+    return await _watchlistDatasource.loadWatchlistMovies(
+      limit: limit,
+      offset: offset,
+      priority: priority,
+    );
+  }
+
+  @override
+  Future<WatchlistMovie?> getWatchlistMovie(int movieId) async {
+    return await _watchlistDatasource.getWatchlistMovie(movieId);
+  }
+
+  @override
+  Future<int> getWatchlistCount() async {
+    return await _watchlistDatasource.getWatchlistCount();
   }
 }
