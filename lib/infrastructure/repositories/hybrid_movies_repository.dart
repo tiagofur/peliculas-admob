@@ -1,4 +1,7 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
+
 import '../../core/logging/logger_factory.dart';
+import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/datasources/movies_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/video.dart';
@@ -6,18 +9,35 @@ import '../../domain/repositories/movies_repository.dart';
 import '../mappers/trakt_mapper.dart';
 import '../services/trakt_api_service.dart';
 
-/// Repositorio híbrido que prioriza Trakt.tv con fallback a TMDB
+/// Repositorio híbrido que prioriza cache offline, luego Trakt.tv con fallback a TMDB
 class HybridMoviesRepository implements MoviesRepository {
   HybridMoviesRepository({
     required TraktApiService traktApiService,
     required MoviesDatasource tmdbDatasource,
+    required LocalStorageDatasource localDatasource,
   })  : _traktApiService = traktApiService,
-        _tmdbDatasource = tmdbDatasource;
+        _tmdbDatasource = tmdbDatasource,
+        _localDatasource = localDatasource;
+        
   final TraktApiService _traktApiService;
   final MoviesDatasource _tmdbDatasource;
+  final LocalStorageDatasource _localDatasource;
   final Map<String, List<Movie>> _cache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
   final Duration _cacheTimeout = const Duration(minutes: 30);
+
+  /// Check network connectivity
+  Future<bool> _hasConnectivity() async {
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      return connectivityResult.contains(ConnectivityResult.mobile) ||
+             connectivityResult.contains(ConnectivityResult.wifi) ||
+             connectivityResult.contains(ConnectivityResult.ethernet);
+    } catch (e) {
+      LoggerFactory.warning('Error checking connectivity: $e');
+      return false;
+    }
+  }
 
   /// Verifica si el cache es válido para una clave específica
   bool _isCacheValid(String key) {
@@ -40,27 +60,50 @@ class HybridMoviesRepository implements MoviesRepository {
     return null;
   }
 
-  /// Método principal para obtener películas con sistema de prioridades
+  /// Método principal para obtener películas con sistema de prioridades offline-first
   Future<List<Movie>> _getMoviesWithFallback(
     String cacheKey,
     Future<List<Movie>> Function() traktCall,
     Future<List<Movie>> Function() tmdbCall,
   ) async {
-    // 1. Verificar cache
+    // 1. Verificar cache en memoria primero (más rápido)
     final cachedData = _getFromCache(cacheKey);
     if (cachedData != null) {
+      LoggerFactory.info('📱 Datos obtenidos del cache en memoria: ${cachedData.length} películas');
       return cachedData;
     }
 
+    // 2. Verificar cache offline persistente
+    final offlineCachedMovies = await _localDatasource.getCachedMoviesByCategory(cacheKey);
+    if (offlineCachedMovies.isNotEmpty) {
+      LoggerFactory.info('📱 Datos obtenidos del cache offline: ${offlineCachedMovies.length} películas');
+      // También guardar en cache en memoria para acceso más rápido
+      _saveToCache(cacheKey, offlineCachedMovies);
+      return offlineCachedMovies;
+    }
+
+    // 3. Verificar conectividad antes de hacer llamadas de red
+    final hasConnection = await _hasConnectivity();
+    if (!hasConnection) {
+      LoggerFactory.warning('📱 Sin conectividad - solo disponible cache offline');
+      return []; // Return empty list when offline and no cache
+    }
+
     try {
-      // 2. Intentar con Trakt (prioridad alta)
+      // 4. Intentar con Trakt (prioridad alta)
       LoggerFactory.info('🎬 Intentando obtener datos de Trakt...');
       final traktMovies = await traktCall();
 
       if (traktMovies.isNotEmpty) {
         LoggerFactory.info(
             '✅ Datos obtenidos de Trakt: ${traktMovies.length} películas');
+        
+        // Guardar en cache en memoria
         _saveToCache(cacheKey, traktMovies);
+        
+        // Guardar en cache offline para acceso sin conexión
+        await _localDatasource.cacheMovies(traktMovies, cacheKey);
+        
         return traktMovies;
       }
     } catch (e) {
@@ -68,21 +111,35 @@ class HybridMoviesRepository implements MoviesRepository {
     }
 
     try {
-      // 3. Fallback a TMDB
+      // 5. Fallback a TMDB
       LoggerFactory.info('🔄 Fallback: obteniendo datos de TMDB...');
       final tmdbMovies = await tmdbCall();
 
       if (tmdbMovies.isNotEmpty) {
         LoggerFactory.info(
             '✅ Datos obtenidos de TMDB: ${tmdbMovies.length} películas');
+        
+        // Guardar en cache en memoria
         _saveToCache(cacheKey, tmdbMovies);
+        
+        // Guardar en cache offline para acceso sin conexión
+        await _localDatasource.cacheMovies(tmdbMovies, cacheKey);
+        
         return tmdbMovies;
       }
     } catch (e) {
       LoggerFactory.error('❌ Error también en TMDB: $e');
-      throw Exception('Error en ambas fuentes de datos: Trakt y TMDB');
     }
 
+    // 6. Si todo falla, intentar obtener cualquier cache antiguo
+    LoggerFactory.warning('⚠️ Todas las fuentes fallaron, verificando cache antiguo...');
+    final oldCachedMovies = await _localDatasource.getCachedMoviesByCategory(cacheKey);
+    if (oldCachedMovies.isNotEmpty) {
+      LoggerFactory.info('📱 Usando cache antiguo: ${oldCachedMovies.length} películas');
+      return oldCachedMovies;
+    }
+
+    LoggerFactory.error('❌ No hay datos disponibles para $cacheKey');
     return [];
   }
 
@@ -164,36 +221,66 @@ class HybridMoviesRepository implements MoviesRepository {
 
   @override
   Future<Movie> getMovieById(String id) async {
+    final movieIdInt = int.tryParse(id) ?? 0;
     final cacheKey = 'movie_$id';
 
-    // Verificar cache para película individual
+    // 1. Verificar cache en memoria para película individual
     final cachedMovies = _getFromCache(cacheKey);
     if (cachedMovies != null && cachedMovies.isNotEmpty) {
+      LoggerFactory.info('📱 Movie obtenida del cache en memoria: ${cachedMovies.first.title}');
       return cachedMovies.first;
     }
 
+    // 2. Verificar cache offline persistente
+    final cachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
+    if (cachedMovie != null) {
+      LoggerFactory.info('📱 Movie obtenida del cache offline: ${cachedMovie.title}');
+      // También guardar en cache en memoria
+      _saveToCache(cacheKey, [cachedMovie]);
+      return cachedMovie;
+    }
+
+    // 3. Verificar conectividad antes de hacer llamadas de red
+    final hasConnection = await _hasConnectivity();
+    if (!hasConnection) {
+      LoggerFactory.warning('📱 Sin conectividad - película no disponible offline');
+      throw Exception('Película no disponible offline: $id');
+    }
+
     try {
-      // 1. Intentar con Trakt primero
+      // 4. Intentar con Trakt primero
       LoggerFactory.info('🎬 Obteniendo película $id de Trakt...');
       final traktMovie = await _traktApiService.getMovieDetails(id);
       final movie = await TraktMovieMapper.toEntity(traktMovie);
 
-      // Guardar en cache
+      // Guardar en ambos caches
       _saveToCache(cacheKey, [movie]);
+      await _localDatasource.cacheMovie(movie);
+      
       return movie;
     } catch (e) {
       LoggerFactory.warning('⚠️ Error obteniendo película de Trakt: $e');
 
       try {
-        // 2. Fallback a TMDB
+        // 5. Fallback a TMDB
         LoggerFactory.info('🔄 Fallback: obteniendo película $id de TMDB...');
         final movie = await _tmdbDatasource.getMovieById(id);
 
-        // Guardar en cache
+        // Guardar en ambos caches
         _saveToCache(cacheKey, [movie]);
+        await _localDatasource.cacheMovie(movie);
+        
         return movie;
       } catch (tmdbError) {
         LoggerFactory.error('❌ Error también en TMDB: $tmdbError');
+        
+        // 6. Último intento con cache offline (incluso si expirado)
+        final oldCachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
+        if (oldCachedMovie != null) {
+          LoggerFactory.info('📱 Usando cache offline antiguo: ${oldCachedMovie.title}');
+          return oldCachedMovie;
+        }
+        
         throw Exception('Película no encontrada en ninguna fuente: $id');
       }
     }

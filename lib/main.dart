@@ -123,6 +123,11 @@ Future<void> main() async {
         // INICIALIZAR SERVICIO DE CONFIGURACIÓN DE CACHÉ
         await CacheConfigurationService().initialize();
 
+        // Note: Offline cache manager will be initialized when first accessed through providers
+        if (kDebugMode) {
+          LoggerFactory.info('✅ Cache services configured - offline cache will initialize on demand');
+        }
+
         // INICIALIZAR SISTEMA DE NOTIFICACIONES
         if (!kIsWeb) {
           try {
