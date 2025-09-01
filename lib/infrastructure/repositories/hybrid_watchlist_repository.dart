@@ -216,6 +216,16 @@ class HybridWatchlistRepository
     }
   }
 
+  /// Obtiene todas las películas de la watchlist
+  Future<List<WatchlistMovie>> getAllWatchlistMovies() async {
+    try {
+      return await _datasource.getAllWatchlistMovies();
+    } catch (e) {
+      LoggerFactory.error('❌ Error al obtener todas las películas de watchlist: $e');
+      return [];
+    }
+  }
+
   // Sincronizar un elemento individual
   Future<void> _syncSingleItem(Movie movie, {required WatchlistPriority priority}) async {
     LoggerFactory.info('🔄 Iniciando sincronización individual de: ${movie.title}');

@@ -157,6 +157,8 @@ class UserNotificationPreferences {
         NotificationType.listUpdates: true,
         NotificationType.favoriteActorNewMovie: true,
         NotificationType.trendingMovies: false,
+        NotificationType.weeklyWatchlistReminder: true,
+        NotificationType.movieReleaseNotification: true,
       },
       frequencies: {
         NotificationType.newMovies: NotificationFrequency.daily,
@@ -165,6 +167,8 @@ class UserNotificationPreferences {
         NotificationType.listUpdates: NotificationFrequency.immediate,
         NotificationType.favoriteActorNewMovie: NotificationFrequency.immediate,
         NotificationType.trendingMovies: NotificationFrequency.weekly,
+        NotificationType.weeklyWatchlistReminder: NotificationFrequency.weekly,
+        NotificationType.movieReleaseNotification: NotificationFrequency.immediate,
       },
       priorities: {
         NotificationType.newMovies: NotificationPriority.normal,
@@ -172,6 +176,8 @@ class UserNotificationPreferences {
         NotificationType.listUpdates: NotificationPriority.normal,
         NotificationType.favoriteActorNewMovie: NotificationPriority.high,
         NotificationType.trendingMovies: NotificationPriority.low,
+        NotificationType.weeklyWatchlistReminder: NotificationPriority.normal,
+        NotificationType.movieReleaseNotification: NotificationPriority.high,
       },
       schedule: const NotificationSchedule(
         startTime: TimeOfDay(hour: 9, minute: 0),

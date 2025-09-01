@@ -14,6 +14,7 @@ import '../../domain/entities/person.dart';
 import '../logging/base_logger.dart';
 import '../logging/logger_factory.dart';
 import 'local_notification_service.dart';
+import 'notification_metrics.dart';
 import 'notification_preferences.dart';
 
 /// Tipos de notificaciones disponibles
@@ -24,6 +25,8 @@ enum NotificationType {
   favoriteActorNewMovie,
   trendingMovies,
   personalizedRecommendations,
+  weeklyWatchlistReminder,
+  movieReleaseNotification,
 }
 
 /// Prioridad de las notificaciones
@@ -230,6 +233,7 @@ class NotificationManager {
   FirebaseMessaging? _firebaseMessaging;
   SharedPreferences? _prefs;
   LocalNotificationService? _localNotificationService;
+  NotificationMetricsService? _metricsService;
 
   NotificationPreferences _preferences = const NotificationPreferences();
   final Map<String, Timer> _scheduledNotifications = {};
@@ -245,6 +249,10 @@ class NotificationManager {
       // Inicializar SharedPreferences
       _prefs = await SharedPreferences.getInstance();
       await _loadPreferences();
+
+      // Inicializar servicio de métricas
+      _metricsService = NotificationMetricsService.instance;
+      await _metricsService!.initialize();
 
       // Inicializar servicio de notificaciones locales
       _localNotificationService = LocalNotificationService.instance;
@@ -505,30 +513,55 @@ class NotificationManager {
   Future<void> _showImmediateNotification(NotificationConfig config) async {
     if (!_shouldShowNotification(config)) return;
 
-    // Usar el servicio de notificaciones locales si está disponible
-    if (_localNotificationService != null &&
-        _localNotificationService!.isInitialized) {
-      final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-      await _localNotificationService!.showNotification(
-        id: id,
-        title: config.title,
-        body: config.body,
-        payload: jsonEncode({
-          'type': config.type.name,
-          'data': config.data,
-          'actionUrl': config.actionUrl,
-        }),
-        priority: config.priority,
-        largeIcon: config.imageUrl,
+    final notificationId = DateTime.now().millisecondsSinceEpoch.toString();
+
+    try {
+      // Registrar métrica de envío
+      await _metricsService?.recordNotificationSent(
+        notificationId: notificationId,
+        type: config.type,
+        scheduledFor: config.scheduledTime ?? DateTime.now(),
       );
-    } else {
-      await _showLocalNotification(config);
+
+      // Usar el servicio de notificaciones locales si está disponible
+      if (_localNotificationService != null &&
+          _localNotificationService!.isInitialized) {
+        final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        await _localNotificationService!.showNotification(
+          id: id,
+          title: config.title,
+          body: config.body,
+          payload: jsonEncode({
+            'notificationId': notificationId,
+            'type': config.type.name,
+            'data': config.data,
+            'actionUrl': config.actionUrl,
+          }),
+          priority: config.priority,
+          largeIcon: config.imageUrl,
+        );
+      } else {
+        await _showLocalNotification(config, notificationId: notificationId);
+      }
+      
+      // Registrar entrega exitosa
+      await _metricsService?.recordNotificationDelivered(
+        notificationId: notificationId,
+      );
+      
+      _incrementDailyCount();
+    } catch (e) {
+      // Registrar fallo
+      await _metricsService?.recordNotificationFailed(
+        notificationId: notificationId,
+        reason: e.toString(),
+      );
+      rethrow;
     }
-    _incrementDailyCount();
   }
 
   /// Muestra una notificación local
-  Future<void> _showLocalNotification(NotificationConfig config) async {
+  Future<void> _showLocalNotification(NotificationConfig config, {String? notificationId}) async {
     final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     final androidDetails = fln.AndroidNotificationDetails(
@@ -564,6 +597,7 @@ class NotificationManager {
     );
 
     final payload = jsonEncode({
+      'notificationId': notificationId ?? DateTime.now().millisecondsSinceEpoch.toString(),
       'type': config.type.name,
       'data': config.data,
       'actionUrl': config.actionUrl,
@@ -595,6 +629,10 @@ class NotificationManager {
         return 'Películas Populares';
       case NotificationType.personalizedRecommendations:
         return 'Recomendaciones Personalizadas';
+      case NotificationType.weeklyWatchlistReminder:
+        return 'Recordatorios de Lista';
+      case NotificationType.movieReleaseNotification:
+        return 'Estrenos de Películas';
       default:
         return 'Notificaciones';
     }
@@ -615,6 +653,10 @@ class NotificationManager {
         return 'Películas que están siendo populares';
       case NotificationType.personalizedRecommendations:
         return 'Recomendaciones personalizadas especialmente para ti';
+      case NotificationType.weeklyWatchlistReminder:
+        return 'Recordatorios semanales de películas en tu lista pendiente';
+      case NotificationType.movieReleaseNotification:
+        return 'Notificaciones de estrenos de películas que sigues';
     }
   }
 
@@ -788,7 +830,6 @@ class NotificationManager {
       case NotificationType.listUpdates:
         // Enviar actualizaciones de lista inmediatamente
         return now;
-
       case NotificationType.favoriteActorNewMovie:
         // Enviar noticias de actores favoritos por la mañana
         return DateTime(now.year, now.month, now.day, 10, 0);
@@ -797,6 +838,17 @@ class NotificationManager {
         final daysUntilSaturday = (6 - now.weekday) % 7;
         return DateTime(
             now.year, now.month, now.day + daysUntilSaturday, 12, 0);
+      case NotificationType.weeklyWatchlistReminder:
+        // Los recordatorios semanales se manejan en su propio servicio
+        // Programar para el próximo domingo a las 10:00 AM
+        int daysUntilSunday = (DateTime.sunday - now.weekday) % 7;
+        if (daysUntilSunday == 0 && now.hour >= 10) {
+          daysUntilSunday = 7;
+        }
+        return DateTime(now.year, now.month, now.day + daysUntilSunday, 10, 0);
+      case NotificationType.movieReleaseNotification:
+        // Notificaciones de estreno se envían inmediatamente cuando se detectan
+        return now;
     }
   }
 
@@ -839,11 +891,16 @@ class NotificationManager {
     await _showLocalNotification(config);
   }
 
+  /// Acceso al servicio de métricas
+  NotificationMetricsService? get metricsService => _metricsService;
+
   /// Limpia recursos
   void dispose() {
     cancelAllScheduledNotifications();
     _localNotificationService?.dispose();
+    _metricsService?.dispose();
     _localNotificationService = null;
+    _metricsService = null;
     _instance = null;
   }
 }
