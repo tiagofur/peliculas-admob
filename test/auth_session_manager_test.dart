@@ -7,7 +7,7 @@ import '../lib/infrastructure/services/auth_session_manager.dart';
 import '../lib/infrastructure/services/web_safe_storage_service.dart';
 
 // Generate mocks for the test
-@GenerateMocks([WebSafeStorageService, SupabaseClient, GoTrueClient, Session])
+@GenerateMocks([WebSafeStorageService, SupabaseClient, GoTrueClient, Session, User])
 void main() {
   group('AuthSessionManager Tests', () {
     late AuthSessionManager sessionManager;
@@ -15,12 +15,14 @@ void main() {
     late MockSupabaseClient mockSupabase;
     late MockGoTrueClient mockAuth;
     late MockSession mockSession;
+    late MockUser mockUser;
 
     setUp(() {
       mockStorage = MockWebSafeStorageService();
       mockSupabase = MockSupabaseClient();
       mockAuth = MockGoTrueClient();
       mockSession = MockSession();
+      mockUser = MockUser();
       
       // Setup basic mocks
       when(mockSupabase.auth).thenReturn(mockAuth);
@@ -39,7 +41,8 @@ void main() {
         when(mockSession.accessToken).thenReturn(accessToken);
         when(mockSession.refreshToken).thenReturn(refreshToken);
         when(mockSession.expiresAt).thenReturn(expiresAt);
-        when(mockSession.user).thenReturn(User(id: userId));
+        when(mockSession.user).thenReturn(mockUser);
+        when(mockUser.id).thenReturn(userId);
         
         when(mockStorage.saveString(any, any)).thenAnswer((_) async => true);
         
@@ -58,7 +61,8 @@ void main() {
         when(mockSession.accessToken).thenReturn(accessToken);
         when(mockSession.refreshToken).thenReturn('refresh-token');
         when(mockSession.expiresAt).thenReturn(DateTime.now().millisecondsSinceEpoch ~/ 1000);
-        when(mockSession.user).thenReturn(User(id: 'user-id'));
+        when(mockSession.user).thenReturn(mockUser);
+        when(mockUser.id).thenReturn('user-id');
         
         String? capturedEncryptedData;
         when(mockStorage.saveString('auth_session_encrypted', any))
