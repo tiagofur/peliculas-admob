@@ -430,33 +430,42 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildRatingsSection(ThemeData theme) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Consumer(
+      builder: (context, ref, child) {
+        final appState = ref.watch(appStateProvider);
+        
+        // Don't show ratings section for guest users
+        if (!appState.isAuthenticated) {
+          return const SizedBox.shrink();
+        }
+        
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.star,
-                  color: Colors.amber,
-                  size: 20,
+                Row(
+                  children: [
+                    Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Mis Valoraciones',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Mis Valoraciones',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Consumer(
-              builder: (context, ref, child) {
-                final recentRatingsAsync = ref.watch(recentRatingsProvider(5));
-                final ratingStatsAsync = ref.watch(userRatingStatsProvider);
+                const SizedBox(height: 16),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final recentRatingsAsync = ref.watch(recentRatingsProvider(5));
+                    final ratingStatsAsync = ref.watch(userRatingStatsProvider);
                 
                 return Column(
                   children: [

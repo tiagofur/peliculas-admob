@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/user_movie_rating.dart';
 import '../providers/user_movie_ratings_provider.dart';
+import '../providers/auth_provider.dart';
 import 'star_rating_widgets.dart';
 
 class MovieRatingAndNotes extends ConsumerStatefulWidget {
@@ -174,6 +175,50 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final appState = ref.watch(appStateProvider);
+    
+    // Show login prompt for guest users
+    if (!appState.isAuthenticated) {
+      return Card(
+        margin: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(
+                Icons.star_outline,
+                size: 48,
+                color: theme.colorScheme.onSurface.withOpacity(0.3),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Inicia sesión para valorar películas',
+                style: theme.textTheme.titleMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Crea una cuenta gratuita para guardar tus valoraciones y notas personales.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  // TODO: Navigate to login screen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Función de login en desarrollo')),
+                  );
+                },
+                child: const Text('Iniciar Sesión'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     
     return Card(
       margin: const EdgeInsets.all(16),

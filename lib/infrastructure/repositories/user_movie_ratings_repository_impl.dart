@@ -11,16 +11,22 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
   @override
   Future<UserMovieRating?> getUserRating(int movieId) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    if (user == null) return null; // Return null instead of throwing when not authenticated
 
-    final response = await _supabase
-        .from(_tableName)
-        .select()
-        .eq('user_id', user.id)
-        .eq('movie_id', movieId)
-        .maybeSingle();
+    try {
+      final response = await _supabase
+          .from(_tableName)
+          .select()
+          .eq('user_id', user.id)
+          .eq('movie_id', movieId)
+          .maybeSingle();
 
-    return response != null ? UserMovieRating.fromJson(response) : null;
+      return response != null ? UserMovieRating.fromJson(response) : null;
+    } catch (e) {
+      // Log error but don't throw to prevent UI crashes
+      print('Error getting user rating: $e');
+      return null;
+    }
   }
 
   @override
@@ -31,33 +37,38 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     bool ascending = false,
   }) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) throw Exception('User not authenticated');
+    if (user == null) return []; // Return empty list instead of throwing
 
-    var query = _supabase
-        .from(_tableName)
-        .select()
-        .eq('user_id', user.id);
+    try {
+      var query = _supabase
+          .from(_tableName)
+          .select()
+          .eq('user_id', user.id);
 
-    // Aplicar ordenamiento
-    if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
-    } else {
-      query = query.order('created_at', ascending: false);
+      // Aplicar ordenamiento
+      if (orderBy != null) {
+        query = query.order(orderBy, ascending: ascending);
+      } else {
+        query = query.order('created_at', ascending: false);
+      }
+
+      // Aplicar límite y offset
+      if (limit != null) {
+        query = query.limit(limit);
+      }
+      if (offset != null) {
+        query = query.range(offset, offset + (limit ?? 50) - 1);
+      }
+
+      final response = await query;
+      
+      return response
+          .map<UserMovieRating>((json) => UserMovieRating.fromJson(json))
+          .toList();
+    } catch (e) {
+      print('Error getting user ratings: $e');
+      return [];
     }
-
-    // Aplicar límite y offset
-    if (limit != null) {
-      query = query.limit(limit);
-    }
-    if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 50) - 1);
-    }
-
-    final response = await query;
-    
-    return response
-        .map<UserMovieRating>((json) => UserMovieRating.fromJson(json))
-        .toList();
   }
 
   @override
@@ -65,32 +76,37 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
-    // Verificar si ya existe una valoración para esta película
-    final existingRating = await getUserRating(rating.movieId);
+    try {
+      // Verificar si ya existe una valoración para esta película
+      final existingRating = await getUserRating(rating.movieId);
 
-    if (existingRating != null) {
-      // Actualizar valoración existente
-      final response = await _supabase
-          .from(_tableName)
-          .update(rating.toSupabaseUpdate())
-          .eq('user_id', user.id)
-          .eq('movie_id', rating.movieId)
-          .select()
-          .single();
+      if (existingRating != null) {
+        // Actualizar valoración existente
+        final response = await _supabase
+            .from(_tableName)
+            .update(rating.toSupabaseUpdate())
+            .eq('user_id', user.id)
+            .eq('movie_id', rating.movieId)
+            .select()
+            .single();
 
-      return UserMovieRating.fromJson(response);
-    } else {
-      // Crear nueva valoración
-      final response = await _supabase
-          .from(_tableName)
-          .insert({
-            ...rating.toSupabaseInsert(),
-            'user_id': user.id,
-          })
-          .select()
-          .single();
+        return UserMovieRating.fromJson(response);
+      } else {
+        // Crear nueva valoración
+        final response = await _supabase
+            .from(_tableName)
+            .insert({
+              ...rating.toSupabaseInsert(),
+              'user_id': user.id,
+            })
+            .select()
+            .single();
 
-      return UserMovieRating.fromJson(response);
+        return UserMovieRating.fromJson(response);
+      }
+    } catch (e) {
+      print('Error saving rating: $e');
+      rethrow; // Re-throw so UI can handle the error
     }
   }
 
