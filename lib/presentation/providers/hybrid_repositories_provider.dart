@@ -2,6 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/datasources/local_storage_datasource.dart';
+import '../../domain/repositories/favorites_repository.dart';
+import '../../domain/repositories/watched_movies_repository.dart';
+import '../../domain/repositories/custom_lists_repository.dart';
+import '../../domain/repositories/watchlist_repository.dart';
 
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/datasources/favorite_movies_shared_preferences_datasource.dart';
@@ -12,12 +16,9 @@ import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
 import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
 
-
-
-// Provider para el repositorio híbrido de favoritos
-final hybridFavoritesRepositoryProvider =
-    Provider<HybridFavoritesRepository>((ref) {
-  // Usar el MISMO datasource que favoriteMoviesProvider para consistencia
+// Provider for the unified favorites repository interface
+final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
+  // Use the SAME datasource as favoriteMoviesProvider for consistency
   LocalStorageDatasource datasource;
 
   if (kIsWeb) {
@@ -32,9 +33,8 @@ final hybridFavoritesRepositoryProvider =
   );
 });
 
-// Provider para el repositorio híbrido de películas vistas
-final hybridWatchedRepositoryProvider =
-    Provider<HybridWatchedRepository>((ref) {
+// Provider for the unified watched movies repository interface
+final watchedMoviesRepositoryProvider = Provider<WatchedMoviesRepository>((ref) {
   final watchedHiveDatasource = ref.watch(watchedMoviesHiveDatasourceProvider);
 
   return HybridWatchedRepository(
@@ -54,9 +54,8 @@ final watchedMoviesHiveDatasourceProvider =
   return WatchedMoviesHiveDatasource();
 });
 
-// Provider para el repositorio híbrido de listas personalizadas
-final hybridCustomListsRepositoryProvider =
-    Provider<HybridCustomListsRepository>((ref) {
+// Provider for the unified custom lists repository interface
+final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
   final localDatasource = ref.watch(customListsLocalDatasourceProvider);
 
   return HybridCustomListsRepository(
@@ -65,16 +64,9 @@ final hybridCustomListsRepositoryProvider =
   );
 });
 
-// Provider para el datasource local de listas personalizadas
-final customListsLocalDatasourceProvider =
-    Provider<CustomListsSharedPreferencesDatasource>((ref) {
-  return CustomListsSharedPreferencesDatasource();
-});
-
-// Provider para el repositorio híbrido de watchlist
-final hybridWatchlistRepositoryProvider =
-    Provider<HybridWatchlistRepository>((ref) {
-  // Usar el mismo datasource que favoritos para consistencia
+// Provider for the unified watchlist repository interface
+final watchlistRepositoryProvider = Provider<WatchlistRepository>((ref) {
+  // Use the same datasource as favorites for consistency
   LocalStorageDatasource datasource;
 
   if (kIsWeb) {
@@ -88,3 +80,26 @@ final hybridWatchlistRepositoryProvider =
     ref: ref,
   );
 });
+
+// Datasource providers
+final hiveDatasourceProvider = Provider<HiveDatasource>((ref) {
+  return HiveDatasource();
+});
+
+final watchedMoviesHiveDatasourceProvider =
+    Provider<WatchedMoviesHiveDatasource>((ref) {
+  return WatchedMoviesHiveDatasource();
+});
+
+final customListsLocalDatasourceProvider =
+    Provider<CustomListsSharedPreferencesDatasource>((ref) {
+  return CustomListsSharedPreferencesDatasource();
+});
+
+// Legacy providers for backward compatibility (to be removed in future versions)
+// These allow for gradual migration to the new interface-based providers
+
+final hybridFavoritesRepositoryProvider = favoritesRepositoryProvider;
+final hybridWatchedRepositoryProvider = watchedMoviesRepositoryProvider; 
+final hybridCustomListsRepositoryProvider = customListsRepositoryProvider;
+final hybridWatchlistRepositoryProvider = watchlistRepositoryProvider;

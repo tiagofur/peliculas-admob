@@ -1,8 +1,9 @@
 import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
+import '../repositories/syncable_repository.dart';
 import 'movie.dart';
 
-/// Entidad sincronizable para películas vistas que implementa SoftDeletable
-class SyncableWatchedMovie implements SoftDeletable {
+/// Entidad sincronizable para películas vistas que implementa SoftDeletable y Syncable
+class SyncableWatchedMovie implements SoftDeletable, Syncable {
   const SyncableWatchedMovie({
     required this.id,
     required this.userId,
@@ -21,6 +22,7 @@ class SyncableWatchedMovie implements SoftDeletable {
     this.isDeleted = false,
     this.deletedAt,
     this.traktId,
+    this.syncStatus = SyncStatus.synced,
   });
 
   /// Crea desde WatchedMovie
@@ -89,6 +91,8 @@ class SyncableWatchedMovie implements SoftDeletable {
   final bool isDeleted;
   final DateTime? deletedAt;
   final int? traktId;
+  @override
+  final SyncStatus syncStatus;
 
   /// Implementa SoftDeletable - crea copia marcada como eliminada
   @override
@@ -119,6 +123,7 @@ class SyncableWatchedMovie implements SoftDeletable {
     bool? isDeleted,
     DateTime? deletedAt,
     int? traktId,
+    SyncStatus? syncStatus,
   }) {
     return SyncableWatchedMovie(
       id: id ?? this.id,
@@ -138,6 +143,7 @@ class SyncableWatchedMovie implements SoftDeletable {
       isDeleted: isDeleted ?? this.isDeleted,
       deletedAt: deletedAt ?? this.deletedAt,
       traktId: traktId ?? this.traktId,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 
