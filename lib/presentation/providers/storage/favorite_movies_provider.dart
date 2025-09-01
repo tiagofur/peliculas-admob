@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/movie.dart';
@@ -8,7 +9,13 @@ import 'local_storage_provider.dart';
 final favoriteMoviesProvider =
     StateNotifierProvider<StorageMoviesNotifier, Map<int, Movie>>((ref) {
   final localStorageRepository = ref.watch(localStorageRepositoryProvider);
-  return StorageMoviesNotifier(localStorageRepository: localStorageRepository, ref: ref);
+  return StorageMoviesNotifier(
+    localStorageRepository: localStorageRepository,
+    onMovieFavorited: () {
+      // Manejar el callback aquí, dentro del provider
+      ref.read(achievementsProvider.notifier).trackMovieFavorited();
+    },
+  );
 });
 
 /*
@@ -21,11 +28,14 @@ final favoriteMoviesProvider =
 */
 
 class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
-  StorageMoviesNotifier({required this.localStorageRepository, required this.ref}) : super({});
+  StorageMoviesNotifier({
+    required this.localStorageRepository,
+    required this.onMovieFavorited,
+  }) : super({});
 
   int page = 0;
   final LocalStorageRepository localStorageRepository;
-  final Ref ref;
+  final VoidCallback onMovieFavorited;
 
   Future<List<Movie>> loadNextPage() async {
     final movies =
@@ -51,8 +61,14 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
       state = {...state};
     } else {
       state = {...state, movie.id: movie};
-      // Rastrear logro de película favorita
-      ref.read(achievementsProvider.notifier).trackMovieFavorited();
+      // Usar callback en lugar de ref directo
+      onMovieFavorited();
     }
+  }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }
