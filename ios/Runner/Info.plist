@@ -47,5 +47,36 @@
 		<false/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		
+		<!-- Deep Link URL Schemes -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>mx.creapolis.peliculas.deeplink</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>peliculas</string>
+				</array>
+				<key>CFBundleURLRole</key>
+				<string>Editor</string>
+			</dict>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>mx.creapolis.peliculas.web</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>https</string>
+				</array>
+				<key>CFBundleURLRole</key>
+				<string>Editor</string>
+			</dict>
+		</array>
+		
+		<!-- Associated Domains for Universal Links -->
+		<key>com.apple.developer.associated-domains</key>
+		<array>
+			<string>applinks:peliculas.creapolis.dev</string>
+		</array>
 	</dict>
 </plist>
