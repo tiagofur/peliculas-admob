@@ -122,12 +122,22 @@ class GamificationManager extends ChangeNotifier {
       Achievement(
         id: 'movie_collector',
         name: 'Coleccionista',
-        description: 'Agrega 50 películas a favoritos',
+        description: 'Agrega 5 películas a favoritos',
+        category: AchievementCategory.collection,
+        rarity: AchievementRarity.common,
+        points: 50,
+        maxProgress: 5,
+        iconPath: 'assets/icons/collector.png',
+      ),
+      Achievement(
+        id: 'movie_enthusiast',
+        name: 'Entusiasta',
+        description: 'Agrega 25 películas a favoritos',
         category: AchievementCategory.collection,
         rarity: AchievementRarity.uncommon,
         points: 100,
-        maxProgress: 50,
-        iconPath: 'assets/icons/collector.png',
+        maxProgress: 25,
+        iconPath: 'assets/icons/enthusiast.png',
       ),
       Achievement(
         id: 'movie_master',
@@ -246,6 +256,38 @@ class GamificationManager extends ChangeNotifier {
         points: 75,
         maxProgress: 10,
         iconPath: 'assets/icons/binge_master.png',
+      ),
+
+      // Daily Streak Achievements
+      Achievement(
+        id: 'streak_3_days',
+        name: 'Racha de 3 Días',
+        description: 'Interactúa con la app 3 días seguidos',
+        category: AchievementCategory.engagement,
+        rarity: AchievementRarity.common,
+        points: 20,
+        maxProgress: 3,
+        iconPath: 'assets/icons/streak_3.png',
+      ),
+      Achievement(
+        id: 'streak_7_days',
+        name: 'Semana Completa',
+        description: 'Mantén una racha de 7 días',
+        category: AchievementCategory.engagement,
+        rarity: AchievementRarity.uncommon,
+        points: 75,
+        maxProgress: 7,
+        iconPath: 'assets/icons/streak_7.png',
+      ),
+      Achievement(
+        id: 'streak_30_days',
+        name: 'Dedicación Total',
+        description: 'Mantén una racha de 30 días',
+        category: AchievementCategory.engagement,
+        rarity: AchievementRarity.rare,
+        points: 300,
+        maxProgress: 30,
+        iconPath: 'assets/icons/streak_30.png',
       ),
 
       // Completionist Achievements
@@ -409,6 +451,7 @@ class GamificationManager extends ChangeNotifier {
       'favorites_added': _userProgress.favoritesAdded,
       'genre_$genre': updatedGenreStats[genre] ?? 0,
       'daily_movies': await _getDailyMovieCount(),
+      'streak_days': _userProgress.streakDays,
     });
 
     // Verificar desafíos
@@ -426,6 +469,7 @@ class GamificationManager extends ChangeNotifier {
 
     await _checkAchievements({
       'movies_shared': _userProgress.moviesShared,
+      'streak_days': _userProgress.streakDays,
     });
 
     await _checkChallenges('share', 1);
@@ -442,6 +486,7 @@ class GamificationManager extends ChangeNotifier {
 
     await _checkAchievements({
       'reviews_written': _userProgress.reviewsWritten,
+      'streak_days': _userProgress.streakDays,
     });
 
     await _checkChallenges('review', 1);
@@ -458,6 +503,7 @@ class GamificationManager extends ChangeNotifier {
 
     await _checkAchievements({
       'watchlists_completed': _userProgress.watchlistsCompleted,
+      'streak_days': _userProgress.streakDays,
     });
 
     await _saveUserProgress();
@@ -477,6 +523,9 @@ class GamificationManager extends ChangeNotifier {
     final newTotalPoints = _userProgress.totalPoints + points;
     final newLevel = _calculateLevel(newTotalPoints);
 
+    // Update daily streak
+    final updatedStreakDays = await _updateDailyStreak();
+
     _userProgress = _userProgress.copyWith(
       totalPoints: newTotalPoints,
       currentLevel: newLevel.index + 1,
@@ -485,6 +534,7 @@ class GamificationManager extends ChangeNotifier {
       contentShared: moviesShared,
       moviesFavorited: favoritesAdded,
       watchlistsCompleted: watchlistsCompleted,
+      streakDays: updatedStreakDays,
       lastActivityDate: DateTime.now(),
     );
 
@@ -516,6 +566,7 @@ class GamificationManager extends ChangeNotifier {
       switch (achievement.id) {
         case 'first_movie':
         case 'movie_collector':
+        case 'movie_enthusiast':
         case 'movie_master':
           currentProgress = stats['favorites_added'] ?? 0;
           break;
@@ -540,6 +591,11 @@ class GamificationManager extends ChangeNotifier {
         case 'weekend_warrior':
         case 'binge_master':
           currentProgress = stats['daily_movies'] ?? 0;
+          break;
+        case 'streak_3_days':
+        case 'streak_7_days':
+        case 'streak_30_days':
+          currentProgress = stats['streak_days'] ?? 0;
           break;
         case 'watchlist_complete':
           currentProgress = stats['watchlists_completed'] ?? 0;
@@ -642,6 +698,39 @@ class GamificationManager extends ChangeNotifier {
     return prefs.getInt('daily_movies_$todayKey') ?? 0;
   }
 
+  // Actualizar streak diario
+  Future<int> _updateDailyStreak() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lastActivity = DateTime(
+      _userProgress.lastActivityDate.year,
+      _userProgress.lastActivityDate.month,
+      _userProgress.lastActivityDate.day,
+    );
+
+    // Si la última actividad fue hoy, mantener el streak actual
+    if (today.isAtSameMomentAs(lastActivity)) {
+      return _userProgress.streakDays;
+    }
+
+    // Si la última actividad fue ayer, incrementar el streak
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (yesterday.isAtSameMomentAs(lastActivity)) {
+      final newStreak = _userProgress.streakDays + 1;
+      
+      // Notificar hitos de streak
+      if (newStreak % 7 == 0) {
+        LoggerFactory.info('Weekly streak milestone reached: $newStreak days',
+            category: LogCategory.general);
+      }
+      
+      return newStreak;
+    }
+
+    // Si la última actividad fue hace más de un día, resetear el streak
+    return 1; // Comenzar nuevo streak con la actividad de hoy
+  }
+
   // Métodos de utilidad
   List<Achievement> getAchievementsByCategory(AchievementCategory category) {
     return _availableAchievements.where((a) => a.category == category).toList();
@@ -649,6 +738,20 @@ class GamificationManager extends ChangeNotifier {
 
   List<Achievement> getUnlockedAchievements() {
     return _availableAchievements.where((a) => a.isUnlocked).toList();
+  }
+
+  /// Get recent achievements ordered by unlock date
+  Future<List<Achievement>> getRecentAchievements({int limit = 5}) async {
+    final unlockedAchievements = getUnlockedAchievements()
+        .where((a) => a.unlockedAt != null)
+        .toList();
+    
+    // Sort by unlock date (most recent first)
+    unlockedAchievements.sort((a, b) => 
+        b.unlockedAt!.compareTo(a.unlockedAt!));
+    
+    // Return limited list
+    return unlockedAchievements.take(limit).toList();
   }
 
   List<Achievement> getLockedAchievements() {
@@ -766,13 +869,29 @@ class GamificationManager extends ChangeNotifier {
 
   // Helper method to save data to storage
   Future<void> _saveToStorage(String key, Map<String, dynamic> data) async {
-    // TODO: Implement storage logic
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(key, jsonEncode(data));
+    } catch (e) {
+      LoggerFactory.error('Error saving data to storage for key $key: $e',
+          category: LogCategory.general);
+    }
   }
 
   // Helper method to load data from storage
   Future<Map<String, dynamic>?> _loadFromStorage(String key) async {
-    // TODO: Implement storage logic
-    return null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = prefs.getString(key);
+      if (data != null) {
+        return jsonDecode(data) as Map<String, dynamic>;
+      }
+      return null;
+    } catch (e) {
+      LoggerFactory.error('Error loading data from storage for key $key: $e',
+          category: LogCategory.general);
+      return null;
+    }
   }
 
   // Limpieza
