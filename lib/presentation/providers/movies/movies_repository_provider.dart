@@ -1,15 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Rollback temporal a TMDB mientras se resuelve API key de Trakt
-import '../../../infrastructure/datasources/moviedb_datasource.dart';
-import '../../../infrastructure/repositories/movie_repository_impl.dart';
+// Use the new cached repository with offline support
+import 'cached_movies_repository_provider.dart';
 
-// TEMPORALMENTE USANDO TMDB - CAMBIAR A TRAKT CUANDO SE TENGA API KEY VÁLIDA
+// Export the cached repository as the main movie repository
 final movieRepositoryProvider = Provider((ref) {
-  return MovieRepositoryImpl(MoviedbDatasource());
+  return ref.watch(cachedMovieRepositoryProvider);
 });
 
-// PARA TRAKT (cuando se tenga API key válida):
+// LEGACY: TMDB only implementation (kept for reference)
+// import '../../../infrastructure/datasources/moviedb_datasource.dart';
+// import '../../../infrastructure/repositories/movie_repository_impl.dart';
+// 
+// final movieRepositoryProvider = Provider((ref) {
+//   return MovieRepositoryImpl(MoviedbDatasource());
+// });
+
+// LEGACY: TRAKT implementation (when API key is available)
 // import '../../../infrastructure/repositories/trakt_movies_repository_impl.dart';
 // import '../../../infrastructure/services/trakt_api_service.dart';
 //

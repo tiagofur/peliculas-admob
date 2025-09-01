@@ -146,4 +146,236 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   Future<int> getWatchlistCount() async {
     return await _watchlistDatasource.getWatchlistCount();
   }
+
+  // ================== OFFLINE CACHE METHODS ==================
+  // For web platform, we implement cache using SharedPreferences
+
+  static const String _cachePrefix = 'cached_movie_';
+  static const String _cacheMetadataPrefix = 'cache_metadata_';
+  static const String _categoryPrefix = 'category_';
+  static const Duration _defaultCacheExpiry = Duration(days: 7);
+  static const int _maxCacheSize = 500; // Reduced for web storage limits
+
+  @override
+  Future<bool> cacheMovie(Movie movie) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check cache size and enforce limit
+      await _enforceCacheLimit();
+      
+      // Store movie data
+      final movieKey = '$_cachePrefix${movie.id}';
+      final movieJson = jsonEncode(_movieToJson(movie));
+      await prefs.setString(movieKey, movieJson);
+      
+      // Store metadata
+      final metadataKey = '$_cacheMetadataPrefix${movie.id}';
+      final metadata = {
+        'cached_at': DateTime.now().millisecondsSinceEpoch,
+        'expires_at': DateTime.now().add(_defaultCacheExpiry).millisecondsSinceEpoch,
+      };
+      await prefs.setString(metadataKey, jsonEncode(metadata));
+      
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Future<Movie?> getCachedMovie(int movieId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Check if cache is valid
+      if (!await _isCacheValid(movieId)) {
+        await _removeCachedMovie(movieId);
+        return null;
+      }
+      
+      // Get movie data
+      final movieKey = '$_cachePrefix$movieId';
+      final movieJson = prefs.getString(movieKey);
+      if (movieJson == null) return null;
+      
+      final movieData = jsonDecode(movieJson);
+      return _movieFromJson(movieData);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> cacheMovies(List<Movie> movies, String category) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Cache individual movies
+      for (final movie in movies) {
+        await cacheMovie(movie);
+      }
+      
+      // Store category mapping
+      final categoryKey = '$_categoryPrefix$category';
+      final categoryData = {
+        'movie_ids': movies.map((m) => m.id).toList(),
+        'cached_at': DateTime.now().millisecondsSinceEpoch,
+      };
+      await prefs.setString(categoryKey, jsonEncode(categoryData));
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  @override
+  Future<List<Movie>> getCachedMoviesByCategory(String category) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Get category mapping
+      final categoryKey = '$_categoryPrefix$category';
+      final categoryJson = prefs.getString(categoryKey);
+      if (categoryJson == null) return [];
+      
+      final categoryData = jsonDecode(categoryJson);
+      final movieIds = (categoryData['movie_ids'] as List).cast<int>();
+      
+      // Get individual movies
+      final movies = <Movie>[];
+      for (final movieId in movieIds) {
+        final movie = await getCachedMovie(movieId);
+        if (movie != null) {
+          movies.add(movie);
+        }
+      }
+      
+      return movies;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  @override
+  Future<void> clearExpiredCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      final now = DateTime.now().millisecondsSinceEpoch;
+      
+      for (final key in keys) {
+        if (key.startsWith(_cacheMetadataPrefix)) {
+          final metadataJson = prefs.getString(key);
+          if (metadataJson != null) {
+            final metadata = jsonDecode(metadataJson);
+            final expiresAt = metadata['expires_at'] as int;
+            if (now > expiresAt) {
+              // Remove metadata and corresponding movie data
+              final movieId = key.replaceFirst(_cacheMetadataPrefix, '');
+              await prefs.remove(key);
+              await prefs.remove('$_cachePrefix$movieId');
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  @override
+  Future<int> getCacheSize() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      return keys.where((key) => key.startsWith(_cachePrefix)).length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  @override
+  Future<void> clearAllCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().toList();
+      
+      for (final key in keys) {
+        if (key.startsWith(_cachePrefix) || 
+            key.startsWith(_cacheMetadataPrefix) || 
+            key.startsWith(_categoryPrefix)) {
+          await prefs.remove(key);
+        }
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  /// Check if cached movie is still valid
+  Future<bool> _isCacheValid(int movieId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final metadataKey = '$_cacheMetadataPrefix$movieId';
+      final metadataJson = prefs.getString(metadataKey);
+      if (metadataJson == null) return false;
+      
+      final metadata = jsonDecode(metadataJson);
+      final expiresAt = metadata['expires_at'] as int;
+      return DateTime.now().millisecondsSinceEpoch < expiresAt;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Remove cached movie and its metadata
+  Future<void> _removeCachedMovie(int movieId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_cachePrefix$movieId');
+      await prefs.remove('$_cacheMetadataPrefix$movieId');
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  /// Enforce cache size limit by removing oldest entries
+  Future<void> _enforceCacheLimit() async {
+    try {
+      final currentSize = await getCacheSize();
+      if (currentSize < _maxCacheSize) return;
+      
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys();
+      
+      // Get all cache entries with timestamps
+      final cacheEntries = <MapEntry<String, int>>[];
+      
+      for (final key in keys) {
+        if (key.startsWith(_cacheMetadataPrefix)) {
+          final metadataJson = prefs.getString(key);
+          if (metadataJson != null) {
+            final metadata = jsonDecode(metadataJson);
+            final cachedAt = metadata['cached_at'] as int;
+            cacheEntries.add(MapEntry(key, cachedAt));
+          }
+        }
+      }
+      
+      // Sort by timestamp (oldest first)
+      cacheEntries.sort((a, b) => a.value.compareTo(b.value));
+      
+      // Remove oldest entries to get under limit
+      final entriesToRemove = currentSize - (_maxCacheSize * 0.8).round();
+      
+      for (int i = 0; i < entriesToRemove && i < cacheEntries.length; i++) {
+        final metadataKey = cacheEntries[i].key;
+        final movieId = metadataKey.replaceFirst(_cacheMetadataPrefix, '');
+        await prefs.remove(metadataKey);
+        await prefs.remove('$_cachePrefix$movieId');
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
 }
