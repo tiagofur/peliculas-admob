@@ -30,6 +30,7 @@ abstract class AuthRepository {
   Future<User> updateUser({
     String? fullName,
     String? avatarUrl,
+    String? email,
   });
 
   // Operaciones de perfil

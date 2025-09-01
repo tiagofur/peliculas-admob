@@ -148,16 +148,18 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<domain.User> updateUser({
     String? fullName,
     String? avatarUrl,
+    String? email,
   }) async {
     try {
-      final response = await _supabase.auth.updateUser(
-        UserAttributes(
-          data: {
-            if (fullName != null) 'full_name': fullName,
-            if (avatarUrl != null) 'avatar_url': avatarUrl,
-          },
-        ),
+      final updateAttributes = UserAttributes(
+        email: email,
+        data: {
+          if (fullName != null) 'full_name': fullName,
+          if (avatarUrl != null) 'avatar_url': avatarUrl,
+        },
       );
+
+      final response = await _supabase.auth.updateUser(updateAttributes);
 
       if (response.user == null) {
         throw Exception('Error al actualizar usuario');
