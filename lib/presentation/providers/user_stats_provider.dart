@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/entities.dart';
@@ -6,7 +8,8 @@ import 'storage/favorite_movies_provider.dart';
 import 'watched_movies_provider.dart';
 
 // Provider combinado para datos de estadísticas (optimización de performance)
-final userStatsDataProvider = Provider<({
+// Usa .autoDispose para liberar recursos cuando no se usa
+final userStatsDataProvider = Provider.autoDispose<({
   List<Movie> favoriteMovies,
   List<WatchedMovie> watchedMovies,
   List<CustomList> customLists,
@@ -26,9 +29,21 @@ final userStatsDataProvider = Provider<({
   );
 });
 
-// Provider para estadísticas del usuario (optimizado)
-final userStatsProvider = FutureProvider<UserStats>((ref) async {
+// Provider para estadísticas del usuario (optimizado con caché)
+final userStatsProvider = FutureProvider.autoDispose<UserStats>((ref) async {
   final data = ref.watch(userStatsDataProvider);
+
+  // Mantener el provider activo por 5 minutos para evitar recálculos frecuentes
+  ref.keepAlive();
+  
+  // Programar limpieza automática después de 5 minutos de inactividad
+  final timer = Timer(const Duration(minutes: 5), () {
+    ref.invalidateSelf();
+  });
+  
+  ref.onDispose(() {
+    timer.cancel();
+  });
 
   return UserStats.fromMovies(
     favoriteMovies: data.favoriteMovies,
@@ -38,9 +53,16 @@ final userStatsProvider = FutureProvider<UserStats>((ref) async {
   );
 });
 
-// Provider para análisis de géneros (optimizado)
-final genreAnalysisProvider = FutureProvider<GenreAnalysis>((ref) async {
+// Provider para análisis de géneros (optimizado con caché)
+final genreAnalysisProvider = FutureProvider.autoDispose<GenreAnalysis>((ref) async {
   final data = ref.watch(userStatsDataProvider);
+
+  // Mantener activo por tiempo limitado
+  ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 3), () {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(() => timer.cancel());
 
   return GenreAnalysis.fromMovies(
     favoriteMovies: data.favoriteMovies,
@@ -48,9 +70,15 @@ final genreAnalysisProvider = FutureProvider<GenreAnalysis>((ref) async {
   );
 });
 
-// Provider para análisis temporal (optimizado)
-final temporalAnalysisProvider = FutureProvider<TemporalAnalysis>((ref) async {
+// Provider para análisis temporal (optimizado con caché)
+final temporalAnalysisProvider = FutureProvider.autoDispose<TemporalAnalysis>((ref) async {
   final data = ref.watch(userStatsDataProvider);
+
+  ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 3), () {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(() => timer.cancel());
 
   return TemporalAnalysis.fromMovies(
     favoriteMovies: data.favoriteMovies,
@@ -58,9 +86,15 @@ final temporalAnalysisProvider = FutureProvider<TemporalAnalysis>((ref) async {
   );
 });
 
-// Provider para análisis de calificaciones (optimizado)
-final ratingAnalysisProvider = FutureProvider<RatingAnalysis>((ref) async {
+// Provider para análisis de calificaciones (optimizado con caché)
+final ratingAnalysisProvider = FutureProvider.autoDispose<RatingAnalysis>((ref) async {
   final data = ref.watch(userStatsDataProvider);
+
+  ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 3), () {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(() => timer.cancel());
 
   return RatingAnalysis.fromMovies(
     favoriteMovies: data.favoriteMovies,
@@ -68,19 +102,32 @@ final ratingAnalysisProvider = FutureProvider<RatingAnalysis>((ref) async {
   );
 });
 
-// Provider para patrones de actividad (optimizado)
-final activityPatternsProvider = FutureProvider<ActivityPatterns>((ref) async {
+// Provider para patrones de actividad (optimizado con caché)
+final activityPatternsProvider = FutureProvider.autoDispose<ActivityPatterns>((ref) async {
   final data = ref.watch(userStatsDataProvider);
+
+  ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 3), () {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(() => timer.cancel());
 
   return ActivityPatterns.fromWatchedMovies(data.watchedMovies);
 });
 
-// Provider para recomendaciones basadas en estadísticas
+// Provider para recomendaciones basadas en estadísticas (optimizado)
 final statsBasedRecommendationsProvider =
-    FutureProvider<List<String>>((ref) async {
+    FutureProvider.autoDispose<List<String>>((ref) async {
+  // Usar select para evitar reconstrucción innecesaria
   final genreAnalysis = await ref.watch(genreAnalysisProvider.future);
   final temporalAnalysis = await ref.watch(temporalAnalysisProvider.future);
   final ratingAnalysis = await ref.watch(ratingAnalysisProvider.future);
+
+  ref.keepAlive();
+  final timer = Timer(const Duration(minutes: 5), () {
+    ref.invalidateSelf();
+  });
+  ref.onDispose(() => timer.cancel());
 
   return _generateRecommendations(
     genreAnalysis: genreAnalysis,
@@ -88,6 +135,36 @@ final statsBasedRecommendationsProvider =
     ratingAnalysis: ratingAnalysis,
   );
 });
+
+// Provider ligero para casos donde solo se necesitan estadísticas básicas
+final basicUserStatsProvider = Provider.autoDispose<BasicUserStats>((ref) {
+  final data = ref.watch(userStatsDataProvider);
+  
+  return BasicUserStats(
+    totalFavorites: data.favoriteMovies.length,
+    totalWatched: data.watchedMovies.length,
+    totalCustomLists: data.customLists.length,
+    totalDefaultLists: data.defaultLists.length,
+  );
+});
+
+// Clase para estadísticas básicas sin cálculos pesados
+class BasicUserStats {
+  const BasicUserStats({
+    required this.totalFavorites,
+    required this.totalWatched,
+    required this.totalCustomLists,
+    required this.totalDefaultLists,
+  });
+
+  final int totalFavorites;
+  final int totalWatched;
+  final int totalCustomLists;
+  final int totalDefaultLists;
+  
+  int get totalMoviesInteractedWith => totalFavorites + totalWatched;
+  int get totalLists => totalCustomLists + totalDefaultLists;
+}
 
 // UserStats class moved to domain/entities/user_stats.dart
 

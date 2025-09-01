@@ -1,5 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../services/logger_factory.dart';
 import 'notification_manager.dart';
@@ -15,9 +17,18 @@ class NotificationInitializationService {
 
   bool _isInitialized = false;
   NotificationManager? _notificationManager;
+  GlobalKey<NavigatorState>? _globalNavigatorKey;
 
   bool get isInitialized => _isInitialized;
   NotificationManager? get notificationManager => _notificationManager;
+
+  /// Establece la clave de navegación global para permitir navegación desde notificaciones
+  void setNavigatorKey(GlobalKey<NavigatorState> navigatorKey) {
+    _globalNavigatorKey = navigatorKey;
+    if (kDebugMode) {
+      LoggerFactory.info('🔑 Navigator key configurado para notificaciones push');
+    }
+  }
 
   /// Inicializa todo el sistema de notificaciones
   Future<void> initialize() async {
@@ -172,7 +183,6 @@ class NotificationInitializationService {
       LoggerFactory.info('Notification tapped: ${message.data}');
     }
 
-    // TODO: Implementar navegación basada en el tipo de notificación
     final notificationType = message.data['type'];
     final actionUrl = message.data['actionUrl'];
 
@@ -181,25 +191,18 @@ class NotificationInitializationService {
         // Navegar a la película específica
         final movieId = message.data['movieId'];
         if (movieId != null) {
-          // TODO: Implementar navegación a película
-          if (kDebugMode) {
-            LoggerFactory.info('Navigate to movie: $movieId');
-          }
+          _navigateToMovie(movieId);
         }
         break;
       case 'recommendation':
         // Navegar a recomendaciones
-        if (kDebugMode) {
-          LoggerFactory.info('Navigate to recommendations');
-        }
+        _navigateToRecommendations();
         break;
       case 'list_update':
         // Navegar a la lista específica
         final listId = message.data['listId'];
         if (listId != null) {
-          if (kDebugMode) {
-            LoggerFactory.info('Navigate to list: $listId');
-          }
+          _navigateToList(listId);
         }
         break;
       default:
@@ -207,8 +210,72 @@ class NotificationInitializationService {
           if (kDebugMode) {
             LoggerFactory.info('Navigate to URL: $actionUrl');
           }
+          // Para URLs personalizadas, podríamos implementar navegación personalizada
         }
         break;
+    }
+  }
+
+  /// Navega a los detalles de una película específica
+  void _navigateToMovie(String movieId) {
+    final context = _globalNavigatorKey?.currentContext;
+    if (context != null && context.mounted) {
+      try {
+        context.go('/movie/$movieId');
+        if (kDebugMode) {
+          LoggerFactory.info('✅ Navegando a película desde push: $movieId');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory.error('❌ Error navegando a película desde push: $e');
+        }
+      }
+    } else {
+      if (kDebugMode) {
+        LoggerFactory.warning('⚠️ No hay contexto de navegación disponible para push');
+      }
+    }
+  }
+
+  /// Navega a la pantalla principal con foco en recomendaciones
+  void _navigateToRecommendations() {
+    final context = _globalNavigatorKey?.currentContext;
+    if (context != null && context.mounted) {
+      try {
+        context.go('/');
+        if (kDebugMode) {
+          LoggerFactory.info('✅ Navegando a recomendaciones desde push');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory.error('❌ Error navegando a recomendaciones desde push: $e');
+        }
+      }
+    } else {
+      if (kDebugMode) {
+        LoggerFactory.warning('⚠️ No hay contexto de navegación disponible para push');
+      }
+    }
+  }
+
+  /// Navega a una lista específica en Mi Biblioteca
+  void _navigateToList(String listId) {
+    final context = _globalNavigatorKey?.currentContext;
+    if (context != null && context.mounted) {
+      try {
+        context.go('/my-library/lists/$listId');
+        if (kDebugMode) {
+          LoggerFactory.info('✅ Navegando a lista desde push: $listId');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory.error('❌ Error navegando a lista desde push: $e');
+        }
+      }
+    } else {
+      if (kDebugMode) {
+        LoggerFactory.warning('⚠️ No hay contexto de navegación disponible para push');
+      }
     }
   }
 

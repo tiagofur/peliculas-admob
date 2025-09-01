@@ -16,6 +16,7 @@ import 'config/theme/app_theme.dart';
 import 'config/theme/custom_scroll_behavior.dart';
 import 'core/config/supabase_config.dart';
 import 'core/logging/logger_factory.dart';
+import 'core/notifications/local_notification_service.dart';
 import 'core/notifications/notification_initialization_service.dart';
 import 'infrastructure/services/app_lifecycle_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
@@ -117,8 +118,13 @@ Future<void> main() async {
     if (!kIsWeb) {
       try {
         await NotificationInitializationService.instance.initialize();
+        
+        // Configurar navigator key para navegación desde notificaciones
+        NotificationInitializationService.instance.setNavigatorKey(globalNavigatorKey);
+        LocalNotificationService.instance.setNavigatorKey(globalNavigatorKey);
+        
         if (kDebugMode) {
-          LoggerFactory.info('✅ Sistema de notificaciones inicializado');
+          LoggerFactory.info('✅ Sistema de notificaciones inicializado con navegación');
         }
       } catch (e) {
         if (kDebugMode) {

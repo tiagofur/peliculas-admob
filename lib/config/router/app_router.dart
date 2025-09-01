@@ -13,6 +13,9 @@ import '../../presentation/views/recommendation_share_web_view.dart';
 import '../../presentation/views/views.dart';
 import '../../presentation/widgets/shared/page_transitions.dart';
 
+// Global navigator key para navegación desde notificaciones
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
 // Provider para el router con acceso al estado de autenticación
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(isAuthenticatedProvider);
