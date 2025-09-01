@@ -423,6 +423,321 @@ class TrendingMoviesNotificationService {
   }
 }
 
+/// Servicio para recordatorios semanales de watchlist
+class WeeklyWatchlistReminderService {
+  WeeklyWatchlistReminderService._();
+  static WeeklyWatchlistReminderService? _instance;
+  static WeeklyWatchlistReminderService get instance =>
+      _instance ??= WeeklyWatchlistReminderService._();
+
+  final _logger = LoggerFactory.logger;
+  final _notificationManager = NotificationManager.instance;
+  Timer? _weeklyTimer;
+  DateTime? _lastReminderSent;
+
+  /// Inicia el servicio de recordatorios semanales
+  void startWeeklyReminders() {
+    _logger.info('Iniciando servicio de recordatorios semanales de watchlist');
+
+    // Programar para enviar cada domingo a las 10:00 AM
+    _scheduleWeeklyReminder();
+  }
+
+  /// Detiene el servicio de recordatorios semanales
+  void stopWeeklyReminders() {
+    _weeklyTimer?.cancel();
+    _weeklyTimer = null;
+    _logger.info('Servicio de recordatorios semanales detenido');
+  }
+
+  /// Programa el próximo recordatorio semanal
+  void _scheduleWeeklyReminder() {
+    final now = DateTime.now();
+    
+    // Calcular el próximo domingo a las 10:00 AM
+    int daysUntilSunday = (DateTime.sunday - now.weekday) % 7;
+    if (daysUntilSunday == 0 && now.hour >= 10) {
+      daysUntilSunday = 7; // Si es domingo después de las 10 AM, programa para el próximo domingo
+    }
+    
+    final nextSunday = DateTime(
+      now.year,
+      now.month,
+      now.day + daysUntilSunday,
+      10, // 10:00 AM
+      0,
+    );
+
+    final duration = nextSunday.difference(now);
+    
+    _weeklyTimer = Timer(duration, () {
+      _sendWeeklyWatchlistReminder();
+      _scheduleWeeklyReminder(); // Programar el siguiente
+    });
+
+    _logger.info('Próximo recordatorio semanal programado para: $nextSunday');
+  }
+
+  /// Envía el recordatorio semanal de watchlist
+  Future<void> _sendWeeklyWatchlistReminder() async {
+    try {
+      _logger.info('Enviando recordatorio semanal de watchlist');
+
+      final watchlistMovies = await _getWatchlistMovies();
+      
+      if (watchlistMovies.isEmpty) {
+        _logger.info('No hay películas en watchlist para recordatorio semanal');
+        return;
+      }
+
+      // Dividir por prioridades
+      final highPriorityMovies = watchlistMovies.where((m) => m.priority.value == 'alta').toList();
+      final normalPriorityMovies = watchlistMovies.where((m) => m.priority.value == 'normal').toList();
+      final lowPriorityMovies = watchlistMovies.where((m) => m.priority.value == 'baja').toList();
+
+      String title = '📺 Recordatorio semanal';
+      String body;
+      
+      if (highPriorityMovies.isNotEmpty) {
+        body = 'Tienes ${highPriorityMovies.length} películas de alta prioridad pendientes en tu lista.';
+        if (highPriorityMovies.length == 1) {
+          body = 'No olvides ver "${highPriorityMovies.first.movieTitle}" que tienes en alta prioridad.';
+        }
+      } else if (normalPriorityMovies.isNotEmpty) {
+        body = 'Tienes ${normalPriorityMovies.length} películas pendientes en tu watchlist.';
+        if (normalPriorityMovies.length == 1) {
+          body = 'No olvides ver "${normalPriorityMovies.first.movieTitle}" que tienes en tu lista.';
+        }
+      } else {
+        body = 'Tienes ${lowPriorityMovies.length} películas pendientes en tu watchlist.';
+      }
+
+      await _notificationManager.scheduleIntelligentNotification(
+        NotificationConfig(
+          type: NotificationType.weeklyWatchlistReminder,
+          title: title,
+          body: body,
+          data: {
+            'totalMovies': watchlistMovies.length.toString(),
+            'highPriorityCount': highPriorityMovies.length.toString(),
+            'normalPriorityCount': normalPriorityMovies.length.toString(),
+            'lowPriorityCount': lowPriorityMovies.length.toString(),
+          },
+          actionUrl: '/watchlist',
+          priority: NotificationPriority.normal,
+          actions: [
+            const NotificationAction(
+              id: 'view_watchlist',
+              title: 'Ver mi lista',
+            ),
+            const NotificationAction(
+              id: 'dismiss',
+              title: 'Recordar después',
+            ),
+          ],
+        ),
+      );
+
+      _lastReminderSent = DateTime.now();
+      _logger.info('Recordatorio semanal enviado: ${watchlistMovies.length} películas');
+    } catch (e) {
+      _logger.error('Error enviando recordatorio semanal: $e');
+    }
+  }
+
+  /// Obtiene las películas de la watchlist
+  Future<List<dynamic>> _getWatchlistMovies() async {
+    // TODO: Implementar con el repositorio real de watchlist
+    // Por ahora retorna lista vacía como placeholder
+    return [];
+  }
+
+  /// Envía recordatorio manual para testing
+  Future<void> sendManualReminder() async {
+    await _sendWeeklyWatchlistReminder();
+  }
+
+  /// Obtiene la fecha del último recordatorio enviado
+  DateTime? get lastReminderSent => _lastReminderSent;
+}
+
+/// Servicio para notificaciones de estrenos de películas
+class MovieReleaseNotificationService {
+  MovieReleaseNotificationService._();
+  static MovieReleaseNotificationService? _instance;
+  static MovieReleaseNotificationService get instance =>
+      _instance ??= MovieReleaseNotificationService._();
+
+  final _logger = LoggerFactory.logger;
+  final _notificationManager = NotificationManager.instance;
+  final Set<int> _notifiedReleases = {};
+  Timer? _releaseCheckTimer;
+
+  /// Inicia el monitoreo de estrenos
+  void startReleaseMonitoring() {
+    _logger.info('Iniciando monitoreo de estrenos de películas');
+
+    // Verificar estrenos diariamente a las 9:00 AM
+    _scheduleReleaseCheck();
+  }
+
+  /// Detiene el monitoreo de estrenos
+  void stopReleaseMonitoring() {
+    _releaseCheckTimer?.cancel();
+    _releaseCheckTimer = null;
+    _logger.info('Monitoreo de estrenos detenido');
+  }
+
+  /// Programa la próxima verificación de estrenos
+  void _scheduleReleaseCheck() {
+    final now = DateTime.now();
+    
+    // Programar para las 9:00 AM del próximo día si ya pasó la hora
+    DateTime nextCheck = DateTime(now.year, now.month, now.day, 9, 0);
+    if (nextCheck.isBefore(now)) {
+      nextCheck = nextCheck.add(const Duration(days: 1));
+    }
+
+    final duration = nextCheck.difference(now);
+    
+    _releaseCheckTimer = Timer(duration, () {
+      _checkMovieReleases();
+      _scheduleReleaseCheck(); // Programar el siguiente
+    });
+
+    _logger.info('Próxima verificación de estrenos programada para: $nextCheck');
+  }
+
+  /// Verifica estrenos de películas en watchlist y seguidas
+  Future<void> _checkMovieReleases() async {
+    try {
+      _logger.info('Verificando estrenos de películas');
+
+      final today = DateTime.now();
+      final releasesToday = await _getMoviesReleasingToday(today);
+
+      for (final movie in releasesToday) {
+        if (!_notifiedReleases.contains(movie.id)) {
+          await _notifyMovieRelease(movie);
+          _notifiedReleases.add(movie.id);
+        }
+      }
+
+      // También verificar próximos estrenos (en los próximos 7 días)
+      final upcomingReleases = await _getUpcomingMovieReleases(today);
+      for (final movie in upcomingReleases) {
+        final releaseKey = movie.id * 1000 + movie.releaseDate.day; // Clave única por día
+        if (!_notifiedReleases.contains(releaseKey)) {
+          await _notifyUpcomingRelease(movie);
+          _notifiedReleases.add(releaseKey);
+        }
+      }
+
+      // Limpiar notificaciones antiguas (mantener solo las últimas 100)
+      if (_notifiedReleases.length > 100) {
+        final toRemove = _notifiedReleases.length - 100;
+        final oldReleases = _notifiedReleases.take(toRemove).toList();
+        for (final releaseId in oldReleases) {
+          _notifiedReleases.remove(releaseId);
+        }
+      }
+    } catch (e) {
+      _logger.error('Error verificando estrenos: $e');
+    }
+  }
+
+  /// Obtiene películas que se estrenan hoy
+  Future<List<Movie>> _getMoviesReleasingToday(DateTime date) async {
+    // TODO: Implementar lógica para obtener películas de watchlist que se estrenan hoy
+    // Debe consultar tanto watchlist como películas seguidas por género/actor favorito
+    return [];
+  }
+
+  /// Obtiene próximos estrenos (próximos 7 días)
+  Future<List<Movie>> _getUpcomingMovieReleases(DateTime startDate) async {
+    // TODO: Implementar lógica para obtener próximos estrenos de interés
+    return [];
+  }
+
+  /// Notifica sobre un estreno de hoy
+  Future<void> _notifyMovieRelease(Movie movie) async {
+    await _notificationManager.scheduleIntelligentNotification(
+      NotificationConfig(
+        type: NotificationType.movieReleaseNotification,
+        title: '🎬 ¡Ya disponible!',
+        body: '"${movie.title}" se estrenó hoy. ¡Ve a verla!',
+        data: {
+          'movieId': movie.id.toString(),
+          'releaseType': 'today',
+        },
+        imageUrl: movie.posterPath,
+        actionUrl: '/movie/${movie.id}',
+        priority: NotificationPriority.high,
+        actions: [
+          const NotificationAction(
+            id: 'view_movie',
+            title: 'Ver detalles',
+          ),
+          const NotificationAction(
+            id: 'find_tickets',
+            title: 'Buscar entradas',
+          ),
+        ],
+      ),
+    );
+
+    _logger.info('Notificación de estreno enviada: ${movie.title}');
+  }
+
+  /// Notifica sobre un próximo estreno
+  Future<void> _notifyUpcomingRelease(Movie movie) async {
+    final daysUntilRelease = movie.releaseDate.difference(DateTime.now()).inDays;
+    
+    await _notificationManager.scheduleIntelligentNotification(
+      NotificationConfig(
+        type: NotificationType.movieReleaseNotification,
+        title: '🗓️ Próximo estreno',
+        body: '"${movie.title}" se estrena en $daysUntilRelease días.',
+        data: {
+          'movieId': movie.id.toString(),
+          'releaseType': 'upcoming',
+          'daysUntilRelease': daysUntilRelease.toString(),
+        },
+        imageUrl: movie.posterPath,
+        actionUrl: '/movie/${movie.id}',
+        priority: NotificationPriority.normal,
+        actions: [
+          const NotificationAction(
+            id: 'view_movie',
+            title: 'Ver detalles',
+          ),
+          const NotificationAction(
+            id: 'add_calendar',
+            title: 'Agregar al calendario',
+          ),
+        ],
+      ),
+    );
+
+    _logger.info('Notificación de próximo estreno enviada: ${movie.title} (${daysUntilRelease} días)');
+  }
+
+  /// Notifica manualmente sobre un estreno (para testing)
+  Future<void> notifyReleaseManually(Movie movie, {bool isToday = true}) async {
+    if (isToday) {
+      await _notifyMovieRelease(movie);
+    } else {
+      await _notifyUpcomingRelease(movie);
+    }
+  }
+
+  /// Limpia el historial de notificaciones de estrenos
+  void clearReleaseHistory() {
+    _notifiedReleases.clear();
+    _logger.info('Historial de notificaciones de estrenos limpiado');
+  }
+}
+
 /// Coordinador central para todos los servicios de notificaciones
 class NotificationCategoriesCoordinator {
   NotificationCategoriesCoordinator._();
@@ -438,6 +753,8 @@ class NotificationCategoriesCoordinator {
   final listUpdateService = ListUpdateNotificationService.instance;
   final favoriteActorService = FavoriteActorNotificationService.instance;
   final trendingMoviesService = TrendingMoviesNotificationService.instance;
+  final weeklyWatchlistReminderService = WeeklyWatchlistReminderService.instance;
+  final movieReleaseService = MovieReleaseNotificationService.instance;
 
   /// Inicia todos los servicios de notificaciones
   Future<void> startAllServices({List<Person>? favoriteActors}) async {
@@ -446,6 +763,8 @@ class NotificationCategoriesCoordinator {
     newMovieService.startMonitoring();
     recommendationService.startRecommendationService();
     trendingMoviesService.startTrendingMonitoring();
+    weeklyWatchlistReminderService.startWeeklyReminders();
+    movieReleaseService.startReleaseMonitoring();
 
     if (favoriteActors != null && favoriteActors.isNotEmpty) {
       favoriteActorService.startMonitoring(favoriteActors);
@@ -462,6 +781,8 @@ class NotificationCategoriesCoordinator {
     recommendationService.stopRecommendationService();
     favoriteActorService.stopMonitoring();
     trendingMoviesService.stopTrendingMonitoring();
+    weeklyWatchlistReminderService.stopWeeklyReminders();
+    movieReleaseService.stopReleaseMonitoring();
 
     _logger.info('Todos los servicios de notificaciones detenidos');
   }
@@ -474,6 +795,7 @@ class NotificationCategoriesCoordinator {
     listUpdateService.clearAllListMonitoring();
     favoriteActorService.clearNotificationHistory();
     trendingMoviesService.clearTrendingHistory();
+    movieReleaseService.clearReleaseHistory();
 
     _logger.info('Todos los historiales de notificaciones limpiados');
   }
