@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/user_movie_ratings_provider.dart';
 import '../../widgets/profile_avatar.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/user_profile.dart';
@@ -140,6 +141,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             _buildStatsSection(theme, stats),
             const SizedBox(height: 32),
           ],
+          
+          // Valoraciones recientes
+          _buildRatingsSection(theme),
+          const SizedBox(height: 32),
           
           // Formulario de edición o información
           if (_isEditing)
@@ -421,6 +426,233 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRatingsSection(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Mis Valoraciones',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Consumer(
+              builder: (context, ref, child) {
+                final recentRatingsAsync = ref.watch(recentRatingsProvider(5));
+                final ratingStatsAsync = ref.watch(userRatingStatsProvider);
+                
+                return Column(
+                  children: [
+                    // Estadísticas de valoraciones
+                    ratingStatsAsync.when(
+                      data: (stats) => _buildRatingStats(theme, stats),
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Valoraciones recientes
+                    recentRatingsAsync.when(
+                      data: (ratings) {
+                        if (ratings.isEmpty) {
+                          return Column(
+                            children: [
+                              Icon(
+                                Icons.star_border,
+                                size: 48,
+                                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Aún no has valorado ninguna película',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          );
+                        }
+                        
+                        return Column(
+                          children: [
+                            Text(
+                              'Valoraciones Recientes',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...ratings.take(3).map((rating) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: _buildRatingItem(theme, rating),
+                            )),
+                            if (ratings.length > 3)
+                              TextButton(
+                                onPressed: () => _showAllRatings(context),
+                                child: const Text('Ver todas mis valoraciones'),
+                              ),
+                          ],
+                        );
+                      },
+                      loading: () => const CircularProgressIndicator(),
+                      error: (error, stack) => Text(
+                        'Error al cargar valoraciones',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.red,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingStats(ThemeData theme, Map<String, dynamic> stats) {
+    final totalRatings = stats['total_ratings'] ?? 0;
+    final averageRating = (stats['average_rating'] ?? 0.0) as double;
+    
+    if (totalRatings == 0) return const SizedBox.shrink();
+    
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              Text(
+                totalRatings.toString(),
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              Text(
+                'Películas\nvaloradas',
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    averageRating.toStringAsFixed(1),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.amber,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.star,
+                    color: Colors.amber,
+                    size: 20,
+                  ),
+                ],
+              ),
+              Text(
+                'Promedio',
+                style: theme.textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRatingItem(ThemeData theme, dynamic rating) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Poster pequeño (si está disponible)
+          Container(
+            width: 40,
+            height: 60,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              color: theme.colorScheme.surface,
+            ),
+            child: rating.moviePosterPath?.isNotEmpty == true
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      'https://image.tmdb.org/t/p/w92${rating.moviePosterPath}',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stack) => 
+                          Icon(Icons.movie, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                    ),
+                  )
+                : Icon(Icons.movie, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  rating.movieTitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    ...List.generate(5, (index) => Icon(
+                      index < rating.rating ? Icons.star : Icons.star_border,
+                      size: 16,
+                      color: Colors.amber,
+                    )),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAllRatings(BuildContext context) {
+    // TODO: Navigate to a full ratings screen
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Función en desarrollo: Ver todas las valoraciones')),
     );
   }
 

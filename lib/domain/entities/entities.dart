@@ -14,3 +14,4 @@ export 'genre_analysis.dart';
 export 'temporal_analysis.dart';
 export 'rating_analysis.dart';
 export 'activity_patterns.dart';
+export 'user_movie_rating.dart';

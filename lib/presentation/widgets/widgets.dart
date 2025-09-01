@@ -22,6 +22,8 @@ export 'shared/custom_bottom_navigation.dart';
 export 'shared/full_screen_loader.dart';
 export 'shared/cinema_mode.dart';
 export 'shared/page_transitions.dart';
+export 'star_rating_widgets.dart';
+export 'movie_rating_and_notes.dart';
 
 export 'videos/videos_from_movie.dart';
 
