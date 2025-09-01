@@ -5,6 +5,9 @@ import '../lib/core/notifications/notification_categories.dart';
 import '../lib/core/notifications/notification_manager.dart';
 import '../lib/core/notifications/notification_metrics.dart';
 import '../lib/core/notifications/notification_preferences.dart';
+import '../lib/core/notifications/notification_services_initializer.dart';
+import '../lib/infrastructure/datasources/watchlist_hive_datasource.dart';
+import '../lib/domain/entities/watchlist_movie.dart';
 
 void main() {
   group('Push Notification System Tests', () {
@@ -138,6 +141,40 @@ void main() {
       test('should clear all metrics', () async {
         await metricsService.initialize();
         await expectLater(metricsService.clearAllMetrics(), completes);
+      });
+    });
+
+    group('Service Integration', () {
+      test('should initialize services standalone', () async {
+        final initializer = NotificationServicesInitializer.instance;
+        
+        await expectLater(
+          initializer.initializeStandalone(),
+          completes,
+        );
+        
+        expect(initializer.isHealthy, isA<bool>());
+        
+        // Cleanup
+        initializer.stopAllServices();
+      });
+
+      test('should provide services status', () {
+        final initializer = NotificationServicesInitializer.instance;
+        final status = initializer.getServicesStatus();
+        
+        expect(status, isA<Map<String, dynamic>>());
+        expect(status, containsPair('initialized', isA<bool>()));
+        expect(status, containsPair('notificationManagerInitialized', isA<bool>()));
+      });
+
+      test('should handle watchlist datasource configuration', () {
+        final reminderService = WeeklyWatchlistReminderService.instance;
+        final releaseService = MovieReleaseNotificationService.instance;
+        final datasource = WatchlistHiveDatasource();
+        
+        expect(() => reminderService.setWatchlistDatasource(datasource), returnsNormally);
+        expect(() => releaseService.setWatchlistDatasource(datasource), returnsNormally);
       });
     });
 

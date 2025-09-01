@@ -2,6 +2,8 @@ import 'dart:async';
 
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/person.dart';
+import '../../domain/entities/watchlist_movie.dart';
+import '../../infrastructure/datasources/watchlist_hive_datasource.dart';
 import '../logging/logger_factory.dart';
 import 'notification_manager.dart';
 
@@ -434,6 +436,17 @@ class WeeklyWatchlistReminderService {
   final _notificationManager = NotificationManager.instance;
   Timer? _weeklyTimer;
   DateTime? _lastReminderSent;
+  WatchlistHiveDatasource? _watchlistDatasource;
+
+  /// Configura el datasource de watchlist
+  void setWatchlistDatasource(WatchlistHiveDatasource datasource) {
+    _watchlistDatasource = datasource;
+  }
+
+  /// Obtiene el datasource de watchlist (crea uno por defecto si no se ha configurado)
+  WatchlistHiveDatasource get _datasource {
+    return _watchlistDatasource ??= WatchlistHiveDatasource();
+  }
 
   /// Inicia el servicio de recordatorios semanales
   void startWeeklyReminders() {
@@ -546,10 +559,13 @@ class WeeklyWatchlistReminderService {
   }
 
   /// Obtiene las películas de la watchlist
-  Future<List<dynamic>> _getWatchlistMovies() async {
-    // TODO: Implementar con el repositorio real de watchlist
-    // Por ahora retorna lista vacía como placeholder
-    return [];
+  Future<List<WatchlistMovie>> _getWatchlistMovies() async {
+    try {
+      return await _datasource.getAllWatchlistMovies();
+    } catch (e) {
+      _logger.error('Error obteniendo películas de watchlist: $e');
+      return [];
+    }
   }
 
   /// Envía recordatorio manual para testing
@@ -572,6 +588,17 @@ class MovieReleaseNotificationService {
   final _notificationManager = NotificationManager.instance;
   final Set<int> _notifiedReleases = {};
   Timer? _releaseCheckTimer;
+  WatchlistHiveDatasource? _watchlistDatasource;
+
+  /// Configura el datasource de watchlist
+  void setWatchlistDatasource(WatchlistHiveDatasource datasource) {
+    _watchlistDatasource = datasource;
+  }
+
+  /// Obtiene el datasource de watchlist (crea uno por defecto si no se ha configurado)
+  WatchlistHiveDatasource get _datasource {
+    return _watchlistDatasource ??= WatchlistHiveDatasource();
+  }
 
   /// Inicia el monitoreo de estrenos
   void startReleaseMonitoring() {
@@ -648,15 +675,88 @@ class MovieReleaseNotificationService {
 
   /// Obtiene películas que se estrenan hoy
   Future<List<Movie>> _getMoviesReleasingToday(DateTime date) async {
-    // TODO: Implementar lógica para obtener películas de watchlist que se estrenan hoy
-    // Debe consultar tanto watchlist como películas seguidas por género/actor favorito
-    return [];
+    try {
+      // Obtener películas de la watchlist
+      final watchlistMovies = await _datasource.getAllWatchlistMovies();
+      
+      // Filtrar por las que se estrenan hoy
+      final releasesToday = <Movie>[];
+      for (final watchlistMovie in watchlistMovies) {
+        if (watchlistMovie.movieReleaseDate != null) {
+          final releaseDate = watchlistMovie.movieReleaseDate!;
+          if (releaseDate.year == date.year &&
+              releaseDate.month == date.month &&
+              releaseDate.day == date.day) {
+            // Crear un objeto Movie a partir de los datos en watchlist
+            final movie = Movie(
+              adult: false,
+              backdropPath: watchlistMovie.movieBackdropPath ?? '',
+              genreIds: [], // TODO: Se puede agregar si se almacena en watchlist
+              id: watchlistMovie.movieId,
+              originalLanguage: 'es', // Valor por defecto
+              originalTitle: watchlistMovie.movieTitle,
+              overview: watchlistMovie.movieOverview ?? '',
+              popularity: 0.0,
+              posterPath: watchlistMovie.moviePosterPath ?? '',
+              releaseDate: releaseDate,
+              title: watchlistMovie.movieTitle,
+              video: false,
+              voteAverage: watchlistMovie.movieVoteAverage ?? 0.0,
+              voteCount: 0,
+            );
+            releasesToday.add(movie);
+          }
+        }
+      }
+      
+      return releasesToday;
+    } catch (e) {
+      _logger.error('Error obteniendo películas que se estrenan hoy: $e');
+      return [];
+    }
   }
 
   /// Obtiene próximos estrenos (próximos 7 días)
   Future<List<Movie>> _getUpcomingMovieReleases(DateTime startDate) async {
-    // TODO: Implementar lógica para obtener próximos estrenos de interés
-    return [];
+    try {
+      // Obtener películas de la watchlist
+      final watchlistMovies = await _datasource.getAllWatchlistMovies();
+      
+      // Filtrar por las que se estrenan en los próximos 7 días
+      final endDate = startDate.add(const Duration(days: 7));
+      final upcomingReleases = <Movie>[];
+      
+      for (final watchlistMovie in watchlistMovies) {
+        if (watchlistMovie.movieReleaseDate != null) {
+          final releaseDate = watchlistMovie.movieReleaseDate!;
+          if (releaseDate.isAfter(startDate) && releaseDate.isBefore(endDate)) {
+            // Crear un objeto Movie a partir de los datos en watchlist
+            final movie = Movie(
+              adult: false,
+              backdropPath: watchlistMovie.movieBackdropPath ?? '',
+              genreIds: [], // TODO: Se puede agregar si se almacena en watchlist
+              id: watchlistMovie.movieId,
+              originalLanguage: 'es', // Valor por defecto
+              originalTitle: watchlistMovie.movieTitle,
+              overview: watchlistMovie.movieOverview ?? '',
+              popularity: 0.0,
+              posterPath: watchlistMovie.moviePosterPath ?? '',
+              releaseDate: releaseDate,
+              title: watchlistMovie.movieTitle,
+              video: false,
+              voteAverage: watchlistMovie.movieVoteAverage ?? 0.0,
+              voteCount: 0,
+            );
+            upcomingReleases.add(movie);
+          }
+        }
+      }
+      
+      return upcomingReleases;
+    } catch (e) {
+      _logger.error('Error obteniendo próximos estrenos: $e');
+      return [];
+    }
   }
 
   /// Notifica sobre un estreno de hoy
