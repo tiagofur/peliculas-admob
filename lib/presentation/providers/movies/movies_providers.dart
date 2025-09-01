@@ -70,7 +70,7 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   }) : super(const MoviesStateData());
 
   int currentPage = 0;
-  MovieCallback fetchMoreMovies;
+  final MovieCallback fetchMoreMovies;
   static const int maxRetries = 3;
 
   Future<void> loadNextPage({int retryCount = 0}) async {
@@ -125,5 +125,11 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
         errorMessage: null,
       );
     }
+  }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }

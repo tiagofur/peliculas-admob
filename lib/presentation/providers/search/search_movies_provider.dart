@@ -21,16 +21,22 @@ typedef SearchMoviesCallback = Future<List<Movie>> Function(String query);
 class SearchedMoviesNotifier extends StateNotifier<List<Movie>> {
   SearchedMoviesNotifier({
     required this.searchMovies,
-    required this.ref,
+    required this.updateQuery,
   }) : super([]);
   final SearchMoviesCallback searchMovies;
-  final Ref ref;
+  final void Function(String) updateQuery;
 
   Future<List<Movie>> searchMoviesByQuery(String query) async {
     final List<Movie> movies = await searchMovies(query);
     state = movies;
-    ref.read(searchQueryProvider.notifier).update((state) => query);
+    updateQuery(query);
 
     return movies;
+  }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }

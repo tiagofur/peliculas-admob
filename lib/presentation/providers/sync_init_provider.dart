@@ -12,34 +12,41 @@ final crossPlatformInitProvider = Provider<CrossPlatformInitService>((ref) {
 
 /// Provider que escucha cambios de autenticación y maneja la sincronización
 final authSyncListenerProvider = Provider<AuthSyncListener>((ref) {
-  return AuthSyncListener(ref);
+  return AuthSyncListener(
+    listenToAuthChanges: (void Function(AppState?, AppState) callback) {
+      ref.listen<AppState>(appStateProvider, callback);
+    },
+    getSyncService: () => ref.read(syncServiceProvider),
+  );
 });
 
 /// Clase que maneja la sincronización automática basada en el estado de autenticación
 class AuthSyncListener {
-  AuthSyncListener(this._ref) {
-    _listenToAuthChanges();
+  AuthSyncListener({
+    required this.listenToAuthChanges,
+    required this.getSyncService,
+  }) {
+    _initializeAuthListener();
   }
-  final Ref _ref;
 
-  void _listenToAuthChanges() {
-    // Escuchar cambios en el estado de autenticación
-    _ref.listen<AppState>(
-      appStateProvider,
-      (previous, next) async {
-        // Si el usuario acaba de autenticarse
-        if (previous?.isAuthenticated == false &&
-            next.isAuthenticated == true) {
-          await _handleUserAuthenticated();
-        }
+  final void Function(void Function(AppState?, AppState)) listenToAuthChanges;
+  final SyncService Function() getSyncService;
 
-        // Si el usuario acaba de cerrar sesión
-        if (previous?.isAuthenticated == true &&
-            next.isAuthenticated == false) {
-          await _handleUserLoggedOut();
-        }
-      },
-    );
+  void _initializeAuthListener() {
+    // Escuchar cambios en el estado de autenticación usando callback
+    listenToAuthChanges((previous, next) async {
+      // Si el usuario acaba de autenticarse
+      if (previous?.isAuthenticated == false &&
+          next.isAuthenticated == true) {
+        await _handleUserAuthenticated();
+      }
+
+      // Si el usuario acaba de cerrar sesión
+      if (previous?.isAuthenticated == true &&
+          next.isAuthenticated == false) {
+        await _handleUserLoggedOut();
+      }
+    });
   }
 
   /// Manejar cuando el usuario se autentica
@@ -47,8 +54,8 @@ class AuthSyncListener {
     try {
       LoggerFactory.info('🔐 Usuario autenticado - iniciando sincronización...');
 
-      // Obtener el servicio de sincronización
-      final syncService = _ref.read(syncServiceProvider);
+      // Obtener el servicio de sincronización usando callback
+      final syncService = getSyncService();
 
       // Iniciar sincronización automática
       await syncService.onUserAuthenticated();
@@ -64,8 +71,8 @@ class AuthSyncListener {
     try {
       LoggerFactory.info('🚪 Usuario cerró sesión - limpiando servicios...');
 
-      // Obtener el servicio de sincronización
-      final syncService = _ref.read(syncServiceProvider);
+      // Obtener el servicio de sincronización usando callback
+      final syncService = getSyncService();
 
       // Detener sincronización y limpiar recursos
       syncService.dispose();
@@ -83,7 +90,7 @@ class AuthSyncListener {
   /// Forzar sincronización manual
   Future<void> forceSyncAll() async {
     try {
-      final syncService = _ref.read(syncServiceProvider);
+      final syncService = getSyncService();
       await syncService.forceSyncAllData();
     } catch (e) {
       LoggerFactory.error('❌ Error en sincronización manual: $e');
@@ -93,7 +100,7 @@ class AuthSyncListener {
 
   /// Obtener estado de sincronización
   Map<String, dynamic> getSyncStatus() {
-    final syncService = _ref.read(syncServiceProvider);
+    final syncService = getSyncService();
     return syncService.getSyncStatus();
   }
 

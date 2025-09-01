@@ -5,15 +5,20 @@ import 'custom_lists_provider.dart';
 import 'storage/favorite_movies_provider.dart';
 import 'watched_movies_provider.dart';
 
-// Provider para estadísticas del usuario
-final userStatsProvider = FutureProvider<UserStats>((ref) async {
+// Provider combinado para datos de estadísticas (optimización de performance)
+final userStatsDataProvider = Provider<({
+  List<Movie> favoriteMovies,
+  List<WatchedMovie> watchedMovies,
+  List<CustomList> customLists,
+  List<CustomList> defaultLists,
+})>((ref) {
   final favoriteMoviesMap = ref.watch(favoriteMoviesProvider);
   final favoriteMovies = favoriteMoviesMap.values.toList();
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
   final customLists = ref.watch(customListsProvider);
   final defaultLists = ref.watch(defaultListsProvider);
 
-  return UserStats.fromMovies(
+  return (
     favoriteMovies: favoriteMovies,
     watchedMovies: watchedMoviesState.movies,
     customLists: customLists,
@@ -21,47 +26,53 @@ final userStatsProvider = FutureProvider<UserStats>((ref) async {
   );
 });
 
-// Provider para análisis de géneros
+// Provider para estadísticas del usuario (optimizado)
+final userStatsProvider = FutureProvider<UserStats>((ref) async {
+  final data = ref.watch(userStatsDataProvider);
+
+  return UserStats.fromMovies(
+    favoriteMovies: data.favoriteMovies,
+    watchedMovies: data.watchedMovies,
+    customLists: data.customLists,
+    defaultLists: data.defaultLists,
+  );
+});
+
+// Provider para análisis de géneros (optimizado)
 final genreAnalysisProvider = FutureProvider<GenreAnalysis>((ref) async {
-  final favoriteMoviesMap = ref.watch(favoriteMoviesProvider);
-  final favoriteMovies = favoriteMoviesMap.values.toList();
-  final watchedMoviesState = ref.watch(watchedMoviesProvider);
+  final data = ref.watch(userStatsDataProvider);
 
   return GenreAnalysis.fromMovies(
-    favoriteMovies: favoriteMovies,
-    watchedMovies: watchedMoviesState.movies,
+    favoriteMovies: data.favoriteMovies,
+    watchedMovies: data.watchedMovies,
   );
 });
 
-// Provider para análisis temporal
+// Provider para análisis temporal (optimizado)
 final temporalAnalysisProvider = FutureProvider<TemporalAnalysis>((ref) async {
-  final favoriteMoviesMap = ref.watch(favoriteMoviesProvider);
-  final favoriteMovies = favoriteMoviesMap.values.toList();
-  final watchedMoviesState = ref.watch(watchedMoviesProvider);
+  final data = ref.watch(userStatsDataProvider);
 
   return TemporalAnalysis.fromMovies(
-    favoriteMovies: favoriteMovies,
-    watchedMovies: watchedMoviesState.movies,
+    favoriteMovies: data.favoriteMovies,
+    watchedMovies: data.watchedMovies,
   );
 });
 
-// Provider para análisis de calificaciones
+// Provider para análisis de calificaciones (optimizado)
 final ratingAnalysisProvider = FutureProvider<RatingAnalysis>((ref) async {
-  final favoriteMoviesMap = ref.watch(favoriteMoviesProvider);
-  final favoriteMovies = favoriteMoviesMap.values.toList();
-  final watchedMoviesState = ref.watch(watchedMoviesProvider);
+  final data = ref.watch(userStatsDataProvider);
 
   return RatingAnalysis.fromMovies(
-    favoriteMovies: favoriteMovies,
-    watchedMovies: watchedMoviesState.movies,
+    favoriteMovies: data.favoriteMovies,
+    watchedMovies: data.watchedMovies,
   );
 });
 
-// Provider para patrones de actividad
+// Provider para patrones de actividad (optimizado)
 final activityPatternsProvider = FutureProvider<ActivityPatterns>((ref) async {
-  final watchedMoviesState = ref.watch(watchedMoviesProvider);
+  final data = ref.watch(userStatsDataProvider);
 
-  return ActivityPatterns.fromWatchedMovies(watchedMoviesState.movies);
+  return ActivityPatterns.fromWatchedMovies(data.watchedMovies);
 });
 
 // Provider para recomendaciones basadas en estadísticas

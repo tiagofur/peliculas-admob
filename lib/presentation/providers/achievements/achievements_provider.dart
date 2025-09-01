@@ -160,4 +160,10 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
       return !previousUnlocked.any((Achievement previous) => previous.id == current.id);
     }).toList();
   }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
+  }
 }
