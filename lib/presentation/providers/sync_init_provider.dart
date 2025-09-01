@@ -106,7 +106,12 @@ class AuthSyncListener {
 
   /// Verificar salud de los servicios
   Future<Map<String, bool>> checkServicesHealth() async {
-    final initService = _ref.read(crossPlatformInitProvider);
-    return await initService.checkHealth();
+    try {
+      final initService = CrossPlatformInitService.instance;
+      return await initService.checkHealth();
+    } catch (e) {
+      LoggerFactory.error('Error verificando salud de servicios: $e');
+      return {'general': false};
+    }
   }
 }
