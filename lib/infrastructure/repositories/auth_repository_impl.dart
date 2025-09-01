@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/supabase_config.dart';
 import '../../core/exceptions/auth_exceptions.dart';
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user.dart' as domain;
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
@@ -12,14 +13,20 @@ import '../../domain/repositories/auth_repository.dart';
 import '../models/user_model.dart';
 import '../models/user_profile_model.dart';
 import '../models/user_stats_model.dart';
+import '../services/auth_session_manager.dart';
+import '../services/token_refresh_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl() {
     _initAuthStateStream();
+    _initializePersistentAuth();
   }
   final SupabaseClient _supabase = SupabaseConfig.client;
+  final AuthSessionManager _sessionManager = AuthSessionManager.instance;
+  final TokenRefreshService _tokenRefreshService = TokenRefreshService.instance;
   StreamController<domain.User?>? _authStateController;
   StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<TokenRefreshEvent>? _tokenRefreshSubscription;
 
   void _initAuthStateStream() {
     _authStateController = StreamController<domain.User?>.broadcast();
@@ -37,10 +44,54 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = data.session?.user;
       if (user != null) {
         _authStateController?.add(UserModel.fromSupabaseUser(user));
+        
+        // Persistir sesión cuando se autentica
+        if (data.session != null) {
+          _sessionManager.persistSession(data.session!);
+        }
       } else {
         _authStateController?.add(null);
+        
+        // Limpiar datos persistentes cuando se desautentica
+        _sessionManager.clearSession();
       }
     });
+
+    // Escuchar eventos de refresco de tokens
+    _tokenRefreshSubscription = _tokenRefreshService.events.listen((event) {
+      switch (event) {
+        case SessionInvalidatedEvent():
+          // Notificar que la sesión se invalidó
+          _authStateController?.add(null);
+          LoggerFactory.warning('⚠️ Sesión invalidada por fallo en refresh');
+          break;
+        case RefreshFailedEvent():
+          LoggerFactory.error('❌ Fallo en refresco de token: ${event.error}');
+          break;
+        case TokenRefreshedEvent():
+          LoggerFactory.info('✅ Token refrescado exitosamente para usuario: ${event.userId}');
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
+  /// Inicializa la autenticación persistente
+  Future<void> _initializePersistentAuth() async {
+    try {
+      // Inicializar gestores de sesión y tokens
+      await _sessionManager.initialize();
+      await _tokenRefreshService.initialize();
+      
+      // Intentar recuperar sesión persistente
+      final recovered = await _sessionManager.recoverSession();
+      if (recovered) {
+        LoggerFactory.info('✅ Sesión persistente recuperada exitosamente');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error inicializando autenticación persistente: $e');
+    }
   }
 
   @override
@@ -68,6 +119,11 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (response.user == null) {
         throw Exception('Error al iniciar sesión');
+      }
+
+      // Persistir sesión inmediatamente después de login exitoso
+      if (response.session != null) {
+        await _sessionManager.persistSession(response.session!);
       }
 
       return UserModel.fromSupabaseUser(response.user!);
@@ -114,6 +170,9 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
+      // Persistir sesión inmediatamente después de signup exitoso
+      await _sessionManager.persistSession(response.session!);
+
       return UserModel.fromSupabaseUser(response.user!);
     } on EmailConfirmationRequiredException {
       rethrow;
@@ -127,6 +186,10 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() async {
     try {
+      // Limpiar datos persistentes antes de cerrar sesión
+      await _sessionManager.clearSession();
+      
+      // Cerrar sesión en Supabase
       await _supabase.auth.signOut();
     } catch (e) {
       throw Exception('Error al cerrar sesión');
@@ -314,6 +377,66 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  // Operaciones de sesión persistente
+
+  @override
+  Future<bool> hasPersistedSession() async {
+    try {
+      return await _sessionManager.hasPersistedSession();
+    } catch (e) {
+      LoggerFactory.error('❌ Error verificando sesión persistente: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> validateCurrentSession() async {
+    try {
+      return await _sessionManager.validateCurrentSession();
+    } catch (e) {
+      LoggerFactory.error('❌ Error validando sesión actual: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<void> refreshToken() async {
+    try {
+      final success = await _tokenRefreshService.forceRefresh();
+      if (!success) {
+        throw Exception('No se pudo refrescar el token');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error refrescando token: $e');
+      throw Exception('Error al refrescar token de autenticación');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getSessionInfo() async {
+    try {
+      final sessionInfo = await _sessionManager.getSessionInfo();
+      final tokenStatus = await _tokenRefreshService.getTokenStatus();
+      
+      return {
+        'session': sessionInfo,
+        'token_status': {
+          'has_token': tokenStatus.hasToken,
+          'is_valid': tokenStatus.isValid,
+          'expires_at': tokenStatus.expiresAt?.toIso8601String(),
+          'time_until_expiry_minutes': tokenStatus.timeUntilExpiry?.inMinutes,
+          'needs_refresh': tokenStatus.needsRefresh,
+          'is_refreshing': tokenStatus.isRefreshing,
+          'is_healthy': tokenStatus.isHealthy,
+          'error': tokenStatus.error,
+        },
+      };
+    } catch (e) {
+      LoggerFactory.error('❌ Error obteniendo información de sesión: $e');
+      return null;
+    }
+  }
+
   // Método para reenviar email de confirmación
   @override
   Future<void> resendConfirmationEmail(String email) async {
@@ -353,6 +476,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _tokenRefreshSubscription?.cancel();
     _authStateController?.close();
+    _sessionManager.dispose();
+    _tokenRefreshService.dispose();
   }
 }

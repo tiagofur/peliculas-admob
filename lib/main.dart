@@ -20,8 +20,10 @@ import 'core/logging/logger_factory.dart';
 import 'core/notifications/local_notification_service.dart';
 import 'core/notifications/notification_initialization_service.dart';
 import 'infrastructure/services/app_lifecycle_manager.dart';
+import 'infrastructure/services/auth_session_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
 import 'infrastructure/services/cross_platform_init_service.dart';
+import 'infrastructure/services/token_refresh_service.dart';
 import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/multiplatform_sync_provider.dart';
@@ -91,6 +93,20 @@ Future<void> main() async {
 
         // INICIALIZAR SUPABASE
         await SupabaseConfig.initialize();
+
+        // INICIALIZAR GESTORES DE AUTENTICACIÓN PERSISTENTE
+        try {
+          await AuthSessionManager.instance.initialize();
+          await TokenRefreshService.instance.initialize();
+          
+          if (kDebugMode) {
+            LoggerFactory.info('✅ Sistema de autenticación persistente inicializado');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            LoggerFactory.error('❌ Error inicializando autenticación persistente: $e');
+          }
+        }
 
         // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
         try {
