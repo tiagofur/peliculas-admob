@@ -423,6 +423,7 @@ class ImageCacheManager {
       if (!await file.exists()) return null;
 
       // Verificar expiración con duración adaptativa
+      final stat = await file.stat();
       final age = DateTime.now().difference(stat.modified);
       if (age > _cacheExpiry) {
         await file.delete();
