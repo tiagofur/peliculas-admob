@@ -14,11 +14,8 @@ final userProgressProvider = FutureProvider<UserProgress>((ref) async {
 });
 
 final recentAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
-  // TODO: Uncomment when getRecentAchievements is implemented
-  // final gamificationManager = ref.watch(gamificationManagerProvider);
-  // TODO: Implement getRecentAchievements method in GamificationManager
-  // return await gamificationManager.getRecentAchievements(limit: 3);
-  return <Achievement>[];
+  final gamificationManager = ref.watch(gamificationManagerProvider);
+  return await gamificationManager.getRecentAchievements(limit: 3);
 });
 
 final unlockedAchievementsProvider = Provider<List<Achievement>>((ref) {
