@@ -29,7 +29,13 @@ final isMovieWatchedProvider = FutureProvider.family<bool, int>((ref, movieId) a
 // Provider para la lista de películas vistas
 final watchedMoviesProvider = StateNotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>((ref) {
   final repository = ref.watch(watchedMoviesRepositoryProvider);
-  return WatchedMoviesNotifier(repository, ref);
+  return WatchedMoviesNotifier(
+    repository: repository,
+    onMovieWatched: (Movie movie) async {
+      // Manejar el callback aquí, dentro del provider
+      await ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
+    },
+  );
 });
 
 // Estado para las películas vistas
@@ -63,12 +69,15 @@ class WatchedMoviesState {
 
 // Notifier para gestionar las películas vistas
 class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
-  WatchedMoviesNotifier(this.repository, this.ref) : super(const WatchedMoviesState()) {
+  WatchedMoviesNotifier({
+    required this.repository,
+    required this.onMovieWatched,
+  }) : super(const WatchedMoviesState()) {
     loadNextPage();
   }
 
   final WatchedMoviesRepository repository;
-  final Ref ref;
+  final Future<void> Function(Movie) onMovieWatched;
   static const int _limit = 20;
 
   Future<void> loadNextPage() async {
@@ -100,8 +109,8 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   Future<void> markAsWatched(Movie movie) async {
     await repository.markAsWatched(movie);
     
-    // Track logros
-    await ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
+    // Track logros usando callback en lugar de ref directo
+    await onMovieWatched(movie);
     
     // Recargar la lista
     await _reloadMovies();
@@ -120,5 +129,11 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
 
   Future<void> refresh() async {
     await _reloadMovies();
+  }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }

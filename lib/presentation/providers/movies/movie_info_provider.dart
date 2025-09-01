@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/movie.dart';
 import 'movies_repository_provider.dart';
 
+// Provider optimizado con AutoDispose para liberación automática
 final movieInfoProvider =
-    StateNotifierProvider<MovieMapNotifier, Map<String, Movie>>((ref) {
+    StateNotifierProvider.autoDispose<MovieMapNotifier, Map<String, Movie>>((ref) {
   final movieRepository = ref.watch(movieRepositoryProvider);
   return MovieMapNotifier(getMovie: movieRepository.getMovieById);
 });
@@ -42,5 +43,11 @@ class MovieMapNotifier extends StateNotifier<Map<String, Movie>> {
     
     final movie = await getMovie(movieId);
     state = {...state, movieId: movie};
+  }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }

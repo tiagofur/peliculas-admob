@@ -41,6 +41,12 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
     state = state.copyWith(selectedColor: colorIndex);
     await themeRepository.saveTheme(state.isDarkMode, colorIndex);
   }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
+  }
 }
 
 // State class for the theme
