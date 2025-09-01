@@ -15,11 +15,13 @@ import '../../presentation/providers/hybrid_repositories_provider.dart';
 class SyncService {
   SyncService({
     required List<SyncableRepository<dynamic>> repositories,
-    required Ref ref,
-  })  : _repositories = repositories,
-        _ref = ref;
+    required this.getCurrentUser,
+    required this.getConnectivityStatus,
+  }) : _repositories = repositories;
+  
   final List<SyncableRepository<dynamic>> _repositories;
-  final Ref _ref;
+  final User? Function() getCurrentUser;
+  final ConnectivityStatus Function() getConnectivityStatus;
   Timer? _syncTimer;
   Timer? _retryTimer;
   final List<String> _syncErrors = [];
@@ -35,7 +37,7 @@ class SyncService {
     LoggerFactory.info(
         'Usuario autenticado - iniciando sincronización automática');
 
-    final user = _ref.read(currentUserProvider);
+    final user = getCurrentUser();
     if (user != null) {
       LoggerFactory.info(
           '🔄 Iniciando sincronización para usuario: ${user.email}');
@@ -408,8 +410,8 @@ class SyncService {
 
   /// Verifica si el usuario está autenticado
   bool _isAuthenticated() {
-    final appState = _ref.read(appStateProvider);
-    return appState.isAuthenticated;
+    final user = getCurrentUser();
+    return user != null;
   }
 
   /// Verifica conectividad a internet
@@ -464,7 +466,11 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 
   return SyncService(
     repositories: repositories,
-    ref: ref,
+    getCurrentUser: () => ref.read(currentUserProvider),
+    getConnectivityStatus: () {
+      // Return default online status - can be enhanced with connectivity provider
+      return ConnectivityStatus.online;
+    },
   );
 });
 
