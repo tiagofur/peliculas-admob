@@ -247,12 +247,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> updateUser({
     String? fullName,
     String? avatarUrl,
+    String? email,
   }) async {
     state = const AsyncValue.loading();
     try {
       await _authRepository.updateUser(
         fullName: fullName,
         avatarUrl: avatarUrl,
+        email: email,
       );
       state = const AsyncValue.data(null);
     } catch (e, stackTrace) {

@@ -22,6 +22,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _bioController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _isEditing = false;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
@@ -42,6 +43,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void dispose() {
     _fullNameController.dispose();
     _bioController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -338,6 +340,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 16),
           TextFormField(
+            controller: _emailController,
+            decoration: InputDecoration(
+              labelText: 'Email',
+              prefixIcon: const Icon(Icons.email),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Por favor ingresa tu email';
+              }
+              final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+              if (!emailRegex.hasMatch(value.trim())) {
+                return 'Por favor ingresa un email válido';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _bioController,
             maxLines: 3,
             maxLength: 150,
@@ -356,6 +380,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildProfileInfo(ThemeData theme, UserProfile profile) {
+    final currentUser = ref.watch(currentUserProvider);
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -372,16 +398,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           profile.fullName,
           Icons.person,
         ),
-        if (profile.hasBio) ...[
+        const SizedBox(height: 12),
+        if (currentUser?.email != null)
+          _buildInfoTile(
+            theme,
+            'Email',
+            currentUser!.email,
+            Icons.email,
+          ),
+        if (currentUser?.email != null)
           const SizedBox(height: 12),
+        if (profile.hasBio) ...[
           _buildInfoTile(
             theme,
             'Biografía',
             profile.bio!,
             Icons.edit_note,
           ),
+          const SizedBox(height: 12),
         ],
-        const SizedBox(height: 12),
         _buildInfoTile(
           theme,
           'Última actualización',
@@ -689,10 +724,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _startEditing(UserProfile? profile) {
     if (profile != null) {
+      final currentUser = ref.read(authStateProvider).value;
       setState(() {
         _isEditing = true;
         _fullNameController.text = profile.fullName;
         _bioController.text = profile.bio ?? '';
+        _emailController.text = currentUser?.email ?? '';
         _selectedImage = null;
       });
       
@@ -711,6 +748,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _selectedImage = null;
       _fullNameController.clear();
       _bioController.clear();
+      _emailController.clear();
     });
   }
 
@@ -729,12 +767,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             );
           }
           
+          // Actualizar perfil en la tabla user_profiles
           await ref.read(userProfileNotifierProvider.notifier).updateProfile(
             userId: currentUser.id,
             fullName: _fullNameController.text.trim(),
             bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
             avatarUrl: avatarUrl,
           );
+
+          // Actualizar email si ha cambiado
+          if (_emailController.text.trim() != currentUser.email) {
+            await ref.read(authNotifierProvider.notifier).updateUser(
+              email: _emailController.text.trim(),
+            );
+          }
         }
         
         if (mounted) {
@@ -748,6 +794,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             'timestamp': DateTime.now().toIso8601String(),
             'has_bio': _bioController.text.trim().isNotEmpty,
             'has_avatar_change': _selectedImage != null,
+            'has_email_change': _emailController.text.trim() != currentUser?.email,
             'name_length': _fullNameController.text.trim().length,
           });
           
