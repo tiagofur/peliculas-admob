@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 
 /// Niveles de logging para sincronización
@@ -24,16 +25,6 @@ enum SyncOperationType {
 
 /// Entrada de log de sincronización
 class SyncLogEntry {
-  final DateTime timestamp;
-  final SyncLogLevel level;
-  final SyncOperationType operation;
-  final String repository;
-  final String message;
-  final Map<String, dynamic>? metadata;
-  final String? error;
-  final StackTrace? stackTrace;
-  final Duration? duration;
-
   const SyncLogEntry({
     required this.timestamp,
     required this.level,
@@ -45,17 +36,26 @@ class SyncLogEntry {
     this.stackTrace,
     this.duration,
   });
+  final DateTime timestamp;
+  final SyncLogLevel level;
+  final SyncOperationType operation;
+  final String repository;
+  final String message;
+  final Map<String, dynamic>? metadata;
+  final String? error;
+  final StackTrace? stackTrace;
+  final Duration? duration;
 
   Map<String, dynamic> toJson() => {
-    'timestamp': timestamp.toIso8601String(),
-    'level': level.name,
-    'operation': operation.name,
-    'repository': repository,
-    'message': message,
-    'metadata': metadata,
-    'error': error,
-    'duration_ms': duration?.inMilliseconds,
-  };
+        'timestamp': timestamp.toIso8601String(),
+        'level': level.name,
+        'operation': operation.name,
+        'repository': repository,
+        'message': message,
+        'metadata': metadata,
+        'error': error,
+        'duration_ms': duration?.inMilliseconds,
+      };
 
   @override
   String toString() {
@@ -65,28 +65,28 @@ class SyncLogEntry {
     buffer.write('[$repository] ');
     buffer.write('${operation.name.toUpperCase()}: ');
     buffer.write(message);
-    
+
     if (duration != null) {
       buffer.write(' (${duration!.inMilliseconds}ms)');
     }
-    
+
     if (error != null) {
       buffer.write(' - Error: $error');
     }
-    
+
     return buffer.toString();
   }
 }
 
 /// Logger especializado para operaciones de sincronización
 class SyncLogger {
-  static final SyncLogger _instance = SyncLogger._internal();
   factory SyncLogger() => _instance;
   SyncLogger._internal();
+  static final SyncLogger _instance = SyncLogger._internal();
 
   final List<SyncLogEntry> _logs = [];
   final int _maxLogs = 1000; // Mantener últimos 1000 logs
-  
+
   SyncLogLevel _minLevel = kDebugMode ? SyncLogLevel.debug : SyncLogLevel.info;
 
   /// Configurar nivel mínimo de logging
@@ -95,59 +95,81 @@ class SyncLogger {
   }
 
   /// Log de debug
-  void debug(String repository, SyncOperationType operation, String message, {
+  void debug(
+    String repository,
+    SyncOperationType operation,
+    String message, {
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
-    _log(SyncLogLevel.debug, repository, operation, message, 
-         metadata: metadata, duration: duration);
+    _log(SyncLogLevel.debug, repository, operation, message,
+        metadata: metadata, duration: duration);
   }
 
   /// Log de información
-  void info(String repository, SyncOperationType operation, String message, {
+  void info(
+    String repository,
+    SyncOperationType operation,
+    String message, {
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
-    _log(SyncLogLevel.info, repository, operation, message, 
-         metadata: metadata, duration: duration);
+    _log(SyncLogLevel.info, repository, operation, message,
+        metadata: metadata, duration: duration);
   }
 
   /// Log de advertencia
-  void warning(String repository, SyncOperationType operation, String message, {
+  void warning(
+    String repository,
+    SyncOperationType operation,
+    String message, {
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
-    _log(SyncLogLevel.warning, repository, operation, message, 
-         metadata: metadata, duration: duration);
+    _log(SyncLogLevel.warning, repository, operation, message,
+        metadata: metadata, duration: duration);
   }
 
   /// Log de error
-  void error(String repository, SyncOperationType operation, String message, {
+  void error(
+    String repository,
+    SyncOperationType operation,
+    String message, {
     Object? error,
     StackTrace? stackTrace,
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
     _log(SyncLogLevel.error, repository, operation, message,
-         error: error?.toString(), stackTrace: stackTrace,
-         metadata: metadata, duration: duration);
+        error: error?.toString(),
+        stackTrace: stackTrace,
+        metadata: metadata,
+        duration: duration);
   }
 
   /// Log crítico
-  void critical(String repository, SyncOperationType operation, String message, {
+  void critical(
+    String repository,
+    SyncOperationType operation,
+    String message, {
     Object? error,
     StackTrace? stackTrace,
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
     _log(SyncLogLevel.critical, repository, operation, message,
-         error: error?.toString(), stackTrace: stackTrace,
-         metadata: metadata, duration: duration);
+        error: error?.toString(),
+        stackTrace: stackTrace,
+        metadata: metadata,
+        duration: duration);
   }
 
   /// Método interno de logging
-  void _log(SyncLogLevel level, String repository, SyncOperationType operation, 
-           String message, {
+  void _log(
+    SyncLogLevel level,
+    String repository,
+    SyncOperationType operation,
+    String message, {
     String? error,
     StackTrace? stackTrace,
     Map<String, dynamic>? metadata,
@@ -168,7 +190,7 @@ class SyncLogger {
     );
 
     _logs.add(entry);
-    
+
     // Mantener solo los últimos N logs
     if (_logs.length > _maxLogs) {
       _logs.removeAt(0);
@@ -234,32 +256,36 @@ class SyncLogger {
     String? repository,
   }) {
     final logs = getLogs(since: since, repository: repository);
-    
+
     final stats = <String, dynamic>{
       'total_logs': logs.length,
       'by_level': <String, int>{},
       'by_operation': <String, int>{},
       'by_repository': <String, int>{},
-      'errors': logs.where((l) => l.level == SyncLogLevel.error || 
-                                 l.level == SyncLogLevel.critical).length,
+      'errors': logs
+          .where((l) =>
+              l.level == SyncLogLevel.error || l.level == SyncLogLevel.critical)
+          .length,
       'avg_duration_ms': 0.0,
     };
 
     // Contar por nivel
     for (final level in SyncLogLevel.values) {
-      stats['by_level'][level.name] = logs.where((l) => l.level == level).length;
+      stats['by_level'][level.name] =
+          logs.where((l) => l.level == level).length;
     }
 
     // Contar por operación
     for (final operation in SyncOperationType.values) {
-      stats['by_operation'][operation.name] = 
+      stats['by_operation'][operation.name] =
           logs.where((l) => l.operation == operation).length;
     }
 
     // Contar por repositorio
     final repositories = logs.map((l) => l.repository).toSet();
     for (final repo in repositories) {
-      stats['by_repository'][repo] = logs.where((l) => l.repository == repo).length;
+      stats['by_repository'][repo] =
+          logs.where((l) => l.repository == repo).length;
     }
 
     // Calcular duración promedio
@@ -300,52 +326,66 @@ class SyncLogger {
 /// Extension para facilitar el logging en repositorios
 extension SyncLoggerExtension on Object {
   SyncLogger get syncLogger => SyncLogger();
-  
+
   String get _repositoryName => runtimeType.toString();
 
-  void logSyncDebug(SyncOperationType operation, String message, {
+  void logSyncDebug(
+    SyncOperationType operation,
+    String message, {
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
-    syncLogger.debug(_repositoryName, operation, message, 
-                    metadata: metadata, duration: duration);
+    syncLogger.debug(_repositoryName, operation, message,
+        metadata: metadata, duration: duration);
   }
 
-  void logSyncInfo(SyncOperationType operation, String message, {
+  void logSyncInfo(
+    SyncOperationType operation,
+    String message, {
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
-    syncLogger.info(_repositoryName, operation, message, 
-                   metadata: metadata, duration: duration);
+    syncLogger.info(_repositoryName, operation, message,
+        metadata: metadata, duration: duration);
   }
 
-  void logSyncWarning(SyncOperationType operation, String message, {
+  void logSyncWarning(
+    SyncOperationType operation,
+    String message, {
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
-    syncLogger.warning(_repositoryName, operation, message, 
-                      metadata: metadata, duration: duration);
+    syncLogger.warning(_repositoryName, operation, message,
+        metadata: metadata, duration: duration);
   }
 
-  void logSyncError(SyncOperationType operation, String message, {
+  void logSyncError(
+    SyncOperationType operation,
+    String message, {
     Object? error,
     StackTrace? stackTrace,
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
     syncLogger.error(_repositoryName, operation, message,
-                    error: error, stackTrace: stackTrace,
-                    metadata: metadata, duration: duration);
+        error: error,
+        stackTrace: stackTrace,
+        metadata: metadata,
+        duration: duration);
   }
 
-  void logSyncCritical(SyncOperationType operation, String message, {
+  void logSyncCritical(
+    SyncOperationType operation,
+    String message, {
     Object? error,
     StackTrace? stackTrace,
     Map<String, dynamic>? metadata,
     Duration? duration,
   }) {
     syncLogger.critical(_repositoryName, operation, message,
-                       error: error, stackTrace: stackTrace,
-                       metadata: metadata, duration: duration);
+        error: error,
+        stackTrace: stackTrace,
+        metadata: metadata,
+        duration: duration);
   }
 }

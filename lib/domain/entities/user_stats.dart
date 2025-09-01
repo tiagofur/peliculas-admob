@@ -1,13 +1,4 @@
 class UserStats {
-  final String id;
-  final String userId;
-  final int moviesWatched;
-  final int favoritesCount;
-  final int listsCount;
-  final DateTime lastActivity;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
   const UserStats({
     required this.id,
     required this.userId,
@@ -38,6 +29,14 @@ class UserStats {
       updatedAt: now,
     );
   }
+  final String id;
+  final String userId;
+  final int moviesWatched;
+  final int favoritesCount;
+  final int listsCount;
+  final DateTime lastActivity;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   UserStats copyWith({
     String? id,
@@ -110,7 +109,8 @@ class UserStats {
 
   // Getters útiles
   bool get isActiveUser => moviesWatched > 0 || favoritesCount > 0;
-  bool get hasActivity => lastActivity.isAfter(DateTime.now().subtract(const Duration(days: 30)));
+  bool get hasActivity =>
+      lastActivity.isAfter(DateTime.now().subtract(const Duration(days: 30)));
   int get totalInteractions => moviesWatched + favoritesCount + listsCount;
 
   // Método estático para obtener nombres de meses en español
@@ -120,11 +120,11 @@ class UserStats {
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
-    
+
     if (month < 1 || month > 12) {
       return 'Mes desconocido';
     }
-    
+
     return monthNames[month];
   }
 

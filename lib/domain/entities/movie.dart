@@ -94,4 +94,35 @@ class Movie {
   final Map<String, dynamic>? images;
   final Map<String, dynamic>? reviews;
   final Map<String, dynamic>? similar;
+
+  /// Convierte la película a JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'adult': adult,
+      'backdrop_path': backdropPath,
+      'genre_ids': genreIds,
+      'original_language': originalLanguage,
+      'original_title': originalTitle,
+      'overview': overview,
+      'popularity': popularity,
+      'poster_path': posterPath,
+      'release_date': releaseDate.toIso8601String(),
+      'title': title,
+      'video': video,
+      'vote_average': voteAverage,
+      'vote_count': voteCount,
+      'runtime': runtime,
+      'budget': budget,
+      'revenue': revenue,
+      'homepage': homepage,
+      'imdb_id': imdbId,
+      'status': status,
+      'tagline': tagline,
+      'production_companies': productionCompanies,
+      'production_countries': productionCountries,
+      'spoken_languages': spokenLanguages,
+      'belongs_to_collection': belongsToCollection,
+    };
+  }
 }

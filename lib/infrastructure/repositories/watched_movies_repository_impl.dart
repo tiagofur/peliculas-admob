@@ -23,7 +23,8 @@ class WatchedMoviesRepositoryImpl extends WatchedMoviesRepository {
   }
 
   @override
-  Future<List<WatchedMovie>> loadWatchedMovies({int limit = 10, int offset = 0}) {
+  Future<List<WatchedMovie>> loadWatchedMovies(
+      {int limit = 10, int offset = 0}) {
     return datasource.loadWatchedMovies(limit: limit, offset: offset);
   }
 }

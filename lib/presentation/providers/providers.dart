@@ -1,23 +1,18 @@
-
-export 'actors/actors_repository_provider.dart';
-export 'actors/actors_by_movie_provider.dart';
-
 export 'achievements/achievements_provider.dart';
-
+export 'actors/actors_by_movie_provider.dart';
+export 'actors/actors_repository_provider.dart';
+export 'custom_lists_provider.dart';
+export 'hybrid_repositories_provider.dart';
+export 'movies/discovery_provider.dart';
 export 'movies/initial_loading_provider.dart';
+export 'movies/movie_filters_provider.dart';
+export 'movies/movie_info_provider.dart';
 export 'movies/movies_providers.dart';
 export 'movies/movies_repository_provider.dart';
 export 'movies/movies_slideshow_provider.dart';
-export 'movies/movie_info_provider.dart';
-export 'movies/movie_filters_provider.dart';
-export 'movies/discovery_provider.dart';
-export 'custom_lists_provider.dart';
-export 'user_stats_provider.dart';
-
 export 'recommendations/recommendations_provider.dart';
-
 export 'search/search_movies_provider.dart';
-
-export 'storage/local_storage_provider.dart';
 export 'storage/favorite_movies_provider.dart';
+export 'storage/local_storage_provider.dart';
+export 'user_stats_provider.dart';
 export 'watched_movies_provider.dart';

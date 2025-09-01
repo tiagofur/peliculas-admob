@@ -12,6 +12,25 @@ class UserStatsModel extends UserStats {
     required super.updatedAt,
   });
 
+  factory UserStatsModel.create({
+    required String userId,
+    int moviesWatched = 0,
+    int favoritesCount = 0,
+    int listsCount = 0,
+  }) {
+    final now = DateTime.now();
+    return UserStatsModel(
+      id: '', // Se generará en la base de datos
+      userId: userId,
+      moviesWatched: moviesWatched,
+      favoritesCount: favoritesCount,
+      listsCount: listsCount,
+      lastActivity: now,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
   factory UserStatsModel.fromJson(Map<String, dynamic> json) {
     return UserStatsModel(
       id: json['id'] as String,
@@ -77,25 +96,6 @@ class UserStatsModel extends UserStats {
       lastActivity: lastActivity ?? this.lastActivity,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  factory UserStatsModel.create({
-    required String userId,
-    int moviesWatched = 0,
-    int favoritesCount = 0,
-    int listsCount = 0,
-  }) {
-    final now = DateTime.now();
-    return UserStatsModel(
-      id: '', // Se generará en la base de datos
-      userId: userId,
-      moviesWatched: moviesWatched,
-      favoritesCount: favoritesCount,
-      listsCount: listsCount,
-      lastActivity: now,
-      createdAt: now,
-      updatedAt: now,
     );
   }
 

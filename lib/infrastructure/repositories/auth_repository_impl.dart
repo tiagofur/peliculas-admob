@@ -14,17 +14,16 @@ import '../models/user_profile_model.dart';
 import '../models/user_stats_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
+  AuthRepositoryImpl() {
+    _initAuthStateStream();
+  }
   final SupabaseClient _supabase = SupabaseConfig.client;
   StreamController<domain.User?>? _authStateController;
   StreamSubscription<AuthState>? _authSubscription;
 
-  AuthRepositoryImpl() {
-    _initAuthStateStream();
-  }
-
   void _initAuthStateStream() {
     _authStateController = StreamController<domain.User?>.broadcast();
-    
+
     // Emitir el estado inicial inmediatamente
     final currentUser = _supabase.auth.currentUser;
     if (currentUser != null) {
@@ -32,7 +31,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } else {
       _authStateController?.add(null);
     }
-    
+
     // Escuchar cambios de estado
     _authSubscription = _supabase.auth.onAuthStateChange.listen((data) {
       final user = data.session?.user;
@@ -274,12 +273,13 @@ class AuthRepositoryImpl implements AuthRepository {
       final fileName = '$userId/avatar.$fileExt';
 
       await _supabase.storage.from('avatars').upload(
-        fileName,
-        file,
-        fileOptions: const FileOptions(upsert: true),
-      );
+            fileName,
+            file,
+            fileOptions: const FileOptions(upsert: true),
+          );
 
-      final publicUrl = _supabase.storage.from('avatars').getPublicUrl(fileName);
+      final publicUrl =
+          _supabase.storage.from('avatars').getPublicUrl(fileName);
       return publicUrl;
     } catch (e) {
       throw Exception('Error al subir avatar');
@@ -290,9 +290,11 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> deleteAvatar(String userId) async {
     try {
       final files = await _supabase.storage.from('avatars').list(path: userId);
-      
+
       for (final file in files) {
-        await _supabase.storage.from('avatars').remove(['$userId/${file.name}']);
+        await _supabase.storage
+            .from('avatars')
+            .remove(['$userId/${file.name}']);
       }
     } catch (e) {
       throw Exception('Error al eliminar avatar');
@@ -311,6 +313,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   // Método para reenviar email de confirmación
+  @override
   Future<void> resendConfirmationEmail(String email) async {
     try {
       await _supabase.auth.resend(

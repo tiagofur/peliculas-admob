@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/sync_result.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
@@ -32,25 +32,27 @@ class SyncService {
 
   /// Sincronización automática después del login
   Future<void> onUserAuthenticated() async {
-    developer.log('Usuario autenticado - iniciando sincronización automática');
+    LoggerFactory.info(
+        'Usuario autenticado - iniciando sincronización automática');
 
     final user = _ref.read(currentUserProvider);
     if (user != null) {
-      print('🔄 Iniciando sincronización para usuario: ${user.email}');
+      LoggerFactory.info(
+          '🔄 Iniciando sincronización para usuario: ${user.email}');
     } else {
-      print('❌ No hay usuario autenticado disponible');
+      LoggerFactory.warning('❌ No hay usuario autenticado disponible');
       return;
     }
 
     try {
-      print('📤 Ejecutando sincronización completa...');
+      LoggerFactory.info('📤 Ejecutando sincronización completa...');
       final result = await syncAllData();
-      print('✅ Sincronización completada: ${result.repositoryResults}');
+      LoggerFactory.info(
+          '✅ Sincronización completada: ${result.repositoryResults}');
 
       _startPeriodicSync();
     } catch (e) {
-      print('❌ Error en sincronización post-login: $e');
-      developer.log('Error en sincronización post-login: $e');
+      LoggerFactory.error('❌ Error en sincronización post-login: $e');
       _scheduleRetry('onUserAuthenticated');
     }
   }
@@ -85,31 +87,34 @@ class SyncService {
     final results = <String, bool>{};
     final errors = <String>[];
 
-    developer.log(
+    LoggerFactory.info(
         'Iniciando sincronización completa de ${_repositories.length} repositorios');
 
-    for (final repo in _repositories) {
+    // Sincronizar todos los repositorios en paralelo para mejor rendimiento
+    final syncTasks = _repositories.map((repo) async {
       final repoName = repo.runtimeType.toString();
-
+      
       try {
-        developer.log('Sincronizando $repoName...');
+        LoggerFactory.info('Sincronizando $repoName...');
         await repo.syncWithSupabase();
         results[repoName] = true;
 
         // Resetear contador de reintentos en caso de éxito
         _retryAttempts.remove(repoName);
 
-        developer.log('$repoName sincronizado exitosamente');
+        LoggerFactory.info('$repoName sincronizado exitosamente');
       } catch (e) {
         results[repoName] = false;
         final error = 'Error en $repoName: $e';
         errors.add(error);
 
-        developer.log(error);
+        LoggerFactory.error(error);
         _logSyncError(repoName, e);
         _scheduleRetry(repoName);
       }
-    }
+    });
+
+    await Future.wait(syncTasks);
 
     final duration = DateTime.now().difference(startTime);
     final result = SyncResult(
@@ -119,22 +124,142 @@ class SyncService {
       errors: errors,
     );
 
-    developer.log('Sincronización completada: $result');
+    LoggerFactory.info('Sincronización completada: $result');
     return result;
+  }
+
+  /// Sincroniza solo los favoritos
+  Future<SyncResult> syncFavorites() async {
+    if (!_isAuthenticated() || !await _isOnline()) {
+      LoggerFactory.info('⏸️ Sincronización de favoritos omitida: usuario no autenticado o sin conexión');
+      return SyncResult(
+        repositoryResults: {'HybridFavoritesRepository': false},
+        timestamp: DateTime.now(),
+        duration: Duration.zero,
+        errors: ['Usuario no autenticado o sin conexión'],
+      );
+    }
+
+    final startTime = DateTime.now();
+    final favoritesRepo = _repositories.firstWhere(
+      (repo) => repo.runtimeType.toString().contains('Favorites'),
+      orElse: () => throw Exception('Repositorio de favoritos no encontrado'),
+    );
+
+    try {
+      LoggerFactory.info('🔄 Sincronizando favoritos...');
+      await favoritesRepo.syncWithSupabase();
+      LoggerFactory.info('✅ Favoritos sincronizados');
+      
+      return SyncResult(
+        repositoryResults: {'HybridFavoritesRepository': true},
+        timestamp: startTime,
+        duration: DateTime.now().difference(startTime),
+        errors: [],
+      );
+    } catch (e) {
+      _logSyncError('HybridFavoritesRepository', e);
+      return SyncResult(
+        repositoryResults: {'HybridFavoritesRepository': false},
+        timestamp: startTime,
+        duration: DateTime.now().difference(startTime),
+        errors: ['Error sincronizando favoritos: $e'],
+      );
+    }
+  }
+
+  /// Sincroniza solo las películas vistas
+  Future<SyncResult> syncWatchedMovies() async {
+    if (!_isAuthenticated() || !await _isOnline()) {
+      LoggerFactory.info('⏸️ Sincronización de películas vistas omitida: usuario no autenticado o sin conexión');
+      return SyncResult(
+        repositoryResults: {'HybridWatchedRepository': false},
+        timestamp: DateTime.now(),
+        duration: Duration.zero,
+        errors: ['Usuario no autenticado o sin conexión'],
+      );
+    }
+
+    final startTime = DateTime.now();
+    final watchedRepo = _repositories.firstWhere(
+      (repo) => repo.runtimeType.toString().contains('Watched'),
+      orElse: () => throw Exception('Repositorio de películas vistas no encontrado'),
+    );
+
+    try {
+      LoggerFactory.info('🔄 Sincronizando películas vistas...');
+      await watchedRepo.syncWithSupabase();
+      LoggerFactory.info('✅ Películas vistas sincronizadas');
+      
+      return SyncResult(
+        repositoryResults: {'HybridWatchedRepository': true},
+        timestamp: startTime,
+        duration: DateTime.now().difference(startTime),
+        errors: [],
+      );
+    } catch (e) {
+      _logSyncError('HybridWatchedRepository', e);
+      return SyncResult(
+        repositoryResults: {'HybridWatchedRepository': false},
+        timestamp: startTime,
+        duration: DateTime.now().difference(startTime),
+        errors: ['Error sincronizando películas vistas: $e'],
+      );
+    }
+  }
+
+  /// Sincroniza solo las listas personalizadas
+  Future<SyncResult> syncCustomLists() async {
+    if (!_isAuthenticated() || !await _isOnline()) {
+      LoggerFactory.info('⏸️ Sincronización de listas personalizadas omitida: usuario no autenticado o sin conexión');
+      return SyncResult(
+        repositoryResults: {'HybridCustomListsRepository': false},
+        timestamp: DateTime.now(),
+        duration: Duration.zero,
+        errors: ['Usuario no autenticado o sin conexión'],
+      );
+    }
+
+    final startTime = DateTime.now();
+    final customListsRepo = _repositories.firstWhere(
+      (repo) => repo.runtimeType.toString().contains('CustomLists'),
+      orElse: () => throw Exception('Repositorio de listas personalizadas no encontrado'),
+    );
+
+    try {
+      LoggerFactory.info('🔄 Sincronizando listas personalizadas...');
+      await customListsRepo.syncWithSupabase();
+      LoggerFactory.info('✅ Listas personalizadas sincronizadas');
+      
+      return SyncResult(
+        repositoryResults: {'HybridCustomListsRepository': true},
+        timestamp: startTime,
+        duration: DateTime.now().difference(startTime),
+        errors: [],
+      );
+    } catch (e) {
+      _logSyncError('HybridCustomListsRepository', e);
+      return SyncResult(
+        repositoryResults: {'HybridCustomListsRepository': false},
+        timestamp: startTime,
+        duration: DateTime.now().difference(startTime),
+        errors: ['Error sincronizando listas personalizadas: $e'],
+      );
+    }
   }
 
   /// Inicia la sincronización periódica
   void _startPeriodicSync() {
     _stopPeriodicSync(); // Detener cualquier timer existente
 
-    developer.log(
+    LoggerFactory.info(
         'Iniciando sincronización periódica cada ${_syncInterval.inMinutes} minutos');
 
     _syncTimer = Timer.periodic(_syncInterval, (_) async {
       if (await _isOnline() && _isAuthenticated()) {
-        developer.log('Ejecutando sincronización periódica');
+        LoggerFactory.info('Ejecutando sincronización periódica');
         syncAllData().catchError((e) {
-          developer.log('Error en sincronización periódica: $e');
+          LoggerFactory.error('Error en sincronización periódica: $e');
           return SyncResult(
             repositoryResults: {
               for (var item
@@ -161,7 +286,7 @@ class SyncService {
     final attempts = _retryAttempts[operation] ?? 0;
 
     if (attempts >= _maxRetryAttempts) {
-      developer.log('Máximo de reintentos alcanzado para $operation');
+      LoggerFactory.warning('Máximo de reintentos alcanzado para $operation');
       return;
     }
 
@@ -172,7 +297,7 @@ class SyncService {
       seconds: _baseRetryDelay.inSeconds * (1 << attempts),
     );
 
-    developer.log(
+    LoggerFactory.info(
         'Programando reintento #${attempts + 1} para $operation en ${delay.inSeconds}s');
 
     _retryTimer?.cancel();
@@ -180,10 +305,10 @@ class SyncService {
       if (_isAuthenticated()) {
         final isOnline = await _isOnline();
         if (isOnline) {
-          developer
-              .log('Ejecutando reintento #${attempts + 1} para $operation');
+          LoggerFactory.info(
+              'Ejecutando reintento #${attempts + 1} para $operation');
           syncAllData().catchError((e) {
-            developer.log('Error en reintento de $operation: $e');
+            LoggerFactory.error('Error en reintento de $operation: $e');
             return SyncResult(
               repositoryResults: {
                 for (var item
@@ -208,12 +333,12 @@ class SyncService {
     _syncErrors.clear();
     _retryAttempts.clear();
 
-    developer.log('SyncService disposed');
+    LoggerFactory.info('SyncService disposed');
   }
 
   /// Sincronización manual forzada
   Future<SyncResult> forceSyncAllData() async {
-    developer.log('Forzando sincronización manual');
+    LoggerFactory.info('Forzando sincronización manual');
 
     // Limpiar errores y reintentos previos
     _syncErrors.clear();
@@ -230,6 +355,53 @@ class SyncService {
       'recent_errors': List.from(_syncErrors.take(10)),
       'repositories_count': _repositories.length,
     };
+  }
+
+  /// Obtiene información detallada del estado de sincronización
+  Map<String, dynamic> getDetailedSyncStatus() {
+    return {
+      'current_state': _syncTimer?.isActive ?? false ? 'active' : 'inactive',
+      'is_syncing': _syncTimer?.isActive ?? false,
+      'is_authenticated': _isAuthenticated(),
+      'last_sync': DateTime.now().toIso8601String(),
+      'periodic_sync_active': _syncTimer?.isActive ?? false,
+      'retry_count': _retryAttempts.values.fold(0, (sum, count) => sum + count),
+      'repositories_count': _repositories.length,
+    };
+  }
+
+  /// Obtiene estadísticas de sincronización
+  Map<String, dynamic> getSyncStatistics() {
+    final totalAttempts = _retryAttempts.values.fold(0, (sum, count) => sum + count);
+    final successfulRepos = _repositories.length - _retryAttempts.length;
+    return {
+      'total_syncs': totalAttempts + successfulRepos,
+      'successful_syncs': successfulRepos,
+      'failed_syncs': _retryAttempts.length,
+      'success_rate': _repositories.isNotEmpty ? (successfulRepos / _repositories.length * 100).toStringAsFixed(1) : '0.0',
+    };
+  }
+
+  /// Verifica si necesita sincronización
+  bool needsSync() {
+    if (!_isAuthenticated()) {
+      return false;
+    }
+
+    // Si hay errores de sincronización pendientes
+    if (_retryAttempts.isNotEmpty) {
+      return true;
+    }
+
+    // Si la sincronización periódica no está activa
+    return !(_syncTimer?.isActive ?? false);
+  }
+
+  /// Reinicia las estadísticas de sincronización
+  void resetSyncStatistics() {
+    _syncErrors.clear();
+    _retryAttempts.clear();
+    LoggerFactory.info('📊 Estadísticas de sincronización reiniciadas');
   }
 
   // Métodos auxiliares privados
@@ -254,7 +426,7 @@ class SyncService {
       final connectivityResults = await Connectivity().checkConnectivity();
       return !connectivityResults.contains(ConnectivityResult.none);
     } catch (e) {
-      developer.log('Error verificando conectividad: $e');
+      LoggerFactory.error('Error verificando conectividad: $e');
       // En caso de error, asumir que hay conexión para no bloquear funcionalidad
       return true;
     }
@@ -272,12 +444,12 @@ class SyncService {
 
     // Logging diferenciado para Web y plataformas nativas
     if (kIsWeb) {
-      // En Web, usar print en lugar de developer.log para mejor visibilidad
+      // En Web, usar LoggerFactory para mejor consistencia
       if (kDebugMode) {
-        print('🔄 Error de sincronización (Web): $errorMessage');
+        LoggerFactory.error('🔄 Error de sincronización (Web): $errorMessage');
       }
     } else {
-      developer.log('Error de sincronización registrado: $errorMessage');
+      LoggerFactory.error('Error de sincronización registrado: $errorMessage');
     }
   }
 }

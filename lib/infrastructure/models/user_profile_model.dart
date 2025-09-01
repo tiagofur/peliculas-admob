@@ -11,6 +11,24 @@ class UserProfileModel extends UserProfile {
     required super.updatedAt,
   });
 
+  factory UserProfileModel.create({
+    required String userId,
+    required String fullName,
+    String? bio,
+    String? avatarUrl,
+  }) {
+    final now = DateTime.now();
+    return UserProfileModel(
+      id: '', // Se generará en la base de datos
+      userId: userId,
+      fullName: fullName,
+      bio: bio,
+      avatarUrl: avatarUrl,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
     return UserProfileModel(
       id: json['id'] as String,
@@ -70,24 +88,6 @@ class UserProfileModel extends UserProfile {
       avatarUrl: avatarUrl ?? this.avatarUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-    );
-  }
-
-  factory UserProfileModel.create({
-    required String userId,
-    required String fullName,
-    String? bio,
-    String? avatarUrl,
-  }) {
-    final now = DateTime.now();
-    return UserProfileModel(
-      id: '', // Se generará en la base de datos
-      userId: userId,
-      fullName: fullName,
-      bio: bio,
-      avatarUrl: avatarUrl,
-      createdAt: now,
-      updatedAt: now,
     );
   }
 }

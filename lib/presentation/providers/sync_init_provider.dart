@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../infrastructure/services/cross_platform_init_service.dart';
 import '../../infrastructure/services/sync_service.dart';
 import 'auth_provider.dart';
@@ -44,7 +45,7 @@ class AuthSyncListener {
   /// Manejar cuando el usuario se autentica
   Future<void> _handleUserAuthenticated() async {
     try {
-      print('🔐 Usuario autenticado - iniciando sincronización...');
+      LoggerFactory.info('🔐 Usuario autenticado - iniciando sincronización...');
 
       // Obtener el servicio de sincronización
       final syncService = _ref.read(syncServiceProvider);
@@ -52,16 +53,16 @@ class AuthSyncListener {
       // Iniciar sincronización automática
       await syncService.onUserAuthenticated();
 
-      print('✅ Sincronización post-login completada');
+      LoggerFactory.info('✅ Sincronización post-login completada');
     } catch (e) {
-      print('❌ Error en sincronización post-login: $e');
+      LoggerFactory.error('❌ Error en sincronización post-login: $e');
     }
   }
 
   /// Manejar cuando el usuario cierra sesión
   Future<void> _handleUserLoggedOut() async {
     try {
-      print('🚪 Usuario cerró sesión - limpiando servicios...');
+      LoggerFactory.info('🚪 Usuario cerró sesión - limpiando servicios...');
 
       // Obtener el servicio de sincronización
       final syncService = _ref.read(syncServiceProvider);
@@ -73,9 +74,9 @@ class AuthSyncListener {
       // final initService = _ref.read(crossPlatformInitProvider);
       // await initService.clearAllData();
 
-      print('✅ Limpieza post-logout completada');
+      LoggerFactory.info('✅ Limpieza post-logout completada');
     } catch (e) {
-      print('❌ Error en limpieza post-logout: $e');
+      LoggerFactory.error('❌ Error en limpieza post-logout: $e');
     }
   }
 
@@ -85,7 +86,7 @@ class AuthSyncListener {
       final syncService = _ref.read(syncServiceProvider);
       await syncService.forceSyncAllData();
     } catch (e) {
-      print('❌ Error en sincronización manual: $e');
+      LoggerFactory.error('❌ Error en sincronización manual: $e');
       rethrow;
     }
   }

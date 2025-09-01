@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../domain/entities/movie.dart';
+import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
 import '../../screens/movies/movie_screen.dart';
 import '../admob/ad_integration_helper.dart';
@@ -271,14 +272,30 @@ class _SlideState extends ConsumerState<_Slide>
                         borderRadius: BorderRadius.circular(20),
                         child: Stack(
                           children: [
-                            FadeInImage(
+                            SizedBox(
                               height: 220,
-                              fit: BoxFit.cover,
-                              placeholder: const AssetImage(
-                                  'assets/loaders/bottle-loader.gif'),
-                              image: NetworkImage(widget.movie.posterPath),
-                              imageErrorBuilder: (context, error, stackTrace) {
-                                return Container(
+                              width: 150,
+                              child: OptimizedImage(
+                                imageUrl: widget.movie.posterPath,
+                                fit: BoxFit.cover,
+                                borderRadius: BorderRadius.circular(20),
+                                enableHeroAnimation: true,
+                                heroTag: 'horizontal-ads-${widget.movie.id}',
+                                placeholder: Container(
+                                  height: 220,
+                                  width: 150,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: Container(
                                   height: 220,
                                   width: 150,
                                   decoration: BoxDecoration(
@@ -304,8 +321,8 @@ class _SlideState extends ConsumerState<_Slide>
                                       ),
                                     ],
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                             ),
 
                             // Botones de acción

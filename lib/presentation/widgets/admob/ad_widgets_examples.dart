@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/movie.dart';
 import '../movies/movie_horizontal_listview_with_ads.dart';
 import '../movies/movie_masonry_with_ads.dart';
@@ -26,17 +27,14 @@ class AdWidgetsExamples extends StatelessWidget {
             _buildSectionTitle('1. Anuncios en Listas Horizontales'),
             const SizedBox(height: 16),
             _buildHorizontalListExample(),
-            
             const SizedBox(height: 32),
             _buildSectionTitle('2. Anuncios Individuales'),
             const SizedBox(height: 16),
             _buildIndividualAdsExample(),
-            
             const SizedBox(height: 32),
             _buildSectionTitle('3. Anuncios de Ancho Completo'),
             const SizedBox(height: 16),
             _buildFullWidthAdsExample(),
-            
             const SizedBox(height: 32),
             _buildSectionTitle('4. Grid con Anuncios'),
             const SizedBox(height: 16),
@@ -60,7 +58,7 @@ class AdWidgetsExamples extends StatelessWidget {
   Widget _buildHorizontalListExample() {
     // Ejemplo con películas ficticias
     final movies = _generateSampleMovies(20);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -89,7 +87,7 @@ class AdWidgetsExamples extends StatelessWidget {
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(height: 16),
-        
+
         // Fila con diferentes tipos de anuncios de tarjeta
         Row(
           children: [
@@ -107,9 +105,9 @@ class AdWidgetsExamples extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             // Anuncio de tarjeta compacto
             const Expanded(
               child: Column(
@@ -124,9 +122,9 @@ class AdWidgetsExamples extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             const SizedBox(width: 16),
-            
+
             // Anuncio de grid
             const Expanded(
               child: Column(
@@ -156,17 +154,17 @@ class AdWidgetsExamples extends StatelessWidget {
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(height: 16),
-        
+
         // Anuncio estándar
         const FullWidthAdWidget(),
-        
+
         const SizedBox(height: 16),
-        
+
         // Anuncio compacto
         const CompactFullWidthAdWidget(),
-        
+
         const SizedBox(height: 16),
-        
+
         // Anuncio premium
         const PremiumFullWidthAdWidget(),
       ],
@@ -175,7 +173,7 @@ class AdWidgetsExamples extends StatelessWidget {
 
   Widget _buildGridExample() {
     final movies = _generateSampleMovies(30);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -184,7 +182,7 @@ class AdWidgetsExamples extends StatelessWidget {
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
         const SizedBox(height: 8),
-        
+
         // Contenedor con altura fija para el ejemplo
         SizedBox(
           height: 600,
@@ -192,7 +190,7 @@ class AdWidgetsExamples extends StatelessWidget {
             movies: movies,
             loadNextPage: () {
               // Simular carga de más películas
-              debugPrint('Cargando más películas...');
+              LoggerFactory.info('Cargando más películas...');
             },
             gridAdFrequency: 9,
             fullWidthAdFrequency: 15,
@@ -209,12 +207,14 @@ class AdWidgetsExamples extends StatelessWidget {
     return List.generate(count, (index) {
       return Movie(
         adult: false,
-        backdropPath: 'https://image.tmdb.org/t/p/w500/sample_backdrop_$index.jpg',
+        backdropPath:
+            'https://image.tmdb.org/t/p/w500/sample_backdrop_$index.jpg',
         genreIds: ['28', '12', '878'], // Acción, Aventura, Ciencia ficción
         id: index + 1,
         originalLanguage: 'en',
         originalTitle: 'Sample Movie ${index + 1}',
-        overview: 'Esta es una película de ejemplo número ${index + 1} para demostrar la integración de anuncios.',
+        overview:
+            'Esta es una película de ejemplo número ${index + 1} para demostrar la integración de anuncios.',
         popularity: 100.0 - index,
         posterPath: 'https://image.tmdb.org/t/p/w500/sample_poster_$index.jpg',
         releaseDate: DateTime.now().subtract(Duration(days: index * 30)),
@@ -263,7 +263,7 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Controles para anuncios horizontales
                 Row(
                   children: [
@@ -293,7 +293,7 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
                     const Text(' películas'),
                   ],
                 ),
-                
+
                 // Controles para anuncios de grid
                 Row(
                   children: [
@@ -323,7 +323,7 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
                     const Text(' películas'),
                   ],
                 ),
-                
+
                 // Controles para anuncios de ancho completo
                 Row(
                   children: [
@@ -356,7 +356,7 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
               ],
             ),
           ),
-          
+
           // Vista previa con la configuración actual
           Expanded(
             child: SingleChildScrollView(
@@ -370,9 +370,9 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
                     adFrequency: _horizontalAdFrequency,
                     enableAds: _enableHorizontalAds,
                   ),
-                  
+
                   const SizedBox(height: 32),
-                  
+
                   // Grid con configuración actual
                   SizedBox(
                     height: 400,
@@ -398,7 +398,8 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
     return List.generate(count, (index) {
       return Movie(
         adult: false,
-        backdropPath: 'https://image.tmdb.org/t/p/w500/sample_backdrop_$index.jpg',
+        backdropPath:
+            'https://image.tmdb.org/t/p/w500/sample_backdrop_$index.jpg',
         genreIds: ['28', '12', '878'],
         id: index + 1,
         originalLanguage: 'en',

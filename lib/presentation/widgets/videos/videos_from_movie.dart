@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/video.dart';
 import '../../providers/movies/movies_repository_provider.dart';
 import '../../services/pip_service.dart';
@@ -81,12 +82,14 @@ class _VideosList extends StatelessWidget {
                     onTap: () {
                       Navigator.of(context).push(
                         PageRouteBuilder(
-                          pageBuilder: (context, animation, secondaryAnimation) =>
-                              CinemaMode(
+                          pageBuilder:
+                              (context, animation, secondaryAnimation) =>
+                                  CinemaMode(
                             youtubeId: videos.first.youtubeKey,
                             movieTitle: videos.first.name,
                           ),
-                          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          transitionsBuilder:
+                              (context, animation, secondaryAnimation, child) {
                             return FadeTransition(
                               opacity: animation,
                               child: ScaleTransition(
@@ -142,9 +145,9 @@ class _VideosList extends StatelessWidget {
 
         //* Aunque tengo varios videos, sólo quiero mostrar el primero
         _YouTubeVideoPlayer(
-            youtubeId: videos.first.youtubeKey, 
-            name: videos.first.name,
-            videos: videos,
+          youtubeId: videos.first.youtubeKey,
+          name: videos.first.name,
+          videos: videos,
         )
 
         //* Si se desean mostrar todos los videos
@@ -158,7 +161,7 @@ class _VideosList extends StatelessWidget {
 
 class _YouTubeVideoPlayer extends StatefulWidget {
   const _YouTubeVideoPlayer({
-    required this.youtubeId, 
+    required this.youtubeId,
     required this.name,
     required this.videos,
   });
@@ -229,7 +232,7 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
                     );
                     if (success) {
                       // PiP iniciado exitosamente
-                      debugPrint('PiP iniciado para: ${widget.name}');
+                      LoggerFactory.info('PiP iniciado para: ${widget.name}');
                     }
                   },
                   child: Container(

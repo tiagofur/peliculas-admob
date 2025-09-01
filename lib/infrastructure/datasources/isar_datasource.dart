@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 
@@ -34,7 +35,7 @@ class HiveDatasource extends LocalStorageDatasource {
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
-        print('Error inicializando Hive: $e');
+        LoggerFactory.error('Error inicializando Hive: $e');
       }
       // En caso de error, intentar con un nombre de box diferente
       try {
@@ -42,7 +43,7 @@ class HiveDatasource extends LocalStorageDatasource {
         _isInitialized = true;
       } catch (e2) {
         if (kDebugMode) {
-          print('Error inicializando Hive con fallback: $e2');
+          LoggerFactory.error('Error inicializando Hive con fallback: $e2');
         }
         rethrow;
       }
@@ -59,7 +60,7 @@ class HiveDatasource extends LocalStorageDatasource {
       return movies.isNotEmpty;
     } catch (e) {
       if (kDebugMode) {
-        print('Error checking if movie is favorite: $e');
+        LoggerFactory.error('Error checking if movie is favorite: $e');
       }
       return false;
     }
@@ -86,7 +87,7 @@ class HiveDatasource extends LocalStorageDatasource {
       await _moviesBox!.add(movie);
     } catch (e) {
       if (kDebugMode) {
-        print('Error toggling favorite: $e');
+        LoggerFactory.error('Error toggling favorite: $e');
       }
       rethrow;
     }
@@ -96,32 +97,37 @@ class HiveDatasource extends LocalStorageDatasource {
   Future<List<Movie>> loadMovies({int limit = 10, offset = 0}) async {
     try {
       if (!_isInitialized) {
-        print('🔄 HiveDatasource no inicializado, inicializando...');
+        LoggerFactory.info(
+            '🔄 HiveDatasource no inicializado, inicializando...');
         await _initHive();
       }
 
       if (_moviesBox == null) {
-        print('❌ MoviesBox es null, retornando lista vacía');
+        LoggerFactory.warning('❌ MoviesBox es null, retornando lista vacía');
         return [];
       }
 
       final allMovies = _moviesBox!.values.toList();
-      print('📊 HiveDatasource: Total películas en box: ${allMovies.length}');
-      print('📊 HiveDatasource: Solicitado limit=$limit, offset=$offset');
+      LoggerFactory.info(
+          '📊 HiveDatasource: Total películas en box: ${allMovies.length}');
+      LoggerFactory.info(
+          '📊 HiveDatasource: Solicitado limit=$limit, offset=$offset');
 
       final endIndex = (offset + limit).clamp(0, allMovies.length);
 
       if (offset >= allMovies.length) {
-        print('📊 HiveDatasource: Offset mayor que total, retornando vacío');
+        LoggerFactory.info(
+            '📊 HiveDatasource: Offset mayor que total, retornando vacío');
         return [];
       }
 
       final result = allMovies.sublist(offset, endIndex);
-      print('📊 HiveDatasource: Retornando ${result.length} películas');
+      LoggerFactory.info(
+          '📊 HiveDatasource: Retornando ${result.length} películas');
       return result;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error loading movies: $e');
+        LoggerFactory.error('❌ Error loading movies: $e');
       }
       return [];
     }
@@ -136,7 +142,7 @@ class HiveDatasource extends LocalStorageDatasource {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error clearing all data: $e');
+        LoggerFactory.error('Error clearing all data: $e');
       }
     }
   }
@@ -150,7 +156,7 @@ class HiveDatasource extends LocalStorageDatasource {
       _isInitialized = false;
     } catch (e) {
       if (kDebugMode) {
-        print('Error closing database: $e');
+        LoggerFactory.error('Error closing database: $e');
       }
     }
   }

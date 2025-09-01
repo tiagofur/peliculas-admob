@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/logging/logger_factory.dart';
 import 'web_safe_storage_service.dart';
 
 class PersistentSyncQueue {
@@ -11,7 +12,7 @@ class PersistentSyncQueue {
   Future<void> init() async {
     // No necesita inicialización específica con SharedPreferences
     if (kDebugMode) {
-      print(
+      LoggerFactory.info(
           'PersistentSyncQueue inicializado para ${kIsWeb ? 'Web' : 'nativo'}');
     }
   }
@@ -25,7 +26,7 @@ class PersistentSyncQueue {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error agregando item a sync queue: $e');
+        LoggerFactory.error('Error agregando item a sync queue: $e');
       }
     }
   }
@@ -38,7 +39,7 @@ class PersistentSyncQueue {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error removiendo item de sync queue: $e');
+        LoggerFactory.error('Error removiendo item de sync queue: $e');
       }
     }
   }
@@ -49,7 +50,7 @@ class PersistentSyncQueue {
       return itemsJson.map((item) => item['id'] as String).toList();
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo items de sync queue: $e');
+        LoggerFactory.error('Error obteniendo items de sync queue: $e');
       }
       return [];
     }
@@ -66,7 +67,7 @@ class PersistentSyncQueue {
       await _storage.clearWithPrefix(_keyPrefix);
     } catch (e) {
       if (kDebugMode) {
-        print('Error limpiando sync queue: $e');
+        LoggerFactory.error('Error limpiando sync queue: $e');
       }
     }
   }
@@ -78,7 +79,7 @@ class PersistentSyncQueue {
       await _storage.saveJsonList(_itemsListKey, itemsJson);
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando items en sync queue: $e');
+        LoggerFactory.error('Error guardando items en sync queue: $e');
       }
     }
   }

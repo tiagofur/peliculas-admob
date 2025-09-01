@@ -24,3 +24,5 @@ export 'shared/cinema_mode.dart';
 export 'shared/page_transitions.dart';
 
 export 'videos/videos_from_movie.dart';
+
+export 'streaming/streaming_widgets.dart';

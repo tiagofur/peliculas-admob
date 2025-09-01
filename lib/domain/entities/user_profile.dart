@@ -1,12 +1,4 @@
 class UserProfile {
-  final String id;
-  final String userId;
-  final String fullName;
-  final String? bio;
-  final String? avatarUrl;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
   const UserProfile({
     required this.id,
     required this.userId,
@@ -16,6 +8,13 @@ class UserProfile {
     required this.createdAt,
     required this.updatedAt,
   });
+  final String id;
+  final String userId;
+  final String fullName;
+  final String? bio;
+  final String? avatarUrl;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   UserProfile copyWith({
     String? id,

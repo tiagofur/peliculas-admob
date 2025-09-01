@@ -3,6 +3,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    
+    <!-- Firebase Cloud Messaging permissions -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
    <application
         android:label="Peliculas"
@@ -12,6 +18,25 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-3460220325831299~7925363454"/>
+            
+        <!-- Firebase Cloud Messaging default notification channel -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="peliculas_notifications" />
+            
+        <!-- Firebase Cloud Messaging default notification icon -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/launcher_icon" />
+            
+        <!-- Firebase Cloud Messaging service -->
+        <service
+            android:name=".FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
         
         <activity
             android:name=".MainActivity"

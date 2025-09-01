@@ -1,3 +1,4 @@
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/sync_models.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import 'conflict_resolver.dart';
@@ -19,19 +20,19 @@ class SyncManager<T extends SyncableEntity> {
   final SyncableRepository<T> repository;
 
   Future<SyncResult> sync() async {
-    print('🔄 SyncManager: Iniciando sincronización...');
+    LoggerFactory.info('🔄 SyncManager: Iniciando sincronización...');
 
     final localItems = await repository.getLocalData();
     final remoteItems = await repository.getRemoteData();
 
-    print(
+    LoggerFactory.info(
         '📊 SyncManager: Local: ${localItems.length}, Remote: ${remoteItems.length}');
 
     final toUpload = ConflictResolver.findLocalChanges(localItems, remoteItems);
     final toDownload =
         ConflictResolver.findRemoteChanges(localItems, remoteItems);
 
-    print(
+    LoggerFactory.info(
         '📊 SyncManager: Para subir: ${toUpload.length}, Para descargar: ${toDownload.length}');
 
     await _upload(toUpload);
@@ -39,10 +40,10 @@ class SyncManager<T extends SyncableEntity> {
 
     final conflicts = ConflictResolver.detectConflicts(localItems, remoteItems);
     if (conflicts.isNotEmpty) {
-      print(
+      LoggerFactory.warning(
           '⚠️ SyncManager: ${conflicts.length} conflictos detectados, resolviendo...');
       await repository.resolveConflicts(localItems, remoteItems);
-      print('✅ SyncManager: Conflictos resueltos');
+      LoggerFactory.info('✅ SyncManager: Conflictos resueltos');
     }
 
     final result = SyncResult(
@@ -51,27 +52,27 @@ class SyncManager<T extends SyncableEntity> {
       conflicted: conflicts.length,
     );
 
-    print('🎉 SyncManager: Sincronización completada - $result');
+    LoggerFactory.info('🎉 SyncManager: Sincronización completada - $result');
     return result;
   }
 
   Future<void> _upload(List<T> items) async {
     if (items.isNotEmpty) {
-      print('⬆️ SyncManager: Subiendo ${items.length} elementos...');
+      LoggerFactory.info('⬆️ SyncManager: Subiendo ${items.length} elementos...');
       await repository.upload(items);
-      print('✅ SyncManager: Upload completado');
+      LoggerFactory.info('✅ SyncManager: Upload completado');
     } else {
-      print('⬆️ SyncManager: No hay elementos para subir');
+      LoggerFactory.info('⬆️ SyncManager: No hay elementos para subir');
     }
   }
 
   Future<void> _download(List<T> items) async {
     if (items.isNotEmpty) {
-      print('⬇️ SyncManager: Descargando ${items.length} elementos...');
+      LoggerFactory.info('⬇️ SyncManager: Descargando ${items.length} elementos...');
       await repository.download(items);
-      print('✅ SyncManager: Download completado');
+      LoggerFactory.info('✅ SyncManager: Download completado');
     } else {
-      print('⬇️ SyncManager: No hay elementos para descargar');
+      LoggerFactory.info('⬇️ SyncManager: No hay elementos para descargar');
     }
   }
 }

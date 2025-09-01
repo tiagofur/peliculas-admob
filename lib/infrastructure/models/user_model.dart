@@ -1,24 +1,17 @@
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+
 import '../../domain/entities/user.dart';
 
 class UserModel extends User {
   const UserModel({
-    required String id,
-    required String email,
-    String? fullName,
-    String? avatarUrl,
-    required DateTime createdAt,
-    DateTime? lastSignInAt,
-    Map<String, dynamic>? userMetadata,
-  }) : super(
-    id: id,
-    email: email,
-    fullName: fullName,
-    avatarUrl: avatarUrl,
-    createdAt: createdAt,
-    lastSignInAt: lastSignInAt,
-    userMetadata: userMetadata,
-  );
+    required super.id,
+    required super.email,
+    super.fullName,
+    super.avatarUrl,
+    required super.createdAt,
+    super.lastSignInAt,
+    super.userMetadata,
+  });
 
   factory UserModel.fromSupabaseUser(supabase.User user) {
     return UserModel(
@@ -27,9 +20,8 @@ class UserModel extends User {
       fullName: user.userMetadata?['full_name'] as String?,
       avatarUrl: user.userMetadata?['avatar_url'] as String?,
       createdAt: DateTime.parse(user.createdAt),
-      lastSignInAt: user.lastSignInAt != null 
-          ? DateTime.parse(user.lastSignInAt!) 
-          : null,
+      lastSignInAt:
+          user.lastSignInAt != null ? DateTime.parse(user.lastSignInAt!) : null,
       userMetadata: user.userMetadata,
     );
   }
@@ -47,10 +39,4 @@ class UserModel extends User {
       userMetadata: json['user_metadata'] as Map<String, dynamic>?,
     );
   }
-
-
-
-
-
-
 }

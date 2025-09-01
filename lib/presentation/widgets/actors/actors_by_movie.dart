@@ -2,6 +2,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../services/hybrid_image_service.dart';
 import '../../providers/actors/actors_by_movie_provider.dart';
 
 class ActorsByMovie extends ConsumerWidget {
@@ -39,44 +40,58 @@ class ActorsByMovie extends ConsumerWidget {
               children: [
                 // Actor Photo
                 FadeInRight(
-                  child: ClipRRect(
+                  child: SizedBox(
+                    height: 180,
+                    width: 135,
+                    child: OptimizedImage(
+                      imageUrl: actor.profilePath,
+                      fit: BoxFit.cover,
                       borderRadius: BorderRadius.circular(20),
-                      child: FadeInImage(
-                        placeholder: const AssetImage('assets/loaders/bottle-loader.gif'),
-                        image: NetworkImage(actor.profilePath),
+                      enableHeroAnimation: true,
+                      heroTag: 'actor-${actor.id}',
+                      placeholder: Container(
                         height: 180,
                         width: 135,
-                        fit: BoxFit.cover,
-                        imageErrorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 180,
-                            width: 135,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[900],
-                              borderRadius: BorderRadius.circular(20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          ),
+                        ),
+                      ),
+                      errorWidget: Container(
+                        height: 180,
+                        width: 135,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[900],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.person_outline,
+                              size: 40,
+                              color: Colors.grey[600],
                             ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.person_outline,
-                                  size: 40,
-                                  color: Colors.grey[600],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Perfil no\ndisponible',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(height: 8),
+                            Text(
+                              'Perfil no\ndisponible',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 10,
+                              ),
                             ),
-                          );
-                        },
-                      )),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
 
                 // Nombre

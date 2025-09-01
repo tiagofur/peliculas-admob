@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+// TODO: Re-enable when gamification integration is implemented
+// import '../../core/gamification/gamification_integration_service.dart';
 import '../../domain/entities/entities.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
@@ -29,11 +31,17 @@ class AllListsState {
 
 // StateNotifier unificado para manejar todas las listas
 class AllListsNotifier extends StateNotifier<AllListsState> {
-  AllListsNotifier(this._repository) : super(_getInitialState()) {
+  AllListsNotifier(Ref ref, this._repository) : super(_getInitialState()) {
+    // TODO: Initialize gamification service when needed
+    // _gamificationService = _ref.read(gamificationIntegrationServiceProvider);
     _loadCustomLists();
   }
 
   final CustomListsRepository _repository;
+  // TODO: Re-enable _ref when gamification integration is implemented
+  // final Ref _ref;
+  // TODO: Implement gamification integration when trackMovieAddedToList is available
+  // late final GamificationIntegrationService _gamificationService;
 
   // Cargar listas personalizadas y predeterminadas desde el almacenamiento
   Future<void> _loadCustomLists() async {
@@ -42,7 +50,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       final savedDefaultLists = await _repository.getDefaultLists();
 
       List<CustomList> finalDefaultLists;
-      
+
       if (savedDefaultLists.isNotEmpty) {
         // Si hay listas guardadas, fusionar con las iniciales para preservar movieIds
         final initialDefaultLists = state.defaultLists;
@@ -52,7 +60,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
             (saved) => saved.id == initialList.id,
             orElse: () => initialList, // Si no se encuentra, usar la inicial
           );
-          
+
           // Preservar movieIds de la lista guardada pero mantener otros datos actualizados
           return initialList.copyWith(
             movieIds: savedList.movieIds,
@@ -266,8 +274,14 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
   // Añadir película a una lista
   void addMovieToList(String listId, int movieId) {
+    // TODO: Uncomment when gamification is implemented
+    // bool movieAdded = false;
+    // String? listName;
+
     final updatedCustomLists = state.customLists.map((list) {
       if (list.id == listId && !list.movieIds.contains(movieId)) {
+        // movieAdded = true;
+        // listName = list.name;
         final updatedMovieIds = [...list.movieIds, movieId];
         return list.copyWith(
           movieIds: updatedMovieIds,
@@ -279,6 +293,8 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
     final updatedDefaultLists = state.defaultLists.map((list) {
       if (list.id == listId && !list.movieIds.contains(movieId)) {
+        // movieAdded = true;
+        // listName = list.name;
         final updatedMovieIds = [...list.movieIds, movieId];
         return list.copyWith(
           movieIds: updatedMovieIds,
@@ -293,6 +309,16 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       defaultLists: updatedDefaultLists,
     );
     _saveCustomLists();
+
+    // Track gamification event
+    // TODO: Implement trackMovieAddedToList method in GamificationIntegrationService
+    // if (movieAdded && listName != null) {
+    //   _gamificationService.trackMovieAddedToList(
+    //     movieId: movieId.toString(),
+    //     listId: listId,
+    //     listName: listName!,
+    //   );
+    // }
   }
 
   // Remover película de una lista
@@ -441,7 +467,7 @@ final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
 final allListsProvider =
     StateNotifierProvider<AllListsNotifier, AllListsState>((ref) {
   final repository = ref.watch(customListsRepositoryProvider);
-  return AllListsNotifier(repository);
+  return AllListsNotifier(ref, repository);
 });
 
 // Provider para obtener todas las listas

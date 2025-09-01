@@ -3,12 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
+import '../../core/logging/logger_factory.dart';
+import '../../core/services/persistent_sync_queue.dart';
+import '../../core/sync/conflict_resolution/conflict_detector.dart';
+import '../../core/sync/conflict_resolution/conflict_metrics_service.dart';
+import '../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
+import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
+import '../../core/sync/conflict_resolution/strategies/custom_lists_conflict_strategy.dart';
 import '../../domain/entities/custom_list.dart';
-import '../../domain/entities/sync_models.dart';
+import '../../domain/entities/sync_operation.dart';
+import '../../domain/entities/syncable_custom_list.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../datasources/custom_lists_shared_preferences_datasource.dart';
-import '../services/persistent_sync_queue.dart';
+// Removed unused import
+import '../sync/conflict_statistics_service.dart';
 
 // Repositorio híbrido que maneja listas personalizadas localmente y sincroniza con Supabase
 class HybridCustomListsRepository
@@ -16,14 +25,51 @@ class HybridCustomListsRepository
   HybridCustomListsRepository({
     required CustomListsSharedPreferencesDatasource localDatasource,
     required Ref ref,
+    MultiplataformConflictResolver? conflictResolver,
+    ConflictDetector? conflictDetector,
+    SoftDeleteManager? softDeleteManager,
+    ConflictMetricsService? metricsService,
   })  : _localDatasource = localDatasource,
         _ref = ref {
-    _syncQueue.init();
+    _syncQueue = PersistentSyncQueue();
+
+    // Inicializar componentes de resolución de conflictos
+    _conflictResolver = conflictResolver ?? MultiplataformConflictResolver();
+    // Removed unused _severityClassifier
+    _statisticsService = ConflictStatisticsService();
+    _conflictDetector = conflictDetector ??
+        ConflictDetector(
+          _softDeleteManager,
+          _statisticsService,
+        );
+    _softDeleteManager = softDeleteManager ?? SoftDeleteManager();
+    _metricsService = metricsService ?? ConflictMetricsService();
+
+    // Registrar estrategia específica para listas personalizadas
+    _conflictResolver.registerStrategy<SyncableCustomList>(
+      CustomListsConflictStrategy(),
+    );
+
+    _initializeQueue();
+    _metricsService.startSession('custom_lists_sync');
   }
+
+  Future<void> _initializeQueue() async {
+    await _syncQueue.initialize();
+  }
+
   final CustomListsSharedPreferencesDatasource _localDatasource;
   final Ref _ref;
   final SupabaseClient _supabase = Supabase.instance.client;
-  final PersistentSyncQueue _syncQueue = PersistentSyncQueue();
+  late final PersistentSyncQueue _syncQueue;
+
+  // Componentes del nuevo sistema de resolución de conflictos
+  late final MultiplataformConflictResolver _conflictResolver;
+  // Removed unused _severityClassifier
+  late final ConflictStatisticsService _statisticsService;
+  late final ConflictDetector _conflictDetector;
+  late final SoftDeleteManager _softDeleteManager;
+  late final ConflictMetricsService _metricsService;
 
   // Métodos auxiliares
   Future<void> _checkOnline() async {
@@ -50,7 +96,8 @@ class HybridCustomListsRepository
         await _checkOnline();
         await syncWithSupabase();
       } on SyncException catch (e) {
-        print('Error en sincronización automática de listas: $e');
+        LoggerFactory.warning(
+            'Error en sincronización automática de listas: $e');
       }
     }
 
@@ -96,14 +143,25 @@ class HybridCustomListsRepository
       throw LocalStorageException('Error al añadir la lista personalizada: $e');
     }
 
+    // Agregar operación a la cola de sincronización
+    final userId = _getCurrentUserId();
+    if (userId != null) {
+      final operation = SyncOperationFactory.createCustomList(
+          name: list.name, description: list.description, userId: userId);
+
+      LoggerFactory.info(
+          '📝 Agregando operación a la cola: ${operation.type.name} para lista ${list.name}');
+      await _syncQueue.enqueue(operation);
+    }
+
     try {
       await _checkOnline();
       if (_isAuthenticated()) {
         await _syncSingleList(list, isDeleted: false);
       }
     } on SyncException catch (e) {
-      await markForSync('${list.id}_add');
-      print('Error sincronizando nueva lista ${list.id}: $e');
+      LoggerFactory.logger
+          .error('Error sincronizando nueva lista ${list.id}: $e');
     }
   }
 
@@ -115,14 +173,28 @@ class HybridCustomListsRepository
           'Error al actualizar la lista personalizada: $e');
     }
 
+    // Agregar operación a la cola de sincronización
+    final userId = _getCurrentUserId();
+    if (userId != null) {
+      final operation = SyncOperationFactory.updateCustomList(
+          listId: list.id,
+          name: list.name,
+          description: list.description,
+          userId: userId);
+
+      LoggerFactory.info(
+          '📝 Agregando operación a la cola: ${operation.type.name} para lista ${list.name}');
+      await _syncQueue.enqueue(operation);
+    }
+
     try {
       await _checkOnline();
       if (_isAuthenticated()) {
         await _syncSingleList(list, isDeleted: false);
       }
     } on SyncException catch (e) {
-      await markForSync('${list.id}_update');
-      print('Error sincronizando actualización de lista ${list.id}: $e');
+      LoggerFactory.logger
+          .error('Error sincronizando actualización de lista ${list.id}: $e');
     }
   }
 
@@ -134,21 +206,32 @@ class HybridCustomListsRepository
           'Error al eliminar la lista personalizada: $e');
     }
 
+    // Agregar operación a la cola de sincronización
+    final userId = _getCurrentUserId();
+    if (userId != null) {
+      final operation =
+          SyncOperationFactory.deleteCustomList(listId: listId, userId: userId);
+
+      LoggerFactory.info(
+          '📝 Agregando operación a la cola: ${operation.type.name} para lista $listId');
+      await _syncQueue.enqueue(operation);
+    }
+
     try {
       await _checkOnline();
       if (_isAuthenticated()) {
         await _syncSingleListDeletion(listId);
       }
     } on SyncException catch (e) {
-      await markForSync('${listId}_delete');
-      print('Error sincronizando eliminación de lista $listId: $e');
+      LoggerFactory.logger
+          .error('Error sincronizando eliminación de lista $listId: $e');
     }
   }
 
   Future<void> clearAllCustomLists() async {
     try {
       await _localDatasource.clearAllCustomLists();
-      await _syncQueue.clear();
+      await _syncQueue.clearCompleted();
     } catch (e) {
       throw LocalStorageException(
           'Error al limpiar las listas personalizadas: $e');
@@ -180,9 +263,8 @@ class HybridCustomListsRepository
         await _syncListItems(list);
       }
 
-      // Limpiar marcador de sincronización
-      await clearSyncMarker('${list.id}_add');
-      await clearSyncMarker('${list.id}_update');
+      LoggerFactory.info(
+          '✅ Sincronización individual completada para lista ${list.name}');
     } on PostgrestException catch (e) {
       throw SupabaseSyncException(e.message, code: e.code);
     } catch (e) {
@@ -211,8 +293,7 @@ class HybridCustomListsRepository
           .eq('id', listId)
           .eq('user_id', userId);
 
-      // Limpiar marcador de sincronización
-      await clearSyncMarker('${listId}_delete');
+      LoggerFactory.info('✅ Eliminación de lista sincronizada: $listId');
     } on PostgrestException catch (e) {
       throw SupabaseSyncException(e.message, code: e.code);
     } catch (e) {
@@ -263,7 +344,7 @@ class HybridCustomListsRepository
       if (userId == null) return [];
 
       return customLists
-          .map((list) => SyncableCustomList.fromCustomList(list, userId))
+          .map((list) => SyncableCustomList.fromCustomList(list))
           .toList();
     } catch (e) {
       throw LocalStorageException(
@@ -312,37 +393,57 @@ class HybridCustomListsRepository
 
   @override
   Future<void> markForSync(String itemId) async {
-    await _syncQueue.addItem(itemId);
+    // Las operaciones se agregan automáticamente a la cola
+    LoggerFactory.info(
+        '📝 Marcador de sincronización agregado automáticamente: $itemId');
   }
 
   @override
   Future<bool> hasPendingSync() async {
-    return !(await _syncQueue.isEmpty);
+    final stats = _syncQueue.getStats();
+    return stats.pendingOperations > 0;
   }
 
   @override
   Future<List<String>> getPendingSyncItems() async {
-    return await _syncQueue.getItems();
+    final operations = _syncQueue.getPendingOperations();
+    return operations
+        .map((op) => '${op.data['listId']}_${op.type.name}')
+        .toList();
   }
 
   @override
   Future<void> clearSyncMarker(String itemId) async {
-    await _syncQueue.removeItem(itemId);
+    // Las operaciones se limpian automáticamente por la cola
+    LoggerFactory.info(
+        '🧹 Marcador de sincronización limpiado automáticamente: $itemId');
   }
 
   // Implementación de métodos abstractos faltantes
   @override
   Future<void> syncWithSupabase() async {
-    if (!_isAuthenticated()) return;
+    if (!_isAuthenticated()) {
+      LoggerFactory.info(
+          '👤 Usuario no autenticado, omitiendo sincronización de listas');
+      return;
+    }
 
     try {
       await _checkOnline();
+      LoggerFactory.info(
+          '🔄 Iniciando sincronización de listas personalizadas con Supabase');
 
       final localData = await getLocalData();
       final remoteData = await getRemoteData();
 
+      LoggerFactory.info(
+          '📊 Datos obtenidos: ${localData.length} locales, ${remoteData.length} remotos');
+
       await resolveConflicts(localData, remoteData);
+
+      LoggerFactory.info('✅ Sincronización de listas completada exitosamente');
     } catch (e) {
+      LoggerFactory.error('💥 Error en sincronización de listas: $e');
       throw SyncException('Error en sincronización: $e');
     }
   }
@@ -377,34 +478,169 @@ class HybridCustomListsRepository
   @override
   Future<void> resolveConflicts(
       List<SyncableCustomList> local, List<SyncableCustomList> remote) async {
-    // Resolver conflictos comparando timestamps
-    for (final remoteItem in remote) {
-      final localItem = local.firstWhere(
-        (item) => item.id == remoteItem.id,
-        orElse: () => throw Exception('Item not found'),
-      );
+    LoggerFactory.info(
+        '🔍 Iniciando resolución de conflictos para ${local.length} listas locales y ${remote.length} remotas');
 
-      try {
-        if (localItem.updatedAt.isAfter(remoteItem.updatedAt)) {
-          // Local es más reciente, subir cambios
-          await upload([localItem]);
-        } else if (remoteItem.updatedAt.isAfter(localItem.updatedAt)) {
-          // Remoto es más reciente, descargar cambios
-          await download([remoteItem]);
+    try {
+      // Detectar conflictos usando el nuevo sistema
+      final conflicts = _conflictDetector.detectConflicts(local, remote);
+
+      LoggerFactory.info(
+          '⚠️ Detectados ${conflicts.length} conflictos en listas personalizadas');
+
+      // Procesar cada conflicto individualmente
+      for (final conflict in conflicts) {
+        try {
+          // Registrar conflicto detectado
+          _metricsService.logConflictDetected(conflict);
+
+          LoggerFactory.info(
+              '🔧 Resolviendo conflicto ${conflict.type.name} para lista ${conflict.localItem.name ?? conflict.remoteItem.name}');
+
+          // Detectar tipo de conflicto
+          final conflictType = _conflictResolver.detectConflictType(
+            conflict.localItem,
+            conflict.remoteItem,
+            conflict.localItem.deletedAt != null,
+            conflict.remoteItem.deletedAt != null,
+            conflict.localItem.updatedAt,
+            conflict.remoteItem.updatedAt,
+          );
+
+          // Resolver usando la estrategia específica
+          final resolution = _conflictResolver.resolveConflict(
+            conflict.localItem,
+            conflict.remoteItem,
+            conflictType,
+          );
+
+          // Aplicar la resolución
+          await _applyResolution(conflict, resolution);
+
+          // Registrar resolución exitosa
+          _metricsService.logConflictResolved(conflict, resolution);
+
+          LoggerFactory.info('✅ Conflicto resuelto exitosamente');
+        } catch (e) {
+          LoggerFactory.error('❌ Error resolviendo conflicto: $e');
+          _metricsService.logConflictResolutionError(
+              conflict, e, StackTrace.current);
+          rethrow;
         }
-        // Si son iguales, no hacer nada
-      } catch (e) {
-        // Si no se encuentra localmente, descargar el remoto
-        await download([remoteItem]);
       }
+
+      // Sincronizar elementos sin conflictos
+      await _syncNonConflictingItems(local, remote, conflicts);
+
+      // Obtener y mostrar estadísticas
+      final stats = _conflictResolver.getConflictStats();
+      LoggerFactory.info(
+          '📊 Estadísticas de resolución: ${stats['totalConflicts']} conflictos, ${stats['dataLossIncidents']} con pérdida de datos');
+    } catch (e) {
+      LoggerFactory.error('💥 Error en resolución de conflictos de listas: $e');
+      rethrow;
+    }
+  }
+
+  /// Aplica la resolución de un conflicto tanto local como remotamente
+  Future<void> _applyResolution<T>(
+    ConflictInfo<T> conflict,
+    ConflictResolutionResult<T> resolution,
+  ) async {
+    final resolvedItem = resolution.resolvedItem as SyncableCustomList;
+
+    try {
+      // Manejar soft deletes
+      if (resolution.dataLoss) {
+        _softDeleteManager.markAsDeleted(resolvedItem);
+
+        // Aplicar soft delete remotamente para la lista
+        await _supabase.from('user_lists').update({
+          'deleted_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', resolvedItem.id);
+
+        // Aplicar soft delete a los elementos de la lista
+        await _supabase.from('user_list_items').update({
+          'deleted_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('list_id', resolvedItem.id);
+
+        // Remover localmente
+        await _localDatasource.deleteCustomList(resolvedItem.id);
+
+        LoggerFactory.info(
+            '🗑️ Soft delete aplicado para lista ${resolvedItem.name}');
+        return;
+      }
+
+      // Aplicar resolución localmente
+      final customList = resolvedItem.toCustomList();
+      await _localDatasource.updateCustomList(customList);
+
+      // Aplicar resolución remotamente
+      await _supabase.from('user_lists').upsert({
+        'id': resolvedItem.id,
+        'user_id': resolvedItem.userId,
+        'name': resolvedItem.name,
+        'description': resolvedItem.description,
+        'color_hex': resolvedItem.emoji,
+        'is_public': resolvedItem.isPublic,
+        'created_at': resolvedItem.createdAt.toIso8601String(),
+        'updated_at': resolvedItem.updatedAt.toIso8601String(),
+        'deleted_at': null, // Asegurar que no esté marcado como eliminado
+      });
+
+      // Sincronizar elementos de la lista
+      await _syncListItems(customList);
+
+      LoggerFactory.info(
+          '💾 Resolución aplicada para lista ${resolvedItem.name}');
+    } on PostgrestException catch (e) {
+      throw SupabaseSyncException(
+          'Error aplicando resolución para ${resolvedItem.id}: ${e.message}',
+          code: e.code);
+    } catch (e) {
+      throw LocalStorageException(
+          'Error aplicando resolución para ${resolvedItem.id}: $e');
+    }
+  }
+
+  /// Sincroniza elementos que no tienen conflictos
+  Future<void> _syncNonConflictingItems(
+    List<SyncableCustomList> localItems,
+    List<SyncableCustomList> remoteItems,
+    List<ConflictInfo<SyncableCustomList>> conflicts,
+  ) async {
+    // Obtener IDs de elementos en conflicto
+    final conflictIds =
+        conflicts.expand((c) => [c.localItem.id, c.remoteItem.id]).toSet();
+
+    // Elementos locales sin conflictos para subir
+    final localToUpload = localItems
+        .where((item) => !conflictIds.contains(item.id))
+        .where((local) => !remoteItems.any((remote) => remote.id == local.id))
+        .toList();
+
+    // Elementos remotos sin conflictos para descargar
+    final remoteToDownload = remoteItems
+        .where((item) => !conflictIds.contains(item.id))
+        .where((remote) => !localItems.any((local) => local.id == remote.id))
+        .toList();
+
+    LoggerFactory.info(
+        '⬆️ Subiendo ${localToUpload.length} listas sin conflictos');
+    LoggerFactory.info(
+        '⬇️ Descargando ${remoteToDownload.length} listas sin conflictos');
+
+    // Subir elementos locales
+    if (localToUpload.isNotEmpty) {
+      await upload(localToUpload);
     }
 
-    // Subir elementos que solo existen localmente
-    for (final localItem in local) {
-      final existsInRemote = remote.any((item) => item.id == localItem.id);
-      if (!existsInRemote) {
-        await upload([localItem]);
-      }
+    // Descargar elementos remotos
+    if (remoteToDownload.isNotEmpty) {
+      await download(remoteToDownload);
     }
   }
 

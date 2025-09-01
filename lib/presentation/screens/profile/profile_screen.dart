@@ -6,6 +6,7 @@ import 'package:image_cropper/image_cropper.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../widgets/profile_avatar.dart';
+import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
 
@@ -23,6 +24,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _isEditing = false;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
+  final AnalyticsService _analyticsService = AnalyticsService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Rastrear visualización del perfil
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -414,6 +427,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildActionButtons(ThemeData theme) {
     return Column(
       children: [
+
+        
+        // Botón de cerrar sesión
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
@@ -437,6 +453,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _fullNameController.text = profile.fullName;
         _bioController.text = profile.bio ?? '';
         _selectedImage = null;
+      });
+      
+      // Rastrear inicio de edición del perfil
+      _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+        'timestamp': DateTime.now().toIso8601String(),
+        'has_bio': profile.bio != null,
+        'has_avatar': profile.avatarUrl != null,
       });
     }
   }
@@ -477,6 +500,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           setState(() {
             _isEditing = false;
             _selectedImage = null;
+          });
+          
+          // Rastrear guardado exitoso del perfil
+          _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+            'timestamp': DateTime.now().toIso8601String(),
+            'has_bio': _bioController.text.trim().isNotEmpty,
+            'has_avatar_change': _selectedImage != null,
+            'name_length': _fullNameController.text.trim().length,
           });
           
           ScaffoldMessenger.of(context).showSnackBar(
@@ -535,6 +566,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {
           _selectedImage = File(croppedFile.path);
         });
+        
+        // Rastrear selección de imagen de avatar
+        _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'gallery',
+        });
       }
     }
   }
@@ -553,6 +590,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
+              
+              // Rastrear cierre de sesión
+              _analyticsService.trackEvent(AnalyticsEventType.sessionEnd, {
+                'timestamp': DateTime.now().toIso8601String(),
+                'source': 'profile_screen',
+              });
+              
               ref.read(authNotifierProvider.notifier).signOut();
             },
             style: FilledButton.styleFrom(

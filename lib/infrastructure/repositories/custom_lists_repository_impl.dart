@@ -8,7 +8,7 @@ abstract class CustomListsRepository {
   Future<void> updateCustomList(CustomList list);
   Future<void> deleteCustomList(String listId);
   Future<void> clearAllCustomLists();
-  
+
   // Métodos para listas predeterminadas
   Future<List<CustomList>> getDefaultLists();
   Future<void> saveDefaultLists(List<CustomList> lists);

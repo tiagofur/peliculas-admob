@@ -25,7 +25,12 @@ enum RecommendationType {
   trending,
   forYou,
   similar,
-  mood
+  mood,
+  newReleases,
+  topRated,
+  director,
+  actor,
+  genre
 }
 
 class RecommendationCategory {

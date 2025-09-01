@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/auth_provider.dart';
 import 'profile_avatar.dart';
-import 'guest_mode_banner.dart';
 
 class CustomDrawer extends ConsumerWidget {
   const CustomDrawer({super.key});
@@ -14,7 +13,7 @@ class CustomDrawer extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    
+
     return Drawer(
       child: Column(
         children: [
@@ -23,24 +22,27 @@ class CustomDrawer extends ConsumerWidget {
             _buildAuthenticatedHeader(context, ref, colorScheme)
           else
             _buildGuestHeader(context, colorScheme),
-          
+
           // Divider
           const Divider(height: 1),
-          
+
           // Menu items
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                if (isAuthenticated) ..._buildAuthenticatedMenuItems(context, ref)
-                else ..._buildGuestMenuItems(context),
-                
+                if (isAuthenticated)
+                  ..._buildAuthenticatedMenuItems(context, ref)
+                else
+                  ..._buildGuestMenuItems(context),
+
                 const Divider(),
-                
+
                 // Menu items comunes
                 ..._buildCommonMenuItems(context),
-                
-                if (isAuthenticated) ..._buildAuthenticatedActions(context, ref),
+
+                if (isAuthenticated)
+                  ..._buildAuthenticatedActions(context, ref),
               ],
             ),
           ),
@@ -49,10 +51,11 @@ class CustomDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildAuthenticatedHeader(BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
+  Widget _buildAuthenticatedHeader(
+      BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final user = ref.watch(currentUserProvider);
     final userProfileAsync = ref.watch(currentUserProfileProvider);
-    
+
     return DrawerHeader(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -75,7 +78,8 @@ class CustomDrawer extends ConsumerWidget {
                   fullName: profile?.fullName ?? user?.fullName,
                   radius: 32,
                   showBorder: true,
-                  borderColor: colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  borderColor:
+                      colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
                   onTap: () {
                     Navigator.of(context).pop();
                     context.push('/profile');
@@ -88,10 +92,11 @@ class CustomDrawer extends ConsumerWidget {
                     children: [
                       Text(
                         profile?.fullName ?? user?.fullName ?? 'Usuario',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -99,8 +104,9 @@ class CustomDrawer extends ConsumerWidget {
                       Text(
                         user?.email ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                        ),
+                              color: colorScheme.onPrimaryContainer
+                                  .withValues(alpha: 0.8),
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -114,8 +120,9 @@ class CustomDrawer extends ConsumerWidget {
               Text(
                 profile.bio!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
-                ),
+                      color:
+                          colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -131,7 +138,8 @@ class CustomDrawer extends ConsumerWidget {
                   fullName: user?.fullName,
                   radius: 32,
                   showBorder: true,
-                  borderColor: colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  borderColor:
+                      colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -140,17 +148,19 @@ class CustomDrawer extends ConsumerWidget {
                     children: [
                       Text(
                         user?.fullName ?? 'Usuario',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user?.email ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                        ),
+                              color: colorScheme.onPrimaryContainer
+                                  .withValues(alpha: 0.8),
+                            ),
                       ),
                     ],
                   ),
@@ -169,7 +179,8 @@ class CustomDrawer extends ConsumerWidget {
                   fullName: user?.fullName,
                   radius: 32,
                   showBorder: true,
-                  borderColor: colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  borderColor:
+                      colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -178,17 +189,19 @@ class CustomDrawer extends ConsumerWidget {
                     children: [
                       Text(
                         user?.fullName ?? 'Usuario',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: colorScheme.onPrimaryContainer,
+                                  fontWeight: FontWeight.w600,
+                                ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user?.email ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
-                        ),
+                              color: colorScheme.onPrimaryContainer
+                                  .withValues(alpha: 0.8),
+                            ),
                       ),
                     ],
                   ),
@@ -203,81 +216,74 @@ class CustomDrawer extends ConsumerWidget {
 
   Widget _buildGuestHeader(BuildContext context, ColorScheme colorScheme) {
     final theme = Theme.of(context);
-    
-    return Column(
-      children: [
-        // Banner superior compacto
-        const GuestModeTopBanner(),
-        
-        // Header tradicional
-        DrawerHeader(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colorScheme.surfaceContainerHighest,
-                colorScheme.surfaceContainer,
-              ],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+
+    return DrawerHeader(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.surfaceContainerHighest,
+            colorScheme.surfaceContainer,
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: colorScheme.primary,
-                    child: Icon(
-                      Icons.person,
-                      size: 32,
-                      color: colorScheme.onPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Bienvenido',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Inicia sesión para acceder a todas las funciones',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              CircleAvatar(
+                radius: 32,
+                backgroundColor: colorScheme.primary,
+                child: Icon(
+                  Icons.person,
+                  size: 32,
+                  color: colorScheme.onPrimary,
+                ),
               ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.push('/login');
-                  },
-                  child: const Text('Iniciar Sesión'),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bienvenido',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Inicia sesión para acceder a todas las funciones',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                context.push('/login');
+              },
+              child: const Text('Iniciar Sesión'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  List<Widget> _buildAuthenticatedMenuItems(BuildContext context, WidgetRef ref) {
+  List<Widget> _buildAuthenticatedMenuItems(
+      BuildContext context, WidgetRef ref) {
     return [
       ListTile(
         leading: const Icon(Icons.person),
@@ -308,9 +314,6 @@ class CustomDrawer extends ConsumerWidget {
 
   List<Widget> _buildGuestMenuItems(BuildContext context) {
     return [
-      // Indicador de datos locales
-      const LocalDataIndicator(),
-      
       ListTile(
         leading: const Icon(Icons.login),
         title: const Text('Iniciar Sesión'),

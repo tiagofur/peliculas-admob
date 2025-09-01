@@ -9,7 +9,9 @@ class CustomList {
     required this.movieIds,
     required this.createdAt,
     required this.updatedAt,
+    this.userId,
     this.isDefault = false,
+    this.isPublic = false,
     this.color = 'blue',
   });
 
@@ -28,7 +30,9 @@ class CustomList {
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
+      userId: json['userId'],
       isDefault: json['isDefault'] ?? false,
+      isPublic: json['isPublic'] ?? false,
       color: json['color'] ?? 'blue',
     );
   }
@@ -40,7 +44,9 @@ class CustomList {
   final List<int> movieIds;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? userId;
   final bool isDefault;
+  final bool isPublic;
   final String color;
 
   CustomList copyWith({
@@ -51,7 +57,9 @@ class CustomList {
     List<int>? movieIds,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? userId,
     bool? isDefault,
+    bool? isPublic,
     String? color,
   }) {
     return CustomList(
@@ -62,7 +70,9 @@ class CustomList {
       movieIds: movieIds ?? this.movieIds,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      userId: userId ?? this.userId,
       isDefault: isDefault ?? this.isDefault,
+      isPublic: isPublic ?? this.isPublic,
       color: color ?? this.color,
     );
   }
@@ -76,7 +86,9 @@ class CustomList {
       'movieIds': movieIds,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'userId': userId,
       'isDefault': isDefault,
+      'isPublic': isPublic,
       'color': color,
     };
   }
@@ -92,7 +104,9 @@ class CustomList {
         listEquals(other.movieIds, movieIds) && // Use listEquals for List comparison
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt &&
+        other.userId == userId &&
         other.isDefault == isDefault &&
+        other.isPublic == isPublic &&
         other.color == color;
   }
 
@@ -105,7 +119,9 @@ class CustomList {
         Object.hashAll(movieIds),
         createdAt,
         updatedAt,
+        userId,
         isDefault,
+        isPublic,
         color,
       );
 

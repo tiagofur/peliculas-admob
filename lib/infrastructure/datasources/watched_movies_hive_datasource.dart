@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/datasources/watched_movies_datasource.dart';
 import '../../domain/entities/entities.dart';
 
@@ -37,7 +38,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
-        print('Error inicializando Hive para películas vistas: $e');
+        LoggerFactory.error('Error inicializando Hive para películas vistas: $e');
       }
       // En caso de error, intentar con un nombre de box diferente
       try {
@@ -46,7 +47,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
         _isInitialized = true;
       } catch (e2) {
         if (kDebugMode) {
-          print(
+          LoggerFactory.error(
               'Error inicializando Hive con fallback para películas vistas: $e2');
         }
         rethrow;
@@ -58,8 +59,9 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
   Future<void> markAsWatched(Movie movie) async {
     try {
       if (!_isInitialized) await _initHive();
-      if (_watchedMoviesBox == null)
+      if (_watchedMoviesBox == null) {
         throw Exception('Watched movies box not available');
+      }
 
       // Verificar si ya está marcada como vista
       final isAlreadyWatched = await isMovieWatched(movie.id);
@@ -74,7 +76,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       await _watchedMoviesBox!.add(watchedMovie);
     } catch (e) {
       if (kDebugMode) {
-        print('Error marking movie as watched: $e');
+        LoggerFactory.error('Error marking movie as watched: $e');
       }
       rethrow;
     }
@@ -96,7 +98,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error removing movie from watched: $e');
+        LoggerFactory.error('Error removing movie from watched: $e');
       }
     }
   }
@@ -112,7 +114,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       return watchedMovies.isNotEmpty;
     } catch (e) {
       if (kDebugMode) {
-        print('Error checking if movie is watched: $e');
+        LoggerFactory.error('Error checking if movie is watched: $e');
       }
       return false;
     }
@@ -137,7 +139,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       return allWatchedMovies.sublist(offset, endIndex);
     } catch (e) {
       if (kDebugMode) {
-        print('Error loading watched movies: $e');
+        LoggerFactory.error('Error loading watched movies: $e');
       }
       return [];
     }
@@ -152,7 +154,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('Error clearing all watched movies: $e');
+        LoggerFactory.error('Error clearing all watched movies: $e');
       }
     }
   }
@@ -166,7 +168,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       _isInitialized = false;
     } catch (e) {
       if (kDebugMode) {
-        print('Error closing watched movies database: $e');
+        LoggerFactory.error('Error closing watched movies database: $e');
       }
     }
   }

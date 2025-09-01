@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../services/hybrid_image_service.dart';
 
 class MoviesSlideshow extends StatelessWidget {
   const MoviesSlideshow({super.key, required this.movies});
@@ -49,51 +50,62 @@ class _Slide extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 30),
       child: DecoratedBox(
           decoration: decoration,
-          child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: GestureDetector(
-                onTap: () => context.push('/movie/${movie.id}'),
-                child: FadeInImage(
-                  placeholder: const AssetImage('assets/loaders/bottle-loader.gif'),
-                  image: NetworkImage(movie.backdropPath),
+          child: GestureDetector(
+            onTap: () => context.push('/movie/${movie.id}'),
+            child: OptimizedImage(
+                  imageUrl: movie.backdropPath,
                   fit: BoxFit.cover,
-                  imageErrorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20),
+                  enableHeroAnimation: true,
+                  heroTag: 'slideshow-${movie.id}',
+                  placeholder: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.movie_outlined,
-                            size: 64,
+                    ),
+                  ),
+                  errorWidget: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.movie_outlined,
+                          size: 64,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Imagen no disponible',
+                          style: TextStyle(
                             color: Colors.grey[600],
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Imagen no disponible',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Error de conexión',
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Error de conexión',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ))),
+            ),
+          ),
     );
   }
 }

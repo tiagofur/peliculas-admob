@@ -1,12 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peliculas/core/config/supabase_config.dart';
-import 'package:peliculas/domain/entities/movie.dart';
-import 'package:peliculas/infrastructure/repositories/hybrid_favorites_repository.dart';
+import 'package:peliculas/core/logging/logger_factory.dart';
 
 void main() {
   group('Sincronización en Tiempo Real Tests', () {
-    late HybridFavoritesRepository repository;
-
     setUpAll(() async {
       // Inicializar Supabase
       await SupabaseConfig.initialize();
@@ -20,24 +17,9 @@ void main() {
     testWidgets('Agregar favorito debe sincronizar inmediatamente',
         (WidgetTester tester) async {
       // Película de prueba
-      final testMovie = Movie(
-        id: 12345,
-        title: 'Test Movie Sync',
-        overview: 'Película para probar sincronización',
-        releaseDate: DateTime(2023, 1, 1),
-        posterPath: '/test_poster.jpg',
-        backdropPath: '/test_backdrop.jpg',
-        voteAverage: 8.5,
-        genreIds: ['Action', 'Thriller'],
-        adult: false,
-        originalLanguage: 'en',
-        originalTitle: 'Test Movie Sync',
-        popularity: 100.0,
-        video: false,
-        voteCount: 1000,
-      );
 
-      print('🧪 Iniciando test de sincronización en tiempo real...');
+      LoggerFactory.info(
+          '🧪 Iniciando test de sincronización en tiempo real...');
 
       // TODO: Implementar test una vez que se corrija el repositorio
       // 1. Hacer login con usuario de prueba
@@ -50,7 +32,7 @@ void main() {
 
     testWidgets('Quitar favorito debe sincronizar inmediatamente',
         (WidgetTester tester) async {
-      print('🧪 Test de remover favorito...');
+      LoggerFactory.info('🧪 Test de remover favorito...');
 
       // TODO: Implementar test de eliminación
       expect(true, true); // Placeholder
@@ -66,9 +48,9 @@ Future<void> createTestUser() async {
       email: 'test-sync@peliculas.com',
       password: 'TestPassword123!',
     );
-    print('✅ Usuario de prueba creado');
+    LoggerFactory.info('✅ Usuario de prueba creado');
   } catch (e) {
-    print('❌ Error creando usuario de prueba: $e');
+    LoggerFactory.error('❌ Error creando usuario de prueba: $e');
   }
 }
 
@@ -80,9 +62,9 @@ Future<void> loginTestUser() async {
       email: 'test-sync@peliculas.com',
       password: 'TestPassword123!',
     );
-    print('✅ Login de usuario de prueba exitoso');
+    LoggerFactory.info('✅ Login de usuario de prueba exitoso');
   } catch (e) {
-    print('❌ Error en login de usuario de prueba: $e');
+    LoggerFactory.error('❌ Error en login de usuario de prueba: $e');
   }
 }
 
@@ -97,11 +79,11 @@ Future<bool> verifyDataInSupabase(String userId, int movieId) async {
         .eq('movie_id', movieId);
 
     final hasData = (response as List).isNotEmpty;
-    print(
+    LoggerFactory.info(
         '📊 Datos en Supabase para movie $movieId: ${hasData ? "PRESENTE" : "AUSENTE"}');
     return hasData;
   } catch (e) {
-    print('❌ Error verificando datos en Supabase: $e');
+    LoggerFactory.error('❌ Error verificando datos en Supabase: $e');
     return false;
   }
 }

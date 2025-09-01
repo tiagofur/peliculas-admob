@@ -156,7 +156,7 @@ class MovieDetails {
 }
 
 class BelongsToCollection {
-  BelongsToCollection({
+  const BelongsToCollection({
     required this.id,
     required this.name,
     required this.posterPath,
@@ -184,7 +184,7 @@ class BelongsToCollection {
 }
 
 class Genre {
-  Genre({
+  const Genre({
     required this.id,
     required this.name,
   });
@@ -203,7 +203,7 @@ class Genre {
 }
 
 class ProductionCompany {
-  ProductionCompany({
+  const ProductionCompany({
     required this.id,
     this.logoPath,
     required this.name,
@@ -231,7 +231,7 @@ class ProductionCompany {
 }
 
 class ProductionCountry {
-  ProductionCountry({
+  const ProductionCountry({
     required this.iso31661,
     required this.name,
   });
@@ -251,7 +251,7 @@ class ProductionCountry {
 }
 
 class SpokenLanguage {
-  SpokenLanguage({
+  const SpokenLanguage({
     required this.englishName,
     required this.iso6391,
     required this.name,

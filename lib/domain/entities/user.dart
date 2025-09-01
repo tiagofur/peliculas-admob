@@ -1,12 +1,4 @@
 class User {
-  final String id;
-  final String email;
-  final String? fullName;
-  final String? avatarUrl;
-  final DateTime createdAt;
-  final DateTime? lastSignInAt;
-  final Map<String, dynamic>? userMetadata;
-
   const User({
     required this.id,
     required this.email,
@@ -16,6 +8,13 @@ class User {
     this.lastSignInAt,
     this.userMetadata,
   });
+  final String id;
+  final String email;
+  final String? fullName;
+  final String? avatarUrl;
+  final DateTime createdAt;
+  final DateTime? lastSignInAt;
+  final Map<String, dynamic>? userMetadata;
 
   User copyWith({
     String? id,

@@ -8,7 +8,7 @@ class AchievementsRepositoryImpl extends AchievementsRepository {
   AchievementsRepositoryImpl(this.datasource);
 
   final AchievementsDatasource datasource;
-  
+
   static const String _exploredGenresKey = 'explored_genres';
   static const String _exploredDecadesKey = 'explored_decades';
 
@@ -33,8 +33,10 @@ class AchievementsRepositoryImpl extends AchievementsRepository {
   }
 
   @override
-  Future<void> incrementAchievementProgress(String achievementId, {int increment = 1}) {
-    return datasource.incrementAchievementProgress(achievementId, increment: increment);
+  Future<void> incrementAchievementProgress(String achievementId,
+      {int increment = 1}) {
+    return datasource.incrementAchievementProgress(achievementId,
+        increment: increment);
   }
 
   @override
@@ -60,56 +62,57 @@ class AchievementsRepositoryImpl extends AchievementsRepository {
   Future<void> trackGenreExplored(String genre) async {
     final prefs = await SharedPreferences.getInstance();
     final exploredGenres = prefs.getStringList(_exploredGenresKey) ?? [];
-    
+
     if (!exploredGenres.contains(genre)) {
       exploredGenres.add(genre);
       await prefs.setStringList(_exploredGenresKey, exploredGenres);
-      
+
       // Actualizar logro de explorador de géneros
       final achievements = await getAllAchievements();
       final genreAchievement = achievements.firstWhere(
         (a) => a.id == 'genre_explorer',
         orElse: () => throw Exception('Genre explorer achievement not found'),
       );
-      
+
       final updatedAchievement = genreAchievement.copyWith(
         currentValue: exploredGenres.length,
         isUnlocked: exploredGenres.length >= genreAchievement.targetValue,
-        unlockedDate: exploredGenres.length >= genreAchievement.targetValue 
-            ? DateTime.now() 
+        unlockedDate: exploredGenres.length >= genreAchievement.targetValue
+            ? DateTime.now()
             : genreAchievement.unlockedDate,
       );
-      
+
       await updateAchievement(updatedAchievement);
     }
   }
 
   @override
   Future<void> trackDecadeExplored(int year) async {
-    final decade = (year ~/ 10) * 10; // Convertir año a década (ej: 1995 -> 1990)
+    final decade =
+        (year ~/ 10) * 10; // Convertir año a década (ej: 1995 -> 1990)
     final prefs = await SharedPreferences.getInstance();
     final exploredDecades = prefs.getStringList(_exploredDecadesKey) ?? [];
     final decadeString = decade.toString();
-    
+
     if (!exploredDecades.contains(decadeString)) {
       exploredDecades.add(decadeString);
       await prefs.setStringList(_exploredDecadesKey, exploredDecades);
-      
+
       // Actualizar logro de viajero del tiempo
       final achievements = await getAllAchievements();
       final decadeAchievement = achievements.firstWhere(
         (a) => a.id == 'decade_traveler',
         orElse: () => throw Exception('Decade traveler achievement not found'),
       );
-      
+
       final updatedAchievement = decadeAchievement.copyWith(
         currentValue: exploredDecades.length,
         isUnlocked: exploredDecades.length >= decadeAchievement.targetValue,
-        unlockedDate: exploredDecades.length >= decadeAchievement.targetValue 
-            ? DateTime.now() 
+        unlockedDate: exploredDecades.length >= decadeAchievement.targetValue
+            ? DateTime.now()
             : decadeAchievement.unlockedDate,
       );
-      
+
       await updateAchievement(updatedAchievement);
     }
   }

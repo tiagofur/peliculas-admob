@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
+import '../../core/logging/logger_factory.dart';
+
 class PipService {
   factory PipService() => _instance;
   PipService._internal();
@@ -18,7 +20,7 @@ class PipService {
       final pipWidget = PiPWidget(
         onPiPClose: () {
           // Manejar el cierre del PiP
-          debugPrint('PiP cerrado');
+          LoggerFactory.info('PiP cerrado');
         },
         child: _PipVideoPlayer(
           youtubeId: youtubeId,
@@ -29,7 +31,7 @@ class PipService {
       PictureInPicture.startPiP(pipWidget: pipWidget);
       return true;
     } catch (e) {
-      debugPrint('Error al entrar en modo PiP: $e');
+      LoggerFactory.error('Error al entrar en modo PiP: $e');
       return false;
     }
   }
@@ -39,7 +41,7 @@ class PipService {
     try {
       PictureInPicture.stopPiP();
     } catch (e) {
-      debugPrint('Error al salir del modo PiP: $e');
+      LoggerFactory.error('Error al salir del modo PiP: $e');
     }
   }
 

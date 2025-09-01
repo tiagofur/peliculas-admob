@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/helpers/human_formats.dart';
 import '../../domain/entities/movie.dart';
+import '../../services/hybrid_image_service.dart';
 
 typedef SearchMoviesCallback = Future<List<Movie>> Function(String query);
 
@@ -144,43 +145,55 @@ class _MovieItem extends StatelessWidget {
               // Image
               SizedBox(
                 width: size.width * 0.2,
-                child: ClipRRect(
+                child: SizedBox(
+                  height: 130,
+                  child: OptimizedImage(
+                    imageUrl: movie.posterPath,
+                    fit: BoxFit.cover,
                     borderRadius: BorderRadius.circular(10),
-                    child: FadeInImage(
+                    enableHeroAnimation: true,
+                    heroTag: 'search-${movie.id}',
+                    placeholder: Container(
                       height: 130,
-                      fit: BoxFit.cover,
-                      image: NetworkImage(movie.posterPath),
-                      placeholder:
-                          const AssetImage('assets/loaders/bottle-loader.gif'),
-                      imageErrorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 130,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[900],
-                            borderRadius: BorderRadius.circular(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                        ),
+                      ),
+                    ),
+                    errorWidget: Container(
+                      height: 130,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.movie_outlined,
+                            size: 30,
+                            color: Colors.grey[600],
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.movie_outlined,
-                                size: 30,
-                                color: Colors.grey[600],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Sin imagen',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 8,
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 4),
+                          Text(
+                            'Sin imagen',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 8,
+                            ),
                           ),
-                        );
-                      },
-                    )),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
 
               const SizedBox(width: 10),

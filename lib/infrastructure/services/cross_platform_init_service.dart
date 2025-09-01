@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watched_movie.dart';
 import 'web_safe_storage_service.dart';
@@ -18,14 +19,14 @@ class CrossPlatformInitService {
   Future<void> initialize() async {
     if (_isInitialized) {
       if (kDebugMode) {
-        print('CrossPlatformInitService ya fue inicializado');
+        LoggerFactory.info('CrossPlatformInitService ya fue inicializado');
       }
       return;
     }
 
     try {
       if (kDebugMode) {
-        print(
+        LoggerFactory.info(
             '🚀 Inicializando servicios para ${kIsWeb ? 'Web' : 'plataforma nativa'}...');
       }
 
@@ -41,12 +42,12 @@ class CrossPlatformInitService {
       _isInitialized = true;
 
       if (kDebugMode) {
-        print(
+        LoggerFactory.info(
             '✅ Servicios inicializados correctamente para ${kIsWeb ? 'Web' : 'plataforma nativa'}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error inicializando servicios: $e');
+        LoggerFactory.error('❌ Error inicializando servicios: $e');
       }
       rethrow;
     }
@@ -60,12 +61,12 @@ class CrossPlatformInitService {
       await Hive.initFlutter();
 
       if (kDebugMode) {
-        print(
+        LoggerFactory.info(
             '📦 Hive inicializado correctamente para ${kIsWeb ? 'Web (IndexedDB)' : 'plataforma nativa'}');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error inicializando Hive: $e');
+        LoggerFactory.error('❌ Error inicializando Hive: $e');
       }
       rethrow;
     }
@@ -84,7 +85,7 @@ class CrossPlatformInitService {
       if (testResult) {
         await storage.remove('init_test');
         if (kDebugMode) {
-          print(
+          LoggerFactory.info(
               '💾 WebSafeStorageService inicializado y probado correctamente');
         }
       } else {
@@ -92,7 +93,7 @@ class CrossPlatformInitService {
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error inicializando WebSafeStorageService: $e');
+        LoggerFactory.error('❌ Error inicializando WebSafeStorageService: $e');
       }
       rethrow;
     }
@@ -105,7 +106,7 @@ class CrossPlatformInitService {
       if (!Hive.isAdapterRegistered(0)) {
         Hive.registerAdapter(MovieAdapter());
         if (kDebugMode) {
-          print('🎬 MovieAdapter registrado (ID: 0)');
+          LoggerFactory.info('🎬 MovieAdapter registrado (ID: 0)');
         }
       }
 
@@ -113,12 +114,12 @@ class CrossPlatformInitService {
       if (!Hive.isAdapterRegistered(1)) {
         Hive.registerAdapter(WatchedMovieAdapter());
         if (kDebugMode) {
-          print('👁️ WatchedMovieAdapter registrado (ID: 1)');
+          LoggerFactory.info('👁️ WatchedMovieAdapter registrado (ID: 1)');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error registrando adaptadores de Hive: $e');
+        LoggerFactory.error('❌ Error registrando adaptadores de Hive: $e');
       }
       rethrow;
     }
@@ -131,7 +132,7 @@ class CrossPlatformInitService {
   Future<void> clearAllData() async {
     try {
       if (kDebugMode) {
-        print('🧹 Limpiando todos los datos...');
+        LoggerFactory.info('🧹 Limpiando todos los datos...');
       }
 
       // Limpiar Hive boxes
@@ -150,11 +151,11 @@ class CrossPlatformInitService {
       await storage.clearAll();
 
       if (kDebugMode) {
-        print('✅ Todos los datos han sido limpiados');
+        LoggerFactory.info('✅ Todos los datos han sido limpiados');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error limpiando datos: $e');
+        LoggerFactory.error('❌ Error limpiando datos: $e');
       }
       rethrow;
     }
@@ -164,7 +165,7 @@ class CrossPlatformInitService {
   Future<void> dispose() async {
     try {
       if (kDebugMode) {
-        print('🔄 Cerrando conexiones...');
+        LoggerFactory.info('🔄 Cerrando conexiones...');
       }
 
       // Cerrar boxes de Hive si están abiertos
@@ -179,11 +180,11 @@ class CrossPlatformInitService {
       _isInitialized = false;
 
       if (kDebugMode) {
-        print('✅ Conexiones cerradas correctamente');
+        LoggerFactory.info('✅ Conexiones cerradas correctamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error cerrando conexiones: $e');
+        LoggerFactory.error('❌ Error cerrando conexiones: $e');
       }
       // No rethrow aquí porque es un cleanup
     }
@@ -221,14 +222,15 @@ class CrossPlatformInitService {
       health['watched_movie_adapter'] = Hive.isAdapterRegistered(1);
 
       if (kDebugMode) {
-        print('🏥 Estado de salud de los servicios:');
+        LoggerFactory.info('🏥 Estado de salud de los servicios:');
         health.forEach((service, isHealthy) {
-          print('  $service: ${isHealthy ? '✅' : '❌'}');
+          LoggerFactory.info('  $service: ${isHealthy ? '✅' : '❌'}');
         });
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ Error verificando la salud de los servicios: $e');
+        LoggerFactory.error(
+            '❌ Error verificando la salud de los servicios: $e');
       }
     }
 

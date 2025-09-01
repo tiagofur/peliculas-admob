@@ -6,7 +6,7 @@ part 'watch_provider.g.dart';
 class WatchProvider {
   // 'flatrate', 'rent', 'buy'
 
-  WatchProvider({
+  const WatchProvider({
     required this.providerId,
     required this.providerName,
     required this.logoPath,

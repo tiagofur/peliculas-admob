@@ -45,6 +45,16 @@ class CustomBottomNavigation extends StatelessWidget {
             activeIcon: Icon(Icons.bar_chart),
             label: 'Estadísticas'
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.play_circle_outline),
+            activeIcon: Icon(Icons.play_circle),
+            label: 'Streaming'
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.emoji_events_outlined),
+            activeIcon: Icon(Icons.emoji_events),
+            label: 'Desafíos'
+          ),
         ]);
   }
 }

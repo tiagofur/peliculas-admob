@@ -1,7 +1,6 @@
 import '../../domain/datasources/recommendations_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/recommendation.dart';
-
 import '../../domain/repositories/recommendations_repository.dart';
 
 class RecommendationsRepositoryImpl extends RecommendationsRepository {
@@ -13,23 +12,23 @@ class RecommendationsRepositoryImpl extends RecommendationsRepository {
   Future<List<Recommendation>> getPersonalizedRecommendations() async {
     // Esta función combinará diferentes tipos de recomendaciones
     final allRecommendations = <Recommendation>[];
-    
+
     try {
       // Obtener recomendaciones trending como base
       final trending = await datasource.getTrendingRecommendations();
       allRecommendations.addAll(trending.take(5));
-      
+
       // Agregar recomendaciones por estado de ánimo aleatorio
       final moods = ['happy', 'excited', 'romantic'];
       final randomMood = moods[DateTime.now().millisecond % moods.length];
-      final moodRecommendations = await datasource.getRecommendationsByMood(randomMood);
+      final moodRecommendations =
+          await datasource.getRecommendationsByMood(randomMood);
       allRecommendations.addAll(moodRecommendations.take(3));
-      
     } catch (e) {
       // En caso de error, devolver lista vacía
       return [];
     }
-    
+
     // Ordenar por score y eliminar duplicados
     final uniqueRecommendations = <int, Recommendation>{};
     for (final rec in allRecommendations) {
@@ -37,25 +36,28 @@ class RecommendationsRepositoryImpl extends RecommendationsRepository {
         uniqueRecommendations[rec.movieId] = rec;
       }
     }
-    
+
     final result = uniqueRecommendations.values.toList()
       ..sort((a, b) => b.score.compareTo(a.score));
-    
+
     return result.take(20).toList();
   }
 
   @override
-  Future<List<Recommendation>> getRecommendationsByCategory(String categoryId) async {
+  Future<List<Recommendation>> getRecommendationsByCategory(
+      String categoryId) async {
     try {
       switch (categoryId) {
         case 'romantic_night':
           return await datasource.getRecommendationsByMood('romantic');
         case 'weekend_fun':
-          return await datasource.getRecommendationsByGenre(['35', '28']); // Comedy, Action
+          return await datasource
+              .getRecommendationsByGenre(['35', '28']); // Comedy, Action
         case 'feel_good':
           return await datasource.getRecommendationsByMood('happy');
         case 'mind_bending':
-          return await datasource.getRecommendationsByGenre(['878', '53']); // Sci-Fi, Thriller
+          return await datasource
+              .getRecommendationsByGenre(['878', '53']); // Sci-Fi, Thriller
         case 'hidden_gems':
         case 'classic_forgotten':
           // Para estas categorías, usaremos discover con filtros específicos
@@ -123,13 +125,16 @@ class RecommendationsRepositoryImpl extends RecommendationsRepository {
     return [];
   }
 
-  Future<List<Recommendation>> _getSpecialCategoryMovies(String categoryId) async {
+  Future<List<Recommendation>> _getSpecialCategoryMovies(
+      String categoryId) async {
     // Implementación específica para categorías especiales
     switch (categoryId) {
       case 'hidden_gems':
-        return await datasource.getRecommendationsByGenre(['18', '878']); // Drama, Sci-Fi
+        return await datasource
+            .getRecommendationsByGenre(['18', '878']); // Drama, Sci-Fi
       case 'classic_forgotten':
-        return await datasource.getRecommendationsByGenre(['18', '36']); // Drama, History
+        return await datasource
+            .getRecommendationsByGenre(['18', '36']); // Drama, History
       default:
         return [];
     }

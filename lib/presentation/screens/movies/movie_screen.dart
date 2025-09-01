@@ -2,6 +2,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/share_service.dart';
 import '../../providers/providers.dart';
@@ -21,12 +22,25 @@ class MovieScreen extends ConsumerStatefulWidget {
 }
 
 class MovieScreenState extends ConsumerState<MovieScreen> {
+  final AnalyticsService _analytics = AnalyticsService();
+
   @override
   void initState() {
     super.initState();
 
     ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
     ref.read(actorsByMovieProvider.notifier).loadActors(widget.movieId);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Rastrear vista de película cuando se carga la pantalla
+    final movie = ref.read(movieInfoProvider)[widget.movieId];
+    if (movie != null) {
+      _analytics.trackMovieView(movie.id.toString(), movie.title);
+    }
   }
 
   @override
@@ -185,6 +199,11 @@ class _CustomSliverAppBar extends ConsumerWidget {
         // Botón de compartir con animación
         _AnimatedActionButton(
           onPressed: () async {
+            // Rastrear evento de compartir
+            await AnalyticsService().trackMovieShare(
+              movie.id.toString(), 
+              'native_share'
+            );
             await ShareService.shareMovie(context: context, movie: movie);
           },
           feedbackType: FeedbackType.info,

@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,9 +15,18 @@ import 'config/router/app_router.dart';
 import 'config/theme/app_theme.dart';
 import 'config/theme/custom_scroll_behavior.dart';
 import 'core/config/supabase_config.dart';
+import 'core/logging/logger_factory.dart';
+import 'core/notifications/notification_initialization_service.dart';
+import 'infrastructure/services/app_lifecycle_manager.dart';
+import 'infrastructure/services/connectivity_detector.dart';
 import 'infrastructure/services/cross_platform_init_service.dart';
+import 'presentation/providers/challenge_providers.dart';
+import 'presentation/providers/multiplatform_sync_provider.dart';
 import 'presentation/providers/sync_init_provider.dart';
 import 'presentation/providers/theme/theme_provider.dart';
+import 'services/cache_configuration_service.dart';
+import 'services/hybrid_image_service.dart';
+import 'services/image_preloader_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,8 +49,84 @@ Future<void> main() async {
     // INICIALIZAR SERVICIOS MULTIPLATAFORMA (Hive, Storage, etc.)
     await CrossPlatformInitService.instance.initialize();
 
+    // INICIALIZAR FIREBASE
+    if (!kIsWeb) {
+      try {
+        await Firebase.initializeApp();
+
+        // Configurar el manejo de mensajes en segundo plano
+        FirebaseMessaging.onBackgroundMessage(
+            _firebaseMessagingBackgroundHandler);
+
+        // Solicitar permisos de notificación
+        await FirebaseMessaging.instance.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
+
+        if (kDebugMode) {
+          LoggerFactory.info('✅ Firebase inicializado correctamente');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory.error('❌ Error inicializando Firebase: $e');
+        }
+      }
+    }
+
     // INICIALIZAR SUPABASE
     await SupabaseConfig.initialize();
+
+    // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
+    try {
+      // Inicializar detector de conectividad
+      await ConnectivityDetector.instance.initialize();
+
+      // Inicializar gestor del ciclo de vida
+      AppLifecycleManager.instance.initialize();
+
+      if (kDebugMode) {
+        LoggerFactory
+            .info('✅ Sistema de sincronización multiplataforma inicializado');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        LoggerFactory
+            .error('❌ Error inicializando sistema de sincronización: $e');
+      }
+    }
+
+    // INICIALIZAR SISTEMA DE CACHÉ DE IMÁGENES
+    await HybridImageService.instance.initialize();
+
+    // Configurar servicio de precarga de imágenes
+    ImagePreloaderService().configure(
+      enabled: true,
+      maxConcurrentPreloads: 3,
+    );
+
+    // INICIALIZAR SERVICIO DE CONFIGURACIÓN DE CACHÉ
+    await CacheConfigurationService().initialize();
+
+    // INICIALIZAR SISTEMA DE NOTIFICACIONES
+    if (!kIsWeb) {
+      try {
+        await NotificationInitializationService.instance.initialize();
+        if (kDebugMode) {
+          LoggerFactory.info('✅ Sistema de notificaciones inicializado');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory
+              .error('❌ Error inicializando sistema de notificaciones: $e');
+        }
+      }
+    }
 
     // INICIALIZAR ADMOB solo en plataformas móviles
     if (!kIsWeb) {
@@ -47,7 +134,7 @@ Future<void> main() async {
         await MobileAds.instance.initialize();
       } catch (e) {
         if (kDebugMode) {
-          print('Error initializing MobileAds: $e');
+          LoggerFactory.error('Error initializing MobileAds: $e');
         }
       }
     }
@@ -58,12 +145,12 @@ Future<void> main() async {
     }
 
     if (kDebugMode) {
-      print(
+      LoggerFactory.info(
           '✅ Aplicación inicializada correctamente para ${kIsWeb ? 'Web' : 'plataforma nativa'}');
     }
   } catch (e) {
     if (kDebugMode) {
-      print('❌ Error durante la inicialización: $e');
+      LoggerFactory.error('❌ Error durante la inicialización: $e');
     }
     // Continuar con la ejecución aunque haya errores de inicialización
   }
@@ -81,6 +168,12 @@ class MainApp extends ConsumerWidget {
     // INICIALIZAR SYNC LISTENER - Esto es CRÍTICO para que funcione la sincronización automática
     ref.watch(authSyncListenerProvider);
 
+    // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
+    ref.watch(syncInitializationProvider);
+
+    // INICIALIZAR CHALLENGE SYSTEM
+    ref.watch(challengeInitializationProvider);
+
     // Remover el splash screen solo en plataformas móviles
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -88,7 +181,7 @@ class MainApp extends ConsumerWidget {
           FlutterNativeSplash.remove();
         } catch (e) {
           if (kDebugMode) {
-            print('Error removing splash screen: $e');
+            LoggerFactory.error('Error removing splash screen: $e');
           }
         }
       });
@@ -133,4 +226,19 @@ class MainApp extends ConsumerWidget {
       ),
     );
   }
+}
+
+// Función para manejar mensajes de Firebase en segundo plano
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Inicializar Firebase si no está inicializado
+  await Firebase.initializeApp();
+
+  if (kDebugMode) {
+    LoggerFactory
+        .info('Handling a background message: ${message.messageId}');
+  }
+
+  // Aquí se puede procesar el mensaje en segundo plano
+  // Por ejemplo, actualizar datos locales, mostrar notificación local, etc.
 }

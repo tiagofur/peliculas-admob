@@ -1,33 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../core/exceptions/auth_exceptions.dart';
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../infrastructure/services/sync_service.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
+import '../../infrastructure/services/sync_service.dart';
 
 // Enum para definir el modo de la aplicación
 enum AppMode {
-  guest,      // Usuario no autenticado usando datos locales
+  guest, // Usuario no autenticado usando datos locales
   authenticated, // Usuario autenticado con sincronización a Supabase
 }
 
 // Estado de la aplicación que incluye modo y usuario
 class AppState {
-  final AppMode mode;
-  final User? user;
-  final bool hasLocalData;
-  
   const AppState({
     required this.mode,
     this.user,
     this.hasLocalData = false,
   });
-  
+  final AppMode mode;
+  final User? user;
+  final bool hasLocalData;
+
   bool get isGuest => mode == AppMode.guest;
   bool get isAuthenticated => mode == AppMode.authenticated && user != null;
-  
+
   AppState copyWith({
     AppMode? mode,
     User? user,
@@ -69,18 +70,17 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 });
 
 // Provider del estado de la aplicación (guest o authenticated)
-final appStateProvider = StateNotifierProvider<AppStateNotifier, AppState>((ref) {
+final appStateProvider =
+    StateNotifierProvider<AppStateNotifier, AppState>((ref) {
   return AppStateNotifier(ref);
 });
 
 // Notifier para manejar el estado de la aplicación
 class AppStateNotifier extends StateNotifier<AppState> {
-  final Ref _ref;
-  
   AppStateNotifier(this._ref) : super(const AppState(mode: AppMode.guest)) {
     // Inicializar con el estado actual de autenticación
     _initializeWithCurrentAuthState();
-    
+
     // Escuchar cambios en el estado de autenticación
     _ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
       next.when(
@@ -110,7 +110,8 @@ class AppStateNotifier extends StateNotifier<AppState> {
       );
     });
   }
-  
+  final Ref _ref;
+
   // Método para inicializar con el estado actual de autenticación
   void _initializeWithCurrentAuthState() {
     final currentAuthState = _ref.read(authStateProvider);
@@ -133,7 +134,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
       },
     );
   }
-  
+
   // Método para cambiar a modo guest manualmente
   void switchToGuestMode() {
     state = state.copyWith(
@@ -141,7 +142,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
       user: null,
     );
   }
-  
+
   // Método para marcar que hay datos locales
   void setHasLocalData(bool hasData) {
     state = state.copyWith(hasLocalData: hasData);
@@ -152,7 +153,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
 final currentUserProfileProvider = FutureProvider<UserProfile?>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;
-  
+
   final authRepository = ref.watch(authRepositoryProvider);
   return await authRepository.getUserProfile(user.id);
 });
@@ -161,17 +162,17 @@ final currentUserProfileProvider = FutureProvider<UserProfile?>((ref) async {
 final currentUserStatsProvider = FutureProvider<UserStats?>((ref) async {
   final user = ref.watch(currentUserProvider);
   if (user == null) return null;
-  
+
   final authRepository = ref.watch(authRepositoryProvider);
   return await authRepository.getUserStats(user.id);
 });
 
 // Notifier para operaciones de autenticación
 class AuthNotifier extends StateNotifier<AsyncValue<void>> {
+  AuthNotifier(this._authRepository, this._ref)
+      : super(const AsyncValue.data(null));
   final AuthRepository _authRepository;
   final Ref _ref;
-  
-  AuthNotifier(this._authRepository, this._ref) : super(const AsyncValue.data(null));
 
   Future<void> signIn({
     required String email,
@@ -183,10 +184,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         email: email,
         password: password,
       );
-      
+
       // Ejecutar sincronización después del login exitoso
       _syncDataAfterAuth();
-      
+
       state = const AsyncValue.data(null);
     } on EmailConfirmationRequiredException catch (e, stackTrace) {
       // Manejar específicamente la excepción de confirmación de email
@@ -210,10 +211,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         fullName: fullName,
         avatarUrl: avatarUrl,
       );
-      
+
       // Ejecutar sincronización después del registro exitoso
       _syncDataAfterAuth();
-      
+
       state = const AsyncValue.data(null);
     } on EmailConfirmationRequiredException catch (e, stackTrace) {
       // Manejar específicamente la excepción de confirmación de email
@@ -268,7 +269,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       state = AsyncValue.error(e, stackTrace);
     }
   }
-  
+
   // Método privado para sincronizar datos después de autenticación
   void _syncDataAfterAuth() {
     // Ejecutar sincronización en background sin bloquear la UI
@@ -278,23 +279,24 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         await syncService.onUserAuthenticated();
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario
-        print('Error durante sincronización automática: $e');
+        LoggerFactory.error('Error durante sincronización automática: $e');
       }
     });
   }
 }
 
 // Provider del notifier de autenticación
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AsyncValue<void>>((ref) {
+final authNotifierProvider =
+    StateNotifierProvider<AuthNotifier, AsyncValue<void>>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return AuthNotifier(authRepository, ref);
 });
 
 // Notifier para operaciones de perfil
 class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
+  UserProfileNotifier(this._authRepository)
+      : super(const AsyncValue.data(null));
   final AuthRepository _authRepository;
-  
-  UserProfileNotifier(this._authRepository) : super(const AsyncValue.data(null));
 
   Future<void> loadProfile(String userId) async {
     state = const AsyncValue.loading();
@@ -342,16 +344,16 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
 }
 
 // Provider del notifier de perfil
-final userProfileNotifierProvider = StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>((ref) {
+final userProfileNotifierProvider =
+    StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return UserProfileNotifier(authRepository);
 });
 
 // Notifier para operaciones de estadísticas
 class UserStatsNotifier extends StateNotifier<AsyncValue<UserStats?>> {
-  final AuthRepository _authRepository;
-  
   UserStatsNotifier(this._authRepository) : super(const AsyncValue.data(null));
+  final AuthRepository _authRepository;
 
   Future<void> loadStats(String userId) async {
     state = const AsyncValue.loading();
@@ -408,8 +410,8 @@ class UserStatsNotifier extends StateNotifier<AsyncValue<UserStats?>> {
     if (currentStats != null) {
       await updateStats(
         userId: userId,
-        favoritesCount: currentStats.favoritesCount > 0 
-            ? currentStats.favoritesCount - 1 
+        favoritesCount: currentStats.favoritesCount > 0
+            ? currentStats.favoritesCount - 1
             : 0,
       );
     }
@@ -417,7 +419,8 @@ class UserStatsNotifier extends StateNotifier<AsyncValue<UserStats?>> {
 }
 
 // Provider del notifier de estadísticas
-final userStatsNotifierProvider = StateNotifierProvider<UserStatsNotifier, AsyncValue<UserStats?>>((ref) {
+final userStatsNotifierProvider =
+    StateNotifierProvider<UserStatsNotifier, AsyncValue<UserStats?>>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
   return UserStatsNotifier(authRepository);
 });

@@ -1,5 +1,15 @@
 /// Resultado de una operación de sincronización
 class SyncResult {
+  SyncResult({
+    required this.repositoryResults,
+    required this.timestamp,
+    required this.duration,
+    this.errors = const [],
+  })  : totalRepositories = repositoryResults.length,
+        successfulRepositories =
+            repositoryResults.values.where((success) => success).length,
+        failedRepositories =
+            repositoryResults.values.where((success) => !success).length;
   final Map<String, bool> repositoryResults;
   final DateTime timestamp;
   final Duration duration;
@@ -8,15 +18,6 @@ class SyncResult {
   final int successfulRepositories;
   final int failedRepositories;
 
-  SyncResult({
-    required this.repositoryResults,
-    required this.timestamp,
-    required this.duration,
-    this.errors = const [],
-  }) : totalRepositories = repositoryResults.length,
-       successfulRepositories = repositoryResults.values.where((success) => success).length,
-       failedRepositories = repositoryResults.values.where((success) => !success).length;
-
   /// Indica si la sincronización fue completamente exitosa
   bool get isFullySuccessful => failedRepositories == 0;
 
@@ -24,8 +25,8 @@ class SyncResult {
   bool get hasAnySuccess => successfulRepositories > 0;
 
   /// Porcentaje de éxito de la sincronización
-  double get successRate => totalRepositories > 0 
-      ? (successfulRepositories / totalRepositories) * 100 
+  double get successRate => totalRepositories > 0
+      ? (successfulRepositories / totalRepositories) * 100
       : 0.0;
 
   SyncResult copyWith({
@@ -45,8 +46,8 @@ class SyncResult {
   @override
   String toString() {
     return 'SyncResult(success: $successfulRepositories/$totalRepositories, '
-           'duration: ${duration.inMilliseconds}ms, '
-           'errors: ${errors.length})';
+        'duration: ${duration.inMilliseconds}ms, '
+        'errors: ${errors.length})';
   }
 
   /// Convierte el resultado a un mapa para logging

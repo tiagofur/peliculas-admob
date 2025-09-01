@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../core/logging/logger_factory.dart';
+
 /// Métricas de una operación de sincronización
 class SyncOperationMetrics {
   SyncOperationMetrics({
@@ -81,7 +83,7 @@ class SyncKPIs {
 
 /// Alerta de sincronización
 class SyncAlert {
-  SyncAlert({
+  const SyncAlert({
     required this.id,
     required this.type,
     required this.message,
@@ -167,7 +169,8 @@ class SyncMetricsService {
     _checkForAlerts(metrics);
 
     if (kDebugMode) {
-      print('SyncMetrics: ${metrics.repository} ${metrics.operation} '
+      LoggerFactory.info(
+          'SyncMetrics: ${metrics.repository} ${metrics.operation} '
           '${metrics.success ? "SUCCESS" : "FAILED"} '
           '(${metrics.duration.inMilliseconds}ms)');
     }
@@ -421,7 +424,7 @@ class SyncMetricsService {
     }
 
     if (kDebugMode) {
-      print('SyncAlert [${severity.toUpperCase()}]: $message');
+      LoggerFactory.warning('SyncAlert [${severity.toUpperCase()}]: $message');
     }
   }
 

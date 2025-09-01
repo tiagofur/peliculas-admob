@@ -22,7 +22,7 @@ class ShareableContent {
       description: movieDescription.length > 100
           ? '${movieDescription.substring(0, 100)}...'
           : movieDescription,
-      url: 'https://peliculas.creapolis.dev/movie/$movieId',
+      url: 'https://peliculas.creapolis.dev/movie/$movieId/share',
       imageUrl: posterUrl,
       type: ShareableContentType.movie,
       metadata: {

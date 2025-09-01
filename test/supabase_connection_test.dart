@@ -1,14 +1,15 @@
 // Script simple para verificar conectividad directa con Supabase
 // Ejecutar con: dart run test/supabase_connection_test.dart
 
+import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
-  print('🧪 Iniciando test de conexión directa con Supabase...\n');
+  LoggerFactory.info('🧪 Iniciando test de conexión directa con Supabase...\n');
 
   try {
     // 1. Inicializar Supabase
-    print('📡 Inicializando Supabase...');
+    LoggerFactory.info('📡 Inicializando Supabase...');
     await Supabase.initialize(
       url: 'https://fyzujpifkzftweynrudh.supabase.co',
       anonKey:
@@ -16,13 +17,13 @@ void main() async {
     );
 
     final client = Supabase.instance.client;
-    print('✅ Cliente Supabase inicializado\n');
+    LoggerFactory.info('✅ Cliente Supabase inicializado\n');
 
     // 2. Test de autenticación
     const testEmail = 'test-sync@peliculas.com';
     const testPassword = 'TestPassword123!';
 
-    print('🔐 Probando autenticación...');
+    LoggerFactory.info('🔐 Probando autenticación...');
 
     User? currentUser;
 
@@ -35,15 +36,15 @@ void main() async {
 
       if (response.user != null) {
         currentUser = response.user;
-        print('✅ Login exitoso: ${response.user!.email}');
+        LoggerFactory.info('✅ Login exitoso: ${response.user!.email}');
       } else {
-        print('❌ Login falló');
+        LoggerFactory.warning('❌ Login falló');
       }
     } catch (e) {
-      print('⚠️ Login falló: $e');
+      LoggerFactory.warning('⚠️ Login falló: $e');
 
       // Si falla, intentar registro
-      print('📝 Intentando registro...');
+      LoggerFactory.info('📝 Intentando registro...');
       try {
         final signUpResponse = await client.auth.signUp(
           email: testEmail,
@@ -52,24 +53,25 @@ void main() async {
 
         if (signUpResponse.user != null) {
           currentUser = signUpResponse.user;
-          print('✅ Registro exitoso: ${signUpResponse.user!.email}');
+          LoggerFactory.info(
+              '✅ Registro exitoso: ${signUpResponse.user!.email}');
         } else {
-          print('❌ Registro falló');
+          LoggerFactory.warning('❌ Registro falló');
         }
       } catch (e2) {
-        print('❌ Error en registro: $e2');
+        LoggerFactory.error('❌ Error en registro: $e2');
       }
     }
 
     if (currentUser == null) {
-      print('❌ No se pudo autenticar. Abortando tests.');
+      LoggerFactory.error('❌ No se pudo autenticar. Abortando tests.');
       return;
     }
 
-    print('👤 Usuario actual: ${currentUser.email}\n');
+    LoggerFactory.info('👤 Usuario actual: ${currentUser.email}\n');
 
     // 3. Test de operaciones CRUD
-    print('📊 Probando operaciones CRUD en user_favorites...');
+    LoggerFactory.info('📊 Probando operaciones CRUD en user_favorites...');
 
     // Película de prueba
     final testMovieId = 99999;
@@ -87,14 +89,14 @@ void main() async {
     };
 
     // CREATE - Insertar favorito
-    print('⬆️ Insertando favorito...');
+    LoggerFactory.info('⬆️ Insertando favorito...');
     await client
         .from('user_favorites')
         .upsert(testData, onConflict: 'user_id,movie_id');
-    print('✅ Favorito insertado');
+    LoggerFactory.info('✅ Favorito insertado');
 
     // READ - Leer favorito
-    print('📖 Leyendo favorito...');
+    LoggerFactory.info('📖 Leyendo favorito...');
     final readResponse = await client
         .from('user_favorites')
         .select()
@@ -102,14 +104,15 @@ void main() async {
         .eq('movie_id', testMovieId);
 
     if (readResponse.isNotEmpty) {
-      print('✅ Favorito encontrado: ${readResponse[0]['movie_title']}');
+      LoggerFactory.info(
+          '✅ Favorito encontrado: ${readResponse[0]['movie_title']}');
     } else {
-      print('❌ No se encontró el favorito recién insertado');
+      LoggerFactory.error('❌ No se encontró el favorito recién insertado');
       return;
     }
 
     // UPDATE - Actualizar favorito
-    print('✏️ Actualizando favorito...');
+    LoggerFactory.info('✏️ Actualizando favorito...');
     await client
         .from('user_favorites')
         .update({
@@ -118,7 +121,7 @@ void main() async {
         })
         .eq('user_id', currentUser.id)
         .eq('movie_id', testMovieId);
-    print('✅ Favorito actualizado');
+    LoggerFactory.info('✅ Favorito actualizado');
 
     // Verificar actualización
     final updatedResponse = await client
@@ -129,19 +132,20 @@ void main() async {
 
     if (updatedResponse.isNotEmpty &&
         updatedResponse[0]['movie_title'] == 'Updated Test Movie $timestamp') {
-      print('✅ Actualización verificada: ${updatedResponse[0]['movie_title']}');
+      LoggerFactory.info(
+          '✅ Actualización verificada: ${updatedResponse[0]['movie_title']}');
     } else {
-      print('❌ La actualización no se reflejó correctamente');
+      LoggerFactory.error('❌ La actualización no se reflejó correctamente');
     }
 
     // DELETE - Eliminar favorito
-    print('🗑️ Eliminando favorito...');
+    LoggerFactory.info('🗑️ Eliminando favorito...');
     await client
         .from('user_favorites')
         .delete()
         .eq('user_id', currentUser.id)
         .eq('movie_id', testMovieId);
-    print('✅ Favorito eliminado');
+    LoggerFactory.info('✅ Favorito eliminado');
 
     // Verificar eliminación
     final deletedResponse = await client
@@ -151,15 +155,17 @@ void main() async {
         .eq('movie_id', testMovieId);
 
     if (deletedResponse.isEmpty) {
-      print('✅ Eliminación verificada');
+      LoggerFactory.info('✅ Eliminación verificada');
     } else {
-      print('❌ El favorito no fue eliminado correctamente');
+      LoggerFactory.error('❌ El favorito no fue eliminado correctamente');
     }
 
-    print('\n🎉 ¡Todos los tests de Supabase completados exitosamente!');
-    print('📡 La sincronización con Supabase está funcionando correctamente.');
+    LoggerFactory.info(
+        '\n🎉 ¡Todos los tests de Supabase completados exitosamente!');
+    LoggerFactory.info(
+        '📡 La sincronización con Supabase está funcionando correctamente.');
   } catch (e, stackTrace) {
-    print('❌ Error general en el test: $e');
-    print('Stack trace: $stackTrace');
+    LoggerFactory.error('❌ Error general en el test: $e');
+    LoggerFactory.error('Stack trace: $stackTrace');
   }
 }

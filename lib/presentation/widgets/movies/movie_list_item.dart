@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
 import '../../screens/movies/movie_screen.dart';
 import 'movie_rating.dart';
@@ -153,15 +154,30 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
                         borderRadius: BorderRadius.circular(20),
                         child: Stack(
                           children: [
-                            FadeInImage(
-                              placeholder: const AssetImage(
-                                  'assets/loaders/bottle-loader.gif'),
-                              image: NetworkImage(widget.movie.posterPath),
+                            SizedBox(
                               height: 220,
                               width: 150,
-                              fit: BoxFit.cover,
-                              imageErrorBuilder: (context, error, stackTrace) {
-                                return Container(
+                              child: OptimizedImage(
+                                imageUrl: widget.movie.posterPath,
+                                fit: BoxFit.cover,
+                                borderRadius: BorderRadius.circular(20),
+                                enableHeroAnimation: true,
+                                heroTag: 'list-item-${widget.movie.id}',
+                                placeholder: Container(
+                                  height: 220,
+                                  width: 150,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: Container(
                                   height: 220,
                                   width: 150,
                                   decoration: BoxDecoration(
@@ -187,8 +203,8 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
                                       ),
                                     ],
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                             ),
 
                             // Botones de acción

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/watch_provider.dart';
 import '../../domain/entities/watch_providers.dart';
 import '../../domain/services/affiliate_service.dart';
@@ -236,7 +237,7 @@ class WatchProvidersWidget extends StatelessWidget {
         mode: LaunchMode.externalApplication,
       );
     } else {
-      debugPrint('No se pudo abrir la URL: $url');
+      LoggerFactory.error('No se pudo abrir la URL: $url');
     }
   }
 }

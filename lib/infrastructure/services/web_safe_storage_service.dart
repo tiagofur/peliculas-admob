@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+
+import '../../core/logging/logger_factory.dart';
 
 /// Servicio de almacenamiento que funciona tanto en plataformas nativas como en Web
 /// Sin usar path_provider ni ObjectBox
@@ -16,7 +19,7 @@ class WebSafeStorageService {
       return await SharedPreferences.getInstance();
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo SharedPreferences: $e');
+        LoggerFactory.error('Error obteniendo SharedPreferences: $e');
       }
       rethrow;
     }
@@ -30,7 +33,7 @@ class WebSafeStorageService {
       return await prefs.setString(key, jsonString);
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando JSON para key $key: $e');
+        LoggerFactory.error('Error guardando JSON para key $key: $e');
       }
       return false;
     }
@@ -46,7 +49,7 @@ class WebSafeStorageService {
       return jsonDecode(jsonString) as Map<String, dynamic>;
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo JSON para key $key: $e');
+        LoggerFactory.error('Error obteniendo JSON para key $key: $e');
       }
       return null;
     }
@@ -61,7 +64,7 @@ class WebSafeStorageService {
       return await prefs.setStringList(key, jsonStringList);
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando lista JSON para key $key: $e');
+        LoggerFactory.error('Error guardando lista JSON para key $key: $e');
       }
       return false;
     }
@@ -79,7 +82,7 @@ class WebSafeStorageService {
           .toList();
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo lista JSON para key $key: $e');
+        LoggerFactory.error('Error obteniendo lista JSON para key $key: $e');
       }
       return [];
     }
@@ -92,7 +95,7 @@ class WebSafeStorageService {
       return await prefs.setString(key, value);
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando string para key $key: $e');
+        LoggerFactory.error('Error guardando string para key $key: $e');
       }
       return false;
     }
@@ -105,7 +108,7 @@ class WebSafeStorageService {
       return prefs.getString(key);
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo string para key $key: $e');
+        LoggerFactory.error('Error obteniendo string para key $key: $e');
       }
       return null;
     }
@@ -118,7 +121,7 @@ class WebSafeStorageService {
       return await prefs.setBool(key, value);
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando bool para key $key: $e');
+        LoggerFactory.error('Error guardando bool para key $key: $e');
       }
       return false;
     }
@@ -131,7 +134,7 @@ class WebSafeStorageService {
       return prefs.getBool(key) ?? defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo bool para key $key: $e');
+        LoggerFactory.error('Error obteniendo bool para key $key: $e');
       }
       return defaultValue;
     }
@@ -144,7 +147,7 @@ class WebSafeStorageService {
       return await prefs.setInt(key, value);
     } catch (e) {
       if (kDebugMode) {
-        print('Error guardando int para key $key: $e');
+        LoggerFactory.error('Error guardando int para key $key: $e');
       }
       return false;
     }
@@ -157,7 +160,7 @@ class WebSafeStorageService {
       return prefs.getInt(key) ?? defaultValue;
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo int para key $key: $e');
+        LoggerFactory.error('Error obteniendo int para key $key: $e');
       }
       return defaultValue;
     }
@@ -170,7 +173,7 @@ class WebSafeStorageService {
       return await prefs.remove(key);
     } catch (e) {
       if (kDebugMode) {
-        print('Error eliminando key $key: $e');
+        LoggerFactory.error('Error eliminando key $key: $e');
       }
       return false;
     }
@@ -183,7 +186,7 @@ class WebSafeStorageService {
       return prefs.containsKey(key);
     } catch (e) {
       if (kDebugMode) {
-        print('Error verificando key $key: $e');
+        LoggerFactory.error('Error verificando key $key: $e');
       }
       return false;
     }
@@ -202,7 +205,7 @@ class WebSafeStorageService {
       return true;
     } catch (e) {
       if (kDebugMode) {
-        print('Error limpiando keys con prefijo $prefix: $e');
+        LoggerFactory.error('Error limpiando keys con prefijo $prefix: $e');
       }
       return false;
     }
@@ -215,7 +218,7 @@ class WebSafeStorageService {
       return prefs.getKeys();
     } catch (e) {
       if (kDebugMode) {
-        print('Error obteniendo todas las keys: $e');
+        LoggerFactory.error('Error obteniendo todas las keys: $e');
       }
       return <String>{};
     }
@@ -228,7 +231,7 @@ class WebSafeStorageService {
       return await prefs.clear();
     } catch (e) {
       if (kDebugMode) {
-        print('Error limpiando todo el almacenamiento: $e');
+        LoggerFactory.error('Error limpiando todo el almacenamiento: $e');
       }
       return false;
     }

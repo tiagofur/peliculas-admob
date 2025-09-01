@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../domain/entities/entities.dart';
+
 import '../../../config/helpers/human_formats.dart';
+import '../../../core/logging/logger_factory.dart';
+import '../../../core/streaming/streaming.dart';
+import '../../../domain/entities/entities.dart';
+import '../streaming/streaming_availability_indicator.dart';
 import '../watch_providers_widget.dart';
 
 // Widgets públicos para usar en otras pantallas
@@ -22,37 +26,54 @@ class MovieInfoSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Información básica mejorada
         _BasicInfoSection(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Sinopsis expandida
         _ExpandedSynopsis(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Detalles técnicos
         _TechnicalDetails(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Colección si pertenece a una
-        if (movie.belongsToCollection != null && movie.belongsToCollection!.isNotEmpty)
+        if (movie.belongsToCollection != null &&
+            movie.belongsToCollection!.isNotEmpty)
           _CollectionInfo(movie: movie),
-        if (movie.belongsToCollection != null && movie.belongsToCollection!.isNotEmpty)
+        if (movie.belongsToCollection != null &&
+            movie.belongsToCollection!.isNotEmpty)
           const SizedBox(height: 16),
-        
+
         // Idiomas hablados
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           _SpokenLanguages(movie: movie),
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
-        
+
+        // Streaming Quick Action Button
+        StreamingQuickAction(
+          movieId: movie.id,
+          movieTitle: movie.title,
+        ),
+        const SizedBox(height: 16),
+
+        // Streaming Availability Section
+        StreamingAvailabilityDetail(
+          movieId: movie.id,
+          movieTitle: movie.title,
+          onPlatformTap: (platform) => _launchStreamingPlatform(platform),
+        ),
+        const SizedBox(height: 16),
+
         // Watch Providers - Plataformas de streaming
         if (movie.watchProviders != null)
           WatchProvidersWidget(
@@ -61,9 +82,8 @@ class MovieInfoSection extends StatelessWidget {
             imdbId: movie.imdbId,
             country: 'MX',
           ),
-        if (movie.watchProviders != null)
-          const SizedBox(height: 16),
-        
+        if (movie.watchProviders != null) const SizedBox(height: 16),
+
         // Homepage link if available
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
           Container(
@@ -104,11 +124,11 @@ class MovieInfoSection extends StatelessWidget {
           ),
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
           const SizedBox(height: 16),
-        
+
         // Cast principal mejorado
         if (showCast) _EnhancedCast(movie: movie),
         if (showCast) const SizedBox(height: 16),
-        
+
         // Estadísticas y datos curiosos
         if (showStats) _MovieStats(movie: movie),
       ],
@@ -125,7 +145,24 @@ class MovieInfoSection extends StatelessWidget {
         throw 'No se pudo abrir la URL: $url';
       }
     } catch (e) {
-      debugPrint('Error al abrir URL: $e');
+      LoggerFactory.error('Error al abrir URL: $e');
+    }
+  }
+
+  Future<void> _launchStreamingPlatform(StreamingPlatform platform) async {
+    try {
+      final deepLinkingService = DeepLinkingService();
+      final success = await deepLinkingService.launchStreamingApp(
+        platform: platform,
+        movieId: movie.id.toString(),
+      );
+
+      if (!success) {
+        // Handle error - could show snackbar if context available
+        LoggerFactory.error('No se pudo abrir ${platform.displayName}');
+      }
+    } catch (e) {
+      LoggerFactory.error('Error al abrir la aplicación: $e');
     }
   }
 }
@@ -161,37 +198,39 @@ class EnhancedMovieInfo extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Información básica mejorada
         _BasicInfoSection(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Sinopsis expandida
         _ExpandedSynopsis(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Detalles técnicos
         _TechnicalDetails(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Colección si pertenece a una
-        if (movie.belongsToCollection != null && movie.belongsToCollection!.isNotEmpty)
+        if (movie.belongsToCollection != null &&
+            movie.belongsToCollection!.isNotEmpty)
           _CollectionInfo(movie: movie),
-        if (movie.belongsToCollection != null && movie.belongsToCollection!.isNotEmpty)
+        if (movie.belongsToCollection != null &&
+            movie.belongsToCollection!.isNotEmpty)
           const SizedBox(height: 16),
-        
+
         // Idiomas hablados
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           _SpokenLanguages(movie: movie),
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
-        
+
         // Watch Providers - Plataformas de streaming
         if (movie.watchProviders != null)
           WatchProvidersWidget(
@@ -200,9 +239,8 @@ class EnhancedMovieInfo extends ConsumerWidget {
             imdbId: movie.imdbId,
             country: 'MX',
           ),
-        if (movie.watchProviders != null)
-          const SizedBox(height: 16),
-        
+        if (movie.watchProviders != null) const SizedBox(height: 16),
+
         // Homepage link if available
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
           Container(
@@ -243,12 +281,12 @@ class EnhancedMovieInfo extends ConsumerWidget {
           ),
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
           const SizedBox(height: 16),
-        
+
         // Cast principal mejorado
         _EnhancedCast(movie: movie),
-        
+
         const SizedBox(height: 16),
-        
+
         // Estadísticas y datos curiosos
         _MovieStats(movie: movie),
       ],
@@ -265,7 +303,7 @@ class EnhancedMovieInfo extends ConsumerWidget {
         throw 'No se pudo abrir la URL: $url';
       }
     } catch (e) {
-      debugPrint('Error al abrir URL: $e');
+      LoggerFactory.error('Error al abrir URL: $e');
     }
   }
 }
@@ -369,11 +407,13 @@ class _SpokenLanguages extends StatelessWidget {
             runSpacing: 8,
             children: movie.spokenLanguages!
                 .map((language) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: colors.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color: colors.primary.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -455,7 +495,8 @@ class _BasicInfoSection extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: _getRatingColor(movie.voteAverage),
                   borderRadius: BorderRadius.circular(20),
@@ -497,7 +538,8 @@ class _BasicInfoSection extends StatelessWidget {
               ),
               _InfoChip(
                 icon: Icons.how_to_vote,
-                label: '${HumanFormats.number(movie.voteCount.toDouble())} votos',
+                label:
+                    '${HumanFormats.number(movie.voteCount.toDouble())} votos',
               ),
               if (movie.status != null)
                 _InfoChip(
@@ -529,7 +571,7 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -573,7 +615,7 @@ class _ExpandedSynopsisState extends State<_ExpandedSynopsis> {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
     final overview = widget.movie.overview;
-    
+
     if (overview.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -603,7 +645,7 @@ class _ExpandedSynopsisState extends State<_ExpandedSynopsis> {
           const SizedBox(height: 12),
           AnimatedCrossFade(
             firstChild: Text(
-              overview.length > 150 
+              overview.length > 150
                   ? '${overview.substring(0, 150)}...'
                   : overview,
               style: textStyles.bodyMedium?.copyWith(
@@ -616,8 +658,8 @@ class _ExpandedSynopsisState extends State<_ExpandedSynopsis> {
                 height: 1.5,
               ),
             ),
-            crossFadeState: _isExpanded 
-                ? CrossFadeState.showSecond 
+            crossFadeState: _isExpanded
+                ? CrossFadeState.showSecond
                 : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 300),
           ),
@@ -685,13 +727,15 @@ class _TechnicalDetails extends StatelessWidget {
                   Expanded(
                     child: _DetailItem(
                       label: 'Ingresos',
-                      value: '\$${HumanFormats.number(movie.revenue!.toDouble())}',
+                      value:
+                          '\$${HumanFormats.number(movie.revenue!.toDouble())}',
                       icon: Icons.trending_up,
                     ),
                   ),
               ],
             ),
-          if (movie.budget != null && movie.budget! > 0) const SizedBox(height: 8),
+          if (movie.budget != null && movie.budget! > 0)
+            const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -711,7 +755,8 @@ class _TechnicalDetails extends StatelessWidget {
                 ),
             ],
           ),
-          if (movie.productionCompanies != null && movie.productionCompanies!.isNotEmpty)
+          if (movie.productionCompanies != null &&
+              movie.productionCompanies!.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -733,13 +778,15 @@ class _TechnicalDetails extends StatelessWidget {
                               company,
                               style: const TextStyle(fontSize: 12),
                             ),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ))
                       .toList(),
                 ),
               ],
             ),
-          if (movie.productionCountries != null && movie.productionCountries!.isNotEmpty)
+          if (movie.productionCountries != null &&
+              movie.productionCountries!.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -760,7 +807,8 @@ class _TechnicalDetails extends StatelessWidget {
                               country,
                               style: const TextStyle(fontSize: 12),
                             ),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ))
                       .toList(),
                 ),
@@ -816,8 +864,6 @@ class _DetailItem extends StatelessWidget {
   }
 }
 
-
-
 class _EnhancedCast extends StatelessWidget {
   const _EnhancedCast({required this.movie});
 
@@ -829,7 +875,9 @@ class _EnhancedCast extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     // Show cast only if available from API
-    if (movie.credits == null || movie.credits!['cast'] == null || (movie.credits!['cast'] as List).isEmpty) {
+    if (movie.credits == null ||
+        movie.credits!['cast'] == null ||
+        (movie.credits!['cast'] as List).isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -868,7 +916,7 @@ class _EnhancedCast extends StatelessWidget {
                 final profilePath = actor['profile_path'] as String?;
                 final name = actor['name'] as String? ?? 'Actor desconocido';
                 final character = actor['character'] as String?;
-                
+
                 return Container(
                   width: 90,
                   margin: const EdgeInsets.only(right: 12),
@@ -878,7 +926,8 @@ class _EnhancedCast extends StatelessWidget {
                         radius: 35,
                         backgroundColor: colors.surfaceContainerHighest,
                         backgroundImage: profilePath != null
-                            ? NetworkImage('https://image.tmdb.org/t/p/w185$profilePath')
+                            ? NetworkImage(
+                                'https://image.tmdb.org/t/p/w185$profilePath')
                             : null,
                         child: profilePath == null
                             ? Icon(

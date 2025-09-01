@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
 import '../../screens/movies/movie_screen.dart';
+import '../streaming/streaming_availability_indicator.dart';
 
 class MovieCardWithActions extends ConsumerWidget {
   const MovieCardWithActions({super.key, required this.movie});
@@ -37,39 +39,48 @@ class MovieCardWithActions extends ConsumerWidget {
             },
             child: AspectRatio(
               aspectRatio: 2 / 3, // Relación de aspecto típica de poster de película
-              child: ClipRRect(
+              child: OptimizedImage(
+                imageUrl: movie.posterPath,
+                fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(20),
-                child: FadeInImage(
-                  fit: BoxFit.cover,
-                  placeholder: const AssetImage('assets/loaders/bottle-loader.gif'),
-                  image: NetworkImage(movie.posterPath),
-                  imageErrorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[900],
-                        borderRadius: BorderRadius.circular(20),
+                enableHeroAnimation: true,
+                heroTag: 'movie-card-${movie.id}',
+                placeholder: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                    ),
+                  ),
+                ),
+                errorWidget: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.movie_outlined,
+                        size: 40,
+                        color: Colors.grey[600],
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.movie_outlined,
-                            size: 40,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Imagen no\ndisponible',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'Imagen no\ndisponible',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 10,
+                        ),
                       ),
-                    );
-                  },
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -136,8 +147,12 @@ class MovieCardWithActions extends ConsumerWidget {
                   ),
                 ),
                 
-                // Indicadores de estado eliminados - ya no son necesarios
-                const SizedBox.shrink(),
+                // Streaming availability indicator
+                StreamingAvailabilityBadge(
+                  movieId: movie.id,
+                  size: StreamingBadgeSize.small,
+                  maxPlatforms: 2,
+                ),
               ],
             ),
           ),
