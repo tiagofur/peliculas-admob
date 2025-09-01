@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../presentation/providers/user_movie_ratings_provider.dart';
+import '../../presentation/providers/watchlist_provider.dart';
 import 'app_lifecycle_manager.dart';
 import 'connectivity_detector.dart';
 
@@ -23,6 +25,9 @@ class MultiplataformSyncManager {
   Timer? _periodicSyncTimer;
   StreamSubscription<ConnectivityStatus>? _connectivitySubscription;
   _AppLifecycleObserver? _lifecycleObserver;
+  
+  // Reference to Riverpod container for invalidating providers
+  ProviderContainer? _providerContainer;
 
   bool _isInitialized = false;
   bool _isPeriodicSyncActive = false;
@@ -30,11 +35,14 @@ class MultiplataformSyncManager {
   DateTime? _lastSuccessfulSync;
 
   /// Inicializa el gestor de sincronización multiplataforma
-  Future<void> initialize() async {
+  Future<void> initialize([ProviderContainer? container]) async {
     if (_isInitialized) {
       LoggerFactory.info('⚠️ MultiplataformSyncManager ya está inicializado');
       return;
     }
+
+    // Store container reference for provider invalidation
+    _providerContainer = container;
 
     LoggerFactory.info('🚀 Inicializando MultiplataformSyncManager...');
 
@@ -313,8 +321,10 @@ class MultiplataformSyncManager {
     LoggerFactory.info('⚡ Realtime INSERT en $tableName: ${data['id']}');
     
     try {
-      // Aquí se podría implementar lógica específica para cada tabla
-      // Por ahora, simplemente registramos el evento y podríamos disparar una sincronización
+      // Invalidate specific providers based on table
+      _invalidateProviders(tableName);
+      
+      // Trigger sync for data consistency
       await _performSync('realtime_insert_$tableName');
     } catch (e) {
       LoggerFactory.error('❌ Error manejando realtime insert: $e');
@@ -326,7 +336,10 @@ class MultiplataformSyncManager {
     LoggerFactory.info('⚡ Realtime UPDATE en $tableName: ${data['id']}');
     
     try {
-      // Implementar lógica de resolución de conflictos si es necesario
+      // Invalidate specific providers based on table
+      _invalidateProviders(tableName);
+      
+      // Trigger sync for conflict resolution if necessary
       await _performSync('realtime_update_$tableName');
     } catch (e) {
       LoggerFactory.error('❌ Error manejando realtime update: $e');
@@ -338,9 +351,45 @@ class MultiplataformSyncManager {
     LoggerFactory.info('⚡ Realtime DELETE en $tableName: $id');
     
     try {
+      // Invalidate specific providers based on table
+      _invalidateProviders(tableName);
+      
       await _performSync('realtime_delete_$tableName');
     } catch (e) {
       LoggerFactory.error('❌ Error manejando realtime delete: $e');
+    }
+  }
+
+  /// Invalidates providers based on the affected table
+  void _invalidateProviders(String tableName) {
+    if (_providerContainer == null) {
+      LoggerFactory.warning('⚠️ No provider container available for invalidation');
+      return;
+    }
+
+    try {
+      switch (tableName) {
+        case 'user_watchlist':
+          LoggerFactory.info('🔄 Invalidating watchlist providers');
+          _providerContainer!.invalidate(watchlistProvider);
+          _providerContainer!.invalidate(watchlistCountProvider);
+          _providerContainer!.invalidate(isMovieInWatchlistProvider);
+          _providerContainer!.invalidate(watchlistMovieProvider);
+          break;
+          
+        case 'user_movie_ratings':
+          LoggerFactory.info('🔄 Invalidating ratings providers');
+          _providerContainer!.invalidate(userRatingsProvider);
+          _providerContainer!.invalidate(ratingStatsProvider);
+          _providerContainer!.invalidate(topRatedMoviesProvider);
+          _providerContainer!.invalidate(recentRatingsProvider);
+          break;
+          
+        default:
+          LoggerFactory.info('🔄 Unknown table for provider invalidation: $tableName');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error invalidating providers: $e');
     }
   }
 

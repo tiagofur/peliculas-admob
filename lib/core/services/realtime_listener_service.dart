@@ -5,7 +5,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/syncable_custom_list.dart';
 import '../../domain/entities/syncable_favorite_movie.dart';
+import '../../domain/entities/syncable_user_movie_rating.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
+import '../../domain/entities/syncable_watchlist_movie.dart';
 import '../../infrastructure/services/multiplatform_sync_manager.dart';
 import '../config/supabase_config.dart';
 import 'realtime_throttle_service.dart';
@@ -38,6 +40,8 @@ class RealtimeListenerService {
       await _setupFavoritesListener();
       await _setupWatchedMoviesListener();
       await _setupCustomListsListener();
+      await _setupWatchlistListener();
+      await _setupRatingsListener();
 
       _updateConnectionState(true); // connected
       _reconnectAttempts = 0;
@@ -99,6 +103,38 @@ class RealtimeListenerService {
 
     _channels['custom_lists'] = channel;
     developer.log('Custom lists listener configured', name: 'RealtimeService');
+  }
+
+  /// Configura el listener para la tabla user_watchlist
+  Future<void> _setupWatchlistListener() async {
+    final channel = SupabaseConfig.client
+        .channel('watchlist_changes')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'user_watchlist',
+          callback: (payload) => _handleWatchlistChange(payload),
+        )
+        .subscribe();
+
+    _channels['user_watchlist'] = channel;
+    developer.log('Watchlist listener configured', name: 'RealtimeService');
+  }
+
+  /// Configura el listener para la tabla user_movie_ratings
+  Future<void> _setupRatingsListener() async {
+    final channel = SupabaseConfig.client
+        .channel('ratings_changes')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'user_movie_ratings',
+          callback: (payload) => _handleRatingsChange(payload),
+        )
+        .subscribe();
+
+    _channels['user_movie_ratings'] = channel;
+    developer.log('Ratings listener configured', name: 'RealtimeService');
   }
 
   /// Maneja cambios en la tabla favorites
@@ -223,6 +259,93 @@ class RealtimeListenerService {
       );
     } catch (e) {
       developer.log('Error handling custom list change: $e',
+          name: 'RealtimeService');
+    }
+  }
+
+  /// Maneja cambios en la tabla user_watchlist
+  void _handleWatchlistChange(PostgresChangePayload payload) {
+    try {
+      developer.log('Watchlist change detected: ${payload.eventType}',
+          name: 'RealtimeService');
+
+      final eventKey = 'user_watchlist_${payload.eventType.name}';
+
+      _throttleService.smartThrottle(
+        eventKey,
+        () {
+          switch (payload.eventType) {
+            case PostgresChangeEvent.insert:
+              final watchlistMovie =
+                  SyncableWatchlistMovie.fromSupabase(payload.newRecord);
+              _syncManager.handleRealtimeInsert(
+                  'user_watchlist', watchlistMovie.toSupabase());
+              break;
+            case PostgresChangeEvent.update:
+              final watchlistMovie =
+                  SyncableWatchlistMovie.fromSupabase(payload.newRecord);
+              _syncManager.handleRealtimeUpdate(
+                  'user_watchlist', watchlistMovie.toSupabase());
+              break;
+            case PostgresChangeEvent.delete:
+              final watchlistMovieId = payload.oldRecord['id'];
+              _syncManager.handleRealtimeDelete(
+                  'user_watchlist', watchlistMovieId);
+              break;
+            case PostgresChangeEvent.all:
+              // Caso para eventos combinados - no se maneja específicamente
+              break;
+          }
+        },
+        debounceDelay: const Duration(milliseconds: 300),
+        throttleInterval: const Duration(seconds: 1),
+        maxEvents: 3,
+      );
+    } catch (e) {
+      developer.log('Error handling watchlist change: $e',
+          name: 'RealtimeService');
+    }
+  }
+
+  /// Maneja cambios en la tabla user_movie_ratings
+  void _handleRatingsChange(PostgresChangePayload payload) {
+    try {
+      developer.log('Rating change detected: ${payload.eventType}',
+          name: 'RealtimeService');
+
+      final eventKey = 'user_movie_ratings_${payload.eventType.name}';
+
+      _throttleService.smartThrottle(
+        eventKey,
+        () {
+          switch (payload.eventType) {
+            case PostgresChangeEvent.insert:
+              final rating =
+                  SyncableUserMovieRating.fromSupabase(payload.newRecord);
+              _syncManager.handleRealtimeInsert(
+                  'user_movie_ratings', rating.toSupabase());
+              break;
+            case PostgresChangeEvent.update:
+              final rating =
+                  SyncableUserMovieRating.fromSupabase(payload.newRecord);
+              _syncManager.handleRealtimeUpdate(
+                  'user_movie_ratings', rating.toSupabase());
+              break;
+            case PostgresChangeEvent.delete:
+              final ratingId = payload.oldRecord['id'];
+              _syncManager.handleRealtimeDelete('user_movie_ratings', ratingId);
+              break;
+            case PostgresChangeEvent.all:
+              // Caso para eventos combinados - no se maneja específicamente
+              break;
+          }
+        },
+        debounceDelay: const Duration(milliseconds: 300),
+        throttleInterval: const Duration(seconds: 1),
+        maxEvents: 3,
+      );
+    } catch (e) {
+      developer.log('Error handling rating change: $e',
           name: 'RealtimeService');
     }
   }
