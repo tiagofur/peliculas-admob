@@ -167,8 +167,13 @@
 
 ### Accesibilidad Básica
 - [ ] Elementos importantes están etiquetados
-- [ ] Contraste suficiente
+- [ ] Contraste suficiente (WCAG AA: 4.5:1 texto normal, 3:1 texto grande)
 - [ ] Navegación por teclado (en web/desktop)
+- [ ] **NUEVO** Modo alto contraste funciona correctamente
+- [ ] **NUEVO** Escalado de texto hasta 200% mantiene usabilidad
+- [ ] **NUEVO** Botones de AppBar tienen tooltips y etiquetas semánticas
+- [ ] **NUEVO** Star ratings tienen descripciones completas
+- [ ] **NUEVO** Elementos táctiles mínimo 44x44dp
 
 **Estado**: [ ] ✅ Aprobado | [ ] ❌ Falla | **Tiempo**: _____ min
 

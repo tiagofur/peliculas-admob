@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/streaming/streaming.dart';
+import '../../../services/accessibility_service.dart';
 
 /// Compact streaming availability indicator for movie cards
 class StreamingAvailabilityBadge extends ConsumerWidget {
@@ -269,24 +270,33 @@ class StreamingAvailabilityDetail extends ConsumerWidget {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
-    return InkWell(
-      onTap: () => onPlatformTap?.call(platform.platform),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: _getPlatformColor(platform.platform.id).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color:
-                _getPlatformColor(platform.platform.id).withValues(alpha: 0.3),
+    return Semantics(
+      button: true,
+      label: AccessibilityService.getStreamingPlatformSemantics(
+        platform.platform.displayName, 
+        platform.isAvailable
+      ),
+      hint: 'Toque para abrir en ${platform.platform.displayName}',
+      child: InkWell(
+        onTap: () => onPlatformTap?.call(platform.platform),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: _getPlatformColor(platform.platform.id).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  _getPlatformColor(platform.platform.id).withValues(alpha: 0.3),
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 16,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                label: 'Icono de ${platform.platform.displayName}',
+                child: Container(
+                  width: 16,
               height: 16,
               decoration: BoxDecoration(
                 color: _getPlatformColor(platform.platform.id),
@@ -341,10 +351,13 @@ class StreamingAvailabilityDetail extends ConsumerWidget {
               ],
             ),
             const SizedBox(width: 4),
-            Icon(
-              Icons.open_in_new,
-              size: 12,
-              color: colors.onSurface.withValues(alpha: 0.6),
+            Semantics(
+              label: 'Abrir enlace externo',
+              child: Icon(
+                Icons.open_in_new,
+                size: 12,
+                color: colors.onSurface.withValues(alpha: 0.6),
+              ),
             ),
           ],
         ),
