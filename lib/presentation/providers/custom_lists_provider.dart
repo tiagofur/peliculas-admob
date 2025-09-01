@@ -31,7 +31,7 @@ class AllListsState {
 
 // StateNotifier unificado para manejar todas las listas
 class AllListsNotifier extends StateNotifier<AllListsState> {
-  AllListsNotifier(Ref ref, this._repository) : super(_getInitialState()) {
+  AllListsNotifier(this._repository) : super(_getInitialState()) {
     // TODO: Initialize gamification service when needed
     // _gamificationService = _ref.read(gamificationIntegrationServiceProvider);
     _loadCustomLists();
@@ -42,6 +42,13 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   // final Ref _ref;
   // TODO: Implement gamification integration when trackMovieAddedToList is available
   // late final GamificationIntegrationService _gamificationService;
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    // _gamificationService?.dispose(); // Cuando se implemente
+    super.dispose();
+  }
 
   // Cargar listas personalizadas y predeterminadas desde el almacenamiento
   Future<void> _loadCustomLists() async {
@@ -467,7 +474,7 @@ final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
 final allListsProvider =
     StateNotifierProvider<AllListsNotifier, AllListsState>((ref) {
   final repository = ref.watch(customListsRepositoryProvider);
-  return AllListsNotifier(ref, repository);
+  return AllListsNotifier(repository);
 });
 
 // Provider para obtener todas las listas
