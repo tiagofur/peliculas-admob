@@ -2,11 +2,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/error_reporting/error_reporting_service.dart';
 import '../../core/logging/logger_factory.dart';
+import '../../services/error_reporting_config.dart';
 import 'auth_provider.dart';
 
 /// Provider for error reporting service
 final errorReportingServiceProvider = Provider<ErrorReportingService>((ref) {
   return ErrorReportingService.instance;
+});
+
+/// Provider for error reporting configuration
+final errorReportingConfigProvider = Provider<ErrorReportingConfig>((ref) {
+  return ErrorReportingConfig.instance;
+});
+
+/// Provider to get current error reporting status
+final errorReportingStatusProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final config = ref.watch(errorReportingConfigProvider);
+  final service = ref.watch(errorReportingServiceProvider);
+  
+  // Ensure config is initialized
+  if (!config.currentConfig['initialized']) {
+    await config.initialize();
+  }
+  
+  return {
+    ...config.currentConfig,
+    'service_initialized': service.isInitialized,
+    'service_available': service.isAvailable,
+  };
 });
 
 /// Provider to automatically set user context when user logs in/out

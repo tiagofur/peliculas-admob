@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peliculas/core/error_reporting/error_reporting_service.dart';
 import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:peliculas/presentation/providers/error_reporting_provider.dart';
+import 'package:peliculas/services/error_reporting_config.dart';
 
 /// Tests for error reporting functionality
 void main() {
@@ -140,6 +141,12 @@ void main() {
         expect(service, isA<ErrorReportingService>());
       });
 
+      test('should provide error reporting config', () {
+        final config = container.read(errorReportingConfigProvider);
+        expect(config, isNotNull);
+        expect(config, isA<ErrorReportingConfig>());
+      });
+
       test('should handle error reporting mixin', () async {
         await errorReporting.initialize(enabled: false);
         
@@ -166,6 +173,40 @@ void main() {
           ),
           returnsNormally,
         );
+      });
+    });
+
+    group('Configuration Service', () {
+      late ErrorReportingConfig config;
+
+      setUp(() {
+        config = ErrorReportingConfig.instance;
+      });
+
+      test('should get current config data', () {
+        final configData = config.currentConfig;
+        expect(configData, isA<Map<String, dynamic>>());
+        expect(configData.containsKey('initialized'), isTrue);
+        expect(configData.containsKey('buildMode'), isTrue);
+      });
+
+      test('should handle enable/disable operations safely', () async {
+        // Should not throw even if not initialized
+        expect(
+          () => config.setEnabled(true),
+          returnsNormally,
+        );
+        
+        expect(
+          () => config.setUserOptIn(false),
+          returnsNormally,
+        );
+      });
+
+      test('should provide default values when not initialized', () {
+        // Before initialization, should provide reasonable defaults
+        expect(config.currentConfig['buildMode'], isNotNull);
+        expect(config.isEnabled, isA<bool>());
       });
     });
 
