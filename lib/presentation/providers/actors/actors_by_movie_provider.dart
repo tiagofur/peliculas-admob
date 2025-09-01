@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/actor.dart';
 import 'actors_repository_provider.dart';
 
+// Provider optimizado con AutoDispose para liberación automática
 final actorsByMovieProvider =
-    StateNotifierProvider<ActorsByMovieNotifier, Map<String, List<Actor>>>(
+    StateNotifierProvider.autoDispose<ActorsByMovieNotifier, Map<String, List<Actor>>>(
         (ref) {
   final actorsRepository = ref.watch(actorsRepositoryProvider);
 
@@ -34,5 +35,11 @@ class ActorsByMovieNotifier extends StateNotifier<Map<String, List<Actor>>> {
 
     final List<Actor> actors = await getActors(movieId);
     state = {...state, movieId: actors};
+  }
+
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }
