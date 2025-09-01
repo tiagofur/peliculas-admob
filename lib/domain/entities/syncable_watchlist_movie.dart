@@ -1,7 +1,9 @@
+import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
 import 'watchlist_movie.dart';
 
 /// Entidad sincronizable para películas en watchlist que incluye metadatos de sincronización
-class SyncableWatchlistMovie {
+class SyncableWatchlistMovie implements SoftDeletable {
+  @override
   final String id;
   final String userId;
   final int movieId;
@@ -13,10 +15,19 @@ class SyncableWatchlistMovie {
   final double? movieVoteAverage;
   final WatchlistPriority priority;
   final DateTime addedAt;
+  
+  @override
   final DateTime updatedAt;
+  
   final DateTime? deletedAt;
   final bool isSynced;
   final bool needsSync;
+
+  @override
+  DateTime get createdAt => addedAt; // Usar addedAt como createdAt para compatibilidad
+
+  @override
+  bool get isDeleted => deletedAt != null;
 
   const SyncableWatchlistMovie({
     required this.id,
@@ -162,8 +173,18 @@ class SyncableWatchlistMovie {
     );
   }
 
-  /// Indica si este elemento está marcado como eliminado
-  bool get isDeleted => deletedAt != null;
+  /// Implementa SoftDeletable - crea copia marcada como eliminada
+  @override
+  SoftDeletable copyWithDeleted(bool isDeleted, DateTime updatedAt) {
+    return copyWith(
+      deletedAt: isDeleted ? updatedAt : null,
+      updatedAt: updatedAt,
+    );
+  }
+
+  /// Indica si este elemento está marcado como eliminado (deprecated, usar isDeleted getter)
+  @Deprecated('Use isDeleted getter instead')
+  bool get wasDeleted => deletedAt != null;
 
   @override
   bool operator ==(Object other) {

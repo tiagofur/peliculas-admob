@@ -18,7 +18,8 @@ import '../../domain/entities/watchlist_movie.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../services/sync_manager.dart';
-import '../sync/conflict_statistics_service.dart';
+import '../../core/sync/conflict_resolution/strategies/watchlist_conflict_strategy.dart';
+import '../../services/conflict_resolution_service.dart';
 
 /// Repositorio híbrido que maneja watchlist localmente y sincroniza con Supabase
 class HybridWatchlistRepository
@@ -55,6 +56,9 @@ class HybridWatchlistRepository
 
   Future<void> _initializeComponents() async {
     await _syncQueue.initialize();
+    
+    // Registrar estrategia de resolución de conflictos para watchlist
+    ConflictResolutionService.registerWatchlistStrategy(_conflictResolver);
   }
 
   String? _getCurrentUserId() {
