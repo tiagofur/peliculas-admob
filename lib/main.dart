@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -20,6 +21,7 @@ import 'core/error_reporting/error_reporting_service.dart';
 import 'core/logging/logger_factory.dart';
 import 'core/notifications/local_notification_service.dart';
 import 'core/notifications/notification_initialization_service.dart';
+import 'generated/app_localizations.dart';
 import 'infrastructure/services/app_lifecycle_manager.dart';
 import 'infrastructure/services/auth_session_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
@@ -27,6 +29,7 @@ import 'infrastructure/services/cross_platform_init_service.dart';
 import 'infrastructure/services/token_refresh_service.dart';
 import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
+import 'presentation/providers/locale/locale_provider.dart';
 import 'presentation/providers/multiplatform_sync_provider.dart';
 import 'presentation/providers/sync_init_provider.dart';
 import 'presentation/providers/sync_integration_provider.dart';
@@ -247,6 +250,9 @@ class MainApp extends ConsumerWidget {
       ),
     ));
 
+    // Watch locale state
+    final localeState = ref.watch(localeNotifierProvider);
+
     // Usar el router provider con autenticación
     final router = ref.watch(appRouterProvider);
 
@@ -265,6 +271,9 @@ class MainApp extends ConsumerWidget {
           routerConfig: router,
           debugShowCheckedModeBanner: false,
           theme: appTheme.getTheme(),
+          locale: localeState.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
             // Actualizar la UI del sistema cuando cambie el tema
             appTheme.updateSystemUIOverlay(context);
@@ -278,6 +287,9 @@ class MainApp extends ConsumerWidget {
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       theme: appTheme.getTheme(),
+      locale: localeState.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
         // Actualizar la UI del sistema cuando cambie el tema
         appTheme.updateSystemUIOverlay(context);

@@ -1,0 +1,75 @@
+{
+  "@@locale": "en",
+  "appTitle": "Movies",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "appearance": "Appearance",
+  "@appearance": {
+    "description": "Appearance settings section title"
+  },
+  "themeMode": "Theme Mode",
+  "@themeMode": {
+    "description": "Theme mode selection label"
+  },
+  "themeColor": "Theme Color",
+  "@themeColor": {
+    "description": "Theme color selection label"
+  },
+  "information": "Information",
+  "@information": {
+    "description": "Information section title"
+  },
+  "systemThemeDescription": "The 'System' mode will automatically follow your device's theme setting.",
+  "@systemThemeDescription": {
+    "description": "Description for system theme mode"
+  },
+  "system": "System",
+  "@system": {
+    "description": "System theme mode option"
+  },
+  "systemThemeSubtitle": "Follow device configuration",
+  "@systemThemeSubtitle": {
+    "description": "Subtitle for system theme mode"
+  },
+  "light": "Light",
+  "@light": {
+    "description": "Light theme mode option"
+  },
+  "lightThemeSubtitle": "Theme with light colors",
+  "@lightThemeSubtitle": {
+    "description": "Subtitle for light theme mode"
+  },
+  "dark": "Dark",
+  "@dark": {
+    "description": "Dark theme mode option"
+  },
+  "darkThemeSubtitle": "Theme with dark colors",
+  "@darkThemeSubtitle": {
+    "description": "Subtitle for dark theme mode"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language selection section title"
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Language selection label"
+  },
+  "spanish": "Spanish",
+  "@spanish": {
+    "description": "Spanish language option"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language option"
+  },
+  "languageDescription": "Change the app language. The app will restart to apply the new language.",
+  "@languageDescription": {
+    "description": "Description for language selection"
+  }
+}
