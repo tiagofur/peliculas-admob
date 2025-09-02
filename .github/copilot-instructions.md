@@ -104,8 +104,12 @@ flutter test integration_test/
 # Comprehensive tests with coverage - takes 15-25 minutes. Set timeout to 35+ minutes.
 ./scripts/run_comprehensive_tests.sh
 
-# Golden tests - takes 2-3 minutes. Set timeout to 8+ minutes.
-flutter test test/golden_tests/ --update-goldens || flutter test test/golden_tests/
+# Golden tests - takes 2-3 minutes per run. Set timeout to 8+ minutes.
+# ALWAYS run update first, then validate
+flutter test test/golden_tests/ --update-goldens
+flutter test test/golden_tests/
+
+# If golden tests fail, check artifacts and update as needed
 ```
 
 ## Critical Test Coverage and Files
@@ -263,10 +267,16 @@ lib/
 ### Test Issues
 
 **Problem**: Golden test failures
-**Solution**: Run `flutter test test/golden_tests/ --update-goldens` first
+**Solution**: Run `flutter test test/golden_tests/ --update-goldens` first, then `flutter test test/golden_tests/`
 
 **Problem**: Integration test timeouts
-**Solution**: Increase timeout values, tests can take 10+ minutes
+**Solution**: Increase timeout values, tests can take 15+ minutes for 8+ integration tests
+
+**Problem**: Coverage reports missing
+**Solution**: Ensure `./scripts/run_comprehensive_tests.sh` completes fully
+
+**Problem**: Test database conflicts
+**Solution**: Each test should cleanup properly, check test setup/teardown methods
 
 ### Development Workflow Issues
 
@@ -319,7 +329,44 @@ lib/
 - Linux, macOS, Windows supported
 - Platform-specific code in respective directories
 
-## Environment and Dependencies
+## CI/CD Pipeline Expectations
+
+### Automated Checks (GitHub Actions)
+
+The CI system runs these workflows automatically:
+
+1. **CI Pipeline** (`.github/workflows/ci.yml`):
+   - Code formatting validation
+   - Static analysis (`flutter analyze --fatal-infos --fatal-warnings`)
+   - Unit tests with coverage
+   - Integration tests  
+   - Build validation (Web + Android)
+
+2. **Golden Tests** (`.github/workflows/golden_tests.yml`):
+   - UI regression testing
+   - Automatic golden file generation
+   - Failure artifact uploads
+
+3. **Security & Quality** (`.github/workflows/security-quality.yml`):
+   - Dependency auditing (`dart pub audit`)
+   - Performance analysis
+   - Bundle size checks
+   - Code quality metrics
+
+4. **Release Pipeline** (`.github/workflows/release.yml`):
+   - Multi-platform builds
+   - Release artifact generation
+   - Automated release notes
+
+### PR Requirements
+
+**NEVER** submit PRs without local validation. All PRs must pass:
+- Format check: `dart format --set-exit-if-changed .`
+- Analysis: `flutter analyze --fatal-infos --fatal-warnings`
+- Tests: All 65+ unit tests and 8+ integration tests
+- Build: Web and Android builds must succeed
+
+### Performance and Dependencies
 
 ### Flutter Version
 - Required: SDK >= 3.0.0 < 4.0.0
@@ -335,8 +382,23 @@ lib/
 
 ### Development Dependencies
 - `flutter_test` - Testing framework
-- `mockito` - Mocking for tests
+- `mockito` - Mocking for tests (generates .mocks.dart files)
 - `integration_test` - E2E testing
 - `build_runner` - Code generation
+- `hive_generator` - Hive box generation
+- `isar_generator` - Isar database generation
+- `json_serializable` - JSON serialization
+
+### Code Generation
+
+**ALWAYS** run code generation after model changes:
+
+```bash
+# Generate code - takes 1-3 minutes. Set timeout to 8+ minutes.
+flutter packages pub run build_runner build
+
+# Generate with deletion of conflicting outputs
+flutter packages pub run build_runner build --delete-conflicting-outputs
+```
 
 **ALWAYS** check `pubspec.yaml` for current dependency versions before making changes.
