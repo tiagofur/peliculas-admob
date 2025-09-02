@@ -34,8 +34,8 @@ dependencies:
   url_launcher: ^6.3.2
   uuid: ^4.4.0
   # Firebase dependencies
-  firebase_core: ^3.8.0
-  firebase_messaging: ^15.1.4
+  firebase_core: ^4.1.0
+  firebase_messaging: ^16.0.1
   timezone: ^0.10.1
   # Supabase dependencies
   supabase_flutter: ^2.9.1
