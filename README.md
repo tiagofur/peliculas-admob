@@ -119,11 +119,27 @@ flutter test test/offline_functionality_test.dart
 
 ## 📱 Arquitectura
 
-- **Domain-driven design**: Separación clara de capas
-- **Riverpod**: Gestión de estado
-- **Supabase**: Backend y sincronización
-- **Hive/Isar**: Storage local
-- **Gamificación**: Sistema de logros y desafíos
+Esta aplicación sigue una **arquitectura Clean con Domain-Driven Design**, optimizada para escalabilidad y mantenibilidad:
+
+### Stack Tecnológico Principal
+- **Frontend**: Flutter 3.0+ con Riverpod para gestión de estado
+- **Backend**: Supabase (PostgreSQL + Auth + Storage) + Firebase (servicios auxiliares)
+- **Storage Local**: Hive (cache rápido) + Isar (queries complejas)
+- **APIs Externas**: TMDB (datos de películas), YouTube (trailers)
+
+### Características Arquitectónicas
+- ✅ **Offline-first**: Funcionalidad completa sin conexión
+- ✅ **Real-time sync**: Sincronización automática entre dispositivos
+- ✅ **Gamificación**: Sistema completo de logros y desafíos
+- ✅ **Multiplataforma**: Android, iOS, Web, Desktop
+- ✅ **Type-safe**: Dart con análisis estático estricto
+- ✅ **Testeable**: >85% cobertura de tests
+
+### 📚 Documentación Técnica Detallada
+- **[Arquitectura Completa](ARCHITECTURE.md)**: Diagrams, patrones y decisiones técnicas
+- **[Decisiones Arquitectónicas (ADR)](docs/ARCHITECTURE_DECISIONS.md)**: Registro de decisiones clave y trade-offs
+- **[Arquitectura de Backend](docs/BACKEND_ARCHITECTURE.md)**: Supabase, Firebase y APIs externas
+- **[Guía de Contribución](CONTRIBUTING.md)**: Onboarding completo para desarrolladores
 
 ## 🔧 Configuración
 
@@ -244,27 +260,68 @@ await ErrorReportingConfig.instance.setUserOptIn(true);  // Habilitar
 
 ## 🤝 Contribución
 
-1. Fork el proyecto
-2. Crea tu rama (`git checkout -b feature/AmazingFeature`)
-3. **Asegurate que el CI pase localmente**
-4. Commit tus cambios (`git commit -m 'feat: Add some AmazingFeature'`)
-5. Push a la rama (`git push origin feature/AmazingFeature`)
-6. Abre un Pull Request usando el template
+### 🚀 Inicio Rápido para Desarrolladores
 
-### Convenciones de Commit
-- `feat:` Nueva funcionalidad
-- `fix:` Corrección de bug  
-- `docs:` Cambios en documentación
-- `style:` Cambios de formato
-- `refactor:` Refactoring de código
-- `test:` Añadir o modificar tests
-- `ci:` Cambios en CI/CD
+**Prerequisitos**: Flutter SDK 3.0+, Git, IDE (VS Code/Android Studio)
 
-## 📚 Recursos
+```bash
+# 1. Clonar y configurar
+git clone https://github.com/tiagofur/peliculas-admob.git
+cd peliculas-admob
+cp .env.example .env  # Configurar APIs keys
 
+# 2. Instalar dependencias
+flutter pub get
+
+# 3. Verificar setup
+flutter doctor && flutter analyze && flutter test
+
+# 4. Ejecutar
+flutter run
+```
+
+### 📋 Proceso de Desarrollo
+
+1. **Crear issue** o asignar existente
+2. **Fork el proyecto** y crear rama: `git checkout -b feature/nueva-funcionalidad`
+3. **Seguir quality gates**: Formato, análisis, tests (ver [CONTRIBUTING.md](CONTRIBUTING.md))
+4. **Commit con convenciones**: `feat:`, `fix:`, `docs:`, etc.
+5. **Crear Pull Request** usando el template
+6. **Revisión de código** y aprobación del CI
+7. **Merge** una vez que todas las validaciones pasen
+
+### 🏆 Quality Standards
+- **Formato**: `dart format --set-exit-if-changed`
+- **Análisis**: `flutter analyze --fatal-infos --fatal-warnings`  
+- **Tests**: `flutter test --coverage` (objetivo >80%)
+- **Build**: Validación multiplataforma automática
+
+### 📖 Recursos para Desarrolladores
+- **[Guía Completa de Contribución](CONTRIBUTING.md)**: Patterns, testing, code style
+- **[Arquitectura del Proyecto](ARCHITECTURE.md)**: Clean Architecture, DDD, diagramas
+- **[Decisiones Técnicas (ADR)](docs/ARCHITECTURE_DECISIONS.md)**: Context y rationale de decisiones clave
+- **[Backend Architecture](docs/BACKEND_ARCHITECTURE.md)**: Supabase, PostgreSQL, APIs
+
+## 📚 Recursos y Documentación
+
+### 📖 Documentación del Proyecto
+- **[📚 Índice de Documentación](docs/DOCUMENTATION_INDEX.md)**: Navegación completa de toda la documentación
+- **[ARCHITECTURE.md](ARCHITECTURE.md)**: Arquitectura completa, patrones y diagramas
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: Guía completa para desarrolladores
+- **[docs/ARCHITECTURE_DECISIONS.md](docs/ARCHITECTURE_DECISIONS.md)**: ADR con decisiones técnicas clave
+- **[docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md)**: Arquitectura de backend detallada
+- **[docs/](docs/)**: Documentación técnica especializada
+
+### 🔧 Frameworks y Librerías
 - [Flutter Documentation](https://flutter.dev/docs)
+- [Riverpod Documentation](https://riverpod.dev)
 - [Supabase Documentation](https://supabase.com/docs)
-- [Proyecto Arquitectura](.trae/documents/)
+- [Firebase Documentation](https://firebase.google.com/docs)
+
+### 🏗️ Arquitectura y Patrones
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
+- [Repository Pattern](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/infrastructure-persistence-layer-design)
 
 ## 📄 Licencia
 
