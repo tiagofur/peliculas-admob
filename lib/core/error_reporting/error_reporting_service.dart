@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../logging/logger_factory.dart';
 import '../../services/error_reporting_config.dart';
+import 'error_metrics_service.dart';
 
 /// Service for handling error reporting using Firebase Crashlytics
 /// Integrates with the existing logging system to provide crash reporting
@@ -26,6 +27,9 @@ class ErrorReportingService {
       // Initialize config first
       await ErrorReportingConfig.instance.initialize();
       
+      // Initialize metrics service
+      await ErrorMetricsService.instance.initialize();
+      
       // Use config to determine if enabled, or fall back to parameter
       _isEnabled = enabled ?? ErrorReportingConfig.instance.isEnabled;
 
@@ -37,6 +41,10 @@ class ErrorReportingService {
         // Set up automatic crash reporting
         FlutterError.onError = (FlutterErrorDetails details) {
           FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+          
+          // Record crash in metrics
+          ErrorMetricsService.instance.recordSessionCrash();
+          
           LoggerFactory.error(
             'Flutter Fatal Error: ${details.exception}',
             data: {
@@ -51,6 +59,10 @@ class ErrorReportingService {
         // Handle errors that occur outside of Flutter's context
         PlatformDispatcher.instance.onError = (error, stack) {
           FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          
+          // Record crash in metrics
+          ErrorMetricsService.instance.recordSessionCrash();
+          
           LoggerFactory.error(
             'Platform Error: $error',
             stackTrace: stack,
@@ -192,6 +204,15 @@ class ErrorReportingService {
 
   /// Check if the service is initialized
   bool get isInitialized => _isInitialized;
+
+  /// Get current error reporting metrics
+  Map<String, dynamic> get metrics => ErrorMetricsService.instance.metricsSnapshot;
+
+  /// Check if crash-free sessions meet success criteria (≥99.7%)
+  bool get meetsCrashFreeTarget => ErrorMetricsService.instance.meetsCrashFreeSuccessCriteria;
+
+  /// Check if core flow error rate meets success criteria (<5%)
+  bool get meetsCoreFlowTarget => ErrorMetricsService.instance.meetsCoreFlowSuccessCriteria;
 }
 
 /// Extension to easily add error reporting to any zone

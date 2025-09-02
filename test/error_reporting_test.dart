@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peliculas/core/error_reporting/error_reporting_service.dart';
+import 'package:peliculas/core/error_reporting/error_metrics_service.dart';
 import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:peliculas/presentation/providers/error_reporting_provider.dart';
 import 'package:peliculas/services/error_reporting_config.dart';
@@ -10,10 +11,12 @@ void main() {
   group('Error Reporting Tests', () {
     late ProviderContainer container;
     late ErrorReportingService errorReporting;
+    late ErrorMetricsService metrics;
 
     setUp(() {
       container = ProviderContainer();
       errorReporting = ErrorReportingService.instance;
+      metrics = ErrorMetricsService.instance;
     });
 
     tearDown(() {
@@ -147,6 +150,12 @@ void main() {
         expect(config, isA<ErrorReportingConfig>());
       });
 
+      test('should provide error metrics service', () {
+        final metricsService = container.read(errorMetricsServiceProvider);
+        expect(metricsService, isNotNull);
+        expect(metricsService, isA<ErrorMetricsService>());
+      });
+
       test('should handle error reporting mixin', () async {
         await errorReporting.initialize(enabled: false);
         
@@ -171,6 +180,35 @@ void main() {
             operationName: 'test_operation',
             customData: {'operation_test': true},
           ),
+          returnsNormally,
+        );
+      });
+
+      test('should handle core flow tracking mixin', () async {
+        await errorReporting.initialize(enabled: false);
+        await metrics.initialize();
+        
+        final testNotifier = TestStateNotifierWithCoreFlowTracking();
+        
+        // Should not throw when tracking core flows
+        expect(
+          () => testNotifier.trackCoreFlow(
+            'authentication',
+            () async => 'flow_result',
+            additionalData: {'test': true},
+          ),
+          returnsNormally,
+        );
+
+        // Should not throw when recording core flow success
+        expect(
+          () => testNotifier.recordCoreFlowSuccess('movie_search'),
+          returnsNormally,
+        );
+
+        // Should not throw when recording core flow error
+        expect(
+          () => testNotifier.recordCoreFlowError('watchlist_add', 'Test error'),
           returnsNormally,
         );
       });
@@ -240,6 +278,16 @@ void main() {
 class TestStateNotifierWithErrorReporting extends StateNotifier<String>
     with ErrorReportingMixin<String> {
   TestStateNotifierWithErrorReporting() : super('initial_state');
+  
+  void updateState(String newState) {
+    state = newState;
+  }
+}
+
+/// Test state notifier with core flow tracking mixin
+class TestStateNotifierWithCoreFlowTracking extends StateNotifier<String>
+    with CoreFlowTrackingMixin<String> {
+  TestStateNotifierWithCoreFlowTracking() : super('initial_state');
   
   void updateState(String newState) {
     state = newState;

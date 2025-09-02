@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/error_reporting/error_reporting_service.dart';
+import '../../core/error_reporting/error_metrics_service.dart';
 import '../../services/error_reporting_config.dart';
 
 /// Debug widget to show error reporting status and controls
@@ -15,19 +16,23 @@ class ErrorReportingDebugWidget extends StatefulWidget {
 class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
   late ErrorReportingService _errorReporting;
   late ErrorReportingConfig _config;
+  late ErrorMetricsService _metrics;
   Map<String, dynamic> _configData = {};
+  Map<String, dynamic> _metricsData = {};
 
   @override
   void initState() {
     super.initState();
     _errorReporting = ErrorReportingService.instance;
     _config = ErrorReportingConfig.instance;
+    _metrics = ErrorMetricsService.instance;
     _loadConfigData();
   }
 
   Future<void> _loadConfigData() async {
     setState(() {
       _configData = _config.currentConfig;
+      _metricsData = _metrics.metricsSnapshot;
     });
   }
 
@@ -60,6 +65,19 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
             
             const SizedBox(height: 16),
             Text('Build Mode: ${_configData['buildMode'] ?? 'unknown'}'),
+            
+            const SizedBox(height: 16),
+            
+            // Metrics section
+            const Text(
+              '📊 Success Criteria Metrics',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildMetricsSection(),
             
             const SizedBox(height: 16),
             
@@ -113,6 +131,39 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                   },
                   child: const Text('Refresh Status'),
                 ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _metrics.recordCoreFlowAttempt('authentication');
+                    await _loadConfigData();
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Test core flow attempt recorded')),
+                    );
+                  },
+                  child: const Text('Test Core Flow Attempt'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _metrics.recordCoreFlowError('authentication', errorDetails: 'Debug test error');
+                    await _loadConfigData();
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Test core flow error recorded')),
+                    );
+                  },
+                  child: const Text('Test Core Flow Error'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _metrics.resetMetrics();
+                    await _loadConfigData();
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Metrics reset')),
+                    );
+                  },
+                  child: const Text('Reset Metrics'),
+                ),
               ],
             ),
             
@@ -163,6 +214,84 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMetricsSection() {
+    if (!_metricsData['initialized']) {
+      return const Text('Metrics not initialized', style: TextStyle(color: Colors.grey));
+    }
+
+    final sessionMetrics = _metricsData['session_metrics'] as Map<String, dynamic>?;
+    final coreFlowMetrics = _metricsData['core_flow_metrics'] as Map<String, dynamic>?;
+
+    if (sessionMetrics == null || coreFlowMetrics == null) {
+      return const Text('Metrics data unavailable', style: TextStyle(color: Colors.grey));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Crash-free sessions
+        _buildMetricRow(
+          '🛡️ Crash-free Sessions',
+          '${sessionMetrics['crash_free_percentage']}%',
+          sessionMetrics['meets_crash_free_criteria'] ?? false,
+          'Target: ≥${sessionMetrics['crash_free_target']}%',
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '   Sessions: ${sessionMetrics['total_sessions']} total, ${sessionMetrics['crash_sessions']} crashed',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Core flow error rate
+        _buildMetricRow(
+          '⚡ Core Flow Error Rate',
+          '${coreFlowMetrics['error_rate_percentage']}%',
+          coreFlowMetrics['meets_error_rate_criteria'] ?? false,
+          'Target: <${coreFlowMetrics['error_rate_target']}%',
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '   Attempts: ${coreFlowMetrics['total_attempts']} total, ${coreFlowMetrics['total_errors']} errors',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricRow(String label, String value, bool meetsTarget, String targetText) {
+    return Row(
+      children: [
+        Icon(
+          meetsTarget ? Icons.check_circle : Icons.warning,
+          color: meetsTarget ? Colors.green : Colors.orange,
+          size: 16,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label),
+              Text(
+                targetText,
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            color: meetsTarget ? Colors.green : Colors.orange,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }
