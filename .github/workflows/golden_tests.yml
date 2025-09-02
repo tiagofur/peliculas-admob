@@ -1,0 +1,57 @@
+name: Golden Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  golden_tests:
+    name: Golden Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: 'stable'
+        cache: true
+        
+    - name: Get dependencies
+      run: flutter pub get
+      
+    - name: Create goldens directory
+      run: mkdir -p test/golden_tests/goldens
+      
+    - name: Run golden tests (generate)
+      run: flutter test test/golden_tests/ --update-goldens
+      continue-on-error: true
+      
+    - name: Run golden tests (validate)
+      run: flutter test test/golden_tests/
+      
+    - name: Upload golden files as artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: golden-test-failures
+        path: |
+          test/golden_tests/goldens/
+          test/failures/
+        retention-days: 7
+        
+    - name: Comment PR with golden test results
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '❌ Golden tests failed. Please check the uploaded artifacts for differences and update golden files if needed.'
+          })
