@@ -1,13 +1,15 @@
-# 📚 Índice de Documentación de Pruebas Manuales
+# 📚 Índice de Documentación de Pruebas y Verificación
 
 ## 🎯 Propósito
 
-Esta documentación proporciona un marco completo para ejecutar pruebas funcionales manuales de la aplicación **Peliculas AdMob**, enfocándose en las cuatro áreas principales:
+Esta documentación proporciona un marco completo para ejecutar pruebas funcionales manuales y verificación de sincronización de la aplicación **Peliculas AdMob**, enfocándose en las áreas principales:
 
 1. 🧭 **Navegación entre pantallas**
 2. 📺 **Carga y visualización de anuncios** 
 3. 💾 **Persistencia de datos**
 4. ⚠️ **Manejo de errores en la UI**
+5. 🔄 **Sincronización de datos Supabase y caché local**
+6. 📱 **Funcionalidad multi-dispositivo y offline**
 
 ---
 
@@ -36,6 +38,79 @@ Esta documentación proporciona un marco completo para ejecutar pruebas funciona
 - Identificación de puntos críticos
 - Estrategias de prueba recomendadas
 - Métricas clave a monitorear
+
+### 🔄 Documentos de Verificación de Sincronización
+
+#### 1. [Checklist de Verificación de Sincronización](./SYNC_VERIFICATION_CHECKLIST.md)
+**Descripción**: Checklist completo e integral para verificar la sincronización de datos entre Supabase y caché local.
+
+**Cuándo usar**: Para validación completa del sistema de sincronización antes de releases o después de cambios en la infraestructura de datos.
+
+**Contenido**:
+- Preparación del entorno multi-dispositivo
+- Verificación de autenticación y sincronización inicial
+- Pruebas de favoritos, ratings, historial y listas personalizadas
+- Validación de funcionalidad offline y recuperación
+- Criterios de éxito específicos (latencia ≤ 3s, 100% de operaciones exitosas)
+- Template de reporte de resultados
+
+#### 2. [Guía de Pruebas Manuales Multi-Dispositivo](./MANUAL_MULTI_DEVICE_TESTING_GUIDE.md)
+**Descripción**: Guía paso a paso para ejecutar pruebas manuales de sincronización entre múltiples dispositivos.
+
+**Cuándo usar**: Para validar comportamientos complejos de sincronización en condiciones reales de uso.
+
+**Contenido**:
+- 7 escenarios detallados de prueba multi-dispositivo
+- Configuración específica para Web, Android e iOS
+- Casos de conflicto y resolución
+- Pruebas de alto volumen y rendimiento
+- Monitoreo de logs y métricas en tiempo real
+- Troubleshooting de casos de error comunes
+
+### 🛠️ Scripts de Verificación Automatizada
+
+#### 3. [Script de Verificación de Sincronización](../scripts/sync_verification.sh)
+**Descripción**: Script automatizado que ejecuta todos los tests relacionados con sincronización y genera reportes detallados.
+
+**Cuándo usar**: Para verificación rápida del estado de sincronización y antes de proceder con pruebas manuales.
+
+**Características**:
+- Ejecuta tests de sincronización, offline y integración E2E
+- Verificación de código (formatting, análisis estático)
+- Generación automática de reportes en Markdown
+- Timeouts apropiados para tests de larga duración
+
+#### 4. [Script de Monitoreo Integral](../scripts/sync_monitoring_execution.sh)
+**Descripción**: Sistema avanzado de monitoreo que ejecuta tests con métricas detalladas de rendimiento.
+
+**Cuándo usar**: Para análisis profundo de rendimiento y generación de métricas de sincronización.
+
+**Características**:
+- Captura métricas de latencia y rendimiento
+- Verificación de criterios de tiempo (≤ 3s para operaciones críticas)
+- Exportación de métricas en formato JSON
+- Reportes ejecutivos con análisis de resultados
+
+### 🧪 Tests Automatizados de Sincronización
+
+Los siguientes tests automatizados complementan las pruebas manuales:
+
+#### Core Sync Tests
+- `test/sync_integration_test.dart` - Pruebas básicas de integración
+- `test/realtime_sync_complex_test.dart` - Sincronización en tiempo real
+- `test/multi_device_realtime_conflict_test.dart` - Conflictos multi-dispositivo
+- `test/sync_status_integration_test.dart` - Estados de sincronización
+
+#### Performance and Metrics Tests
+- `test/sync_performance_metrics_test.dart` - Métricas de rendimiento y latencia
+- `test/sync_data_integrity_validation_test.dart` - Integridad de datos
+- `test/multi_device_sync_simulation_test.dart` - Simulación multi-dispositivo
+- `test/offline_sync_recovery_test.dart` - Recuperación offline
+
+#### Offline Functionality Tests
+- `test/offline_functionality_test.dart` - Funcionalidad offline
+- `test/offline_cache_test.dart` - Sistema de caché offline
+- `test/persistent_sync_queue_test.dart` - Cola persistente de operaciones
 
 ### 🛠️ Plantillas de Ejecución
 
@@ -95,6 +170,26 @@ Esta documentación proporciona un marco completo para ejecutar pruebas funciona
 2. [Plantilla de Bugs](./BUG_REPORT_TEMPLATE.md) - Si se encuentran problemas
 
 **Tiempo estimado**: 30-45 minutos
+
+### 🔄 Escenario 3: Verificación de Sincronización Completa
+**Objetivo**: Validar completamente el sistema de sincronización de datos
+
+**Documentos a usar**:
+1. [Script de Verificación](../scripts/sync_verification.sh) - Para tests automatizados
+2. [Checklist de Sincronización](./SYNC_VERIFICATION_CHECKLIST.md) - Para validación integral
+3. [Guía Multi-Dispositivo](./MANUAL_MULTI_DEVICE_TESTING_GUIDE.md) - Para pruebas manuales
+4. [Script de Monitoreo](../scripts/sync_monitoring_execution.sh) - Para métricas detalladas
+
+**Tiempo estimado**: 2-3 horas (1h automatizada + 1-2h manual)
+
+### 📱 Escenario 4: Validación Multi-Dispositivo Rápida
+**Objetivo**: Verificar sincronización básica entre dispositivos
+
+**Documentos a usar**:
+1. [Guía Multi-Dispositivo](./MANUAL_MULTI_DEVICE_TESTING_GUIDE.md) - Escenarios 1-3 únicamente
+2. [Script de Verificación](../scripts/sync_verification.sh) - Para pre-validación
+
+**Tiempo estimado**: 45-60 minutos
 
 ### 🔍 Escenario 3: Investigación de Bug Reportado
 **Objetivo**: Reproducir y analizar un problema específico
