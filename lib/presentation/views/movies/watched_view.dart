@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../generated/app_localizations.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -29,6 +30,7 @@ class WatchedViewState extends ConsumerState<WatchedView>
     final watchedMovies = watchedMoviesState.movies
         .map((watchedMovie) => watchedMovie.movie)
         .toList();
+    final l10n = AppLocalizations.of(context)!;
 
     if (watchedMovies.isEmpty) {
       final colors = Theme.of(context).colorScheme;
@@ -48,14 +50,14 @@ class WatchedViewState extends ConsumerState<WatchedView>
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(Icons.visibility_outlined, size: 60, color: colors.primary),
-                        Text('¡Aún no has visto nada!',
+                        Text(l10n.notWatchedYet,
                             style: TextStyle(fontSize: 30, color: colors.primary)),
-                        const Text('No tienes películas marcadas como vistas',
-                            style: TextStyle(fontSize: 20)),
+                        Text(l10n.noWatchedMessage,
+                            style: const TextStyle(fontSize: 20)),
                         const SizedBox(height: 20),
                         FilledButton.tonal(
                             onPressed: () => context.go('/'),
-                            child: const Text('Empieza a explorar'))
+                            child: Text(l10n.startExploring))
                       ],
                     ),
                   ),

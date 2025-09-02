@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../config/theme/app_theme.dart' as app_theme;
+import '../../generated/app_localizations.dart';
+import '../providers/locale/locale_provider.dart';
 import '../providers/theme/theme_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -11,15 +13,63 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeState = ref.watch(themeNotifierProvider);
     final colorList = ref.watch(colorListProvider);
+    final localeState = ref.watch(localeNotifierProvider);
+    final l10n = AppLocalizations.of(context)!;
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuración'),
+        title: Text(l10n.settings),
         centerTitle: false,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          // Sección de Idioma
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.language,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        l10n.language,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Selector de idioma
+                  Text(
+                    l10n.selectLanguage,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildLanguageSelector(context, ref, localeState, l10n),
+                  
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.languageDescription,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
           // Sección de Tema
           Card(
             child: Padding(
@@ -35,7 +85,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Apariencia',
+                        l10n.appearance,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -46,17 +96,17 @@ class SettingsScreen extends ConsumerWidget {
                   
                   // Selector de modo de tema
                   Text(
-                    'Modo de tema',
+                    l10n.themeMode,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  _buildThemeModeSelector(context, ref, themeState),
+                  _buildThemeModeSelector(context, ref, themeState, l10n),
                   
                   const SizedBox(height: 24),
                   
                   // Selector de color
                   Text(
-                    'Color del tema',
+                    l10n.themeColor,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -83,7 +133,7 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        'Información',
+                        l10n.information,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -92,7 +142,7 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'El modo "Sistema" seguirá automáticamente la configuración de tema de tu dispositivo.',
+                    l10n.systemThemeDescription,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
                     ),
@@ -106,7 +156,7 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref, ThemeState themeState) {
+  Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref, ThemeState themeState, AppLocalizations l10n) {
     return Column(
       children: [
         RadioListTile<app_theme.ThemeMode>(
@@ -117,8 +167,8 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(themeNotifierProvider.notifier).setThemeMode(value);
             }
           },
-          title: const Text('Sistema'),
-          subtitle: const Text('Seguir la configuración del dispositivo'),
+          title: Text(l10n.system),
+          subtitle: Text(l10n.systemThemeSubtitle),
           secondary: const Icon(Icons.brightness_auto),
         ),
         RadioListTile<app_theme.ThemeMode>(
@@ -129,8 +179,8 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(themeNotifierProvider.notifier).setThemeMode(value);
             }
           },
-          title: const Text('Claro'),
-          subtitle: const Text('Tema con colores claros'),
+          title: Text(l10n.light),
+          subtitle: Text(l10n.lightThemeSubtitle),
           secondary: const Icon(Icons.light_mode),
         ),
         RadioListTile<app_theme.ThemeMode>(
@@ -141,9 +191,41 @@ class SettingsScreen extends ConsumerWidget {
               ref.read(themeNotifierProvider.notifier).setThemeMode(value);
             }
           },
-          title: const Text('Oscuro'),
-          subtitle: const Text('Tema con colores oscuros'),
+          title: Text(l10n.dark),
+          subtitle: Text(l10n.darkThemeSubtitle),
           secondary: const Icon(Icons.dark_mode),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageSelector(BuildContext context, WidgetRef ref, LocaleState localeState, AppLocalizations l10n) {
+    final localeNotifier = ref.read(localeNotifierProvider.notifier);
+    final currentLocale = localeState.locale ?? Locale(Localizations.localeOf(context).languageCode);
+    
+    return Column(
+      children: [
+        RadioListTile<String>(
+          value: 'es',
+          groupValue: currentLocale.languageCode,
+          onChanged: (value) {
+            if (value != null) {
+              localeNotifier.setLocale(Locale(value));
+            }
+          },
+          title: Text(l10n.spanish),
+          secondary: const Icon(Icons.language),
+        ),
+        RadioListTile<String>(
+          value: 'en',
+          groupValue: currentLocale.languageCode,
+          onChanged: (value) {
+            if (value != null) {
+              localeNotifier.setLocale(Locale(value));
+            }
+          },
+          title: Text(l10n.english),
+          secondary: const Icon(Icons.language),
         ),
       ],
     );

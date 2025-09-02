@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../generated/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -45,6 +46,7 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
     super.build(context);
 
     final favoriteMovies = ref.watch(favoriteMoviesProvider).values.toList();
+    final l10n = AppLocalizations.of(context)!;
 
     if (favoriteMovies.isEmpty) {
       final colors = Theme.of(context).colorScheme;
@@ -64,14 +66,14 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(Icons.favorite_outline_sharp, size: 60, color: colors.primary),
-                        Text('Ohhh no!!',
+                        Text(l10n.noFavorites,
                             style: TextStyle(fontSize: 30, color: colors.primary)),
-                        const Text('No tienes películas favoritas',
-                            style: TextStyle(fontSize: 20)),
+                        Text(l10n.noFavoritesMessage,
+                            style: const TextStyle(fontSize: 20)),
                         const SizedBox(height: 20),
                         FilledButton.tonal(
                             onPressed: () => context.go('/'),
-                            child: const Text('Empieza a buscar'))
+                            child: Text(l10n.startSearching))
                       ],
                     ),
                   ),

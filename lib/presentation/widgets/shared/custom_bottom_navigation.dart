@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../generated/app_localizations.dart';
 import '../sync/sync_status_indicator.dart';
 
 class CustomBottomNavigation extends ConsumerWidget {
@@ -16,6 +17,7 @@ class CustomBottomNavigation extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       decoration: BoxDecoration(
@@ -62,29 +64,29 @@ class CustomBottomNavigation extends ConsumerWidget {
               fontWeight: FontWeight.w400,
             ),
             iconSize: 24,
-            items: const [
+            items: [
               BottomNavigationBarItem(
-                icon: Icon(Icons.home_max), 
-                label: 'Inicio'
+                icon: const Icon(Icons.home_max), 
+                label: l10n.home
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.library_books_outlined), 
-                label: 'Mi Biblioteca'
+                icon: const Icon(Icons.library_books_outlined), 
+                label: l10n.myLibrary
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.bar_chart_outlined),
-                activeIcon: Icon(Icons.bar_chart),
-                label: 'Estadísticas'
+                icon: const Icon(Icons.bar_chart_outlined),
+                activeIcon: const Icon(Icons.bar_chart),
+                label: l10n.statistics
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.play_circle_outline),
-                activeIcon: Icon(Icons.play_circle),
-                label: 'Streaming'
+                icon: const Icon(Icons.play_circle_outline),
+                activeIcon: const Icon(Icons.play_circle),
+                label: l10n.streaming
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.emoji_events_outlined),
-                activeIcon: Icon(Icons.emoji_events),
-                label: 'Desafíos'
+                icon: const Icon(Icons.emoji_events_outlined),
+                activeIcon: const Icon(Icons.emoji_events),
+                label: l10n.challenges
               ),
             ],
           ),
