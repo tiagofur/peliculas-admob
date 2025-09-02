@@ -19,6 +19,7 @@ import 'config/theme/custom_scroll_behavior.dart';
 import 'core/config/supabase_config.dart';
 import 'core/error_reporting/error_reporting_service.dart';
 import 'core/logging/logger_factory.dart';
+import 'core/monetization/monetization_initializer.dart';
 import 'core/notifications/local_notification_service.dart';
 import 'core/notifications/notification_initialization_service.dart';
 import 'generated/app_localizations.dart';
@@ -176,6 +177,20 @@ Future<void> main() async {
             if (kDebugMode) {
               LoggerFactory.error('Error initializing MobileAds: $e');
             }
+          }
+        }
+
+        // INICIALIZAR SISTEMA DE MONETIZACIÓN
+        try {
+          await MonetizationInitializer.instance.initialize(
+            enableDebugMode: kDebugMode,
+          );
+          if (kDebugMode) {
+            LoggerFactory.info('✅ Sistema de monetización inicializado');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            LoggerFactory.error('❌ Error inicializando sistema de monetización: $e');
           }
         }
 

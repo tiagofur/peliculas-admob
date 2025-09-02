@@ -130,6 +130,88 @@ Medir tiempos:
 - ⚠️ Verificar que no hay memory leaks en anuncios
 - ❌ Web debe mostrar comportamiento apropiado (sin anuncios)
 
+### ✨ NUEVO: Sistema de Monetización Optimizado
+
+#### Componentes Implementados:
+
+**Archivo**: `lib/core/monetization/ad_frequency_controller.dart`
+- Control de frecuencia inteligente por sesión, hora y día
+- Cooldowns después de interacciones del usuario
+- Métricas de monetización (CTR, revenue, UX score)
+- Persistencia de configuración y datos
+
+**Archivo**: `lib/core/monetization/monetization_analytics_service.dart`
+- Tracking avanzado de impresiones y clicks
+- Métricas de rendimiento de carga
+- Análisis de experiencia de usuario
+- Distribución por tipo de anuncio
+
+**Archivo**: `lib/presentation/widgets/admob/controlled_ad_widget.dart`
+- Widgets que respetan automáticamente límites de frecuencia
+- Placeholders discretos cuando anuncios están bloqueados
+- Callbacks para eventos de anuncios
+- Integración visual coherente
+
+#### Configuraciones de Frecuencia:
+
+##### TC-FREQ-CONSERVATIVE: Configuración Conservadora
+```
+Verificar límites:
+- Máximo 5 anuncios por sesión
+- Máximo 8 anuncios por hora
+- Máximo 30 anuncios por día
+- Mínimo 3 minutos entre anuncios
+- Cooldown 8 minutos después de interacción
+```
+
+##### TC-FREQ-BALANCED: Configuración Balanceada (Por defecto)
+```
+Verificar límites:
+- Máximo 8 anuncios por sesión
+- Máximo 12 anuncios por hora
+- Máximo 50 anuncios por día
+- Mínimo 2 minutos entre anuncios
+- Cooldown 5 minutos después de interacción
+```
+
+##### TC-FREQ-METRICS: Métricas de Monetización
+```
+Validar tracking:
+- CTR ≥ 1% considera saludable
+- UX Score ≥ 70% para experiencia positiva
+- Error rate ≤ 10% para confiabilidad
+- Revenue tracking preciso por click
+```
+
+#### Casos de Prueba Críticos para Frecuencia:
+
+##### TC-FREQ-LIMITS: Respeto de Límites
+```
+Verificar que:
+- Sistema bloquea anuncios cuando se alcanzan límites
+- Diferentes tipos de límites funcionan independientemente
+- Reinicio de sesión resetea contadores apropiadamente
+- Persistencia mantiene datos entre reinicios de app
+```
+
+##### TC-FREQ-UX: Experiencia de Usuario
+```
+Verificar que:
+- Placeholders aparecen discretamente cuando ad bloqueado
+- Cooldowns se activan después de interacciones
+- No hay anuncios invasivos o saturación
+- Integración visual es coherente
+```
+
+##### TC-FREQ-ANALYTICS: Métricas y Analytics
+```
+Verificar tracking de:
+- Impresiones registradas correctamente
+- Clicks con revenue estimado
+- Errores de carga reportados
+- Health checks funcionan automáticamente
+```
+
 ---
 
 ## 💾 3. PERSISTENCIA DE DATOS
