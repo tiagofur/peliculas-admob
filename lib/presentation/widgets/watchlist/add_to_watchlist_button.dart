@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/watchlist_movie.dart';
 import '../../providers/watchlist_provider.dart';
@@ -160,6 +161,17 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
 
       try {
         await ref.read(watchlistProvider.notifier).addToWatchlist(widget.movie, result);
+        
+        // Track analytics event for add to watchlist
+        await AnalyticsService().trackEvent(
+          AnalyticsEventType.addWatchlist,
+          {
+            'movie_id': widget.movie.id,
+            'movie_title': widget.movie.title,
+            'priority': result.name,
+            'action': 'add_to_watchlist',
+          },
+        );
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

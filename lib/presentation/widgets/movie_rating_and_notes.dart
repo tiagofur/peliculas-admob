@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/user_movie_rating.dart';
 import '../providers/user_movie_ratings_provider.dart';
@@ -71,6 +72,19 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
       );
 
       await ref.read(userRatingsProvider.notifier).saveRating(rating);
+      
+      // Track analytics event for movie rating
+      await AnalyticsService().trackEvent(
+        AnalyticsEventType.rateMovie,
+        {
+          'movie_id': widget.movie.id,
+          'movie_title': widget.movie.title,
+          'rating': _currentRating,
+          'has_personal_note': _notesController.text.trim().isNotEmpty,
+          'note_length': _notesController.text.trim().length,
+          'action': 'rate_movie',
+        },
+      );
       
       // Invalidar el provider específico para actualizar la UI
       ref.invalidate(movieRatingProvider(widget.movie.id));

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/exceptions/auth_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
@@ -40,7 +42,7 @@ class AuthRepositoryImpl implements AuthRepository {
     }
 
     // Escuchar cambios de estado
-    _authSubscription = _supabase.auth.onAuthStateChange.listen((data) {
+    _authSubscription = _supabase.auth.onAuthStateChange.listen((data) async {
       final user = data.session?.user;
       if (user != null) {
         _authStateController?.add(UserModel.fromSupabaseUser(user));
@@ -49,6 +51,9 @@ class AuthRepositoryImpl implements AuthRepository {
         if (data.session != null) {
           _sessionManager.persistSession(data.session!);
         }
+        
+        // Track onboarding completion for first-time users
+        await _trackOnboardingCompletion(user.id);
       } else {
         _authStateController?.add(null);
         
@@ -470,6 +475,35 @@ class AuthRepositoryImpl implements AuthRepository {
         return 'El registro está temporalmente deshabilitado';
       default:
         return error;
+    }
+  }
+
+  /// Track onboarding completion for first-time users
+  Future<void> _trackOnboardingCompletion(String userId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final onboardingKey = 'onboarding_completed_$userId';
+      
+      // Check if this user has already completed onboarding
+      if (!prefs.getBool(onboardingKey) ?? true) {
+        // Mark onboarding as completed for this user
+        await prefs.setBool(onboardingKey, true);
+        
+        // Track analytics event for onboarding completion
+        await AnalyticsService().trackEvent(
+          AnalyticsEventType.onboarding,
+          {
+            'user_id': userId,
+            'action': 'onboarding_completed',
+            'completion_method': 'authentication',
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
+          },
+        );
+        
+        LoggerFactory.info('✅ Onboarding completion tracked for user: $userId');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error tracking onboarding completion: $e');
     }
   }
 
