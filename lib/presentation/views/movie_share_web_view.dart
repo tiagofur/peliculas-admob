@@ -88,13 +88,17 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
   }
 
   Future<void> _openInApp() async {
-    final deepLink = 'peliculas://movie/${widget.movieId}';
+    final deepLink = ShareService.generateMovieAppDeepLink(int.parse(widget.movieId));
     final uri = Uri.parse(deepLink);
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      // Fallback to app store if app is not installed
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        // Fallback to app store if app is not installed
+        await _launchAppStore();
+      }
+    } catch (e) {
+      // Fallback to app store if there's any error
       await _launchAppStore();
     }
   }

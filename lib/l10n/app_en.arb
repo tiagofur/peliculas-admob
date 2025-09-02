@@ -1,0 +1,139 @@
+{
+  "@@locale": "en",
+  "appTitle": "Movies",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "appearance": "Appearance",
+  "@appearance": {
+    "description": "Appearance settings section title"
+  },
+  "themeMode": "Theme Mode",
+  "@themeMode": {
+    "description": "Theme mode selection label"
+  },
+  "themeColor": "Theme Color",
+  "@themeColor": {
+    "description": "Theme color selection label"
+  },
+  "information": "Information",
+  "@information": {
+    "description": "Information section title"
+  },
+  "systemThemeDescription": "The 'System' mode will automatically follow your device's theme setting.",
+  "@systemThemeDescription": {
+    "description": "Description for system theme mode"
+  },
+  "system": "System",
+  "@system": {
+    "description": "System theme mode option"
+  },
+  "systemThemeSubtitle": "Follow device configuration",
+  "@systemThemeSubtitle": {
+    "description": "Subtitle for system theme mode"
+  },
+  "light": "Light",
+  "@light": {
+    "description": "Light theme mode option"
+  },
+  "lightThemeSubtitle": "Theme with light colors",
+  "@lightThemeSubtitle": {
+    "description": "Subtitle for light theme mode"
+  },
+  "dark": "Dark",
+  "@dark": {
+    "description": "Dark theme mode option"
+  },
+  "darkThemeSubtitle": "Theme with dark colors",
+  "@darkThemeSubtitle": {
+    "description": "Subtitle for dark theme mode"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language selection section title"
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Language selection label"
+  },
+  "spanish": "Spanish",
+  "@spanish": {
+    "description": "Spanish language option"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English language option"
+  },
+  "languageDescription": "Change the app language. The app will restart to apply the new language.",
+  "@languageDescription": {
+    "description": "Description for language selection"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home screen title"
+  },
+  "favorites": "Favorites",
+  "@favorites": {
+    "description": "Favorites screen title"
+  },
+  "watchlist": "Watchlist",
+  "@watchlist": {
+    "description": "Watchlist screen title"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile screen title"
+  },
+  "noFavorites": "Ohhh no!!",
+  "@noFavorites": {
+    "description": "No favorites exclamation"
+  },
+  "noFavoritesMessage": "You don't have any favorite movies",
+  "@noFavoritesMessage": {
+    "description": "Message when user has no favorite movies"
+  },
+  "startSearching": "Start searching",
+  "@startSearching": {
+    "description": "Button text to start searching for movies"
+  },
+  "notWatchedYet": "You haven't watched anything yet!",
+  "@notWatchedYet": {
+    "description": "Message when user hasn't watched any movies"
+  },
+  "noWatchedMessage": "You don't have any movies marked as watched",
+  "@noWatchedMessage": {
+    "description": "Message when user has no watched movies"
+  },
+  "startExploring": "Start exploring",
+  "@startExploring": {
+    "description": "Button text to start exploring movies"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login screen title"
+  },
+  "register": "Register",
+  "@register": {
+    "description": "Register screen title"
+  },
+  "streaming": "Streaming",
+  "@streaming": {
+    "description": "Streaming screen title"
+  },
+  "myLibrary": "My Library",
+  "@myLibrary": {
+    "description": "My Library tab label"
+  },
+  "statistics": "Statistics",
+  "@statistics": {
+    "description": "Statistics tab label"
+  },
+  "challenges": "Challenges",
+  "@challenges": {
+    "description": "Challenges tab label"
+  }
+}

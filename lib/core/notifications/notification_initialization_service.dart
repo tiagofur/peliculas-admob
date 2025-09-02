@@ -1,11 +1,13 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/logger_factory.dart';
 import 'notification_manager.dart';
 import 'notification_preferences.dart';
+import 'notification_services_initializer.dart';
 
 class NotificationInitializationService {
   factory NotificationInitializationService() => _instance;
@@ -67,6 +69,31 @@ class NotificationInitializationService {
         LoggerFactory.error('❌ Error initializing notification system: $e');
       }
       rethrow;
+    }
+  }
+
+  /// Inicializa todo el sistema de notificaciones con Riverpod
+  Future<void> initializeWithRiverpod(Ref ref) async {
+    await initialize(); // Inicialización básica primero
+    
+    if (!_isInitialized) return;
+    
+    try {
+      if (kDebugMode) {
+        LoggerFactory.info('🔔 Inicializando servicios específicos de notificaciones...');
+      }
+
+      // Inicializar servicios específicos conectados a repositorios
+      await NotificationServicesInitializer.instance.initializeWithRepositories(ref: ref);
+
+      if (kDebugMode) {
+        LoggerFactory.info('✅ Servicios específicos de notificaciones inicializados');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        LoggerFactory.error('❌ Error inicializando servicios específicos: $e');
+      }
+      // No re-lanzar el error ya que la inicialización básica fue exitosa
     }
   }
 

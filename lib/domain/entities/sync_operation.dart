@@ -24,6 +24,12 @@ enum SyncOperationType {
   addMovieToList,
   @HiveField(8)
   removeMovieFromList,
+  @HiveField(9)
+  addToWatchlist,
+  @HiveField(10)
+  removeFromWatchlist,
+  @HiveField(11)
+  updateWatchlistPriority,
 }
 
 /// Estado de una operación de sincronización
@@ -394,6 +400,67 @@ class SyncOperationFactory {
         'listId': listId,
         'movieId': movieId,
         'userId': userId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      createdAt: DateTime.now(),
+      priority: priority,
+    );
+  }
+
+  /// Crea una operación para agregar a watchlist
+  static SyncOperation addToWatchlist({
+    required int movieId,
+    required String userId,
+    required String priority,
+    int operationPriority = 0,
+  }) {
+    return SyncOperation(
+      id: _generateId(),
+      type: SyncOperationType.addToWatchlist,
+      data: {
+        'movieId': movieId,
+        'userId': userId,
+        'priority': priority,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      createdAt: DateTime.now(),
+      priority: operationPriority,
+    );
+  }
+
+  /// Crea una operación para remover de watchlist
+  static SyncOperation removeFromWatchlist({
+    required int movieId,
+    required String userId,
+    int priority = 0,
+  }) {
+    return SyncOperation(
+      id: _generateId(),
+      type: SyncOperationType.removeFromWatchlist,
+      data: {
+        'movieId': movieId,
+        'userId': userId,
+        'timestamp': DateTime.now().toIso8601String(),
+      },
+      createdAt: DateTime.now(),
+      priority: priority,
+    );
+  }
+
+  /// Crea una operación para actualizar prioridad de watchlist
+  static SyncOperation updateWatchlistPriority({
+    required int movieId,
+    required String userId,
+    required String newPriority,
+    int priority = 0,
+  }) {
+    return SyncOperation(
+      id: _generateId(),
+      type: SyncOperationType.updateWatchlistPriority,
+      data: {
+        'movieId': movieId,
+        'userId': userId,
+        'newPriority': newPriority,
         'timestamp': DateTime.now().toIso8601String(),
       },
       createdAt: DateTime.now(),

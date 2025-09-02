@@ -64,7 +64,7 @@ await realtimeService.initialize();
 ### RealtimeListenerService
 
 **Responsabilidades:**
-- Escuchar eventos de las tablas: `favorites`, `watched_movies`, `custom_lists`
+- Escuchar eventos de las tablas: `favorites`, `watched_movies`, `custom_lists`, `user_watchlist`, `user_movie_ratings`
 - Manejar reconexiones automáticas
 - Gestionar estados de conexión
 - Aplicar throttling a los eventos
@@ -75,6 +75,8 @@ await realtimeService.initialize();
 - `_setupFavoritesListener()` - Configura listener para favoritos
 - `_setupWatchedMoviesListener()` - Configura listener para películas vistas
 - `_setupCustomListsListener()` - Configura listener para listas personalizadas
+- `_setupWatchlistListener()` - Configura listener para watchlist de usuario
+- `_setupRatingsListener()` - Configura listener para valoraciones de usuario
 
 **Eventos Manejados:**
 - `INSERT` - Nuevos registros

@@ -9,6 +9,8 @@ import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/widgets.dart';
+import '../../widgets/watchlist/add_to_watchlist_button.dart';
+import '../../widgets/movie_rating_and_notes.dart';
 
 class MovieScreen extends ConsumerStatefulWidget {
   const MovieScreen({super.key, required this.movieId});
@@ -84,6 +86,9 @@ class _MovieDetails extends StatelessWidget {
             children: [
               // Información básica, sinopsis, detalles técnicos, etc.
               _MovieInfoBeforeCast(movie: movie),
+
+              // Valoración del usuario
+              MovieRatingAndNotes(movie: movie),
 
               //* 1. Banner antes de 'Reparto Principal'
               const Padding(
@@ -266,7 +271,13 @@ class _CustomSliverAppBar extends ConsumerWidget {
             isFavoriteFuture ? Icons.favorite_rounded : Icons.favorite_border,
             color: isFavoriteFuture ? Colors.red : Colors.white,
           ),
-        )
+        ),
+        // Botón de watchlist
+        AddToWatchlistButton(
+          movie: movie,
+          isIconButton: true,
+          showLabel: false,
+        ),
       ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(bottom: 0),

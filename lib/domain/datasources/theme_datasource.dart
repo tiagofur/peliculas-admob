@@ -1,4 +1,6 @@
+import '../../../config/theme/app_theme.dart';
+
 abstract class ThemeDatasource {
-  Future<void> saveTheme(bool isDarkMode, int colorIndex);
-  Future<(bool, int)> getTheme();
+  Future<void> saveTheme(ThemeMode themeMode, int colorIndex);
+  Future<(ThemeMode, int)> getTheme();
 }

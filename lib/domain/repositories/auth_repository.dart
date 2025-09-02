@@ -30,6 +30,7 @@ abstract class AuthRepository {
   Future<User> updateUser({
     String? fullName,
     String? avatarUrl,
+    String? email,
   });
 
   // Operaciones de perfil
@@ -62,6 +63,12 @@ abstract class AuthRepository {
 
   // Operaciones de validación
   Future<bool> isEmailAvailable(String email);
+  
+  // Operaciones de sesión persistente
+  Future<bool> hasPersistedSession();
+  Future<bool> validateCurrentSession();
+  Future<void> refreshToken();
+  Future<Map<String, dynamic>?> getSessionInfo();
   
   // Limpieza de recursos
   void dispose();

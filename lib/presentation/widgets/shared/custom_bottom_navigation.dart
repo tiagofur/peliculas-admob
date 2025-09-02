@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CustomBottomNavigation extends StatelessWidget {
+import '../../../generated/app_localizations.dart';
+import '../sync/sync_status_indicator.dart';
+
+class CustomBottomNavigation extends ConsumerWidget {
   const CustomBottomNavigation({
     super.key, 
     required this.currentIndex,
@@ -11,50 +15,83 @@ class CustomBottomNavigation extends StatelessWidget {
   final void Function(int) onItemTapped;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
-    return BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: onItemTapped,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: colors.surface,
-        selectedItemColor: colors.primary,
-        unselectedItemColor: colors.onSurface.withValues(alpha: 0.6),
-        selectedLabelStyle: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: colors.outline.withOpacity(0.2),
+            width: 0.5,
+          ),
         ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w400,
-        ),
-        iconSize: 24,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_max), 
-            label: 'Inicio'
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Indicador de sincronización en la parte superior del bottom nav
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SyncStatusIndicator(
+                  size: 16,
+                  showText: true,
+                  compact: true,
+                ),
+              ],
+            ),
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books_outlined), 
-            label: 'Mi Biblioteca'
+          // Bottom navigation bar
+          BottomNavigationBar(
+            currentIndex: currentIndex,
+            onTap: onItemTapped,
+            elevation: 0,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: colors.surface,
+            selectedItemColor: colors.primary,
+            unselectedItemColor: colors.onSurface.withValues(alpha: 0.6),
+            selectedLabelStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w400,
+            ),
+            iconSize: 24,
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_max), 
+                label: l10n.home
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.library_books_outlined), 
+                label: l10n.myLibrary
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.bar_chart_outlined),
+                activeIcon: const Icon(Icons.bar_chart),
+                label: l10n.statistics
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.play_circle_outline),
+                activeIcon: const Icon(Icons.play_circle),
+                label: l10n.streaming
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.emoji_events_outlined),
+                activeIcon: const Icon(Icons.emoji_events),
+                label: l10n.challenges
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Estadísticas'
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.play_circle_outline),
-            activeIcon: Icon(Icons.play_circle),
-            label: 'Streaming'
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.emoji_events_outlined),
-            activeIcon: Icon(Icons.emoji_events),
-            label: 'Desafíos'
-          ),
-        ]);
+        ],
+      ),
+    );
   }
 }

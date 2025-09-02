@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../services/accessibility_service.dart';
 import '../../delegates/search_movie_delegate.dart';
 import '../../providers/providers.dart';
 import '../../providers/theme/theme_provider.dart';
@@ -38,26 +39,35 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                   icon: Icon(isDarkMode
                       ? Icons.light_mode_outlined
                       : Icons.dark_mode_outlined),
+                  tooltip: isDarkMode 
+                      ? 'Cambiar a modo claro'
+                      : 'Cambiar a modo oscuro',
+                  semanticLabel: isDarkMode
+                      ? 'Activar modo claro'
+                      : 'Activar modo oscuro',
                 ),
                 IconButton(
-                    onPressed: () {
-                      final searchQuery = ref.read(searchQueryProvider);
-                      final movieRepository = ref.read(movieRepositoryProvider);
+                  onPressed: () {
+                    final searchQuery = ref.read(searchQueryProvider);
+                    final movieRepository = ref.read(movieRepositoryProvider);
 
-                      showSearch<Movie?>(
-                              query: searchQuery,
-                              context: context,
-                              delegate: SearchMovieDelegate(
-                                  initialMovies: const [],
-                                  searchMovies: movieRepository.searchMovies))
-                          .then((movie) {
-                        if (movie == null) return;
-                        if (context.mounted) {
-                          context.push('/movie/${movie.id}');
-                        }
-                      });
-                    },
-                    icon: const Icon(Icons.search))
+                    showSearch<Movie?>(
+                            query: searchQuery,
+                            context: context,
+                            delegate: SearchMovieDelegate(
+                                initialMovies: const [],
+                                searchMovies: movieRepository.searchMovies))
+                        .then((movie) {
+                      if (movie == null) return;
+                      if (context.mounted) {
+                        context.push('/movie/${movie.id}');
+                      }
+                    });
+                  },
+                  icon: const Icon(Icons.search),
+                  tooltip: 'Buscar películas',
+                  semanticLabel: 'Abrir búsqueda de películas',
+                )
               ],
             ),
           ),

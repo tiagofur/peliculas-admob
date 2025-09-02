@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
@@ -150,6 +151,9 @@ class HomeViewState extends ConsumerState<HomeView>
                   ),
                 ),
 
+              // Sección de recomendaciones personalizadas
+              _buildRecommendationsSection(ref),
+
               // Anuncio nativo adicional entre "Tendencias" y "Próximamente" (MEDIA PRIORIDAD)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
@@ -247,4 +251,161 @@ class HomeViewState extends ConsumerState<HomeView>
 
   @override
   bool get wantKeepAlive => true;
+
+  /// Construye la sección de recomendaciones personalizadas
+  Widget _buildRecommendationsSection(WidgetRef ref) {
+    final recommendationsAsync = ref.watch(personalizedRecommendationsProvider);
+
+    return recommendationsAsync.when(
+      data: (recommendations) {
+        if (recommendations.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header con botón para ver todas las recomendaciones
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Recomendado para ti',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Basado en tus gustos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to full recommendations view
+                      context.push('/recommendations');
+                    },
+                    child: const Text('Ver todos'),
+                  ),
+                ],
+              ),
+            ),
+            // Lista horizontal de recomendaciones
+            SizedBox(
+              height: 200,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: recommendations.take(10).length,
+                itemBuilder: (context, index) {
+                  final recommendation = recommendations[index];
+                  return _buildRecommendationCard(recommendation, context);
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        );
+      },
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      ),
+      error: (error, stack) => const SizedBox.shrink(),
+    );
+  }
+
+  /// Construye una tarjeta individual de recomendación
+  Widget _buildRecommendationCard(dynamic recommendation, BuildContext context) {
+    return Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () {
+          context.push('/movie/${recommendation.movieId}');
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Poster de la película
+            Container(
+              width: 120,
+              height: 140,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.grey[300],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: recommendation.posterPath.isNotEmpty
+                    ? FadeInImage.assetNetwork(
+                        placeholder: 'assets/loaders/bottle-loader.gif',
+                        image: 'https://image.tmdb.org/t/p/w500${recommendation.posterPath}',
+                        fit: BoxFit.cover,
+                        imageErrorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Icon(
+                              Icons.movie,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          );
+                        },
+                      )
+                    : Container(
+                        color: Colors.grey[300],
+                        child: const Icon(
+                          Icons.movie,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Título de la película
+            Text(
+              recommendation.title,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            // Razón de la recomendación
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                recommendation.reason,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.blue[700],
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

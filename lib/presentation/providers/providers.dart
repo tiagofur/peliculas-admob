@@ -14,5 +14,6 @@ export 'recommendations/recommendations_provider.dart';
 export 'search/search_movies_provider.dart';
 export 'storage/favorite_movies_provider.dart';
 export 'storage/local_storage_provider.dart';
+export 'user_movie_ratings_provider.dart';
 export 'user_stats_provider.dart';
 export 'watched_movies_provider.dart';

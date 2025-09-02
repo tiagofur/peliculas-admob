@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../error_reporting_provider.dart';
 import 'movies_repository_provider.dart';
 
 enum MoviesState {
@@ -64,7 +65,7 @@ final topRatedMoviesProvider =
 
 typedef MovieCallback = Future<List<Movie>> Function({int page});
 
-class MoviesNotifier extends StateNotifier<MoviesStateData> {
+class MoviesNotifier extends StateNotifier<MoviesStateData> with ErrorReportingMixin<MoviesStateData> {
   MoviesNotifier({
     required this.fetchMoreMovies,
   }) : super(const MoviesStateData());
@@ -82,20 +83,44 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
     }
 
     try {
-      currentPage++;
-      final List<Movie> movies = await fetchMoreMovies(page: currentPage);
-      
-      // Simular delay solo en desarrollo
-      await Future.delayed(const Duration(milliseconds: 300));
-      
-      final updatedMovies = [...state.movies, ...movies];
-      state = state.copyWith(
-        movies: updatedMovies,
-        state: MoviesState.loaded,
-        errorMessage: null,
-        hasReachedMax: movies.isEmpty,
+      await runWithErrorReporting(
+        () async {
+          currentPage++;
+          final List<Movie> movies = await fetchMoreMovies(page: currentPage);
+          
+          // Simular delay solo en desarrollo
+          await Future.delayed(const Duration(milliseconds: 300));
+          
+          final updatedMovies = [...state.movies, ...movies];
+          state = state.copyWith(
+            movies: updatedMovies,
+            state: MoviesState.loaded,
+            errorMessage: null,
+            hasReachedMax: movies.isEmpty,
+          );
+        },
+        operationName: 'loadNextPage',
+        customData: {
+          'page': currentPage + 1,
+          'retry_count': retryCount,
+          'current_movies_count': state.movies.length,
+        },
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Report error with context
+      await reportError(
+        e,
+        stackTrace,
+        context: 'loadNextPage',
+        data: {
+          'page': currentPage + 1,
+          'retry_count': retryCount,
+          'max_retries': maxRetries,
+          'current_movies_count': state.movies.length,
+        },
+        fatal: false,
+      );
+
       // Implementar reintentos automáticos
       if (retryCount < maxRetries) {
         await Future.delayed(Duration(seconds: (retryCount + 1) * 2));
@@ -113,9 +138,17 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   }
 
   Future<void> refresh() async {
-    currentPage = 0;
-    state = const MoviesStateData();
-    await loadNextPage();
+    await runWithErrorReporting(
+      () async {
+        currentPage = 0;
+        state = const MoviesStateData();
+        await loadNextPage();
+      },
+      operationName: 'refresh',
+      customData: {
+        'previous_movies_count': state.movies.length,
+      },
+    );
   }
 
   void clearError() {

@@ -1,13 +1,14 @@
 {
-    "name": "peliculas",
-    "short_name": "peliculas",
+    "name": "Películas - Red Social de Cine",
+    "short_name": "Películas",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#EEBEB8",
+    "theme_color": "#EEBEB8",
+    "description": "Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "scope": "/",
     "icons": [
         {
             "src": "icons/Icon-192.png",
@@ -31,5 +32,22 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "categories": ["entertainment", "lifestyle"],
+    "lang": "es",
+    "protocol_handlers": [
+        {
+            "protocol": "web+peliculas",
+            "url": "/?action=%s"
+        }
+    ],
+    "share_target": {
+        "action": "/share",
+        "method": "GET",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url"
+        }
+    }
 }
