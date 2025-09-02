@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import '../../../core/monetization/monetization_analytics_service.dart';
 
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({super.key});
@@ -14,6 +15,8 @@ class BannerAdWidget extends StatefulWidget {
 class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isBannerAdReady = false;
+  final MonetizationAnalyticsService _analytics = MonetizationAnalyticsService.instance;
+  final DateTime _loadStartTime = DateTime.now();
 
   @override
   void initState() {
@@ -36,11 +39,54 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           setState(() {
             _isBannerAdReady = true;
           });
+          
+          // Track successful load
+          final loadTime = DateTime.now().difference(_loadStartTime);
+          _analytics.trackAdLoadTime(
+            adType: 'banner',
+            adUnitId: AdHelper.bannerAdUnitId,
+            loadTime: loadTime,
+            successful: true,
+            placement: 'general',
+          );
+          
+          // Track impression
+          _analytics.trackAdImpression(
+            adType: 'banner',
+            adUnitId: AdHelper.bannerAdUnitId,
+            placement: 'general',
+          );
         },
         onAdFailedToLoad: (ad, err) {
-          //print('Error al cargar banner: ${err.message}');
           _isBannerAdReady = false;
           ad.dispose();
+          
+          // Track error
+          final loadTime = DateTime.now().difference(_loadStartTime);
+          _analytics.trackAdLoadTime(
+            adType: 'banner',
+            adUnitId: AdHelper.bannerAdUnitId,
+            loadTime: loadTime,
+            successful: false,
+            placement: 'general',
+          );
+          
+          _analytics.trackAdLoadError(
+            adType: 'banner',
+            adUnitId: AdHelper.bannerAdUnitId,
+            errorCode: err.code.toString(),
+            errorMessage: err.message,
+            placement: 'general',
+          );
+        },
+        onAdClicked: (_) {
+          // Track click
+          _analytics.trackAdClick(
+            adType: 'banner',
+            adUnitId: AdHelper.bannerAdUnitId,
+            placement: 'general',
+            estimatedRevenue: 0.01, // Estimated revenue per click
+          );
         },
       ),
     );
