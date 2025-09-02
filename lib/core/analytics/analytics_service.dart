@@ -23,7 +23,11 @@ enum AnalyticsEventType {
   sessionEnd,
   error,
   performance,
-  gamificationActivity
+  gamificationActivity,
+  // Nuevos eventos requeridos
+  onboarding,
+  addWatchlist,
+  rateMovie
 }
 
 /// Modelo de evento de analíticas
@@ -161,6 +165,9 @@ class AnalyticsService {
   // Streams públicos
   Stream<AnalyticsEvent> get eventStream => _eventController.stream;
   Stream<AnalyticsDashboard> get dashboardStream => _dashboardController.stream;
+
+  /// Obtener lista de eventos para análisis y testing
+  List<AnalyticsEvent> get events => List.unmodifiable(_events);
 
   /// Inicializar el servicio de analíticas
   Future<void> initialize() async {
