@@ -145,6 +145,9 @@ La aplicación incluye un sistema de **error reporting** integrado con **Firebas
 - **Información detallada**: Incluye stack traces, datos de contexto y metadata
 - **Configuración por entorno**: Habilitado en producción, configurable en desarrollo
 - **Integración con logging**: Se conecta con el sistema de logging existente
+- **🆕 Métricas de éxito**: Tracking de crash-free sessions ≥99.7% y core flow error rate <5%
+- **🆕 Dashboard en tiempo real**: Visualización de métricas y criterios de éxito
+- **🆕 Alertas automáticas**: Notificaciones cuando no se cumplen los criterios de calidad
 
 #### 🔧 Configuración del Error Reporting
 
@@ -166,6 +169,15 @@ await ErrorReportingService.instance.reportError(
   data: {'additional': 'context'},
   fatal: false,
 );
+
+// 🆕 Tracking de core flows para métricas de calidad
+await ErrorMetricsService.instance.trackCoreFlow('authentication', () async {
+  return await performAuthentication();
+});
+
+// 🆕 Verificar criterios de éxito
+final meetsCrashTarget = ErrorReportingService.instance.meetsCrashFreeTarget; // ≥99.7%
+final meetsCoreFlowTarget = ErrorReportingService.instance.meetsCoreFlowTarget; // <5%
 
 // Simular crash para testing (solo en debug)
 await ErrorReportingService.instance.testCrash();

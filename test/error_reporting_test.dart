@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:peliculas/core/error_reporting/error_reporting_service.dart';
+import 'package:peliculas/core/error_reporting/error_metrics_service.dart';
 import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:peliculas/presentation/providers/error_reporting_provider.dart';
 import 'package:peliculas/services/error_reporting_config.dart';
@@ -10,10 +11,12 @@ void main() {
   group('Error Reporting Tests', () {
     late ProviderContainer container;
     late ErrorReportingService errorReporting;
+    late ErrorMetricsService metrics;
 
     setUp(() {
       container = ProviderContainer();
       errorReporting = ErrorReportingService.instance;
+      metrics = ErrorMetricsService.instance;
     });
 
     tearDown(() {
@@ -147,6 +150,12 @@ void main() {
         expect(config, isA<ErrorReportingConfig>());
       });
 
+      test('should provide error metrics service', () {
+        final metricsService = container.read(errorMetricsServiceProvider);
+        expect(metricsService, isNotNull);
+        expect(metricsService, isA<ErrorMetricsService>());
+      });
+
       test('should handle error reporting mixin', () async {
         await errorReporting.initialize(enabled: false);
         
@@ -171,6 +180,35 @@ void main() {
             operationName: 'test_operation',
             customData: {'operation_test': true},
           ),
+          returnsNormally,
+        );
+      });
+
+      test('should handle core flow tracking mixin', () async {
+        await errorReporting.initialize(enabled: false);
+        await metrics.initialize();
+        
+        final testNotifier = TestStateNotifierWithCoreFlowTracking();
+        
+        // Should not throw when tracking core flows
+        expect(
+          () => testNotifier.trackCoreFlow(
+            'authentication',
+            () async => 'flow_result',
+            additionalData: {'test': true},
+          ),
+          returnsNormally,
+        );
+
+        // Should not throw when recording core flow success
+        expect(
+          () => testNotifier.recordCoreFlowSuccess('movie_search'),
+          returnsNormally,
+        );
+
+        // Should not throw when recording core flow error
+        expect(
+          () => testNotifier.recordCoreFlowError('watchlist_add', 'Test error'),
           returnsNormally,
         );
       });
@@ -234,12 +272,119 @@ void main() {
       });
     });
   });
+  
+  group('Error Metrics Service Tests', () {
+    late ErrorMetricsService metrics;
+
+    setUp(() {
+      metrics = ErrorMetricsService.instance;
+    });
+
+    test('should initialize correctly', () async {
+      await metrics.initialize();
+      expect(metrics.metricsSnapshot['initialized'], isTrue);
+    });
+
+    test('should track core flow attempts and errors', () async {
+      await metrics.initialize();
+      await metrics.resetMetrics();
+      
+      // Track some attempts
+      await metrics.recordCoreFlowAttempt('authentication');
+      await metrics.recordCoreFlowAttempt('movie_search');
+      await metrics.recordCoreFlowAttempt('watchlist_add');
+      
+      // Track some errors
+      await metrics.recordCoreFlowError('authentication', errorDetails: 'Test error');
+      
+      final snapshot = metrics.metricsSnapshot;
+      final coreFlowMetrics = snapshot['core_flow_metrics'] as Map<String, dynamic>;
+      
+      expect(coreFlowMetrics['total_attempts'], equals(3));
+      expect(coreFlowMetrics['total_errors'], equals(1));
+      expect(coreFlowMetrics['successful_attempts'], equals(2));
+      expect(coreFlowMetrics['error_rate_percentage'], greaterThan(0));
+    });
+
+    test('should calculate crash-free sessions correctly', () async {
+      await metrics.initialize();
+      await metrics.resetMetrics();
+      
+      // Start with no crashes - should be 100% crash-free initially
+      var snapshot = metrics.metricsSnapshot;
+      var sessionMetrics = snapshot['session_metrics'] as Map<String, dynamic>;
+      expect(sessionMetrics['crash_free_percentage'], equals(100.0));
+      expect(metrics.meetsCrashFreeSuccessCriteria, isTrue);
+      
+      // Record a crash
+      await metrics.recordSessionCrash();
+      
+      snapshot = metrics.metricsSnapshot;
+      sessionMetrics = snapshot['session_metrics'] as Map<String, dynamic>;
+      
+      // Should be less than 100% now
+      expect(sessionMetrics['crash_free_percentage'], lessThan(100.0));
+    });
+
+    test('should meet success criteria with good metrics', () async {
+      await metrics.initialize();
+      await metrics.resetMetrics();
+      
+      // Simulate good metrics - many attempts, few errors
+      for (int i = 0; i < 100; i++) {
+        await metrics.recordCoreFlowAttempt('authentication');
+      }
+      
+      // Only 1 error out of 100 = 1% error rate (under 5% target)
+      await metrics.recordCoreFlowError('authentication');
+      
+      expect(metrics.meetsCoreFlowSuccessCriteria, isTrue);
+      expect(metrics.coreFlowErrorRate, lessThan(5.0));
+      
+      // Should still meet crash-free criteria (no crashes recorded)
+      expect(metrics.meetsCrashFreeSuccessCriteria, isTrue);
+      expect(metrics.crashFreeSessionPercentage, equals(100.0));
+    });
+
+    test('should provide comprehensive metrics snapshot', () async {
+      await metrics.initialize();
+      
+      final snapshot = metrics.metricsSnapshot;
+      
+      expect(snapshot['initialized'], isTrue);
+      expect(snapshot, containsKey('session_metrics'));
+      expect(snapshot, containsKey('core_flow_metrics'));
+      expect(snapshot, containsKey('current_session'));
+      
+      final sessionMetrics = snapshot['session_metrics'] as Map<String, dynamic>;
+      expect(sessionMetrics, containsKey('total_sessions'));
+      expect(sessionMetrics, containsKey('crash_sessions'));
+      expect(sessionMetrics, containsKey('crash_free_percentage'));
+      expect(sessionMetrics, containsKey('meets_crash_free_criteria'));
+      
+      final coreFlowMetrics = snapshot['core_flow_metrics'] as Map<String, dynamic>;
+      expect(coreFlowMetrics, containsKey('total_attempts'));
+      expect(coreFlowMetrics, containsKey('total_errors'));
+      expect(coreFlowMetrics, containsKey('error_rate_percentage'));
+      expect(coreFlowMetrics, containsKey('meets_error_rate_criteria'));
+    });
+  });
 }
 
 /// Test state notifier with error reporting mixin
 class TestStateNotifierWithErrorReporting extends StateNotifier<String>
     with ErrorReportingMixin<String> {
   TestStateNotifierWithErrorReporting() : super('initial_state');
+  
+  void updateState(String newState) {
+    state = newState;
+  }
+}
+
+/// Test state notifier with core flow tracking mixin
+class TestStateNotifierWithCoreFlowTracking extends StateNotifier<String>
+    with CoreFlowTrackingMixin<String> {
+  TestStateNotifierWithCoreFlowTracking() : super('initial_state');
   
   void updateState(String newState) {
     state = newState;

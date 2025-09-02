@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/error_reporting/error_reporting_service.dart';
+import '../../core/error_reporting/error_metrics_service.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../services/error_reporting_config.dart';
 import 'auth_provider.dart';
@@ -15,10 +16,16 @@ final errorReportingConfigProvider = Provider<ErrorReportingConfig>((ref) {
   return ErrorReportingConfig.instance;
 });
 
+/// Provider for error metrics service
+final errorMetricsServiceProvider = Provider<ErrorMetricsService>((ref) {
+  return ErrorMetricsService.instance;
+});
+
 /// Provider to get current error reporting status
 final errorReportingStatusProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final config = ref.watch(errorReportingConfigProvider);
   final service = ref.watch(errorReportingServiceProvider);
+  final metrics = ref.watch(errorMetricsServiceProvider);
   
   // Ensure config is initialized
   if (!config.currentConfig['initialized']) {
@@ -29,6 +36,9 @@ final errorReportingStatusProvider = FutureProvider<Map<String, dynamic>>((ref) 
     ...config.currentConfig,
     'service_initialized': service.isInitialized,
     'service_available': service.isAvailable,
+    'metrics': service.metrics,
+    'meets_crash_free_target': service.meetsCrashFreeTarget,
+    'meets_core_flow_target': service.meetsCoreFlowTarget,
   };
 });
 
@@ -95,6 +105,46 @@ mixin ErrorReportingMixin<T> on StateNotifier<T> {
         'current_state': state.toString(),
         ...?customData,
       },
+    );
+  }
+}
+
+/// Mixin to track core flow operations in StateNotifiers
+mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
+  /// Track a core flow operation with automatic error and success tracking
+  Future<R> trackCoreFlow<R>(
+    String flowName,
+    Future<R> Function() operation, {
+    Map<String, dynamic>? additionalData,
+  }) async {
+    return await ErrorMetricsService.instance.trackCoreFlow(
+      flowName,
+      () async {
+        return await ErrorReportingService.instance.runAsyncWithErrorReporting(
+          operation,
+          zoneName: '${runtimeType.toString()}.core_flow.$flowName',
+          customData: {
+            'notifier_type': runtimeType.toString(),
+            'current_state': state.toString(),
+            'core_flow': flowName,
+            ...?additionalData,
+          },
+        );
+      },
+    );
+  }
+
+  /// Record a successful core flow attempt (without full operation tracking)
+  Future<void> recordCoreFlowSuccess(String flowName) async {
+    await ErrorMetricsService.instance.recordCoreFlowAttempt(flowName);
+    LoggerFactory.info('✅ Core flow successful: $flowName in ${runtimeType.toString()}');
+  }
+
+  /// Record a core flow error (without full operation tracking)
+  Future<void> recordCoreFlowError(String flowName, dynamic error) async {
+    await ErrorMetricsService.instance.recordCoreFlowError(
+      flowName,
+      errorDetails: error.toString(),
     );
   }
 }
