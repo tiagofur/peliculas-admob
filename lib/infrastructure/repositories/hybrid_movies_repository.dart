@@ -1,5 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
-
 import '../../core/logging/logger_factory.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/datasources/movies_datasource.dart';
@@ -7,6 +5,7 @@ import '../../domain/entities/movie.dart';
 import '../../domain/entities/video.dart';
 import '../../domain/repositories/movies_repository.dart';
 import '../mappers/trakt_mapper.dart';
+import '../services/connectivity_detector.dart';
 import '../services/trakt_api_service.dart';
 
 /// Repositorio híbrido que prioriza cache offline, luego Trakt.tv con fallback a TMDB
@@ -29,10 +28,8 @@ class HybridMoviesRepository implements MoviesRepository {
   /// Check network connectivity
   Future<bool> _hasConnectivity() async {
     try {
-      final connectivityResult = await Connectivity().checkConnectivity();
-      return connectivityResult.contains(ConnectivityResult.mobile) ||
-             connectivityResult.contains(ConnectivityResult.wifi) ||
-             connectivityResult.contains(ConnectivityResult.ethernet);
+      final connectivityStatus = await ConnectivityDetector.instance.checkConnectivity();
+      return connectivityStatus == ConnectivityStatus.online;
     } catch (e) {
       LoggerFactory.warning('Error checking connectivity: $e');
       return false;

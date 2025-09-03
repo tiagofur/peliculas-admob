@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,6 +15,7 @@ import '../../domain/entities/syncable_custom_list.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../datasources/custom_lists_shared_preferences_datasource.dart';
+import '../services/connectivity_detector.dart';
 // Removed unused import
 import '../sync/conflict_statistics_service.dart';
 
@@ -73,8 +73,8 @@ class HybridCustomListsRepository
 
   // Métodos auxiliares
   Future<void> _checkOnline() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.none)) {
+    final connectivityStatus = await ConnectivityDetector.instance.checkConnectivity();
+    if (connectivityStatus == ConnectivityStatus.offline) {
       throw NetworkException();
     }
   }

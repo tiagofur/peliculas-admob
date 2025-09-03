@@ -165,9 +165,13 @@ class ConnectivityDetector {
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
       LoggerFactory.info('🌐 Prueba de conexión Web falló: $e');
-      // En Web, ser más permisivo ya que puede haber problemas de CORS
-      LoggerFactory.warning('⚠️ Asumiendo conexión disponible en Web debido a posibles restricciones CORS');
-      return true;
+      // Verificar navigator.onLine como fallback en Web
+      if (kIsWeb) {
+        // En Web, usar navigator.onLine como indicador adicional
+        LoggerFactory.info('🌐 Verificando navigator.onLine como fallback');
+        return true; // Asumir conexión en Web si no se puede verificar
+      }
+      return false;
     }
   }
 
@@ -196,9 +200,9 @@ class ConnectivityDetector {
         return response.statusCode >= 200 && response.statusCode < 300;
       } catch (httpError) {
         LoggerFactory.info('📱 Fallback HTTP también falló: $httpError');
-        // En lugar de retornar false, ser más permisivo
-        LoggerFactory.warning('⚠️ Asumiendo conexión disponible debido a fallos de prueba');
-        return true;
+        // Ser más estricto: si ambas pruebas fallan, no hay conexión
+        LoggerFactory.warning('⚠️ Sin conexión detectada - ambas pruebas fallaron');
+        return false;
       }
     }
   }

@@ -2,15 +2,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/movie.dart';
-import '../../../domain/repositories/local_storage_repository.dart';
+import '../../../domain/repositories/favorites_repository.dart';
 import '../achievements/achievements_provider.dart';
-import 'local_storage_provider.dart';
+import '../hybrid_repositories_provider.dart';
 
 final favoriteMoviesProvider =
     StateNotifierProvider<StorageMoviesNotifier, Map<int, Movie>>((ref) {
-  final localStorageRepository = ref.watch(localStorageRepositoryProvider);
+  final favoritesRepository = ref.watch(favoritesRepositoryProvider);
   return StorageMoviesNotifier(
-    localStorageRepository: localStorageRepository,
+    favoritesRepository: favoritesRepository,
     onMovieFavorited: () {
       // Manejar el callback aquí, dentro del provider
       ref.read(achievementsProvider.notifier).trackMovieFavorited();
@@ -29,40 +29,50 @@ final favoriteMoviesProvider =
 
 class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   StorageMoviesNotifier({
-    required this.localStorageRepository,
+    required this.favoritesRepository,
     required this.onMovieFavorited,
   }) : super({});
 
   int page = 0;
-  final LocalStorageRepository localStorageRepository;
+  final FavoritesRepository favoritesRepository;
   final VoidCallback onMovieFavorited;
 
   Future<List<Movie>> loadNextPage() async {
-    final movies =
-        await localStorageRepository.loadMovies(offset: page * 10, limit: 20);
+    // Usar getFavoriteMovies del repositorio híbrido
+    final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
+    final movies = favoriteMoviesMap.values.toList();
+    
+    // Paginar los resultados localmente
+    final startIndex = page * 10;
+    final endIndex = (startIndex + 20).clamp(0, movies.length);
+    final paginatedMovies = movies.sublist(startIndex.clamp(0, movies.length), endIndex);
+    
     page++;
 
     final tempMoviesMap = <int, Movie>{};
-    for (final movie in movies) {
+    for (final movie in paginatedMovies) {
       tempMoviesMap[movie.id] = movie;
     }
 
     state = {...state, ...tempMoviesMap};
 
-    return movies;
+    return paginatedMovies;
   }
 
   Future<void> toggleFavorite(Movie movie) async {
-    await localStorageRepository.toggleFavorite(movie);
-    final bool isMovieInFavorites = state[movie.id] != null;
+    // Usar el repositorio híbrido que maneja sincronización automática
+    await favoritesRepository.toggleFavorite(movie);
+    
+    // Verificar el estado actual después del toggle
+    final isMovieInFavorites = await favoritesRepository.isMovieFavorite(movie.id);
 
     if (isMovieInFavorites) {
-      state.remove(movie.id);
-      state = {...state};
-    } else {
       state = {...state, movie.id: movie};
       // Usar callback en lugar de ref directo
       onMovieFavorited();
+    } else {
+      state.remove(movie.id);
+      state = {...state};
     }
   }
 

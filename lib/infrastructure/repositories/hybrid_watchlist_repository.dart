@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -8,6 +7,7 @@ import '../../core/sync/conflict_resolution/conflict_detector.dart';
 import '../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
 import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
 import '../../core/sync/conflict_resolution/strategies/watchlist_conflict_strategy.dart';
+import '../services/connectivity_detector.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/sync_operation.dart';

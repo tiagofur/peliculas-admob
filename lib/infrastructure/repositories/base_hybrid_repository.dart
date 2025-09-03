@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +7,7 @@ import '../../core/logging/logger_factory.dart';
 import '../../core/services/persistent_sync_queue.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
+import '../services/connectivity_detector.dart';
 
 /// Base abstract class for hybrid repositories that support both local storage
 /// and remote synchronization with Supabase. This class consolidates common
@@ -38,8 +38,8 @@ abstract class BaseHybridRepository<T extends Syncable>
   /// Check if there's internet connectivity
   @protected
   Future<void> checkOnline() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.none)) {
+    final connectivityStatus = await ConnectivityDetector.instance.checkConnectivity();
+    if (connectivityStatus == ConnectivityStatus.offline) {
       throw NetworkException();
     }
   }
