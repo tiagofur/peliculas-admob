@@ -181,7 +181,7 @@ class StreamingServiceManager {
     return SubscriptionSummary.fromSubscriptions(
       userId: userId,
       subscriptions: subscriptions,
-      currency: 'USD', // TODO: Make this configurable based on region
+      currency: _getCurrencyForRegion(_currentRegion),
     );
   }
 
@@ -274,6 +274,25 @@ class StreamingServiceManager {
   /// Get all available platforms
   List<StreamingPlatform> getAvailablePlatforms() {
     return _platformServices.values.map((s) => s.platform).toList();
+  }
+
+  String _getCurrencyForRegion(String region) {
+    switch (region.toUpperCase()) {
+      case 'US':
+      case 'CA':
+        return 'USD';
+      case 'GB':
+        return 'GBP';
+      case 'JP':
+        return 'JPY';
+      case 'DE':
+      case 'FR':
+      case 'ES':
+      case 'IT':
+        return 'EUR';
+      default:
+        return 'USD';
+    }
   }
 
   /// Dispose resources

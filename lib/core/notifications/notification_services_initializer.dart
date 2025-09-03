@@ -1,19 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../infrastructure/datasources/watchlist_hive_datasource.dart';
-import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
-import '../../presentation/providers/hybrid_repositories_provider.dart';
 import '../logging/logger_factory.dart';
 import 'notification_categories.dart';
 import 'notification_manager.dart';
 
 /// Servicio de inicialización de notificaciones para conectar con repositorios
 class NotificationServicesInitializer {
+  NotificationServicesInitializer._();
   static NotificationServicesInitializer? _instance;
   static NotificationServicesInitializer get instance =>
       _instance ??= NotificationServicesInitializer._();
-
-  NotificationServicesInitializer._();
 
   final _logger = LoggerFactory.logger;
   bool _initialized = false;
@@ -28,21 +25,23 @@ class NotificationServicesInitializer {
     }
 
     try {
-      _logger.info('Inicializando servicios de notificaciones con repositorios');
+      _logger
+          .info('Inicializando servicios de notificaciones con repositorios');
 
       // 1. Inicializar el NotificationManager principal
       await NotificationManager.instance.initialize();
 
       // 2. Obtener el repositorio de watchlist desde el provider
-      final watchlistRepository = ref.read(watchlistRepositoryProvider) as HybridWatchlistRepository;
-      
+
       // 3. Crear datasource de watchlist para los servicios de notificaciones
       final watchlistDatasource = WatchlistHiveDatasource();
-      
+
       // 4. Configurar servicios de notificaciones con los datasources
-      WeeklyWatchlistReminderService.instance.setWatchlistDatasource(watchlistDatasource);
-      MovieReleaseNotificationService.instance.setWatchlistDatasource(watchlistDatasource);
-      
+      WeeklyWatchlistReminderService.instance
+          .setWatchlistDatasource(watchlistDatasource);
+      MovieReleaseNotificationService.instance
+          .setWatchlistDatasource(watchlistDatasource);
+
       // 5. Iniciar todos los servicios de categorías
       await NotificationCategoriesCoordinator.instance.startAllServices();
 
@@ -69,18 +68,22 @@ class NotificationServicesInitializer {
 
       // 2. Crear datasource de watchlist para los servicios de notificaciones
       final watchlistDatasource = WatchlistHiveDatasource();
-      
+
       // 3. Configurar servicios de notificaciones con los datasources
-      WeeklyWatchlistReminderService.instance.setWatchlistDatasource(watchlistDatasource);
-      MovieReleaseNotificationService.instance.setWatchlistDatasource(watchlistDatasource);
-      
+      WeeklyWatchlistReminderService.instance
+          .setWatchlistDatasource(watchlistDatasource);
+      MovieReleaseNotificationService.instance
+          .setWatchlistDatasource(watchlistDatasource);
+
       // 4. Iniciar todos los servicios de categorías
       await NotificationCategoriesCoordinator.instance.startAllServices();
 
       _initialized = true;
-      _logger.info('Servicios de notificaciones standalone inicializados correctamente');
+      _logger.info(
+          'Servicios de notificaciones standalone inicializados correctamente');
     } catch (e) {
-      _logger.error('Error inicializando servicios de notificaciones standalone: $e');
+      _logger.error(
+          'Error inicializando servicios de notificaciones standalone: $e');
       rethrow;
     }
   }
@@ -88,9 +91,9 @@ class NotificationServicesInitializer {
   /// Detiene todos los servicios de notificaciones
   void stopAllServices() {
     _logger.info('Deteniendo todos los servicios de notificaciones');
-    
+
     NotificationCategoriesCoordinator.instance.stopAllServices();
-    
+
     _initialized = false;
     _logger.info('Servicios de notificaciones detenidos');
   }
@@ -98,9 +101,9 @@ class NotificationServicesInitializer {
   /// Reinicia todos los servicios de notificaciones
   Future<void> restartServices({Ref? ref}) async {
     _logger.info('Reiniciando servicios de notificaciones');
-    
+
     stopAllServices();
-    
+
     if (ref != null) {
       await initializeWithRepositories(ref: ref);
     } else {
@@ -116,10 +119,13 @@ class NotificationServicesInitializer {
 
     return {
       'initialized': _initialized,
+      // ignore: unnecessary_null_comparison
       'notificationManagerInitialized': notificationManager != null,
       'metricsServiceInitialized': metricsService != null,
-      'weeklyReminderServiceActive': coordinator.weeklyWatchlistReminderService.lastReminderSent != null,
-      'releaseServiceActive': true, // MovieReleaseNotificationService está siempre activo una vez iniciado
+      'weeklyReminderServiceActive':
+          coordinator.weeklyWatchlistReminderService.lastReminderSent != null,
+      'releaseServiceActive':
+          true, // MovieReleaseNotificationService está siempre activo una vez iniciado
       'healthReport': metricsService?.getHealthReport(),
       'lastMetricsUpdate': DateTime.now().toIso8601String(),
     };
@@ -130,7 +136,7 @@ class NotificationServicesInitializer {
     if (!_initialized) {
       throw StateError('Servicios de notificaciones no inicializados');
     }
-    
+
     _logger.info('Enviando recordatorio de watchlist de prueba');
     await WeeklyWatchlistReminderService.instance.sendManualReminder();
   }
@@ -140,7 +146,7 @@ class NotificationServicesInitializer {
     if (!_initialized) {
       throw StateError('Servicios de notificaciones no inicializados');
     }
-    
+
     _logger.info('Verificando estrenos de prueba');
     // El servicio se ejecuta automáticamente, pero podríamos exponer un método público si fuera necesario
   }
@@ -154,11 +160,12 @@ class NotificationServicesInitializer {
   /// Verifica si el sistema de notificaciones está saludable
   bool get isHealthy {
     if (!_initialized) return false;
-    
+
     final metricsService = NotificationManager.instance.metricsService;
     if (metricsService == null) return false;
-    
-    return metricsService.isDeliveryRateHealthy && metricsService.isLatencyHealthy;
+
+    return metricsService.isDeliveryRateHealthy &&
+        metricsService.isLatencyHealthy;
   }
 
   /// Verifica si hay notificaciones habilitadas

@@ -150,6 +150,9 @@ class AnalyticsService {
   AnalyticsService._internal();
   static final AnalyticsService _instance = AnalyticsService._internal();
 
+  /// Getter para acceder a la instancia singleton
+  static AnalyticsService get instance => _instance;
+
   final List<AnalyticsEvent> _events = [];
   final StreamController<AnalyticsEvent> _eventController =
       StreamController<AnalyticsEvent>.broadcast();
@@ -168,6 +171,9 @@ class AnalyticsService {
 
   /// Obtener lista de eventos para análisis y testing
   List<AnalyticsEvent> get events => List.unmodifiable(_events);
+
+  /// Método para obtener eventos (requerido por otros servicios)
+  List<AnalyticsEvent> getEvents() => List.unmodifiable(_events);
 
   /// Inicializar el servicio de analíticas
   Future<void> initialize() async {
@@ -188,9 +194,11 @@ class AnalyticsService {
         {'sessionId': _currentSessionId},
       );
 
-      LoggerFactory.info('AnalyticsService initialized successfully', category: LogCategory.analytics);
+      LoggerFactory.info('AnalyticsService initialized successfully',
+          category: LogCategory.analytics);
     } catch (e) {
-      LoggerFactory.error('Error initializing AnalyticsService: $e', category: LogCategory.analytics);
+      LoggerFactory.error('Error initializing AnalyticsService: $e',
+          category: LogCategory.analytics);
     }
   }
 
@@ -233,9 +241,11 @@ class AnalyticsService {
       // Almacenar evento localmente
       await _storeEvent(event);
 
-      LoggerFactory.debug('Analytics event tracked: ${type.name}', category: LogCategory.analytics);
+      LoggerFactory.debug('Analytics event tracked: ${type.name}',
+          category: LogCategory.analytics);
     } catch (e) {
-      LoggerFactory.error('Error tracking analytics event: $e', category: LogCategory.analytics);
+      LoggerFactory.error('Error tracking analytics event: $e',
+          category: LogCategory.analytics);
     }
   }
 
@@ -403,7 +413,8 @@ class AnalyticsService {
       final dashboard = await getDashboard();
       _dashboardController.add(dashboard);
     } catch (e) {
-      LoggerFactory.error('Error updating dashboard: $e', category: LogCategory.analytics);
+      LoggerFactory.error('Error updating dashboard: $e',
+          category: LogCategory.analytics);
     }
   }
 
@@ -535,7 +546,8 @@ class AnalyticsService {
 
       await _prefs?.setStringList('analytics_events', events);
     } catch (e) {
-      LoggerFactory.error('Error storing analytics event: $e', category: LogCategory.analytics);
+      LoggerFactory.error('Error storing analytics event: $e',
+          category: LogCategory.analytics);
     }
   }
 
@@ -547,9 +559,11 @@ class AnalyticsService {
         final event = AnalyticsEvent.fromJson(jsonDecode(eventJson));
         _events.add(event);
       }
-      LoggerFactory.info('Loaded ${_events.length} stored analytics events', category: LogCategory.analytics);
+      LoggerFactory.info('Loaded ${_events.length} stored analytics events',
+          category: LogCategory.analytics);
     } catch (e) {
-      LoggerFactory.error('Error loading stored analytics events: $e', category: LogCategory.analytics);
+      LoggerFactory.error('Error loading stored analytics events: $e',
+          category: LogCategory.analytics);
     }
   }
 
@@ -557,13 +571,15 @@ class AnalyticsService {
   Future<void> _flushEvents() async {
     try {
       // Aquí se implementaría el envío a un servidor de analíticas
-      LoggerFactory.debug('Flushing ${_events.length} analytics events', category: LogCategory.analytics);
+      LoggerFactory.debug('Flushing ${_events.length} analytics events',
+          category: LogCategory.analytics);
 
       // Por ahora solo limpiamos eventos antiguos
       final cutoff = DateTime.now().subtract(const Duration(days: 30));
       _events.removeWhere((event) => event.timestamp.isBefore(cutoff));
     } catch (e) {
-      LoggerFactory.error('Error flushing analytics events: $e', category: LogCategory.analytics);
+      LoggerFactory.error('Error flushing analytics events: $e',
+          category: LogCategory.analytics);
     }
   }
 
@@ -580,8 +596,9 @@ class AnalyticsService {
   /// Finalizar sesión
   Future<void> endSession() async {
     if (_sessionStartTime != null) {
-      final sessionDuration =
-          DateTime.now().difference(_sessionStartTime!).inSeconds;
+      final sessionDuration = DateTime.now()
+          .difference(_sessionStartTime ?? DateTime.now())
+          .inSeconds;
       await trackEvent(AnalyticsEventType.sessionEnd, {
         'sessionDuration': sessionDuration,
         'sessionId': _currentSessionId,

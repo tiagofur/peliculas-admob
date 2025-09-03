@@ -306,7 +306,7 @@ class SyncAlertSystem {
     _activeAlerts.removeWhere((alert) => 
       alert.isResolved && 
       alert.resolvedAt != null && 
-      alert.resolvedAt!.isBefore(cutoffTime)
+      alert.resolvedAt?.isBefore(cutoffTime) == true
     );
 
     _logger.debug(

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../core/error_reporting/error_reporting_service.dart';
-import '../../core/error_reporting/error_metrics_service.dart';
-import '../../services/error_reporting_config.dart';
+import '../../../core/error_reporting/error_metrics_service.dart';
+import '../../../core/error_reporting/error_reporting_service.dart';
+import '../../../services/error_reporting_config.dart';
 
 /// Debug widget to show error reporting status and controls
 /// Should only be shown in debug builds
 class ErrorReportingDebugWidget extends StatefulWidget {
-  const ErrorReportingDebugWidget({Key? key}) : super(key: key);
+  const ErrorReportingDebugWidget({super.key});
 
   @override
-  State<ErrorReportingDebugWidget> createState() => _ErrorReportingDebugWidgetState();
+  State<ErrorReportingDebugWidget> createState() =>
+      _ErrorReportingDebugWidgetState();
 }
 
 class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
@@ -54,20 +55,24 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Status indicators
-            _buildStatusRow('Service Initialized', _errorReporting.isInitialized),
+            _buildStatusRow(
+                'Service Initialized', _errorReporting.isInitialized),
             _buildStatusRow('Service Available', _errorReporting.isAvailable),
-            _buildStatusRow('Config Initialized', _configData['initialized'] ?? false),
-            _buildStatusRow('Currently Enabled', _configData['isEnabled'] ?? false),
+            _buildStatusRow(
+                'Config Initialized', _configData['initialized'] ?? false),
+            _buildStatusRow(
+                'Currently Enabled', _configData['isEnabled'] ?? false),
             _buildStatusRow('User Opt-in', _configData['userOptIn'] ?? false),
-            _buildStatusRow('Config Enabled', _configData['configEnabled'] ?? false),
-            
+            _buildStatusRow(
+                'Config Enabled', _configData['configEnabled'] ?? false),
+
             const SizedBox(height: 16),
             Text('Build Mode: ${_configData['buildMode'] ?? 'unknown'}'),
-            
+
             const SizedBox(height: 16),
-            
+
             // Metrics section
             const Text(
               '📊 Success Criteria Metrics',
@@ -78,9 +83,9 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
             ),
             const SizedBox(height: 8),
             _buildMetricsSection(),
-            
+
             const SizedBox(height: 16),
-            
+
             // Controls
             Wrap(
               spacing: 8,
@@ -91,14 +96,18 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                     await _config.setUserOptIn(!_config.userOptIn);
                     await _loadConfigData();
                   },
-                  child: Text(_config.userOptIn ? 'Disable User Opt-in' : 'Enable User Opt-in'),
+                  child: Text(_config.userOptIn
+                      ? 'Disable User Opt-in'
+                      : 'Enable User Opt-in'),
                 ),
                 ElevatedButton(
                   onPressed: () async {
                     await _config.setEnabled(!_config.configEnabled);
                     await _loadConfigData();
                   },
-                  child: Text(_config.configEnabled ? 'Disable Config' : 'Enable Config'),
+                  child: Text(_config.configEnabled
+                      ? 'Disable Config'
+                      : 'Enable Config'),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -112,7 +121,7 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                       },
                       fatal: false,
                     );
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Test error reported')),
                     );
@@ -135,20 +144,23 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                   onPressed: () async {
                     await _metrics.recordCoreFlowAttempt('authentication');
                     await _loadConfigData();
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Test core flow attempt recorded')),
+                      const SnackBar(
+                          content: Text('Test core flow attempt recorded')),
                     );
                   },
                   child: const Text('Test Core Flow Attempt'),
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await _metrics.recordCoreFlowError('authentication', errorDetails: 'Debug test error');
+                    await _metrics.recordCoreFlowError('authentication',
+                        errorDetails: 'Debug test error');
                     await _loadConfigData();
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Test core flow error recorded')),
+                      const SnackBar(
+                          content: Text('Test core flow error recorded')),
                     );
                   },
                   child: const Text('Test Core Flow Error'),
@@ -157,7 +169,7 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                   onPressed: () async {
                     await _metrics.resetMetrics();
                     await _loadConfigData();
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Metrics reset')),
                     );
@@ -166,9 +178,9 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Raw config data
             ExpansionTile(
               title: const Text('Raw Configuration'),
@@ -182,7 +194,8 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                   ),
                   child: Text(
                     _configData.toString(),
-                    style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                    style:
+                        const TextStyle(fontFamily: 'monospace', fontSize: 12),
                   ),
                 ),
               ],
@@ -219,14 +232,18 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
 
   Widget _buildMetricsSection() {
     if (!_metricsData['initialized']) {
-      return const Text('Metrics not initialized', style: TextStyle(color: Colors.grey));
+      return const Text('Metrics not initialized',
+          style: TextStyle(color: Colors.grey));
     }
 
-    final sessionMetrics = _metricsData['session_metrics'] as Map<String, dynamic>?;
-    final coreFlowMetrics = _metricsData['core_flow_metrics'] as Map<String, dynamic>?;
+    final sessionMetrics =
+        _metricsData['session_metrics'] as Map<String, dynamic>?;
+    final coreFlowMetrics =
+        _metricsData['core_flow_metrics'] as Map<String, dynamic>?;
 
     if (sessionMetrics == null || coreFlowMetrics == null) {
-      return const Text('Metrics data unavailable', style: TextStyle(color: Colors.grey));
+      return const Text('Metrics data unavailable',
+          style: TextStyle(color: Colors.grey));
     }
 
     return Column(
@@ -244,9 +261,9 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
           '   Sessions: ${sessionMetrics['total_sessions']} total, ${sessionMetrics['crash_sessions']} crashed',
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Core flow error rate
         _buildMetricRow(
           '⚡ Core Flow Error Rate',
@@ -263,7 +280,8 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
     );
   }
 
-  Widget _buildMetricRow(String label, String value, bool meetsTarget, String targetText) {
+  Widget _buildMetricRow(
+      String label, String value, bool meetsTarget, String targetText) {
     return Row(
       children: [
         Icon(

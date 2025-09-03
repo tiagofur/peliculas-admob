@@ -210,7 +210,7 @@ class LeaderboardService {
     final entries = await getLeaderboard(query);
 
     if (entries.isEmpty) {
-      return LeaderboardStats(
+      return const LeaderboardStats(
         totalParticipants: 0,
         averageScore: 0,
         topScore: 0,

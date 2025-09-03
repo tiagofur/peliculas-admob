@@ -95,6 +95,14 @@ class SyncOperationTypeAdapter extends TypeAdapter<SyncOperationType> {
         return SyncOperationType.addMovieToList;
       case 8:
         return SyncOperationType.removeMovieFromList;
+      case 9:
+        return SyncOperationType.addToWatchlist;
+      case 10:
+        return SyncOperationType.removeFromWatchlist;
+      case 11:
+        return SyncOperationType.updateWatchlistPriority;
+      case 12:
+        return SyncOperationType.tokenRefresh;
       default:
         return SyncOperationType.addFavorite;
     }
@@ -129,6 +137,18 @@ class SyncOperationTypeAdapter extends TypeAdapter<SyncOperationType> {
         break;
       case SyncOperationType.removeMovieFromList:
         writer.writeByte(8);
+        break;
+      case SyncOperationType.addToWatchlist:
+        writer.writeByte(9);
+        break;
+      case SyncOperationType.removeFromWatchlist:
+        writer.writeByte(10);
+        break;
+      case SyncOperationType.updateWatchlistPriority:
+        writer.writeByte(11);
+        break;
+      case SyncOperationType.tokenRefresh:
+        writer.writeByte(12);
         break;
     }
   }
@@ -246,6 +266,10 @@ const _$SyncOperationTypeEnumMap = {
   SyncOperationType.deleteCustomList: 'deleteCustomList',
   SyncOperationType.addMovieToList: 'addMovieToList',
   SyncOperationType.removeMovieFromList: 'removeMovieFromList',
+  SyncOperationType.addToWatchlist: 'addToWatchlist',
+  SyncOperationType.removeFromWatchlist: 'removeFromWatchlist',
+  SyncOperationType.updateWatchlistPriority: 'updateWatchlistPriority',
+  SyncOperationType.tokenRefresh: 'tokenRefresh',
 };
 
 const _$SyncOperationStatusEnumMap = {

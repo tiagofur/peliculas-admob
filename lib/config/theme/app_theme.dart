@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../services/accessibility_service.dart';
 
 const colorList = <Color>[
@@ -24,7 +25,7 @@ class AppTheme {
   })  : assert(selectedColor >= 0, 'Selected color must be greater then 0'),
         assert(selectedColor < colorList.length,
             'Selected color must be less or equal than ${colorList.length - 1}');
-  
+
   final int selectedColor;
   final ThemeMode themeMode;
 
@@ -36,7 +37,8 @@ class AppTheme {
           return MediaQuery.platformBrightnessOf(context) == Brightness.dark;
         }
         // Fallback si no hay contexto disponible
-        return WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+        return WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark;
       case ThemeMode.light:
         return false;
       case ThemeMode.dark:
@@ -46,10 +48,11 @@ class AppTheme {
 
   ThemeData getTheme([BuildContext? context]) {
     final isDark = _shouldUseDarkMode(context);
-    final isHighContrast = context != null && AccessibilityService.isHighContrastEnabled(context);
-    
+    final isHighContrast =
+        context != null && AccessibilityService.isHighContrastEnabled(context);
+
     ColorScheme colorScheme;
-    
+
     if (isHighContrast) {
       // High contrast theme for WCAG AA compliance
       colorScheme = isDark
@@ -60,8 +63,6 @@ class AppTheme {
               onSecondary: Colors.black,
               surface: Colors.black,
               onSurface: Colors.white,
-              background: Colors.black,
-              onBackground: Colors.white,
               error: Colors.red,
               onError: Colors.white,
             )
@@ -72,8 +73,6 @@ class AppTheme {
               onSecondary: Colors.white,
               surface: Colors.white,
               onSurface: Colors.black,
-              background: Colors.white,
-              onBackground: Colors.black,
               error: Colors.red,
               onError: Colors.white,
             );
@@ -83,7 +82,7 @@ class AppTheme {
         brightness: isDark ? Brightness.dark : Brightness.light,
       );
     }
-    
+
     return ThemeData(
       useMaterial3: true,
       brightness: isDark ? Brightness.dark : Brightness.light,
@@ -110,8 +109,9 @@ class AppTheme {
 
   /// Build text theme with accessibility enhancements
   TextTheme _buildAccessibleTextTheme(bool isDark, bool isHighContrast) {
-    final baseTheme = isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
-    
+    final baseTheme =
+        isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+
     if (isHighContrast) {
       // Enhanced contrast and weight for high contrast mode
       return baseTheme.copyWith(
@@ -141,28 +141,29 @@ class AppTheme {
         ),
       );
     }
-    
+
     return baseTheme;
   }
 
   // Configurar el color de la barra de estado
   void updateSystemUIOverlay([BuildContext? context]) {
     final isDark = _shouldUseDarkMode(context);
-    
+
     SystemChrome.setSystemUIOverlayStyle(
       SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         systemNavigationBarColor: isDark ? Colors.black : Colors.white,
-        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
       ),
     );
   }
 
   // Método de conveniencia para verificar si está en modo oscuro
   bool get isDarkMode => themeMode == ThemeMode.dark;
-  
+
   // Método de conveniencia para verificar si sigue el sistema
   bool get isSystemMode => themeMode == ThemeMode.system;
 

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
-import '../../../services/accessibility_service.dart';
 import '../../delegates/search_movie_delegate.dart';
 import '../../providers/providers.dart';
 import '../../providers/theme/theme_provider.dart';
@@ -39,12 +38,9 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                   icon: Icon(isDarkMode
                       ? Icons.light_mode_outlined
                       : Icons.dark_mode_outlined),
-                  tooltip: isDarkMode 
+                  tooltip: isDarkMode
                       ? 'Cambiar a modo claro'
                       : 'Cambiar a modo oscuro',
-                  semanticLabel: isDarkMode
-                      ? 'Activar modo claro'
-                      : 'Activar modo oscuro',
                 ),
                 IconButton(
                   onPressed: () {
@@ -66,7 +62,6 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                   },
                   icon: const Icon(Icons.search),
                   tooltip: 'Buscar películas',
-                  semanticLabel: 'Abrir búsqueda de películas',
                 )
               ],
             ),

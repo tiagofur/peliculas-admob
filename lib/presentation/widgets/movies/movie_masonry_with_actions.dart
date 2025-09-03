@@ -26,7 +26,7 @@ class _MovieMasonryWithActionsState extends State<MovieMasonryWithActions> {
 
       if ((scrollController.position.pixels + 100) >=
           scrollController.position.maxScrollExtent) {
-        widget.loadNextPage!();
+        widget.loadNextPage?.call();
       }
     });
   }

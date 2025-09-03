@@ -122,7 +122,7 @@ class NoOpLogger extends BaseLogger {
   }
 
   @override
-  Stream<List<LogEntry>> get logsStream => Stream.empty();
+  Stream<List<LogEntry>> get logsStream => const Stream.empty();
 
   @override
   Future<void> dispose() async {

@@ -34,7 +34,7 @@ class WatchlistMovieCard extends StatelessWidget {
               // Poster de la película
               _buildMoviePoster(),
               const SizedBox(width: 12),
-              
+
               // Información de la película
               Expanded(
                 child: Column(
@@ -50,26 +50,29 @@ class WatchlistMovieCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    
+
                     // Fecha de lanzamiento y rating
-                    if (movie.movieReleaseDate != null || movie.movieVoteAverage != null)
+                    if (movie.movieReleaseDate != null ||
+                        movie.movieVoteAverage != null)
                       _buildMovieMetadata(theme),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // Overview
-                    if (movie.movieOverview != null && movie.movieOverview!.isNotEmpty)
+                    if (movie.movieOverview != null &&
+                        (movie.movieOverview?.isNotEmpty ?? false)) ...[  
                       Text(
-                        movie.movieOverview!,
+                        movie.movieOverview ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    
+                    ],
+
                     const SizedBox(height: 12),
-                    
+
                     // Controles (prioridad y acciones)
                     _buildMovieControls(theme),
                   ],
@@ -97,7 +100,8 @@ class WatchlistMovieCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: movie.moviePosterPath != null
             ? CachedNetworkImage(
-                imageUrl: 'https://image.tmdb.org/t/p/w500${movie.moviePosterPath}',
+                imageUrl:
+                    'https://image.tmdb.org/t/p/w500${movie.moviePosterPath}',
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[300],
@@ -122,14 +126,17 @@ class WatchlistMovieCard extends StatelessWidget {
     final List<Widget> metadata = [];
 
     if (movie.movieReleaseDate != null) {
-      metadata.add(
-        Text(
-          '${movie.movieReleaseDate!.year}',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+      final releaseDate = movie.movieReleaseDate;
+      if (releaseDate != null) {
+        metadata.add(
+          Text(
+            '${releaseDate.year}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.grey[600],
+            ),
           ),
-        ),
-      );
+        );
+      }
     }
 
     if (movie.movieVoteAverage != null) {
@@ -143,7 +150,7 @@ class WatchlistMovieCard extends StatelessWidget {
           ),
         );
       }
-      
+
       metadata.add(
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -155,7 +162,7 @@ class WatchlistMovieCard extends StatelessWidget {
             ),
             const SizedBox(width: 2),
             Text(
-              movie.movieVoteAverage!.toStringAsFixed(1),
+              (movie.movieVoteAverage ?? 0.0).toStringAsFixed(1),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.grey[600],
               ),
@@ -175,9 +182,9 @@ class WatchlistMovieCard extends StatelessWidget {
       children: [
         // Selector de prioridad
         _buildPrioritySelector(theme),
-        
+
         const Spacer(),
-        
+
         // Fecha agregada
         Text(
           'Agregada: ${_formatDate(movie.addedAt)}',
@@ -186,9 +193,9 @@ class WatchlistMovieCard extends StatelessWidget {
             fontSize: 12,
           ),
         ),
-        
+
         const SizedBox(width: 8),
-        
+
         // Botón remover
         IconButton(
           onPressed: onRemove,
@@ -210,7 +217,7 @@ class WatchlistMovieCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: _getPriorityColor(movie.priority).withOpacity(0.1),
+          color: _getPriorityColor(movie.priority).withValues(alpha: 0.1 * 255),
           border: Border.all(
             color: _getPriorityColor(movie.priority),
             width: 1,
@@ -325,7 +332,7 @@ class WatchlistMovieCard extends StatelessWidget {
       return 'Hace ${difference.inDays} días';
     } else if (difference.inDays < 30) {
       final weeks = (difference.inDays / 7).floor();
-      return 'Hace ${weeks} semana${weeks > 1 ? 's' : ''}';
+      return 'Hace $weeks semana${weeks > 1 ? 's' : ''}';
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }

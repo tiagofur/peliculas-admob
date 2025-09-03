@@ -53,9 +53,9 @@ class AchievementShareDialog extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Título
-            Text(
+            const Text(
               '¡Logro Desbloqueado!',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

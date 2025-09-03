@@ -32,7 +32,7 @@ class TraktMoviesRepositoryImpl implements MoviesRepository {
     // Filtrar películas con fecha de lanzamiento futura
     final now = DateTime.now();
     final upcomingMovies = traktMovies.where((movie) {
-      return movie.released != null && movie.released!.isAfter(now);
+      return movie.released?.isAfter(now) ?? false;
     }).toList();
 
     return await TraktMovieMapper.toEntityList(upcomingMovies);

@@ -36,7 +36,7 @@ class FullScreenLoader extends StatelessWidget {
             builder: (context, snapshot) {
               if ( !snapshot.hasData ) return const Text('Cargando...');
               
-              return Text( snapshot.data! );
+              return Text( snapshot.data ?? 'Cargando...' );
             },
           ),
         ],

@@ -290,7 +290,8 @@ class SubscriptionTracker {
 
       return subscriptions.where((sub) {
         if (sub.endDate == null) return false;
-        return sub.endDate!.isBefore(warningDate) && sub.endDate!.isAfter(now);
+        return (sub.endDate?.isBefore(warningDate) ?? false) &&
+            (sub.endDate?.isAfter(now) ?? false);
       }).toList();
     } catch (e) {
       _logger.error('Error getting expiring subscriptions: $e');
@@ -409,10 +410,10 @@ class SubscriptionTracker {
 
       final userCacheKey = '${_allSubscriptionsCacheKey}_$userId';
       await _cacheService.set(
-          userCacheKey,
-          updatedSubscriptions.map((sub) => sub.toJson()).toList(),
-          expiration: _cacheDuration,
-        );
+        userCacheKey,
+        updatedSubscriptions.map((sub) => sub.toJson()).toList(),
+        expiration: _cacheDuration,
+      );
 
       _analyticsService.trackEvent(
         AnalyticsEventType.userEngagement,
@@ -454,10 +455,10 @@ class SubscriptionTracker {
       // Cache the updated list
       final userCacheKey = '${_allSubscriptionsCacheKey}_$userId';
       await _cacheService.set(
-          userCacheKey,
-          userSubscriptions.map((sub) => sub.toJson()).toList(),
-          expiration: _cacheDuration,
-        );
+        userCacheKey,
+        userSubscriptions.map((sub) => sub.toJson()).toList(),
+        expiration: _cacheDuration,
+      );
     } catch (e) {
       _logger.error('Error updating user subscriptions list: $e');
     }

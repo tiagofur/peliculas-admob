@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../domain/entities/entities.dart';
-
 import '../../providers/providers.dart';
-
 
 class DiscoveryView extends ConsumerStatefulWidget {
   const DiscoveryView({super.key});
@@ -18,7 +17,7 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     final sections = ref.watch(discoverySections);
     final userStats = ref.watch(basicUserStatsProvider);
 
@@ -29,10 +28,10 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
           SliverToBoxAdapter(
             child: _buildUserStatsHeader(userStats),
           ),
-          
+
           // Secciones de descubrimiento
           ...sections.map((section) => _buildDiscoverySection(section)),
-          
+
           // Espaciado final
           const SliverToBoxAdapter(
             child: SizedBox(height: 100),
@@ -64,15 +63,15 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.explore,
                 color: Colors.white,
                 size: 28,
               ),
-              const SizedBox(width: 12),
-              const Expanded(
+              SizedBox(width: 12),
+              Expanded(
                 child: Text(
                   'Descubre tu Próxima Película',
                   style: TextStyle(
@@ -95,11 +94,14 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildStatChip('${userStats.totalFavorites}', 'Favoritas', Icons.favorite),
+              _buildStatChip(
+                  '${userStats.totalFavorites}', 'Favoritas', Icons.favorite),
               const SizedBox(width: 12),
-              _buildStatChip('${userStats.totalWatched}', 'Vistas', Icons.visibility),
+              _buildStatChip(
+                  '${userStats.totalWatched}', 'Vistas', Icons.visibility),
               const SizedBox(width: 12),
-              _buildStatChip(userStats.averageRating.toStringAsFixed(1), 'Rating', Icons.star),
+              _buildStatChip(userStats.averageRating.toStringAsFixed(1),
+                  'Rating', Icons.star),
             ],
           ),
         ],
@@ -308,48 +310,51 @@ class DiscoveryViewState extends ConsumerState<DiscoveryView>
   void _navigateToCategory(DiscoveryCategory category) {
     // Aplicar filtros de la categoría
     final notifier = ref.read(movieFiltersNotifierProvider.notifier);
-    
+
     // Limpiar filtros anteriores
     notifier.clearFilters();
-    
+
     // Aplicar filtros de la categoría
     notifier.updateGenres(category.associatedGenres);
-    
+
     // Aplicar filtros adicionales basados en la configuración de la categoría
     final filters = category.filters;
-    
+
     if (filters.containsKey('vote_average.gte')) {
-      notifier.updateRatingRange(
-        (filters['vote_average.gte'] as num).toDouble(),
-        null,
-      );
+      final rating = (filters['vote_average.gte'] as num?)?.toDouble();
+      if (rating != null) {
+        notifier.updateRatingRange(rating, null);
+      }
     }
-    
+
     if (filters.containsKey('sort_by')) {
-      notifier.updateSortBy(filters['sort_by'] as String);
+      final sortBy = filters['sort_by'] as String?;
+      if (sortBy != null) {
+        notifier.updateSortBy(sortBy);
+      }
     }
-    
+
     if (filters.containsKey('with_runtime.lte')) {
-      notifier.updateDurationRange(
-        null,
-        filters['with_runtime.lte'] as int,
-      );
+      final maxRuntime = filters['with_runtime.lte'] as int?;
+      if (maxRuntime != null) {
+        notifier.updateDurationRange(null, maxRuntime);
+      }
     }
-    
+
     if (filters.containsKey('with_runtime.gte')) {
-      notifier.updateDurationRange(
-        filters['with_runtime.gte'] as int,
-        null,
-      );
+      final minRuntime = filters['with_runtime.gte'] as int?;
+      if (minRuntime != null) {
+        notifier.updateDurationRange(minRuntime, null);
+      }
     }
-    
+
     if (category.mood != null) {
       notifier.updateMood(category.mood);
     }
-    
+
     // Navegar a la vista de películas populares con los filtros aplicados
     context.go('/my-library');
-    
+
     // Mostrar mensaje de confirmación
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -148,14 +148,14 @@ class GamificationNotificationService {
   Future<void> showBadgeNotification(gamification_badge.Badge badge) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       'badges',
       'Badge Notifications',
       channelDescription: 'Notifications for earned badges',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       icon: '@mipmap/ic_launcher',
-      color: const Color(0xFFF59E0B),
+      color: Color(0xFFF59E0B),
       playSound: true,
     );
 
@@ -165,7 +165,7 @@ class GamificationNotificationService {
       presentSound: true,
     );
 
-    final details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -188,14 +188,14 @@ class GamificationNotificationService {
   Future<void> showChallengeCompletedNotification(Challenge challenge) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       'challenges',
       'Challenge Notifications',
       channelDescription: 'Notifications for completed challenges',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       icon: '@mipmap/ic_launcher',
-      color: const Color(0xFF8B5CF6),
+      color: Color(0xFF8B5CF6),
       playSound: true,
     );
 
@@ -205,7 +205,7 @@ class GamificationNotificationService {
       presentSound: true,
     );
 
-    final details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -228,14 +228,14 @@ class GamificationNotificationService {
   Future<void> showStreakNotification(int streakDays, int points) async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       'streaks',
       'Streak Notifications',
       channelDescription: 'Notifications for streak milestones',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       icon: '@mipmap/ic_launcher',
-      color: const Color(0xFFEF4444),
+      color: Color(0xFFEF4444),
       playSound: true,
     );
 
@@ -245,7 +245,7 @@ class GamificationNotificationService {
       presentSound: true,
     );
 
-    final details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -269,14 +269,14 @@ class GamificationNotificationService {
   Future<void> scheduleDailyReminder() async {
     if (!_isInitialized) await initialize();
 
-    final androidDetails = AndroidNotificationDetails(
+    const androidDetails = AndroidNotificationDetails(
       'daily_reminders',
       'Daily Reminders',
       channelDescription: 'Daily reminders to use the app',
       importance: Importance.defaultImportance,
       priority: Priority.defaultPriority,
       icon: '@mipmap/ic_launcher',
-      color: const Color(0xFF6366F1),
+      color: Color(0xFF6366F1),
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -285,7 +285,7 @@ class GamificationNotificationService {
       presentSound: false,
     );
 
-    final details = NotificationDetails(
+    const details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );

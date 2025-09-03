@@ -9,7 +9,8 @@ import '../../infrastructure/repositories/watched_movies_repository_impl.dart';
 import 'achievements/achievements_provider.dart';
 
 // Provider del repositorio
-final watchedMoviesRepositoryProvider = Provider<WatchedMoviesRepository>((ref) {
+final watchedMoviesRepositoryProvider =
+    Provider<WatchedMoviesRepository>((ref) {
   // Usar SharedPreferences en web, Hive en otras plataformas
   if (kIsWeb) {
     final datasource = WatchedMoviesSharedPreferencesDatasource();
@@ -21,13 +22,15 @@ final watchedMoviesRepositoryProvider = Provider<WatchedMoviesRepository>((ref) 
 });
 
 // Provider para verificar si una película está vista
-final isMovieWatchedProvider = FutureProvider.family<bool, int>((ref, movieId) async {
+final isMovieWatchedProvider =
+    FutureProvider.family<bool, int>((ref, movieId) async {
   final repository = ref.watch(watchedMoviesRepositoryProvider);
   return repository.isMovieWatched(movieId);
 });
 
 // Provider para la lista de películas vistas
-final watchedMoviesProvider = StateNotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>((ref) {
+final watchedMoviesProvider =
+    StateNotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>((ref) {
   final repository = ref.watch(watchedMoviesRepositoryProvider);
   return WatchedMoviesNotifier(
     repository: repository,
@@ -108,10 +111,10 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
 
   Future<void> markAsWatched(Movie movie) async {
     await repository.markAsWatched(movie);
-    
+
     // Track logros usando callback en lugar de ref directo
     await onMovieWatched(movie);
-    
+
     // Recargar la lista
     await _reloadMovies();
   }
@@ -123,7 +126,7 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   }
 
   Future<void> _reloadMovies() async {
-    state = WatchedMoviesState();
+    state = const WatchedMoviesState();
     await loadNextPage();
   }
 

@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
-import '../lib/core/analytics/analytics_service.dart';
-import '../lib/domain/entities/movie.dart';
-import '../lib/domain/entities/watchlist_movie.dart';
+import 'package:peliculas/core/analytics/analytics_service.dart';
+import 'package:peliculas/core/logging/app_logger.dart';
+import 'package:peliculas/domain/entities/movie.dart';
+import 'package:peliculas/domain/entities/watchlist_movie.dart';
 
 /// Demo script to showcase the analytics events functionality
 class AnalyticsEventsDemo {
   static Future<void> demonstrateAnalyticsEvents() async {
-    print('🚀 Analytics Events Demo Starting...\n');
+    AppLogger.instance.info('🚀 Analytics Events Demo Starting...\n');
 
     // Initialize analytics service
     final analyticsService = AnalyticsService();
     await analyticsService.initialize();
-    print('✅ Analytics service initialized\n');
+    AppLogger.instance.info('✅ Analytics service initialized\n');
 
     // Demo movie for testing
     final testMovie = Movie(
@@ -23,7 +22,7 @@ class AnalyticsEventsDemo {
       posterPath: '/poster.jpg',
       backdropPath: '/backdrop.jpg',
       releaseDate: DateTime(2010, 7, 16),
-      genreIds: [878, 28, 53], // Sci-Fi, Action, Thriller
+      genreIds: ['878', '28', '53'], // Sci-Fi, Action, Thriller
       originalLanguage: 'en',
       originalTitle: 'Inception',
       popularity: 8.8,
@@ -33,10 +32,10 @@ class AnalyticsEventsDemo {
       video: false,
     );
 
-    print('🎬 Demo Movie: ${testMovie.title}\n');
+    AppLogger.instance.info('🎬 Demo Movie: ${testMovie.title}\n');
 
     // 1. Demonstrate Onboarding Completion Event
-    print('📋 1. Tracking Onboarding Completion Event...');
+    AppLogger.instance.info('📋 1. Tracking Onboarding Completion Event...');
     await analyticsService.trackEvent(
       AnalyticsEventType.onboarding,
       {
@@ -46,23 +45,23 @@ class AnalyticsEventsDemo {
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       },
     );
-    print('   ✅ Onboarding completion event tracked');
+    AppLogger.instance.info('   ✅ Onboarding completion event tracked');
 
     // 2. Demonstrate Add to Watchlist Event
-    print('\n📺 2. Tracking Add to Watchlist Event...');
+    AppLogger.instance.info('\n📺 2. Tracking Add to Watchlist Event...');
     await analyticsService.trackEvent(
       AnalyticsEventType.addWatchlist,
       {
         'movie_id': testMovie.id,
         'movie_title': testMovie.title,
-        'priority': WatchlistPriority.high.name,
+        'priority': WatchlistPriority.alta.name,
         'action': 'add_to_watchlist',
       },
     );
-    print('   ✅ Add to watchlist event tracked');
+    AppLogger.instance.info('   ✅ Add to watchlist event tracked');
 
     // 3. Demonstrate Rate Movie Event
-    print('\n⭐ 3. Tracking Rate Movie Event...');
+    AppLogger.instance.info('\n⭐ 3. Tracking Rate Movie Event...');
     await analyticsService.trackEvent(
       AnalyticsEventType.rateMovie,
       {
@@ -74,33 +73,38 @@ class AnalyticsEventsDemo {
         'action': 'rate_movie',
       },
     );
-    print('   ✅ Rate movie event tracked');
+    AppLogger.instance.info('   ✅ Rate movie event tracked');
 
     // Show analytics dashboard
-    print('\n📊 4. Analytics Dashboard Summary:');
+    AppLogger.instance.info('\n📊 4. Analytics Dashboard Summary:');
     final dashboard = await analyticsService.getDashboard();
-    print('   📈 Dashboard generated at: ${dashboard.lastUpdated}');
-    print('   📈 User metrics available: ${dashboard.userMetrics != null}');
-    print('   📈 Content metrics available: ${dashboard.contentMetrics != null}');
-    print('   📈 Performance metrics available: ${dashboard.performanceMetrics != null}');
+    AppLogger.instance
+        .info('   📈 Dashboard generated at: ${dashboard.lastUpdated}');
+    AppLogger.instance
+        .info('   📈 User metrics available: ${dashboard.userMetrics}');
+    AppLogger.instance
+        .info('   📈 Content metrics available: ${dashboard.contentMetrics}');
+    AppLogger.instance.info(
+        '   📈 Performance metrics available: ${dashboard.performanceMetrics}');
 
     // Show event summary
     final events = analyticsService.events;
-    print('\n📋 5. Event Summary:');
-    print('   📊 Total events tracked: ${events.length}');
-    
+    AppLogger.instance.info('\n📋 5. Event Summary:');
+    AppLogger.instance.info('   📊 Total events tracked: ${events.length}');
+
     if (events.isNotEmpty) {
       final recentEvents = events.takeLast(3);
-      print('   🔍 Recent events:');
+      AppLogger.instance.info('   🔍 Recent events:');
       for (int i = 0; i < recentEvents.length; i++) {
         final event = recentEvents[i];
-        print('      ${i + 1}. ${event.type.name} - ${event.properties['action'] ?? 'unknown action'}');
+        AppLogger.instance.info(
+            '      ${i + 1}. ${event.type.name} - ${event.properties['action'] ?? 'unknown action'}');
       }
     }
 
     // Test success rate
-    print('\n🎯 6. Testing Event Delivery Success Rate...');
-    final testEvents = 50;
+    AppLogger.instance.info('\n🎯 6. Testing Event Delivery Success Rate...');
+    const testEvents = 50;
     var successfulEvents = 0;
 
     for (int i = 0; i < testEvents; i++) {
@@ -115,33 +119,40 @@ class AnalyticsEventsDemo {
         );
         successfulEvents++;
       } catch (e) {
-        print('   ❌ Failed to track event $i: $e');
+        AppLogger.instance.error('   ❌ Failed to track event $i: $e');
       }
     }
 
     final successRate = (successfulEvents / testEvents) * 100;
-    print('   📊 Success Rate: ${successRate.toStringAsFixed(1)}% ($successfulEvents/$testEvents)');
-    
+    AppLogger.instance.info(
+        '   📊 Success Rate: ${successRate.toStringAsFixed(1)}% ($successfulEvents/$testEvents)');
+
     if (successRate > 99.0) {
-      print('   ✅ SUCCESS: Achieved >99% event delivery rate requirement!');
+      AppLogger.instance
+          .info('   ✅ SUCCESS: Achieved >99% event delivery rate requirement!');
     } else {
-      print('   ⚠️  WARNING: Success rate below 99% requirement');
+      AppLogger.instance
+          .warning('   ⚠️  WARNING: Success rate below 99% requirement');
     }
 
     // Event streaming demonstration
-    print('\n📡 7. Event Streaming Capability:');
-    print('   📻 Event stream available: ${analyticsService.eventStream != null}');
-    print('   📻 Dashboard stream available: ${analyticsService.dashboardStream != null}');
+    AppLogger.instance.info('\n📡 7. Event Streaming Capability:');
+    AppLogger.instance
+        .info('   📻 Event stream available: ${analyticsService.eventStream}');
+    AppLogger.instance.info(
+        '   📻 Dashboard stream available: ${analyticsService.dashboardStream}');
 
-    print('\n🎉 Analytics Events Demo Completed Successfully!');
-    print('📋 Key Features Demonstrated:');
-    print('   ✅ Onboarding completion tracking');
-    print('   ✅ Add to watchlist tracking');
-    print('   ✅ Movie rating tracking');
-    print('   ✅ Analytics dashboard generation');
-    print('   ✅ Event delivery validation (>99% success rate)');
-    print('   ✅ Real-time event streaming');
-    print('   ✅ Metrics available for analysis');
+    AppLogger.instance
+        .info('\n🎉 Analytics Events Demo Completed Successfully!');
+    AppLogger.instance.info('📋 Key Features Demonstrated:');
+    AppLogger.instance.info('   ✅ Onboarding completion tracking');
+    AppLogger.instance.info('   ✅ Add to watchlist tracking');
+    AppLogger.instance.info('   ✅ Movie rating tracking');
+    AppLogger.instance.info('   ✅ Analytics dashboard generation');
+    AppLogger.instance
+        .info('   ✅ Event delivery validation (>99% success rate)');
+    AppLogger.instance.info('   ✅ Real-time event streaming');
+    AppLogger.instance.info('   ✅ Metrics available for analysis');
   }
 }
 

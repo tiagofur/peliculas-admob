@@ -91,7 +91,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       ),
     );
 
-    _bannerAd!.load();
+    _bannerAd?.load();
   }
 
   @override
@@ -101,10 +101,11 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return const SizedBox.shrink();
     }
     
-    if (_isBannerAdReady && _bannerAd != null) {
+    final bannerAd = _bannerAd;
+    if (_isBannerAdReady && bannerAd != null) {
       return Container(
-        width: _bannerAd!.size.width.toDouble(),
-        height: _bannerAd!.size.height.toDouble(),
+        width: bannerAd.size.width.toDouble(),
+        height: bannerAd.size.height.toDouble(),
         margin: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
@@ -113,7 +114,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
               .surfaceContainerHighest
               .withValues(alpha: 0.3),
         ),
-        child: AdWidget(ad: _bannerAd!),
+        child: AdWidget(ad: bannerAd),
       );
     }
     return const SizedBox.shrink();

@@ -84,8 +84,8 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
 
   WatchedMovie _watchedMovieFromJson(Map<String, dynamic> json) {
     return WatchedMovie(
-      movie: _movieFromJson(json['movie'] as Map<String, dynamic>),
-      watchedDate: DateTime.parse(json['watchedDate'] as String),
+      movie: _movieFromJson(json['movie'] as Map<String, dynamic>? ?? {}),
+      watchedDate: DateTime.tryParse(json['watchedDate'] as String? ?? '') ?? DateTime.now(),
     );
   }
 
@@ -110,22 +110,22 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
 
   Movie _movieFromJson(Map<String, dynamic> json) {
     return Movie(
-      id: json['id'] as int,
-      adult: json['adult'] as bool,
-      backdropPath: json['backdropPath'] as String,
-      genreIds: List<String>.from(json['genreIds'] as List),
-      originalLanguage: json['originalLanguage'] as String,
-      originalTitle: json['originalTitle'] as String,
-      overview: json['overview'] as String,
-      popularity: (json['popularity'] as num).toDouble(),
-      posterPath: json['posterPath'] as String,
+      id: json['id'] as int? ?? 0,
+      adult: json['adult'] as bool? ?? false,
+      backdropPath: json['backdropPath'] as String? ?? '',
+      genreIds: List<String>.from(json['genreIds'] as List? ?? []),
+      originalLanguage: json['originalLanguage'] as String? ?? '',
+      originalTitle: json['originalTitle'] as String? ?? '',
+      overview: json['overview'] as String? ?? '',
+      popularity: (json['popularity'] as num?)?.toDouble() ?? 0.0,
+      posterPath: json['posterPath'] as String? ?? '',
       releaseDate: json['releaseDate'] != null
-          ? DateTime.parse(json['releaseDate'] as String)
+          ? DateTime.tryParse(json['releaseDate'] as String? ?? '') ?? DateTime(1900)
           : DateTime(1900),
-      title: json['title'] as String,
-      video: json['video'] as bool,
-      voteAverage: (json['voteAverage'] as num).toDouble(),
-      voteCount: json['voteCount'] as int,
+      title: json['title'] as String? ?? '',
+      video: json['video'] as bool? ?? false,
+      voteAverage: (json['voteAverage'] as num?)?.toDouble() ?? 0.0,
+      voteCount: json['voteCount'] as int? ?? 0,
     );
   }
 }

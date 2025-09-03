@@ -23,7 +23,7 @@ class CustomBottomNavigation extends ConsumerWidget {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: colors.outline.withOpacity(0.2),
+            color: colors.outline.withValues(alpha: 0.2 * 255),
             width: 0.5,
           ),
         ),

@@ -52,6 +52,10 @@ class RealtimeListenerService {
       developer.log('Error initializing RealtimeListenerService: $e',
           name: 'RealtimeService');
       _updateConnectionState(false); // error
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'initialize_realtime_listeners',
+      );
       _scheduleReconnect();
     }
   }
@@ -175,6 +179,11 @@ class RealtimeListenerService {
     } catch (e) {
       developer.log('Error handling favorite change: $e',
           name: 'RealtimeService');
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'handle_favorite_change',
+        tableName: 'favorites',
+      );
     }
   }
 
@@ -219,6 +228,11 @@ class RealtimeListenerService {
     } catch (e) {
       developer.log('Error handling watched movie change: $e',
           name: 'RealtimeService');
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'handle_watched_movie_change',
+        tableName: 'watched_movies',
+      );
     }
   }
 
@@ -260,6 +274,11 @@ class RealtimeListenerService {
     } catch (e) {
       developer.log('Error handling custom list change: $e',
           name: 'RealtimeService');
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'handle_custom_list_change',
+        tableName: 'custom_lists',
+      );
     }
   }
 
@@ -304,6 +323,11 @@ class RealtimeListenerService {
     } catch (e) {
       developer.log('Error handling watchlist change: $e',
           name: 'RealtimeService');
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'handle_watchlist_change',
+        tableName: 'user_watchlist',
+      );
     }
   }
 
@@ -347,6 +371,11 @@ class RealtimeListenerService {
     } catch (e) {
       developer.log('Error handling rating change: $e',
           name: 'RealtimeService');
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'handle_rating_change',
+        tableName: 'user_movie_ratings',
+      );
     }
   }
 
@@ -399,6 +428,10 @@ class RealtimeListenerService {
     } catch (e) {
       developer.log('Error disconnecting RealtimeListenerService: $e',
           name: 'RealtimeService');
+      _syncManager.handleRealtimeError(
+        e.toString(),
+        operation: 'disconnect_realtime_listeners',
+      );
     }
   }
 

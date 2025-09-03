@@ -67,7 +67,7 @@ class SyncLogEntry {
     buffer.write(message);
 
     if (duration != null) {
-      buffer.write(' (${duration!.inMilliseconds}ms)');
+      buffer.write(' (${duration?.inMilliseconds}ms)');
     }
 
     if (error != null) {
@@ -292,7 +292,7 @@ class SyncLogger {
     final logsWithDuration = logs.where((l) => l.duration != null).toList();
     if (logsWithDuration.isNotEmpty) {
       final totalMs = logsWithDuration
-          .map((l) => l.duration!.inMilliseconds)
+          .map((l) => l.duration?.inMilliseconds ?? 0)
           .reduce((a, b) => a + b);
       stats['avg_duration_ms'] = totalMs / logsWithDuration.length;
     }

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,18 +8,20 @@ import '../logging/logger_factory.dart';
 /// Service to track error reporting metrics and success criteria
 /// Monitors crash-free sessions and core flow error rates
 class ErrorMetricsService {
-  static ErrorMetricsService? _instance;
-  static ErrorMetricsService get instance => _instance ??= ErrorMetricsService._();
-  
   ErrorMetricsService._();
+  static ErrorMetricsService? _instance;
+  static ErrorMetricsService get instance =>
+      _instance ??= ErrorMetricsService._();
 
   static const String _sessionCountKey = 'error_metrics_session_count';
-  static const String _crashSessionCountKey = 'error_metrics_crash_session_count';
-  static const String _coreFlowAttemptCountKey = 'error_metrics_core_flow_attempts';
+  static const String _crashSessionCountKey =
+      'error_metrics_crash_session_count';
+  static const String _coreFlowAttemptCountKey =
+      'error_metrics_core_flow_attempts';
   static const String _coreFlowErrorCountKey = 'error_metrics_core_flow_errors';
   static const String _sessionStartTimeKey = 'error_metrics_session_start_time';
   static const String _lastMetricsResetKey = 'error_metrics_last_reset';
-  
+
   SharedPreferences? _prefs;
   bool _isInitialized = false;
   Timer? _metricsTimer;
@@ -46,16 +47,16 @@ class ErrorMetricsService {
     try {
       _prefs = await SharedPreferences.getInstance();
       _isInitialized = true;
-      
+
       // Start new session
       await _startNewSession();
-      
+
       // Reset metrics weekly to keep recent data relevant
       await _checkAndResetMetricsIfNeeded();
-      
+
       // Start periodic metrics logging
       _startPeriodicMetricsLogging();
-      
+
       LoggerFactory.info('✅ Error metrics service initialized');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize error metrics service: $e');
@@ -68,14 +69,18 @@ class ErrorMetricsService {
 
     _currentSessionStart = DateTime.now();
     _sessionHadCrash = false;
-    
+
     try {
-      await _prefs!.setString(_sessionStartTimeKey, _currentSessionStart!.toIso8601String());
-      
+      final prefs = _prefs;
+      if (prefs == null || _currentSessionStart == null) return;
+
+      await prefs.setString(_sessionStartTimeKey,
+          (_currentSessionStart ?? DateTime.now()).toIso8601String());
+
       // Increment total session count
-      final currentCount = _prefs!.getInt(_sessionCountKey) ?? 0;
-      await _prefs!.setInt(_sessionCountKey, currentCount + 1);
-      
+      final currentCount = prefs.getInt(_sessionCountKey) ?? 0;
+      await prefs.setInt(_sessionCountKey, currentCount + 1);
+
       LoggerFactory.info('📊 New session started for metrics tracking');
     } catch (e) {
       LoggerFactory.error('Failed to start new session for metrics: $e');
@@ -87,11 +92,14 @@ class ErrorMetricsService {
     if (!_isInitialized || _prefs == null || _sessionHadCrash) return;
 
     _sessionHadCrash = true;
-    
+
     try {
-      final currentCrashCount = _prefs!.getInt(_crashSessionCountKey) ?? 0;
-      await _prefs!.setInt(_crashSessionCountKey, currentCrashCount + 1);
-      
+      final prefs = _prefs;
+      if (prefs == null) return;
+
+      final currentCrashCount = prefs.getInt(_crashSessionCountKey) ?? 0;
+      await prefs.setInt(_crashSessionCountKey, currentCrashCount + 1);
+
       LoggerFactory.warning('💥 Session crash recorded for metrics');
     } catch (e) {
       LoggerFactory.error('Failed to record session crash: $e');
@@ -107,9 +115,12 @@ class ErrorMetricsService {
     }
 
     try {
-      final currentAttempts = _prefs!.getInt(_coreFlowAttemptCountKey) ?? 0;
-      await _prefs!.setInt(_coreFlowAttemptCountKey, currentAttempts + 1);
-      
+      final prefs = _prefs;
+      if (prefs == null) return;
+
+      final currentAttempts = prefs.getInt(_coreFlowAttemptCountKey) ?? 0;
+      await prefs.setInt(_coreFlowAttemptCountKey, currentAttempts + 1);
+
       if (kDebugMode) {
         LoggerFactory.debug('📈 Core flow attempt recorded: $flowName');
       }
@@ -119,7 +130,8 @@ class ErrorMetricsService {
   }
 
   /// Record a core flow error
-  Future<void> recordCoreFlowError(String flowName, {String? errorDetails}) async {
+  Future<void> recordCoreFlowError(String flowName,
+      {String? errorDetails}) async {
     if (!_isInitialized || _prefs == null) return;
     if (!coreFlows.contains(flowName)) {
       LoggerFactory.warning('Unknown core flow error: $flowName');
@@ -127,9 +139,12 @@ class ErrorMetricsService {
     }
 
     try {
-      final currentErrors = _prefs!.getInt(_coreFlowErrorCountKey) ?? 0;
-      await _prefs!.setInt(_coreFlowErrorCountKey, currentErrors + 1);
-      
+      final prefs = _prefs;
+      if (prefs == null) return;
+
+      final currentErrors = prefs.getInt(_coreFlowErrorCountKey) ?? 0;
+      await prefs.setInt(_coreFlowErrorCountKey, currentErrors + 1);
+
       LoggerFactory.warning(
         '❌ Core flow error recorded: $flowName${errorDetails != null ? ' - $errorDetails' : ''}',
       );
@@ -142,12 +157,16 @@ class ErrorMetricsService {
   double get crashFreeSessionPercentage {
     if (!_isInitialized || _prefs == null) return 0.0;
 
-    final totalSessions = _prefs!.getInt(_sessionCountKey) ?? 0;
-    final crashSessions = _prefs!.getInt(_crashSessionCountKey) ?? 0;
+    final prefs = _prefs;
+    if (prefs == null) return 0.0;
+
+    final totalSessions = prefs.getInt(_sessionCountKey) ?? 0;
+    final crashSessions = prefs.getInt(_crashSessionCountKey) ?? 0;
 
     if (totalSessions == 0) return 100.0;
 
-    final crashFreePercentage = ((totalSessions - crashSessions) / totalSessions) * 100;
+    final crashFreePercentage =
+        ((totalSessions - crashSessions) / totalSessions) * 100;
     return double.parse(crashFreePercentage.toStringAsFixed(2));
   }
 
@@ -155,8 +174,11 @@ class ErrorMetricsService {
   double get coreFlowErrorRate {
     if (!_isInitialized || _prefs == null) return 0.0;
 
-    final totalAttempts = _prefs!.getInt(_coreFlowAttemptCountKey) ?? 0;
-    final totalErrors = _prefs!.getInt(_coreFlowErrorCountKey) ?? 0;
+    final prefs = _prefs;
+    if (prefs == null) return 0.0;
+
+    final totalAttempts = prefs.getInt(_coreFlowAttemptCountKey) ?? 0;
+    final totalErrors = prefs.getInt(_coreFlowErrorCountKey) ?? 0;
 
     if (totalAttempts == 0) return 0.0;
 
@@ -183,10 +205,18 @@ class ErrorMetricsService {
       };
     }
 
-    final totalSessions = _prefs!.getInt(_sessionCountKey) ?? 0;
-    final crashSessions = _prefs!.getInt(_crashSessionCountKey) ?? 0;
-    final totalAttempts = _prefs!.getInt(_coreFlowAttemptCountKey) ?? 0;
-    final totalErrors = _prefs!.getInt(_coreFlowErrorCountKey) ?? 0;
+    final prefs = _prefs;
+    if (prefs == null) {
+      return {
+        'initialized': false,
+        'error': 'SharedPreferences not available',
+      };
+    }
+
+    final totalSessions = prefs.getInt(_sessionCountKey) ?? 0;
+    final crashSessions = prefs.getInt(_crashSessionCountKey) ?? 0;
+    final totalAttempts = prefs.getInt(_coreFlowAttemptCountKey) ?? 0;
+    final totalErrors = prefs.getInt(_coreFlowErrorCountKey) ?? 0;
 
     return {
       'initialized': true,
@@ -210,7 +240,7 @@ class ErrorMetricsService {
         'session_start': _currentSessionStart?.toIso8601String(),
         'session_had_crash': _sessionHadCrash,
       },
-      'last_reset': _prefs!.getString(_lastMetricsResetKey),
+      'last_reset': prefs.getString(_lastMetricsResetKey),
     };
   }
 
@@ -219,12 +249,16 @@ class ErrorMetricsService {
     if (!_isInitialized || _prefs == null) return;
 
     try {
-      await _prefs!.setInt(_sessionCountKey, 0);
-      await _prefs!.setInt(_crashSessionCountKey, 0);
-      await _prefs!.setInt(_coreFlowAttemptCountKey, 0);
-      await _prefs!.setInt(_coreFlowErrorCountKey, 0);
-      await _prefs!.setString(_lastMetricsResetKey, DateTime.now().toIso8601String());
-      
+      final prefs = _prefs;
+      if (prefs == null) return;
+
+      await prefs.setInt(_sessionCountKey, 0);
+      await prefs.setInt(_crashSessionCountKey, 0);
+      await prefs.setInt(_coreFlowAttemptCountKey, 0);
+      await prefs.setInt(_coreFlowErrorCountKey, 0);
+      await prefs.setString(
+          _lastMetricsResetKey, DateTime.now().toIso8601String());
+
       LoggerFactory.info('📊 Error metrics reset');
     } catch (e) {
       LoggerFactory.error('Failed to reset metrics: $e');
@@ -235,17 +269,21 @@ class ErrorMetricsService {
   Future<void> _checkAndResetMetricsIfNeeded() async {
     if (!_isInitialized || _prefs == null) return;
 
-    final lastResetString = _prefs!.getString(_lastMetricsResetKey);
+    final prefs = _prefs;
+    if (prefs == null) return;
+
+    final lastResetString = prefs.getString(_lastMetricsResetKey);
     if (lastResetString == null) {
       // First time - set reset time but don't reset
-      await _prefs!.setString(_lastMetricsResetKey, DateTime.now().toIso8601String());
+      await prefs.setString(
+          _lastMetricsResetKey, DateTime.now().toIso8601String());
       return;
     }
 
     try {
       final lastReset = DateTime.parse(lastResetString);
       final weekAgo = DateTime.now().subtract(const Duration(days: 7));
-      
+
       if (lastReset.isBefore(weekAgo)) {
         LoggerFactory.info('📊 Weekly metrics reset due');
         await resetMetrics();
@@ -258,10 +296,10 @@ class ErrorMetricsService {
   /// Start periodic metrics logging
   void _startPeriodicMetricsLogging() {
     _metricsTimer?.cancel();
-    
+
     // Log metrics every hour in debug mode, every 6 hours in release
-    final duration = kDebugMode ? const Duration(hours: 1) : const Duration(hours: 6);
-    
+    const duration = kDebugMode ? Duration(hours: 1) : Duration(hours: 6);
+
     _metricsTimer = Timer.periodic(duration, (timer) {
       _logCurrentMetrics();
     });
@@ -271,8 +309,9 @@ class ErrorMetricsService {
   void _logCurrentMetrics() {
     final metrics = metricsSnapshot;
     final sessionMetrics = metrics['session_metrics'] as Map<String, dynamic>;
-    final coreFlowMetrics = metrics['core_flow_metrics'] as Map<String, dynamic>;
-    
+    final coreFlowMetrics =
+        metrics['core_flow_metrics'] as Map<String, dynamic>;
+
     LoggerFactory.info(
       '📊 Error Metrics Report: '
       'Crash-free: ${sessionMetrics['crash_free_percentage']}% '
@@ -297,13 +336,13 @@ extension CoreFlowTracking on ErrorMetricsService {
     Future<T> Function() operation,
   ) async {
     await recordCoreFlowAttempt(flowName);
-    
+
     try {
       final result = await operation();
       return result;
     } catch (error, stackTrace) {
       await recordCoreFlowError(flowName, errorDetails: error.toString());
-      
+
       // Also report to error reporting service
       LoggerFactory.reportCriticalError(
         error,
@@ -315,7 +354,7 @@ extension CoreFlowTracking on ErrorMetricsService {
         },
         fatal: false,
       );
-      
+
       rethrow;
     }
   }

@@ -71,7 +71,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
     if (_lastPausedTime == null || isInForeground) {
       return null;
     }
-    return DateTime.now().difference(_lastPausedTime!);
+    return DateTime.now().difference(_lastPausedTime ?? DateTime.now());
   }
 
   /// Verifica si la app ha estado en segundo plano por mucho tiempo
@@ -172,7 +172,7 @@ class AppLifecycleManager with WidgetsBindingObserver {
         _lastResumedTime = DateTime.now();
         if (_lastPausedTime != null) {
           final backgroundDuration =
-              DateTime.now().difference(_lastPausedTime!);
+              DateTime.now().difference(_lastPausedTime ?? DateTime.now());
           LoggerFactory.info(
               '⏱️ App estuvo en segundo plano por: ${backgroundDuration.inMinutes} minutos');
         }

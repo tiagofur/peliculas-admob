@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../analytics/analytics_service.dart';
@@ -19,6 +18,18 @@ class AdFrequencyConfig {
     this.respectUserPreferences = true,
   });
 
+  factory AdFrequencyConfig.fromJson(Map<String, dynamic> json) =>
+      AdFrequencyConfig(
+        maxAdsPerSession: json['maxAdsPerSession'] ?? 8,
+        maxAdsPerHour: json['maxAdsPerHour'] ?? 12,
+        maxAdsPerDay: json['maxAdsPerDay'] ?? 50,
+        minTimeBetweenAds:
+            Duration(minutes: json['minTimeBetweenAdsMinutes'] ?? 2),
+        cooldownAfterUserInteraction:
+            Duration(minutes: json['cooldownAfterUserInteractionMinutes'] ?? 5),
+        respectUserPreferences: json['respectUserPreferences'] ?? true,
+      );
+
   final int maxAdsPerSession;
   final int maxAdsPerHour;
   final int maxAdsPerDay;
@@ -31,18 +42,10 @@ class AdFrequencyConfig {
         'maxAdsPerHour': maxAdsPerHour,
         'maxAdsPerDay': maxAdsPerDay,
         'minTimeBetweenAdsMinutes': minTimeBetweenAds.inMinutes,
-        'cooldownAfterUserInteractionMinutes': cooldownAfterUserInteraction.inMinutes,
+        'cooldownAfterUserInteractionMinutes':
+            cooldownAfterUserInteraction.inMinutes,
         'respectUserPreferences': respectUserPreferences,
       };
-
-  factory AdFrequencyConfig.fromJson(Map<String, dynamic> json) => AdFrequencyConfig(
-        maxAdsPerSession: json['maxAdsPerSession'] ?? 8,
-        maxAdsPerHour: json['maxAdsPerHour'] ?? 12,
-        maxAdsPerDay: json['maxAdsPerDay'] ?? 50,
-        minTimeBetweenAds: Duration(minutes: json['minTimeBetweenAdsMinutes'] ?? 2),
-        cooldownAfterUserInteraction: Duration(minutes: json['cooldownAfterUserInteractionMinutes'] ?? 5),
-        respectUserPreferences: json['respectUserPreferences'] ?? true,
-      );
 }
 
 /// Métricas de monetización de anuncios
@@ -93,24 +96,24 @@ enum AdDecisionResult {
 /// Controlador de frecuencia de anuncios con métricas de monetización
 class AdFrequencyController {
   AdFrequencyController._();
-  
+
   static final AdFrequencyController _instance = AdFrequencyController._();
   static AdFrequencyController get instance => _instance;
 
   final BaseLogger _logger = LoggerFactory.getLogger('AdFrequencyController');
   final AnalyticsService _analytics = AnalyticsService.instance;
-  
+
   SharedPreferences? _prefs;
   AdFrequencyConfig _config = const AdFrequencyConfig();
   String? _currentSessionId;
   DateTime? _sessionStartTime;
   DateTime? _lastAdShownTime;
   DateTime? _lastUserInteractionTime;
-  
+
   // Contadores de sesión
   int _sessionAdCount = 0;
   int _sessionClickCount = 0;
-  
+
   // Cache para métricas
   List<DateTime> _todayImpressions = [];
   List<DateTime> _hourlyImpressions = [];
@@ -125,11 +128,12 @@ class AdFrequencyController {
       } else {
         await _loadConfig();
       }
-      
+
       _startNewSession();
       await _loadTodayData();
-      
-      _logger.info('AdFrequencyController initialized with config: ${_config.toJson()}');
+
+      _logger.info(
+          'AdFrequencyController initialized with config: ${_config.toJson()}');
     } catch (e) {
       _logger.error('Error initializing AdFrequencyController: $e');
       rethrow;
@@ -142,37 +146,42 @@ class AdFrequencyController {
     _sessionStartTime = DateTime.now();
     _sessionAdCount = 0;
     _sessionClickCount = 0;
-    
+
     _analytics.trackEvent(AnalyticsEventType.sessionStart, {
       'sessionId': _currentSessionId,
-      'timestamp': _sessionStartTime!.toIso8601String(),
+      'timestamp': (_sessionStartTime ?? DateTime.now()).toIso8601String(),
     });
+
+    // Guardar historial de sesiones para cálculo de retención
+    final sessionHistory = _prefs?.getStringList('session_history') ?? [];
+    sessionHistory.add((_sessionStartTime ?? DateTime.now()).toIso8601String());
+    _prefs?.setStringList('session_history', sessionHistory);
   }
 
   /// Verificar si se puede mostrar un anuncio
   Future<AdDecisionResult> canShowAd({String? adType}) async {
     try {
       final now = DateTime.now();
-      
+
       // Verificar límite de sesión
       if (_sessionAdCount >= _config.maxAdsPerSession) {
         _logDecision(AdDecisionResult.blockedBySessionLimit, adType);
         return AdDecisionResult.blockedBySessionLimit;
       }
-      
+
       // Verificar límite horario
       _cleanupOldImpressions();
       if (_hourlyImpressions.length >= _config.maxAdsPerHour) {
         _logDecision(AdDecisionResult.blockedByHourlyLimit, adType);
         return AdDecisionResult.blockedByHourlyLimit;
       }
-      
+
       // Verificar límite diario
       if (_todayImpressions.length >= _config.maxAdsPerDay) {
         _logDecision(AdDecisionResult.blockedByDailyLimit, adType);
         return AdDecisionResult.blockedByDailyLimit;
       }
-      
+
       // Verificar tiempo mínimo entre anuncios
       if (_lastAdShownTime != null) {
         final timeSinceLastAd = now.difference(_lastAdShownTime!);
@@ -181,7 +190,7 @@ class AdFrequencyController {
           return AdDecisionResult.blockedByTimeCooldown;
         }
       }
-      
+
       // Verificar cooldown después de interacción del usuario
       if (_lastUserInteractionTime != null) {
         final timeSinceInteraction = now.difference(_lastUserInteractionTime!);
@@ -190,10 +199,9 @@ class AdFrequencyController {
           return AdDecisionResult.blockedByUserInteraction;
         }
       }
-      
+
       _logDecision(AdDecisionResult.allowed, adType);
       return AdDecisionResult.allowed;
-      
     } catch (e) {
       _logger.error('Error checking ad permission: $e');
       return AdDecisionResult.blockedBySessionLimit; // Fail safe
@@ -208,15 +216,15 @@ class AdFrequencyController {
   }) async {
     try {
       final now = DateTime.now();
-      
+
       _sessionAdCount++;
       _lastAdShownTime = now;
       _todayImpressions.add(now);
       _hourlyImpressions.add(now);
-      
+
       // Persistir datos
       await _saveTodayData();
-      
+
       // Enviar evento de analytics
       await _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'event': 'ad_impression',
@@ -227,8 +235,9 @@ class AdFrequencyController {
         'timestamp': now.toIso8601String(),
         ...?metadata,
       });
-      
-      _logger.info('Ad shown: $adType (session: $_sessionAdCount/${_config.maxAdsPerSession})');
+
+      _logger.info(
+          'Ad shown: $adType (session: $_sessionAdCount/${_config.maxAdsPerSession})');
     } catch (e) {
       _logger.error('Error recording ad shown: $e');
     }
@@ -242,7 +251,7 @@ class AdFrequencyController {
   }) async {
     try {
       _sessionClickCount++;
-      
+
       await _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'event': 'ad_click',
         'adType': adType,
@@ -251,10 +260,32 @@ class AdFrequencyController {
         'estimatedRevenue': estimatedRevenue,
         'timestamp': DateTime.now().toIso8601String(),
       });
-      
+
       _logger.info('Ad clicked: $adType (session clicks: $_sessionClickCount)');
     } catch (e) {
       _logger.error('Error recording ad click: $e');
+    }
+  }
+
+  /// Registrar que un anuncio fue bloqueado por el usuario
+  Future<void> recordAdBlocked() async {
+    try {
+      final currentCount = _prefs?.getInt('ad_blocked_count') ?? 0;
+      await _prefs?.setInt('ad_blocked_count', currentCount + 1);
+      _logger.info('Ad blocked recorded. Total: ${currentCount + 1}');
+    } catch (e) {
+      _logger.error('Error recording ad blocked: $e');
+    }
+  }
+
+  /// Registrar que un anuncio fue omitido por el usuario
+  Future<void> recordAdSkipped() async {
+    try {
+      final currentCount = _prefs?.getInt('ad_skipped_count') ?? 0;
+      await _prefs?.setInt('ad_skipped_count', currentCount + 1);
+      _logger.info('Ad skipped recorded. Total: ${currentCount + 1}');
+    } catch (e) {
+      _logger.error('Error recording ad skipped: $e');
     }
   }
 
@@ -266,24 +297,34 @@ class AdFrequencyController {
   /// Obtener métricas de monetización
   Future<AdMonetizationMetrics> getMonetizationMetrics() async {
     try {
-      final allEvents = await _analytics.getEvents();
-      final adEvents = allEvents.where((e) => 
-        e.properties['event'] == 'ad_impression' || 
-        e.properties['event'] == 'ad_click'
-      ).toList();
-      
-      final impressions = adEvents.where((e) => e.properties['event'] == 'ad_impression').length;
-      final clicks = adEvents.where((e) => e.properties['event'] == 'ad_click').length;
+      final allEvents = _analytics.getEvents();
+      final adEvents = allEvents
+          .where((e) =>
+              e.properties['event'] == 'ad_impression' ||
+              e.properties['event'] == 'ad_click')
+          .toList();
+
+      final impressions = adEvents
+          .where((e) => e.properties['event'] == 'ad_impression')
+          .length;
+      final clicks =
+          adEvents.where((e) => e.properties['event'] == 'ad_click').length;
       final ctr = impressions > 0 ? clicks / impressions : 0.0;
-      
+
       final revenue = adEvents
           .where((e) => e.properties['estimatedRevenue'] != null)
-          .fold<double>(0.0, (sum, e) => sum + (e.properties['estimatedRevenue'] as double? ?? 0.0));
-      
-      final sessionLength = _sessionStartTime != null 
+          .fold<double>(
+              0.0,
+              (sum, e) =>
+                  sum + (e.properties['estimatedRevenue'] as double? ?? 0.0));
+
+      final sessionLength = _sessionStartTime != null
           ? DateTime.now().difference(_sessionStartTime!)
           : Duration.zero;
-      
+
+      final blockedCount = _prefs?.getInt('ad_blocked_count') ?? 0;
+      final skippedCount = _prefs?.getInt('ad_skipped_count') ?? 0;
+
       return AdMonetizationMetrics(
         totalImpressions: impressions,
         totalClicks: clicks,
@@ -291,8 +332,8 @@ class AdFrequencyController {
         estimatedRevenue: revenue,
         averageSessionLength: sessionLength,
         userRetentionRate: _calculateRetentionRate(),
-        adBlockedCount: 0, // TODO: Implementar
-        adSkippedCount: 0, // TODO: Implementar
+        adBlockedCount: blockedCount,
+        adSkippedCount: skippedCount,
       );
     } catch (e) {
       _logger.error('Error getting monetization metrics: $e');
@@ -314,7 +355,7 @@ class AdFrequencyController {
     final now = DateTime.now();
     final oneHourAgo = now.subtract(const Duration(hours: 1));
     final oneDayAgo = now.subtract(const Duration(days: 1));
-    
+
     _hourlyImpressions.removeWhere((time) => time.isBefore(oneHourAgo));
     _todayImpressions.removeWhere((time) => time.isBefore(oneDayAgo));
   }
@@ -326,13 +367,40 @@ class AdFrequencyController {
 
   /// Calcular tasa de retención (simplificado)
   double _calculateRetentionRate() {
-    // TODO: Implementar cálculo real basado en sesiones de usuario
-    return 0.8; // Placeholder
+    final sessionHistory = _prefs?.getStringList('session_history') ?? [];
+    if (sessionHistory.length < 2) {
+      return 0.0; // No se puede calcular retención con menos de 2 sesiones
+    }
+
+    final sessions = sessionHistory.map((s) => DateTime.parse(s)).toList();
+    sessions.sort(); // Asegurarse de que estén en orden
+
+    final uniqueDays = <String>{};
+
+    for (final session in sessions) {
+      final day = '${session.year}-${session.month}-${session.day}';
+      uniqueDays.add(day);
+    }
+
+    if (uniqueDays.length < 2) {
+      return 0.0; // Solo hubo sesiones en un día
+    }
+
+    // Simplificación: consideramos un usuario retenido si vuelve en un día diferente.
+    // Una métrica más real necesitaría un backend y seguimiento de cohortes.
+    // Porcentaje de días con actividad sobre el total de días desde el inicio.
+    final firstDay = sessions.first;
+    final totalDays = DateTime.now().difference(firstDay).inDays;
+
+    if (totalDays == 0) return 0.0;
+
+    return (uniqueDays.length / totalDays).clamp(0.0, 1.0);
   }
 
   /// Guardar configuración
   Future<void> _saveConfig() async {
-    await _prefs?.setString('ad_frequency_config', jsonEncode(_config.toJson()));
+    await _prefs?.setString(
+        'ad_frequency_config', jsonEncode(_config.toJson()));
   }
 
   /// Cargar configuración
@@ -351,20 +419,22 @@ class AdFrequencyController {
   /// Guardar datos del día
   Future<void> _saveTodayData() async {
     final today = DateTime.now().toIso8601String().split('T')[0];
-    final impressionsJson = _todayImpressions.map((d) => d.toIso8601String()).toList();
+    final impressionsJson =
+        _todayImpressions.map((d) => d.toIso8601String()).toList();
     await _prefs?.setStringList('today_impressions_$today', impressionsJson);
   }
 
   /// Cargar datos del día
   Future<void> _loadTodayData() async {
     final today = DateTime.now().toIso8601String().split('T')[0];
-    final impressionsStr = _prefs?.getStringList('today_impressions_$today') ?? [];
-    
+    final impressionsStr =
+        _prefs?.getStringList('today_impressions_$today') ?? [];
+
     _todayImpressions = impressionsStr
         .map((str) => DateTime.parse(str))
         .where((date) => _isToday(date))
         .toList();
-    
+
     _hourlyImpressions = _todayImpressions
         .where((date) => DateTime.now().difference(date).inHours < 1)
         .toList();
@@ -373,9 +443,9 @@ class AdFrequencyController {
   /// Verificar si una fecha es hoy
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && 
-           date.month == now.month && 
-           date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   /// Obtener configuración actual
@@ -383,16 +453,16 @@ class AdFrequencyController {
 
   /// Obtener estadísticas de sesión actual
   Map<String, dynamic> getSessionStats() => {
-    'sessionId': _currentSessionId,
-    'sessionAdCount': _sessionAdCount,
-    'sessionClickCount': _sessionClickCount,
-    'sessionDuration': _sessionStartTime != null 
-        ? DateTime.now().difference(_sessionStartTime!).inMinutes 
-        : 0,
-    'lastAdShown': _lastAdShownTime?.toIso8601String(),
-    'dailyImpressions': _todayImpressions.length,
-    'hourlyImpressions': _hourlyImpressions.length,
-  };
+        'sessionId': _currentSessionId,
+        'sessionAdCount': _sessionAdCount,
+        'sessionClickCount': _sessionClickCount,
+        'sessionDuration': _sessionStartTime != null
+            ? DateTime.now().difference(_sessionStartTime!).inMinutes
+            : 0,
+        'lastAdShown': _lastAdShownTime?.toIso8601String(),
+        'dailyImpressions': _todayImpressions.length,
+        'hourlyImpressions': _hourlyImpressions.length,
+      };
 
   /// Actualizar configuración
   Future<void> updateConfig(AdFrequencyConfig newConfig) async {

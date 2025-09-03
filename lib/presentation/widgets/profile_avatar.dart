@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -5,105 +7,242 @@ class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
     super.key,
     this.avatarUrl,
-    this.fullName,
-    this.radius = 20,
+    this.selectedImage,
+    this.size = 120,
     this.onTap,
-    this.showBorder = false,
-    this.borderColor,
+    this.showEditIcon = false,
+    this.heroTag,
   });
-
   final String? avatarUrl;
-  final String? fullName;
-  final double radius;
+  final File? selectedImage;
+  final double size;
   final VoidCallback? onTap;
-  final bool showBorder;
-  final Color? borderColor;
+  final bool showEditIcon;
+  final String? heroTag;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    Widget avatar;
-    
-    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      avatar = CachedNetworkImage(
-        imageUrl: avatarUrl!,
-        imageBuilder: (context, imageProvider) => CircleAvatar(
-          radius: radius,
-          backgroundImage: imageProvider,
-        ),
-        placeholder: (context, url) => CircleAvatar(
-          radius: radius,
-          backgroundColor: colorScheme.surfaceContainerHighest,
-          child: SizedBox(
-            width: radius * 0.6,
-            height: radius * 0.6,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                colorScheme.primary,
-              ),
-            ),
-          ),
-        ),
-        errorWidget: (context, url, error) => _buildInitialsAvatar(
-          context,
-          colorScheme,
-        ),
-      );
-    } else {
-      avatar = _buildInitialsAvatar(context, colorScheme);
-    }
 
-    if (showBorder) {
-      avatar = Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: borderColor ?? colorScheme.outline,
-            width: 2,
-          ),
+    Widget avatarWidget = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+          width: 2,
         ),
-        child: avatar,
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: _buildAvatarContent(theme),
+      ),
+    );
+
+    if (heroTag != null) {
+      avatarWidget = Hero(
+        tag: heroTag!,
+        child: avatarWidget,
       );
     }
 
     if (onTap != null) {
-      return GestureDetector(
+      avatarWidget = GestureDetector(
         onTap: onTap,
-        child: avatar,
+        child: avatarWidget,
       );
     }
 
-    return avatar;
+    if (showEditIcon) {
+      return Stack(
+        children: [
+          avatarWidget,
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: size * 0.25,
+              height: size * 0.25,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: theme.colorScheme.surface,
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                Icons.edit,
+                color: theme.colorScheme.onPrimary,
+                size: size * 0.12,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return avatarWidget;
   }
 
-  Widget _buildInitialsAvatar(BuildContext context, ColorScheme colorScheme) {
-    final initials = _getInitials(fullName ?? 'Usuario');
-    
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: colorScheme.primaryContainer,
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: colorScheme.onPrimaryContainer,
-          fontSize: radius * 0.6,
-          fontWeight: FontWeight.w600,
+  Widget _buildAvatarContent(ThemeData theme) {
+    // Si hay una imagen seleccionada localmente, mostrarla
+    if (selectedImage != null) {
+      return Image.file(
+        selectedImage!,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildDefaultAvatar(theme);
+        },
+      );
+    }
+
+    // Si hay una URL de avatar, cargarla desde la red
+    if (avatarUrl != null && (avatarUrl?.isNotEmpty ?? false)) {
+      return CachedNetworkImage(
+        imageUrl: avatarUrl ?? '',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          color: theme.colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: SizedBox(
+              width: size * 0.3,
+              height: size * 0.3,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
         ),
+        errorWidget: (context, url, error) {
+          return _buildDefaultAvatar(theme);
+        },
+      );
+    }
+
+    // Avatar por defecto
+    return _buildDefaultAvatar(theme);
+  }
+
+  Widget _buildDefaultAvatar(ThemeData theme) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.8),
+            theme.colorScheme.secondary.withValues(alpha: 0.8),
+          ],
+        ),
+      ),
+      child: Icon(
+        Icons.person,
+        size: size * 0.5,
+        color: theme.colorScheme.onPrimary,
       ),
     );
   }
+}
 
-  String _getInitials(String name) {
-    final words = name.trim().split(' ');
-    if (words.isEmpty) return 'U';
-    
-    if (words.length == 1) {
-      return words[0].substring(0, 1).toUpperCase();
-    }
-    
-    return '${words[0].substring(0, 1)}${words[1].substring(0, 1)}'.toUpperCase();
+// Widget auxiliar para avatares pequeños en listas
+class SmallProfileAvatar extends StatelessWidget {
+  const SmallProfileAvatar({
+    super.key,
+    this.avatarUrl,
+    this.size = 40,
+    this.heroTag,
+  });
+  final String? avatarUrl;
+  final double size;
+  final String? heroTag;
+
+  @override
+  Widget build(BuildContext context) {
+    return ProfileAvatar(
+      avatarUrl: avatarUrl,
+      size: size,
+      heroTag: heroTag,
+    );
+  }
+}
+
+// Widget para mostrar avatar con información del usuario
+class UserAvatarWithInfo extends StatelessWidget {
+  const UserAvatarWithInfo({
+    super.key,
+    this.avatarUrl,
+    required this.fullName,
+    this.subtitle,
+    this.avatarSize = 50,
+    this.onTap,
+  });
+  final String? avatarUrl;
+  final String fullName;
+  final String? subtitle;
+  final double avatarSize;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: [
+            ProfileAvatar(
+              avatarUrl: avatarUrl,
+              size: avatarSize,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    fullName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

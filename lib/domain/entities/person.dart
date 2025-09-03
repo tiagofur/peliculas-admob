@@ -78,7 +78,7 @@ class Person {
   }
 
   String get fullProfileUrl {
-    if (profilePath == null || profilePath!.isEmpty) return '';
+    if (profilePath == null || (profilePath?.isEmpty ?? true)) return '';
     return 'https://image.tmdb.org/t/p/w500$profilePath';
   }
 
@@ -95,10 +95,10 @@ class Person {
     }
   }
 
-  bool get isAlive => deathday == null || deathday!.isEmpty;
+  bool get isAlive => deathday == null || (deathday?.isEmpty ?? true);
 
   int? get age {
-    if (birthday == null || birthday!.isEmpty) return null;
+    if (birthday == null || (birthday?.isEmpty ?? true)) return null;
 
     final birthDate = DateTime.tryParse(birthday!);
     if (birthDate == null) return null;

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/logger_factory.dart';
 import 'notification_manager.dart';
@@ -28,7 +29,8 @@ class NotificationInitializationService {
   void setNavigatorKey(GlobalKey<NavigatorState> navigatorKey) {
     _globalNavigatorKey = navigatorKey;
     if (kDebugMode) {
-      LoggerFactory.info('🔑 Navigator key configurado para notificaciones push');
+      LoggerFactory.info(
+          '🔑 Navigator key configurado para notificaciones push');
     }
   }
 
@@ -48,7 +50,10 @@ class NotificationInitializationService {
 
       // Inicializar el manager de notificaciones
       _notificationManager = NotificationManager.instance;
-      await _notificationManager!.initialize();
+      final manager = _notificationManager;
+      if (manager != null) {
+        await manager.initialize();
+      }
 
       // Configurar listeners de Firebase Messaging
       await _setupFirebaseMessagingListeners();
@@ -75,19 +80,22 @@ class NotificationInitializationService {
   /// Inicializa todo el sistema de notificaciones con Riverpod
   Future<void> initializeWithRiverpod(Ref ref) async {
     await initialize(); // Inicialización básica primero
-    
+
     if (!_isInitialized) return;
-    
+
     try {
       if (kDebugMode) {
-        LoggerFactory.info('🔔 Inicializando servicios específicos de notificaciones...');
+        LoggerFactory.info(
+            '🔔 Inicializando servicios específicos de notificaciones...');
       }
 
       // Inicializar servicios específicos conectados a repositorios
-      await NotificationServicesInitializer.instance.initializeWithRepositories(ref: ref);
+      await NotificationServicesInitializer.instance
+          .initializeWithRepositories(ref: ref);
 
       if (kDebugMode) {
-        LoggerFactory.info('✅ Servicios específicos de notificaciones inicializados');
+        LoggerFactory.info(
+            '✅ Servicios específicos de notificaciones inicializados');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -151,13 +159,35 @@ class NotificationInitializationService {
         if (kDebugMode) {
           LoggerFactory.info('FCM Token refreshed: $token');
         }
-        // TODO: Enviar el nuevo token al servidor
+        _sendTokenToServer(token);
       });
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error(
             'Error setting up Firebase Messaging listeners: $e');
       }
+    }
+  }
+
+  Future<void> _sendTokenToServer(String token) async {
+    try {
+      // Asumimos que el cliente de Supabase está disponible globalmente o via provider
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+
+      if (userId == null) {
+        LoggerFactory.info('No user logged in, cannot send FCM token.');
+        return;
+      }
+
+      // Asumimos una tabla 'profiles' con una columna 'fcm_token'
+      await supabase
+          .from('profiles')
+          .update({'fcm_token': token}).eq('id', userId);
+
+      LoggerFactory.info('FCM token sent to server successfully.');
+    } catch (e) {
+      LoggerFactory.error('Error sending FCM token to server: $e');
     }
   }
 
@@ -191,12 +221,15 @@ class NotificationInitializationService {
     if (notification == null) return;
 
     try {
-      await _notificationManager!.showLocalNotification(
-        id: message.hashCode,
-        title: notification.title ?? 'Notificación',
-        body: notification.body ?? '',
-        payload: message.data.toString(),
-      );
+      final manager = _notificationManager;
+      if (manager != null) {
+        await manager.showLocalNotification(
+          id: message.hashCode,
+          title: notification.title ?? 'Notificación',
+          body: notification.body ?? '',
+          payload: message.data.toString(),
+        );
+      }
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error('Error showing foreground notification: $e');
@@ -259,7 +292,8 @@ class NotificationInitializationService {
       }
     } else {
       if (kDebugMode) {
-        LoggerFactory.warning('⚠️ No hay contexto de navegación disponible para push');
+        LoggerFactory.warning(
+            '⚠️ No hay contexto de navegación disponible para push');
       }
     }
   }
@@ -275,12 +309,14 @@ class NotificationInitializationService {
         }
       } catch (e) {
         if (kDebugMode) {
-          LoggerFactory.error('❌ Error navegando a recomendaciones desde push: $e');
+          LoggerFactory.error(
+              '❌ Error navegando a recomendaciones desde push: $e');
         }
       }
     } else {
       if (kDebugMode) {
-        LoggerFactory.warning('⚠️ No hay contexto de navegación disponible para push');
+        LoggerFactory.warning(
+            '⚠️ No hay contexto de navegación disponible para push');
       }
     }
   }
@@ -301,7 +337,8 @@ class NotificationInitializationService {
       }
     } else {
       if (kDebugMode) {
-        LoggerFactory.warning('⚠️ No hay contexto de navegación disponible para push');
+        LoggerFactory.warning(
+            '⚠️ No hay contexto de navegación disponible para push');
       }
     }
   }

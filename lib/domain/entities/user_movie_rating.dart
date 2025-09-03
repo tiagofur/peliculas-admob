@@ -1,14 +1,4 @@
 class UserMovieRating {
-  final String id;
-  final String userId;
-  final int movieId;
-  final String movieTitle;
-  final String? moviePosterPath;
-  final int rating; // 1-5 stars
-  final String? personalNote;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
   const UserMovieRating({
     required this.id,
     required this.userId,
@@ -35,6 +25,15 @@ class UserMovieRating {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+  final String id;
+  final String userId;
+  final int movieId;
+  final String movieTitle;
+  final String? moviePosterPath;
+  final int rating; // 1-5 stars
+  final String? personalNote;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   /// Convierte la valoración a JSON
   Map<String, dynamic> toJson() {
@@ -102,7 +101,7 @@ class UserMovieRating {
   bool get isValidRating => rating >= 1 && rating <= 5;
 
   /// Valida que la nota personal no exceda el límite
-  bool get isValidNote => personalNote == null || personalNote!.length <= 500;
+  bool get isValidNote => personalNote == null || (personalNote?.length ?? 0) <= 500;
 
   /// Valida que la entidad sea válida
   bool get isValid => isValidRating && isValidNote;
@@ -110,7 +109,7 @@ class UserMovieRating {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is UserMovieRating &&
         other.id == id &&
         other.userId == userId &&

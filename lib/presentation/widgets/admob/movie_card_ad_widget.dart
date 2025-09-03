@@ -72,7 +72,7 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
       request: const AdRequest(),
     );
 
-    _nativeAd!.load();
+    _nativeAd?.load();
   }
 
   @override
@@ -149,8 +149,9 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
   }
 
   Widget _buildAdContent(ColorScheme colors, TextTheme textStyles) {
-    if (_isAdLoaded && _nativeAd != null) {
-      return AdWidget(ad: _nativeAd!);
+    final nativeAd = _nativeAd;
+    if (_isAdLoaded && nativeAd != null) {
+      return AdWidget(ad: nativeAd);
     }
 
     if (_isAdFailed) {

@@ -134,7 +134,7 @@ class ConnectivityDetector {
   Future<void> _performPeriodicCheck() async {
     if (_currentStatus == ConnectivityStatus.unknown ||
         (_lastCheck != null &&
-            DateTime.now().difference(_lastCheck!) > _checkInterval)) {
+            DateTime.now().difference(_lastCheck ?? DateTime.now()) > _checkInterval)) {
       await _performConnectivityCheck();
     }
   }
@@ -218,6 +218,12 @@ class ConnectivityDetector {
 
     await _performConnectivityCheck();
     return _currentStatus;
+  }
+
+  /// Prueba la conexión a internet de forma pública
+  Future<bool> testConnection() async {
+    LoggerFactory.info('🔄 Prueba de conexión solicitada');
+    return await _testInternetConnection();
   }
 
   /// Obtiene información detallada del estado

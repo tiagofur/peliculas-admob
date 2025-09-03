@@ -254,7 +254,7 @@ class CustomListsConflictStrategy
   String? _mergeStringField(String? field1, String? field2) {
     if (field1?.isNotEmpty == true && field2?.isNotEmpty == true) {
       // Si ambos tienen contenido, usar el más largo
-      return field1!.length >= field2!.length ? field1 : field2;
+      return (field1?.length ?? 0) >= (field2?.length ?? 0) ? field1 : field2;
     }
 
     // Usar el que no esté vacío

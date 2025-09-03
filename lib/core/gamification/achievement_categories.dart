@@ -6,7 +6,7 @@ class AchievementCategories {
 
   /// Logros de Movie Explorer - Exploración y descubrimiento de películas
   static List<Achievement> get movieExplorerAchievements => [
-        Achievement(
+        const Achievement(
           id: 'first_movie',
           name: 'Primera Película',
           description: 'Agrega tu primera película a favoritos',
@@ -16,7 +16,7 @@ class AchievementCategories {
           maxProgress: 1,
           iconPath: '$_iconBasePath/first_movie.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'movie_enthusiast',
           name: 'Entusiasta del Cine',
           description: 'Agrega 10 películas a favoritos',
@@ -26,7 +26,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/movie_enthusiast.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'movie_collector',
           name: 'Coleccionista',
           description: 'Agrega 50 películas a favoritos',
@@ -36,7 +36,7 @@ class AchievementCategories {
           maxProgress: 50,
           iconPath: '$_iconBasePath/collector.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'movie_curator',
           name: 'Curador de Cine',
           description: 'Agrega 100 películas a favoritos',
@@ -46,7 +46,7 @@ class AchievementCategories {
           maxProgress: 100,
           iconPath: '$_iconBasePath/curator.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'movie_master',
           name: 'Maestro del Cine',
           description: 'Agrega 200 películas a favoritos',
@@ -56,7 +56,7 @@ class AchievementCategories {
           maxProgress: 200,
           iconPath: '$_iconBasePath/movie_master.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'movie_legend',
           name: 'Leyenda Cinematográfica',
           description: 'Agrega 500 películas a favoritos',
@@ -71,7 +71,7 @@ class AchievementCategories {
   /// Logros de Genre Master - Especialización en géneros específicos
   static List<Achievement> get genreMasterAchievements => [
         // Acción
-        Achievement(
+        const Achievement(
           id: 'action_fan',
           name: 'Fan de Acción',
           description: 'Agrega 15 películas de acción a favoritos',
@@ -81,7 +81,7 @@ class AchievementCategories {
           maxProgress: 15,
           iconPath: '$_iconBasePath/action_fan.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'action_expert',
           name: 'Experto en Acción',
           description: 'Agrega 50 películas de acción a favoritos',
@@ -93,7 +93,7 @@ class AchievementCategories {
         ),
 
         // Terror
-        Achievement(
+        const Achievement(
           id: 'horror_enthusiast',
           name: 'Amante del Terror',
           description: 'Agrega 10 películas de terror a favoritos',
@@ -103,7 +103,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/horror_fan.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'horror_master',
           name: 'Maestro del Terror',
           description: 'Agrega 30 películas de terror a favoritos',
@@ -115,7 +115,7 @@ class AchievementCategories {
         ),
 
         // Comedia
-        Achievement(
+        const Achievement(
           id: 'comedy_lover',
           name: 'Risas Garantizadas',
           description: 'Agrega 20 comedias a favoritos',
@@ -125,7 +125,7 @@ class AchievementCategories {
           maxProgress: 20,
           iconPath: '$_iconBasePath/comedy_lover.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'comedy_connoisseur',
           name: 'Conocedor de Comedias',
           description: 'Agrega 40 comedias a favoritos',
@@ -137,7 +137,7 @@ class AchievementCategories {
         ),
 
         // Drama
-        Achievement(
+        const Achievement(
           id: 'drama_appreciator',
           name: 'Apreciador de Dramas',
           description: 'Agrega 15 dramas a favoritos',
@@ -147,7 +147,7 @@ class AchievementCategories {
           maxProgress: 15,
           iconPath: '$_iconBasePath/drama_appreciator.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'drama_scholar',
           name: 'Erudito del Drama',
           description: 'Agrega 35 dramas a favoritos',
@@ -159,7 +159,7 @@ class AchievementCategories {
         ),
 
         // Ciencia Ficción
-        Achievement(
+        const Achievement(
           id: 'scifi_explorer',
           name: 'Explorador Sci-Fi',
           description: 'Agrega 12 películas de ciencia ficción a favoritos',
@@ -169,7 +169,7 @@ class AchievementCategories {
           maxProgress: 12,
           iconPath: '$_iconBasePath/scifi_explorer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'scifi_visionary',
           name: 'Visionario Sci-Fi',
           description: 'Agrega 30 películas de ciencia ficción a favoritos',
@@ -181,7 +181,7 @@ class AchievementCategories {
         ),
 
         // Romance
-        Achievement(
+        const Achievement(
           id: 'romance_fan',
           name: 'Romántico Empedernido',
           description: 'Agrega 15 películas románticas a favoritos',
@@ -193,7 +193,7 @@ class AchievementCategories {
         ),
 
         // Thriller
-        Achievement(
+        const Achievement(
           id: 'thriller_seeker',
           name: 'Buscador de Emociones',
           description: 'Agrega 18 thrillers a favoritos',
@@ -205,7 +205,7 @@ class AchievementCategories {
         ),
 
         // Género Diverso
-        Achievement(
+        const Achievement(
           id: 'genre_explorer',
           name: 'Explorador de Géneros',
           description: 'Agrega películas de al menos 5 géneros diferentes',
@@ -215,7 +215,7 @@ class AchievementCategories {
           maxProgress: 5,
           iconPath: '$_iconBasePath/genre_explorer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'genre_master',
           name: 'Maestro de Géneros',
           description: 'Agrega películas de al menos 10 géneros diferentes',
@@ -229,7 +229,7 @@ class AchievementCategories {
 
   /// Logros de Binge Watcher - Actividad intensiva de visualización
   static List<Achievement> get bingeWatcherAchievements => [
-        Achievement(
+        const Achievement(
           id: 'daily_duo',
           name: 'Dúo Diario',
           description: 'Agrega 2 películas en un día',
@@ -239,7 +239,7 @@ class AchievementCategories {
           maxProgress: 2,
           iconPath: '$_iconBasePath/daily_duo.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'weekend_warrior',
           name: 'Guerrero del Fin de Semana',
           description: 'Agrega 5 películas en un día',
@@ -249,7 +249,7 @@ class AchievementCategories {
           maxProgress: 5,
           iconPath: '$_iconBasePath/weekend_warrior.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'binge_master',
           name: 'Maestro del Maratón',
           description: 'Agrega 10 películas en un día',
@@ -259,7 +259,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/binge_master.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'marathon_legend',
           name: 'Leyenda del Maratón',
           description: 'Agrega 15 películas en un día',
@@ -269,7 +269,7 @@ class AchievementCategories {
           maxProgress: 15,
           iconPath: '$_iconBasePath/marathon_legend.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'weekly_explorer',
           name: 'Explorador Semanal',
           description: 'Agrega 20 películas en una semana',
@@ -279,7 +279,7 @@ class AchievementCategories {
           maxProgress: 20,
           iconPath: '$_iconBasePath/weekly_explorer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'monthly_champion',
           name: 'Campeón Mensual',
           description: 'Agrega 50 películas en un mes',
@@ -289,7 +289,7 @@ class AchievementCategories {
           maxProgress: 50,
           iconPath: '$_iconBasePath/monthly_champion.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'consistency_king',
           name: 'Rey de la Consistencia',
           description: 'Agrega al menos 1 película durante 7 días consecutivos',
@@ -303,7 +303,7 @@ class AchievementCategories {
 
   /// Logros de Social Butterfly - Interacción social y compartir
   static List<Achievement> get socialButterflyAchievements => [
-        Achievement(
+        const Achievement(
           id: 'first_share',
           name: 'Primera Compartida',
           description: 'Comparte tu primera película',
@@ -313,7 +313,7 @@ class AchievementCategories {
           maxProgress: 1,
           iconPath: '$_iconBasePath/first_share.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'social_starter',
           name: 'Iniciador Social',
           description: 'Comparte 5 películas',
@@ -323,7 +323,7 @@ class AchievementCategories {
           maxProgress: 5,
           iconPath: '$_iconBasePath/social_starter.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'sharing_enthusiast',
           name: 'Entusiasta del Compartir',
           description: 'Comparte 15 películas',
@@ -333,7 +333,7 @@ class AchievementCategories {
           maxProgress: 15,
           iconPath: '$_iconBasePath/sharing_enthusiast.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'social_influencer',
           name: 'Influencer Social',
           description: 'Comparte 30 películas',
@@ -343,7 +343,7 @@ class AchievementCategories {
           maxProgress: 30,
           iconPath: '$_iconBasePath/social_influencer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'social_star',
           name: 'Estrella Social',
           description: 'Comparte 50 películas',
@@ -353,7 +353,7 @@ class AchievementCategories {
           maxProgress: 50,
           iconPath: '$_iconBasePath/social_star.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'viral_creator',
           name: 'Creador Viral',
           description: 'Comparte 100 películas',
@@ -363,7 +363,7 @@ class AchievementCategories {
           maxProgress: 100,
           iconPath: '$_iconBasePath/viral_creator.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'recommendation_guru',
           name: 'Gurú de Recomendaciones',
           description: 'Comparte películas de 8 géneros diferentes',
@@ -377,7 +377,7 @@ class AchievementCategories {
 
   /// Logros de Critic - Escritura de reseñas y críticas
   static List<Achievement> get criticAchievements => [
-        Achievement(
+        const Achievement(
           id: 'first_review',
           name: 'Primera Reseña',
           description: 'Escribe tu primera reseña',
@@ -387,7 +387,7 @@ class AchievementCategories {
           maxProgress: 1,
           iconPath: '$_iconBasePath/first_review.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'budding_critic',
           name: 'Crítico en Ciernes',
           description: 'Escribe 5 reseñas',
@@ -397,7 +397,7 @@ class AchievementCategories {
           maxProgress: 5,
           iconPath: '$_iconBasePath/budding_critic.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'thoughtful_reviewer',
           name: 'Reseñador Reflexivo',
           description: 'Escribe 10 reseñas',
@@ -407,7 +407,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/thoughtful_reviewer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'prolific_critic',
           name: 'Crítico Prolífico',
           description: 'Escribe 25 reseñas',
@@ -417,7 +417,7 @@ class AchievementCategories {
           maxProgress: 25,
           iconPath: '$_iconBasePath/prolific_critic.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'expert_reviewer',
           name: 'Reseñador Experto',
           description: 'Escribe 50 reseñas',
@@ -427,7 +427,7 @@ class AchievementCategories {
           maxProgress: 50,
           iconPath: '$_iconBasePath/expert_reviewer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'master_critic',
           name: 'Crítico Maestro',
           description: 'Escribe 100 reseñas',
@@ -437,7 +437,7 @@ class AchievementCategories {
           maxProgress: 100,
           iconPath: '$_iconBasePath/master_critic.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'legendary_critic',
           name: 'Crítico Legendario',
           description: 'Escribe 200 reseñas',
@@ -447,7 +447,7 @@ class AchievementCategories {
           maxProgress: 200,
           iconPath: '$_iconBasePath/legendary_critic.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'detailed_analyst',
           name: 'Analista Detallado',
           description: 'Escribe 10 reseñas con más de 100 palabras',
@@ -457,7 +457,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/detailed_analyst.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'balanced_critic',
           name: 'Crítico Equilibrado',
           description:
@@ -472,7 +472,7 @@ class AchievementCategories {
 
   /// Logros de Completionist - Completar listas y colecciones
   static List<Achievement> get completionistAchievements => [
-        Achievement(
+        const Achievement(
           id: 'watchlist_starter',
           name: 'Iniciador de Listas',
           description: 'Crea tu primera lista de reproducción',
@@ -482,7 +482,7 @@ class AchievementCategories {
           maxProgress: 1,
           iconPath: '$_iconBasePath/watchlist_starter.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'watchlist_complete',
           name: 'Lista Completada',
           description: 'Completa tu primera lista de reproducción',
@@ -492,7 +492,7 @@ class AchievementCategories {
           maxProgress: 1,
           iconPath: '$_iconBasePath/watchlist_complete.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'list_master',
           name: 'Maestro de Listas',
           description: 'Completa 5 listas de reproducción',
@@ -502,7 +502,7 @@ class AchievementCategories {
           maxProgress: 5,
           iconPath: '$_iconBasePath/list_master.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'completion_champion',
           name: 'Campeón de Completado',
           description: 'Completa 10 listas de reproducción',
@@ -512,7 +512,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/completion_champion.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'organized_viewer',
           name: 'Espectador Organizado',
           description: 'Mantén 3 listas activas simultáneamente',
@@ -526,7 +526,7 @@ class AchievementCategories {
 
   /// Logros de Trendsetter - Descubrir tendencias y novedades
   static List<Achievement> get trendsetterAchievements => [
-        Achievement(
+        const Achievement(
           id: 'early_adopter',
           name: 'Adoptador Temprano',
           description: 'Agrega una película recién estrenada (menos de 1 mes)',
@@ -536,7 +536,7 @@ class AchievementCategories {
           maxProgress: 1,
           iconPath: '$_iconBasePath/early_adopter.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'trend_spotter',
           name: 'Cazador de Tendencias',
           description: 'Agrega 5 películas recién estrenadas',
@@ -546,7 +546,7 @@ class AchievementCategories {
           maxProgress: 5,
           iconPath: '$_iconBasePath/trend_spotter.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'trendsetter',
           name: 'Creador de Tendencias',
           description: 'Agrega 10 películas recién estrenadas',
@@ -556,7 +556,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/trendsetter.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'classic_explorer',
           name: 'Explorador de Clásicos',
           description: 'Agrega 10 películas anteriores a 1990',
@@ -566,7 +566,7 @@ class AchievementCategories {
           maxProgress: 10,
           iconPath: '$_iconBasePath/classic_explorer.png',
         ),
-        Achievement(
+        const Achievement(
           id: 'decade_collector',
           name: 'Coleccionista de Décadas',
           description: 'Agrega películas de al menos 5 décadas diferentes',

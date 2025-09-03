@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
+import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import 'movie_rating.dart';
 
@@ -40,7 +41,7 @@ class _MovieHorizontalListviewState extends State<MovieHorizontalListview> {
 
       if ((scrollController.position.pixels + 200) >=
           scrollController.position.maxScrollExtent) {
-        widget.loadNextPage!();
+        widget.loadNextPage?.call();
       }
     });
   }
@@ -91,7 +92,8 @@ class _Slide extends ConsumerStatefulWidget {
   ConsumerState<_Slide> createState() => _SlideState();
 }
 
-class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMixin {
+class _SlideState extends ConsumerState<_Slide>
+    with SingleTickerProviderStateMixin {
   late AnimationController _hoverController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _elevationAnimation;
@@ -104,7 +106,7 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
       duration: const Duration(milliseconds: 200),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 1.05,
@@ -112,7 +114,7 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
       parent: _hoverController,
       curve: Curves.easeOutCubic,
     ));
-    
+
     _elevationAnimation = Tween<double>(
       begin: 4.0,
       end: 12.0,
@@ -167,7 +169,9 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
 
   void _toggleWatched(bool currentValue) {
     if (currentValue) {
-      ref.read(watchedMoviesProvider.notifier).removeFromWatched(widget.movie.id);
+      ref
+          .read(watchedMoviesProvider.notifier)
+          .removeFromWatched(widget.movie.id);
     } else {
       ref.read(watchedMoviesProvider.notifier).markAsWatched(widget.movie);
     }
@@ -236,7 +240,8 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
                                   child: const Center(
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.grey),
                                     ),
                                   ),
                                 ),
@@ -301,17 +306,24 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
                                 children: [
                                   // Botón favorito
                                   _buildActionButton(
-                                    icon: isFavorite ? Icons.favorite : Icons.favorite_border,
-                                    color: isFavorite ? Colors.red : Colors.white,
-                                    onPressed: () => _toggleFavorite(isFavorite),
+                                    icon: isFavorite
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color:
+                                        isFavorite ? Colors.red : Colors.white,
+                                    onPressed: () =>
+                                        _toggleFavorite(isFavorite),
                                   ),
-                                  
+
                                   const SizedBox(height: 4),
-                                  
+
                                   // Botón visto
                                   _buildActionButton(
-                                    icon: isWatched ? Icons.visibility : Icons.visibility_outlined,
-                                    color: isWatched ? Colors.green : Colors.white,
+                                    icon: isWatched
+                                        ? Icons.visibility
+                                        : Icons.visibility_outlined,
+                                    color:
+                                        isWatched ? Colors.green : Colors.white,
                                     onPressed: () => _toggleWatched(isWatched),
                                   ),
                                 ],
@@ -339,8 +351,8 @@ class _SlideState extends ConsumerState<_Slide> with SingleTickerProviderStateMi
                     widget.movie.title,
                     maxLines: 2,
                     style: textStyles.titleSmall?.copyWith(
-                      color: _isHovered 
-                          ? Theme.of(context).primaryColor 
+                      color: _isHovered
+                          ? Theme.of(context).primaryColor
                           : textStyles.titleSmall?.color,
                     ),
                   ),
@@ -380,13 +392,13 @@ class _Title extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       child: Row(
         children: [
-          if (title != null) Text(title!, style: titleStyle),
+          if (title != null) Text(title ?? '', style: titleStyle),
           const Spacer(),
           if (subTitle != null)
             FilledButton.tonal(
                 style: const ButtonStyle(visualDensity: VisualDensity.compact),
                 onPressed: () {},
-                child: Text(subTitle!))
+                child: Text(subTitle ?? ''))
         ],
       ),
     );

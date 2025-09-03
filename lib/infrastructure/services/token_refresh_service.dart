@@ -6,26 +6,26 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../core/services/intelligent_retry_logic.dart';
+import '../../domain/entities/sync_operation.dart';
 import 'auth_session_manager.dart';
 
 /// Servicio para manejar el refresco automático de tokens de autenticación
 class TokenRefreshService {
   TokenRefreshService._();
   static TokenRefreshService? _instance;
-  static TokenRefreshService get instance => _instance ??= TokenRefreshService._();
+  static TokenRefreshService get instance =>
+      _instance ??= TokenRefreshService._();
 
   final SupabaseClient _supabase = SupabaseConfig.client;
   final AuthSessionManager _sessionManager = AuthSessionManager.instance;
-  final IntelligentRetryLogic _retryLogic = IntelligentRetryLogic(
-    maxRetries: 3,
-    baseDelay: const Duration(seconds: 5),
-    maxDelay: const Duration(minutes: 5),
-  );
+  final IntelligentRetryLogic _retryLogic = IntelligentRetryLogic();
 
   // Configuración
   static const Duration _checkInterval = Duration(minutes: 2);
-  static const Duration _refreshThreshold = Duration(minutes: 10); // Refrescar 10 min antes de expirar
-  static const Duration _maxTokenAge = Duration(hours: 23); // JWT típicamente expira en 24h
+  static const Duration _refreshThreshold =
+      Duration(minutes: 10); // Refrescar 10 min antes de expirar
+  static const Duration _maxTokenAge =
+      Duration(hours: 23); // JWT típicamente expira en 24h
 
   Timer? _refreshTimer;
   bool _isRefreshing = false;
@@ -33,7 +33,7 @@ class TokenRefreshService {
   StreamSubscription<AuthState>? _authSubscription;
 
   // Stream controllers para notificaciones
-  final StreamController<TokenRefreshEvent> _eventController = 
+  final StreamController<TokenRefreshEvent> _eventController =
       StreamController<TokenRefreshEvent>.broadcast();
 
   /// Stream de eventos de refresco de tokens
@@ -45,8 +45,9 @@ class TokenRefreshService {
 
     try {
       // Escuchar cambios de autenticación
-      _authSubscription = _supabase.auth.onAuthStateChange.listen(_onAuthStateChange);
-      
+      _authSubscription =
+          _supabase.auth.onAuthStateChange.listen(_onAuthStateChange);
+
       // Iniciar monitoreo si hay usuario autenticado
       final currentUser = _supabase.auth.currentUser;
       if (currentUser != null) {
@@ -54,7 +55,7 @@ class TokenRefreshService {
       }
 
       _isInitialized = true;
-      
+
       if (kDebugMode) {
         LoggerFactory.info('✅ TokenRefreshService inicializado correctamente');
       }
@@ -67,7 +68,7 @@ class TokenRefreshService {
   /// Maneja cambios en el estado de autenticación
   void _onAuthStateChange(AuthState data) {
     final user = data.session?.user;
-    
+
     if (user != null && data.event == AuthChangeEvent.signedIn) {
       // Usuario se autentica, iniciar monitoreo
       _startTokenMonitoring();
@@ -122,7 +123,7 @@ class TokenRefreshService {
       if (session == null) return;
 
       final needsRefresh = _shouldRefreshToken(session);
-      
+
       if (needsRefresh) {
         await _performTokenRefresh(session);
       }
@@ -135,28 +136,31 @@ class TokenRefreshService {
   /// Determina si el token necesita ser refrescado
   bool _shouldRefreshToken(Session session) {
     final now = DateTime.now();
-    
+
     // Verificar si el token expira pronto
     if (session.expiresAt != null) {
-      final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+      final expiresAt =
+          DateTime.fromMillisecondsSinceEpoch((session.expiresAt ?? 0) * 1000);
       final timeUntilExpiry = expiresAt.difference(now);
-      
+
       if (timeUntilExpiry <= _refreshThreshold) {
         if (kDebugMode) {
-          LoggerFactory.info('🔄 Token expira en ${timeUntilExpiry.inMinutes} minutos, refrescando');
+          LoggerFactory.info(
+              '🔄 Token expira en ${timeUntilExpiry.inMinutes} minutos, refrescando');
         }
         return true;
       }
     }
 
     // Verificar edad máxima del token (por seguridad)
-    final tokenIssueTime = DateTime.fromMillisecondsSinceEpoch(
-      (session.expiresAt ?? 0) * 1000
-    ).subtract(const Duration(hours: 24)); // Asumir duración estándar
-    
+    final tokenIssueTime =
+        DateTime.fromMillisecondsSinceEpoch((session.expiresAt ?? 0) * 1000)
+            .subtract(const Duration(hours: 24)); // Asumir duración estándar
+
     if (now.difference(tokenIssueTime) >= _maxTokenAge) {
       if (kDebugMode) {
-        LoggerFactory.info('⏰ Token demasiado antiguo, refrescando por seguridad');
+        LoggerFactory.info(
+            '⏰ Token demasiado antiguo, refrescando por seguridad');
       }
       return true;
     }
@@ -167,34 +171,48 @@ class TokenRefreshService {
   /// Realiza el refresco del token con lógica de retry
   Future<void> _performTokenRefresh(Session session) async {
     if (_isRefreshing) return;
-    
+
     _isRefreshing = true;
     _eventController.add(TokenRefreshEvent.refreshStarted(session.user.id));
 
     try {
-      await _retryLogic.execute(
-        operationName: 'token_refresh',
-        operation: () async {
-          final response = await _supabase.auth.refreshSession(session.refreshToken);
-          
+      final result = await _retryLogic.executeWithRetry(
+        SyncOperation(
+          id: 'token_refresh_${DateTime.now().millisecondsSinceEpoch}',
+          type: SyncOperationType.tokenRefresh,
+          data: {'userId': session.user.id},
+          createdAt: DateTime.now(),
+          maxRetries: 3,
+        ),
+        () async {
+          final response =
+              await _supabase.auth.refreshSession(session.refreshToken);
+
           if (response.session == null) {
             throw Exception('Token refresh devolvió sesión nula');
           }
 
           // Persistir nueva sesión
-          await _sessionManager.persistSession(response.session!);
-          
+          if (response.session != null) {
+            await _sessionManager.persistSession(response.session!);
+          }
+
           if (kDebugMode) {
             LoggerFactory.info('✅ Token refrescado exitosamente');
           }
 
-          return response.session!;
+          return response.session ?? (throw Exception('Session is null after refresh'));
         },
       );
+
+      if (!result.success) {
+        throw Exception('Token refresh failed: ${result.error}');
+      }
     } catch (e) {
-      LoggerFactory.error('❌ Error refrescando token después de reintentos: $e');
+      LoggerFactory.error(
+          '❌ Error refrescando token después de reintentos: $e');
       _eventController.add(TokenRefreshEvent.refreshFailed(e.toString()));
-      
+
       // Si el refresh falla completamente, limpiar sesión y forzar re-login
       await _handleRefreshFailure();
     } finally {
@@ -207,12 +225,12 @@ class TokenRefreshService {
     try {
       // Limpiar sesión local
       await _sessionManager.clearSession();
-      
+
       // Cerrar sesión en Supabase
       await _supabase.auth.signOut();
-      
+
       _eventController.add(TokenRefreshEvent.sessionInvalidated());
-      
+
       if (kDebugMode) {
         LoggerFactory.warning('⚠️ Sesión invalidada debido a fallo en refresh');
       }
@@ -257,8 +275,8 @@ class TokenRefreshService {
       }
 
       final now = DateTime.now();
-      final expiresAt = session.expiresAt != null 
-          ? DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000)
+      final expiresAt = session.expiresAt != null
+          ? DateTime.fromMillisecondsSinceEpoch((session.expiresAt ?? 0) * 1000)
           : null;
 
       return TokenStatus(
@@ -336,6 +354,17 @@ class TokenStatus {
     this.error,
   });
 
+  factory TokenStatus.noToken() => const TokenStatus(
+        hasToken: false,
+        isValid: false,
+      );
+
+  factory TokenStatus.error(String error) => TokenStatus(
+        hasToken: false,
+        isValid: false,
+        error: error,
+      );
+
   final bool hasToken;
   final bool isValid;
   final DateTime? expiresAt;
@@ -343,17 +372,6 @@ class TokenStatus {
   final bool needsRefresh;
   final bool isRefreshing;
   final String? error;
-
-  factory TokenStatus.noToken() => const TokenStatus(
-    hasToken: false,
-    isValid: false,
-  );
-
-  factory TokenStatus.error(String error) => TokenStatus(
-    hasToken: false,
-    isValid: false,
-    error: error,
-  );
 
   bool get isHealthy => hasToken && isValid && !needsRefresh && error == null;
 }

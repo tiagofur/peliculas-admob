@@ -7,7 +7,7 @@ part 'watchlist_movie.g.dart';
 enum WatchlistPriority {
   @HiveField(0)
   alta,
-  @HiveField(1) 
+  @HiveField(1)
   normal,
   @HiveField(2)
   baja;
@@ -46,44 +46,15 @@ enum WatchlistPriority {
         return WatchlistPriority.normal;
     }
   }
+
+  static WatchlistPriority fromValue(String value) {
+    return fromString(value);
+  }
 }
 
 /// Entidad que representa una película en la watchlist del usuario
 @HiveType(typeId: 101)
 class WatchlistMovie {
-  @HiveField(0)
-  final String id;
-  
-  @HiveField(1)
-  final int movieId;
-  
-  @HiveField(2)
-  final String movieTitle;
-  
-  @HiveField(3)
-  final String? moviePosterPath;
-  
-  @HiveField(4)
-  final String? movieBackdropPath;
-  
-  @HiveField(5)
-  final String? movieOverview;
-  
-  @HiveField(6)
-  final DateTime? movieReleaseDate;
-  
-  @HiveField(7)
-  final double? movieVoteAverage;
-  
-  @HiveField(8)
-  final WatchlistPriority priority;
-  
-  @HiveField(9)
-  final DateTime addedAt;
-  
-  @HiveField(10)
-  final DateTime updatedAt;
-
   const WatchlistMovie({
     required this.id,
     required this.movieId,
@@ -97,6 +68,38 @@ class WatchlistMovie {
     required this.addedAt,
     required this.updatedAt,
   });
+  @HiveField(0)
+  final String id;
+
+  @HiveField(1)
+  final int movieId;
+
+  @HiveField(2)
+  final String movieTitle;
+
+  @HiveField(3)
+  final String? moviePosterPath;
+
+  @HiveField(4)
+  final String? movieBackdropPath;
+
+  @HiveField(5)
+  final String? movieOverview;
+
+  @HiveField(6)
+  final DateTime? movieReleaseDate;
+
+  @HiveField(7)
+  final double? movieVoteAverage;
+
+  @HiveField(8)
+  final WatchlistPriority priority;
+
+  @HiveField(9)
+  final DateTime addedAt;
+
+  @HiveField(10)
+  final DateTime updatedAt;
 
   WatchlistMovie copyWith({
     String? id,

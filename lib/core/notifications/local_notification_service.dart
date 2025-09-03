@@ -65,10 +65,13 @@ class LocalNotificationService {
         iOS: initializationSettingsIOS,
       );
 
-      await _flutterLocalNotificationsPlugin!.initialize(
-        initializationSettings,
-        onDidReceiveNotificationResponse: _onNotificationTapped,
-      );
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        await plugin.initialize(
+          initializationSettings,
+          onDidReceiveNotificationResponse: _onNotificationTapped,
+        );
+      }
 
       // Solicitar permisos en Android 13+
       if (Platform.isAndroid) {
@@ -120,8 +123,11 @@ class LocalNotificationService {
     // Procesar el payload y navegar según corresponda
     if (notificationResponse.payload != null) {
       try {
-        final data = jsonDecode(notificationResponse.payload!);
-        _handleNotificationNavigation(data);
+        final payload = notificationResponse.payload;
+        if (payload != null) {
+          final data = jsonDecode(payload);
+          _handleNotificationNavigation(data);
+        }
       } catch (e) {
         if (kDebugMode) {
           LoggerFactory.error('Error parsing notification payload: $e');
@@ -278,13 +284,16 @@ class LocalNotificationService {
         iOS: iosDetails,
       );
 
-      await _flutterLocalNotificationsPlugin!.show(
-        id,
-        title,
-        body,
-        notificationDetails,
-        payload: payload,
-      );
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        await plugin.show(
+          id,
+          title,
+          body,
+          notificationDetails,
+          payload: payload,
+        );
+      }
 
       if (kDebugMode) {
         LoggerFactory.info('Local notification shown: $title');
@@ -343,15 +352,18 @@ class LocalNotificationService {
         iOS: iosDetails,
       );
 
-      await _flutterLocalNotificationsPlugin!.zonedSchedule(
-        id,
-        title,
-        body,
-        tz.TZDateTime.from(scheduledDate, tz.local),
-        notificationDetails,
-        payload: payload,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        await plugin.zonedSchedule(
+          id,
+          title,
+          body,
+          tz.TZDateTime.from(scheduledDate, tz.local),
+          notificationDetails,
+          payload: payload,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        );
+      }
 
       // Guardar la notificación programada
       await _saveScheduledNotification({
@@ -410,15 +422,18 @@ class LocalNotificationService {
         iOS: iosDetails,
       );
 
-      await _flutterLocalNotificationsPlugin!.periodicallyShow(
-        id,
-        title,
-        body,
-        repeatInterval,
-        notificationDetails,
-        payload: payload,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      );
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        await plugin.periodicallyShow(
+          id,
+          title,
+          body,
+          repeatInterval,
+          notificationDetails,
+          payload: payload,
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        );
+      }
 
       if (kDebugMode) {
         LoggerFactory.info('Repeating notification scheduled: $repeatInterval');
@@ -435,7 +450,10 @@ class LocalNotificationService {
     if (!_isInitialized || _flutterLocalNotificationsPlugin == null) return;
 
     try {
-      await _flutterLocalNotificationsPlugin!.cancel(id);
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        await plugin.cancel(id);
+      }
       await _removeScheduledNotification(id);
 
       if (kDebugMode) {
@@ -453,7 +471,10 @@ class LocalNotificationService {
     if (!_isInitialized || _flutterLocalNotificationsPlugin == null) return;
 
     try {
-      await _flutterLocalNotificationsPlugin!.cancelAll();
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        await plugin.cancelAll();
+      }
       await _clearAllScheduledNotifications();
 
       if (kDebugMode) {
@@ -473,8 +494,11 @@ class LocalNotificationService {
     }
 
     try {
-      return await _flutterLocalNotificationsPlugin!
-          .pendingNotificationRequests();
+      final plugin = _flutterLocalNotificationsPlugin;
+      if (plugin != null) {
+        return await plugin.pendingNotificationRequests();
+      }
+      return [];
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error('Error getting pending notifications: $e');

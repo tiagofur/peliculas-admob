@@ -18,7 +18,7 @@ class AccessibilityService {
 
   /// Get the current text scale factor
   static double getTextScaleFactor(BuildContext context) {
-    return MediaQuery.textScaleFactorOf(context);
+    return MediaQuery.textScalerOf(context).scale(1.0);
   }
 
   /// Check if text scaling is large (>1.3x)
@@ -32,18 +32,19 @@ class AccessibilityService {
   }
 
   /// Get accessible color contrast for text on background
-  static Color getAccessibleTextColor(BuildContext context, Color backgroundColor) {
+  static Color getAccessibleTextColor(
+      BuildContext context, Color backgroundColor) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final isHighContrast = isHighContrastEnabled(context);
-    
+
     if (isHighContrast) {
       // Use maximum contrast for high contrast mode
-      return ThemeData.estimateBrightnessForColor(backgroundColor) == Brightness.dark
+      return ThemeData.estimateBrightnessForColor(backgroundColor) ==
+              Brightness.dark
           ? Colors.white
           : Colors.black;
     }
-    
+
     // Use theme-appropriate colors with WCAG AA compliance
     return theme.colorScheme.onSurface;
   }
@@ -69,7 +70,8 @@ class AccessibilityService {
   }
 
   /// Get semantic label for streaming platform
-  static String getStreamingPlatformSemantics(String platformName, bool isAvailable) {
+  static String getStreamingPlatformSemantics(
+      String platformName, bool isAvailable) {
     if (isAvailable) {
       return 'Disponible en $platformName';
     }

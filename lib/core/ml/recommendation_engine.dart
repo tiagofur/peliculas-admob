@@ -254,12 +254,18 @@ class RecommendationEngine {
 
     // Películas favoritas tienen rating alto
     for (final movie in favorites) {
-      _userMovieMatrix[userId]![movie.id] = 5.0;
+      final userMatrix = _userMovieMatrix[userId];
+      if (userMatrix != null) {
+        userMatrix[movie.id] = 5.0;
+      }
     }
 
     // Películas vistas tienen rating basado en su puntuación
     for (final movie in watched) {
-      _userMovieMatrix[userId]![movie.id] = (movie.voteAverage) / 2.0;
+      final userMatrix = _userMovieMatrix[userId];
+      if (userMatrix != null) {
+        userMatrix[movie.id] = (movie.voteAverage) / 2.0;
+      }
     }
   }
 
@@ -301,20 +307,26 @@ class RecommendationEngine {
       int samples = 0;
 
       for (final userId in _userMovieMatrix.keys) {
-        for (final entry in _userMovieMatrix[userId]!.entries) {
+        final userMatrix = _userMovieMatrix[userId];
+        if (userMatrix == null) continue;
+        
+        for (final entry in userMatrix.entries) {
           final movieId = entry.key;
           final rating = entry.value;
 
           if (_userEmbeddings.containsKey(userId) &&
               _movieEmbeddings.containsKey(movieId)) {
-            final predicted = _dotProduct(
-                _userEmbeddings[userId]!, _movieEmbeddings[movieId]!);
-            final error = rating - predicted;
-            totalError += error * error;
-            samples++;
+            final userEmb = _userEmbeddings[userId];
+            final movieEmb = _movieEmbeddings[movieId];
+            if (userEmb != null && movieEmb != null) {
+              final predicted = _dotProduct(userEmb, movieEmb);
+              final error = rating - predicted;
+              totalError += error * error;
+              samples++;
 
-            // Actualizar embeddings
-            _updateEmbeddings(userId, movieId, error);
+              // Actualizar embeddings
+              _updateEmbeddings(userId, movieId, error);
+            }
           }
         }
       }
@@ -334,14 +346,17 @@ class RecommendationEngine {
 
     if (!_userEmbeddings.containsKey(userId)) return recommendations;
 
-    final userEmbedding = _userEmbeddings[userId]!;
+    final userEmbedding = _userEmbeddings[userId];
+    if (userEmbedding == null) return recommendations;
+    
     final scores = <int, double>{};
 
     // Calcular puntuaciones para todas las películas
     for (final movieId in _movieEmbeddings.keys) {
-      if (!_userMovieMatrix[userId]!.containsKey(movieId)) {
-        scores[movieId] =
-            _dotProduct(userEmbedding, _movieEmbeddings[movieId]!);
+      final userMatrix = _userMovieMatrix[userId];
+      final movieEmb = _movieEmbeddings[movieId];
+      if (userMatrix != null && !userMatrix.containsKey(movieId) && movieEmb != null) {
+        scores[movieId] = _dotProduct(userEmbedding, movieEmb);
       }
     }
 
@@ -402,8 +417,10 @@ class RecommendationEngine {
 
     final scores = <int, double>{};
     for (final movieId in candidateMovies) {
-      scores[movieId] = _calculateContentSimilarity(
-          userProfile, _movieFeatureMatrix[movieId]!);
+      final movieFeatures = _movieFeatureMatrix[movieId];
+      if (movieFeatures != null) {
+        scores[movieId] = _calculateContentSimilarity(userProfile, movieFeatures);
+      }
     }
 
     final sortedMovies = scores.entries.toList()
@@ -430,17 +447,17 @@ class RecommendationEngine {
 
     // Simular películas trending (en implementación real, vendría de API)
     final trendingMovies = _movieFeatureMatrix.entries
-        .where((entry) => entry.value['popularity']! > 0.5)
+        .where((entry) => (entry.value['popularity'] ?? 0.0) > 0.5)
         .toList()
       ..sort(
-          (a, b) => b.value['popularity']!.compareTo(a.value['popularity']!));
+          (a, b) => (b.value['popularity'] ?? 0.0).compareTo(a.value['popularity'] ?? 0.0));
 
     for (final entry in trendingMovies.take(limit)) {
       recommendations.add(Recommendation(
         movieId: entry.key,
         title: 'Película ${entry.key}',
         posterPath: '',
-        score: entry.value['popularity']!,
+        score: entry.value['popularity'] ?? 0.0,
         reason: 'Película popular en tendencia',
         type: RecommendationType.trending,
         tags: ['trending'],
@@ -535,8 +552,10 @@ class RecommendationEngine {
   }
 
   void _updateEmbeddings(int userId, int movieId, double error) {
-    final userEmb = _userEmbeddings[userId]!;
-    final movieEmb = _movieEmbeddings[movieId]!;
+    final userEmb = _userEmbeddings[userId];
+    final movieEmb = _movieEmbeddings[movieId];
+    
+    if (userEmb == null || movieEmb == null) return;
 
     for (int i = 0; i < _embeddingDimensions; i++) {
       final userFeature = userEmb[i];
@@ -564,7 +583,10 @@ class RecommendationEngine {
     // Normalizar por número de películas
     final movieCount = movies.length.toDouble();
     for (final key in profile.keys) {
-      profile[key] = profile[key]! / movieCount;
+      final value = profile[key];
+      if (value != null) {
+        profile[key] = value / movieCount;
+      }
     }
 
     return profile;
@@ -577,8 +599,12 @@ class RecommendationEngine {
 
     for (final key in profile1.keys) {
       if (profile2.containsKey(key)) {
-        similarity += profile1[key]! * profile2[key]!;
-        commonFeatures++;
+        final val1 = profile1[key];
+        final val2 = profile2[key];
+        if (val1 != null && val2 != null) {
+          similarity += val1 * val2;
+          commonFeatures++;
+        }
       }
     }
 
@@ -631,9 +657,12 @@ class RecommendationEngine {
     // Calcular preferencias normalizadas
     final preferences = <String, double>{};
     for (final genre in genreCount.keys) {
-      final count = genreCount[genre]!;
-      final avgRating = genreRating[genre]! / count;
-      preferences[genre] = (count * avgRating) / 100.0; // Normalizar
+      final count = genreCount[genre];
+      final rating = genreRating[genre];
+      if (count != null && rating != null && count > 0) {
+        final avgRating = rating / count;
+        preferences[genre] = (count * avgRating) / 100.0; // Normalizar
+      }
     }
 
     return preferences;
@@ -735,12 +764,13 @@ class RecommendationEngine {
 
     if (!_movieEmbeddings.containsKey(movieId)) return similar;
 
-    final targetEmbedding = _movieEmbeddings[movieId]!;
+    final targetEmbedding = _movieEmbeddings[movieId];
+    if (targetEmbedding == null) return similar;
 
     for (final movie in favorites) {
-      if (_movieEmbeddings.containsKey(movie.id)) {
-        final similarity = _calculateCosineSimilarity(
-            targetEmbedding, _movieEmbeddings[movie.id]!);
+      final movieEmbedding = _movieEmbeddings[movie.id];
+      if (movieEmbedding != null) {
+        final similarity = _calculateCosineSimilarity(targetEmbedding, movieEmbedding);
         if (similarity > 0.7) {
           similar.add(movie);
         }

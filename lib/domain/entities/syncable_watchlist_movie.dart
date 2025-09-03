@@ -1,34 +1,9 @@
 import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
+import '../repositories/syncable_repository.dart';
 import 'watchlist_movie.dart';
 
 /// Entidad sincronizable para películas en watchlist que incluye metadatos de sincronización
-class SyncableWatchlistMovie implements SoftDeletable {
-  @override
-  final String id;
-  final String userId;
-  final int movieId;
-  final String movieTitle;
-  final String? moviePosterPath;
-  final String? movieBackdropPath;
-  final String? movieOverview;
-  final DateTime? movieReleaseDate;
-  final double? movieVoteAverage;
-  final WatchlistPriority priority;
-  final DateTime addedAt;
-  
-  @override
-  final DateTime updatedAt;
-  
-  final DateTime? deletedAt;
-  final bool isSynced;
-  final bool needsSync;
-
-  @override
-  DateTime get createdAt => addedAt; // Usar addedAt como createdAt para compatibilidad
-
-  @override
-  bool get isDeleted => deletedAt != null;
-
+class SyncableWatchlistMovie implements SoftDeletable, Syncable {
   const SyncableWatchlistMovie({
     required this.id,
     required this.userId,
@@ -45,6 +20,7 @@ class SyncableWatchlistMovie implements SoftDeletable {
     this.deletedAt,
     this.isSynced = false,
     this.needsSync = true,
+    this.syncStatus = SyncStatus.synced,
   });
 
   /// Convierte de WatchlistMovie local a SyncableWatchlistMovie
@@ -54,6 +30,7 @@ class SyncableWatchlistMovie implements SoftDeletable {
     bool isSynced = false,
     bool needsSync = true,
     DateTime? deletedAt,
+    SyncStatus syncStatus = SyncStatus.synced,
   }) {
     return SyncableWatchlistMovie(
       id: movie.id,
@@ -71,35 +48,71 @@ class SyncableWatchlistMovie implements SoftDeletable {
       deletedAt: deletedAt,
       isSynced: isSynced,
       needsSync: needsSync,
+      syncStatus: syncStatus,
     );
   }
 
   /// Convierte de datos de Supabase a SyncableWatchlistMovie
   factory SyncableWatchlistMovie.fromSupabase(Map<String, dynamic> data) {
     return SyncableWatchlistMovie(
-      id: data['id'] as String,
-      userId: data['user_id'] as String,
-      movieId: data['movie_id'] as int,
-      movieTitle: data['movie_title'] as String,
+      id: data['id'] as String? ?? '',
+      userId: data['user_id'] as String? ?? '',
+      movieId: data['movie_id'] as int? ?? 0,
+      movieTitle: data['movie_title'] as String? ?? '',
       moviePosterPath: data['movie_poster_path'] as String?,
       movieBackdropPath: data['movie_backdrop_path'] as String?,
       movieOverview: data['movie_overview'] as String?,
-      movieReleaseDate: data['movie_release_date'] != null 
-          ? DateTime.parse(data['movie_release_date'] as String)
+      movieReleaseDate: data['movie_release_date'] != null
+          ? DateTime.tryParse(data['movie_release_date'] as String? ?? '')
           : null,
-      movieVoteAverage: data['movie_vote_average'] != null 
-          ? (data['movie_vote_average'] as num).toDouble()
+      movieVoteAverage: data['movie_vote_average'] != null
+          ? (data['movie_vote_average'] as num?)?.toDouble()
           : null,
-      priority: WatchlistPriority.fromString(data['priority'] as String? ?? 'normal'),
-      addedAt: DateTime.parse(data['added_at'] as String),
-      updatedAt: DateTime.parse(data['updated_at'] as String),
-      deletedAt: data['deleted_at'] != null 
-          ? DateTime.parse(data['deleted_at'] as String)
+      priority:
+          WatchlistPriority.fromString(data['priority'] as String? ?? 'normal'),
+      addedAt: data['added_at'] != null 
+          ? DateTime.tryParse(data['added_at'] as String? ?? '') ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: data['updated_at'] != null 
+          ? DateTime.tryParse(data['updated_at'] as String? ?? '') ?? DateTime.now()
+          : DateTime.now(),
+      deletedAt: data['deleted_at'] != null
+          ? DateTime.tryParse(data['deleted_at'] as String? ?? '')
           : null,
       isSynced: true,
       needsSync: false,
+      syncStatus: SyncStatus.synced,
     );
   }
+  @override
+  final String id;
+  final String userId;
+  final int movieId;
+  final String movieTitle;
+  final String? moviePosterPath;
+  final String? movieBackdropPath;
+  final String? movieOverview;
+  final DateTime? movieReleaseDate;
+  final double? movieVoteAverage;
+  final WatchlistPriority priority;
+  final DateTime addedAt;
+
+  @override
+  final DateTime updatedAt;
+
+  final DateTime? deletedAt;
+  final bool isSynced;
+  final bool needsSync;
+
+  @override
+  final SyncStatus syncStatus;
+
+  @override
+  DateTime get createdAt =>
+      addedAt; // Usar addedAt como createdAt para compatibilidad
+
+  @override
+  bool get isDeleted => deletedAt != null;
 
   /// Convierte a WatchlistMovie local
   WatchlistMovie toWatchlistMovie() {
@@ -153,6 +166,7 @@ class SyncableWatchlistMovie implements SoftDeletable {
     DateTime? deletedAt,
     bool? isSynced,
     bool? needsSync,
+    SyncStatus? syncStatus,
   }) {
     return SyncableWatchlistMovie(
       id: id ?? this.id,
@@ -170,6 +184,7 @@ class SyncableWatchlistMovie implements SoftDeletable {
       deletedAt: deletedAt ?? this.deletedAt,
       isSynced: isSynced ?? this.isSynced,
       needsSync: needsSync ?? this.needsSync,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 

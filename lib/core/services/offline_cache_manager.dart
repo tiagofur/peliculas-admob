@@ -11,7 +11,8 @@ class OfflineCacheManager {
   OfflineCacheManager({
     required LocalStorageDatasource datasource,
     required Ref ref,
-  }) : _datasource = datasource, _ref = ref;
+  })  : _datasource = datasource,
+        _ref = ref;
 
   final LocalStorageDatasource _datasource;
   final Ref _ref;
@@ -25,16 +26,16 @@ class OfflineCacheManager {
   Future<void> initialize() async {
     try {
       LoggerFactory.info('🔧 Initializing OfflineCacheManager...');
-      
+
       // Start periodic cache cleanup
       _startPeriodicCleanup();
-      
+
       // Monitor connectivity for sync opportunities
       _monitorConnectivity();
-      
+
       // Initial cleanup
       await _performCleanup();
-      
+
       LoggerFactory.info('✅ OfflineCacheManager initialized successfully');
     } catch (e) {
       LoggerFactory.error('❌ Error initializing OfflineCacheManager: $e');
@@ -56,9 +57,9 @@ class OfflineCacheManager {
         .onConnectivityChanged
         .listen((List<ConnectivityResult> result) {
       final hasConnection = result.contains(ConnectivityResult.mobile) ||
-                           result.contains(ConnectivityResult.wifi) ||
-                           result.contains(ConnectivityResult.ethernet);
-      
+          result.contains(ConnectivityResult.wifi) ||
+          result.contains(ConnectivityResult.ethernet);
+
       if (hasConnection) {
         LoggerFactory.info('📶 Connectivity restored - cache sync opportunity');
         _onConnectivityRestored();
@@ -79,19 +80,19 @@ class OfflineCacheManager {
   Future<void> _performCleanup() async {
     try {
       LoggerFactory.info('🧹 Starting cache cleanup...');
-      
+
       final initialSize = await _datasource.getCacheSize();
       LoggerFactory.info('📊 Cache size before cleanup: $initialSize items');
-      
+
       // Clear expired cache entries
       await _datasource.clearExpiredCache();
-      
+
       final finalSize = await _datasource.getCacheSize();
       final cleaned = initialSize - finalSize;
-      
-      LoggerFactory.info('🧹 Cache cleanup completed: removed $cleaned expired items');
+
+      LoggerFactory.info(
+          '🧹 Cache cleanup completed: removed $cleaned expired items');
       LoggerFactory.info('📊 Cache size after cleanup: $finalSize items');
-      
     } catch (e) {
       LoggerFactory.error('❌ Error during cache cleanup: $e');
     }
@@ -101,7 +102,7 @@ class OfflineCacheManager {
   Future<CacheStats> getCacheStats() async {
     try {
       final cacheSize = await _datasource.getCacheSize();
-      
+
       return CacheStats(
         totalItems: cacheSize,
         lastCleanup: DateTime.now(),
@@ -124,9 +125,9 @@ class OfflineCacheManager {
   Future<void> clearAllCache() async {
     try {
       LoggerFactory.warning('🗑️ Clearing all cache data...');
-      
+
       await _datasource.clearAllCache();
-      
+
       LoggerFactory.info('🗑️ All cache cleared');
     } catch (e) {
       LoggerFactory.error('❌ Error clearing all cache: $e');

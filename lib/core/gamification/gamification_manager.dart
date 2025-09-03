@@ -109,7 +109,7 @@ class GamificationManager extends ChangeNotifier {
   Future<void> _initializeAchievements() async {
     _availableAchievements = [
       // Movie Explorer Achievements
-      Achievement(
+      const Achievement(
         id: 'first_movie',
         name: 'Primera Película',
         description: 'Agrega tu primera película a favoritos',
@@ -119,7 +119,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 1,
         iconPath: 'assets/icons/first_movie.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'movie_collector',
         name: 'Coleccionista',
         description: 'Agrega 5 películas a favoritos',
@@ -129,7 +129,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 5,
         iconPath: 'assets/icons/collector.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'movie_enthusiast',
         name: 'Entusiasta',
         description: 'Agrega 25 películas a favoritos',
@@ -139,7 +139,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 25,
         iconPath: 'assets/icons/enthusiast.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'movie_master',
         name: 'Maestro del Cine',
         description: 'Agrega 200 películas a favoritos',
@@ -151,7 +151,7 @@ class GamificationManager extends ChangeNotifier {
       ),
 
       // Genre Master Achievements
-      Achievement(
+      const Achievement(
         id: 'action_fan',
         name: 'Fan de Acción',
         description: 'Agrega 20 películas de acción a favoritos',
@@ -161,7 +161,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 20,
         iconPath: 'assets/icons/action_fan.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'horror_enthusiast',
         name: 'Amante del Terror',
         description: 'Agrega 15 películas de terror a favoritos',
@@ -171,7 +171,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 15,
         iconPath: 'assets/icons/horror_fan.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'comedy_lover',
         name: 'Risas Garantizadas',
         description: 'Agrega 25 comedias a favoritos',
@@ -183,7 +183,7 @@ class GamificationManager extends ChangeNotifier {
       ),
 
       // Social Butterfly Achievements
-      Achievement(
+      const Achievement(
         id: 'first_share',
         name: 'Primera Compartida',
         description: 'Comparte tu primera película',
@@ -193,7 +193,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 1,
         iconPath: 'assets/icons/first_share.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'social_star',
         name: 'Estrella Social',
         description: 'Comparte 50 películas',
@@ -205,7 +205,7 @@ class GamificationManager extends ChangeNotifier {
       ),
 
       // Critic Achievements
-      Achievement(
+      const Achievement(
         id: 'first_review',
         name: 'Primera Reseña',
         description: 'Escribe tu primera reseña',
@@ -215,7 +215,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 1,
         iconPath: 'assets/icons/first_review.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'prolific_critic',
         name: 'Crítico Prolífico',
         description: 'Escribe 25 reseñas',
@@ -225,7 +225,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 25,
         iconPath: 'assets/icons/prolific_critic.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'master_critic',
         name: 'Crítico Maestro',
         description: 'Escribe 100 reseñas',
@@ -237,7 +237,7 @@ class GamificationManager extends ChangeNotifier {
       ),
 
       // Binge Watcher Achievements
-      Achievement(
+      const Achievement(
         id: 'weekend_warrior',
         name: 'Guerrero del Fin de Semana',
         description: 'Agrega 5 películas en un día',
@@ -247,7 +247,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 5,
         iconPath: 'assets/icons/weekend_warrior.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'binge_master',
         name: 'Maestro del Maratón',
         description: 'Agrega 10 películas en un día',
@@ -259,7 +259,7 @@ class GamificationManager extends ChangeNotifier {
       ),
 
       // Daily Streak Achievements
-      Achievement(
+      const Achievement(
         id: 'streak_3_days',
         name: 'Racha de 3 Días',
         description: 'Interactúa con la app 3 días seguidos',
@@ -269,7 +269,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 3,
         iconPath: 'assets/icons/streak_3.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'streak_7_days',
         name: 'Semana Completa',
         description: 'Mantén una racha de 7 días',
@@ -279,7 +279,7 @@ class GamificationManager extends ChangeNotifier {
         maxProgress: 7,
         iconPath: 'assets/icons/streak_7.png',
       ),
-      Achievement(
+      const Achievement(
         id: 'streak_30_days',
         name: 'Dedicación Total',
         description: 'Mantén una racha de 30 días',
@@ -291,7 +291,7 @@ class GamificationManager extends ChangeNotifier {
       ),
 
       // Completionist Achievements
-      Achievement(
+      const Achievement(
         id: 'watchlist_complete',
         name: 'Lista Completada',
         description: 'Completa tu primera lista de reproducción',
@@ -717,13 +717,13 @@ class GamificationManager extends ChangeNotifier {
     final yesterday = today.subtract(const Duration(days: 1));
     if (yesterday.isAtSameMomentAs(lastActivity)) {
       final newStreak = _userProgress.streakDays + 1;
-      
+
       // Notificar hitos de streak
       if (newStreak % 7 == 0) {
         LoggerFactory.info('Weekly streak milestone reached: $newStreak days',
             category: LogCategory.general);
       }
-      
+
       return newStreak;
     }
 
@@ -742,14 +742,13 @@ class GamificationManager extends ChangeNotifier {
 
   /// Get recent achievements ordered by unlock date
   Future<List<Achievement>> getRecentAchievements({int limit = 5}) async {
-    final unlockedAchievements = getUnlockedAchievements()
-        .where((a) => a.unlockedAt != null)
-        .toList();
-    
+    final unlockedAchievements =
+        getUnlockedAchievements().where((a) => a.unlockedAt != null).toList();
+
     // Sort by unlock date (most recent first)
-    unlockedAchievements.sort((a, b) => 
-        b.unlockedAt!.compareTo(a.unlockedAt!));
-    
+    unlockedAchievements.sort((a, b) => (b.unlockedAt ?? DateTime(1970))
+        .compareTo(a.unlockedAt ?? DateTime(1970)));
+
     // Return limited list
     return unlockedAchievements.take(limit).toList();
   }

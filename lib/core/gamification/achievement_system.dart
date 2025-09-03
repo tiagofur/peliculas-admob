@@ -36,7 +36,7 @@ class AchievementSystemService {
     final recent = _unlockedAchievements
         .where((achievement) => achievement.unlockedAt != null)
         .toList()
-      ..sort((a, b) => b.unlockedAt!.compareTo(a.unlockedAt!));
+      ..sort((a, b) => (b.unlockedAt ?? DateTime(1970)).compareTo(a.unlockedAt ?? DateTime(1970)));
     return recent.take(10).toList();
   }
 

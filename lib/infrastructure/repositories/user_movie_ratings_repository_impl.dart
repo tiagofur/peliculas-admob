@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/supabase_config.dart';
+import '../../core/services/logger_factory.dart';
 import '../../domain/entities/user_movie_rating.dart';
 import '../../domain/repositories/user_movie_ratings_repository.dart';
 
@@ -11,7 +12,9 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
   @override
   Future<UserMovieRating?> getUserRating(int movieId) async {
     final user = _supabase.auth.currentUser;
-    if (user == null) return null; // Return null instead of throwing when not authenticated
+    if (user == null) {
+      return null; // Return null instead of throwing when not authenticated
+    }
 
     try {
       final response = await _supabase
@@ -24,7 +27,7 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
       return response != null ? UserMovieRating.fromJson(response) : null;
     } catch (e) {
       // Log error but don't throw to prevent UI crashes
-      print('Error getting user rating: $e');
+      LoggerFactory.error('Error getting user rating: $e', tag: 'UserMovieRatingsRepository');
       return null;
     }
   }
@@ -40,10 +43,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     if (user == null) return []; // Return empty list instead of throwing
 
     try {
-      var query = _supabase
-          .from(_tableName)
-          .select()
-          .eq('user_id', user.id);
+      PostgrestTransformBuilder<PostgrestList> query =
+          _supabase.from(_tableName).select().eq('user_id', user.id);
 
       // Aplicar ordenamiento
       if (orderBy != null) {
@@ -61,12 +62,12 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
       }
 
       final response = await query;
-      
+
       return response
           .map<UserMovieRating>((json) => UserMovieRating.fromJson(json))
           .toList();
     } catch (e) {
-      print('Error getting user ratings: $e');
+      LoggerFactory.error('Error getting user ratings: $e', tag: 'UserMovieRatingsRepository');
       return [];
     }
   }
@@ -105,7 +106,7 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
         return UserMovieRating.fromJson(response);
       }
     } catch (e) {
-      print('Error saving rating: $e');
+      LoggerFactory.error('Error saving rating: $e', tag: 'UserMovieRatingsRepository');
       rethrow; // Re-throw so UI can handle the error
     }
   }
@@ -127,13 +128,9 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
 
-    // Obtener estadísticas básicas
-    final response = await _supabase
-        .rpc('get_user_rating_stats', params: {'user_uuid': user.id});
-
-    // Si la función no existe en Supabase, calculamos las estadísticas aquí
+    // Calcular estadísticas localmente
     final ratings = await getUserRatings();
-    
+
     if (ratings.isEmpty) {
       return {
         'total_ratings': 0,
@@ -144,18 +141,18 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     }
 
     final totalRatings = ratings.length;
-    final averageRating = ratings.map((r) => r.rating).reduce((a, b) => a + b) / totalRatings;
-    
+    final averageRating =
+        ratings.map((r) => r.rating).reduce((a, b) => a + b) / totalRatings;
+
     // Calcular distribución de ratings
     final distribution = <int, int>{};
     for (int i = 1; i <= 5; i++) {
       distribution[i] = ratings.where((r) => r.rating == i).length;
     }
-    
+
     // Rating más frecuente
-    final mostRatedRating = distribution.entries
-        .reduce((a, b) => a.value > b.value ? a : b)
-        .key;
+    final mostRatedRating =
+        distribution.entries.reduce((a, b) => a.value > b.value ? a : b).key;
 
     return {
       'total_ratings': totalRatings,

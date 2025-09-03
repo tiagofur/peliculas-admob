@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/error_reporting/error_reporting_service.dart';
 import '../../core/error_reporting/error_metrics_service.dart';
+import '../../core/error_reporting/error_reporting_service.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../services/error_reporting_config.dart';
 import 'auth_provider.dart';
@@ -22,16 +22,16 @@ final errorMetricsServiceProvider = Provider<ErrorMetricsService>((ref) {
 });
 
 /// Provider to get current error reporting status
-final errorReportingStatusProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final errorReportingStatusProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final config = ref.watch(errorReportingConfigProvider);
   final service = ref.watch(errorReportingServiceProvider);
-  final metrics = ref.watch(errorMetricsServiceProvider);
-  
+
   // Ensure config is initialized
   if (!config.currentConfig['initialized']) {
     await config.initialize();
   }
-  
+
   return {
     ...config.currentConfig,
     'service_initialized': service.isInitialized,
@@ -46,13 +46,14 @@ final errorReportingStatusProvider = FutureProvider<Map<String, dynamic>>((ref) 
 final errorReportingUserContextProvider = Provider<void>((ref) {
   ref.listen(currentUserProvider, (previous, next) {
     final errorReporting = ref.read(errorReportingServiceProvider);
-    
+
     if (next != null) {
       // User logged in, set user context
       errorReporting.setUserId(next.id);
-      errorReporting.setCustomKey('user_email', next.email ?? 'unknown');
-      errorReporting.setCustomKey('user_last_sign_in', next.lastSignInAt?.toIso8601String() ?? 'unknown');
-      
+      errorReporting.setCustomKey('user_email', next.email);
+      errorReporting.setCustomKey('user_last_sign_in',
+          next.lastSignInAt?.toIso8601String() ?? 'unknown');
+
       LoggerFactory.setUserContext(next.id);
       LoggerFactory.info('Error reporting context set for user: ${next.id}');
     } else {
@@ -60,7 +61,7 @@ final errorReportingUserContextProvider = Provider<void>((ref) {
       errorReporting.setUserId('anonymous');
       errorReporting.setCustomKey('user_email', null);
       errorReporting.setCustomKey('user_last_sign_in', null);
-      
+
       LoggerFactory.info('Error reporting context cleared for logged out user');
     }
   });
@@ -77,7 +78,7 @@ mixin ErrorReportingMixin<T> on StateNotifier<T> {
     bool fatal = false,
   }) async {
     final notifierContext = context ?? runtimeType.toString();
-    
+
     await LoggerFactory.reportCriticalError(
       error,
       stackTrace,
@@ -99,7 +100,8 @@ mixin ErrorReportingMixin<T> on StateNotifier<T> {
   }) async {
     return await ErrorReportingService.instance.runAsyncWithErrorReporting(
       body,
-      zoneName: '${runtimeType.toString()}${operationName != null ? '.$operationName' : ''}',
+      zoneName:
+          '${runtimeType.toString()}${operationName != null ? '.$operationName' : ''}',
       customData: {
         'notifier_type': runtimeType.toString(),
         'current_state': state.toString(),
@@ -137,7 +139,8 @@ mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
   /// Record a successful core flow attempt (without full operation tracking)
   Future<void> recordCoreFlowSuccess(String flowName) async {
     await ErrorMetricsService.instance.recordCoreFlowAttempt(flowName);
-    LoggerFactory.info('✅ Core flow successful: $flowName in ${runtimeType.toString()}');
+    LoggerFactory.info(
+        '✅ Core flow successful: $flowName in ${runtimeType.toString()}');
   }
 
   /// Record a core flow error (without full operation tracking)
@@ -150,7 +153,7 @@ mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
 }
 
 /// Extension to add error reporting to any provider
-extension ErrorReportingProviderExtension on ProviderRef {
+extension ErrorReportingProviderExtension on Ref {
   /// Report an error with provider context
   Future<void> reportError(
     dynamic error,

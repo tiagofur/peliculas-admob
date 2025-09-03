@@ -1,6 +1,6 @@
+import '../error_reporting/error_reporting_service.dart';
 import 'base_logger.dart';
 import 'noop_logger.dart';
-import '../error_reporting/error_reporting_service.dart';
 
 /// Factory para gestionar instancias de logger con fallback automático
 /// Permite usar logging sin necesidad de configuración previa,
@@ -36,10 +36,20 @@ class LoggerFactory {
   /// Verificar si el sistema está inicializado
   static bool get isInitialized => _isInitialized;
 
+  /// Obtener una instancia de logger con un nombre específico
+  /// Retorna el logger actual configurado o NoOpLogger si no hay ninguno
+  static BaseLogger getLogger(String name) {
+    if (_currentLogger != null) {
+      return _currentLogger!;
+    }
+    // Si no hay logger configurado, usar NoOpLogger por defecto
+    return NoOpLogger.instance;
+  }
+
   /// Resetear el logger al estado por defecto (NoOpLogger)
   static Future<void> reset() async {
     if (_currentLogger != null) {
-      await _currentLogger!.dispose();
+      await _currentLogger?.dispose();
       _currentLogger = null;
     }
     _isInitialized = false;
@@ -72,7 +82,7 @@ class LoggerFactory {
   }) async {
     await logger.error(message,
         category: category, data: data, stackTrace: stackTrace);
-    
+
     // Also report to error reporting service if it's a significant error
     if (category == LogCategory.error || stackTrace != null) {
       await ErrorReportingService.instance.reportError(
@@ -93,8 +103,6 @@ class LoggerFactory {
     await logger.debug(message, category: category, data: data);
   }
 
-
-
   /// Report a critical error that should be tracked in crash reporting
   static Future<void> reportCriticalError(
     dynamic error,
@@ -103,8 +111,9 @@ class LoggerFactory {
     Map<String, dynamic>? data,
     bool fatal = false,
   }) async {
-    final message = 'Critical error${context != null ? ' in $context' : ''}: $error';
-    
+    final message =
+        'Critical error${context != null ? ' in $context' : ''}: $error';
+
     // Log locally
     await logger.error(
       message,
@@ -112,7 +121,7 @@ class LoggerFactory {
       data: data,
       stackTrace: stackTrace,
     );
-    
+
     // Report to error reporting service
     await ErrorReportingService.instance.reportError(
       error,
@@ -132,6 +141,9 @@ class LoggerFactory {
   static Future<void> setCustomContext(String key, dynamic value) async {
     await ErrorReportingService.instance.setCustomKey(key, value);
   }
+
+  /// Log batch processing results
+  static Future<void> batchProcessed({
     required String tableName,
     required int batchNumber,
     required int batchSize,

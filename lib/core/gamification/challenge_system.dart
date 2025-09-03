@@ -291,23 +291,26 @@ class ChallengeSystem extends ChangeNotifier {
     switch (type) {
       case ChallengeType.genreExplorer:
         // Higher score if user has diverse genre preferences
-        score = _userBehavior!.genrePreferences.length / 10.0;
+        score = (_userBehavior?.genrePreferences.length ?? 0) / 10.0;
         break;
       case ChallengeType.marathonWeekend:
         // Higher score if user watches many movies per week
-        score = (_userBehavior!.averageMoviesPerWeek / 10.0).clamp(0.0, 1.0);
+        score =
+            ((_userBehavior?.averageMoviesPerWeek ?? 0) / 10.0).clamp(0.0, 1.0);
         break;
       case ChallengeType.socialSharer:
         // Higher score if user shares frequently
-        score = (_userBehavior!.socialSharesPerMonth / 20.0).clamp(0.0, 1.0);
+        score =
+            ((_userBehavior?.socialSharesPerMonth ?? 0) / 20.0).clamp(0.0, 1.0);
         break;
       case ChallengeType.reviewMaster:
         // Higher score if user writes reviews
-        score = (_userBehavior!.averageReviewsPerMonth / 15.0).clamp(0.0, 1.0);
+        score = ((_userBehavior?.averageReviewsPerMonth ?? 0) / 15.0)
+            .clamp(0.0, 1.0);
         break;
       case ChallengeType.discoveryQuest:
         // Higher score for engaged users
-        score = _userBehavior!.engagementScore;
+        score = _userBehavior?.engagementScore ?? 0.5;
         break;
     }
 
@@ -443,7 +446,7 @@ class ChallengeSystem extends ChangeNotifier {
   ChallengeDifficulty _selectDifficultyForUser() {
     if (_userBehavior == null) return ChallengeDifficulty.easy;
 
-    final engagement = _userBehavior!.engagementScore;
+    final engagement = _userBehavior?.engagementScore ?? 0.5;
 
     if (engagement >= 0.8) return ChallengeDifficulty.expert;
     if (engagement >= 0.6) return ChallengeDifficulty.hard;
@@ -509,16 +512,18 @@ class ChallengeSystem extends ChangeNotifier {
       switch (template.type) {
         case ChallengeType.marathonWeekend:
           baseValue =
-              (baseValue * (_userBehavior!.averageMoviesPerWeek / 5.0)).round();
-          break;
-        case ChallengeType.reviewMaster:
-          baseValue =
-              (baseValue * (_userBehavior!.averageReviewsPerMonth / 10.0))
+              (baseValue * ((_userBehavior?.averageMoviesPerWeek ?? 2) / 5.0))
                   .round();
           break;
-        case ChallengeType.socialSharer:
-          baseValue = (baseValue * (_userBehavior!.socialSharesPerMonth / 15.0))
+        case ChallengeType.reviewMaster:
+          baseValue = (baseValue *
+                  ((_userBehavior?.averageReviewsPerMonth ?? 1) / 10.0))
               .round();
+          break;
+        case ChallengeType.socialSharer:
+          baseValue =
+              (baseValue * ((_userBehavior?.socialSharesPerMonth ?? 1) / 15.0))
+                  .round();
           break;
         default:
           break;

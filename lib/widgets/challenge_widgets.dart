@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/gamification/challenge_notifications.dart';
-import '../core/gamification/models/challenge_enums.dart';
 import '../core/gamification/models/challenge.dart';
+import '../core/gamification/models/challenge_enums.dart';
 import '../presentation/providers/challenge_providers.dart';
 
 /// Widget to display a single challenge card
@@ -216,7 +216,7 @@ class ChallengeCard extends StatelessWidget {
   Widget _buildRewardSection(ThemeData theme) {
     return Row(
       children: [
-        Icon(
+        const Icon(
           Icons.stars,
           size: 16,
           color: Colors.amber,
@@ -466,7 +466,7 @@ class ChallengeStats extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Engagement Score: ${((stats['engagementScore'] as double) * 100).round()}%',
+              'Engagement Score: ${((stats['engagementScore'] is double ? stats['engagementScore'] as double : double.tryParse(stats['engagementScore'].toString()) ?? 0.0) * 100).round()}%',
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),

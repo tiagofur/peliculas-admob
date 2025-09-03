@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../core/gamification/widgets/badge_display.dart';
 import '../../../core/gamification/widgets/level_progress_indicator.dart';
-import '../../providers/gamification_providers.dart';
+import '../providers/gamification_providers.dart';
 
 /// Ejemplo de widget para integrar gamificación en el perfil
 class GamificationProfileSection extends ConsumerWidget {
@@ -28,7 +29,7 @@ class GamificationProfileSection extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // User Progress Section
             userProgressAsync.when(
               data: (progress) => Column(
@@ -60,18 +61,17 @@ class GamificationProfileSection extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Level Progress Indicator
                   LevelProgressIndicator(
                     userProgress: progress,
-                    showLevel: true,
-                    showPoints: true,
+                    showDetails: true,
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Activity Stats
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -109,9 +109,9 @@ class GamificationProfileSection extends ConsumerWidget {
                 style: TextStyle(color: theme.colorScheme.error),
               ),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Recent Achievements Section
             Text(
               'Logros Recientes',
@@ -120,7 +120,7 @@ class GamificationProfileSection extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            
+
             recentAchievementsAsync.when(
               data: (achievements) {
                 if (achievements.isEmpty) {
@@ -137,14 +137,16 @@ class GamificationProfileSection extends ConsumerWidget {
                       children: [
                         Icon(
                           Icons.emoji_events_outlined,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Completa actividades para desbloquear logros',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
                         ),
@@ -152,7 +154,7 @@ class GamificationProfileSection extends ConsumerWidget {
                     ),
                   );
                 }
-                
+
                 return BadgeDisplay(
                   unlockedAchievements: achievements,
                   showCount: true,
@@ -172,9 +174,9 @@ class GamificationProfileSection extends ConsumerWidget {
                 style: TextStyle(color: theme.colorScheme.error),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Action Button
             SizedBox(
               width: double.infinity,
@@ -198,7 +200,7 @@ class GamificationProfileSection extends ConsumerWidget {
     Color color,
   ) {
     final theme = Theme.of(context);
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -231,7 +233,7 @@ class GamificationProfileSection extends ConsumerWidget {
   void _showAchievementsDialog(BuildContext context, WidgetRef ref) {
     final manager = ref.read(gamificationManagerProvider);
     final allAchievements = manager.getUnlockedAchievements();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

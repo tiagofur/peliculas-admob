@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -103,13 +102,15 @@ Future<void> main() async {
         try {
           await AuthSessionManager.instance.initialize();
           await TokenRefreshService.instance.initialize();
-          
+
           if (kDebugMode) {
-            LoggerFactory.info('✅ Sistema de autenticación persistente inicializado');
+            LoggerFactory.info(
+                '✅ Sistema de autenticación persistente inicializado');
           }
         } catch (e) {
           if (kDebugMode) {
-            LoggerFactory.error('❌ Error inicializando autenticación persistente: $e');
+            LoggerFactory.error(
+                '❌ Error inicializando autenticación persistente: $e');
           }
         }
 
@@ -122,13 +123,13 @@ Future<void> main() async {
           AppLifecycleManager.instance.initialize();
 
           if (kDebugMode) {
-            LoggerFactory
-                .info('✅ Sistema de sincronización multiplataforma inicializado');
+            LoggerFactory.info(
+                '✅ Sistema de sincronización multiplataforma inicializado');
           }
         } catch (e) {
           if (kDebugMode) {
-            LoggerFactory
-                .error('❌ Error inicializando sistema de sincronización: $e');
+            LoggerFactory.error(
+                '❌ Error inicializando sistema de sincronización: $e');
           }
         }
 
@@ -146,25 +147,29 @@ Future<void> main() async {
 
         // Note: Offline cache manager will be initialized when first accessed through providers
         if (kDebugMode) {
-          LoggerFactory.info('✅ Cache services configured - offline cache will initialize on demand');
+          LoggerFactory.info(
+              '✅ Cache services configured - offline cache will initialize on demand');
         }
 
         // INICIALIZAR SISTEMA DE NOTIFICACIONES
         if (!kIsWeb) {
           try {
             await NotificationInitializationService.instance.initialize();
-            
+
             // Configurar navigator key para navegación desde notificaciones
-            NotificationInitializationService.instance.setNavigatorKey(globalNavigatorKey);
-            LocalNotificationService.instance.setNavigatorKey(globalNavigatorKey);
-            
+            NotificationInitializationService.instance
+                .setNavigatorKey(globalNavigatorKey);
+            LocalNotificationService.instance
+                .setNavigatorKey(globalNavigatorKey);
+
             if (kDebugMode) {
-              LoggerFactory.info('✅ Sistema de notificaciones inicializado con navegación');
+              LoggerFactory.info(
+                  '✅ Sistema de notificaciones inicializado con navegación');
             }
           } catch (e) {
             if (kDebugMode) {
-              LoggerFactory
-                  .error('❌ Error inicializando sistema de notificaciones: $e');
+              LoggerFactory.error(
+                  '❌ Error inicializando sistema de notificaciones: $e');
             }
           }
         }
@@ -190,7 +195,8 @@ Future<void> main() async {
           }
         } catch (e) {
           if (kDebugMode) {
-            LoggerFactory.error('❌ Error inicializando sistema de monetización: $e');
+            LoggerFactory.error(
+                '❌ Error inicializando sistema de monetización: $e');
           }
         }
 
@@ -310,7 +316,7 @@ class MainApp extends ConsumerWidget {
         appTheme.updateSystemUIOverlay(context);
         return child ?? const SizedBox.shrink();
       },
-      pipParams: PiPParams(
+      pipParams: const PiPParams(
         pipWindowHeight: 200,
         pipWindowWidth: 300,
         bottomSpace: 80,
@@ -332,8 +338,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
 
   if (kDebugMode) {
-    LoggerFactory
-        .info('Handling a background message: ${message.messageId}');
+    LoggerFactory.info('Handling a background message: ${message.messageId}');
   }
 
   // Aquí se puede procesar el mensaje en segundo plano

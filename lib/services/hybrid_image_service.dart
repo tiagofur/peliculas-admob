@@ -103,8 +103,8 @@ class HybridImageService {
   }
 
   /// Obtiene estadísticas del caché
-  Future<CacheStats> getCacheStats() async {
-    return await _cacheManager.getStats();
+  Future<EnhancedCacheStats> getCacheStats() async {
+    return await _cacheManager.getEnhancedStats();
   }
 
   /// Limpia todo el caché

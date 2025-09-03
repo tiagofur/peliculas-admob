@@ -6,50 +6,6 @@ part of 'watchlist_movie.dart';
 // TypeAdapterGenerator
 // **************************************************************************
 
-class WatchlistPriorityAdapter extends TypeAdapter<WatchlistPriority> {
-  @override
-  final int typeId = 100;
-
-  @override
-  WatchlistPriority read(BinaryReader reader) {
-    switch (reader.readByte()) {
-      case 0:
-        return WatchlistPriority.alta;
-      case 1:
-        return WatchlistPriority.normal;
-      case 2:
-        return WatchlistPriority.baja;
-      default:
-        return WatchlistPriority.normal;
-    }
-  }
-
-  @override
-  void write(BinaryWriter writer, WatchlistPriority obj) {
-    switch (obj) {
-      case WatchlistPriority.alta:
-        writer.writeByte(0);
-        break;
-      case WatchlistPriority.normal:
-        writer.writeByte(1);
-        break;
-      case WatchlistPriority.baja:
-        writer.writeByte(2);
-        break;
-    }
-  }
-
-  @override
-  int get hashCode => typeId.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is WatchlistPriorityAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
-}
-
 class WatchlistMovieAdapter extends TypeAdapter<WatchlistMovie> {
   @override
   final int typeId = 101;
@@ -110,6 +66,50 @@ class WatchlistMovieAdapter extends TypeAdapter<WatchlistMovie> {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is WatchlistMovieAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+class WatchlistPriorityAdapter extends TypeAdapter<WatchlistPriority> {
+  @override
+  final int typeId = 100;
+
+  @override
+  WatchlistPriority read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return WatchlistPriority.alta;
+      case 1:
+        return WatchlistPriority.normal;
+      case 2:
+        return WatchlistPriority.baja;
+      default:
+        return WatchlistPriority.alta;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, WatchlistPriority obj) {
+    switch (obj) {
+      case WatchlistPriority.alta:
+        writer.writeByte(0);
+        break;
+      case WatchlistPriority.normal:
+        writer.writeByte(1);
+        break;
+      case WatchlistPriority.baja:
+        writer.writeByte(2);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WatchlistPriorityAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

@@ -2,68 +2,85 @@
 // This file demonstrates how to integrate and use the new adaptive caching features
 
 import 'package:flutter/material.dart';
-import 'package:peliculas/core/cache/image_cache_manager.dart';
-import 'package:peliculas/core/cache/adaptive_cache_config.dart';
-import 'package:peliculas/core/cache/network_aware_strategy.dart';
-import 'package:peliculas/core/cache/image_cache_performance_metrics.dart';
+
+import '../core/cache/adaptive_cache_config.dart';
+import '../core/cache/image_cache_manager.dart';
+import '../core/cache/image_cache_performance_metrics.dart';
+import '../core/cache/network_aware_strategy.dart';
+import '../core/services/logger_factory.dart';
 
 /// Example of how to initialize the adaptive caching system
 class AdaptiveCacheIntegrationExample {
-  
   /// Initialize the adaptive caching system (typically in main.dart)
   static Future<void> initializeAdaptiveCache() async {
-    print('🚀 Initializing adaptive image cache system...');
-    
+    LoggerFactory.info('🚀 Initializing adaptive image cache system...',
+        tag: 'AdaptiveCacheExample');
+
     try {
       // Initialize the entire adaptive caching system
       await ImageCacheManager.instance.initialize();
-      
-      print('✅ Adaptive cache system initialized successfully');
-      
+
+      LoggerFactory.info('✅ Adaptive cache system initialized successfully',
+          tag: 'AdaptiveCacheExample');
+
       // Log initial configuration
       final config = AdaptiveCacheConfig.instance.configuration;
       final capabilities = AdaptiveCacheConfig.instance.deviceCapabilities;
-      
-      print('📱 Device: ${capabilities.deviceType} (${capabilities.performanceTier})');
-      print('💾 Memory cache: ${(config.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB');
-      print('💿 Disk cache: ${(config.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB');
-      
+
+      LoggerFactory.info(
+          '📱 Device: ${capabilities.deviceType} (${capabilities.performanceTier})',
+          tag: 'AdaptiveCacheExample');
+      LoggerFactory.info(
+          '💾 Memory cache: ${(config.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB',
+          tag: 'AdaptiveCacheExample');
+      LoggerFactory.info(
+          '💿 Disk cache: ${(config.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB',
+          tag: 'AdaptiveCacheExample');
     } catch (e) {
-      print('❌ Failed to initialize adaptive cache: $e');
+      LoggerFactory.error('❌ Failed to initialize adaptive cache: $e',
+          tag: 'AdaptiveCacheExample');
       // System will fall back to default configuration
     }
   }
-  
+
   /// Example of monitoring performance (for admin/debug screens)
   static Future<void> showPerformanceReport() async {
     final report = ImageCacheManager.instance.generatePerformanceReport();
-    print('\n📊 ADAPTIVE CACHE PERFORMANCE REPORT\n$report');
-    
+    LoggerFactory.info('\n📊 ADAPTIVE CACHE PERFORMANCE REPORT\n$report',
+        tag: 'AdaptiveCacheExample');
+
     // Get enhanced stats for detailed analysis
     final enhancedStats = await ImageCacheManager.instance.getEnhancedStats();
-    print('\n🔍 Enhanced Stats: $enhancedStats');
-    
+    LoggerFactory.info('\n🔍 Enhanced Stats: $enhancedStats',
+        tag: 'AdaptiveCacheExample');
+
     // Check performance assessment
-    final assessment = ImageCachePerformanceMetrics.instance.assessPerformance();
-    print('🏥 Health: ${assessment.healthStatus} (Score: ${assessment.score.toStringAsFixed(1)})');
-    
+    final assessment =
+        ImageCachePerformanceMetrics.instance.assessPerformance();
+    LoggerFactory.info(
+        '🏥 Health: ${assessment.healthStatus} (Score: ${assessment.score.toStringAsFixed(1)})',
+        tag: 'AdaptiveCacheExample');
+
     if (assessment.issues.isNotEmpty) {
-      print('⚠️ Issues detected:');
+      LoggerFactory.warning('⚠️ Issues detected:', tag: 'AdaptiveCacheExample');
       for (final issue in assessment.issues) {
-        print('  - $issue');
+        LoggerFactory.warning('  - $issue', tag: 'AdaptiveCacheExample');
       }
     }
   }
-  
+
   /// Example of refreshing configuration when network changes
   static Future<void> onNetworkChanged() async {
-    print('🌐 Network changed, refreshing adaptive configuration...');
+    LoggerFactory.info(
+        '🌐 Network changed, refreshing adaptive configuration...',
+        tag: 'AdaptiveCacheExample');
     await ImageCacheManager.instance.refreshAdaptiveConfiguration();
-    
+
     final networkStatus = NetworkAwareStrategy.instance.getNetworkStatus();
-    print('📡 New network status: $networkStatus');
+    LoggerFactory.info('📡 New network status: $networkStatus',
+        tag: 'AdaptiveCacheExample');
   }
-  
+
   /// Example widget showing how to use cached images (no changes needed!)
   static Widget buildCachedImageExample(String imageUrl) {
     return CachedNetworkImageWidget(
@@ -75,27 +92,34 @@ class AdaptiveCacheIntegrationExample {
       height: 300,
     );
   }
-  
+
   /// Example of getting cache statistics for UI display
   static Future<Map<String, String>> getCacheStatsForUI() async {
     final stats = await ImageCacheManager.instance.getEnhancedStats();
     final performanceStats = stats.performanceStats;
-    
+
     return {
-      'Cache Hit Rate': '${(performanceStats.overallCacheHitRate * 100).toStringAsFixed(1)}%',
-      'Average Load Time': '${performanceStats.averageLoadTime.inMilliseconds}ms',
-      'Memory Usage': '${(stats.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB',
+      'Cache Hit Rate':
+          '${(performanceStats.overallCacheHitRate * 100).toStringAsFixed(1)}%',
+      'Average Load Time':
+          '${performanceStats.averageLoadTime.inMilliseconds}ms',
+      'Memory Usage':
+          '${(stats.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB',
       'Network Condition': stats.networkCondition.toString().split('.').last,
-      'Performance Score': '${stats.performanceAssessment.score.toStringAsFixed(0)}/100',
-      'Device Tier': stats.deviceCapabilities.performanceTier.toString().split('.').last,
+      'Performance Score':
+          '${stats.performanceAssessment.score.toStringAsFixed(0)}/100',
+      'Device Tier':
+          stats.deviceCapabilities.performanceTier.toString().split('.').last,
     };
   }
-  
+
   /// Example of clearing cache when needed
   static Future<void> clearCacheExample() async {
-    print('🧹 Clearing image cache...');
+    LoggerFactory.info('🧹 Clearing image cache...',
+        tag: 'AdaptiveCacheExample');
     await ImageCacheManager.instance.clearCache();
-    print('✅ Cache cleared successfully');
+    LoggerFactory.info('✅ Cache cleared successfully',
+        tag: 'AdaptiveCacheExample');
   }
 }
 
@@ -124,11 +148,13 @@ class MainAppExample extends StatelessWidget {
               ),
             );
           }
-          
+
           if (snapshot.hasError) {
-            print('⚠️ Cache initialization error (using fallback): ${snapshot.error}');
+            LoggerFactory.warning(
+                '⚠️ Cache initialization error (using fallback): ${snapshot.error}',
+                tag: 'AdaptiveCacheExample');
           }
-          
+
           return const HomeScreen();
         },
       ),
@@ -146,13 +172,13 @@ class CacheDebugScreen extends StatefulWidget {
 
 class _CacheDebugScreenState extends State<CacheDebugScreen> {
   Map<String, String>? _cacheStats;
-  
+
   @override
   void initState() {
     super.initState();
     _loadCacheStats();
   }
-  
+
   Future<void> _loadCacheStats() async {
     final stats = await AdaptiveCacheIntegrationExample.getCacheStatsForUI();
     if (mounted) {
@@ -161,7 +187,7 @@ class _CacheDebugScreenState extends State<CacheDebugScreen> {
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,21 +217,24 @@ class _CacheDebugScreenState extends State<CacheDebugScreen> {
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
-                ..._cacheStats!.entries.map((entry) => Card(
-                  child: ListTile(
-                    title: Text(entry.key),
-                    trailing: Text(
-                      entry.value,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                )),
+                ...(_cacheStats?.entries ?? <MapEntry<String, String>>[])
+                    .map((entry) => Card(
+                          child: ListTile(
+                            title: Text(entry.key),
+                            trailing: Text(
+                              entry.value,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        )),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
                     AdaptiveCacheIntegrationExample.showPerformanceReport();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Check console for detailed report')),
+                      const SnackBar(
+                          content: Text('Check console for detailed report')),
                     );
                   },
                   child: const Text('Generate Performance Report'),
@@ -217,7 +246,8 @@ class _CacheDebugScreenState extends State<CacheDebugScreen> {
                     _loadCacheStats();
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Configuration refreshed')),
+                        const SnackBar(
+                            content: Text('Configuration refreshed')),
                       );
                     }
                   },
@@ -244,7 +274,8 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CacheDebugScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const CacheDebugScreen()),
               );
             },
           ),
@@ -261,10 +292,11 @@ class HomeScreen extends StatelessWidget {
         itemCount: 20,
         itemBuilder: (context, index) {
           final imageUrl = 'https://image.tmdb.org/t/p/w500/example_$index.jpg';
-          
+
           return Card(
             clipBehavior: Clip.antiAlias,
-            child: AdaptiveCacheIntegrationExample.buildCachedImageExample(imageUrl),
+            child: AdaptiveCacheIntegrationExample.buildCachedImageExample(
+                imageUrl),
           );
         },
       ),

@@ -3,17 +3,16 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
-import '../../infrastructure/services/sync_service.dart';
 import 'auth_provider.dart';
 import 'sync_init_provider.dart';
 
 /// Estados de sincronización
 enum SyncStatus {
-  idle,       // Sin sincronización activa
-  syncing,    // Sincronizando datos
-  success,    // Sincronización exitosa
-  error,      // Error en sincronización
-  offline,    // Sin conexión
+  idle, // Sin sincronización activa
+  syncing, // Sincronizando datos
+  success, // Sincronización exitosa
+  error, // Error en sincronización
+  offline, // Sin conexión
 }
 
 /// Modelo para el estado de sincronización
@@ -103,7 +102,7 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void _checkSyncStatus() {
     try {
       final appState = _ref.read(appStateProvider);
-      
+
       // Si no está autenticado, estado idle
       if (!appState.isAuthenticated) {
         if (state.status != SyncStatus.idle) {
@@ -120,7 +119,6 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
       // Como no podemos acceder directamente al SyncService aquí,
       // usaremos una aproximación basada en el estado de la app
       _updateSyncStatusFromSystemState();
-      
     } catch (e) {
       LoggerFactory.error('Error verificando estado de sincronización: $e');
       if (!state.hasError) {
@@ -129,67 +127,47 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
     }
   }
 
-  void _checkSyncStatus() {
+  /// Actualiza el estado de sincronización basado en el estado del sistema
+  void _updateSyncStatusFromSystemState() {
     try {
-      final appState = _ref.read(appStateProvider);
-      
-      // Si no está autenticado, estado idle
-      if (!appState.isAuthenticated) {
-        if (state.status != SyncStatus.idle) {
-          state = state.copyWith(
-            status: SyncStatus.idle,
-            message: '',
-            progress: 0.0,
-          );
+      // Obtener información del sync service a través del provider
+      final syncServiceData = _ref.read(syncServiceAccessProvider);
+
+      if (syncServiceData == null) {
+        // Si no hay datos disponibles, mantener estado actual o marcar como offline
+        if (state.status == SyncStatus.syncing) {
+          // Si estaba sincronizando pero ya no hay datos, posible error
+          _updateStatus(
+              SyncStatus.error, 'Conexión perdida durante sincronización');
         }
         return;
       }
 
-      // Obtener estado de la sincronización desde el sistema existente
-      final syncServiceStatus = _ref.read(syncServiceAccessProvider);
-      _updateSyncStatusFromServiceData(syncServiceStatus);
-      
+      // Interpretar el estado basado en los datos disponibles
+      final isActive = syncServiceData['isActive'] as bool? ?? false;
+      final hasError = syncServiceData['hasError'] as bool? ?? false;
+      final progress = syncServiceData['progress'] as double? ?? 0.0;
+      final message = syncServiceData['message'] as String? ?? '';
+
+      if (hasError) {
+        _updateStatus(SyncStatus.error,
+            message.isNotEmpty ? message : 'Error en sincronización');
+      } else if (isActive) {
+        _updateStatus(SyncStatus.syncing,
+            message.isNotEmpty ? message : 'Sincronizando...',
+            progress: progress);
+      } else if (progress >= 1.0) {
+        _updateStatus(SyncStatus.success, 'Sincronización completada');
+      } else {
+        // Estado idle - no hay sincronización activa
+        if (state.status == SyncStatus.syncing) {
+          // Si estaba sincronizando pero ya no está activo, marcar como completado
+          _updateStatus(SyncStatus.success, 'Sincronización completada');
+        }
+      }
     } catch (e) {
-      LoggerFactory.error('Error verificando estado de sincronización: $e');
-      if (!state.hasError) {
-        _updateStatus(SyncStatus.error, 'Error verificando sincronización');
-      }
-    }
-  }
-
-  void _updateSyncStatusFromServiceData(Map<String, dynamic>? serviceStatus) {
-    final appState = _ref.read(appStateProvider);
-    
-    if (!appState.isAuthenticated) {
-      return;
-    }
-
-    if (serviceStatus == null) {
-      // Si no hay información del servicio, asumir estado idle para usuarios autenticados
-      if (state.status != SyncStatus.success && state.status != SyncStatus.error) {
-        _updateStatus(SyncStatus.success, 'Datos disponibles');
-      }
-      return;
-    }
-
-    // Interpretar el estado del servicio de sincronización
-    final isPeriodicSyncActive = serviceStatus['is_periodic_sync_active'] as bool? ?? false;
-    final recentErrors = serviceStatus['recent_errors'] as List? ?? [];
-    final retryAttempts = serviceStatus['retry_attempts'] as Map? ?? {};
-
-    if (recentErrors.isNotEmpty) {
-      if (state.status != SyncStatus.error) {
-        _updateStatus(SyncStatus.error, 'Error en sincronización');
-      }
-    } else if (isPeriodicSyncActive) {
-      if (state.status == SyncStatus.idle || state.status == SyncStatus.error) {
-        _updateStatus(SyncStatus.success, 'Datos sincronizados');
-      }
-    } else {
-      // Sin sync activo, pero usuario autenticado - estado neutral
-      if (state.status == SyncStatus.idle || state.status == SyncStatus.error) {
-        _updateStatus(SyncStatus.success, 'Listo para sincronizar');
-      }
+      LoggerFactory.error('Error actualizando estado desde sistema: $e');
+      // En caso de error, mantener el estado actual
     }
   }
 
@@ -198,8 +176,10 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
     state = state.copyWith(
       status: status,
       message: message,
-      progress: progress ?? (status == SyncStatus.success ? 1.0 : state.progress),
-      lastSyncTime: status == SyncStatus.success ? DateTime.now() : state.lastSyncTime,
+      progress:
+          progress ?? (status == SyncStatus.success ? 1.0 : state.progress),
+      lastSyncTime:
+          status == SyncStatus.success ? DateTime.now() : state.lastSyncTime,
       errorMessage: status == SyncStatus.error ? message : null,
     );
 
@@ -212,7 +192,9 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void _scheduleMessageClear() {
     _messageDisplayTimer?.cancel();
     _messageDisplayTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && (state.status == SyncStatus.success || state.status == SyncStatus.error)) {
+      if (mounted &&
+          (state.status == SyncStatus.success ||
+              state.status == SyncStatus.error)) {
         state = state.copyWith(
           status: SyncStatus.idle,
           message: '',
@@ -226,12 +208,14 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void startManualSync() {
     final appState = _ref.read(appStateProvider);
     if (!appState.isAuthenticated) {
-      LoggerFactory.warning('Intento de sincronización sin usuario autenticado');
+      LoggerFactory.warning(
+          'Intento de sincronización sin usuario autenticado');
       return;
     }
 
-    _updateStatus(SyncStatus.syncing, 'Iniciando sincronización...', progress: 0.1);
-    
+    _updateStatus(SyncStatus.syncing, 'Iniciando sincronización...',
+        progress: 0.1);
+
     // Intentar ejecutar sincronización real a través del AuthSyncListener
     _triggerActualSync();
   }
@@ -239,16 +223,15 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   Future<void> _triggerActualSync() async {
     try {
       final authSyncListener = _ref.read(authSyncListenerProvider);
-      
+
       // Simular progreso inicial
       _updateProgressSteps();
-      
+
       // Ejecutar sincronización real
       await authSyncListener.forceSyncAll();
-      
+
       // Éxito
       _updateStatus(SyncStatus.success, 'Sincronización completada');
-      
     } catch (e) {
       LoggerFactory.error('Error en sincronización manual: $e');
       _updateStatus(SyncStatus.error, 'Error: ${e.toString()}');
@@ -262,7 +245,7 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
         timer.cancel();
         return;
       }
-      
+
       final currentProgress = state.progress + 0.15;
       if (currentProgress >= 0.9) {
         timer.cancel();
@@ -298,7 +281,8 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
 }
 
 /// Provider del estado de sincronización
-final syncStatusProvider = StateNotifierProvider<SyncStatusNotifier, SyncState>((ref) {
+final syncStatusProvider =
+    StateNotifierProvider<SyncStatusNotifier, SyncState>((ref) {
   return SyncStatusNotifier(ref);
 });
 

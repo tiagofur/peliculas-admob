@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/monetization/ad_frequency_controller.dart';
 import '../../../core/logging/base_logger.dart';
 import '../../../core/logging/logger_factory.dart';
+import '../../../core/monetization/ad_frequency_controller.dart';
 import 'banner_ad_widget.dart';
-import 'native_ad_widget.dart';
-import 'grid_ad_widget.dart';
 import 'full_width_ad_widget.dart';
+import 'grid_ad_widget.dart';
+import 'native_ad_widget.dart';
 
 /// Tipos de anuncios controlados
 enum ControlledAdType {
@@ -46,9 +46,9 @@ class ControlledAdWidget extends StatefulWidget {
 }
 
 class _ControlledAdWidgetState extends State<ControlledAdWidget> {
-  final BaseLogger _logger = LoggerFactory.getLogger('ControlledAdWidget');
+  final BaseLogger _logger = LoggerFactory.logger;
   final AdFrequencyController _controller = AdFrequencyController.instance;
-  
+
   bool _canShowAd = false;
   bool _isInitialized = false;
   AdDecisionResult? _lastDecision;
@@ -62,7 +62,7 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
   Future<void> _checkAdPermission() async {
     try {
       final decision = await _controller.canShowAd(adType: widget.adType.name);
-      
+
       setState(() {
         _canShowAd = decision == AdDecisionResult.allowed;
         _lastDecision = decision;
@@ -80,7 +80,7 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
             ...?widget.metadata,
           },
         );
-        
+
         widget.onAdShown?.call();
       } else {
         widget.onAdBlocked?.call(decision);
@@ -98,7 +98,7 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
     switch (widget.adType) {
       case ControlledAdType.banner:
         return const BannerAdWidget();
-      
+
       case ControlledAdType.native:
         return NativeAdWidget(
           height: widget.height ?? 120,
@@ -106,13 +106,13 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
           margin: widget.margin,
           borderRadius: widget.borderRadius,
         );
-      
+
       case ControlledAdType.grid:
         return GridAdWidget(
           aspectRatio: widget.aspectRatio ?? 0.7,
           showLabel: widget.showLabel,
         );
-      
+
       case ControlledAdType.fullWidth:
         return const FullWidthAdWidget();
     }
@@ -127,7 +127,8 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
     final theme = Theme.of(context);
     return Container(
       height: _getPlaceholderHeight(),
-      margin: widget.margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: widget.margin ??
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(widget.borderRadius),
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.1),
@@ -160,9 +161,10 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
   }
 
   String _getBlockedReasonText() {
-    if (_lastDecision == null) return '';
-    
-    switch (_lastDecision!) {
+    final decision = _lastDecision;
+    if (decision == null) return '';
+
+    switch (decision) {
       case AdDecisionResult.blockedBySessionLimit:
         return 'Límite de sesión alcanzado';
       case AdDecisionResult.blockedByHourlyLimit:

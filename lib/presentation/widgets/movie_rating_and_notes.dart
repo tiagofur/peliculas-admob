@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/analytics/analytics_service.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/user_movie_rating.dart';
-import '../providers/user_movie_ratings_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/user_movie_ratings_provider.dart';
 import 'star_rating_widgets.dart';
 
 class MovieRatingAndNotes extends ConsumerStatefulWidget {
@@ -19,7 +20,8 @@ class MovieRatingAndNotes extends ConsumerStatefulWidget {
   final VoidCallback? onRatingChanged;
 
   @override
-  ConsumerState<MovieRatingAndNotes> createState() => _MovieRatingAndNotesState();
+  ConsumerState<MovieRatingAndNotes> createState() =>
+      _MovieRatingAndNotesState();
 }
 
 class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
@@ -41,7 +43,8 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
   }
 
   Future<void> _loadExistingRating() async {
-    final existingRating = await ref.read(movieRatingProvider(widget.movie.id).future);
+    final existingRating =
+        await ref.read(movieRatingProvider(widget.movie.id).future);
     if (existingRating != null && mounted) {
       setState(() {
         _currentRating = existingRating.rating;
@@ -66,13 +69,15 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
         movieTitle: widget.movie.title,
         moviePosterPath: widget.movie.posterPath,
         rating: _currentRating,
-        personalNote: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        personalNote: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
       await ref.read(userRatingsProvider.notifier).saveRating(rating);
-      
+
       // Track analytics event for movie rating
       await AnalyticsService().trackEvent(
         AnalyticsEventType.rateMovie,
@@ -85,10 +90,10 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
           'action': 'rate_movie',
         },
       );
-      
+
       // Invalidar el provider específico para actualizar la UI
       ref.invalidate(movieRatingProvider(widget.movie.id));
-      
+
       widget.onRatingChanged?.call();
 
       if (mounted) {
@@ -123,11 +128,13 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
     });
 
     try {
-      await ref.read(userRatingsProvider.notifier).deleteRating(widget.movie.id);
-      
+      await ref
+          .read(userRatingsProvider.notifier)
+          .deleteRating(widget.movie.id);
+
       // Invalidar el provider específico para actualizar la UI
       ref.invalidate(movieRatingProvider(widget.movie.id));
-      
+
       widget.onRatingChanged?.call();
 
       if (mounted) {
@@ -167,7 +174,8 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar valoración'),
-        content: const Text('¿Estás seguro de que quieres eliminar tu valoración de esta película?'),
+        content: const Text(
+            '¿Estás seguro de que quieres eliminar tu valoración de esta película?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -190,7 +198,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appState = ref.watch(appStateProvider);
-    
+
     // Show login prompt for guest users
     if (!appState.isAuthenticated) {
       return Card(
@@ -202,7 +210,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
               Icon(
                 Icons.star_outline,
                 size: 48,
-                color: theme.colorScheme.onSurface.withOpacity(0.3),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.3 * 255),
               ),
               const SizedBox(height: 16),
               Text(
@@ -214,17 +222,15 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
               Text(
                 'Crea una cuenta gratuita para guardar tus valoraciones y notas personales.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  color:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Navigate to login screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Función de login en desarrollo')),
-                  );
+                  context.push('/login');
                 },
                 child: const Text('Iniciar Sesión'),
               ),
@@ -233,7 +239,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
         ),
       );
     }
-    
+
     return Card(
       margin: const EdgeInsets.all(16),
       child: Padding(
@@ -265,7 +271,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Rating stars
             Center(
               child: InteractiveStarRating(
@@ -279,9 +285,9 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
                 size: 40,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Notes section
             Row(
               children: [
@@ -296,12 +302,13 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
                       _isExpanded = !_isExpanded;
                     });
                   },
-                  icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+                  icon:
+                      Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
                   label: Text(_isExpanded ? 'Ocultar' : 'Agregar nota'),
                 ),
               ],
             ),
-            
+
             AnimatedCrossFade(
               duration: const Duration(milliseconds: 300),
               firstChild: const SizedBox.shrink(),
@@ -322,17 +329,18 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
                 ),
               ),
               crossFadeState: _isExpanded
-                  ? CrossFadeState.secondChild
-                  : CrossFadeState.firstChild,
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Save button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _currentRating > 0 && !_isLoading ? _saveRating : null,
+                onPressed:
+                    _currentRating > 0 && !_isLoading ? _saveRating : null,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -370,7 +378,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
     return ratingAsync.when(
       data: (rating) {
         if (rating == null) return const SizedBox.shrink();
-        
+
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Padding(
@@ -380,7 +388,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.star,
                       color: Colors.amber,
                       size: 20,
@@ -410,7 +418,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      rating.personalNote!,
+                      rating.personalNote ?? '',
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -419,7 +427,8 @@ class MovieRatingDisplayCard extends ConsumerWidget {
                 Text(
                   'Valorado el ${rating.createdAt.day}/${rating.createdAt.month}/${rating.createdAt.year}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    color: theme.colorScheme.onSurface
+                        .withValues(alpha: 0.6 * 255),
                   ),
                 ),
               ],

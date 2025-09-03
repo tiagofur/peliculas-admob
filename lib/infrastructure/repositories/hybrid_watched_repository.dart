@@ -1,5 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
@@ -13,12 +11,10 @@ import 'base_hybrid_repository.dart';
 /// Hybrid repository for watched movies that supports local storage and Supabase sync
 class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     implements WatchedMoviesRepository {
-  
   HybridWatchedRepository({
     required WatchedMoviesHiveDatasource hiveDatasource,
-    required Ref ref,
-  })  : _hiveDatasource = hiveDatasource,
-        super(ref: ref);
+    required super.ref,
+  }) : _hiveDatasource = hiveDatasource;
 
   final WatchedMoviesHiveDatasource _hiveDatasource;
 
@@ -89,19 +85,17 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     }
 
     // 2. Add to sync queue
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId != null) {
-      final operation = SyncOperationFactory.addWatched(
-        userId: userId, 
-        movieId: movie.id
-      );
+      final operation =
+          SyncOperationFactory.markWatched(userId: userId, movieId: movie.id);
       await syncQueue.enqueue(operation);
     }
 
     // 3. Sync if online and authenticated
-    if (_isAuthenticated()) {
+    if (isAuthenticated()) {
       try {
-        await _checkOnline();
+        await checkOnline();
         await _syncSingleWatchedItem(movie);
       } on SyncException catch (e) {
         LoggerFactory.error('❌ Error syncing watched movie: $e');
@@ -112,7 +106,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
   @override
   Future<void> removeFromWatched(int movieId) async {
     LoggerFactory.info('🗑️ REMOVE FROM WATCHED called for movie ID: $movieId');
-    
+
     try {
       await _hiveDatasource.removeFromWatched(movieId);
       LoggerFactory.info('✅ Movie removed from watched locally');
@@ -122,16 +116,14 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     }
 
     // Sync if authenticated
-    final userId = _getCurrentUserId();
-    if (userId != null && _isAuthenticated()) {
-      final operation = SyncOperationFactory.removeWatched(
-        userId: userId, 
-        movieId: movieId
-      );
+    final userId = getCurrentUserId();
+    if (userId != null && isAuthenticated()) {
+      final operation =
+          SyncOperationFactory.unmarkWatched(userId: userId, movieId: movieId);
       await syncQueue.enqueue(operation);
 
       try {
-        await _checkOnline();
+        await checkOnline();
         await _syncSingleWatchedRemoval(movieId);
       } on SyncException catch (e) {
         LoggerFactory.error('❌ Error syncing removal: $e');
@@ -149,10 +141,11 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
   }
 
   @override
-  Future<List<WatchedMovie>> loadWatchedMovies({int limit = 10, int offset = 0}) async {
-    if (_isAuthenticated()) {
+  Future<List<WatchedMovie>> loadWatchedMovies(
+      {int limit = 10, int offset = 0}) async {
+    if (isAuthenticated()) {
       try {
-        await _checkOnline();
+        await checkOnline();
         await syncWithSupabase();
       } on SyncException catch (e) {
         LoggerFactory.error('Error in automatic sync: $e');
@@ -168,7 +161,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
 
   // Helper sync methods
   Future<void> _syncSingleWatchedItem(Movie movie) async {
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId == null) return;
 
     try {
@@ -185,15 +178,17 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
         'updated_at': DateTime.now().toIso8601String(),
         'deleted_at': null,
       }, onConflict: 'user_id,movie_id');
-      
-      LoggerFactory.info('✅ ${movie.title} added to watched movies in Supabase');
+
+      LoggerFactory.info(
+          '✅ ${movie.title} added to watched movies in Supabase');
     } catch (e) {
-      throw SupabaseSyncException('Error syncing watched movie ${movie.title}: $e');
+      throw SupabaseSyncException(
+          'Error syncing watched movie ${movie.title}: $e');
     }
   }
 
   Future<void> _syncSingleWatchedRemoval(int movieId) async {
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId == null) return;
 
     try {
@@ -205,7 +200,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
           })
           .eq('user_id', userId)
           .eq('movie_id', movieId);
-          
+
       LoggerFactory.info('✅ Movie ID $movieId marked as deleted in Supabase');
     } catch (e) {
       throw SupabaseSyncException('Error removing watched movie $movieId: $e');
@@ -217,24 +212,26 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
   Future<List<SyncableWatchedMovie>> getLocalData() async {
     try {
       final watchedMovies = await _hiveDatasource.loadWatchedMovies();
-      final userId = _getCurrentUserId();
+      final userId = getCurrentUserId();
       if (userId == null) return [];
 
-      return watchedMovies.map((watchedMovie) => 
-          SyncableWatchedMovie.fromWatchedMovie(watchedMovie, userId)
-      ).toList();
+      return watchedMovies
+          .map((watchedMovie) =>
+              SyncableWatchedMovie.fromWatchedMovie(watchedMovie, userId))
+          .toList();
     } catch (e) {
-      throw LocalStorageException('Error getting local watched movies data: $e');
+      throw LocalStorageException(
+          'Error getting local watched movies data: $e');
     }
   }
 
   @override
   Future<List<SyncableWatchedMovie>> getRemoteData() async {
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId == null) return [];
 
     try {
-      await _checkOnline();
+      await checkOnline();
       final response = await supabase
           .from('user_watched_movies')
           .select()
@@ -242,11 +239,10 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
           .isFilter('deleted_at', null)
           .order('watched_at', ascending: false);
 
-      return (response as List)
-          .map((data) => mapFromSupabase(data))
-          .toList();
+      return (response as List).map((data) => mapFromSupabase(data)).toList();
     } catch (e) {
-      throw SupabaseSyncException('Error getting remote watched movies data: $e');
+      throw SupabaseSyncException(
+          'Error getting remote watched movies data: $e');
     }
   }
 
@@ -257,11 +253,11 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     for (final watchedMovie in watchedMovies) {
       try {
         await supabase.from('user_watched_movies').upsert(
-          mapToSupabase(watchedMovie),
-          onConflict: 'user_id,movie_id'
-        );
+            mapToSupabase(watchedMovie),
+            onConflict: 'user_id,movie_id');
       } catch (e) {
-        throw SupabaseSyncException('Error uploading watched movie ${watchedMovie.movieTitle}: $e');
+        throw SupabaseSyncException(
+            'Error uploading watched movie ${watchedMovie.movieTitle}: $e');
       }
     }
   }
@@ -273,17 +269,19 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
         final movie = watchedMovie.toMovie();
         await _hiveDatasource.markAsWatched(movie);
       } catch (e) {
-        throw LocalStorageException('Error downloading watched movie ${watchedMovie.id}: $e');
+        throw LocalStorageException(
+            'Error downloading watched movie ${watchedMovie.id}: $e');
       }
     }
   }
 
   @override
-  Future<void> resolveConflicts(
-      List<SyncableWatchedMovie> local, List<SyncableWatchedMovie> remote) async {
+  Future<void> resolveConflicts(List<SyncableWatchedMovie> local,
+      List<SyncableWatchedMovie> remote) async {
     // Simple conflict resolution: remote wins
     for (final remoteItem in remote) {
-      final localItem = local.where((item) => item.id == remoteItem.id).firstOrNull;
+      final localItem =
+          local.where((item) => item.id == remoteItem.id).firstOrNull;
       if (localItem != null) {
         final movie = remoteItem.toMovie();
         await _hiveDatasource.markAsWatched(movie);

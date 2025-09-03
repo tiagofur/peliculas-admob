@@ -13,7 +13,7 @@ class ThemeShowcaseWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeState = ref.watch(themeNotifierProvider);
     final colorList = ref.watch(colorListProvider);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Demostración de Temas'),
@@ -45,12 +45,12 @@ class ThemeShowcaseWidget extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     _buildInfoRow(
-                      'Modo', 
+                      'Modo',
                       _getThemeModeText(themeState.themeMode),
-                      _getThemeModeIcon(themeState.themeMode),
+                      Icon(_getThemeModeIcon(themeState.themeMode)),
                     ),
                     _buildInfoRow(
-                      'Color', 
+                      'Color',
                       'Color ${themeState.selectedColor + 1}',
                       Container(
                         width: 20,
@@ -62,19 +62,23 @@ class ThemeShowcaseWidget extends ConsumerWidget {
                       ),
                     ),
                     _buildInfoRow(
-                      'Brillo detectado', 
-                      MediaQuery.platformBrightnessOf(context) == Brightness.dark 
-                        ? 'Oscuro' : 'Claro',
-                      Icon(MediaQuery.platformBrightnessOf(context) == Brightness.dark 
-                        ? Icons.nights_stay : Icons.wb_sunny),
+                      'Brillo detectado',
+                      MediaQuery.platformBrightnessOf(context) ==
+                              Brightness.dark
+                          ? 'Oscuro'
+                          : 'Claro',
+                      Icon(MediaQuery.platformBrightnessOf(context) ==
+                              Brightness.dark
+                          ? Icons.nights_stay
+                          : Icons.wb_sunny),
                     ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Controles rápidos
             Card(
               child: Padding(
@@ -91,23 +95,23 @@ class ThemeShowcaseWidget extends ConsumerWidget {
                       spacing: 8,
                       children: [
                         _buildThemeChip(
-                          context, 
-                          ref, 
-                          'Sistema', 
+                          context,
+                          ref,
+                          'Sistema',
                           app_theme.ThemeMode.system,
                           Icons.brightness_auto,
                         ),
                         _buildThemeChip(
-                          context, 
-                          ref, 
-                          'Claro', 
+                          context,
+                          ref,
+                          'Claro',
                           app_theme.ThemeMode.light,
                           Icons.light_mode,
                         ),
                         _buildThemeChip(
-                          context, 
-                          ref, 
-                          'Oscuro', 
+                          context,
+                          ref,
+                          'Oscuro',
                           app_theme.ThemeMode.dark,
                           Icons.dark_mode,
                         ),
@@ -117,9 +121,9 @@ class ThemeShowcaseWidget extends ConsumerWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Selector de colores
             Card(
               child: Padding(
@@ -136,7 +140,8 @@ class ThemeShowcaseWidget extends ConsumerWidget {
                       spacing: 12,
                       children: List.generate(
                         colorList.length,
-                        (index) => _buildColorChip(context, ref, index, colorList[index]),
+                        (index) => _buildColorChip(
+                            context, ref, index, colorList[index]),
                       ),
                     ),
                   ],
@@ -172,7 +177,7 @@ class ThemeShowcaseWidget extends ConsumerWidget {
   ) {
     final themeState = ref.watch(themeNotifierProvider);
     final isSelected = themeState.themeMode == mode;
-    
+
     return FilterChip(
       selected: isSelected,
       label: Text(label),
@@ -185,10 +190,11 @@ class ThemeShowcaseWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildColorChip(BuildContext context, WidgetRef ref, int index, Color color) {
+  Widget _buildColorChip(
+      BuildContext context, WidgetRef ref, int index, Color color) {
     final themeState = ref.watch(themeNotifierProvider);
     final isSelected = themeState.selectedColor == index;
-    
+
     return GestureDetector(
       onTap: () {
         ref.read(themeNotifierProvider.notifier).changeColorIndex(index);
@@ -200,19 +206,19 @@ class ThemeShowcaseWidget extends ConsumerWidget {
           color: color,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected 
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
             width: isSelected ? 3 : 1,
           ),
         ),
         child: isSelected
-          ? Icon(
-              Icons.check,
-              color: _getContrastColor(color),
-              size: 24,
-            )
-          : null,
+            ? Icon(
+                Icons.check,
+                color: _getContrastColor(color),
+                size: 24,
+              )
+            : null,
       ),
     );
   }
@@ -258,13 +264,14 @@ class ThemeShowcaseWidget extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
-            Text('Esta es una demostración del sistema de temas mejorado.'),
+            const Text(
+                'Esta es una demostración del sistema de temas mejorado.'),
             const SizedBox(height: 8),
-            Text('• Soporte para modo sistema automático'),
-            Text('• Temas claro y oscuro manuales'),
-            Text('• 6 colores de tema personalizables'),
-            Text('• Persistencia de configuración'),
-            Text('• Integración completa con Material 3'),
+            const Text('• Soporte para modo sistema automático'),
+            const Text('• Temas claro y oscuro manuales'),
+            const Text('• 6 colores de tema personalizables'),
+            const Text('• Persistencia de configuración'),
+            const Text('• Integración completa con Material 3'),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,

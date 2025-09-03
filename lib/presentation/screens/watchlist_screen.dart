@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/watchlist_movie.dart';
 import '../providers/watchlist_provider.dart';
-import '../widgets/watchlist/watchlist_movie_card.dart';
-import '../widgets/watchlist/priority_filter_chip.dart';
 import '../widgets/shared/loading_indicator.dart';
+import '../widgets/watchlist/priority_filter_chip.dart';
+import '../widgets/watchlist/watchlist_movie_card.dart';
 
 class WatchlistScreen extends ConsumerStatefulWidget {
   const WatchlistScreen({super.key});
@@ -19,7 +19,7 @@ class WatchlistScreen extends ConsumerStatefulWidget {
 
 class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
   WatchlistPriority? _selectedPriority;
-  
+
   @override
   void initState() {
     super.initState();
@@ -50,7 +50,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
         children: [
           // Filtros de prioridad
           _buildPriorityFilters(),
-          
+
           // Lista de películas
           Expanded(
             child: _buildWatchlistContent(watchlistState, watchlistNotifier),
@@ -86,7 +86,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = WatchlistPriority.alta;
                 });
-                ref.read(watchlistProvider.notifier).filterByPriority(WatchlistPriority.alta);
+                ref
+                    .read(watchlistProvider.notifier)
+                    .filterByPriority(WatchlistPriority.alta);
               },
             ),
             const SizedBox(width: 8),
@@ -98,7 +100,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = WatchlistPriority.normal;
                 });
-                ref.read(watchlistProvider.notifier).filterByPriority(WatchlistPriority.normal);
+                ref
+                    .read(watchlistProvider.notifier)
+                    .filterByPriority(WatchlistPriority.normal);
               },
             ),
             const SizedBox(width: 8),
@@ -110,7 +114,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = WatchlistPriority.baja;
                 });
-                ref.read(watchlistProvider.notifier).filterByPriority(WatchlistPriority.baja);
+                ref
+                    .read(watchlistProvider.notifier)
+                    .filterByPriority(WatchlistPriority.baja);
               },
             ),
           ],
@@ -119,7 +125,8 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
     );
   }
 
-  Widget _buildWatchlistContent(WatchlistState state, WatchlistNotifier notifier) {
+  Widget _buildWatchlistContent(
+      WatchlistState state, WatchlistNotifier notifier) {
     if (state.isLoading && state.movies.isEmpty) {
       return const Center(child: LoadingIndicator());
     }
@@ -159,9 +166,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _selectedPriority == null 
-                ? 'Tu watchlist está vacía'
-                : 'No hay películas con ${_selectedPriority!.displayName.toLowerCase()} prioridad',
+              _selectedPriority == null
+                  ? 'Tu watchlist está vacía'
+                  : 'No hay películas con ${_selectedPriority?.displayName.toLowerCase() ?? 'esta'} prioridad',
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
@@ -169,8 +176,8 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
             Text(
               'Agrega películas que quieras ver después',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -216,12 +223,14 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
     );
   }
 
-  void _showRemoveConfirmationDialog(WatchlistMovie movie, WatchlistNotifier notifier) {
+  void _showRemoveConfirmationDialog(
+      WatchlistMovie movie, WatchlistNotifier notifier) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remover de Watchlist'),
-        content: Text('¿Estás seguro que quieres remover "${movie.movieTitle}" de tu watchlist?'),
+        content: Text(
+            '¿Estás seguro que quieres remover "${movie.movieTitle}" de tu watchlist?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -231,7 +240,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
             onPressed: () {
               Navigator.of(context).pop();
               notifier.removeFromWatchlist(movie.movieId);
-              
+
               // Mostrar snackbar de confirmación
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

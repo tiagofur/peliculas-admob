@@ -8,6 +8,7 @@ import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
+import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import '../admob/ad_integration_helper.dart';
 import '../admob/movie_card_ad_widget.dart';
@@ -74,9 +75,8 @@ class _MovieHorizontalListviewWithAdsState
         widget.movies,
       );
     } else {
-      _mixedItems = widget.movies
-          .map((movie) => AdListItem.movie(movie))
-          .toList();
+      _mixedItems =
+          widget.movies.map((movie) => AdListItem.movie(movie)).toList();
     }
   }
 
@@ -104,7 +104,7 @@ class _MovieHorizontalListviewWithAdsState
                 physics: const AlwaysScrollableScrollPhysics(),
                 itemBuilder: (context, index) {
                   final item = _mixedItems[index];
-                  
+
                   if (item.type == AdItemType.horizontalAd) {
                     return FadeInRight(
                       delay: Duration(milliseconds: index * 100),
@@ -291,7 +291,8 @@ class _SlideState extends ConsumerState<_Slide>
                                   child: const Center(
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.grey),
                                     ),
                                   ),
                                 ),
@@ -336,8 +337,10 @@ class _SlideState extends ConsumerState<_Slide>
                                     icon: isFavorite
                                         ? Icons.favorite
                                         : Icons.favorite_border,
-                                    color: isFavorite ? Colors.red : Colors.white,
-                                    onPressed: () => _toggleFavorite(isFavorite),
+                                    color:
+                                        isFavorite ? Colors.red : Colors.white,
+                                    onPressed: () =>
+                                        _toggleFavorite(isFavorite),
                                   ),
 
                                   const SizedBox(height: 4),
@@ -347,7 +350,8 @@ class _SlideState extends ConsumerState<_Slide>
                                     icon: isWatched
                                         ? Icons.visibility
                                         : Icons.visibility_outlined,
-                                    color: isWatched ? Colors.green : Colors.white,
+                                    color:
+                                        isWatched ? Colors.green : Colors.white,
                                     onPressed: () => _toggleWatched(isWatched),
                                   ),
                                 ],

@@ -232,7 +232,8 @@ class _SubscriptionSummaryCard extends ConsumerWidget {
 
   Future<SubscriptionSummary> _getSubscriptionSummary() async {
     final subscriptionTracker = tracker.SubscriptionTracker();
-    final subscriptions = await subscriptionTracker.getUserSubscriptions('user123');
+    final subscriptions =
+        await subscriptionTracker.getUserSubscriptions('user123');
     return SubscriptionSummary.fromSubscriptions(
       userId: 'user123',
       subscriptions: subscriptions,
@@ -573,7 +574,7 @@ class _AvailablePlatformsGrid extends ConsumerWidget {
   Future<List<StreamingPlatform>> _getAvailablePlatforms() async {
     // Mock data - in real app, this would come from the streaming service
     return [
-      StreamingPlatform(
+      const StreamingPlatform(
         id: 'netflix',
         name: 'Netflix',
         displayName: 'Netflix',
@@ -583,7 +584,7 @@ class _AvailablePlatformsGrid extends ConsumerWidget {
         supportedCountries: ['US', 'CA', 'MX', 'ES', 'AR'],
         requiresSubscription: true,
       ),
-      StreamingPlatform(
+      const StreamingPlatform(
         id: 'amazon_prime',
         name: 'Amazon Prime Video',
         displayName: 'Prime Video',
@@ -593,7 +594,7 @@ class _AvailablePlatformsGrid extends ConsumerWidget {
         supportedCountries: ['US', 'CA', 'MX', 'ES', 'AR'],
         requiresSubscription: true,
       ),
-      StreamingPlatform(
+      const StreamingPlatform(
         id: 'disney_plus',
         name: 'Disney+',
         displayName: 'Disney+',
@@ -603,7 +604,7 @@ class _AvailablePlatformsGrid extends ConsumerWidget {
         supportedCountries: ['US', 'CA', 'MX', 'ES', 'AR'],
         requiresSubscription: true,
       ),
-      StreamingPlatform(
+      const StreamingPlatform(
         id: 'hbo_max',
         name: 'HBO Max',
         displayName: 'HBO Max',
@@ -744,9 +745,9 @@ class _PersonalizedRecommendations extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
+        const SizedBox(
           height: 200,
-          child: const Center(
+          child: Center(
             child: Text('Contenido de recomendaciones próximamente...'),
           ),
         ),
@@ -770,9 +771,9 @@ class _PlatformHighlights extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
+        const SizedBox(
           height: 200,
-          child: const Center(
+          child: Center(
             child: Text('Destacados próximamente...'),
           ),
         ),
@@ -796,9 +797,9 @@ class _NewReleases extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
+        const SizedBox(
           height: 200,
-          child: const Center(
+          child: Center(
             child: Text('Nuevos lanzamientos próximamente...'),
           ),
         ),
@@ -822,9 +823,9 @@ class _TrendingContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
+        const SizedBox(
           height: 200,
-          child: const Center(
+          child: Center(
             child: Text('Contenido en tendencia próximamente...'),
           ),
         ),
@@ -848,9 +849,9 @@ class _PopularByPlatform extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
+        const SizedBox(
           height: 200,
-          child: const Center(
+          child: Center(
             child: Text('Contenido popular próximamente...'),
           ),
         ),

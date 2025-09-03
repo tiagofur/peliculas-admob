@@ -25,14 +25,15 @@ class CacheService {
       'expiration': expiration?.inMilliseconds,
     };
 
-    return await _prefs!.setString(key, jsonEncode(cacheData));
+    return await (_prefs?.setString(key, jsonEncode(cacheData)) ??
+        Future.value(false));
   }
 
   /// Get a value from cache
   Future<T?> get<T>(String key) async {
     await initialize();
 
-    final cachedString = _prefs!.getString(key);
+    final cachedString = _prefs?.getString(key);
     if (cachedString == null) return null;
 
     try {
@@ -60,25 +61,25 @@ class CacheService {
   /// Remove a value from cache
   Future<bool> remove(String key) async {
     await initialize();
-    return await _prefs!.remove(key);
+    return await (_prefs?.remove(key) ?? Future.value(false));
   }
 
   /// Clear all cache
   Future<bool> clear() async {
     await initialize();
-    return await _prefs!.clear();
+    return await (_prefs?.clear() ?? Future.value(false));
   }
 
   /// Check if a key exists in cache
   Future<bool> containsKey(String key) async {
     await initialize();
-    return _prefs!.containsKey(key);
+    return _prefs?.containsKey(key) ?? false;
   }
 
   /// Get all cache keys
   Future<Set<String>> getAllKeys() async {
     await initialize();
-    return _prefs!.getKeys();
+    return _prefs?.getKeys() ?? <String>{};
   }
 
   /// Clear expired cache entries
@@ -89,7 +90,7 @@ class CacheService {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     for (final key in keys) {
-      final cachedString = _prefs!.getString(key);
+      final cachedString = _prefs?.getString(key);
       if (cachedString == null) continue;
 
       try {
@@ -118,7 +119,7 @@ class CacheService {
     int totalSize = 0;
 
     for (final key in keys) {
-      final value = _prefs!.getString(key);
+      final value = _prefs?.getString(key);
       if (value != null) {
         totalSize += value.length;
       }

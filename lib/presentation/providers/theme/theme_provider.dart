@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../config/theme/app_theme.dart';
@@ -6,7 +6,7 @@ import '../../../domain/repositories/theme_repository.dart';
 import 'theme_repository_provider.dart';
 
 // Provider for the list of available colors
-final colorListProvider = Provider<List<Color>>((ref) => colorList);
+final colorListProvider = Provider<List<material.Color>>((ref) => colorList);
 
 // Provider for managing the theme state
 final themeNotifierProvider = StateNotifierProvider<ThemeNotifier, ThemeState>(
@@ -38,8 +38,21 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
 
   Future<void> toggleDarkMode() async {
     // Para mantener compatibilidad con el comportamiento anterior
-    final newMode = state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    final newMode =
+        state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     await setThemeMode(newMode);
+  }
+
+  // Método de conversión para compatibilidad con Flutter ThemeMode
+  material.ThemeMode get flutterThemeMode {
+    switch (state.themeMode) {
+      case ThemeMode.system:
+        return material.ThemeMode.system;
+      case ThemeMode.light:
+        return material.ThemeMode.light;
+      case ThemeMode.dark:
+        return material.ThemeMode.dark;
+    }
   }
 
   Future<void> changeColorIndex(int colorIndex) async {
@@ -60,7 +73,7 @@ class ThemeState {
     this.themeMode = ThemeMode.system,
     this.selectedColor = 0,
   });
-  
+
   final ThemeMode themeMode;
   final int selectedColor;
 
@@ -80,10 +93,10 @@ class ThemeState {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    
+
     return other is ThemeState &&
-      other.themeMode == themeMode &&
-      other.selectedColor == selectedColor;
+        other.themeMode == themeMode &&
+        other.selectedColor == selectedColor;
   }
 
   @override

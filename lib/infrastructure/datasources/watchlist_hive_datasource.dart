@@ -10,7 +10,7 @@ class WatchlistHiveDatasource {
   static const _uuid = Uuid();
 
   static Future<void> initialize() async {
-    if (_box == null || !_box!.isOpen) {
+    if (_box == null || !(_box?.isOpen ?? false)) {
       // Registrar adaptadores si no están registrados
       if (!Hive.isAdapterRegistered(100)) {
         Hive.registerAdapter(WatchlistPriorityAdapter());
@@ -18,21 +18,22 @@ class WatchlistHiveDatasource {
       if (!Hive.isAdapterRegistered(101)) {
         Hive.registerAdapter(WatchlistMovieAdapter());
       }
-      
+
       _box = await Hive.openBox<WatchlistMovie>(_boxName);
     }
   }
 
   static Box<WatchlistMovie> get _watchlistBox {
-    if (_box == null || !_box!.isOpen) {
-      throw Exception('Watchlist Hive box is not initialized. Call initialize() first.');
+    if (_box == null || !(_box?.isOpen ?? false)) {
+      throw Exception(
+          'Watchlist Hive box is not initialized. Call initialize() first.');
     }
-    return _box!;
+    return _box!; // Safe because we just checked above
   }
 
   Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) async {
     await initialize();
-    
+
     final now = DateTime.now();
     final watchlistMovie = WatchlistMovie(
       id: _uuid.v4(),
@@ -41,13 +42,13 @@ class WatchlistHiveDatasource {
       moviePosterPath: movie.posterPath,
       movieBackdropPath: movie.backdropPath,
       movieOverview: movie.overview,
-      movieReleaseDate: DateTime.tryParse(movie.releaseDate),
+      movieReleaseDate: movie.releaseDate,
       movieVoteAverage: movie.voteAverage,
       priority: priority,
       addedAt: now,
       updatedAt: now,
     );
-    
+
     // Usar movieId como key para facilitar búsqueda
     await _watchlistBox.put(movie.id, watchlistMovie);
   }
@@ -57,9 +58,10 @@ class WatchlistHiveDatasource {
     await _watchlistBox.delete(movieId);
   }
 
-  Future<void> updateWatchlistPriority(int movieId, WatchlistPriority priority) async {
+  Future<void> updateWatchlistPriority(
+      int movieId, WatchlistPriority priority) async {
     await initialize();
-    
+
     final existingMovie = _watchlistBox.get(movieId);
     if (existingMovie != null) {
       final updatedMovie = existingMovie.copyWith(
@@ -81,37 +83,37 @@ class WatchlistHiveDatasource {
     WatchlistPriority? priority,
   }) async {
     await initialize();
-    
+
     var movies = _watchlistBox.values.toList();
-    
+
     // Filtrar por prioridad si se especifica
     if (priority != null) {
       movies = movies.where((movie) => movie.priority == priority).toList();
     }
-    
+
     // Ordenar por prioridad (alta primero) y luego por fecha agregada (más reciente primero)
     movies.sort((a, b) {
       // Primero ordenar por prioridad
       final priorityOrder = {'alta': 0, 'normal': 1, 'baja': 2};
       final aPriorityIndex = priorityOrder[a.priority.value] ?? 1;
       final bPriorityIndex = priorityOrder[b.priority.value] ?? 1;
-      
+
       if (aPriorityIndex != bPriorityIndex) {
         return aPriorityIndex.compareTo(bPriorityIndex);
       }
-      
+
       // Si tienen la misma prioridad, ordenar por fecha (más reciente primero)
       return b.addedAt.compareTo(a.addedAt);
     });
-    
+
     // Aplicar paginación
     final startIndex = offset;
     final endIndex = (startIndex + limit).clamp(0, movies.length);
-    
+
     if (startIndex >= movies.length) {
       return [];
     }
-    
+
     return movies.sublist(startIndex, endIndex);
   }
 
@@ -131,6 +133,11 @@ class WatchlistHiveDatasource {
   }
 
   Future<void> clear() async {
+    await initialize();
+    await _watchlistBox.clear();
+  }
+
+  Future<void> clearAll() async {
     await initialize();
     await _watchlistBox.clear();
   }

@@ -263,7 +263,7 @@ class HBOMaxService {
   }) async {
     try {
       return [
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'hbo_max_ads',
           name: 'HBO Max (With Ads)',
           price: 9.99,
@@ -276,7 +276,7 @@ class HBOMaxService {
           ],
           quality: 'HD',
         ),
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'hbo_max_no_ads',
           name: 'HBO Max (Ad-Free)',
           price: 15.99,

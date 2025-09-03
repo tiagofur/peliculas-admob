@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
@@ -36,13 +37,23 @@ class AvailabilityChecker {
     String region = 'US',
     bool useCache = true,
   }) async {
+    final cacheKey = 'availability_${movieId}_$region';
+
+    if (useCache) {
+      try {
+        final cachedData = await _cacheService.get<String>(cacheKey);
+        if (cachedData != null) {
+          _logger.info('Cache hit for movie: $movieTitle ($movieId)');
+          return StreamingAvailability.fromJson(jsonDecode(cachedData));
+        }
+      } catch (e) {
+        _logger.warning('Error reading from cache: $e');
+      }
+    }
+
     try {
       _logger.info('Checking availability for movie: $movieTitle ($movieId)');
 
-      // TODO: Implement caching when cache service is available
-      // Cache functionality temporarily disabled
-
-      // Check availability across all platforms
       final platforms = [
         StreamingPlatform.netflix,
         StreamingPlatform.amazonPrime,
@@ -69,7 +80,6 @@ class AvailabilityChecker {
           }
         } catch (e) {
           _logger.warning('Error checking ${platform.name} availability: $e');
-          // Continue with other platforms
         }
       }
 
@@ -81,8 +91,17 @@ class AvailabilityChecker {
         region: region,
       );
 
-      // TODO: Cache the result when cache service is available
-      // Cache functionality temporarily disabled
+      // Cache the result
+      try {
+        await _cacheService.set(
+          cacheKey,
+          jsonEncode(streamingAvailability.toJson()),
+          expiration: _cacheDuration,
+        );
+        _logger.info('Cached availability for movie: $movieTitle ($movieId)');
+      } catch (e) {
+        _logger.warning('Error writing to cache: $e');
+      }
 
       _analyticsService.trackEvent(
         AnalyticsEventType.movieView,

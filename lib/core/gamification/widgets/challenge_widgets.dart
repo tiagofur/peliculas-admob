@@ -1,3 +1,4 @@
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,9 +24,12 @@ class ChallengeCard extends ConsumerWidget {
 
   bool get isExpired => challenge.endDate.isBefore(DateTime.now());
 
-  double get progressPercentage => challenge.targetValue > 0
-      ? challenge.currentProgress / challenge.targetValue
-      : 0.0;
+  double get progressPercentage {
+    if (challenge.targetValue <= 0) return 0.0;
+    final current = challenge.currentProgress ?? 0;
+    final target = challenge.targetValue ?? 1;
+    return (current / target).clamp(0.0, 1.0);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -886,10 +890,13 @@ class _ChallengeCompletionCelebrationState
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
+  late ConfettiController _confettiController;
 
   @override
   void initState() {
     super.initState();
+    _confettiController =
+        ConfettiController(duration: const Duration(seconds: 1));
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -912,9 +919,10 @@ class _ChallengeCompletionCelebrationState
     ));
 
     _animationController.forward();
+    _confettiController.play();
 
-    // Auto dismiss after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
+    // Auto dismiss after 4 seconds
+    Future.delayed(const Duration(seconds: 4), () {
       if (mounted) {
         widget.onDismiss?.call();
       }
@@ -924,6 +932,7 @@ class _ChallengeCompletionCelebrationState
   @override
   void dispose() {
     _animationController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -933,121 +942,147 @@ class _ChallengeCompletionCelebrationState
 
     return Material(
       color: Colors.black54,
-      child: Center(
-        child: AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _scaleAnimation.value,
-              child: Opacity(
-                opacity: _fadeAnimation.value,
-                child: Container(
-                  margin: const EdgeInsets.all(32),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: theme.scaffoldBackgroundColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black26,
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple
+              ],
+              emissionFrequency: 0.05,
+              numberOfParticles: 20,
+              gravity: 0.2,
+            ),
+          ),
+          Center(
+            child: AnimatedBuilder(
+              animation: _animationController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: Container(
+                      margin: const EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: theme.scaffoldBackgroundColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          const BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // TODO: Add confetti animation
-                      const Icon(
-                        Icons.celebration,
-                        size: 64,
-                        color: Colors.amber,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Challenge Completed!',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.challenge.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.stars, color: Colors.amber),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '+${widget.challenge.pointsReward} Points',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber.shade700,
-                                  ),
-                                ),
-                              ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.celebration,
+                            size: 64,
+                            color: Colors.amber,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Challenge Completed!',
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
                             ),
-                            if (widget.challenge.rewardBadges.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.military_tech,
-                                      color: Colors.blue),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'New Badge${widget.challenge.rewardBadges.length > 1 ? 's' : ''} Unlocked!',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue.shade700,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.challenge.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withAlpha(30),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.stars,
+                                        color: Colors.amber),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '+${widget.challenge.rewardPoints} Points',
+                                      style:
+                                          theme.textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.amber.shade700,
+                                      ),
                                     ),
+                                  ],
+                                ),
+                                if (widget
+                                    .challenge.rewardBadges.isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.military_tech,
+                                          color: Colors.blue),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'New Badge${widget.challenge.rewardBadges.length > 1 ? 's' : ''} Unlocked!',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blue.shade700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: widget.onDismiss,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: theme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32,
+                                vertical: 12,
                               ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: widget.onDismiss,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: theme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 12,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: const Text('Awesome!'),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: const Text('Awesome!'),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

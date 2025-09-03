@@ -7,13 +7,13 @@ import '../logging/logger_factory.dart';
 
 /// Estrategia de caché que se adapta a las condiciones de red
 class NetworkAwareStrategy {
-  static NetworkAwareStrategy? _instance;
-  static NetworkAwareStrategy get instance => _instance ??= NetworkAwareStrategy._();
-
   NetworkAwareStrategy._();
+  static NetworkAwareStrategy? _instance;
+  static NetworkAwareStrategy get instance =>
+      _instance ??= NetworkAwareStrategy._();
 
   final _logger = LoggerFactory.logger;
-  
+
   // Estado de red actual
   NetworkCondition _currentCondition = NetworkCondition.unknown;
   StreamSubscription<ConnectivityStatus>? _connectivitySubscription;
@@ -36,11 +36,12 @@ class NetworkAwareStrategy {
       await _evaluateNetworkCondition();
 
       // Suscribirse a cambios de conectividad
-      _connectivitySubscription = ConnectivityDetector.instance.onConnectivityChanged
+      _connectivitySubscription = ConnectivityDetector
+          .instance.onConnectivityChanged
           .listen(_onConnectivityChanged);
 
       _isInitialized = true;
-      _logger.info('✅ Estrategia de red inicializada: ${_currentCondition}');
+      _logger.info('✅ Estrategia de red inicializada: $_currentCondition');
     } catch (e) {
       _logger.error('❌ Error inicializando estrategia de red: $e');
       _currentCondition = NetworkCondition.poor;
@@ -52,71 +53,71 @@ class NetworkAwareStrategy {
   DownloadStrategy getDownloadStrategy() {
     switch (_currentCondition) {
       case NetworkCondition.excellent:
-        return DownloadStrategy(
+        return const DownloadStrategy(
           concurrentDownloads: 5,
-          downloadTimeout: const Duration(seconds: 15),
+          downloadTimeout: Duration(seconds: 15),
           retryAttempts: 3,
-          retryDelay: const Duration(seconds: 1),
+          retryDelay: Duration(seconds: 1),
           enablePreloading: true,
           preloadDistance: 10, // precargar hasta 10 elementos ahead
           qualityPreference: ImageQuality.high,
           enableProgressiveLoading: false, // red rápida, cargar completo
         );
-      
+
       case NetworkCondition.good:
-        return DownloadStrategy(
+        return const DownloadStrategy(
           concurrentDownloads: 3,
-          downloadTimeout: const Duration(seconds: 25),
+          downloadTimeout: Duration(seconds: 25),
           retryAttempts: 3,
-          retryDelay: const Duration(seconds: 2),
+          retryDelay: Duration(seconds: 2),
           enablePreloading: true,
           preloadDistance: 5,
           qualityPreference: ImageQuality.medium,
           enableProgressiveLoading: true,
         );
-      
+
       case NetworkCondition.fair:
-        return DownloadStrategy(
+        return const DownloadStrategy(
           concurrentDownloads: 2,
-          downloadTimeout: const Duration(seconds: 40),
+          downloadTimeout: Duration(seconds: 40),
           retryAttempts: 2,
-          retryDelay: const Duration(seconds: 3),
+          retryDelay: Duration(seconds: 3),
           enablePreloading: false,
           preloadDistance: 0,
           qualityPreference: ImageQuality.low,
           enableProgressiveLoading: true,
         );
-      
+
       case NetworkCondition.poor:
-        return DownloadStrategy(
+        return const DownloadStrategy(
           concurrentDownloads: 1,
-          downloadTimeout: const Duration(seconds: 60),
+          downloadTimeout: Duration(seconds: 60),
           retryAttempts: 1,
-          retryDelay: const Duration(seconds: 5),
+          retryDelay: Duration(seconds: 5),
           enablePreloading: false,
           preloadDistance: 0,
           qualityPreference: ImageQuality.thumbnail,
           enableProgressiveLoading: true,
         );
-      
+
       case NetworkCondition.offline:
-        return DownloadStrategy(
+        return const DownloadStrategy(
           concurrentDownloads: 0,
-          downloadTimeout: const Duration(seconds: 1),
+          downloadTimeout: Duration(seconds: 1),
           retryAttempts: 0,
-          retryDelay: const Duration(seconds: 10),
+          retryDelay: Duration(seconds: 10),
           enablePreloading: false,
           preloadDistance: 0,
           qualityPreference: ImageQuality.cached,
           enableProgressiveLoading: false,
         );
-      
+
       case NetworkCondition.unknown:
-        return DownloadStrategy(
+        return const DownloadStrategy(
           concurrentDownloads: 2,
-          downloadTimeout: const Duration(seconds: 30),
+          downloadTimeout: Duration(seconds: 30),
           retryAttempts: 2,
-          retryDelay: const Duration(seconds: 3),
+          retryDelay: Duration(seconds: 3),
           enablePreloading: false,
           preloadDistance: 0,
           qualityPreference: ImageQuality.medium,
@@ -129,7 +130,7 @@ class NetworkAwareStrategy {
   Future<void> _evaluateNetworkCondition() async {
     try {
       final connectivityStatus = ConnectivityDetector.instance.currentStatus;
-      
+
       if (connectivityStatus == ConnectivityStatus.offline) {
         _currentCondition = NetworkCondition.offline;
         return;
@@ -137,7 +138,7 @@ class NetworkAwareStrategy {
 
       // Obtener tipo de conectividad
       final connectivityResults = await Connectivity().checkConnectivity();
-      
+
       if (connectivityResults.contains(ConnectivityResult.none)) {
         _currentCondition = NetworkCondition.offline;
         return;
@@ -153,7 +154,6 @@ class NetworkAwareStrategy {
       } else {
         _currentCondition = NetworkCondition.unknown;
       }
-
     } catch (e) {
       _logger.warning('⚠️ Error evaluando condición de red: $e');
       _currentCondition = NetworkCondition.unknown;
@@ -207,7 +207,7 @@ class NetworkAwareStrategy {
   /// Determina si se debe realizar un test de velocidad
   bool _shouldPerformSpeedTest() {
     if (_lastSpeedTest == null) return true;
-    
+
     final timeSinceLastTest = DateTime.now().difference(_lastSpeedTest!);
     return timeSinceLastTest > const Duration(minutes: 5);
   }
@@ -216,24 +216,26 @@ class NetworkAwareStrategy {
   Future<void> _performSimpleSpeedTest() async {
     try {
       _logger.debug('🏃 Realizando test de velocidad...');
-      
+
       final stopwatch = Stopwatch()..start();
-      
+
       // URL de una imagen pequeña conocida (puede ser configurada)
-      const testUrl = 'https://httpbin.org/bytes/100000'; // 100KB
+// 100KB
       const expectedBytes = 100000;
-      
+
       final response = await ConnectivityDetector.instance.testConnection();
       stopwatch.stop();
-      
+
       if (response) {
         final durationSeconds = stopwatch.elapsedMilliseconds / 1000.0;
-        final speedMbps = (expectedBytes * 8) / (durationSeconds * 1000000); // Convert to Mbps
-        
+        final speedMbps = (expectedBytes * 8) /
+            (durationSeconds * 1000000); // Convert to Mbps
+
         _estimatedSpeedMbps = speedMbps;
         _lastSpeedTest = DateTime.now();
-        
-        _logger.debug('📊 Velocidad estimada: ${speedMbps.toStringAsFixed(2)} Mbps');
+
+        _logger.debug(
+            '📊 Velocidad estimada: ${speedMbps.toStringAsFixed(2)} Mbps');
       }
     } catch (e) {
       _logger.warning('⚠️ Error en test de velocidad: $e');
@@ -243,7 +245,7 @@ class NetworkAwareStrategy {
   /// Maneja cambios de conectividad
   void _onConnectivityChanged(ConnectivityStatus status) {
     _logger.info('📡 Cambio de conectividad detectado: $status');
-    
+
     // Re-evaluar condición de red en el próximo tick
     Future.microtask(() async {
       await _evaluateNetworkCondition();
@@ -269,7 +271,7 @@ class NetworkAwareStrategy {
   NetworkCondition get currentCondition => _currentCondition;
   bool get isInitialized => _isInitialized;
   double? get estimatedSpeedMbps => _estimatedSpeedMbps;
-  
+
   /// Obtiene información detallada del estado de red
   Map<String, dynamic> getNetworkStatus() {
     return {
@@ -284,11 +286,11 @@ class NetworkAwareStrategy {
 /// Condiciones de red posibles
 enum NetworkCondition {
   excellent, // >10 Mbps, WiFi/Ethernet estable
-  good,      // 5-10 Mbps, WiFi bueno o 4G/5G
-  fair,      // 1-5 Mbps, WiFi lento o 3G/4G
-  poor,      // <1 Mbps, conexión muy lenta
-  offline,   // Sin conexión
-  unknown,   // No se ha podido determinar
+  good, // 5-10 Mbps, WiFi bueno o 4G/5G
+  fair, // 1-5 Mbps, WiFi lento o 3G/4G
+  poor, // <1 Mbps, conexión muy lenta
+  offline, // Sin conexión
+  unknown, // No se ha podido determinar
 }
 
 /// Estrategia de descarga adaptada a la red
@@ -323,9 +325,9 @@ class DownloadStrategy {
 
 /// Calidades de imagen disponibles
 enum ImageQuality {
-  thumbnail,  // Muy pequeña, para conexiones pobres
-  low,        // Baja calidad, rápida descarga
-  medium,     // Calidad media, balance
-  high,       // Alta calidad, mejor experiencia
-  cached,     // Solo usar caché, no descargar
+  thumbnail, // Muy pequeña, para conexiones pobres
+  low, // Baja calidad, rápida descarga
+  medium, // Calidad media, balance
+  high, // Alta calidad, mejor experiencia
+  cached, // Solo usar caché, no descargar
 }

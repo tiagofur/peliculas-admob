@@ -117,7 +117,7 @@ class _RecommendationShareContent extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _InfoChip(
+                      const _InfoChip(
                         icon: Icons.star,
                         label: 'Recomendado',
                       ),
@@ -427,17 +427,17 @@ class _RecommendationFeaturesSection extends StatelessWidget {
 
   List<Widget> _getCategoryFeatures() {
     return [
-      _FeatureItem(
+      const _FeatureItem(
         icon: Icons.category,
         title: 'Explora por categorías',
         description: 'Descubre películas de todos los géneros',
       ),
-      _FeatureItem(
+      const _FeatureItem(
         icon: Icons.trending_up,
         title: 'Tendencias actuales',
         description: 'Mantente al día con lo más popular',
       ),
-      _FeatureItem(
+      const _FeatureItem(
         icon: Icons.star_rate,
         title: 'Mejor valoradas',
         description: 'Encuentra las películas con mejores críticas',
@@ -447,17 +447,17 @@ class _RecommendationFeaturesSection extends StatelessWidget {
 
   List<Widget> _getMoodFeatures() {
     return [
-      _FeatureItem(
+      const _FeatureItem(
         icon: Icons.mood,
         title: 'Recomendaciones por estado de ánimo',
         description: 'Películas perfectas para cada momento',
       ),
-      _FeatureItem(
+      const _FeatureItem(
         icon: Icons.psychology,
         title: 'Algoritmo inteligente',
         description: 'Sugerencias basadas en tus preferencias',
       ),
-      _FeatureItem(
+      const _FeatureItem(
         icon: Icons.favorite,
         title: 'Personalización total',
         description: 'Crea tu perfil de gustos cinematográficos',

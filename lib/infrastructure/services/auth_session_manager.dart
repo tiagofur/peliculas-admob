@@ -13,7 +13,8 @@ import 'web_safe_storage_service.dart';
 class AuthSessionManager {
   AuthSessionManager._();
   static AuthSessionManager? _instance;
-  static AuthSessionManager get instance => _instance ??= AuthSessionManager._();
+  static AuthSessionManager get instance =>
+      _instance ??= AuthSessionManager._();
 
   final WebSafeStorageService _storage = WebSafeStorageService.instance;
   final SupabaseClient _supabase = SupabaseConfig.client;
@@ -27,7 +28,7 @@ class AuthSessionManager {
   // Configuración
   static const Duration _sessionValidationInterval = Duration(minutes: 5);
   static const Duration _maxSessionAge = Duration(days: 30);
-  
+
   Timer? _validationTimer;
   String? _deviceId;
   bool _isInitialized = false;
@@ -39,15 +40,15 @@ class AuthSessionManager {
     try {
       // Generar o recuperar ID de dispositivo único
       await _initializeDeviceId();
-      
+
       // Recuperar sesión persistente si existe
       await _recoverPersistedSession();
-      
+
       // Iniciar validación periódica
       _startPeriodicValidation();
-      
+
       _isInitialized = true;
-      
+
       if (kDebugMode) {
         LoggerFactory.info('✅ AuthSessionManager inicializado correctamente');
       }
@@ -71,17 +72,17 @@ class AuthSessionManager {
 
       // Encriptar datos de sesión
       final encryptedData = _encryptSessionData(sessionData);
-      
+
       // Guardar sesión encriptada
       await _storage.saveString(_sessionKey, encryptedData);
-      
+
       // Guardar hash del token para validación rápida
       final tokenHash = _generateTokenHash(session.accessToken);
       await _storage.saveString(_sessionTokenKey, tokenHash);
-      
+
       // Actualizar timestamp de última validación
       await _storage.saveString(
-        _lastValidationKey, 
+        _lastValidationKey,
         DateTime.now().millisecondsSinceEpoch.toString(),
       );
 
@@ -115,12 +116,14 @@ class AuthSessionManager {
       if (session == null) return false;
 
       final now = DateTime.now();
-      final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
-      
+      final expiresAt =
+          DateTime.fromMillisecondsSinceEpoch((session.expiresAt ?? 0) * 1000);
+
       // Si expira en menos de 5 minutos, considerar inválida para forzar refresh
       if (expiresAt.difference(now).inMinutes < 5) {
         if (kDebugMode) {
-          LoggerFactory.info('🔄 Sesión próxima a expirar, marcando como inválida');
+          LoggerFactory.info(
+              '🔄 Sesión próxima a expirar, marcando como inválida');
         }
         return false;
       }
@@ -131,7 +134,8 @@ class AuthSessionManager {
         final currentHash = _generateTokenHash(session.accessToken);
         if (storedHash != currentHash) {
           if (kDebugMode) {
-            LoggerFactory.warning('⚠️ Hash de token no coincide, sesión comprometida');
+            LoggerFactory.warning(
+                '⚠️ Hash de token no coincide, sesión comprometida');
           }
           return false;
         }
@@ -148,11 +152,11 @@ class AuthSessionManager {
   Future<void> clearSession() async {
     try {
       _validationTimer?.cancel();
-      
+
       await _storage.remove(_sessionKey);
       await _storage.remove(_sessionTokenKey);
       await _storage.remove(_lastValidationKey);
-      
+
       if (kDebugMode) {
         LoggerFactory.info('✅ Datos de sesión limpiados');
       }
@@ -168,7 +172,7 @@ class AuthSessionManager {
       if (encryptedData == null) return null;
 
       final sessionData = _decryptSessionData(encryptedData);
-      
+
       return {
         'user_id': sessionData['user_id'],
         'device_id': sessionData['device_id'],
@@ -196,14 +200,16 @@ class AuthSessionManager {
 
   Future<void> _initializeDeviceId() async {
     _deviceId = await _storage.getString(_deviceIdKey);
-    
+
     if (_deviceId == null) {
       // Generar ID único basado en timestamp y datos aleatorios
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final random = DateTime.now().microsecondsSinceEpoch;
       _deviceId = _generateHash('$timestamp-$random');
-      
-      await _storage.saveString(_deviceIdKey, _deviceId!);
+
+      if (_deviceId != null) {
+        await _storage.saveString(_deviceIdKey, _deviceId!);
+      }
     }
   }
 
@@ -213,7 +219,7 @@ class AuthSessionManager {
       if (encryptedData == null) return false;
 
       final sessionData = _decryptSessionData(encryptedData);
-      
+
       // Verificar que los datos son válidos
       if (!_isSessionDataValid(sessionData)) {
         await clearSession();
@@ -223,10 +229,12 @@ class AuthSessionManager {
       // Verificar que no ha expirado
       final expiresAt = sessionData['expires_at'] as int?;
       if (expiresAt != null) {
-        final expirationDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+        final expirationDate =
+            DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
         if (DateTime.now().isAfter(expirationDate)) {
           if (kDebugMode) {
-            LoggerFactory.info('🔄 Sesión persistida expirada, intentando refresh');
+            LoggerFactory.info(
+                '🔄 Sesión persistida expirada, intentando refresh');
           }
           // Intentar refrescar con refresh token si está disponible
           return await _attemptTokenRefresh(sessionData);
@@ -248,15 +256,16 @@ class AuthSessionManager {
 
       // Intentar restaurar la sesión en Supabase
       try {
-        await _supabase.auth.setSession(sessionData['access_token'], sessionData['refresh_token']);
-        
+        await _supabase.auth.setSession(sessionData['refresh_token']);
+
         if (kDebugMode) {
           LoggerFactory.info('✅ Sesión recuperada exitosamente');
         }
         return true;
       } catch (e) {
         if (kDebugMode) {
-          LoggerFactory.info('🔄 Error restaurando sesión, intentando refresh: $e');
+          LoggerFactory.info(
+              '🔄 Error restaurando sesión, intentando refresh: $e');
         }
         return await _attemptTokenRefresh(sessionData);
       }
@@ -276,7 +285,7 @@ class AuthSessionManager {
       if (response.session != null) {
         // Persistir la nueva sesión
         await persistSession(response.session!);
-        
+
         if (kDebugMode) {
           LoggerFactory.info('✅ Token refrescado y sesión actualizada');
         }
@@ -291,10 +300,12 @@ class AuthSessionManager {
   }
 
   void _startPeriodicValidation() {
-    _validationTimer = Timer.periodic(_sessionValidationInterval, (timer) async {
+    _validationTimer =
+        Timer.periodic(_sessionValidationInterval, (timer) async {
       if (!await validateCurrentSession()) {
         if (kDebugMode) {
-          LoggerFactory.warning('⚠️ Validación de sesión fallida, iniciando limpieza');
+          LoggerFactory.warning(
+              '⚠️ Validación de sesión fallida, iniciando limpieza');
         }
         timer.cancel();
         await clearSession();
@@ -304,10 +315,10 @@ class AuthSessionManager {
 
   bool _isSessionDataValid(Map<String, dynamic> sessionData) {
     return sessionData.containsKey('access_token') &&
-           sessionData.containsKey('refresh_token') &&
-           sessionData.containsKey('user_id') &&
-           sessionData.containsKey('device_id') &&
-           sessionData['device_id'] == _deviceId;
+        sessionData.containsKey('refresh_token') &&
+        sessionData.containsKey('user_id') &&
+        sessionData.containsKey('device_id') &&
+        sessionData['device_id'] == _deviceId;
   }
 
   String _encryptSessionData(Map<String, dynamic> data) {
@@ -317,12 +328,12 @@ class AuthSessionManager {
     final key = _deviceId ?? 'default_key';
     final keyBytes = utf8.encode(key);
     final dataBytes = utf8.encode(jsonString);
-    
+
     final encryptedBytes = <int>[];
     for (int i = 0; i < dataBytes.length; i++) {
       encryptedBytes.add(dataBytes[i] ^ keyBytes[i % keyBytes.length]);
     }
-    
+
     return base64Encode(encryptedBytes);
   }
 
@@ -330,12 +341,12 @@ class AuthSessionManager {
     final key = _deviceId ?? 'default_key';
     final keyBytes = utf8.encode(key);
     final encryptedBytes = base64Decode(encryptedData);
-    
+
     final decryptedBytes = <int>[];
     for (int i = 0; i < encryptedBytes.length; i++) {
       decryptedBytes.add(encryptedBytes[i] ^ keyBytes[i % keyBytes.length]);
     }
-    
+
     final jsonString = utf8.decode(decryptedBytes);
     return jsonDecode(jsonString) as Map<String, dynamic>;
   }

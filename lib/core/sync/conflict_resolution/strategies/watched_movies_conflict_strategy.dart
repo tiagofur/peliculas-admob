@@ -156,7 +156,7 @@ class WatchedMoviesConflictStrategy
     if (baseItem.review?.isNotEmpty == true &&
         otherItem.review?.isNotEmpty == true) {
       // Si ambos tienen review, usar la más larga
-      review = baseItem.review!.length >= otherItem.review!.length
+      review = (baseItem.review?.length ?? 0) >= (otherItem.review?.length ?? 0)
           ? baseItem.review
           : otherItem.review;
     } else {
@@ -213,8 +213,8 @@ class WatchedMoviesConflictStrategy
 
     if (localItem.review?.isNotEmpty == true &&
         remoteItem.review?.isNotEmpty == true) {
-      final localReview = localItem.review!.toLowerCase();
-      final remoteReview = remoteItem.review!.toLowerCase();
+      final localReview = localItem.review?.toLowerCase() ?? '';
+      final remoteReview = remoteItem.review?.toLowerCase() ?? '';
 
       // Si las reviews son muy diferentes en longitud o contenido
       if ((localReview.length - remoteReview.length).abs() > 100 ||

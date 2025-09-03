@@ -228,7 +228,7 @@ class DisneyPlusService {
   }) async {
     try {
       return [
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'disney_plus_monthly',
           name: 'Disney+ Monthly',
           price: 7.99,
@@ -241,7 +241,7 @@ class DisneyPlusService {
           ],
           quality: '4K Ultra HD',
         ),
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'disney_plus_annual',
           name: 'Disney+ Annual',
           price: 79.99,
@@ -255,7 +255,7 @@ class DisneyPlusService {
           ],
           quality: '4K Ultra HD',
         ),
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'disney_bundle',
           name: 'Disney Bundle',
           price: 13.99,

@@ -77,11 +77,7 @@ class CustomDrawer extends ConsumerWidget {
               children: [
                 ProfileAvatar(
                   avatarUrl: profile?.avatarUrl,
-                  fullName: profile?.fullName ?? user?.fullName,
-                  radius: 32,
-                  showBorder: true,
-                  borderColor:
-                      colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  size: 64,
                   onTap: () {
                     Navigator.of(context).pop();
                     context.push('/profile');
@@ -118,9 +114,9 @@ class CustomDrawer extends ConsumerWidget {
               ],
             ),
             const Spacer(),
-            if (profile?.bio != null && profile!.bio!.isNotEmpty)
+            if (profile?.bio != null && (profile?.bio?.isNotEmpty ?? false))
               Text(
-                profile.bio!,
+                profile?.bio ?? '',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color:
                           colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
@@ -135,13 +131,9 @@ class CustomDrawer extends ConsumerWidget {
           children: [
             Row(
               children: [
-                ProfileAvatar(
+                const ProfileAvatar(
                   avatarUrl: null,
-                  fullName: user?.fullName,
-                  radius: 32,
-                  showBorder: true,
-                  borderColor:
-                      colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  size: 64,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -176,13 +168,9 @@ class CustomDrawer extends ConsumerWidget {
           children: [
             Row(
               children: [
-                ProfileAvatar(
+                const ProfileAvatar(
                   avatarUrl: null,
-                  fullName: user?.fullName,
-                  radius: 32,
-                  showBorder: true,
-                  borderColor:
-                      colorScheme.onPrimaryContainer.withValues(alpha: 0.3),
+                  size: 64,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -345,17 +333,17 @@ class CustomDrawer extends ConsumerWidget {
           context.push('/settings');
         },
       ),
-      
+
       // Quick theme toggle
       Consumer(
         builder: (context, ref, child) {
           final themeState = ref.watch(themeNotifierProvider);
           final isDark = themeState.themeMode == app_theme.ThemeMode.dark;
           final isSystem = themeState.themeMode == app_theme.ThemeMode.system;
-          
+
           String subtitle;
           IconData icon;
-          
+
           if (isSystem) {
             subtitle = 'Siguiendo el sistema';
             icon = Icons.brightness_auto;
@@ -366,7 +354,7 @@ class CustomDrawer extends ConsumerWidget {
             subtitle = 'Modo claro activo';
             icon = Icons.light_mode;
           }
-          
+
           return ListTile(
             leading: Icon(icon),
             title: const Text('Tema'),
@@ -384,7 +372,8 @@ class CustomDrawer extends ConsumerWidget {
                   notifier.setThemeMode(app_theme.ThemeMode.dark);
                 }
               },
-              tooltip: isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
+              tooltip:
+                  isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
             ),
             onTap: () {
               Navigator.of(context).pop();
@@ -393,21 +382,21 @@ class CustomDrawer extends ConsumerWidget {
           );
         },
       ),
-      
+
       ListTile(
-        leading: const Icon(Icons.help),
+        leading: const Icon(Icons.help_outline),
         title: const Text('Ayuda'),
         onTap: () {
           Navigator.of(context).pop();
-          // TODO: Implementar pantalla de ayuda
+          context.push('/help');
         },
       ),
       ListTile(
-        leading: const Icon(Icons.info),
+        leading: const Icon(Icons.info_outline),
         title: const Text('Acerca de'),
         onTap: () {
           Navigator.of(context).pop();
-          // TODO: Implementar pantalla acerca de
+          context.push('/about');
         },
       ),
     ];

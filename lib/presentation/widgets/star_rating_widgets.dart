@@ -84,7 +84,7 @@ class _StarRatingInputState extends State<StarRatingInput> {
                     size: widget.size,
                     color: starNumber <= _currentRating
                         ? widget.color
-                        : (widget.borderColor ?? widget.color.withOpacity(0.3)),
+                        : (widget.borderColor ?? widget.color.withValues(alpha: 0.3 * 255)),
                   ),
                 ),
               ),
@@ -139,7 +139,7 @@ class StarRatingDisplay extends StatelessWidget {
                 size: size,
                 color: starNumber <= rating
                     ? color
-                    : color.withOpacity(0.3),
+                    : color.withValues(alpha: 0.3 * 255),
                 semanticLabel: starNumber <= rating ? 'Estrella llena' : 'Estrella vacía',
               ),
             );
@@ -276,7 +276,7 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
                           color: widget.enabled
                               ? (starNumber <= displayRating
                                   ? widget.color
-                                  : widget.color.withOpacity(0.3))
+                                  : widget.color.withValues(alpha: 0.3 * 255))
                               : Colors.grey,
                         ),
                       ),

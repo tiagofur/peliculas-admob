@@ -171,7 +171,7 @@ class NetflixService {
     try {
       // Simulate Netflix subscription plans
       return [
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'netflix_basic',
           name: 'Basic',
           price: 8.99,
@@ -179,7 +179,7 @@ class NetflixService {
           features: ['1 Screen', 'Mobile & Tablet', 'Unlimited Movies & TV'],
           quality: 'Good',
         ),
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'netflix_standard',
           name: 'Standard',
           price: 13.99,
@@ -187,7 +187,7 @@ class NetflixService {
           features: ['2 Screens', 'HD Available', 'Unlimited Movies & TV'],
           quality: 'Better',
         ),
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'netflix_premium',
           name: 'Premium',
           price: 17.99,
@@ -278,7 +278,7 @@ class SubscriptionPlan {
       SubscriptionPlan(
         id: json['id'] as String,
         name: json['name'] as String,
-        price: (json['price'] as num).toDouble(),
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
         currency: json['currency'] as String,
         features: List<String>.from(json['features'] as List),
         quality: json['quality'] as String,

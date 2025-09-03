@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 
@@ -7,10 +6,10 @@ import '../logging/logger_factory.dart';
 
 /// Configuración adaptativa del caché basada en las capacidades del dispositivo
 class AdaptiveCacheConfig {
-  static AdaptiveCacheConfig? _instance;
-  static AdaptiveCacheConfig get instance => _instance ??= AdaptiveCacheConfig._();
-
   AdaptiveCacheConfig._();
+  static AdaptiveCacheConfig? _instance;
+  static AdaptiveCacheConfig get instance =>
+      _instance ??= AdaptiveCacheConfig._();
 
   final _logger = LoggerFactory.logger;
 
@@ -34,7 +33,7 @@ class AdaptiveCacheConfig {
 
       // Detectar capacidades del dispositivo
       _deviceCapabilities = await _detectDeviceCapabilities();
-      
+
       // Configurar caché según capacidades
       _cacheConfiguration = _calculateOptimalConfiguration(_deviceCapabilities);
 
@@ -58,13 +57,14 @@ class AdaptiveCacheConfig {
     try {
       // Detectar memoria aproximada basada en la plataforma
       int estimatedMemoryMB = _estimateDeviceMemory();
-      
+
       // Detectar tipo de dispositivo
       DeviceType deviceType = _detectDeviceType();
-      
+
       // Detectar nivel de rendimiento
-      PerformanceTier performanceTier = _detectPerformanceTier(estimatedMemoryMB, deviceType);
-      
+      PerformanceTier performanceTier =
+          _detectPerformanceTier(estimatedMemoryMB, deviceType);
+
       // Verificar almacenamiento disponible (simplificado)
       double storageMultiplier = await _getStorageMultiplier();
 
@@ -86,21 +86,23 @@ class AdaptiveCacheConfig {
       // En web, asumir menos memoria disponible
       return 2048; // 2GB estimado para web
     }
-    
+
     if (Platform.isAndroid || Platform.isIOS) {
       // Para móviles, usar heurísticas basadas en resolución de pantalla
       final size = PlatformDispatcher.instance.views.first.physicalSize;
       final pixels = size.width * size.height;
-      
-      if (pixels > 3000000) { // ~2K+ resolution
+
+      if (pixels > 3000000) {
+        // ~2K+ resolution
         return 8192; // 8GB estimado para dispositivos premium
-      } else if (pixels > 2000000) { // ~1080p
+      } else if (pixels > 2000000) {
+        // ~1080p
         return 4096; // 4GB estimado para dispositivos mid-range
       } else {
         return 2048; // 2GB estimado para dispositivos básicos
       }
     }
-    
+
     // Desktop: asumir más memoria disponible
     return 8192; // 8GB estimado para desktop
   }
@@ -122,11 +124,11 @@ class AdaptiveCacheConfig {
     if (deviceType == DeviceType.desktop) {
       return memoryMB >= 8192 ? PerformanceTier.high : PerformanceTier.medium;
     }
-    
+
     if (deviceType == DeviceType.web) {
       return PerformanceTier.low; // Conservador para web
     }
-    
+
     // Para móviles (Android/iOS)
     if (memoryMB >= 8192) {
       return PerformanceTier.high;
@@ -150,7 +152,8 @@ class AdaptiveCacheConfig {
   }
 
   /// Calcula la configuración óptima basada en las capacidades
-  CacheConfiguration _calculateOptimalConfiguration(DeviceCapabilities capabilities) {
+  CacheConfiguration _calculateOptimalConfiguration(
+      DeviceCapabilities capabilities) {
     // Multiplicadores basados en el tier de rendimiento
     double memoryMultiplier;
     double diskMultiplier;
@@ -182,8 +185,10 @@ class AdaptiveCacheConfig {
     int diskCacheSize = (_baseDiskCache * diskMultiplier).round();
 
     // Límites de seguridad
-    memoryCacheSize = memoryCacheSize.clamp(20 * 1024 * 1024, 200 * 1024 * 1024); // 20MB - 200MB
-    diskCacheSize = diskCacheSize.clamp(100 * 1024 * 1024, 2 * 1024 * 1024 * 1024); // 100MB - 2GB
+    memoryCacheSize = memoryCacheSize.clamp(
+        20 * 1024 * 1024, 200 * 1024 * 1024); // 20MB - 200MB
+    diskCacheSize = diskCacheSize.clamp(
+        100 * 1024 * 1024, 2 * 1024 * 1024 * 1024); // 100MB - 2GB
 
     return CacheConfiguration(
       memoryCacheSize: memoryCacheSize,
@@ -245,11 +250,6 @@ class DeviceCapabilities {
     required this.storageMultiplier,
   });
 
-  final int estimatedMemoryMB;
-  final DeviceType deviceType;
-  final PerformanceTier performanceTier;
-  final double storageMultiplier;
-
   factory DeviceCapabilities.safeFallback() {
     return const DeviceCapabilities(
       estimatedMemoryMB: 2048,
@@ -258,6 +258,11 @@ class DeviceCapabilities {
       storageMultiplier: 0.5,
     );
   }
+
+  final int estimatedMemoryMB;
+  final DeviceType deviceType;
+  final PerformanceTier performanceTier;
+  final double storageMultiplier;
 
   @override
   String toString() {
@@ -276,12 +281,6 @@ class CacheConfiguration {
     required this.cacheExpiry,
   });
 
-  final int memoryCacheSize;
-  final int diskCacheSize;
-  final int maxConcurrentDownloads;
-  final Duration downloadTimeout;
-  final Duration cacheExpiry;
-
   factory CacheConfiguration.safeFallback() {
     return const CacheConfiguration(
       memoryCacheSize: 20 * 1024 * 1024, // 20MB
@@ -291,6 +290,12 @@ class CacheConfiguration {
       cacheExpiry: Duration(days: 3),
     );
   }
+
+  final int memoryCacheSize;
+  final int diskCacheSize;
+  final int maxConcurrentDownloads;
+  final Duration downloadTimeout;
+  final Duration cacheExpiry;
 
   @override
   String toString() {
@@ -311,7 +316,7 @@ enum DeviceType {
 
 /// Niveles de rendimiento del dispositivo
 enum PerformanceTier {
-  low,    // Dispositivos básicos, recursos limitados
+  low, // Dispositivos básicos, recursos limitados
   medium, // Dispositivos mid-range, recursos moderados
-  high,   // Dispositivos premium, recursos abundantes
+  high, // Dispositivos premium, recursos abundantes
 }

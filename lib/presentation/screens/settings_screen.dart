@@ -15,7 +15,7 @@ class SettingsScreen extends ConsumerWidget {
     final colorList = ref.watch(colorListProvider);
     final localeState = ref.watch(localeNotifierProvider);
     final l10n = AppLocalizations.of(context)!;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.settings),
@@ -41,13 +41,13 @@ class SettingsScreen extends ConsumerWidget {
                       Text(
                         l10n.language,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Selector de idioma
                   Text(
                     l10n.selectLanguage,
@@ -55,21 +55,24 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _buildLanguageSelector(context, ref, localeState, l10n),
-                  
+
                   const SizedBox(height: 16),
                   Text(
                     l10n.languageDescription,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.8),
+                        ),
                   ),
                 ],
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Sección de Tema
           Card(
             child: Padding(
@@ -87,13 +90,13 @@ class SettingsScreen extends ConsumerWidget {
                       Text(
                         l10n.appearance,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Selector de modo de tema
                   Text(
                     l10n.themeMode,
@@ -101,9 +104,9 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 8),
                   _buildThemeModeSelector(context, ref, themeState, l10n),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   // Selector de color
                   Text(
                     l10n.themeColor,
@@ -115,9 +118,9 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Información adicional
           Card(
             child: Padding(
@@ -135,8 +138,8 @@ class SettingsScreen extends ConsumerWidget {
                       Text(
                         l10n.information,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
                     ],
                   ),
@@ -144,8 +147,11 @@ class SettingsScreen extends ConsumerWidget {
                   Text(
                     l10n.systemThemeDescription,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.8),
+                        ),
                   ),
                 ],
               ),
@@ -156,7 +162,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref, ThemeState themeState, AppLocalizations l10n) {
+  Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref,
+      ThemeState themeState, AppLocalizations l10n) {
     return Column(
       children: [
         RadioListTile<app_theme.ThemeMode>(
@@ -199,10 +206,12 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildLanguageSelector(BuildContext context, WidgetRef ref, LocaleState localeState, AppLocalizations l10n) {
+  Widget _buildLanguageSelector(BuildContext context, WidgetRef ref,
+      LocaleState localeState, AppLocalizations l10n) {
     final localeNotifier = ref.read(localeNotifierProvider.notifier);
-    final currentLocale = localeState.locale ?? Locale(Localizations.localeOf(context).languageCode);
-    
+    final currentLocale = localeState.locale ??
+        Locale(Localizations.localeOf(context).languageCode);
+
     return Column(
       children: [
         RadioListTile<String>(
@@ -231,7 +240,8 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildColorSelector(BuildContext context, WidgetRef ref, List<Color> colorList, ThemeState themeState) {
+  Widget _buildColorSelector(BuildContext context, WidgetRef ref,
+      List<Color> colorList, ThemeState themeState) {
     return SizedBox(
       height: 80,
       child: ListView.builder(
@@ -240,12 +250,14 @@ class SettingsScreen extends ConsumerWidget {
         itemBuilder: (context, index) {
           final color = colorList[index];
           final isSelected = themeState.selectedColor == index;
-          
+
           return Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: GestureDetector(
               onTap: () {
-                ref.read(themeNotifierProvider.notifier).changeColorIndex(index);
+                ref
+                    .read(themeNotifierProvider.notifier)
+                    .changeColorIndex(index);
               },
               child: Container(
                 width: 60,
@@ -253,15 +265,18 @@ class SettingsScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: color,
                   shape: BoxShape.circle,
-                  border: isSelected 
-                    ? Border.all(
-                        color: Theme.of(context).colorScheme.outline,
-                        width: 3,
-                      )
-                    : Border.all(
-                        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
+                  border: isSelected
+                      ? Border.all(
+                          color: Theme.of(context).colorScheme.outline,
+                          width: 3,
+                        )
+                      : Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withValues(alpha: 0.3),
+                          width: 1,
+                        ),
                   boxShadow: [
                     if (isSelected)
                       BoxShadow(
@@ -272,12 +287,12 @@ class SettingsScreen extends ConsumerWidget {
                   ],
                 ),
                 child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      color: _getContrastColor(color),
-                      size: 28,
-                    )
-                  : null,
+                    ? Icon(
+                        Icons.check,
+                        color: _getContrastColor(color),
+                        size: 28,
+                      )
+                    : null,
               ),
             ),
           );

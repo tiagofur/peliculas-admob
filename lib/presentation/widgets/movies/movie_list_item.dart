@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
+import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import 'movie_rating.dart';
 
@@ -173,7 +174,8 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
                                   child: const Center(
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.grey),
                                     ),
                                   ),
                                 ),

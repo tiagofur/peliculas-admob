@@ -47,16 +47,18 @@ class MovieInfoSection extends StatelessWidget {
 
         // Colección si pertenece a una
         if (movie.belongsToCollection != null &&
-            movie.belongsToCollection!.isNotEmpty)
+            (movie.belongsToCollection?.isNotEmpty ?? false))
           _CollectionInfo(movie: movie),
         if (movie.belongsToCollection != null &&
-            movie.belongsToCollection!.isNotEmpty)
+            (movie.belongsToCollection?.isNotEmpty ?? false))
           const SizedBox(height: 16),
 
         // Idiomas hablados
-        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null &&
+            (movie.spokenLanguages?.isNotEmpty ?? false))
           _SpokenLanguages(movie: movie),
-        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null &&
+            (movie.spokenLanguages?.isNotEmpty ?? false))
           const SizedBox(height: 16),
 
         // Streaming Quick Action Button
@@ -85,7 +87,7 @@ class MovieInfoSection extends StatelessWidget {
         if (movie.watchProviders != null) const SizedBox(height: 16),
 
         // Homepage link if available
-        if (movie.homepage != null && movie.homepage!.isNotEmpty)
+        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -110,9 +112,9 @@ class MovieInfoSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 InkWell(
-                  onTap: () => _launchURL(movie.homepage!),
+                  onTap: () => _launchURL(movie.homepage ?? ''),
                   child: Text(
-                    movie.homepage!,
+                    movie.homepage ?? '',
                     style: textStyles.bodyMedium?.copyWith(
                       color: colors.primary,
                       decoration: TextDecoration.underline,
@@ -122,7 +124,7 @@ class MovieInfoSection extends StatelessWidget {
               ],
             ),
           ),
-        if (movie.homepage != null && movie.homepage!.isNotEmpty)
+        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
           const SizedBox(height: 16),
 
         // Cast principal mejorado
@@ -219,16 +221,18 @@ class EnhancedMovieInfo extends ConsumerWidget {
 
         // Colección si pertenece a una
         if (movie.belongsToCollection != null &&
-            movie.belongsToCollection!.isNotEmpty)
+            (movie.belongsToCollection?.isNotEmpty ?? false))
           _CollectionInfo(movie: movie),
         if (movie.belongsToCollection != null &&
-            movie.belongsToCollection!.isNotEmpty)
+            (movie.belongsToCollection?.isNotEmpty ?? false))
           const SizedBox(height: 16),
 
         // Idiomas hablados
-        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null &&
+            (movie.spokenLanguages?.isNotEmpty ?? false))
           _SpokenLanguages(movie: movie),
-        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null &&
+            (movie.spokenLanguages?.isNotEmpty ?? false))
           const SizedBox(height: 16),
 
         // Watch Providers - Plataformas de streaming
@@ -242,7 +246,7 @@ class EnhancedMovieInfo extends ConsumerWidget {
         if (movie.watchProviders != null) const SizedBox(height: 16),
 
         // Homepage link if available
-        if (movie.homepage != null && movie.homepage!.isNotEmpty)
+        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -267,9 +271,9 @@ class EnhancedMovieInfo extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 InkWell(
-                  onTap: () => _launchURL(movie.homepage!),
+                  onTap: () => _launchURL(movie.homepage ?? ''),
                   child: Text(
-                    movie.homepage!,
+                    movie.homepage ?? '',
                     style: textStyles.bodyMedium?.copyWith(
                       color: colors.primary,
                       decoration: TextDecoration.underline,
@@ -279,7 +283,7 @@ class EnhancedMovieInfo extends ConsumerWidget {
               ],
             ),
           ),
-        if (movie.homepage != null && movie.homepage!.isNotEmpty)
+        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
           const SizedBox(height: 16),
 
         // Cast principal mejorado
@@ -353,7 +357,7 @@ class _CollectionInfo extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    movie.belongsToCollection!,
+                    movie.belongsToCollection ?? '',
                     style: textStyles.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                       color: colors.primary,
@@ -405,7 +409,7 @@ class _SpokenLanguages extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: movie.spokenLanguages!
+            children: (movie.spokenLanguages ?? [])
                 .map((language) => Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -478,7 +482,8 @@ class _BasicInfoSection extends StatelessWidget {
                           fontStyle: FontStyle.italic,
                         ),
                       ),
-                    if (movie.tagline != null && movie.tagline!.isNotEmpty)
+                    if (movie.tagline != null &&
+                        (movie.tagline?.isNotEmpty ?? false))
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
@@ -544,7 +549,7 @@ class _BasicInfoSection extends StatelessWidget {
               if (movie.status != null)
                 _InfoChip(
                   icon: Icons.info,
-                  label: movie.status!,
+                  label: movie.status ?? '',
                 ),
             ],
           ),
@@ -713,28 +718,28 @@ class _TechnicalDetails extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          if (movie.budget != null && movie.budget! > 0)
+          if (movie.budget != null && (movie.budget ?? 0) > 0)
             Row(
               children: [
                 Expanded(
                   child: _DetailItem(
                     label: 'Presupuesto',
-                    value: '\$${HumanFormats.number(movie.budget!.toDouble())}',
+                    value: '\$${HumanFormats.number((movie.budget ?? 0).toDouble())}',
                     icon: Icons.attach_money,
                   ),
                 ),
-                if (movie.revenue != null && movie.revenue! > 0)
+                if (movie.revenue != null && (movie.revenue ?? 0) > 0)
                   Expanded(
                     child: _DetailItem(
                       label: 'Ingresos',
                       value:
-                          '\$${HumanFormats.number(movie.revenue!.toDouble())}',
+                          '\$${HumanFormats.number((movie.revenue ?? 0).toDouble())}',
                       icon: Icons.trending_up,
                     ),
                   ),
               ],
             ),
-          if (movie.budget != null && movie.budget! > 0)
+          if (movie.budget != null && (movie.budget ?? 0) > 0)
             const SizedBox(height: 8),
           Row(
             children: [
@@ -749,14 +754,14 @@ class _TechnicalDetails extends StatelessWidget {
                 Expanded(
                   child: _DetailItem(
                     label: 'IMDb ID',
-                    value: movie.imdbId!,
+                    value: movie.imdbId ?? '',
                     icon: Icons.movie,
                   ),
                 ),
             ],
           ),
           if (movie.productionCompanies != null &&
-              movie.productionCompanies!.isNotEmpty)
+              (movie.productionCompanies?.isNotEmpty ?? false))
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -771,7 +776,7 @@ class _TechnicalDetails extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 4,
-                  children: movie.productionCompanies!
+                  children: (movie.productionCompanies ?? [])
                       .take(5)
                       .map((company) => Chip(
                             label: Text(
@@ -786,7 +791,7 @@ class _TechnicalDetails extends StatelessWidget {
               ],
             ),
           if (movie.productionCountries != null &&
-              movie.productionCountries!.isNotEmpty)
+              (movie.productionCountries?.isNotEmpty ?? false))
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -801,7 +806,7 @@ class _TechnicalDetails extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 4,
-                  children: movie.productionCountries!
+                  children: (movie.productionCountries ?? [])
                       .map((country) => Chip(
                             label: Text(
                               country,
@@ -876,12 +881,12 @@ class _EnhancedCast extends StatelessWidget {
 
     // Show cast only if available from API
     if (movie.credits == null ||
-        movie.credits!['cast'] == null ||
-        (movie.credits!['cast'] as List).isEmpty) {
+        movie.credits?['cast'] == null ||
+        ((movie.credits?['cast'] as List?) ?? []).isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final castList = movie.credits!['cast'] as List;
+    final castList = (movie.credits?['cast'] as List?) ?? [];
     final mainCast = castList.take(10).toList();
 
     return Container(

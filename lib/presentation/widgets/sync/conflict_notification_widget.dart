@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
 
 /// Widget que muestra información sobre conflictos resueltos al usuario
@@ -57,7 +58,7 @@ class ConflictNotificationWidget extends StatelessWidget {
             Text(
               conflictResolution.description,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.textColor.withOpacity(0.8),
+                color: colors.textColor.withValues(alpha: 0.8),
               ),
             ),
             if (showDetails) ...[
@@ -78,7 +79,7 @@ class ConflictNotificationWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: colors.backgroundColor.withOpacity(0.3),
+        color: colors.backgroundColor.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -95,13 +96,13 @@ class ConflictNotificationWidget extends StatelessWidget {
           Text(
             'Tipo: ${_getConflictTypeDisplayName(conflictResolution.conflictType)}',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.textColor.withOpacity(0.7),
+              color: colors.textColor.withValues(alpha: 0.7),
             ),
           ),
           Text(
             'Estrategia: ${conflictResolution.resolution}',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.textColor.withOpacity(0.7),
+              color: colors.textColor.withValues(alpha: 0.7),
             ),
           ),
           if (conflictResolution.dataLoss)
@@ -117,13 +118,14 @@ class ConflictNotificationWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildManualInterventionSection(ThemeData theme, _ConflictColors colors) {
+  Widget _buildManualInterventionSection(
+      ThemeData theme, _ConflictColors colors) {
     return Container(
       padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         border: Border.all(color: colors.warningColor, width: 1),
         borderRadius: BorderRadius.circular(8),
-        color: colors.warningColor.withOpacity(0.1),
+        color: colors.warningColor.withValues(alpha: 0.1),
       ),
       child: Row(
         children: [
@@ -187,25 +189,26 @@ class ConflictNotificationWidget extends StatelessWidget {
     }
   }
 
-  _ConflictColors _getColorsForSeverity(ConflictSeverity severity, ThemeData theme) {
+  _ConflictColors _getColorsForSeverity(
+      ConflictSeverity severity, ThemeData theme) {
     switch (severity) {
       case ConflictSeverity.low:
         return _ConflictColors(
-          backgroundColor: Colors.blue.withOpacity(0.1),
+          backgroundColor: Colors.blue.withValues(alpha: 0.1),
           iconColor: Colors.blue,
           textColor: theme.colorScheme.onSurface,
           warningColor: Colors.orange,
         );
       case ConflictSeverity.medium:
         return _ConflictColors(
-          backgroundColor: Colors.orange.withOpacity(0.1),
+          backgroundColor: Colors.orange.withValues(alpha: 0.1),
           iconColor: Colors.orange,
           textColor: theme.colorScheme.onSurface,
           warningColor: Colors.deepOrange,
         );
       case ConflictSeverity.high:
         return _ConflictColors(
-          backgroundColor: Colors.red.withOpacity(0.1),
+          backgroundColor: Colors.red.withValues(alpha: 0.1),
           iconColor: Colors.red,
           textColor: theme.colorScheme.onSurface,
           warningColor: Colors.red,
@@ -243,7 +246,7 @@ class ConflictStatsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final totalConflicts = conflictStats['totalConflicts'] as int? ?? 0;
-    
+
     if (totalConflicts == 0) {
       return const SizedBox.shrink();
     }

@@ -325,7 +325,7 @@ List<String> _getMostCommonGenres(List<Movie> movies) {
     for (final genre in movie.genreIds) {
       final genreId =
           genre is int ? genre : int.tryParse(genre.toString()) ?? 0;
-      final genreName = _getGenreName(genreId as int);
+      final genreName = _getGenreName(genreId is int ? genreId : int.tryParse(genreId.toString()) ?? 0);
       genreCount[genreName] = (genreCount[genreName] ?? 0) + 1;
     }
   }

@@ -236,7 +236,7 @@ class RecommendationsPreviewScreen extends StatelessWidget {
                         margin: const EdgeInsets.only(top: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.2),
+                          color: Colors.blue.withValues(alpha: 0.2 * 255),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(

@@ -42,28 +42,28 @@ class WatchProvidersWidget extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Streaming platforms (flatrate)
-            if (watchProviders!.flatrate.isNotEmpty)
+            if (watchProviders?.flatrate.isNotEmpty ?? false)
               _buildProviderSection(
                 'Streaming',
-                watchProviders!.flatrate,
+                watchProviders?.flatrate ?? [],
                 Icons.play_circle_fill,
                 Colors.green,
               ),
 
             // Rental platforms
-            if (watchProviders!.rent.isNotEmpty)
+            if (watchProviders?.rent.isNotEmpty ?? false)
               _buildProviderSection(
                 'Alquiler',
-                watchProviders!.rent,
+                watchProviders?.rent ?? [],
                 Icons.movie_filter,
                 Colors.orange,
               ),
 
             // Purchase platforms
-            if (watchProviders!.buy.isNotEmpty)
+            if (watchProviders?.buy.isNotEmpty ?? false)
               _buildProviderSection(
                 'Compra',
-                watchProviders!.buy,
+                watchProviders?.buy ?? [],
                 Icons.shopping_cart,
                 Colors.blue,
               ),

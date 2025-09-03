@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-// TODO: Re-enable when gamification integration is implemented
-// import '../../core/gamification/gamification_integration_service.dart';
+import '../../core/gamification/gamification_manager.dart';
+import '../../core/gamification/models/activity_type.dart';
+import '../../core/services/logger_factory.dart';
 import '../../domain/entities/entities.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
+import 'gamification_providers.dart';
 
 // Estado que contiene tanto listas predefinidas como personalizadas
 class AllListsState {
@@ -31,17 +33,14 @@ class AllListsState {
 
 // StateNotifier unificado para manejar todas las listas
 class AllListsNotifier extends StateNotifier<AllListsState> {
-  AllListsNotifier(this._repository) : super(_getInitialState()) {
-    // TODO: Initialize gamification service when needed
-    // _gamificationService = _ref.read(gamificationIntegrationServiceProvider);
+  AllListsNotifier(this._repository, this._ref) : super(_getInitialState()) {
+    _gamificationManager = _ref.read(gamificationManagerProvider);
     _loadCustomLists();
   }
 
   final CustomListsRepository _repository;
-  // TODO: Re-enable _ref when gamification integration is implemented
-  // final Ref _ref;
-  // TODO: Implement gamification integration when trackMovieAddedToList is available
-  // late final GamificationIntegrationService _gamificationService;
+  final Ref _ref;
+  late final GamificationManager _gamificationManager;
 
   @override
   void dispose() {
@@ -86,7 +85,8 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       );
     } catch (e) {
       // En caso de error, mantener el estado inicial
-      //print('Error loading lists: $e');
+      LoggerFactory.error('Error loading lists: $e',
+          tag: 'CustomListsProvider');
     }
   }
 
@@ -96,7 +96,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       await _repository.saveCustomLists(state.customLists);
       await _repository.saveDefaultLists(state.defaultLists);
     } catch (e) {
-      //print('Error saving lists: $e');
+      LoggerFactory.error('Error saving lists: $e', tag: 'CustomListsProvider');
     }
   }
 
@@ -281,14 +281,13 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
   // Añadir película a una lista
   void addMovieToList(String listId, int movieId) {
-    // TODO: Uncomment when gamification is implemented
-    // bool movieAdded = false;
-    // String? listName;
+    bool movieAdded = false;
+    String? listName;
 
     final updatedCustomLists = state.customLists.map((list) {
       if (list.id == listId && !list.movieIds.contains(movieId)) {
-        // movieAdded = true;
-        // listName = list.name;
+        movieAdded = true;
+        listName = list.name;
         final updatedMovieIds = [...list.movieIds, movieId];
         return list.copyWith(
           movieIds: updatedMovieIds,
@@ -300,8 +299,8 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
     final updatedDefaultLists = state.defaultLists.map((list) {
       if (list.id == listId && !list.movieIds.contains(movieId)) {
-        // movieAdded = true;
-        // listName = list.name;
+        movieAdded = true;
+        listName = list.name;
         final updatedMovieIds = [...list.movieIds, movieId];
         return list.copyWith(
           movieIds: updatedMovieIds,
@@ -318,14 +317,12 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     _saveCustomLists();
 
     // Track gamification event
-    // TODO: Implement trackMovieAddedToList method in GamificationIntegrationService
-    // if (movieAdded && listName != null) {
-    //   _gamificationService.trackMovieAddedToList(
-    //     movieId: movieId.toString(),
-    //     listId: listId,
-    //     listName: listName!,
-    //   );
-    // }
+    if (movieAdded) {
+      _gamificationManager.trackActivity(
+          ActivityType
+              .completeWatchlist, // Using a similar existing activity type
+          metadata: {'listName': listName, 'movieId': movieId});
+    }
   }
 
   // Remover película de una lista
@@ -474,7 +471,7 @@ final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
 final allListsProvider =
     StateNotifierProvider<AllListsNotifier, AllListsState>((ref) {
   final repository = ref.watch(customListsRepositoryProvider);
-  return AllListsNotifier(repository);
+  return AllListsNotifier(repository, ref);
 });
 
 // Provider para obtener todas las listas

@@ -26,6 +26,8 @@ abstract class LocalStorageDatasource {
   Future<WatchlistMovie?> getWatchlistMovie(int movieId);
   
   Future<int> getWatchlistCount();
+  
+  Future<List<WatchlistMovie>> getAllWatchlistMovies();
 
   // Offline cache methods
   Future<bool> cacheMovie(Movie movie);
@@ -41,4 +43,7 @@ abstract class LocalStorageDatasource {
   Future<int> getCacheSize();
   
   Future<void> clearAllCache();
+  
+  /// Clear all data (favorites, watchlist, cache)
+  Future<void> clearAll();
 }

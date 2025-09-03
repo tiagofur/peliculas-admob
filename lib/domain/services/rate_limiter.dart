@@ -39,9 +39,9 @@ class RateLimiter {
   static RateLimiter get tmdb => forService(
         'TMDB',
         maxRequests: 40,
-        timeWindow: Duration(seconds: 10),
+        timeWindow: const Duration(seconds: 10),
         minInterval:
-            Duration(milliseconds: 250), // 4 requests por segundo máximo
+            const Duration(milliseconds: 250), // 4 requests por segundo máximo
         strategy: RateLimitStrategy.slidingWindow,
       );
 
@@ -49,9 +49,9 @@ class RateLimiter {
   static RateLimiter get trakt => forService(
         'Trakt',
         maxRequests: 1000,
-        timeWindow: Duration(minutes: 5),
+        timeWindow: const Duration(minutes: 5),
         minInterval:
-            Duration(milliseconds: 300), // ~3.3 requests por segundo máximo
+            const Duration(milliseconds: 300), // ~3.3 requests por segundo máximo
         strategy: RateLimitStrategy.slidingWindow,
       );
 
@@ -59,8 +59,8 @@ class RateLimiter {
   static RateLimiter get migration => forService(
         'Migration',
         maxRequests: 20,
-        timeWindow: Duration(minutes: 1),
-        minInterval: Duration(seconds: 2), // Muy conservador para segundo plano
+        timeWindow: const Duration(minutes: 1),
+        minInterval: const Duration(seconds: 2), // Muy conservador para segundo plano
         strategy: RateLimitStrategy.tokenBucket,
       );
 
@@ -383,8 +383,8 @@ class RateLimiterFactory {
   static RateLimiter development(String serviceName) => RateLimiter.forService(
         '${serviceName}_dev',
         maxRequests: 100,
-        timeWindow: Duration(minutes: 1),
-        minInterval: Duration(milliseconds: 100),
+        timeWindow: const Duration(minutes: 1),
+        minInterval: const Duration(milliseconds: 100),
         strategy: RateLimitStrategy.slidingWindow,
       );
 
@@ -398,7 +398,7 @@ class RateLimiterFactory {
         '${serviceName}_prod',
         maxRequests: maxRequests,
         timeWindow: timeWindow,
-        minInterval: Duration(milliseconds: 500),
+        minInterval: const Duration(milliseconds: 500),
         strategy: RateLimitStrategy.tokenBucket,
       );
 
@@ -406,7 +406,7 @@ class RateLimiterFactory {
   static RateLimiter testing(String serviceName) => RateLimiter.forService(
         '${serviceName}_test',
         maxRequests: 10000,
-        timeWindow: Duration(seconds: 1),
+        timeWindow: const Duration(seconds: 1),
         strategy: RateLimitStrategy.slidingWindow,
       );
 }

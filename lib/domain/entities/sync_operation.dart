@@ -30,6 +30,8 @@ enum SyncOperationType {
   removeFromWatchlist,
   @HiveField(11)
   updateWatchlistPriority,
+  @HiveField(12)
+  tokenRefresh,
 }
 
 /// Estado de una operación de sincronización
@@ -194,9 +196,10 @@ class SyncOperation {
 
   /// Verifica si es tiempo de reintentar la operación
   bool get isReadyForRetry {
-    if (!canRetry || lastAttemptAt == null) return false;
+    final lastAttempt = lastAttemptAt;
+    if (!canRetry || lastAttempt == null) return false;
 
-    final nextRetryTime = lastAttemptAt!.add(nextRetryDelay);
+    final nextRetryTime = lastAttempt.add(nextRetryDelay);
     return DateTime.now().isAfter(nextRetryTime);
   }
 

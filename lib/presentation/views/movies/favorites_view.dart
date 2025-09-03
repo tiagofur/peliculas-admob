@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../generated/app_localizations.dart';
 import '../../providers/providers.dart';
-import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/sync/sync_refresh_wrapper.dart';
 import '../../widgets/sync/sync_status_indicator.dart';
 
@@ -65,9 +65,11 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.favorite_outline_sharp, size: 60, color: colors.primary),
+                        Icon(Icons.favorite_outline_sharp,
+                            size: 60, color: colors.primary),
                         Text(l10n.noFavorites,
-                            style: TextStyle(fontSize: 30, color: colors.primary)),
+                            style:
+                                TextStyle(fontSize: 30, color: colors.primary)),
                         Text(l10n.noFavoritesMessage,
                             style: const TextStyle(fontSize: 20)),
                         const SizedBox(height: 20),
@@ -108,9 +110,7 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: FavoritesMasonryWithAds(
-                  loadNextPage: loadNextPage, 
-                  movies: favoriteMovies
-                ),
+                    loadNextPage: loadNextPage, movies: favoriteMovies),
               ),
             ),
           ],

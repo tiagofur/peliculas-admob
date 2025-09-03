@@ -33,7 +33,8 @@ class SearchMovieDelegate extends SearchDelegate<Movie?> {
   void _onQueryChanged(String query) {
     isLoadingStream.add(true);
 
-    if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+    final timer = _debounceTimer;
+    if (timer?.isActive ?? false) timer?.cancel();
 
     _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
       // if ( query.isEmpty ) {

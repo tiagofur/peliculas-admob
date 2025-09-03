@@ -1,21 +1,22 @@
 import 'dart:ui';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Provider for managing the locale state
-final localeNotifierProvider = StateNotifierProvider<LocaleNotifier, LocaleState>(
+final localeNotifierProvider =
+    StateNotifierProvider<LocaleNotifier, LocaleState>(
   (ref) => LocaleNotifier(),
 );
 
 // State class for locale
 class LocaleState {
-  final Locale? locale;
-  final bool isLoading;
-
   const LocaleState({
     this.locale,
     this.isLoading = false,
   });
+  final Locale? locale;
+  final bool isLoading;
 
   LocaleState copyWith({
     Locale? locale,
@@ -38,11 +39,11 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
 
   Future<void> _loadLocale() async {
     state = state.copyWith(isLoading: true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final localeCode = prefs.getString(_localeKey);
-      
+
       if (localeCode != null) {
         final locale = Locale(localeCode);
         state = state.copyWith(locale: locale, isLoading: false);
@@ -58,7 +59,7 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
 
   Future<void> setLocale(Locale locale) async {
     state = state.copyWith(locale: locale);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localeKey, locale.languageCode);
@@ -69,7 +70,7 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
 
   Future<void> clearLocale() async {
     state = state.copyWith(locale: null);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_localeKey);
@@ -80,7 +81,7 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
 
   // Get supported locales
   List<Locale> get supportedLocales => const [
-    Locale('es'), // Spanish
-    Locale('en'), // English
-  ];
+        Locale('es'), // Spanish
+        Locale('en'), // English
+      ];
 }

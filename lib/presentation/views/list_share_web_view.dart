@@ -93,7 +93,7 @@ class _ListShareContent extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   // List details
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _InfoChip(
@@ -352,22 +352,22 @@ class _FeaturesSection extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 16),
-        _FeatureItem(
+        const _FeatureItem(
           icon: Icons.list_alt,
           title: 'Crear listas personalizadas',
           description: 'Organiza tus películas favoritas en listas temáticas',
         ),
-        _FeatureItem(
+        const _FeatureItem(
           icon: Icons.star,
           title: 'Descubrir recomendaciones',
           description: 'Encuentra nuevas películas basadas en tus gustos',
         ),
-        _FeatureItem(
+        const _FeatureItem(
           icon: Icons.share,
           title: 'Compartir con amigos',
           description: 'Comparte tus listas y películas favoritas',
         ),
-        _FeatureItem(
+        const _FeatureItem(
           icon: Icons.bookmark,
           title: 'Marcar como vistas',
           description: 'Lleva un registro de las películas que has visto',

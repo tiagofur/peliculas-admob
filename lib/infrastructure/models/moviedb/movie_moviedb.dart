@@ -18,7 +18,9 @@ class MovieMovieDB {
   factory MovieMovieDB.fromJson(Map<String, dynamic> json) => MovieMovieDB(
         adult: json['adult'] ?? false,
         backdropPath: json['backdrop_path'] ?? '',
-        genreIds: json['genre_ids'] != null ? List<int>.from(json['genre_ids'].map((x) => x ?? 0)) : [],
+        genreIds: json['genre_ids'] != null
+            ? List<int>.from(json['genre_ids'].map((x) => x ?? 0))
+            : [],
         id: json['id'] ?? 0,
         originalLanguage: json['original_language'] ?? '',
         originalTitle: json['original_title'] ?? '',
@@ -61,7 +63,7 @@ class MovieMovieDB {
         'popularity': popularity,
         'poster_path': posterPath,
         'release_date': (releaseDate != null)
-            ? "${releaseDate!.year.toString().padLeft(4, '0')}-${releaseDate!.month.toString().padLeft(2, '0')}-${releaseDate!.day.toString().padLeft(2, '0')}"
+            ? "${releaseDate?.year.toString().padLeft(4, '0')}-${releaseDate?.month.toString().padLeft(2, '0')}-${releaseDate?.day.toString().padLeft(2, '0')}"
             : null,
         'title': title,
         'video': video,

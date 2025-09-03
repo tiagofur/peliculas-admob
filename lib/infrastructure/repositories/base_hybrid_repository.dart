@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,9 +12,8 @@ import '../../presentation/providers/auth_provider.dart';
 /// Base abstract class for hybrid repositories that support both local storage
 /// and remote synchronization with Supabase. This class consolidates common
 /// sync logic and provides a consistent interface for all hybrid repositories.
-abstract class BaseHybridRepository<T extends Syncable> 
+abstract class BaseHybridRepository<T extends Syncable>
     implements SyncableRepository<T> {
-  
   BaseHybridRepository({required Ref ref}) : _ref = ref {
     _initializeComponents();
   }
@@ -25,26 +25,19 @@ abstract class BaseHybridRepository<T extends Syncable>
   /// Get access to the sync queue for subclasses
   PersistentSyncQueue get syncQueue => _syncQueue;
 
-  /// Get access to Supabase client for subclasses  
+  /// Get access to Supabase client for subclasses
   SupabaseClient get supabase => _supabase;
 
   /// Initialize common components for sync functionality
   Future<void> _initializeComponents() async {
     _syncQueue = PersistentSyncQueue();
     await _syncQueue.initialize();
-    LoggerFactory.info('📦 ${runtimeType} initialized');
+    LoggerFactory.info('📦 $runtimeType initialized');
   }
 
   /// Check if there's internet connectivity
-  Future<void> _checkOnline() async {
-    final connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult.contains(ConnectivityResult.none)) {
-      throw NetworkException();
-    }
-  }
-
-  /// Check if there's internet connectivity
-  Future<void> _checkOnline() async {
+  @protected
+  Future<void> checkOnline() async {
     final connectivityResult = await Connectivity().checkConnectivity();
     if (connectivityResult.contains(ConnectivityResult.none)) {
       throw NetworkException();
@@ -52,49 +45,50 @@ abstract class BaseHybridRepository<T extends Syncable>
   }
 
   /// Check if the user is currently authenticated
-  bool _isAuthenticated() {
+  @protected
+  bool isAuthenticated() {
     final appState = _ref.read(appStateProvider);
     return appState.isAuthenticated && appState.user != null;
   }
 
-  /// Get the current user's ID
-  String? _getCurrentUserId() {
-    final appState = _ref.read(appStateProvider);
-    return appState.user?.id;
+  /// Get the current user ID
+  @protected
+  String? getCurrentUserId() {
+    return _ref.read(appStateProvider).user?.id;
   }
 
   /// Template method for syncing data with Supabase
   /// This implements the common sync flow for all hybrid repositories
   @override
   Future<void> syncWithSupabase() async {
-    if (!_isAuthenticated()) {
+    if (!isAuthenticated()) {
       LoggerFactory.warning(
-          '❌ User not authenticated, skipping ${runtimeType} sync');
+          '❌ User not authenticated, skipping $runtimeType sync');
       return;
     }
 
-    LoggerFactory.info('🔄 Starting ${runtimeType} sync...');
+    LoggerFactory.info('🔄 Starting $runtimeType sync...');
 
     try {
-      await _checkOnline();
+      await checkOnline();
 
       // Get local and remote data
       final localData = await getLocalData();
       final remoteData = await getRemoteData();
 
       LoggerFactory.info(
-          '📊 ${runtimeType} sync - Local: ${localData.length}, Remote: ${remoteData.length}');
+          '📊 $runtimeType sync - Local: ${localData.length}, Remote: ${remoteData.length}');
 
       // Process sync logic
       await _processSyncData(localData, remoteData);
 
-      LoggerFactory.info('✅ ${runtimeType} sync completed successfully');
+      LoggerFactory.info('✅ $runtimeType sync completed successfully');
     } on SyncException catch (e) {
-      LoggerFactory.error('❌ Sync error in ${runtimeType}: $e');
+      LoggerFactory.error('❌ Sync error in $runtimeType: $e');
       rethrow;
     } catch (e) {
-      LoggerFactory.error('❌ Unexpected error in ${runtimeType} sync: $e');
-      throw SupabaseSyncException('Sync failed for ${runtimeType}: $e');
+      LoggerFactory.error('❌ Unexpected error in $runtimeType sync: $e');
+      throw SupabaseSyncException('Sync failed for $runtimeType: $e');
     }
   }
 
@@ -103,13 +97,17 @@ abstract class BaseHybridRepository<T extends Syncable>
     // Find items to upload (local items not in remote)
     final localIds = localData.map((item) => item.id).toSet();
     final remoteIds = remoteData.map((item) => item.id).toSet();
-    
-    final toUpload = localData.where((item) => !remoteIds.contains(item.id)).toList();
-    final toDownload = remoteData.where((item) => !localIds.contains(item.id)).toList();
-    
+
+    final toUpload =
+        localData.where((item) => !remoteIds.contains(item.id)).toList();
+    final toDownload =
+        remoteData.where((item) => !localIds.contains(item.id)).toList();
+
     // Find conflicts (items that exist both locally and remotely)
-    final conflictLocalItems = localData.where((item) => remoteIds.contains(item.id)).toList();
-    final conflictRemoteItems = remoteData.where((item) => localIds.contains(item.id)).toList();
+    final conflictLocalItems =
+        localData.where((item) => remoteIds.contains(item.id)).toList();
+    final conflictRemoteItems =
+        remoteData.where((item) => localIds.contains(item.id)).toList();
 
     // Upload new local items
     if (toUpload.isNotEmpty) {
@@ -125,30 +123,35 @@ abstract class BaseHybridRepository<T extends Syncable>
 
     // Resolve conflicts
     if (conflictLocalItems.isNotEmpty && conflictRemoteItems.isNotEmpty) {
-      LoggerFactory.info('🔧 Resolving conflicts for ${conflictLocalItems.length} items');
+      LoggerFactory.info(
+          '🔧 Resolving conflicts for ${conflictLocalItems.length} items');
       await resolveConflicts(conflictLocalItems, conflictRemoteItems);
     }
   }
 
   /// Get pending sync operations from the queue
+  @override
   Future<List<String>> getPendingSyncItems() async {
     final operations = _syncQueue.getPendingOperations();
     return operations.map((op) => op.id).toList();
   }
 
   /// Check if there are pending sync operations
+  @override
   Future<bool> hasPendingSync() async {
     final stats = _syncQueue.getStats();
     return stats.pendingOperations > 0;
   }
 
   /// Clear sync markers for a specific item
+  @override
   Future<void> clearSyncMarker(String itemId) async {
     LoggerFactory.info('🧹 Clearing sync marker for: $itemId');
     // Sync operations are automatically cleared when completed
   }
 
   /// Mark an item for sync (legacy method, now uses sync queue)
+  @override
   Future<void> markForSync(String itemId) async {
     LoggerFactory.warning('markForSync legacy method called for: $itemId');
     // This method is kept for compatibility but should use enqueue with SyncOperation
@@ -156,7 +159,7 @@ abstract class BaseHybridRepository<T extends Syncable>
 
   /// Clear local data (useful for logout)
   Future<void> clearLocalData() async {
-    LoggerFactory.info('🧹 Clearing local data for ${runtimeType}');
+    LoggerFactory.info('🧹 Clearing local data for $runtimeType');
     await _syncQueue.clear();
     await clearRepositoryData();
   }

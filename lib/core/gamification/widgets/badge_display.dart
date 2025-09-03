@@ -257,7 +257,7 @@ class BadgeDisplay extends StatelessWidget {
       if (!grouped.containsKey(rarity)) {
         grouped[rarity] = [];
       }
-      grouped[rarity]!.add(achievement);
+      grouped[rarity]?.add(achievement);
     }
 
     // Ordenar por rareza (diamond primero, bronze último)

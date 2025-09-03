@@ -377,7 +377,8 @@ class HybridCustomListsRepository
             .order('order_index');
 
         final movieIds = (itemsResponse as List)
-            .map((item) => item['movie_id'] as int)
+            .map((item) => item['movie_id'] is int ? item['movie_id'] as int : int.tryParse(item['movie_id'].toString()) ?? 0)
+            .where((id) => id > 0)
             .toList();
 
         remoteLists.add(_mapFromSupabase(data, movieIds));
@@ -495,7 +496,7 @@ class HybridCustomListsRepository
           _metricsService.logConflictDetected(conflict);
 
           LoggerFactory.info(
-              '🔧 Resolviendo conflicto ${conflict.type.name} para lista ${conflict.localItem.name ?? conflict.remoteItem.name}');
+              '🔧 Resolviendo conflicto ${conflict.type.name} para lista ${conflict.localItem.name}');
 
           // Detectar tipo de conflicto
           final conflictType = _conflictResolver.detectConflictType(
@@ -648,16 +649,16 @@ class HybridCustomListsRepository
   SyncableCustomList _mapFromSupabase(
       Map<String, dynamic> data, List<int> movieIds) {
     return SyncableCustomList(
-      id: data['id'] as String,
-      userId: data['user_id'] as String,
-      name: data['name'] as String,
+      id: data['id'] as String? ?? '',
+      userId: data['user_id'] as String? ?? '',
+      name: data['name'] as String? ?? '',
       description: data['description'] as String? ?? '',
       emoji: data['color_hex'] as String? ?? '📝',
       color: data['color_hex'] as String? ?? 'blue',
       movieIds: movieIds,
       isPublic: data['is_public'] as bool? ?? false,
-      createdAt: DateTime.parse(data['created_at'] as String),
-      updatedAt: DateTime.parse(data['updated_at'] as String),
+      createdAt: DateTime.tryParse(data['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(data['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 }

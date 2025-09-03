@@ -175,10 +175,10 @@ class NotificationPreferences {
         'enabled': enabled,
         'typeEnabled': typeEnabled.map((k, v) => MapEntry(k.name, v)),
         'quietHoursStart': quietHoursStart != null
-            ? '${quietHoursStart!.hour}:${quietHoursStart!.minute}'
+            ? '${quietHoursStart?.hour}:${quietHoursStart?.minute}'
             : null,
         'quietHoursEnd': quietHoursEnd != null
-            ? '${quietHoursEnd!.hour}:${quietHoursEnd!.minute}'
+            ? '${quietHoursEnd?.hour}:${quietHoursEnd?.minute}'
             : null,
         'soundEnabled': soundEnabled,
         'vibrationEnabled': vibrationEnabled,
@@ -252,11 +252,15 @@ class NotificationManager {
 
       // Inicializar servicio de métricas
       _metricsService = NotificationMetricsService.instance;
-      await _metricsService!.initialize();
+      if (_metricsService != null) {
+        await _metricsService?.initialize();
+      }
 
       // Inicializar servicio de notificaciones locales
       _localNotificationService = LocalNotificationService.instance;
-      await _localNotificationService!.initialize();
+      if (_localNotificationService != null) {
+        await _localNotificationService?.initialize();
+      }
 
       // Inicializar notificaciones locales
       await _initializeLocalNotifications();
@@ -314,7 +318,10 @@ class NotificationManager {
       _firebaseMessaging = FirebaseMessaging.instance;
 
       // Solicitar permisos
-      final settings = await _firebaseMessaging!.requestPermission(
+      final messaging = _firebaseMessaging;
+      if (messaging == null) return;
+
+      final settings = await messaging.requestPermission(
         alert: true,
         badge: true,
         sound: true,
@@ -325,7 +332,7 @@ class NotificationManager {
         _log('Permisos de notificaciones push concedidos');
 
         // Obtener token FCM
-        final token = await _firebaseMessaging!.getToken();
+        final token = await messaging.getToken();
         _log('Token FCM: $token');
 
         // Configurar handlers
@@ -334,7 +341,7 @@ class NotificationManager {
         FirebaseMessaging.onBackgroundMessage(_handleBackgroundMessage);
 
         // Manejar notificación que abrió la app
-        final initialMessage = await _firebaseMessaging!.getInitialMessage();
+        final initialMessage = await messaging.getInitialMessage();
         if (initialMessage != null) {
           _handleMessageOpenedApp(initialMessage);
         }
@@ -351,14 +358,15 @@ class NotificationManager {
     _log('Mensaje recibido en primer plano: ${message.messageId}');
 
     // Mostrar notificación local
-    if (message.notification != null) {
+    final notification = message.notification;
+    if (notification != null) {
       _showLocalNotification(
         NotificationConfig(
           type: _getNotificationTypeFromData(message.data),
-          title: message.notification!.title ?? 'Nueva notificación',
-          body: message.notification!.body ?? '',
+          title: notification.title ?? 'Nueva notificación',
+          body: notification.body ?? '',
           data: message.data,
-          imageUrl: message.notification!.android?.imageUrl,
+          imageUrl: notification.android?.imageUrl,
         ),
       );
     }
@@ -381,8 +389,9 @@ class NotificationManager {
   void _onNotificationTapped(fln.NotificationResponse response) {
     _log('Notificación local tocada: ${response.id}');
 
-    if (response.payload != null) {
-      final data = jsonDecode(response.payload!);
+    final payload = response.payload;
+    if (payload != null) {
+      final data = jsonDecode(payload);
       _handleNotificationAction(data);
     }
   }
@@ -470,8 +479,9 @@ class NotificationManager {
     }
 
     final now = TimeOfDay.now();
-    final start = _preferences.quietHoursStart!;
-    final end = _preferences.quietHoursEnd!;
+    final start = _preferences.quietHoursStart;
+    final end = _preferences.quietHoursEnd;
+    if (start == null || end == null) return false;
 
     // Convertir a minutos para comparación más fácil
     final nowMinutes = now.hour * 60 + now.minute;
@@ -489,7 +499,11 @@ class NotificationManager {
 
   /// Programa una notificación para más tarde
   Future<void> _scheduleNotification(NotificationConfig config) async {
-    final scheduledTime = config.scheduledTime!;
+    final scheduledTime = config.scheduledTime;
+    if (scheduledTime == null) {
+      await _showImmediateNotification(config);
+      return;
+    }
     final delay = scheduledTime.difference(DateTime.now());
 
     if (delay.isNegative) {
@@ -525,9 +539,9 @@ class NotificationManager {
 
       // Usar el servicio de notificaciones locales si está disponible
       if (_localNotificationService != null &&
-          _localNotificationService!.isInitialized) {
+          (_localNotificationService?.isInitialized ?? false)) {
         final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        await _localNotificationService!.showNotification(
+        await _localNotificationService?.showNotification(
           id: id,
           title: config.title,
           body: config.body,
@@ -543,12 +557,12 @@ class NotificationManager {
       } else {
         await _showLocalNotification(config, notificationId: notificationId);
       }
-      
+
       // Registrar entrega exitosa
       await _metricsService?.recordNotificationDelivered(
         notificationId: notificationId,
       );
-      
+
       _incrementDailyCount();
     } catch (e) {
       // Registrar fallo
@@ -561,7 +575,8 @@ class NotificationManager {
   }
 
   /// Muestra una notificación local
-  Future<void> _showLocalNotification(NotificationConfig config, {String? notificationId}) async {
+  Future<void> _showLocalNotification(NotificationConfig config,
+      {String? notificationId}) async {
     final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     final androidDetails = fln.AndroidNotificationDetails(
@@ -597,7 +612,8 @@ class NotificationManager {
     );
 
     final payload = jsonEncode({
-      'notificationId': notificationId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      'notificationId':
+          notificationId ?? DateTime.now().millisecondsSinceEpoch.toString(),
       'type': config.type.name,
       'data': config.data,
       'actionUrl': config.actionUrl,

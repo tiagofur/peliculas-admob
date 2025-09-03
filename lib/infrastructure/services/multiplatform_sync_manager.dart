@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../presentation/providers/user_movie_ratings_provider.dart';
 import '../../presentation/providers/watchlist_provider.dart';
 import 'app_lifecycle_manager.dart';
 import 'connectivity_detector.dart';
+import 'error_context_tracker.dart';
 
 /// Gestor de sincronización multiplataforma que orquesta la sincronización automática
 /// entre diferentes dispositivos y plataformas usando Supabase como hub central.
@@ -19,13 +21,13 @@ class MultiplataformSyncManager {
   static MultiplataformSyncManager? _instance;
   static MultiplataformSyncManager get instance {
     _instance ??= MultiplataformSyncManager._internal();
-    return _instance!;
+    return _instance ?? MultiplataformSyncManager._internal();
   }
 
   Timer? _periodicSyncTimer;
   StreamSubscription<ConnectivityStatus>? _connectivitySubscription;
   _AppLifecycleObserver? _lifecycleObserver;
-  
+
   // Reference to Riverpod container for invalidating providers
   ProviderContainer? _providerContainer;
 
@@ -47,6 +49,9 @@ class MultiplataformSyncManager {
     LoggerFactory.info('🚀 Inicializando MultiplataformSyncManager...');
 
     try {
+      // Inicializar el tracker de contexto de errores
+      await ErrorContextTracker.instance.initialize();
+      
       // Verificar conectividad inicial
       await _checkInitialConnectivity();
 
@@ -95,7 +100,10 @@ class MultiplataformSyncManager {
   /// Configura el observer del ciclo de vida de la aplicación
   void _setupLifecycleObserver() {
     _lifecycleObserver = _AppLifecycleObserver(this);
-    WidgetsBinding.instance.addObserver(_lifecycleObserver!);
+    final observer = _lifecycleObserver;
+    if (observer != null) {
+      WidgetsBinding.instance.addObserver(observer);
+    }
 
     LoggerFactory.info('🔄 Observer del ciclo de vida configurado');
   }
@@ -260,8 +268,9 @@ class MultiplataformSyncManager {
       _connectivitySubscription = null;
 
       // Remover observer del ciclo de vida
-      if (_lifecycleObserver != null) {
-        WidgetsBinding.instance.removeObserver(_lifecycleObserver!);
+      final observer = _lifecycleObserver;
+      if (observer != null) {
+        WidgetsBinding.instance.removeObserver(observer);
         _lifecycleObserver = null;
       }
 
@@ -276,15 +285,29 @@ class MultiplataformSyncManager {
     }
   }
 
-  /// Obtiene el estado actual del gestor de sincronización
+  /// Obtiene el estado actual de sincronización
+  Map<String, dynamic> getSyncStatus() {
+    return {
+      'is_syncing': _isPeriodicSyncActive,
+      'last_sync': _lastSuccessfulSync?.toIso8601String(),
+      'sync_count': 0, // Placeholder for sync count
+      'is_online': ConnectivityDetector.instance.isOnline,
+      'lifecycle_state':
+          AppLifecycleManager.instance.getDetailedStatus()['status'],
+    };
+  }
+
+  /// Obtiene el estado detallado del manager para diagnóstico
   Map<String, dynamic> getManagerStatus() {
     return {
-      'isInitialized': _isInitialized,
-      'isPeriodicSyncActive': _isPeriodicSyncActive,
-      'lastSyncAttempt': _lastSyncAttempt?.toIso8601String(),
-      'lastSuccessfulSync': _lastSuccessfulSync?.toIso8601String(),
-      'connectivityStatus': ConnectivityDetector.instance.getDetailedStatus(),
-      'lifecycleStatus': AppLifecycleManager.instance.getDetailedStatus(),
+      'is_syncing': _isPeriodicSyncActive,
+      'last_sync_time': _lastSuccessfulSync?.toIso8601String(),
+      'sync_count': 0, // Placeholder for sync count
+      'is_initialized': _isInitialized,
+      'has_pending_operations': _isPeriodicSyncActive,
+      'uptime_minutes': _lastSuccessfulSync != null
+          ? DateTime.now().difference(_lastSuccessfulSync!).inMinutes
+          : 0,
     };
   }
 
@@ -317,13 +340,14 @@ class MultiplataformSyncManager {
   // ========== MÉTODOS PARA MANEJO DE EVENTOS DE TIEMPO REAL ==========
 
   /// Maneja inserción de datos desde tiempo real
-  Future<void> handleRealtimeInsert(String tableName, Map<String, dynamic> data) async {
+  Future<void> handleRealtimeInsert(
+      String tableName, Map<String, dynamic> data) async {
     LoggerFactory.info('⚡ Realtime INSERT en $tableName: ${data['id']}');
-    
+
     try {
       // Invalidate specific providers based on table
       _invalidateProviders(tableName);
-      
+
       // Trigger sync for data consistency
       await _performSync('realtime_insert_$tableName');
     } catch (e) {
@@ -332,13 +356,14 @@ class MultiplataformSyncManager {
   }
 
   /// Maneja actualización de datos desde tiempo real
-  Future<void> handleRealtimeUpdate(String tableName, Map<String, dynamic> data) async {
+  Future<void> handleRealtimeUpdate(
+      String tableName, Map<String, dynamic> data) async {
     LoggerFactory.info('⚡ Realtime UPDATE en $tableName: ${data['id']}');
-    
+
     try {
       // Invalidate specific providers based on table
       _invalidateProviders(tableName);
-      
+
       // Trigger sync for conflict resolution if necessary
       await _performSync('realtime_update_$tableName');
     } catch (e) {
@@ -349,11 +374,11 @@ class MultiplataformSyncManager {
   /// Maneja eliminación de datos desde tiempo real
   Future<void> handleRealtimeDelete(String tableName, String id) async {
     LoggerFactory.info('⚡ Realtime DELETE en $tableName: $id');
-    
+
     try {
       // Invalidate specific providers based on table
       _invalidateProviders(tableName);
-      
+
       await _performSync('realtime_delete_$tableName');
     } catch (e) {
       LoggerFactory.error('❌ Error manejando realtime delete: $e');
@@ -362,8 +387,10 @@ class MultiplataformSyncManager {
 
   /// Invalidates providers based on the affected table
   void _invalidateProviders(String tableName) {
-    if (_providerContainer == null) {
-      LoggerFactory.warning('⚠️ No provider container available for invalidation');
+    final container = _providerContainer;
+    if (container == null) {
+      LoggerFactory.warning(
+          '⚠️ No provider container available for invalidation');
       return;
     }
 
@@ -371,43 +398,224 @@ class MultiplataformSyncManager {
       switch (tableName) {
         case 'user_watchlist':
           LoggerFactory.info('🔄 Invalidating watchlist providers');
-          _providerContainer!.invalidate(watchlistProvider);
-          _providerContainer!.invalidate(watchlistCountProvider);
-          _providerContainer!.invalidate(isMovieInWatchlistProvider);
-          _providerContainer!.invalidate(watchlistMovieProvider);
+          container.invalidate(watchlistProvider);
+          container.invalidate(watchlistCountProvider);
+          container.invalidate(isMovieInWatchlistProvider);
+          container.invalidate(watchlistMovieProvider);
           break;
-          
+
         case 'user_movie_ratings':
           LoggerFactory.info('🔄 Invalidating ratings providers');
-          _providerContainer!.invalidate(userRatingsProvider);
-          _providerContainer!.invalidate(ratingStatsProvider);
-          _providerContainer!.invalidate(topRatedMoviesProvider);
-          _providerContainer!.invalidate(recentRatingsProvider);
+          container.invalidate(userRatingsProvider);
+          container.invalidate(userRatingStatsProvider);
+          container.invalidate(topRatedMoviesProvider);
+          container.invalidate(recentRatingsProvider);
           break;
-          
+
         default:
-          LoggerFactory.info('🔄 Unknown table for provider invalidation: $tableName');
+          LoggerFactory.info(
+              '🔄 Unknown table for provider invalidation: $tableName');
       }
     } catch (e) {
       LoggerFactory.error('❌ Error invalidating providers: $e');
     }
   }
 
-  /// Maneja errores de conexión de tiempo real
-  void handleRealtimeError(String error) {
-    LoggerFactory.error('⚡❌ Error en tiempo real: $error');
-    
-    // Podríamos implementar lógica de recuperación aquí
-    // Por ejemplo, forzar una sincronización completa
-    Timer(const Duration(seconds: 5), () {
-      forceSync();
-    });
+  /// Maneja errores de conexión de tiempo real con diagnóstico detallado
+  void handleRealtimeError(String error,
+      {String? operation, String? tableName}) {
+    final timestamp = DateTime.now();
+    final errorType = _categorizeRealtimeError(error);
+    final severity = _getRealtimeErrorSeverity(errorType);
+    final recoveryAction = _getRealtimeRecoveryAction(errorType);
+    final managerStatus = getManagerStatus();
+
+    // Contexto adicional para el tracker
+    final additionalContext = {
+      'error_type': errorType,
+      'severity': severity,
+      'manager_status': managerStatus,
+      'connectivity_status': ConnectivityDetector.instance.getDetailedStatus(),
+      'lifecycle_status': AppLifecycleManager.instance.getDetailedStatus(),
+      'recovery_action': recoveryAction,
+      'realtime_context': {
+        'periodic_sync_active': _isPeriodicSyncActive,
+        'last_sync_attempt': _lastSyncAttempt?.toIso8601String(),
+        'last_successful_sync': _lastSuccessfulSync?.toIso8601String(),
+      },
+    };
+
+    // Registrar en el tracker de contexto de errores
+    final correlationId = ErrorContextTracker.instance.trackError(
+      errorType: 'realtime_error',
+      errorMessage: error,
+      operation: operation,
+      tableName: tableName,
+      additionalContext: additionalContext,
+    );
+
+    final structuredMessage =
+        'REALTIME_ERROR: $errorType [$correlationId] - $error';
+
+    // Logging estructurado con contexto completo
+    final logMessage = '⚡❌ [$severity] $structuredMessage\n'
+        '   📊 Context: operation=${operation ?? 'unknown'}, table=${tableName ?? 'unknown'}\n'
+        '   🔗 Connectivity: ${ConnectivityDetector.instance.isOnline ? 'Online' : 'Offline'}\n'
+        '   📱 Lifecycle: ${AppLifecycleManager.instance.getDetailedStatus()['status']}\n'
+        '   🔄 Recovery: $recoveryAction';
+
+    if (severity == 'CRITICAL' || severity == 'HIGH') {
+      LoggerFactory.error(logMessage);
+    } else {
+      LoggerFactory.warning(logMessage);
+    }
+
+    // Log detallado para debugging
+    developer.log(
+      'Realtime Error Details',
+      name: 'MultiplataformSyncManager',
+      error: {
+        'correlation_id': correlationId,
+        'error_type': errorType,
+        'severity': severity,
+        'operation': operation ?? 'unknown',
+        'table_name': tableName ?? 'unknown',
+        'timestamp': timestamp.toIso8601String(),
+        ...additionalContext,
+      },
+    );
+
+    // Implementar lógica de recuperación basada en el tipo de error
+    _executeRealtimeRecovery(errorType, correlationId);
+
+    // Registrar patrón de error para análisis
+    _trackRealtimeErrorPattern(errorType, operation, tableName, timestamp);
+  }
+
+  /// Categoriza errores de tiempo real para mejor diagnóstico
+  String _categorizeRealtimeError(String error) {
+    final errorStr = error.toLowerCase();
+
+    if (errorStr.contains('websocket') ||
+        errorStr.contains('connection closed') ||
+        errorStr.contains('network') ||
+        errorStr.contains('timeout')) {
+      return 'CONNECTION_ERROR';
+    }
+
+    if (errorStr.contains('auth') ||
+        errorStr.contains('unauthorized') ||
+        errorStr.contains('token') ||
+        errorStr.contains('forbidden')) {
+      return 'AUTH_ERROR';
+    }
+
+    if (errorStr.contains('subscription') || errorStr.contains('channel')) {
+      return 'SUBSCRIPTION_ERROR';
+    }
+
+    if (errorStr.contains('payload') ||
+        errorStr.contains('parse') ||
+        errorStr.contains('json') ||
+        errorStr.contains('format')) {
+      return 'DATA_FORMAT_ERROR';
+    }
+
+    if (errorStr.contains('rate limit') || errorStr.contains('throttle')) {
+      return 'RATE_LIMIT_ERROR';
+    }
+
+    return 'UNKNOWN_REALTIME_ERROR';
+  }
+
+  /// Determina la severidad del error de tiempo real
+  String _getRealtimeErrorSeverity(String errorType) {
+    switch (errorType) {
+      case 'AUTH_ERROR':
+        return 'CRITICAL';
+      case 'CONNECTION_ERROR':
+      case 'SUBSCRIPTION_ERROR':
+        return 'HIGH';
+      case 'DATA_FORMAT_ERROR':
+      case 'RATE_LIMIT_ERROR':
+        return 'MEDIUM';
+      default:
+        return 'LOW';
+    }
+  }
+
+  /// Determina la acción de recuperación para errores de tiempo real
+  String _getRealtimeRecoveryAction(String errorType) {
+    switch (errorType) {
+      case 'CONNECTION_ERROR':
+        return 'Reconectar WebSocket y sincronizar datos';
+      case 'AUTH_ERROR':
+        return 'Renovar autenticación y reestablecer suscripciones';
+      case 'SUBSCRIPTION_ERROR':
+        return 'Reestablecer suscripciones de tiempo real';
+      case 'DATA_FORMAT_ERROR':
+        return 'Validar formato de datos y esquemas';
+      case 'RATE_LIMIT_ERROR':
+        return 'Implementar backoff y reducir frecuencia';
+      default:
+        return 'Forzar sincronización completa';
+    }
+  }
+
+  /// Ejecuta la recuperación específica basada en el tipo de error
+  void _executeRealtimeRecovery(String errorType, String correlationId) {
+    LoggerFactory.info(
+        '🔧 Ejecutando recuperación para $errorType [$correlationId]');
+
+    switch (errorType) {
+      case 'CONNECTION_ERROR':
+      case 'SUBSCRIPTION_ERROR':
+        // Esperar un poco más antes de reconectar para errores de conexión
+        Timer(const Duration(seconds: 10), () {
+          LoggerFactory.info(
+              '🔄 Forzando sincronización por error de conexión [$correlationId]');
+          forceSync();
+        });
+        break;
+      case 'AUTH_ERROR':
+        // Para errores de autenticación, esperar más tiempo
+        Timer(const Duration(seconds: 30), () {
+          LoggerFactory.info(
+              '🔄 Forzando sincronización por error de auth [$correlationId]');
+          forceSync();
+        });
+        break;
+      case 'RATE_LIMIT_ERROR':
+        // Para rate limiting, esperar significativamente más
+        Timer(const Duration(minutes: 2), () {
+          LoggerFactory.info(
+              '🔄 Forzando sincronización post rate-limit [$correlationId]');
+          forceSync();
+        });
+        break;
+      default:
+        // Para otros errores, usar el comportamiento original
+        Timer(const Duration(seconds: 5), () {
+          LoggerFactory.info(
+              '🔄 Forzando sincronización por error desconocido [$correlationId]');
+          forceSync();
+        });
+    }
+  }
+
+  /// Rastrea patrones de errores de tiempo real
+  void _trackRealtimeErrorPattern(String errorType, String? operation,
+      String? tableName, DateTime timestamp) {
+    final pattern =
+        '${errorType}_${operation ?? 'unknown'}_${tableName ?? 'unknown'}';
+    LoggerFactory.info(
+        '📈 Realtime error pattern tracked: $pattern at ${timestamp.toIso8601String()}');
   }
 
   /// Maneja reconexión de tiempo real
   void handleRealtimeReconnect() {
     LoggerFactory.info('⚡🔄 Reconexión de tiempo real establecida');
-    
+
     // Realizar sincronización para asegurar consistencia
     Timer(const Duration(seconds: 1), () {
       _performSync('realtime_reconnect');

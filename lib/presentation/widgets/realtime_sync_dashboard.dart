@@ -11,7 +11,8 @@ class RealtimeSyncDashboard extends ConsumerStatefulWidget {
   const RealtimeSyncDashboard({super.key});
 
   @override
-  ConsumerState<RealtimeSyncDashboard> createState() => _RealtimeSyncDashboardState();
+  ConsumerState<RealtimeSyncDashboard> createState() =>
+      _RealtimeSyncDashboardState();
 }
 
 class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
@@ -19,9 +20,10 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   MetricsSnapshot? _currentMetrics;
   final List<_LatencyDataPoint> _latencyHistory = [];
   final List<_EventDataPoint> _eventHistory = [];
-  
+
   // Configuración de alertas según issue #69
-  static const Duration _latencyThreshold = Duration(milliseconds: 1500); // < 1.5s requirement
+  static const Duration _latencyThreshold =
+      Duration(milliseconds: 1500); // < 1.5s requirement
   static const int _maxHistoryPoints = 50;
 
   @override
@@ -115,7 +117,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   }
 
   Widget _buildStatusOverview() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
     final isHealthy = _isSystemHealthy(metrics);
 
     return Card(
@@ -165,13 +168,15 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   }
 
   Widget _buildLatencySection() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
     final avgSyncMs = metrics.averageSyncDuration.inMilliseconds;
     final avgRealtimeMs = metrics.averageRealtimeProcessingTime.inMilliseconds;
-    
+
     // Alertas de latencia según requisitos del issue #69
     final syncLatencyAlert = avgSyncMs > _latencyThreshold.inMilliseconds;
-    final realtimeLatencyAlert = avgRealtimeMs > _latencyThreshold.inMilliseconds;
+    final realtimeLatencyAlert =
+        avgRealtimeMs > _latencyThreshold.inMilliseconds;
 
     return Card(
       child: Padding(
@@ -187,8 +192,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
             Text(
               'Objetivo: < 1.5 segundos (Requerimiento del Issue #69)',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -221,7 +226,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   }
 
   Widget _buildRealtimeEventsSection() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     return Card(
       child: Padding(
@@ -266,7 +272,9 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
               value: metrics.realtimeProcessingRate,
               backgroundColor: Colors.grey[300],
               valueColor: AlwaysStoppedAnimation<Color>(
-                metrics.realtimeProcessingRate > 0.95 ? Colors.green : Colors.orange,
+                metrics.realtimeProcessingRate > 0.95
+                    ? Colors.green
+                    : Colors.orange,
               ),
             ),
             const SizedBox(height: 8),
@@ -281,7 +289,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   }
 
   Widget _buildConflictResolutionSection() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     return Card(
       child: Padding(
@@ -297,8 +306,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
             Text(
               'Estrategia: Last-Write-Wins (updated_at)',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -326,7 +335,9 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
                 value: metrics.conflictResolutionRate,
                 backgroundColor: Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  metrics.conflictResolutionRate > 0.95 ? Colors.green : Colors.red,
+                  metrics.conflictResolutionRate > 0.95
+                      ? Colors.green
+                      : Colors.red,
                 ),
               ),
               const SizedBox(height: 8),
@@ -342,7 +353,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   }
 
   Widget _buildEntityMetricsSection() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
     final watchlistMetrics = metrics.entityMetrics['user_watchlist'];
     final ratingsMetrics = metrics.entityMetrics['user_movie_ratings'];
 
@@ -383,23 +395,27 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
           Text(
             entityName,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
-                child: _buildSmallMetric('Sync Ops', '${metrics.operationsStarted}'),
+                child: _buildSmallMetric(
+                    'Sync Ops', '${metrics.operationsStarted}'),
               ),
               Expanded(
-                child: _buildSmallMetric('Success', '${metrics.successfulOperations}'),
+                child: _buildSmallMetric(
+                    'Success', '${metrics.successfulOperations}'),
               ),
               Expanded(
-                child: _buildSmallMetric('Realtime', '${metrics.realtimeEventsReceived}'),
+                child: _buildSmallMetric(
+                    'Realtime', '${metrics.realtimeEventsReceived}'),
               ),
               Expanded(
-                child: _buildSmallMetric('Conflicts', '${metrics.conflictsDetected}'),
+                child: _buildSmallMetric(
+                    'Conflicts', '${metrics.conflictsDetected}'),
               ),
             ],
           ),
@@ -409,7 +425,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   }
 
   Widget _buildNetworkStabilitySection() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     return Card(
       child: Padding(
@@ -471,11 +488,12 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
     );
   }
 
-  Widget _buildMetricCard(String title, String value, Color color, {bool alert = false}) {
+  Widget _buildMetricCard(String title, String value, Color color,
+      {bool alert = false}) {
     return Container(
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1 * 255),
         border: Border.all(
           color: alert ? Colors.red : color,
           width: alert ? 2.0 : 1.0,
@@ -495,8 +513,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                        color: Colors.grey[600],
+                      ),
                 ),
               ),
             ],
@@ -505,9 +523,9 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              color: alert ? Colors.red : color,
-              fontWeight: FontWeight.bold,
-            ),
+                  color: alert ? Colors.red : color,
+                  fontWeight: FontWeight.bold,
+                ),
           ),
         ],
       ),
@@ -521,14 +539,14 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
         Text(
           title,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
-          ),
+                color: Colors.grey[600],
+              ),
         ),
         Text(
           value,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
+                fontWeight: FontWeight.w500,
+              ),
         ),
       ],
     );
@@ -536,9 +554,9 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
 
   bool _isSystemHealthy(MetricsSnapshot metrics) {
     return metrics.performanceScore > 0.8 &&
-           metrics.isOnline &&
-           metrics.averageSyncDuration < _latencyThreshold &&
-           metrics.averageRealtimeProcessingTime < _latencyThreshold;
+        metrics.isOnline &&
+        metrics.averageSyncDuration < _latencyThreshold &&
+        metrics.averageRealtimeProcessingTime < _latencyThreshold;
   }
 
   Color _getScoreColor(double score) {
@@ -565,38 +583,35 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
 
 /// Clase para almacenar puntos de datos de latencia
 class _LatencyDataPoint {
-  final DateTime timestamp;
-  final Duration syncLatency;
-  final Duration realtimeLatency;
-
   _LatencyDataPoint({
     required this.timestamp,
     required this.syncLatency,
     required this.realtimeLatency,
   });
+  final DateTime timestamp;
+  final Duration syncLatency;
+  final Duration realtimeLatency;
 }
 
 /// Clase para almacenar puntos de datos de eventos
 class _EventDataPoint {
-  final DateTime timestamp;
-  final int realtimeEvents;
-  final int throttledEvents;
-  final int conflicts;
-
   _EventDataPoint({
     required this.timestamp,
     required this.realtimeEvents,
     required this.throttledEvents,
     required this.conflicts,
   });
+  final DateTime timestamp;
+  final int realtimeEvents;
+  final int throttledEvents;
+  final int conflicts;
 }
 
 /// Custom painter para el gráfico de latencia
 class _LatencyChartPainter extends CustomPainter {
+  _LatencyChartPainter(this.dataPoints, this.threshold);
   final List<_LatencyDataPoint> dataPoints;
   final Duration threshold;
-
-  _LatencyChartPainter(this.dataPoints, this.threshold);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -607,12 +622,13 @@ class _LatencyChartPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final thresholdPaint = Paint()
-      ..color = Colors.red.withOpacity(0.5)
+      ..color = Colors.red.withValues(alpha: 0.5 * 255)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
     // Línea de threshold
-    final thresholdY = size.height - (threshold.inMilliseconds / 3000.0) * size.height;
+    final thresholdY =
+        size.height - (threshold.inMilliseconds / 3000.0) * size.height;
     canvas.drawLine(
       Offset(0, thresholdY),
       Offset(size.width, thresholdY),
@@ -628,7 +644,8 @@ class _LatencyChartPainter extends CustomPainter {
     _drawLatencyLine(canvas, size, paint, (point) => point.realtimeLatency);
   }
 
-  void _drawLatencyLine(Canvas canvas, Size size, Paint paint, Duration Function(_LatencyDataPoint) getValue) {
+  void _drawLatencyLine(Canvas canvas, Size size, Paint paint,
+      Duration Function(_LatencyDataPoint) getValue) {
     final path = Path();
     final stepX = size.width / (dataPoints.length - 1);
 

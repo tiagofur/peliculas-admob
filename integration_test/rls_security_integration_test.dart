@@ -1,19 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:peliculas/main.dart' as app;
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
+  late SupabaseClient supabase;
+
   group('RLS Policy Integration Tests', () {
-    late SupabaseClient supabase;
-    
     setUpAll(() async {
       // Initialize Supabase client
       await Supabase.initialize(
-        url: const String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://test.supabase.co'),
-        anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'test-key'),
+        url: const String.fromEnvironment('SUPABASE_URL',
+            defaultValue: 'https://test.supabase.co'),
+        anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY',
+            defaultValue: 'test-key'),
       );
       supabase = Supabase.instance.client;
     });
@@ -23,23 +24,21 @@ void main() {
         // This test validates that RLS policies prevent cross-user access
         try {
           // Attempt to query all profiles (should be filtered by RLS)
-          final response = await supabase
-              .from('user_profiles')
-              .select()
-              .execute();
+          final response = await supabase.from('user_profiles').select();
 
           // In production, this should only return the current user's profile
           // or be empty if not authenticated
-          expect(response.data, isNotNull);
-          
+          expect(response, isNotNull);
+
           // If data is returned, verify it only contains current user's data
-          if (response.data is List && (response.data as List).isNotEmpty) {
-            final profiles = response.data as List;
+          if ((response as List).isNotEmpty) {
+            final profiles = response as List;
             final currentUserId = supabase.auth.currentUser?.id;
-            
+
             for (final profile in profiles) {
               expect(profile['user_id'], equals(currentUserId),
-                  reason: 'RLS should prevent access to other users\' profiles');
+                  reason:
+                      'RLS should prevent access to other users\' profiles');
             }
           }
         } catch (e) {
@@ -59,8 +58,8 @@ void main() {
           await supabase.from('user_profiles').insert({
             'user_id': supabase.auth.currentUser!.id,
             'full_name': 'A', // Too short - should fail
-          }).execute();
-          
+          });
+
           fail('Should have thrown validation error for short name');
         } catch (e) {
           expect(e, isA<PostgrestException>());
@@ -72,8 +71,8 @@ void main() {
             'user_id': supabase.auth.currentUser!.id,
             'full_name': 'Valid Test Name',
             'bio': 'This is a valid bio for testing',
-          }).execute();
-          
+          });
+
           // This should succeed
         } catch (e) {
           // If profile already exists, update should work
@@ -89,20 +88,18 @@ void main() {
         }
 
         try {
-          final response = await supabase
-              .from('user_favorites')
-              .select()
-              .execute();
+          final response = await supabase.from('user_favorites').select();
 
-          expect(response.data, isNotNull);
-          
-          if (response.data is List && (response.data as List).isNotEmpty) {
-            final favorites = response.data as List;
+          expect(response, isNotNull);
+
+          if ((response as List).isNotEmpty) {
+            final favorites = response as List;
             final currentUserId = supabase.auth.currentUser!.id;
-            
+
             for (final favorite in favorites) {
               expect(favorite['user_id'], equals(currentUserId),
-                  reason: 'RLS should prevent access to other users\' favorites');
+                  reason:
+                      'RLS should prevent access to other users\' favorites');
             }
           }
         } catch (e) {
@@ -110,7 +107,8 @@ void main() {
         }
       });
 
-      testWidgets('Movie data validation is enforced in favorites', (tester) async {
+      testWidgets('Movie data validation is enforced in favorites',
+          (tester) async {
         if (supabase.auth.currentUser == null) {
           return;
         }
@@ -121,8 +119,8 @@ void main() {
             'user_id': supabase.auth.currentUser!.id,
             'movie_id': 0, // Invalid - should fail
             'movie_title': 'Test Movie',
-          }).execute();
-          
+          });
+
           fail('Should have thrown validation error for invalid movie_id');
         } catch (e) {
           expect(e, isA<PostgrestException>());
@@ -140,18 +138,18 @@ void main() {
           final response = await supabase
               .from('user_lists')
               .select()
-              .eq('is_public', false) // Only private lists
-              .execute();
+              .eq('is_public', false); // Only private lists
 
-          expect(response.data, isNotNull);
-          
-          if (response.data is List && (response.data as List).isNotEmpty) {
-            final lists = response.data as List;
+          expect(response, isNotNull);
+
+          if ((response as List).isNotEmpty) {
+            final lists = response as List;
             final currentUserId = supabase.auth.currentUser!.id;
-            
+
             for (final list in lists) {
               expect(list['user_id'], equals(currentUserId),
-                  reason: 'RLS should prevent access to other users\' private lists');
+                  reason:
+                      'RLS should prevent access to other users\' private lists');
             }
           }
         } catch (e) {
@@ -161,14 +159,11 @@ void main() {
 
       testWidgets('Public lists are accessible to all users', (tester) async {
         try {
-          final response = await supabase
-              .from('user_lists')
-              .select()
-              .eq('is_public', true)
-              .execute();
+          final response =
+              await supabase.from('user_lists').select().eq('is_public', true);
 
           // This should work even for unauthenticated users
-          expect(response.data, isNotNull);
+          expect(response, isNotNull);
         } catch (e) {
           // Some restrictions might apply, but shouldn't be a complete block
           expect(e, isA<PostgrestException>());
@@ -185,8 +180,8 @@ void main() {
           await supabase.from('user_lists').insert({
             'user_id': supabase.auth.currentUser!.id,
             'name': '', // Empty name - should fail
-          }).execute();
-          
+          });
+
           fail('Should have thrown validation error for empty name');
         } catch (e) {
           expect(e, isA<PostgrestException>());
@@ -204,18 +199,18 @@ void main() {
           final response = await supabase
               .from('user_watchlist')
               .select()
-              .is_('deleted_at', null) // Only non-deleted items
-              .execute();
+              .isFilter('deleted_at', null); // Only non-deleted items
 
-          expect(response.data, isNotNull);
-          
-          if (response.data is List && (response.data as List).isNotEmpty) {
-            final watchlist = response.data as List;
+          expect(response, isNotNull);
+
+          if ((response as List).isNotEmpty) {
+            final watchlist = response as List;
             final currentUserId = supabase.auth.currentUser!.id;
-            
+
             for (final item in watchlist) {
               expect(item['user_id'], equals(currentUserId),
-                  reason: 'RLS should prevent access to other users\' watchlist');
+                  reason:
+                      'RLS should prevent access to other users\' watchlist');
             }
           }
         } catch (e) {
@@ -235,8 +230,8 @@ void main() {
             'movie_id': 123,
             'movie_title': 'Test Movie',
             'priority': 'invalid_priority', // Should fail
-          }).execute();
-          
+          });
+
           fail('Should have thrown validation error for invalid priority');
         } catch (e) {
           expect(e, isA<PostgrestException>());
@@ -251,17 +246,14 @@ void main() {
         }
 
         try {
-          final response = await supabase
-              .from('user_movie_ratings')
-              .select()
-              .execute();
+          final response = await supabase.from('user_movie_ratings').select();
 
-          expect(response.data, isNotNull);
-          
-          if (response.data is List && (response.data as List).isNotEmpty) {
-            final ratings = response.data as List;
+          expect(response, isNotNull);
+
+          if ((response as List).isNotEmpty) {
+            final ratings = response as List;
             final currentUserId = supabase.auth.currentUser!.id;
-            
+
             for (final rating in ratings) {
               expect(rating['user_id'], equals(currentUserId),
                   reason: 'RLS should prevent access to other users\' ratings');
@@ -284,8 +276,8 @@ void main() {
             'movie_id': 123,
             'movie_title': 'Test Movie',
             'rating': 6, // Out of range - should fail
-          }).execute();
-          
+          });
+
           fail('Should have thrown validation error for invalid rating');
         } catch (e) {
           expect(e, isA<PostgrestException>());
@@ -294,7 +286,8 @@ void main() {
     });
 
     group('Storage Security Tests', () {
-      testWidgets('Users can only access their own avatar folder', (tester) async {
+      testWidgets('Users can only access their own avatar folder',
+          (tester) async {
         if (supabase.auth.currentUser == null) {
           return;
         }
@@ -303,10 +296,8 @@ void main() {
 
         try {
           // Attempt to list files in another user's folder
-          await supabase.storage
-              .from('avatars')
-              .list(path: 'other_user_id');
-          
+          await supabase.storage.from('avatars').list(path: 'other_user_id');
+
           // This might succeed but should be empty or restricted
         } catch (e) {
           // Access restrictions are expected
@@ -315,10 +306,8 @@ void main() {
 
         try {
           // Access to own folder should work
-          await supabase.storage
-              .from('avatars')
-              .list(path: currentUserId);
-          
+          await supabase.storage.from('avatars').list(path: currentUserId);
+
           // This should succeed
         } catch (e) {
           // Folder might not exist yet, which is fine
@@ -331,18 +320,15 @@ void main() {
       testWidgets('Audit logs are properly restricted', (tester) async {
         try {
           // Attempt to access audit logs
-          final response = await supabase
-              .from('security_audit_log')
-              .select()
-              .execute();
+          final response = await supabase.from('security_audit_log').select();
 
           // This should either be restricted or only show current user's actions
-          expect(response.data, isNotNull);
-          
-          if (response.data is List && (response.data as List).isNotEmpty) {
-            final logs = response.data as List;
+          expect(response, isNotNull);
+
+          if ((response as List).isNotEmpty) {
+            final logs = response as List;
             final currentUserId = supabase.auth.currentUser?.id;
-            
+
             if (currentUserId != null) {
               for (final log in logs) {
                 // In a more restrictive setup, users might only see their own logs
@@ -369,10 +355,10 @@ void main() {
             'operation_type': 'INSERT',
             'time_window': '1 hour',
             'max_operations': 100,
-          }).execute();
+          });
 
-          expect(response.data, isNotNull);
-          expect(response.data, isA<bool>());
+          expect(response, isNotNull);
+          expect(response, isA<bool>());
         } catch (e) {
           // Function might not exist in test environment
           expect(e, isA<PostgrestException>());
@@ -384,15 +370,14 @@ void main() {
   group('Attack Simulation Tests', () {
     testWidgets('SQL Injection Prevention', (tester) async {
       // Test that malicious SQL in parameters is properly escaped
-      final maliciousSql = "'; DROP TABLE user_profiles; --";
-      
+      const maliciousSql = "'; DROP TABLE user_profiles; --";
+
       try {
         await supabase
             .from('user_profiles')
             .select()
-            .eq('full_name', maliciousSql)
-            .execute();
-        
+            .eq('full_name', maliciousSql);
+
         // Query should complete without executing the malicious SQL
       } catch (e) {
         // Expected if parameter validation catches the issue
@@ -410,9 +395,8 @@ void main() {
         await supabase
             .from('user_favorites')
             .select()
-            .eq('user_id', 'fake_user_id')
-            .execute();
-        
+            .eq('user_id', 'fake_user_id');
+
         // RLS should prevent this from returning unauthorized data
       } catch (e) {
         expect(e, isA<PostgrestException>());

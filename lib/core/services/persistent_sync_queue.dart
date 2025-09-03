@@ -554,7 +554,7 @@ class PersistentSyncQueue {
           .where((operation) =>
               operation.isCompleted &&
               operation.lastAttemptAt != null &&
-              operation.lastAttemptAt!.isBefore(cutoffTime))
+              (operation.lastAttemptAt?.isBefore(cutoffTime) ?? false))
           .toList();
 
       if (completedOperations.isNotEmpty) {

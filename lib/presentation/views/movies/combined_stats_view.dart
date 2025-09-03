@@ -6,22 +6,50 @@ import '../../../domain/entities/genre_analysis.dart';
 import '../../../domain/entities/rating_analysis.dart';
 import '../../../domain/entities/temporal_analysis.dart';
 import '../../../domain/entities/user_stats.dart';
-import '../../providers/user_stats_provider.dart';
-import '../../providers/recommendations/recommendations_provider.dart';
-import '../../widgets/admob/native_ad_widget.dart';
+import '../../providers/recommendations/recommendations_provider.dart'
+    as recommendations;
+import '../../providers/user_stats_provider.dart' as user_stats;
 import '../../widgets/admob/full_width_ad_widget.dart';
+import '../../widgets/admob/native_ad_widget.dart';
 
 class CombinedStatsView extends ConsumerWidget {
   const CombinedStatsView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userStats = ref.watch(userStatsProvider);
-    final basicStats = ref.watch(basicUserStatsProvider);
-    final genreAnalysis = ref.watch(genreAnalysisProvider);
-    final temporalAnalysis = ref.watch(temporalAnalysisProvider);
-    final ratingAnalysis = ref.watch(ratingAnalysisProvider);
-    final activityPatterns = ref.watch(activityPatternsProvider);
+    final userStats = ref.watch(user_stats.userStatsProvider);
+    final basicStats =
+        ref.watch(recommendations.recommendationsUserStatsProvider).when(
+              data: (statsMap) => recommendations.BasicUserStats(
+                totalFavorites: statsMap['totalFavorites'] ?? 0,
+                totalWatched: statsMap['totalWatched'] ?? 0,
+                totalMovies: (statsMap['totalFavorites'] ?? 0) +
+                    (statsMap['totalWatched'] ?? 0),
+                averageRating: statsMap['averageRating'] ?? 0.0,
+                topGenres: List<String>.from(statsMap['favoriteGenres'] ?? []),
+                watchingStreak: 0,
+              ),
+              loading: () => recommendations.BasicUserStats(
+                totalFavorites: 0,
+                totalWatched: 0,
+                totalMovies: 0,
+                averageRating: 0.0,
+                topGenres: [],
+                watchingStreak: 0,
+              ),
+              error: (_, __) => recommendations.BasicUserStats(
+                totalFavorites: 0,
+                totalWatched: 0,
+                totalMovies: 0,
+                averageRating: 0.0,
+                topGenres: [],
+                watchingStreak: 0,
+              ),
+            );
+    final genreAnalysis = ref.watch(user_stats.genreAnalysisProvider);
+    final temporalAnalysis = ref.watch(user_stats.temporalAnalysisProvider);
+    final ratingAnalysis = ref.watch(user_stats.ratingAnalysisProvider);
+    final activityPatterns = ref.watch(user_stats.activityPatternsProvider);
 
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
@@ -40,7 +68,8 @@ class CombinedStatsView extends ConsumerWidget {
                   children: [
                     _buildUserTypeCard(stats, colors, textStyles),
                     const SizedBox(height: 16),
-                    _buildGeneralStatsSection(basicStats, stats, colors, textStyles),
+                    _buildGeneralStatsSection(
+                        basicStats, stats, colors, textStyles),
                   ],
                 ),
               ),
@@ -146,10 +175,7 @@ class CombinedStatsView extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            typeColor.withAlpha(25),
-            typeColor.withAlpha(12)
-          ],
+          colors: [typeColor.withAlpha(25), typeColor.withAlpha(12)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -192,8 +218,8 @@ class CombinedStatsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildGeneralStatsSection(
-      BasicUserStats basicStats, UserStats stats, ColorScheme colors, TextTheme textStyles) {
+  Widget _buildGeneralStatsSection(recommendations.BasicUserStats basicStats,
+      UserStats stats, ColorScheme colors, TextTheme textStyles) {
     return _buildSection(
       title: 'Resumen General',
       icon: Icons.analytics,

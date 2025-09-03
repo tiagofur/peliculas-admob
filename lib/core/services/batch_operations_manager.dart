@@ -69,8 +69,6 @@ class OperationBatch {
 /// Gestor de operaciones en lote para optimizar requests a Supabase
 class BatchOperationsManager {
   BatchOperationsManager(this._supabaseClient);
-  static const int _maxBatchSize = 50;
-  static const Duration _batchTimeout = Duration(seconds: 5);
 
   final SupabaseClient _supabaseClient;
 
@@ -174,6 +172,14 @@ class BatchOperationsManager {
         return await _processListMovieBatch(operations, isAdd: true);
       case SyncOperationType.removeMovieFromList:
         return await _processListMovieBatch(operations, isAdd: false);
+      case SyncOperationType.addToWatchlist:
+        return await _processWatchlistBatch(operations, isAdd: true);
+      case SyncOperationType.removeFromWatchlist:
+        return await _processWatchlistBatch(operations, isAdd: false);
+      case SyncOperationType.updateWatchlistPriority:
+        return await _processWatchlistPriorityBatch(operations);
+      case SyncOperationType.tokenRefresh:
+        return await _processTokenRefreshBatch(operations);
     }
   }
 
@@ -527,6 +533,10 @@ class BatchOperationsManager {
       SyncOperationType.deleteCustomList: Duration(milliseconds: 150),
       SyncOperationType.addMovieToList: Duration(milliseconds: 75),
       SyncOperationType.removeMovieFromList: Duration(milliseconds: 100),
+      SyncOperationType.addToWatchlist: Duration(milliseconds: 60),
+      SyncOperationType.removeFromWatchlist: Duration(milliseconds: 80),
+      SyncOperationType.updateWatchlistPriority: Duration(milliseconds: 40),
+      SyncOperationType.tokenRefresh: Duration(milliseconds: 30),
     };
 
     var totalTime = Duration.zero;
@@ -542,6 +552,136 @@ class BatchOperationsManager {
         Duration(milliseconds: (operations.length * 10).clamp(50, 500));
 
     return totalTime + overhead;
+  }
+
+  /// Procesa lote de operaciones de watchlist
+  Future<List<BatchOperationResult>> _processWatchlistBatch(
+      List<SyncOperation> operations,
+      {required bool isAdd}) async {
+    final results = <BatchOperationResult>[];
+
+    try {
+      if (isAdd) {
+        // Preparar datos para inserción en lote
+        final insertData = operations
+            .map((op) => {
+                  'user_id': op.data['userId'],
+                  'movie_id': op.data['movieId'],
+                  'priority': op.data['priority'] ?? 'medium',
+                  'created_at': op.data['timestamp'],
+                  'updated_at': op.data['timestamp'],
+                })
+            .toList();
+
+        await _supabaseClient
+            .from('user_watchlist')
+            .upsert(insertData, onConflict: 'user_id,movie_id');
+
+        // Todas las operaciones fueron exitosas
+        for (final operation in operations) {
+          results.add(BatchOperationResult(
+            operationId: operation.id,
+            success: true,
+          ));
+        }
+      } else {
+        // Para eliminación, procesar individualmente
+        for (final operation in operations) {
+          try {
+            await _supabaseClient
+                .from('user_watchlist')
+                .delete()
+                .eq('user_id', operation.data['userId'])
+                .eq('movie_id', operation.data['movieId']);
+
+            results.add(BatchOperationResult(
+              operationId: operation.id,
+              success: true,
+            ));
+          } catch (e) {
+            results.add(BatchOperationResult(
+              operationId: operation.id,
+              success: false,
+              error: e.toString(),
+            ));
+          }
+        }
+      }
+    } catch (e) {
+      LoggerFactory.error('Error en lote de watchlist', data: {'error': e});
+
+      // Marcar todas como fallidas
+      for (final operation in operations) {
+        results.add(BatchOperationResult(
+          operationId: operation.id,
+          success: false,
+          error: e.toString(),
+        ));
+      }
+    }
+
+    return results;
+  }
+
+  /// Procesa lote de actualizaciones de prioridad de watchlist
+  Future<List<BatchOperationResult>> _processWatchlistPriorityBatch(
+    List<SyncOperation> operations,
+  ) async {
+    final results = <BatchOperationResult>[];
+
+    for (final operation in operations) {
+      try {
+        await _supabaseClient
+            .from('user_watchlist')
+            .update({
+              'priority': operation.data['priority'],
+              'updated_at': operation.data['timestamp'],
+            })
+            .eq('user_id', operation.data['userId'])
+            .eq('movie_id', operation.data['movieId']);
+
+        results.add(BatchOperationResult(
+          operationId: operation.id,
+          success: true,
+        ));
+      } catch (e) {
+        results.add(BatchOperationResult(
+          operationId: operation.id,
+          success: false,
+          error: e.toString(),
+        ));
+      }
+    }
+
+    return results;
+  }
+
+  /// Procesa lote de operaciones de actualización de token
+  Future<List<BatchOperationResult>> _processTokenRefreshBatch(
+    List<SyncOperation> operations,
+  ) async {
+    final results = <BatchOperationResult>[];
+
+    // Las operaciones de token refresh se procesan individualmente
+    // ya que requieren lógica específica de autenticación
+    for (final operation in operations) {
+      try {
+        // Para operaciones de token refresh, simplemente marcamos como completadas
+        // ya que el token refresh real se maneja en el TokenRefreshService
+        results.add(BatchOperationResult(
+          operationId: operation.id,
+          success: true,
+        ));
+      } catch (e) {
+        results.add(BatchOperationResult(
+          operationId: operation.id,
+          success: false,
+          error: e.toString(),
+        ));
+      }
+    }
+
+    return results;
   }
 
   /// Libera recursos

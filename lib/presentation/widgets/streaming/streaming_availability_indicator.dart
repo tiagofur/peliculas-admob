@@ -26,7 +26,7 @@ class StreamingAvailabilityBadge extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        final availability = snapshot.data!;
+        final availability = snapshot.data ?? StreamingAvailability.empty();
         final availablePlatforms = availability.platforms
             .where((p) => p.isAvailable)
             .take(maxPlatforms)
@@ -189,7 +189,7 @@ class StreamingAvailabilityDetail extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        final availability = snapshot.data!;
+        final availability = snapshot.data ?? StreamingAvailability.empty();
         final availablePlatforms =
             availability.platforms.where((p) => p.isAvailable).toList();
 
@@ -273,9 +273,7 @@ class StreamingAvailabilityDetail extends ConsumerWidget {
     return Semantics(
       button: true,
       label: AccessibilityService.getStreamingPlatformSemantics(
-        platform.platform.displayName, 
-        platform.isAvailable
-      ),
+          platform.platform.displayName, platform.isAvailable),
       hint: 'Toque para abrir en ${platform.platform.displayName}',
       child: InkWell(
         onTap: () => onPlatformTap?.call(platform.platform),
@@ -283,11 +281,12 @@ class StreamingAvailabilityDetail extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: _getPlatformColor(platform.platform.id).withValues(alpha: 0.1),
+            color:
+                _getPlatformColor(platform.platform.id).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color:
-                  _getPlatformColor(platform.platform.id).withValues(alpha: 0.3),
+              color: _getPlatformColor(platform.platform.id)
+                  .withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -297,69 +296,71 @@ class StreamingAvailabilityDetail extends ConsumerWidget {
                 label: 'Icono de ${platform.platform.displayName}',
                 child: Container(
                   width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                color: _getPlatformColor(platform.platform.id),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  _getPlatformInitial(platform.platform.name),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: _getPlatformColor(platform.platform.id),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _getPlatformInitial(platform.platform.name),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  platform.platform.displayName,
-                  style: textStyles.bodySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (platform.isFree)
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    'Gratis',
+                    platform.platform.displayName,
                     style: textStyles.bodySmall?.copyWith(
-                      color: Colors.green,
-                      fontSize: 10,
-                    ),
-                  )
-                else if (platform.requiresSubscription)
-                  Text(
-                    'Suscripción',
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.primary,
-                      fontSize: 10,
-                    ),
-                  )
-                else if (platform.canRent || platform.canPurchase)
-                  Text(
-                    'Renta/Compra',
-                    style: textStyles.bodySmall?.copyWith(
-                      color: colors.secondary,
-                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(width: 4),
-            Semantics(
-              label: 'Abrir enlace externo',
-              child: Icon(
-                Icons.open_in_new,
-                size: 12,
-                color: colors.onSurface.withValues(alpha: 0.6),
+                  if (platform.isFree)
+                    Text(
+                      'Gratis',
+                      style: textStyles.bodySmall?.copyWith(
+                        color: Colors.green,
+                        fontSize: 10,
+                      ),
+                    )
+                  else if (platform.requiresSubscription)
+                    Text(
+                      'Suscripción',
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.primary,
+                        fontSize: 10,
+                      ),
+                    )
+                  else if (platform.canRent || platform.canPurchase)
+                    Text(
+                      'Renta/Compra',
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.secondary,
+                        fontSize: 10,
+                      ),
+                    ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Semantics(
+                label: 'Abrir enlace externo',
+                child: Icon(
+                  Icons.open_in_new,
+                  size: 12,
+                  color: colors.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -456,7 +457,7 @@ class StreamingQuickAction extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        final availability = snapshot.data!;
+        final availability = snapshot.data ?? StreamingAvailability.empty();
         final availablePlatforms =
             availability.platforms.where((p) => p.isAvailable).toList();
 
@@ -469,7 +470,7 @@ class StreamingQuickAction extends ConsumerWidget {
 
         return ElevatedButton.icon(
           onPressed: () => _launchStreamingApp(context, primaryPlatform),
-          icon: Icon(
+          icon: const Icon(
             Icons.play_arrow,
             color: Colors.white,
           ),

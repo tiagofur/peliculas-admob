@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
+import '../../presentation/screens/app_info/about_screen.dart';
+import '../../presentation/screens/app_info/help_screen.dart';
+import '../../presentation/screens/app_info/privacy_policy_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/screens.dart';
 import '../../presentation/screens/settings_screen.dart';
@@ -385,6 +388,40 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           );
         },
       ),
+
+      // Rutas de Ayuda y Acerca de
+      GoRoute(
+        path: '/help',
+        name: 'help',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const HelpScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+            },
+          );
+        },
+      ),
+      GoRoute(
+        path: '/about',
+        name: 'about',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const AboutScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+            },
+          );
+        },
+      ),
     ],
   );
 });
@@ -652,6 +689,24 @@ final appRouter = GoRouter(
         return CustomTransitionPage(
           key: state.pageKey,
           child: const SettingsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return CinematicPageTransitions.slideUpTransition(
+              page: child,
+              duration: const Duration(milliseconds: 500),
+            ).transitionsBuilder(context, animation, secondaryAnimation, child);
+          },
+        );
+      },
+    ),
+
+    // Ruta de política de privacidad
+    GoRoute(
+      path: '/privacy-policy',
+      name: 'privacy-policy',
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const PrivacyPolicyScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return CinematicPageTransitions.slideUpTransition(
               page: child,

@@ -19,7 +19,8 @@ class AddToWatchlistButton extends ConsumerStatefulWidget {
   final bool showLabel;
 
   @override
-  ConsumerState<AddToWatchlistButton> createState() => _AddToWatchlistButtonState();
+  ConsumerState<AddToWatchlistButton> createState() =>
+      _AddToWatchlistButtonState();
 }
 
 class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
@@ -27,14 +28,16 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isInWatchlist = ref.watch(isMovieInWatchlistProvider(widget.movie.id));
+    final isInWatchlist =
+        ref.watch(isMovieInWatchlistProvider(widget.movie.id));
     final theme = Theme.of(context);
 
     return isInWatchlist.when(
       data: (inWatchlist) {
         if (widget.isIconButton) {
           return IconButton(
-            onPressed: _isLoading ? null : () => _handleWatchlistAction(inWatchlist),
+            onPressed:
+                _isLoading ? null : () => _handleWatchlistAction(inWatchlist),
             icon: _isLoading
                 ? const SizedBox(
                     width: 24,
@@ -45,12 +48,14 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                     inWatchlist ? Icons.bookmark : Icons.bookmark_border,
                     color: inWatchlist ? theme.primaryColor : null,
                   ),
-            tooltip: inWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
+            tooltip:
+                inWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
           );
         }
 
         return ElevatedButton.icon(
-          onPressed: _isLoading ? null : () => _handleWatchlistAction(inWatchlist),
+          onPressed:
+              _isLoading ? null : () => _handleWatchlistAction(inWatchlist),
           icon: _isLoading
               ? const SizedBox(
                   width: 16,
@@ -61,7 +66,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                   inWatchlist ? Icons.bookmark : Icons.bookmark_border,
                   size: 20,
                 ),
-          label: widget.showLabel 
+          label: widget.showLabel
               ? Text(inWatchlist ? 'En Watchlist' : 'Agregar a Watchlist')
               : const SizedBox.shrink(),
           style: ElevatedButton.styleFrom(
@@ -86,7 +91,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                 height: 16,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              label: widget.showLabel 
+              label: widget.showLabel
                   ? const Text('Cargando...')
                   : const SizedBox.shrink(),
             ),
@@ -99,7 +104,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
           : ElevatedButton.icon(
               onPressed: () => _handleWatchlistAction(false),
               icon: const Icon(Icons.bookmark_border, size: 20),
-              label: widget.showLabel 
+              label: widget.showLabel
                   ? const Text('Agregar a Watchlist')
                   : const SizedBox.shrink(),
             ),
@@ -120,8 +125,10 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
     });
 
     try {
-      await ref.read(watchlistProvider.notifier).removeFromWatchlist(widget.movie.id);
-      
+      await ref
+          .read(watchlistProvider.notifier)
+          .removeFromWatchlist(widget.movie.id);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -160,8 +167,10 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
       });
 
       try {
-        await ref.read(watchlistProvider.notifier).addToWatchlist(widget.movie, result);
-        
+        await ref
+            .read(watchlistProvider.notifier)
+            .addToWatchlist(widget.movie, result);
+
         // Track analytics event for add to watchlist
         await AnalyticsService().trackEvent(
           AnalyticsEventType.addWatchlist,
@@ -172,11 +181,12 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
             'action': 'add_to_watchlist',
           },
         );
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${widget.movie.title} agregada a watchlist con ${result.displayName.toLowerCase()} prioridad'),
+              content: Text(
+                  '${widget.movie.title} agregada a watchlist con ${result.displayName.toLowerCase()} prioridad'),
               duration: const Duration(seconds: 2),
             ),
           );
@@ -252,36 +262,38 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
   }
 
   Widget _buildPriorityOptions() {
-    return Column(
-      children: WatchlistPriority.values.map((priority) {
-        return RadioListTile<WatchlistPriority>(
-          value: priority,
-          groupValue: _selectedPriority,
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                _selectedPriority = value;
-              });
-            }
-          },
-          title: Row(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: _getPriorityColor(priority),
-                  shape: BoxShape.circle,
+    return RadioGroup<WatchlistPriority>(
+      groupValue: _selectedPriority,
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedPriority = value;
+          });
+        }
+      },
+      child: Column(
+        children: WatchlistPriority.values.map((priority) {
+          return RadioListTile<WatchlistPriority>(
+            value: priority,
+            title: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(priority),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(priority.displayName),
-            ],
-          ),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-        );
-      }).toList(),
+                const SizedBox(width: 12),
+                Text(priority.displayName),
+              ],
+            ),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          );
+        }).toList(),
+      ),
     );
   }
 

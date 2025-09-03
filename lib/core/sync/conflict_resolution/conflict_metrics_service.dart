@@ -270,7 +270,7 @@ class ConflictMetricsService {
 
     final metrics = ConflictSessionMetrics(
       sessionId: _currentSessionId!,
-      startTime: _sessionStartTime!,
+      startTime: _sessionStartTime ?? DateTime.now(),
       endTime: endTime,
       totalConflictsDetected:
           _resolutionHistory.length + _activeConflicts.length,
@@ -341,7 +341,7 @@ class ConflictMetricsService {
 
     return ConflictSessionMetrics(
       sessionId: _currentSessionId!,
-      startTime: _sessionStartTime!,
+      startTime: _sessionStartTime ?? DateTime.now(),
       endTime: now,
       totalConflictsDetected:
           _resolutionHistory.length + _activeConflicts.length,

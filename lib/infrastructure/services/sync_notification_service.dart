@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/notifications/local_notification_service.dart';
+import '../../core/notifications/notification_manager.dart';
 
 /// Servicio para manejar notificaciones de sincronización en background
 class SyncNotificationService {
@@ -9,8 +10,6 @@ class SyncNotificationService {
   static final SyncNotificationService instance = SyncNotificationService._();
 
   static const int _syncNotificationId = 1001;
-  static const String _syncChannelId = 'sync_updates';
-  static const String _syncChannelName = 'Sincronización';
 
   bool _isInitialized = false;
   bool _notificationsEnabled = true;
@@ -22,13 +21,14 @@ class SyncNotificationService {
     try {
       // Solo habilitar notificaciones en modo release para evitar spam durante desarrollo
       _notificationsEnabled = !kDebugMode;
-      
+
       if (_notificationsEnabled && !kIsWeb) {
         await _createNotificationChannel();
       }
-      
+
       _isInitialized = true;
-      LoggerFactory.info('✅ SyncNotificationService inicializado (enabled: $_notificationsEnabled)');
+      LoggerFactory.info(
+          '✅ SyncNotificationService inicializado (enabled: $_notificationsEnabled)');
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando SyncNotificationService: $e');
     }
@@ -56,18 +56,16 @@ class SyncNotificationService {
     if (!_notificationsEnabled || kIsWeb || !_isInitialized) return;
 
     try {
-      final title = '✅ Datos sincronizados';
+      const title = '✅ Datos sincronizados';
       final body = _formatSyncMessage(itemsSynced, additionalInfo);
-      
+
       await LocalNotificationService.instance.showNotification(
         id: _syncNotificationId,
         title: title,
         body: body,
-        channelId: _syncChannelId,
-        channelName: _syncChannelName,
-        priority: 'low', // Prioridad baja para no molestar
+        priority: NotificationPriority.low, // Prioridad baja para no molestar
       );
-      
+
       LoggerFactory.info('📱 Notificación de sync exitoso mostrada');
     } catch (e) {
       LoggerFactory.error('Error mostrando notificación de sync: $e');
@@ -82,20 +80,18 @@ class SyncNotificationService {
     if (!_notificationsEnabled || kIsWeb || !_isInitialized) return;
 
     try {
-      final title = '⚠️ Error de sincronización';
-      final body = canRetry 
-        ? 'Reintentando automáticamente...' 
-        : 'Verifica tu conexión a internet';
-      
+      const title = '⚠️ Error de sincronización';
+      final body = canRetry
+          ? 'Reintentando automáticamente...'
+          : 'Verifica tu conexión a internet';
+
       await LocalNotificationService.instance.showNotification(
         id: _syncNotificationId + 1,
         title: title,
         body: body,
-        channelId: _syncChannelId,
-        channelName: _syncChannelName,
-        priority: 'default',
+        priority: NotificationPriority.normal,
       );
-      
+
       LoggerFactory.info('📱 Notificación de error de sync mostrada');
     } catch (e) {
       LoggerFactory.error('Error mostrando notificación de error: $e');
@@ -111,11 +107,9 @@ class SyncNotificationService {
         id: _syncNotificationId + 2,
         title: '🔄 Sincronizando datos',
         body: 'Actualizando tu biblioteca de películas...',
-        channelId: _syncChannelId,
-        channelName: _syncChannelName,
-        priority: 'low',
+        priority: NotificationPriority.low,
       );
-      
+
       LoggerFactory.info('📱 Notificación de sync inicial mostrada');
     } catch (e) {
       LoggerFactory.error('Error mostrando notificación inicial: $e');
@@ -127,10 +121,13 @@ class SyncNotificationService {
     if (!_notificationsEnabled || kIsWeb || !_isInitialized) return;
 
     try {
-      await LocalNotificationService.instance.cancelNotification(_syncNotificationId);
-      await LocalNotificationService.instance.cancelNotification(_syncNotificationId + 1);
-      await LocalNotificationService.instance.cancelNotification(_syncNotificationId + 2);
-      
+      await LocalNotificationService.instance
+          .cancelNotification(_syncNotificationId);
+      await LocalNotificationService.instance
+          .cancelNotification(_syncNotificationId + 1);
+      await LocalNotificationService.instance
+          .cancelNotification(_syncNotificationId + 2);
+
       LoggerFactory.info('📱 Notificaciones de sync canceladas');
     } catch (e) {
       LoggerFactory.error('Error cancelando notificaciones: $e');
@@ -150,7 +147,8 @@ class SyncNotificationService {
   /// Habilitar/deshabilitar notificaciones
   void setNotificationsEnabled(bool enabled) {
     _notificationsEnabled = enabled;
-    LoggerFactory.info('📱 Notificaciones de sync ${enabled ? 'habilitadas' : 'deshabilitadas'}');
+    LoggerFactory.info(
+        '📱 Notificaciones de sync ${enabled ? 'habilitadas' : 'deshabilitadas'}');
   }
 
   /// Verificar si las notificaciones están habilitadas

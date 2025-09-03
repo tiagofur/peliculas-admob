@@ -109,7 +109,7 @@ class AchievementCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              'Desbloqueado el ${_formatDate(achievement.unlockedDate!)}',
+                              'Desbloqueado el ${achievement.unlockedDate != null ? _formatDate(achievement.unlockedDate!) : 'Fecha desconocida'}',
                               style: textTheme.bodySmall?.copyWith(
                                 color: colors.onPrimaryContainer.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w500,

@@ -76,8 +76,6 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
     }
   }
 
-
-
   Future<void> _launchAppStore() async {
     const appStoreUrl = 'https://peliculas.creapolis.dev';
     final uri = Uri.parse(appStoreUrl);
@@ -88,11 +86,13 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
   }
 
   Future<void> _openInApp() async {
-    final deepLink = ShareService.generateMovieAppDeepLink(int.parse(widget.movieId));
+    final deepLink =
+        ShareService.generateMovieAppDeepLink(int.parse(widget.movieId));
     final uri = Uri.parse(deepLink);
 
     try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
         // Fallback to app store if app is not installed
         await _launchAppStore();
@@ -106,25 +106,27 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
   Future<void> _shareMovie() async {
     if (_shareableContent != null && mounted) {
       // Create a Movie object from the shareable content for ShareService
-      final movie = Movie(
-        id: _shareableContent!.metadata?['movieId'] ?? 0,
-        title: _shareableContent!.metadata?['movieTitle'] ??
-            _shareableContent!.title,
-        overview: _shareableContent!.description,
-        posterPath: _shareableContent!.imageUrl ?? '',
-        adult: false,
-        backdropPath: '',
-        genreIds: [],
-        originalLanguage: '',
-        originalTitle: _shareableContent!.title,
-        popularity: 0.0,
-        releaseDate: DateTime.now(),
-        video: false,
-        voteAverage: 0.0,
-        voteCount: 0,
-      );
+      final content = _shareableContent;
+      if (content != null) {
+        final movie = Movie(
+          id: content.metadata?['movieId'] ?? 0,
+          title: content.metadata?['movieTitle'] ?? content.title,
+          overview: content.description,
+          posterPath: content.imageUrl ?? '',
+          adult: false,
+          backdropPath: '',
+          genreIds: [],
+          originalLanguage: '',
+          originalTitle: content.title,
+          popularity: 0.0,
+          releaseDate: DateTime.now(),
+          video: false,
+          voteAverage: 0.0,
+          voteCount: 0,
+        );
 
-      ShareService.shareMovie(context: context, movie: movie);
+        ShareService.shareMovie(context: context, movie: movie);
+      }
     }
   }
 
@@ -154,7 +156,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        _error!,
+                        _error ?? 'Error desconocido',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.grey,
@@ -200,7 +202,8 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
 
   Widget _buildHeroSection(
       ThemeData theme, bool isDesktop, bool isTablet, bool isMobile) {
-    final content = _shareableContent!;
+    final content = _shareableContent;
+    if (content == null) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,
@@ -275,7 +278,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
         borderRadius: BorderRadius.circular(16),
         child: content.imageUrl != null
             ? Image.network(
-                content.imageUrl!,
+                content.imageUrl ?? '',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) =>
                     _buildPlaceholderPoster(),

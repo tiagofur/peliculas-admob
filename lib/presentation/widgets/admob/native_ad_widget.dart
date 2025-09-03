@@ -54,7 +54,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
         },
       ),
     );
-    _nativeAd!.load();
+    _nativeAd?.load();
   }
 
   @override
@@ -64,7 +64,8 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
       return const SizedBox.shrink();
     }
     
-    if (_nativeAdIsLoaded && _nativeAd != null) {
+    final nativeAd = _nativeAd;
+    if (_nativeAdIsLoaded && nativeAd != null) {
       final adWidget = Container(
         height: widget.height,
         margin: widget.margin ??
@@ -79,7 +80,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
             color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
-        child: AdWidget(ad: _nativeAd!),
+        child: AdWidget(ad: nativeAd),
       );
 
       if (widget.showLabel) {

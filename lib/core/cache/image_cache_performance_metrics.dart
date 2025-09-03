@@ -5,11 +5,10 @@ import '../logging/logger_factory.dart';
 
 /// Métricas de rendimiento del caché de imágenes
 class ImageCachePerformanceMetrics {
-  static ImageCachePerformanceMetrics? _instance;
-  static ImageCachePerformanceMetrics get instance => 
-      _instance ??= ImageCachePerformanceMetrics._();
-
   ImageCachePerformanceMetrics._();
+  static ImageCachePerformanceMetrics? _instance;
+  static ImageCachePerformanceMetrics get instance =>
+      _instance ??= ImageCachePerformanceMetrics._();
 
   final _logger = LoggerFactory.logger;
 
@@ -40,7 +39,7 @@ class ImageCachePerformanceMetrics {
 
     _metricsStartTime = DateTime.now();
     _startCleanupTimer();
-    
+
     _logger.info('📊 Métricas de rendimiento de caché inicializadas');
   }
 
@@ -88,8 +87,8 @@ class ImageCachePerformanceMetrics {
   /// Obtiene estadísticas de rendimiento
   PerformanceStats getStats() {
     final now = DateTime.now();
-    final uptime = _metricsStartTime != null 
-        ? now.difference(_metricsStartTime!) 
+    final uptime = _metricsStartTime != null
+        ? now.difference(_metricsStartTime!)
         : Duration.zero;
 
     return PerformanceStats(
@@ -98,20 +97,16 @@ class ImageCachePerformanceMetrics {
       diskCacheHits: _diskCacheHits,
       networkDownloads: _networkDownloads,
       failedRequests: _failedRequests,
-      
+
       // Ratios
-      memoryCacheHitRate: _totalRequests > 0 
-          ? _memoryCacheHits / _totalRequests 
+      memoryCacheHitRate:
+          _totalRequests > 0 ? _memoryCacheHits / _totalRequests : 0.0,
+      diskCacheHitRate:
+          _totalRequests > 0 ? _diskCacheHits / _totalRequests : 0.0,
+      overallCacheHitRate: _totalRequests > 0
+          ? (_memoryCacheHits + _diskCacheHits) / _totalRequests
           : 0.0,
-      diskCacheHitRate: _totalRequests > 0 
-          ? _diskCacheHits / _totalRequests 
-          : 0.0,
-      overallCacheHitRate: _totalRequests > 0 
-          ? (_memoryCacheHits + _diskCacheHits) / _totalRequests 
-          : 0.0,
-      failureRate: _totalRequests > 0 
-          ? _failedRequests / _totalRequests 
-          : 0.0,
+      failureRate: _totalRequests > 0 ? _failedRequests / _totalRequests : 0.0,
 
       // Tiempos promedio
       averageLoadTime: _calculateAverage(_loadTimes),
@@ -133,24 +128,24 @@ class ImageCachePerformanceMetrics {
   /// Calcula el promedio de una cola de duraciones
   Duration _calculateAverage(Queue<Duration> times) {
     if (times.isEmpty) return Duration.zero;
-    
-    final totalMicroseconds = times
-        .map((t) => t.inMicroseconds)
-        .reduce((a, b) => a + b);
-    
+
+    final totalMicroseconds =
+        times.map((t) => t.inMicroseconds).reduce((a, b) => a + b);
+
     return Duration(microseconds: totalMicroseconds ~/ times.length);
   }
 
   /// Calcula un percentil de una cola de duraciones
   Duration _calculatePercentile(Queue<Duration> times, double percentile) {
     if (times.isEmpty) return Duration.zero;
-    
+
     final sortedTimes = List<Duration>.from(times)
       ..sort((a, b) => a.compareTo(b));
-    
-    final index = (sortedTimes.length * percentile).floor()
+
+    final index = (sortedTimes.length * percentile)
+        .floor()
         .clamp(0, sortedTimes.length - 1);
-    
+
     return sortedTimes[index];
   }
 
@@ -165,7 +160,7 @@ class ImageCachePerformanceMetrics {
   void _cleanupOldData() {
     // En esta implementación simplificada, solo limitamos por número de muestras
     // En una implementación completa, se podría filtrar por tiempo
-    
+
     // Las colas ya están limitadas por _maxSamples en _addTimeToQueue
     // Aquí podríamos agregar lógica adicional si fuera necesario
   }
@@ -177,14 +172,14 @@ class ImageCachePerformanceMetrics {
     _diskCacheHits = 0;
     _networkDownloads = 0;
     _failedRequests = 0;
-    
+
     _loadTimes.clear();
     _memoryCacheAccessTimes.clear();
     _diskCacheAccessTimes.clear();
     _downloadTimes.clear();
-    
+
     _metricsStartTime = DateTime.now();
-    
+
     _logger.info('🔄 Métricas de rendimiento reiniciadas');
   }
 
@@ -192,38 +187,46 @@ class ImageCachePerformanceMetrics {
   String generateReport() {
     final stats = getStats();
     final buffer = StringBuffer();
-    
+
     buffer.writeln('=== REPORTE DE RENDIMIENTO DEL CACHÉ DE IMÁGENES ===');
     buffer.writeln('Tiempo activo: ${_formatDuration(stats.uptime)}');
     buffer.writeln('Tamaño de muestra: ${stats.sampleSize}');
     buffer.writeln();
-    
+
     buffer.writeln('SOLICITUDES:');
     buffer.writeln('  Total: ${stats.totalRequests}');
     buffer.writeln('  Exitosas: ${stats.totalRequests - stats.failedRequests}');
     buffer.writeln('  Fallidas: ${stats.failedRequests}');
-    buffer.writeln('  Tasa de error: ${(stats.failureRate * 100).toStringAsFixed(2)}%');
+    buffer.writeln(
+        '  Tasa de error: ${(stats.failureRate * 100).toStringAsFixed(2)}%');
     buffer.writeln();
-    
+
     buffer.writeln('CACHÉ:');
-    buffer.writeln('  Hits memoria: ${stats.memoryCacheHits} (${(stats.memoryCacheHitRate * 100).toStringAsFixed(2)}%)');
-    buffer.writeln('  Hits disco: ${stats.diskCacheHits} (${(stats.diskCacheHitRate * 100).toStringAsFixed(2)}%)');
+    buffer.writeln(
+        '  Hits memoria: ${stats.memoryCacheHits} (${(stats.memoryCacheHitRate * 100).toStringAsFixed(2)}%)');
+    buffer.writeln(
+        '  Hits disco: ${stats.diskCacheHits} (${(stats.diskCacheHitRate * 100).toStringAsFixed(2)}%)');
     buffer.writeln('  Descargas red: ${stats.networkDownloads}');
-    buffer.writeln('  Hit rate total: ${(stats.overallCacheHitRate * 100).toStringAsFixed(2)}%');
+    buffer.writeln(
+        '  Hit rate total: ${(stats.overallCacheHitRate * 100).toStringAsFixed(2)}%');
     buffer.writeln();
-    
+
     buffer.writeln('TIEMPOS DE RESPUESTA:');
-    buffer.writeln('  Promedio carga: ${_formatDuration(stats.averageLoadTime)}');
-    buffer.writeln('  Promedio memoria: ${_formatDuration(stats.averageMemoryCacheAccessTime)}');
-    buffer.writeln('  Promedio disco: ${_formatDuration(stats.averageDiskCacheAccessTime)}');
-    buffer.writeln('  Promedio descarga: ${_formatDuration(stats.averageDownloadTime)}');
+    buffer
+        .writeln('  Promedio carga: ${_formatDuration(stats.averageLoadTime)}');
+    buffer.writeln(
+        '  Promedio memoria: ${_formatDuration(stats.averageMemoryCacheAccessTime)}');
+    buffer.writeln(
+        '  Promedio disco: ${_formatDuration(stats.averageDiskCacheAccessTime)}');
+    buffer.writeln(
+        '  Promedio descarga: ${_formatDuration(stats.averageDownloadTime)}');
     buffer.writeln();
-    
+
     buffer.writeln('PERCENTILES CARGA:');
     buffer.writeln('  P50: ${_formatDuration(stats.loadTimeP50)}');
     buffer.writeln('  P90: ${_formatDuration(stats.loadTimeP90)}');
     buffer.writeln('  P95: ${_formatDuration(stats.loadTimeP95)}');
-    
+
     return buffer.toString();
   }
 
@@ -240,27 +243,31 @@ class ImageCachePerformanceMetrics {
   PerformanceAssessment assessPerformance() {
     final stats = getStats();
     final issues = <String>[];
-    
+
     // Evaluar tasa de hit del caché
     if (stats.overallCacheHitRate < 0.7) {
-      issues.add('Baja tasa de hit del caché (${(stats.overallCacheHitRate * 100).toStringAsFixed(1)}%)');
+      issues.add(
+          'Baja tasa de hit del caché (${(stats.overallCacheHitRate * 100).toStringAsFixed(1)}%)');
     }
-    
+
     // Evaluar tasa de errores
     if (stats.failureRate > 0.05) {
-      issues.add('Alta tasa de errores (${(stats.failureRate * 100).toStringAsFixed(1)}%)');
+      issues.add(
+          'Alta tasa de errores (${(stats.failureRate * 100).toStringAsFixed(1)}%)');
     }
-    
+
     // Evaluar tiempo de carga
     if (stats.loadTimeP95.inMilliseconds > 2000) {
-      issues.add('Tiempo de carga P95 alto (${stats.loadTimeP95.inMilliseconds}ms)');
+      issues.add(
+          'Tiempo de carga P95 alto (${stats.loadTimeP95.inMilliseconds}ms)');
     }
-    
+
     // Evaluar tiempo promedio
     if (stats.averageLoadTime.inMilliseconds > 1000) {
-      issues.add('Tiempo promedio de carga alto (${stats.averageLoadTime.inMilliseconds}ms)');
+      issues.add(
+          'Tiempo promedio de carga alto (${stats.averageLoadTime.inMilliseconds}ms)');
     }
-    
+
     return PerformanceAssessment(
       isHealthy: issues.isEmpty,
       issues: issues,
@@ -271,20 +278,20 @@ class ImageCachePerformanceMetrics {
   /// Calcula un score de rendimiento (0-100)
   double _calculatePerformanceScore(PerformanceStats stats) {
     double score = 100.0;
-    
+
     // Penalizar por baja tasa de hit
     if (stats.overallCacheHitRate < 0.8) {
       score -= (0.8 - stats.overallCacheHitRate) * 100;
     }
-    
+
     // Penalizar por alta tasa de errores
     score -= stats.failureRate * 500; // 50 puntos por 10% de errores
-    
+
     // Penalizar por tiempos lentos
     if (stats.averageLoadTime.inMilliseconds > 500) {
       score -= (stats.averageLoadTime.inMilliseconds - 500) * 0.05;
     }
-    
+
     return score.clamp(0.0, 100.0);
   }
 
@@ -324,21 +331,21 @@ class PerformanceStats {
   final int diskCacheHits;
   final int networkDownloads;
   final int failedRequests;
-  
+
   final double memoryCacheHitRate;
   final double diskCacheHitRate;
   final double overallCacheHitRate;
   final double failureRate;
-  
+
   final Duration averageLoadTime;
   final Duration averageMemoryCacheAccessTime;
   final Duration averageDiskCacheAccessTime;
   final Duration averageDownloadTime;
-  
+
   final Duration loadTimeP50;
   final Duration loadTimeP90;
   final Duration loadTimeP95;
-  
+
   final Duration uptime;
   final int sampleSize;
 }

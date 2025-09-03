@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
 
 import '../../core/analytics/analytics_service.dart';
-import '../../services/share_service.dart';
 
 /// Service for handling deep links and URL-based navigation
 class DeepLinkHandler {
@@ -25,7 +24,7 @@ class DeepLinkHandler {
       if (kIsWeb) {
         final currentUrl = Uri.base.toString();
         _logger.info('Current URL: $currentUrl');
-        
+
         // Parse and handle the URL
         _parseAndHandleUrl(currentUrl, router);
       }
@@ -39,14 +38,14 @@ class DeepLinkHandler {
     try {
       final uri = Uri.parse(url);
       final path = uri.path;
-      
+
       _logger.info('Parsing URL path: $path');
 
       // Handle share URLs - redirect to main app routes
       if (path.contains('/share')) {
         final cleanPath = path.replaceAll('/share', '');
         _handleShareUrl(cleanPath, router);
-      } 
+      }
       // Handle direct movie URLs
       else if (path.startsWith('/movie/')) {
         _handleMovieUrl(path, router);
@@ -86,7 +85,8 @@ class DeepLinkHandler {
         if (pathSegments.length >= 4) {
           final type = pathSegments[2];
           final id = pathSegments[3];
-          _logger.info('Redirecting from share URL to recommendation: $type/$id');
+          _logger
+              .info('Redirecting from share URL to recommendation: $type/$id');
           router.go('/recommendations/$type/$id');
           _trackDeepLinkEvent('recommendation_share_redirect', {
             'type': type,
@@ -180,18 +180,18 @@ class DeepLinkHandler {
     Map<String, String>? parameters,
   }) {
     final buffer = StringBuffer('$_appScheme://$contentType/$contentId');
-    
+
     if (action != null) {
       buffer.write('/$action');
     }
-    
+
     if (parameters != null && parameters.isNotEmpty) {
       final params = parameters.entries
           .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
           .join('&');
       buffer.write('?$params');
     }
-    
+
     return buffer.toString();
   }
 
@@ -247,10 +247,11 @@ class DeepLinkHandler {
   }
 
   /// Track deep link analytics event
-  static void _trackDeepLinkEvent(String eventName, Map<String, dynamic> parameters) {
+  static void _trackDeepLinkEvent(
+      String eventName, Map<String, dynamic> parameters) {
     try {
       _analytics.trackEvent(
-        AnalyticsEventType.custom,
+        AnalyticsEventType.userEngagement,
         {
           'event_name': eventName,
           'source': 'deep_link',

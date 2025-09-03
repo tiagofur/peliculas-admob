@@ -332,7 +332,7 @@ class _CinemaFooter extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
@@ -340,7 +340,7 @@ class _CinemaFooter extends StatelessWidget {
                     color: Colors.white,
                     size: 16,
                   ),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     'PiP',
                     style: TextStyle(
@@ -369,7 +369,7 @@ class _CinemaFooter extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
@@ -377,7 +377,7 @@ class _CinemaFooter extends StatelessWidget {
                   color: Colors.white,
                   size: 16,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   'MODO CINE',
                   style: TextStyle(

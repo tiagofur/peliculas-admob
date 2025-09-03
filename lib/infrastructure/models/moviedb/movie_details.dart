@@ -1,8 +1,8 @@
+import '../../../domain/entities/watch_providers.dart';
 import 'credits.dart';
 import 'images.dart';
 import 'reviews.dart';
 import 'watch_providers_response.dart';
-import '../../../domain/entities/watch_providers.dart';
 
 class MovieDetails {
   MovieDetails({
@@ -44,7 +44,7 @@ class MovieDetails {
             ? null
             : BelongsToCollection.fromJson(json['belongs_to_collection']),
         budget: json['budget']?.toInt(),
-        genres: json['genres'] != null 
+        genres: json['genres'] != null
             ? List<Genre>.from(json['genres'].map((x) => Genre.fromJson(x)))
             : <Genre>[],
         homepage: json['homepage'] ?? '',
@@ -56,14 +56,16 @@ class MovieDetails {
         popularity: json['popularity']?.toDouble(),
         posterPath: json['poster_path'] ?? '',
         productionCompanies: json['production_companies'] != null
-            ? List<ProductionCompany>.from(
-                json['production_companies'].map((x) => ProductionCompany.fromJson(x)))
+            ? List<ProductionCompany>.from(json['production_companies']
+                .map((x) => ProductionCompany.fromJson(x)))
             : <ProductionCompany>[],
         productionCountries: json['production_countries'] != null
-            ? List<ProductionCountry>.from(
-                json['production_countries'].map((x) => ProductionCountry.fromJson(x)))
+            ? List<ProductionCountry>.from(json['production_countries']
+                .map((x) => ProductionCountry.fromJson(x)))
             : <ProductionCountry>[],
-        releaseDate: json['release_date'] != null ? DateTime.parse(json['release_date']) : null,
+        releaseDate: json['release_date'] != null
+            ? DateTime.parse(json['release_date'])
+            : null,
         revenue: json['revenue']?.toInt(),
         runtime: json['runtime']?.toInt(),
         spokenLanguages: json['spoken_languages'] != null
@@ -76,12 +78,15 @@ class MovieDetails {
         video: json['video'] ?? false,
         voteAverage: json['vote_average']?.toDouble(),
         voteCount: json['vote_count']?.toInt(),
-        credits: json['credits'] != null ? Credits.fromJson(json['credits']) : null,
+        credits:
+            json['credits'] != null ? Credits.fromJson(json['credits']) : null,
         images: json['images'] != null ? Images.fromJson(json['images']) : null,
-        reviews: json['reviews'] != null ? Reviews.fromJson(json['reviews']) : null,
+        reviews:
+            json['reviews'] != null ? Reviews.fromJson(json['reviews']) : null,
         similar: json['similar'],
-        watchProviders: json['watch/providers'] != null 
-            ? WatchProvidersResponse.fromJson(json['watch/providers']).primaryProviders
+        watchProviders: json['watch/providers'] != null
+            ? WatchProvidersResponse.fromJson(json['watch/providers'])
+                .primaryProviders
             : null,
       );
 
@@ -135,7 +140,7 @@ class MovieDetails {
         'production_countries':
             List<dynamic>.from(productionCountries.map((x) => x.toJson())),
         'release_date': releaseDate != null
-            ? "${releaseDate!.year.toString().padLeft(4, '0')}-${releaseDate!.month.toString().padLeft(2, '0')}-${releaseDate!.day.toString().padLeft(2, '0')}"
+            ? "${releaseDate?.year.toString().padLeft(4, '0')}-${releaseDate?.month.toString().padLeft(2, '0')}-${releaseDate?.day.toString().padLeft(2, '0')}"
             : null,
         'revenue': revenue,
         'runtime': runtime,

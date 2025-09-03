@@ -6,11 +6,11 @@ import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/share_service.dart';
 import '../../providers/providers.dart';
+import '../../providers/watched_movies_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
-import '../../widgets/widgets.dart';
 import '../../widgets/watchlist/add_to_watchlist_button.dart';
-import '../../widgets/movie_rating_and_notes.dart';
+import '../../widgets/widgets.dart';
 
 class MovieScreen extends ConsumerStatefulWidget {
   const MovieScreen({super.key, required this.movieId});
@@ -37,7 +37,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Rastrear vista de película cuando se carga la pantalla
     final movie = ref.read(movieInfoProvider)[widget.movieId];
     if (movie != null) {
@@ -51,7 +51,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
     if (movie == null) {
       return const Scaffold(
-          body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+        body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
     }
 
     return Scaffold(
@@ -205,10 +205,8 @@ class _CustomSliverAppBar extends ConsumerWidget {
         _AnimatedActionButton(
           onPressed: () async {
             // Rastrear evento de compartir
-            await AnalyticsService().trackMovieShare(
-              movie.id.toString(), 
-              'native_share'
-            );
+            await AnalyticsService()
+                .trackMovieShare(movie.id.toString(), 'native_share');
             await ShareService.shareMovie(context: context, movie: movie);
           },
           feedbackType: FeedbackType.info,

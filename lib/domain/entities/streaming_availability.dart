@@ -21,6 +21,17 @@ class StreamingAvailability {
       region: json['region'] as String,
     );
   }
+
+  /// Creates an empty StreamingAvailability instance
+  factory StreamingAvailability.empty() {
+    return StreamingAvailability(
+      movieId: 0,
+      movieTitle: '',
+      platforms: const [],
+      lastUpdated: DateTime.now(),
+      region: 'US',
+    );
+  }
   final int movieId;
   final String movieTitle;
   final List<PlatformAvailability> platforms;
@@ -191,21 +202,26 @@ class PlatformAvailability {
 
   /// Get formatted price string for rental
   String? get formattedRentalPrice {
-    if (rentalPrice == null || currency == null) return null;
-    return '${currency!}${rentalPrice!.toStringAsFixed(2)}';
+    final price = rentalPrice;
+    final curr = currency;
+    if (price == null || curr == null) return null;
+    return '$curr${price.toStringAsFixed(2)}';
   }
 
   /// Get formatted price string for purchase
   String? get formattedPurchasePrice {
-    if (purchasePrice == null || currency == null) return null;
-    return '${currency!}${purchasePrice!.toStringAsFixed(2)}';
+    final price = purchasePrice;
+    final curr = currency;
+    if (price == null || curr == null) return null;
+    return '$curr${price.toStringAsFixed(2)}';
   }
 
   /// Check if the content is expiring soon (within 7 days)
   bool get isExpiringSoon {
-    if (availableUntil == null) return false;
+    final until = availableUntil;
+    if (until == null) return false;
     final now = DateTime.now();
-    final difference = availableUntil!.difference(now);
+    final difference = until.difference(now);
     return difference.inDays <= 7 && difference.inDays >= 0;
   }
 

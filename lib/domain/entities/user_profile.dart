@@ -36,8 +36,8 @@ class UserProfile {
     );
   }
 
-  bool get hasBio => bio != null && bio!.isNotEmpty;
-  bool get hasAvatar => avatarUrl != null && avatarUrl!.isNotEmpty;
+  bool get hasBio => bio != null && (bio?.isNotEmpty ?? false);
+  bool get hasAvatar => avatarUrl != null && (avatarUrl?.isNotEmpty ?? false);
 
   @override
   bool operator ==(Object other) {

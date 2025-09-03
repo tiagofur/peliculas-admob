@@ -79,20 +79,20 @@ class AdWidgetsExamples extends StatelessWidget {
   }
 
   Widget _buildIndividualAdsExample() {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Diferentes tipos de anuncios individuales:',
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Fila con diferentes tipos de anuncios de tarjeta
         Row(
           children: [
             // Anuncio de tarjeta estándar
-            const Expanded(
+            Expanded(
               child: Column(
                 children: [
                   MovieCardAdWidget(),
@@ -106,10 +106,10 @@ class AdWidgetsExamples extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
 
             // Anuncio de tarjeta compacto
-            const Expanded(
+            Expanded(
               child: Column(
                 children: [
                   CompactMovieCardAdWidget(),
@@ -123,10 +123,10 @@ class AdWidgetsExamples extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(width: 16),
+            SizedBox(width: 16),
 
             // Anuncio de grid
-            const Expanded(
+            Expanded(
               child: Column(
                 children: [
                   GridAdWidget(),
@@ -146,27 +146,27 @@ class AdWidgetsExamples extends StatelessWidget {
   }
 
   Widget _buildFullWidthAdsExample() {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Anuncios de ancho completo:',
           style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Anuncio estándar
-        const FullWidthAdWidget(),
+        FullWidthAdWidget(),
 
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Anuncio compacto
-        const CompactFullWidthAdWidget(),
+        CompactFullWidthAdWidget(),
 
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
 
         // Anuncio premium
-        const PremiumFullWidthAdWidget(),
+        PremiumFullWidthAdWidget(),
       ],
     );
   }

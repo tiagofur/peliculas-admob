@@ -15,7 +15,7 @@ extension GetPersonCollection on Isar {
 
 const PersonSchema = CollectionSchema(
   name: r'Person',
-  id: 7854610480646705599,
+  id: 7854610480646705152,
   properties: {
     r'adult': PropertySchema(
       id: 0,
@@ -125,7 +125,7 @@ const PersonSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'tmdbId': IndexSchema(
-      id: 7174867214654401712,
+      id: 7174867214654401536,
       name: r'tmdbId',
       unique: false,
       replace: false,

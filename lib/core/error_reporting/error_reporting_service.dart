@@ -3,17 +3,17 @@ import 'dart:async';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
-import '../logging/logger_factory.dart';
 import '../../services/error_reporting_config.dart';
+import '../logging/logger_factory.dart';
 import 'error_metrics_service.dart';
 
 /// Service for handling error reporting using Firebase Crashlytics
 /// Integrates with the existing logging system to provide crash reporting
 class ErrorReportingService {
-  static ErrorReportingService? _instance;
-  static ErrorReportingService get instance => _instance ??= ErrorReportingService._();
-  
   ErrorReportingService._();
+  static ErrorReportingService? _instance;
+  static ErrorReportingService get instance =>
+      _instance ??= ErrorReportingService._();
 
   bool _isInitialized = false;
   bool _isEnabled = false;
@@ -26,25 +26,26 @@ class ErrorReportingService {
     try {
       // Initialize config first
       await ErrorReportingConfig.instance.initialize();
-      
+
       // Initialize metrics service
       await ErrorMetricsService.instance.initialize();
-      
+
       // Use config to determine if enabled, or fall back to parameter
       _isEnabled = enabled ?? ErrorReportingConfig.instance.isEnabled;
 
       // Only initialize Crashlytics on non-web platforms and if enabled
       if (!kIsWeb && _isEnabled) {
         // Initialize Firebase Crashlytics
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
-        
+        await FirebaseCrashlytics.instance
+            .setCrashlyticsCollectionEnabled(true);
+
         // Set up automatic crash reporting
         FlutterError.onError = (FlutterErrorDetails details) {
           FirebaseCrashlytics.instance.recordFlutterFatalError(details);
-          
+
           // Record crash in metrics
           ErrorMetricsService.instance.recordSessionCrash();
-          
+
           LoggerFactory.error(
             'Flutter Fatal Error: ${details.exception}',
             data: {
@@ -59,10 +60,10 @@ class ErrorReportingService {
         // Handle errors that occur outside of Flutter's context
         PlatformDispatcher.instance.onError = (error, stack) {
           FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-          
+
           // Record crash in metrics
           ErrorMetricsService.instance.recordSessionCrash();
-          
+
           LoggerFactory.error(
             'Platform Error: $error',
             stackTrace: stack,
@@ -71,20 +72,26 @@ class ErrorReportingService {
         };
 
         if (kDebugMode) {
-          LoggerFactory.info('✅ Error reporting service initialized with Crashlytics');
+          LoggerFactory.info(
+              '✅ Error reporting service initialized with Crashlytics');
         }
       } else {
         if (kDebugMode) {
-          final reason = kIsWeb ? 'Web platform not supported' : 
-                        !_isEnabled ? 'Disabled by configuration' : 'Unknown reason';
-          LoggerFactory.info('⚠️ Error reporting service initialized but disabled ($reason)');
+          final reason = kIsWeb
+              ? 'Web platform not supported'
+              : !_isEnabled
+                  ? 'Disabled by configuration'
+                  : 'Unknown reason';
+          LoggerFactory.info(
+              '⚠️ Error reporting service initialized but disabled ($reason)');
         }
       }
 
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
-        LoggerFactory.error('❌ Failed to initialize error reporting service: $e');
+        LoggerFactory.error(
+            '❌ Failed to initialize error reporting service: $e');
       }
       // Don't throw - error reporting is not critical for app functionality
     }
@@ -124,7 +131,7 @@ class ErrorReportingService {
         error,
         stackTrace,
         fatal: fatal,
-        information: reason != null ? [reason] : null,
+        information: reason != null ? [reason] : <Object>[],
       );
 
       // Also log locally
@@ -159,7 +166,8 @@ class ErrorReportingService {
     if (!_isInitialized || !_isEnabled || kIsWeb) return;
 
     try {
-      await FirebaseCrashlytics.instance.setCustomKey(key, value?.toString() ?? 'null');
+      await FirebaseCrashlytics.instance
+          .setCustomKey(key, value?.toString() ?? 'null');
     } catch (e) {
       LoggerFactory.warning('Failed to set custom key for crash reporting: $e');
     }
@@ -193,7 +201,7 @@ class ErrorReportingService {
     }
 
     try {
-      await FirebaseCrashlytics.instance.crash();
+      FirebaseCrashlytics.instance.crash();
     } catch (e) {
       LoggerFactory.error('Failed to trigger test crash: $e');
     }
@@ -206,13 +214,16 @@ class ErrorReportingService {
   bool get isInitialized => _isInitialized;
 
   /// Get current error reporting metrics
-  Map<String, dynamic> get metrics => ErrorMetricsService.instance.metricsSnapshot;
+  Map<String, dynamic> get metrics =>
+      ErrorMetricsService.instance.metricsSnapshot;
 
   /// Check if crash-free sessions meet success criteria (≥99.7%)
-  bool get meetsCrashFreeTarget => ErrorMetricsService.instance.meetsCrashFreeSuccessCriteria;
+  bool get meetsCrashFreeTarget =>
+      ErrorMetricsService.instance.meetsCrashFreeSuccessCriteria;
 
   /// Check if core flow error rate meets success criteria (<5%)
-  bool get meetsCoreFlowTarget => ErrorMetricsService.instance.meetsCoreFlowSuccessCriteria;
+  bool get meetsCoreFlowTarget =>
+      ErrorMetricsService.instance.meetsCoreFlowSuccessCriteria;
 }
 
 /// Extension to easily add error reporting to any zone
@@ -224,17 +235,18 @@ extension ErrorReportingZone on ErrorReportingService {
     Map<String, dynamic>? customData,
   }) {
     return runZonedGuarded(
-      body,
-      (error, stackTrace) {
-        reportError(
-          error,
-          stackTrace,
-          reason: zoneName != null ? 'Error in zone: $zoneName' : null,
-          data: customData,
-          fatal: false,
-        );
-      },
-    ) ?? (throw StateError('Zone body returned null'));
+          body,
+          (error, stackTrace) {
+            reportError(
+              error,
+              stackTrace,
+              reason: zoneName != null ? 'Error in zone: $zoneName' : null,
+              data: customData,
+              fatal: false,
+            );
+          },
+        ) ??
+        (throw StateError('Zone body returned null'));
   }
 
   /// Run async code in a zone with automatic error reporting
@@ -244,16 +256,18 @@ extension ErrorReportingZone on ErrorReportingService {
     Map<String, dynamic>? customData,
   }) async {
     return await runZonedGuarded(
-      body,
-      (error, stackTrace) {
-        reportError(
-          error,
-          stackTrace,
-          reason: zoneName != null ? 'Async error in zone: $zoneName' : null,
-          data: customData,
-          fatal: false,
-        );
-      },
-    ) ?? (throw StateError('Zone body returned null'));
+          body,
+          (error, stackTrace) {
+            reportError(
+              error,
+              stackTrace,
+              reason:
+                  zoneName != null ? 'Async error in zone: $zoneName' : null,
+              data: customData,
+              fatal: false,
+            );
+          },
+        ) ??
+        (throw StateError('Zone body returned null'));
   }
 }

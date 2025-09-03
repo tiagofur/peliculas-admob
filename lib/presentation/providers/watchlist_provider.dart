@@ -7,17 +7,16 @@ import 'hybrid_repositories_provider.dart';
 
 /// Estado de la watchlist
 class WatchlistState {
-  final List<WatchlistMovie> movies;
-  final bool isLoading;
-  final String? error;
-  final int totalCount;
-
   const WatchlistState({
     this.movies = const [],
     this.isLoading = false,
     this.error,
     this.totalCount = 0,
   });
+  final List<WatchlistMovie> movies;
+  final bool isLoading;
+  final String? error;
+  final int totalCount;
 
   WatchlistState copyWith({
     List<WatchlistMovie>? movies,
@@ -103,7 +102,8 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
     try {
       await _repository.removeFromWatchlist(movieId);
       // Remover de la lista local inmediatamente para mejor UX
-      final updatedMovies = state.movies.where((movie) => movie.movieId != movieId).toList();
+      final updatedMovies =
+          state.movies.where((movie) => movie.movieId != movieId).toList();
       state = state.copyWith(
         movies: updatedMovies,
         totalCount: state.totalCount - 1,
@@ -116,10 +116,11 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
   }
 
   /// Actualizar prioridad de película en watchlist
-  Future<void> updatePriority(int movieId, WatchlistPriority newPriority) async {
+  Future<void> updatePriority(
+      int movieId, WatchlistPriority newPriority) async {
     try {
       await _repository.updateWatchlistPriority(movieId, newPriority);
-      
+
       // Actualizar en la lista local inmediatamente
       final updatedMovies = state.movies.map((movie) {
         if (movie.movieId == movieId) {
@@ -136,11 +137,11 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
         final priorityOrder = {'alta': 0, 'normal': 1, 'baja': 2};
         final aPriorityIndex = priorityOrder[a.priority.value] ?? 1;
         final bPriorityIndex = priorityOrder[b.priority.value] ?? 1;
-        
+
         if (aPriorityIndex != bPriorityIndex) {
           return aPriorityIndex.compareTo(bPriorityIndex);
         }
-        
+
         return b.addedAt.compareTo(a.addedAt);
       });
 
@@ -178,19 +179,22 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
 }
 
 /// Provider principal de watchlist
-final watchlistProvider = StateNotifierProvider<WatchlistNotifier, WatchlistState>((ref) {
+final watchlistProvider =
+    StateNotifierProvider<WatchlistNotifier, WatchlistState>((ref) {
   final repository = ref.watch(hybridWatchlistRepositoryProvider);
   return WatchlistNotifier(repository);
 });
 
 /// Provider para verificar si una película específica está en watchlist
-final isMovieInWatchlistProvider = FutureProvider.family<bool, int>((ref, movieId) async {
+final isMovieInWatchlistProvider =
+    FutureProvider.family<bool, int>((ref, movieId) async {
   final repository = ref.watch(hybridWatchlistRepositoryProvider);
   return await repository.isMovieInWatchlist(movieId);
 });
 
 /// Provider para obtener una película específica de watchlist
-final watchlistMovieProvider = FutureProvider.family<WatchlistMovie?, int>((ref, movieId) async {
+final watchlistMovieProvider =
+    FutureProvider.family<WatchlistMovie?, int>((ref, movieId) async {
   final repository = ref.watch(hybridWatchlistRepositoryProvider);
   return await repository.getWatchlistMovie(movieId);
 });
@@ -202,7 +206,9 @@ final watchlistCountProvider = FutureProvider<int>((ref) async {
 });
 
 /// Provider para watchlist filtrada por prioridad
-final watchlistByPriorityProvider = FutureProvider.family<List<WatchlistMovie>, WatchlistPriority?>((ref, priority) async {
+final watchlistByPriorityProvider =
+    FutureProvider.family<List<WatchlistMovie>, WatchlistPriority?>(
+        (ref, priority) async {
   final repository = ref.watch(hybridWatchlistRepositoryProvider);
   return await repository.loadWatchlistMovies(
     limit: 100, // Cargar todas para mostrar

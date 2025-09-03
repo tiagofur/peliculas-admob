@@ -46,17 +46,17 @@ class AuthRepositoryImpl implements AuthRepository {
       final user = data.session?.user;
       if (user != null) {
         _authStateController?.add(UserModel.fromSupabaseUser(user));
-        
+
         // Persistir sesión cuando se autentica
         if (data.session != null) {
           _sessionManager.persistSession(data.session!);
         }
-        
+
         // Track onboarding completion for first-time users
         await _trackOnboardingCompletion(user.id);
       } else {
         _authStateController?.add(null);
-        
+
         // Limpiar datos persistentes cuando se desautentica
         _sessionManager.clearSession();
       }
@@ -74,7 +74,8 @@ class AuthRepositoryImpl implements AuthRepository {
           LoggerFactory.error('❌ Fallo en refresco de token: ${event.error}');
           break;
         case TokenRefreshedEvent():
-          LoggerFactory.info('✅ Token refrescado exitosamente para usuario: ${event.userId}');
+          LoggerFactory.info(
+              '✅ Token refrescado exitosamente para usuario: ${event.userId}');
           break;
         default:
           break;
@@ -88,19 +89,20 @@ class AuthRepositoryImpl implements AuthRepository {
       // Inicializar gestores de sesión y tokens
       await _sessionManager.initialize();
       await _tokenRefreshService.initialize();
-      
+
       // Intentar recuperar sesión persistente
       final recovered = await _sessionManager.recoverSession();
       if (recovered) {
         LoggerFactory.info('✅ Sesión persistente recuperada exitosamente');
       }
     } catch (e) {
-      LoggerFactory.error('❌ Error inicializando autenticación persistente: $e');
+      LoggerFactory.error(
+          '❌ Error inicializando autenticación persistente: $e');
     }
   }
 
   @override
-  Stream<domain.User?> get authStateChanges => _authStateController!.stream;
+  Stream<domain.User?> get authStateChanges => _authStateController?.stream ?? const Stream.empty();
 
   @override
   domain.User? get currentUser {
@@ -131,11 +133,14 @@ class AuthRepositoryImpl implements AuthRepository {
         await _sessionManager.persistSession(response.session!);
       }
 
+      if (response.user == null) {
+        throw Exception('Usuario no encontrado en la respuesta');
+      }
       return UserModel.fromSupabaseUser(response.user!);
     } on AuthException catch (e) {
       // Manejar específicamente el error de email no confirmado
       if (e.message.toLowerCase().contains('email not confirmed')) {
-        throw EmailConfirmationRequiredException(
+        throw const EmailConfirmationRequiredException(
           'Tu email aún no ha sido confirmado. '
           'Por favor, revisa tu bandeja de entrada y confirma tu email antes de iniciar sesión.',
         );
@@ -176,8 +181,13 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // Persistir sesión inmediatamente después de signup exitoso
-      await _sessionManager.persistSession(response.session!);
+      if (response.session != null) {
+        await _sessionManager.persistSession(response.session!);
+      }
 
+      if (response.user == null) {
+        throw Exception('Usuario no encontrado en la respuesta');
+      }
       return UserModel.fromSupabaseUser(response.user!);
     } on EmailConfirmationRequiredException {
       rethrow;
@@ -193,7 +203,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Limpiar datos persistentes antes de cerrar sesión
       await _sessionManager.clearSession();
-      
+
       // Cerrar sesión en Supabase
       await _supabase.auth.signOut();
     } catch (e) {
@@ -422,7 +432,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final sessionInfo = await _sessionManager.getSessionInfo();
       final tokenStatus = await _tokenRefreshService.getTokenStatus();
-      
+
       return {
         'session': sessionInfo,
         'token_status': {
@@ -483,12 +493,13 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       final onboardingKey = 'onboarding_completed_$userId';
-      
+
       // Check if this user has already completed onboarding
-      if (!prefs.getBool(onboardingKey) ?? true) {
+      final hasCompletedOnboarding = prefs.getBool(onboardingKey) ?? false;
+      if (!hasCompletedOnboarding) {
         // Mark onboarding as completed for this user
         await prefs.setBool(onboardingKey, true);
-        
+
         // Track analytics event for onboarding completion
         await AnalyticsService().trackEvent(
           AnalyticsEventType.onboarding,
@@ -499,7 +510,7 @@ class AuthRepositoryImpl implements AuthRepository {
             'timestamp': DateTime.now().millisecondsSinceEpoch,
           },
         );
-        
+
         LoggerFactory.info('✅ Onboarding completion tracked for user: $userId');
       }
     } catch (e) {

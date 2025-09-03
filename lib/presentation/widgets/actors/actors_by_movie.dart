@@ -15,14 +15,14 @@ class ActorsByMovie extends ConsumerWidget {
     final actorsByMovie = ref.watch(actorsByMovieProvider);
 
     //* Loading actors
-    if (actorsByMovie[movieId] == null) {
+    final actors = actorsByMovie[movieId];
+    if (actors == null) {
       return Container(
         height: 100,
         margin: const EdgeInsets.only(bottom: 50),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
-    final actors = actorsByMovie[movieId]!;
 
     return SizedBox(
       height: 300,

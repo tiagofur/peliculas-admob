@@ -91,7 +91,7 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.star,
                             color: Colors.amber,
                             size: 16,
@@ -151,7 +151,7 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.lightbulb_outline,
                             color: Colors.blue,
                             size: 20,
@@ -263,7 +263,7 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.check_circle_outline,
                                 color: Colors.green,
                                 size: 16,
@@ -301,7 +301,7 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
                           children: [
                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.psychology_outlined,
                                   color: Colors.purple,
                                   size: 20,

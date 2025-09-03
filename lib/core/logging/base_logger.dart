@@ -141,7 +141,7 @@ abstract class BaseLogger {
   }
 
   /// Stream de logs en tiempo real (opcional)
-  Stream<List<LogEntry>> get logsStream => Stream.empty();
+  Stream<List<LogEntry>> get logsStream => const Stream.empty();
 
   /// Limpiar recursos del logger
   Future<void> dispose() async {}

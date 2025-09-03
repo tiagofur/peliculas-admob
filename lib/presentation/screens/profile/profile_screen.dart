@@ -1,15 +1,16 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 
-import '../../providers/auth_provider.dart';
-import '../../providers/user_movie_ratings_provider.dart';
-import '../../widgets/profile_avatar.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/user_movie_ratings_provider.dart' as ratings;
+import '../../widgets/profile_avatar.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -62,19 +63,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => _startEditing(userProfile.value),
+              onPressed: () => startEditing(userProfile.value),
             )
           else
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextButton(
-                  onPressed: _cancelEditing,
+                  onPressed: cancelEditing,
                   child: const Text('Cancelar'),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: authNotifier.isLoading ? null : _saveProfile,
+                  onPressed: authNotifier.isLoading ? null : saveProfile,
                   child: authNotifier.isLoading
                       ? const SizedBox(
                           width: 16,
@@ -89,7 +90,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       ),
       body: userProfile.when(
-        data: (profile) => _buildProfileContent(theme, profile, userStats.value),
+        data: (profile) =>
+            _buildProfileContent(theme, profile, userStats.value),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: Column(
@@ -125,7 +127,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileContent(ThemeData theme, UserProfile? profile, UserStats? stats) {
+  Widget _buildProfileContent(
+      ThemeData theme, UserProfile? profile, UserStats? stats) {
     if (profile == null) {
       return const Center(child: Text('No se pudo cargar el perfil'));
     }
@@ -137,25 +140,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           // Avatar y información básica
           _buildProfileHeader(theme, profile),
           const SizedBox(height: 32),
-          
+
           // Estadísticas
           if (stats != null) ...[
             _buildStatsSection(theme, stats),
             const SizedBox(height: 32),
           ],
-          
+
           // Valoraciones recientes
           _buildRatingsSection(theme),
           const SizedBox(height: 32),
-          
+
           // Formulario de edición o información
           if (_isEditing)
             _buildEditForm(theme, profile)
           else
             _buildProfileInfo(theme, profile),
-          
+
           const SizedBox(height: 32),
-          
+
           // Botones de acción
           _buildActionButtons(theme),
         ],
@@ -168,18 +171,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       children: [
         Stack(
           children: [
-            GestureDetector(
-              onTap: _isEditing ? _selectImage : null,
-              child: _selectedImage != null
-                  ? CircleAvatar(
-                      radius: 60,
-                      backgroundImage: FileImage(_selectedImage!),
-                    )
-                  : ProfileAvatar(
-                      avatarUrl: profile.avatarUrl,
-                      fullName: profile.fullName,
-                      radius: 60,
-                    ),
+            ProfileAvatar(
+              avatarUrl: profile.avatarUrl,
+              selectedImage: _selectedImage,
+              size: 120,
+              onTap: _isEditing ? selectImage : null,
+              showEditIcon: _isEditing,
+              heroTag: 'profile_avatar',
             ),
             if (_isEditing)
               Positioned(
@@ -200,7 +198,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: theme.colorScheme.onPrimary,
                       size: 20,
                     ),
-                    onPressed: _selectImage,
+                    onPressed: selectImage,
                     constraints: const BoxConstraints(
                       minWidth: 36,
                       minHeight: 36,
@@ -220,7 +218,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Miembro desde ${_formatDate(profile.createdAt)}',
+            'Miembro desde ${formatDate(profile.createdAt)}',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
@@ -278,7 +276,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildStatItem(ThemeData theme, String label, String value, IconData icon) {
+  Widget _buildStatItem(
+      ThemeData theme, String label, String value, IconData icon) {
     return Column(
       children: [
         Icon(
@@ -381,7 +380,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildProfileInfo(ThemeData theme, UserProfile profile) {
     final currentUser = ref.watch(currentUserProvider);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -403,16 +402,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildInfoTile(
             theme,
             'Email',
-            currentUser!.email,
+            currentUser?.email ?? '',
             Icons.email,
           ),
-        if (currentUser?.email != null)
-          const SizedBox(height: 12),
+        if (currentUser?.email != null) const SizedBox(height: 12),
         if (profile.hasBio) ...[
           _buildInfoTile(
             theme,
             'Biografía',
-            profile.bio!,
+            profile.bio ?? '',
             Icons.edit_note,
           ),
           const SizedBox(height: 12),
@@ -420,14 +418,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _buildInfoTile(
           theme,
           'Última actualización',
-          _formatDate(profile.updatedAt),
+          formatDate(profile.updatedAt),
           Icons.update,
         ),
       ],
     );
   }
 
-  Widget _buildInfoTile(ThemeData theme, String label, String value, IconData icon) {
+  Widget _buildInfoTile(
+      ThemeData theme, String label, String value, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -468,12 +467,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Consumer(
       builder: (context, ref, child) {
         final appState = ref.watch(appStateProvider);
-        
+
         // Don't show ratings section for guest users
         if (!appState.isAuthenticated) {
           return const SizedBox.shrink();
         }
-        
+
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -482,7 +481,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.star,
                       color: Colors.amber,
                       size: 20,
@@ -499,87 +498,94 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 16),
                 Consumer(
                   builder: (context, ref, child) {
-                    final recentRatingsAsync = ref.watch(recentRatingsProvider(5));
-                    final ratingStatsAsync = ref.watch(userRatingStatsProvider);
-                
-                return Column(
-                  children: [
-                    // Estadísticas de valoraciones
-                    ratingStatsAsync.when(
-                      data: (stats) => _buildRatingStats(theme, stats),
-                      loading: () => const CircularProgressIndicator(),
-                      error: (error, stack) => const SizedBox.shrink(),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Valoraciones recientes
-                    recentRatingsAsync.when(
-                      data: (ratings) {
-                        if (ratings.isEmpty) {
-                          return Column(
-                            children: [
-                              Icon(
-                                Icons.star_border,
-                                size: 48,
-                                color: theme.colorScheme.onSurface.withOpacity(0.3),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Aún no has valorado ninguna película',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          );
-                        }
-                        
-                        return Column(
-                          children: [
-                            Text(
-                              'Valoraciones Recientes',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            ...ratings.take(3).map((rating) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: _buildRatingItem(theme, rating),
-                            )),
-                            if (ratings.length > 3)
-                              TextButton(
-                                onPressed: () => _showAllRatings(context),
-                                child: const Text('Ver todas mis valoraciones'),
-                              ),
-                          ],
-                        );
-                      },
-                      loading: () => const CircularProgressIndicator(),
-                      error: (error, stack) => Text(
-                        'Error al cargar valoraciones',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: Colors.red,
+                    final recentRatingsAsync =
+                        ref.watch(ratings.recentRatingsProvider(5));
+                    final ratingStatsAsync =
+                        ref.watch(ratings.userRatingStatsProvider);
+
+                    return Column(
+                      children: [
+                        // Estadísticas de valoraciones
+                        ratingStatsAsync.when(
+                          data: (stats) => _buildRatingStats(theme, stats),
+                          loading: () => const CircularProgressIndicator(),
+                          error: (error, stack) => const SizedBox.shrink(),
                         ),
-                      ),
-                    ),
-                  ],
-                );
-              },
+                        const SizedBox(height: 16),
+
+                        // Valoraciones recientes
+                        recentRatingsAsync.when(
+                          data: (ratings) {
+                            if (ratings.isEmpty) {
+                              return Column(
+                                children: [
+                                  Icon(
+                                    Icons.star_border,
+                                    size: 48,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.3),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Aún no has valorado ninguna película',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              );
+                            }
+
+                            return Column(
+                              children: [
+                                Text(
+                                  'Valoraciones Recientes',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ...ratings.take(3).map((rating) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: _buildRatingItem(theme, rating),
+                                    )),
+                                if (ratings.length > 3)
+                                  TextButton(
+                                    onPressed: () => showAllRatings(context),
+                                    child: const Text(
+                                        'Ver todas mis valoraciones'),
+                                  ),
+                              ],
+                            );
+                          },
+                          loading: () => const CircularProgressIndicator(),
+                          error: (error, stack) => Text(
+                            'Error al cargar valoraciones',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildRatingStats(ThemeData theme, Map<String, dynamic> stats) {
     final totalRatings = stats['total_ratings'] ?? 0;
     final averageRating = (stats['average_rating'] ?? 0.0) as double;
-    
+
     if (totalRatings == 0) return const SizedBox.shrink();
-    
+
     return Row(
       children: [
         Expanded(
@@ -656,11 +662,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     child: Image.network(
                       'https://image.tmdb.org/t/p/w92${rating.moviePosterPath}',
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) => 
-                          Icon(Icons.movie, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                      errorBuilder: (context, error, stack) => Icon(Icons.movie,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5)),
                     ),
                   )
-                : Icon(Icons.movie, color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                : Icon(Icons.movie,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -678,11 +686,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    ...List.generate(5, (index) => Icon(
-                      index < rating.rating ? Icons.star : Icons.star_border,
-                      size: 16,
-                      color: Colors.amber,
-                    )),
+                    ...List.generate(
+                        5,
+                        (index) => Icon(
+                              index < rating.rating
+                                  ? Icons.star
+                                  : Icons.star_border,
+                              size: 16,
+                              color: Colors.amber,
+                            )),
                   ],
                 ),
               ],
@@ -693,23 +705,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showAllRatings(BuildContext context) {
-    // TODO: Navigate to a full ratings screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Función en desarrollo: Ver todas las valoraciones')),
-    );
-  }
-
   Widget _buildActionButtons(ThemeData theme) {
     return Column(
       children: [
-
-        
         // Botón de cerrar sesión
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: _showLogoutDialog,
+            onPressed: showLogoutDialog,
             icon: const Icon(Icons.logout),
             label: const Text('Cerrar Sesión'),
             style: OutlinedButton.styleFrom(
@@ -722,7 +725,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _startEditing(UserProfile? profile) {
+  void startEditing(UserProfile? profile) {
     if (profile != null) {
       final currentUser = ref.read(authStateProvider).value;
       setState(() {
@@ -732,7 +735,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _emailController.text = currentUser?.email ?? '';
         _selectedImage = null;
       });
-      
+
       // Rastrear inicio de edición del perfil
       _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
         'timestamp': DateTime.now().toIso8601String(),
@@ -742,7 +745,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _cancelEditing() {
+  void cancelEditing() {
     setState(() {
       _isEditing = false;
       _selectedImage = null;
@@ -752,52 +755,57 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     });
   }
 
-  Future<void> _saveProfile() async {
+  Future<void> saveProfile() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
         final currentUser = ref.read(authStateProvider).value;
         if (currentUser != null) {
           String? avatarUrl;
-          
+
           // Si hay una imagen seleccionada, subirla primero
           if (_selectedImage != null) {
-            avatarUrl = await ref.read(userProfileNotifierProvider.notifier).uploadAvatar(
-              userId: currentUser.id,
-              filePath: _selectedImage!.path,
-            );
+            avatarUrl = await ref
+                .read(userProfileNotifierProvider.notifier)
+                .uploadAvatar(
+                  userId: currentUser.id,
+                  filePath: _selectedImage?.path ?? '',
+                );
           }
-          
+
           // Actualizar perfil en la tabla user_profiles
           await ref.read(userProfileNotifierProvider.notifier).updateProfile(
-            userId: currentUser.id,
-            fullName: _fullNameController.text.trim(),
-            bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
-            avatarUrl: avatarUrl,
-          );
+                userId: currentUser.id,
+                fullName: _fullNameController.text.trim(),
+                bio: _bioController.text.trim().isEmpty
+                    ? null
+                    : _bioController.text.trim(),
+                avatarUrl: avatarUrl,
+              );
 
           // Actualizar email si ha cambiado
           if (_emailController.text.trim() != currentUser.email) {
             await ref.read(authNotifierProvider.notifier).updateUser(
-              email: _emailController.text.trim(),
-            );
+                  email: _emailController.text.trim(),
+                );
           }
         }
-        
+
         if (mounted) {
           setState(() {
             _isEditing = false;
             _selectedImage = null;
           });
-          
+
           // Rastrear guardado exitoso del perfil
           _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
             'timestamp': DateTime.now().toIso8601String(),
             'has_bio': _bioController.text.trim().isNotEmpty,
             'has_avatar_change': _selectedImage != null,
-            'has_email_change': _emailController.text.trim() != currentUser?.email,
+            'has_email_change':
+                _emailController.text.trim() != currentUser?.email,
             'name_length': _fullNameController.text.trim().length,
           });
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Perfil actualizado correctamente'),
@@ -819,7 +827,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  Future<void> _selectImage() async {
+  Future<void> selectImage() async {
     final XFile? image = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 512,
@@ -854,7 +862,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         setState(() {
           _selectedImage = File(croppedFile.path);
         });
-        
+
         // Rastrear selección de imagen de avatar
         _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
           'timestamp': DateTime.now().toIso8601String(),
@@ -864,7 +872,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _showLogoutDialog() {
+  void showLogoutDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -878,13 +886,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
-              
+
               // Rastrear cierre de sesión
               _analyticsService.trackEvent(AnalyticsEventType.sessionEnd, {
                 'timestamp': DateTime.now().toIso8601String(),
                 'source': 'profile_screen',
               });
-              
+
               ref.read(authNotifierProvider.notifier).signOut();
             },
             style: FilledButton.styleFrom(
@@ -897,12 +905,115 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String formatDate(DateTime date) {
     final months = [
-      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre'
     ];
-    
+
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
+  }
+
+  void showAllRatings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        expand: false,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Todas mis valoraciones',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final userRatingsState =
+                          ref.watch(ratings.userRatingsProvider);
+                      final allRatings = userRatingsState.ratings;
+
+                      if (userRatingsState.isLoading && allRatings.isEmpty) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (userRatingsState.error != null) {
+                        return Center(
+                          child: Text(
+                            'Error al cargar valoraciones: ${userRatingsState.error}',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (allRatings.isEmpty) {
+                        return const Center(
+                          child: Text('No tienes valoraciones aún'),
+                        );
+                      }
+
+                      return ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: allRatings.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _buildRatingItem(
+                                Theme.of(context), allRatings[index]),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

@@ -195,7 +195,7 @@ class PrimeVideoService {
     try {
       // Prime Video subscription plans
       return [
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'prime_video_standalone',
           name: 'Prime Video',
           price: 8.99,
@@ -207,7 +207,7 @@ class PrimeVideoService {
           ],
           quality: 'HD/4K',
         ),
-        SubscriptionPlan(
+        const SubscriptionPlan(
           id: 'amazon_prime',
           name: 'Amazon Prime',
           price: 14.98,

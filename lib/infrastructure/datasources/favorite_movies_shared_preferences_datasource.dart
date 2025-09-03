@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
@@ -10,9 +9,10 @@ import 'watchlist_hive_datasource.dart';
 
 class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   static const String _favoriteMoviesKey = 'favorite_movies';
-  
+
   // Usamos el datasource de Hive para watchlist
-  final WatchlistHiveDatasource _watchlistDatasource = WatchlistHiveDatasource();
+  final WatchlistHiveDatasource _watchlistDatasource =
+      WatchlistHiveDatasource();
 
   @override
   Future<bool> isMovieFavorite(int movieId) async {
@@ -87,19 +87,19 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
       id: json['id'] as int,
       adult: json['adult'] as bool,
       backdropPath: json['backdropPath'] as String,
-      genreIds: List<String>.from(json['genreIds'] as List),
-      originalLanguage: json['originalLanguage'] as String,
-      originalTitle: json['originalTitle'] as String,
-      overview: json['overview'] as String,
-      popularity: (json['popularity'] as num).toDouble(),
-      posterPath: json['posterPath'] as String,
+      genreIds: List<String>.from(json['genreIds'] as List? ?? []),
+      originalLanguage: json['originalLanguage'] as String? ?? '',
+      originalTitle: json['originalTitle'] as String? ?? '',
+      overview: json['overview'] as String? ?? '',
+      popularity: (json['popularity'] as num?)?.toDouble() ?? 0.0,
+      posterPath: json['posterPath'] as String? ?? '',
       releaseDate: json['releaseDate'] != null
-          ? DateTime.parse(json['releaseDate'] as String)
+          ? DateTime.tryParse(json['releaseDate'] as String? ?? '') ?? DateTime(1900)
           : DateTime(1900),
-      title: json['title'] as String,
-      video: json['video'] as bool,
-      voteAverage: (json['voteAverage'] as num).toDouble(),
-      voteCount: json['voteCount'] as int,
+      title: json['title'] as String? ?? '',
+      video: json['video'] as bool? ?? false,
+      voteAverage: (json['voteAverage'] as num?)?.toDouble() ?? 0.0,
+      voteCount: json['voteCount'] as int? ?? 0,
     );
   }
 
@@ -115,7 +115,8 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   }
 
   @override
-  Future<void> updateWatchlistPriority(int movieId, WatchlistPriority priority) async {
+  Future<void> updateWatchlistPriority(
+      int movieId, WatchlistPriority priority) async {
     await _watchlistDatasource.updateWatchlistPriority(movieId, priority);
   }
 
@@ -160,23 +161,24 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   Future<bool> cacheMovie(Movie movie) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check cache size and enforce limit
       await _enforceCacheLimit();
-      
+
       // Store movie data
       final movieKey = '$_cachePrefix${movie.id}';
       final movieJson = jsonEncode(_movieToJson(movie));
       await prefs.setString(movieKey, movieJson);
-      
+
       // Store metadata
       final metadataKey = '$_cacheMetadataPrefix${movie.id}';
       final metadata = {
         'cached_at': DateTime.now().millisecondsSinceEpoch,
-        'expires_at': DateTime.now().add(_defaultCacheExpiry).millisecondsSinceEpoch,
+        'expires_at':
+            DateTime.now().add(_defaultCacheExpiry).millisecondsSinceEpoch,
       };
       await prefs.setString(metadataKey, jsonEncode(metadata));
-      
+
       return true;
     } catch (e) {
       return false;
@@ -187,18 +189,18 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   Future<Movie?> getCachedMovie(int movieId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Check if cache is valid
       if (!await _isCacheValid(movieId)) {
         await _removeCachedMovie(movieId);
         return null;
       }
-      
+
       // Get movie data
       final movieKey = '$_cachePrefix$movieId';
       final movieJson = prefs.getString(movieKey);
       if (movieJson == null) return null;
-      
+
       final movieData = jsonDecode(movieJson);
       return _movieFromJson(movieData);
     } catch (e) {
@@ -210,12 +212,12 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   Future<void> cacheMovies(List<Movie> movies, String category) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Cache individual movies
       for (final movie in movies) {
         await cacheMovie(movie);
       }
-      
+
       // Store category mapping
       final categoryKey = '$_categoryPrefix$category';
       final categoryData = {
@@ -232,15 +234,15 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
   Future<List<Movie>> getCachedMoviesByCategory(String category) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Get category mapping
       final categoryKey = '$_categoryPrefix$category';
       final categoryJson = prefs.getString(categoryKey);
       if (categoryJson == null) return [];
-      
+
       final categoryData = jsonDecode(categoryJson);
       final movieIds = (categoryData['movie_ids'] as List).cast<int>();
-      
+
       // Get individual movies
       final movies = <Movie>[];
       for (final movieId in movieIds) {
@@ -249,7 +251,7 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
           movies.add(movie);
         }
       }
-      
+
       return movies;
     } catch (e) {
       return [];
@@ -262,7 +264,7 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
       final now = DateTime.now().millisecondsSinceEpoch;
-      
+
       for (final key in keys) {
         if (key.startsWith(_cacheMetadataPrefix)) {
           final metadataJson = prefs.getString(key);
@@ -299,10 +301,10 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys().toList();
-      
+
       for (final key in keys) {
-        if (key.startsWith(_cachePrefix) || 
-            key.startsWith(_cacheMetadataPrefix) || 
+        if (key.startsWith(_cachePrefix) ||
+            key.startsWith(_cacheMetadataPrefix) ||
             key.startsWith(_categoryPrefix)) {
           await prefs.remove(key);
         }
@@ -319,7 +321,7 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
       final metadataKey = '$_cacheMetadataPrefix$movieId';
       final metadataJson = prefs.getString(metadataKey);
       if (metadataJson == null) return false;
-      
+
       final metadata = jsonDecode(metadataJson);
       final expiresAt = metadata['expires_at'] as int;
       return DateTime.now().millisecondsSinceEpoch < expiresAt;
@@ -344,13 +346,13 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
     try {
       final currentSize = await getCacheSize();
       if (currentSize < _maxCacheSize) return;
-      
+
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
-      
+
       // Get all cache entries with timestamps
       final cacheEntries = <MapEntry<String, int>>[];
-      
+
       for (final key in keys) {
         if (key.startsWith(_cacheMetadataPrefix)) {
           final metadataJson = prefs.getString(key);
@@ -361,19 +363,49 @@ class FavoriteMoviesSharedPreferencesDatasource extends LocalStorageDatasource {
           }
         }
       }
-      
+
       // Sort by timestamp (oldest first)
       cacheEntries.sort((a, b) => a.value.compareTo(b.value));
-      
+
       // Remove oldest entries to get under limit
       final entriesToRemove = currentSize - (_maxCacheSize * 0.8).round();
-      
+
       for (int i = 0; i < entriesToRemove && i < cacheEntries.length; i++) {
         final metadataKey = cacheEntries[i].key;
         final movieId = metadataKey.replaceFirst(_cacheMetadataPrefix, '');
         await prefs.remove(metadataKey);
         await prefs.remove('$_cachePrefix$movieId');
       }
+    } catch (e) {
+      // Ignore errors
+    }
+  }
+
+  @override
+  Future<List<WatchlistMovie>> getAllWatchlistMovies() {
+    return _watchlistDatasource.getAllWatchlistMovies();
+  }
+
+  @override
+  Future<void> clearAll() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().toList();
+
+      // Clear all favorite movies
+      await prefs.remove(_favoriteMoviesKey);
+
+      // Clear all cache data
+      for (final key in keys) {
+        if (key.startsWith(_cachePrefix) ||
+            key.startsWith(_cacheMetadataPrefix) ||
+            key.startsWith(_categoryPrefix)) {
+          await prefs.remove(key);
+        }
+      }
+
+      // Clear watchlist data through Hive datasource
+      await _watchlistDatasource.clearAll();
     } catch (e) {
       // Ignore errors
     }

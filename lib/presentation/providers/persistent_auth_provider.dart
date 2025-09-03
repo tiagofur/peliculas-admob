@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../infrastructure/services/token_refresh_service.dart';
+import 'auth_provider.dart';
 
 /// Provider para el servicio de refresco de tokens
 final tokenRefreshServiceProvider = Provider<TokenRefreshService>((ref) {
@@ -8,13 +9,15 @@ final tokenRefreshServiceProvider = Provider<TokenRefreshService>((ref) {
 });
 
 /// Provider para el estado del token
-final tokenStatusProvider = FutureProvider.autoDispose<TokenStatus>((ref) async {
+final tokenStatusProvider =
+    FutureProvider.autoDispose<TokenStatus>((ref) async {
   final tokenRefreshService = ref.watch(tokenRefreshServiceProvider);
   return await tokenRefreshService.getTokenStatus();
 });
 
 /// Provider para eventos de refresco de tokens
-final tokenRefreshEventsProvider = StreamProvider.autoDispose<TokenRefreshEvent>((ref) {
+final tokenRefreshEventsProvider =
+    StreamProvider.autoDispose<TokenRefreshEvent>((ref) {
   final tokenRefreshService = ref.watch(tokenRefreshServiceProvider);
   return tokenRefreshService.events;
 });
@@ -27,8 +30,9 @@ final tokenNeedsRefreshProvider = FutureProvider.autoDispose<bool>((ref) async {
 
 /// Notifier para operaciones manuales de refresco
 class TokenRefreshNotifier extends StateNotifier<AsyncValue<void>> {
-  TokenRefreshNotifier(this._tokenRefreshService) : super(const AsyncValue.data(null));
-  
+  TokenRefreshNotifier(this._tokenRefreshService)
+      : super(const AsyncValue.data(null));
+
   final TokenRefreshService _tokenRefreshService;
 
   /// Fuerza un refresco manual del token
@@ -39,7 +43,8 @@ class TokenRefreshNotifier extends StateNotifier<AsyncValue<void>> {
       if (success) {
         state = const AsyncValue.data(null);
       } else {
-        state = AsyncValue.error('No se pudo refrescar el token', StackTrace.current);
+        state = AsyncValue.error(
+            'No se pudo refrescar el token', StackTrace.current);
       }
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -48,20 +53,21 @@ class TokenRefreshNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 /// Provider para el notifier de refresco manual
-final tokenRefreshNotifierProvider = 
+final tokenRefreshNotifierProvider =
     StateNotifierProvider<TokenRefreshNotifier, AsyncValue<void>>((ref) {
   final tokenRefreshService = ref.watch(tokenRefreshServiceProvider);
   return TokenRefreshNotifier(tokenRefreshService);
 });
 
 /// Provider combinado para información completa de autenticación persistente
-final persistentAuthInfoProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
+final persistentAuthInfoProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) async {
   final authRepository = ref.watch(authRepositoryProvider);
   final tokenStatus = await ref.watch(tokenStatusProvider.future);
-  
+
   final sessionInfo = await authRepository.getSessionInfo();
   final hasPersistedSession = await authRepository.hasPersistedSession();
-  
+
   return {
     'has_persisted_session': hasPersistedSession,
     'session_info': sessionInfo,
@@ -77,6 +83,3 @@ final persistentAuthInfoProvider = FutureProvider.autoDispose<Map<String, dynami
     },
   };
 });
-
-// Import necesario para authRepositoryProvider
-import '../auth_provider.dart';

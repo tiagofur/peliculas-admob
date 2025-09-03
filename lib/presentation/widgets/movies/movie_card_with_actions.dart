@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
+import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import '../streaming/streaming_availability_indicator.dart';
 
@@ -38,7 +39,8 @@ class MovieCardWithActions extends ConsumerWidget {
               }
             },
             child: AspectRatio(
-              aspectRatio: 2 / 3, // Relación de aspecto típica de poster de película
+              aspectRatio:
+                  2 / 3, // Relación de aspecto típica de poster de película
               child: OptimizedImage(
                 imageUrl: movie.posterPath,
                 fit: BoxFit.cover,
@@ -85,7 +87,7 @@ class MovieCardWithActions extends ConsumerWidget {
               ),
             ),
           ),
-          
+
           // Botones de acción
           Positioned(
             top: 8,
@@ -98,19 +100,20 @@ class MovieCardWithActions extends ConsumerWidget {
                   color: isFavorite ? Colors.red : Colors.white,
                   onPressed: () => _toggleFavorite(ref, movie, isFavorite),
                 ),
-                
+
                 const SizedBox(height: 4),
-                
+
                 // Botón visto
                 _buildActionButton(
-                  icon: isWatched ? Icons.visibility : Icons.visibility_outlined,
+                  icon:
+                      isWatched ? Icons.visibility : Icons.visibility_outlined,
                   color: isWatched ? Colors.green : Colors.white,
                   onPressed: () => _toggleWatched(ref, movie, isWatched),
                 ),
               ],
             ),
           ),
-          
+
           // Indicador de estado en la parte inferior
           Positioned(
             bottom: 8,
@@ -121,7 +124,8 @@ class MovieCardWithActions extends ConsumerWidget {
               children: [
                 // Rating
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(12),
@@ -146,7 +150,7 @@ class MovieCardWithActions extends ConsumerWidget {
                     ],
                   ),
                 ),
-                
+
                 // Streaming availability indicator
                 StreamingAvailabilityBadge(
                   movieId: movie.id,
@@ -189,22 +193,22 @@ class MovieCardWithActions extends ConsumerWidget {
 
   void _toggleFavorite(WidgetRef ref, Movie movie, bool currentState) {
     final favoriteMoviesNotifier = ref.read(favoriteMoviesProvider.notifier);
-    
+
     favoriteMoviesNotifier.toggleFavorite(movie);
-    
+
     // Invalidar el provider para actualizar la UI
     ref.invalidate(isFavoriteProvider(movie.id));
   }
 
   void _toggleWatched(WidgetRef ref, Movie movie, bool currentState) {
     final watchedMoviesNotifier = ref.read(watchedMoviesProvider.notifier);
-    
+
     if (currentState) {
       watchedMoviesNotifier.removeFromWatched(movie.id);
     } else {
       watchedMoviesNotifier.markAsWatched(movie);
     }
-    
+
     // Invalidar el provider para actualizar la UI
     ref.invalidate(isWatchedProvider(movie.id));
   }

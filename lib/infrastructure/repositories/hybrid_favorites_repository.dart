@@ -1,9 +1,7 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
-import '../../core/services/persistent_sync_queue.dart';
 import '../../core/sync/conflict_resolution/conflict_detector.dart';
 import '../../core/sync/conflict_resolution/conflict_metrics_service.dart';
 import '../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
@@ -15,8 +13,6 @@ import '../../domain/entities/sync_models.dart';
 import '../../domain/entities/sync_operation.dart';
 import '../../domain/entities/syncable_favorite_movie.dart';
 import '../../domain/repositories/favorites_repository.dart';
-import '../../presentation/providers/auth_provider.dart';
-import '../services/sync_manager.dart';
 import '../sync/conflict_statistics_service.dart';
 import 'base_hybrid_repository.dart';
 
@@ -25,9 +21,8 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     implements FavoritesRepository {
   HybridFavoritesRepository({
     required LocalStorageDatasource datasource,
-    required Ref ref,
-  })  : _datasource = datasource,
-        super(ref: ref) {
+    required super.ref,
+  }) : _datasource = datasource {
     _softDeleteManager = SoftDeleteManager();
     _statisticsService = ConflictStatisticsService();
     _metricsService = ConflictMetricsService();
@@ -110,9 +105,9 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
   // Implements FavoritesRepository interface
   @override
   Future<Map<int, Movie>> getFavoriteMovies() async {
-    if (_isAuthenticated()) {
+    if (isAuthenticated()) {
       try {
-        await _checkOnline();
+        await checkOnline();
         // Intentar sincronizar primero
         await syncWithSupabase();
       } on SyncException catch (e) {
@@ -142,6 +137,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
   }
 
   // Agregar/quitar película de favoritos
+  @override
   Future<void> toggleFavorite(Movie movie) async {
     LoggerFactory.info('🎬 TOGGLE FAVORITE llamado para: ${movie.title}');
 
@@ -156,7 +152,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
 
     // 2. Agregar operación a la cola de sincronización
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId != null) {
       final isFavorite = await _datasource.isMovieFavorite(movie.id);
       final operation = isFavorite
@@ -175,8 +171,8 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     // 3. Sincronizar si está online y autenticado
     try {
       LoggerFactory.info('🌐 Verificando conectividad...');
-      await _checkOnline();
-      if (_isAuthenticated()) {
+      await checkOnline();
+      if (isAuthenticated()) {
         LoggerFactory.info(
             '🔑 Usuario autenticado, iniciando sincronización individual...');
         await _syncSingleItem(movie);
@@ -199,7 +195,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     LoggerFactory.info(
         '🔄 Iniciando sincronización individual de: ${movie.title}');
 
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId == null) {
       LoggerFactory.warning(
           '❌ No hay usuario autenticado para sincronizar ${movie.title}');
@@ -254,6 +250,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
   }
 
   // Verificar si una película es favorita
+  @override
   Future<bool> isMovieFavorite(int movieId) async {
     // Siempre usar datos locales para respuesta inmediata
     try {
@@ -274,7 +271,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       LoggerFactory.info(
           '🔍 HiveDatasource retornó: ${moviesList.length} películas');
 
-      final userId = _getCurrentUserId();
+      final userId = getCurrentUserId();
       if (userId == null) {
         LoggerFactory.warning(
             '❌ No hay usuario para obtener datos locales de favoritos');
@@ -308,7 +305,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
 
   @override
   Future<List<SyncableFavorite>> getRemoteData() async {
-    final userId = _getCurrentUserId();
+    final userId = getCurrentUserId();
     if (userId == null) {
       LoggerFactory.warning(
           '❌ No hay usuario para obtener datos remotos de favoritos');
@@ -316,7 +313,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
 
     try {
-      await _checkOnline();
+      await checkOnline();
       LoggerFactory.info(
           '☁️ Obteniendo favoritos remotos para usuario: $userId');
 
@@ -344,10 +341,6 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
   }
 
-
-
-
-
   @override
   Future<void> upload(List<SyncableFavorite> favorites) async {
     LoggerFactory.info('⬆️ UPLOAD iniciado para ${favorites.length} favoritos');
@@ -362,9 +355,9 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
         LoggerFactory.info(
             '⬆️ Subiendo ${favorite.movieTitle} (ID: ${favorite.movieId})...');
 
-        await supabase.from('user_favorites').upsert(
-          mapToSupabase(favorite),
-          onConflict: 'user_id,movie_id');
+        await supabase
+            .from('user_favorites')
+            .upsert(mapToSupabase(favorite), onConflict: 'user_id,movie_id');
 
         LoggerFactory.info('✅ ${favorite.movieTitle} subido exitosamente');
       } on PostgrestException catch (e) {
@@ -558,8 +551,4 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     // Método legacy - ahora se usa enqueue con SyncOperation
     LoggerFactory.warning('markForSync legacy method called for: $itemId');
   }
-
-
-
-
 }

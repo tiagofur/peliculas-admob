@@ -2,18 +2,6 @@ import 'user_movie_rating.dart';
 
 /// Entidad sincronizable para valoraciones de usuario que incluye metadatos de sincronización
 class SyncableUserMovieRating {
-  final String id;
-  final String userId;
-  final int movieId;
-  final String movieTitle;
-  final String? moviePosterPath;
-  final int rating;
-  final String? personalNote;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final bool isSynced;
-  final bool needsSync;
-
   const SyncableUserMovieRating({
     required this.id,
     required this.userId,
@@ -70,6 +58,17 @@ class SyncableUserMovieRating {
   factory SyncableUserMovieRating.fromJson(Map<String, dynamic> json) {
     return SyncableUserMovieRating.fromSupabase(json);
   }
+  final String id;
+  final String userId;
+  final int movieId;
+  final String movieTitle;
+  final String? moviePosterPath;
+  final int rating;
+  final String? personalNote;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool isSynced;
+  final bool needsSync;
 
   /// Convierte a UserMovieRating local
   UserMovieRating toUserMovieRating() {
@@ -138,7 +137,7 @@ class SyncableUserMovieRating {
   bool get isValidRating => rating >= 1 && rating <= 5;
 
   /// Valida que la nota personal no exceda el límite
-  bool get isValidNote => personalNote == null || personalNote!.length <= 500;
+  bool get isValidNote => personalNote == null || (personalNote?.length ?? 0) <= 500;
 
   /// Valida que la entidad sea válida
   bool get isValid => isValidRating && isValidNote;

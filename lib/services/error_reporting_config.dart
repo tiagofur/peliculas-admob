@@ -1,17 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/logging/logger_factory.dart';
+import '../core/logging/logger_factory.dart';
 
 /// Configuration service for error reporting settings
 class ErrorReportingConfig {
-  static ErrorReportingConfig? _instance;
-  static ErrorReportingConfig get instance => _instance ??= ErrorReportingConfig._();
-  
   ErrorReportingConfig._();
+  static ErrorReportingConfig? _instance;
+  static ErrorReportingConfig get instance =>
+      _instance ??= ErrorReportingConfig._();
 
   static const String _errorReportingEnabledKey = 'error_reporting_enabled';
-  static const String _errorReportingUserOptInKey = 'error_reporting_user_opt_in';
+  static const String _errorReportingUserOptInKey =
+      'error_reporting_user_opt_in';
 
   SharedPreferences? _prefs;
   bool _isInitialized = false;
@@ -23,7 +24,7 @@ class ErrorReportingConfig {
     try {
       _prefs = await SharedPreferences.getInstance();
       _isInitialized = true;
-      
+
       LoggerFactory.info('✅ Error reporting config initialized');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize error reporting config: $e');
@@ -39,13 +40,13 @@ class ErrorReportingConfig {
 
     // In debug mode, respect explicit setting only
     if (kDebugMode) {
-      return _prefs!.getBool(_errorReportingEnabledKey) ?? false;
+      return _prefs?.getBool(_errorReportingEnabledKey) ?? false;
     }
 
     // In release mode, check user opt-in (default to true if not set)
-    final userOptIn = _prefs!.getBool(_errorReportingUserOptInKey) ?? true;
-    final configEnabled = _prefs!.getBool(_errorReportingEnabledKey) ?? true;
-    
+    final userOptIn = _prefs?.getBool(_errorReportingUserOptInKey) ?? true;
+    final configEnabled = _prefs?.getBool(_errorReportingEnabledKey) ?? true;
+
     return userOptIn && configEnabled;
   }
 
@@ -54,7 +55,7 @@ class ErrorReportingConfig {
     if (!_isInitialized || _prefs == null) return;
 
     try {
-      await _prefs!.setBool(_errorReportingEnabledKey, enabled);
+      await _prefs?.setBool(_errorReportingEnabledKey, enabled);
       LoggerFactory.info('Error reporting config enabled: $enabled');
     } catch (e) {
       LoggerFactory.error('Failed to set error reporting enabled: $e');
@@ -66,7 +67,7 @@ class ErrorReportingConfig {
     if (!_isInitialized || _prefs == null) return;
 
     try {
-      await _prefs!.setBool(_errorReportingUserOptInKey, optIn);
+      await _prefs?.setBool(_errorReportingUserOptInKey, optIn);
       LoggerFactory.info('Error reporting user opt-in: $optIn');
     } catch (e) {
       LoggerFactory.error('Failed to set error reporting user opt-in: $e');
@@ -78,7 +79,7 @@ class ErrorReportingConfig {
     if (!_isInitialized || _prefs == null) {
       return true; // Default to opted in
     }
-    return _prefs!.getBool(_errorReportingUserOptInKey) ?? true;
+    return _prefs?.getBool(_errorReportingUserOptInKey) ?? true;
   }
 
   /// Get admin/config enabled setting
@@ -86,7 +87,7 @@ class ErrorReportingConfig {
     if (!_isInitialized || _prefs == null) {
       return !kDebugMode; // Default based on build mode
     }
-    return _prefs!.getBool(_errorReportingEnabledKey) ?? !kDebugMode;
+    return _prefs?.getBool(_errorReportingEnabledKey) ?? !kDebugMode;
   }
 
   /// Reset all error reporting preferences to defaults
@@ -94,8 +95,8 @@ class ErrorReportingConfig {
     if (!_isInitialized || _prefs == null) return;
 
     try {
-      await _prefs!.remove(_errorReportingEnabledKey);
-      await _prefs!.remove(_errorReportingUserOptInKey);
+      await _prefs?.remove(_errorReportingEnabledKey);
+      await _prefs?.remove(_errorReportingUserOptInKey);
       LoggerFactory.info('Error reporting config reset to defaults');
     } catch (e) {
       LoggerFactory.error('Failed to reset error reporting config: $e');

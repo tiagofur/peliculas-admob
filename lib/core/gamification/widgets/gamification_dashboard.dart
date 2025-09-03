@@ -7,6 +7,7 @@ import '../achievement_system.dart' as achievement_sys;
 import '../challenge_system.dart';
 import '../models/user_progress.dart';
 import 'achievement_card.dart';
+import 'badge_display.dart';
 import 'level_progress_indicator.dart';
 
 /// Dashboard principal de gamificación
@@ -292,16 +293,18 @@ class _GamificationDashboardState extends ConsumerState<GamificationDashboard>
           ),
 
           // Insignias
-          // TODO: Implement badge display
-          // _buildSectionHeader('Insignias'),
-          // const SizedBox(height: 12),
-          // BadgeDisplay(
-          //   unlockedAchievements: [], // TODO: Pass unlocked achievements
-          //   isHorizontal: true,
-          //   maxVisible: 5,
-          //   onViewAll: widget.onViewAllAchievements,
-          // ),
-          // const SizedBox(height: 24),
+          _buildSectionHeader('Insignias'),
+          const SizedBox(height: 12),
+          Consumer(builder: (context, ref, _) {
+            final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
+            return BadgeDisplay(
+              unlockedAchievements: unlockedAchievements,
+              isHorizontal: true,
+              maxVisible: 5,
+              onViewAll: widget.onViewAllAchievements,
+            );
+          }),
+          const SizedBox(height: 24),
 
           // Desafíos activos
           _buildSectionHeader('Desafíos Activos'),

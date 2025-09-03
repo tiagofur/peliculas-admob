@@ -3,14 +3,12 @@ import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../presentation/providers/challenge_providers.dart';
+import '../../presentation/providers/gamification_providers.dart';
 import 'gamification_manager.dart';
-import 'models/user_level.dart';
 import 'models/activity_type.dart' as activity;
-
+import 'models/user_level.dart';
 import 'models/user_progress.dart';
 
-/// Service for tracking user progress in real-time
 class ProgressTrackingService {
   ProgressTrackingService(this._gamificationManager);
 
@@ -59,7 +57,7 @@ class ProgressTrackingService {
       }
 
       // Check for level changes
-      if (_lastLevel != null && newLevel.index > _lastLevel!.index) {
+      if (_lastLevel != null && newLevel.index > (_lastLevel?.index ?? 0)) {
         _milestoneController.add(MilestoneReached(
           type: MilestoneType.levelUp,
           title: 'Level Up!',

@@ -73,7 +73,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
         watchedDate: DateTime.now(),
       );
 
-      await _watchedMoviesBox!.add(watchedMovie);
+      await _watchedMoviesBox?.add(watchedMovie);
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error('Error marking movie as watched: $e');
@@ -88,13 +88,16 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       if (!_isInitialized) await _initHive();
       if (_watchedMoviesBox == null) return;
 
-      final existingMovieKey = _watchedMoviesBox!.keys.cast<int>().firstWhere(
-            (key) => _watchedMoviesBox!.get(key)?.movie.id == movieId,
+      final box = _watchedMoviesBox;
+      if (box == null) return;
+      
+      final existingMovieKey = box.keys.cast<int>().firstWhere(
+            (key) => box.get(key)?.movie.id == movieId,
             orElse: () => -1,
           );
 
       if (existingMovieKey != -1) {
-        await _watchedMoviesBox!.delete(existingMovieKey);
+        await box.delete(existingMovieKey);
       }
     } catch (e) {
       if (kDebugMode) {
@@ -109,7 +112,10 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       if (!_isInitialized) await _initHive();
       if (_watchedMoviesBox == null) return false;
 
-      final watchedMovies = _watchedMoviesBox!.values
+      final box = _watchedMoviesBox;
+      if (box == null) return false;
+      
+      final watchedMovies = box.values
           .where((watchedMovie) => watchedMovie.movie.id == movieId);
       return watchedMovies.isNotEmpty;
     } catch (e) {
@@ -127,7 +133,10 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       if (!_isInitialized) await _initHive();
       if (_watchedMoviesBox == null) return [];
 
-      final allWatchedMovies = _watchedMoviesBox!.values.toList();
+      final box = _watchedMoviesBox;
+      if (box == null) return [];
+      
+      final allWatchedMovies = box.values.toList();
 
       // Ordenar por fecha de visualización (más recientes primero)
       allWatchedMovies.sort((a, b) => b.watchedDate.compareTo(a.watchedDate));
@@ -150,7 +159,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
     try {
       if (!_isInitialized) await _initHive();
       if (_watchedMoviesBox != null) {
-        await _watchedMoviesBox!.clear();
+        await _watchedMoviesBox?.clear();
       }
     } catch (e) {
       if (kDebugMode) {
@@ -163,7 +172,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
   Future<void> close() async {
     try {
       if (_watchedMoviesBox?.isOpen == true) {
-        await _watchedMoviesBox!.close();
+        await _watchedMoviesBox?.close();
       }
       _isInitialized = false;
     } catch (e) {

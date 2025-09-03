@@ -8,13 +8,15 @@ import 'ad_frequency_controller.dart';
 /// Extensión del servicio de analytics específica para monetización
 class MonetizationAnalyticsService {
   MonetizationAnalyticsService._();
-  
-  static final MonetizationAnalyticsService _instance = MonetizationAnalyticsService._();
+
+  static final MonetizationAnalyticsService _instance =
+      MonetizationAnalyticsService._();
   static MonetizationAnalyticsService get instance => _instance;
 
   final BaseLogger _logger = LoggerFactory.getLogger('MonetizationAnalytics');
   final AnalyticsService _analytics = AnalyticsService.instance;
-  final AdFrequencyController _frequencyController = AdFrequencyController.instance;
+  final AdFrequencyController _frequencyController =
+      AdFrequencyController.instance;
 
   /// Registrar impresión de anuncio con detalles de monetización
   Future<void> trackAdImpression({
@@ -80,7 +82,8 @@ class MonetizationAnalyticsService {
         estimatedRevenue: estimatedRevenue,
       );
 
-      _logger.info('Ad click tracked: $adType (revenue: \$${estimatedRevenue ?? 0})');
+      _logger.info(
+          'Ad click tracked: $adType (revenue: \$${estimatedRevenue ?? 0})');
     } catch (e) {
       _logger.error('Error tracking ad click: $e');
     }
@@ -191,15 +194,17 @@ class MonetizationAnalyticsService {
     DateTime? endDate,
   }) async {
     try {
-      final allEvents = await _analytics.getEvents();
-      final start = startDate ?? DateTime.now().subtract(const Duration(days: 7));
+      final allEvents = _analytics.getEvents();
+      final start =
+          startDate ?? DateTime.now().subtract(const Duration(days: 7));
       final end = endDate ?? DateTime.now();
 
-      final relevantEvents = allEvents.where((e) => 
-        e.timestamp.isAfter(start) && 
-        e.timestamp.isBefore(end) &&
-        _isMonetizationEvent(e)
-      ).toList();
+      final relevantEvents = allEvents
+          .where((e) =>
+              e.timestamp.isAfter(start) &&
+              e.timestamp.isBefore(end) &&
+              _isMonetizationEvent(e))
+          .toList();
 
       return _calculateDetailedMetrics(relevantEvents);
     } catch (e) {
@@ -210,26 +215,36 @@ class MonetizationAnalyticsService {
 
   bool _isMonetizationEvent(AnalyticsEvent event) {
     final eventType = event.properties['event'] as String?;
-    return eventType != null && [
-      'ad_impression',
-      'ad_click',
-      'ad_load_error',
-      'ad_blocked',
-      'ad_load_performance',
-      'ad_ux_impact',
-    ].contains(eventType);
+    return eventType != null &&
+        [
+          'ad_impression',
+          'ad_click',
+          'ad_load_error',
+          'ad_blocked',
+          'ad_load_performance',
+          'ad_ux_impact',
+        ].contains(eventType);
   }
 
-  DetailedMonetizationMetrics _calculateDetailedMetrics(List<AnalyticsEvent> events) {
-    final impressions = events.where((e) => e.properties['event'] == 'ad_impression').toList();
-    final clicks = events.where((e) => e.properties['event'] == 'ad_click').toList();
-    final errors = events.where((e) => e.properties['event'] == 'ad_load_error').toList();
-    final blocked = events.where((e) => e.properties['event'] == 'ad_blocked').toList();
-    final performance = events.where((e) => e.properties['event'] == 'ad_load_performance').toList();
-    final uxEvents = events.where((e) => e.properties['event'] == 'ad_ux_impact').toList();
+  DetailedMonetizationMetrics _calculateDetailedMetrics(
+      List<AnalyticsEvent> events) {
+    final impressions =
+        events.where((e) => e.properties['event'] == 'ad_impression').toList();
+    final clicks =
+        events.where((e) => e.properties['event'] == 'ad_click').toList();
+    final errors =
+        events.where((e) => e.properties['event'] == 'ad_load_error').toList();
+    final blocked =
+        events.where((e) => e.properties['event'] == 'ad_blocked').toList();
+    final performance = events
+        .where((e) => e.properties['event'] == 'ad_load_performance')
+        .toList();
+    final uxEvents =
+        events.where((e) => e.properties['event'] == 'ad_ux_impact').toList();
 
     // Calcular CTR
-    final ctr = impressions.isNotEmpty ? clicks.length / impressions.length : 0.0;
+    final ctr =
+        impressions.isNotEmpty ? clicks.length / impressions.length : 0.0;
 
     // Calcular revenue estimado
     final revenue = clicks.fold<double>(0.0, (sum, e) {
@@ -239,7 +254,9 @@ class MonetizationAnalyticsService {
 
     // Calcular métricas de rendimiento
     final avgLoadTime = performance.isNotEmpty
-        ? performance.fold<int>(0, (sum, e) => sum + (e.properties['loadTimeMs'] as int? ?? 0)) / performance.length
+        ? performance.fold<int>(0,
+                (sum, e) => sum + (e.properties['loadTimeMs'] as int? ?? 0)) /
+            performance.length
         : 0.0;
 
     // Calcular distribución por tipo de anuncio
@@ -255,7 +272,7 @@ class MonetizationAnalyticsService {
     for (final click in clicks) {
       final adType = click.properties['adType'] as String? ?? 'unknown';
       clicksByType[adType] = (clicksByType[adType] ?? 0) + 1;
-      
+
       final rev = click.properties['estimatedRevenue'] as double? ?? 0.0;
       revenueByType[adType] = (revenueByType[adType] ?? 0.0) + rev;
     }
@@ -285,7 +302,10 @@ class MonetizationAnalyticsService {
 
   Map<String, dynamic> _calculateUXMetrics(List<AnalyticsEvent> uxEvents) {
     if (uxEvents.isEmpty) {
-      return {'score': 0.8, 'avgSessionDuration': Duration.zero}; // Default values
+      return {
+        'score': 0.8,
+        'avgSessionDuration': Duration.zero
+      }; // Default values
     }
 
     // Calcular score basado en acciones del usuario
@@ -316,11 +336,13 @@ class MonetizationAnalyticsService {
       }
     }
 
-    final avgTimeToAction = actionCount > 0 ? totalTimeToAction / actionCount : 0.0;
+    final avgTimeToAction =
+        actionCount > 0 ? totalTimeToAction / actionCount : 0.0;
     final avgSessionDuration = Duration(milliseconds: avgTimeToAction.round());
 
     return {
-      'score': (score * 0.8).clamp(0.0, 1.0), // Normalizar entre 0-1, máximo 0.8
+      'score':
+          (score * 0.8).clamp(0.0, 1.0), // Normalizar entre 0-1, máximo 0.8
       'avgSessionDuration': avgSessionDuration,
     };
   }

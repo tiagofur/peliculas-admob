@@ -108,8 +108,8 @@ class _VideosList extends StatelessWidget {
                         ),
                       );
                     },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 8,
                       ),
@@ -121,7 +121,7 @@ class _VideosList extends StatelessWidget {
                             color: Colors.white,
                             size: 16,
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           Text(
                             'MODO CINE',
                             style: TextStyle(
@@ -247,7 +247,7 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
                         color: Colors.blue.withValues(alpha: 0.3),
                       ),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
@@ -255,7 +255,7 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
                           color: Colors.blue,
                           size: 14,
                         ),
-                        const SizedBox(width: 4),
+                        SizedBox(width: 4),
                         Text(
                           'PiP',
                           style: TextStyle(

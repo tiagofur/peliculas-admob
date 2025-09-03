@@ -34,7 +34,7 @@ class UserInsightsWidget extends ConsumerWidget {
                     color: Colors.purple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.psychology,
                     color: Colors.purple,
                     size: 24,
@@ -179,7 +179,7 @@ class UserInsightsWidget extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.analytics_outlined,
                 color: Colors.blue,
                 size: 20,
@@ -245,7 +245,7 @@ class UserInsightsWidget extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.lightbulb_outlined,
               color: Colors.grey,
               size: 20,
@@ -275,7 +275,7 @@ class UserInsightsWidget extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.lightbulb_outlined,
                 color: Colors.green,
                 size: 20,
@@ -460,7 +460,7 @@ class UserInsightsWidget extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: Colors.red,
             size: 20,

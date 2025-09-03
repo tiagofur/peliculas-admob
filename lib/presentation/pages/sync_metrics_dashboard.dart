@@ -139,7 +139,8 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
   }
 
   Widget _buildOverviewCards() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +259,7 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
                       child: Text('Esperando datos de rendimiento...'))
                   : LineChart(
                       LineChartData(
-                        gridData: FlGridData(
+                        gridData: const FlGridData(
                           show: true,
                           drawVerticalLine: true,
                           horizontalInterval: 20,
@@ -266,10 +267,10 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
                         ),
                         titlesData: FlTitlesData(
                           show: true,
-                          rightTitles: AxisTitles(
+                          rightTitles: const AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
                           ),
-                          topTitles: AxisTitles(
+                          topTitles: const AxisTitles(
                             sideTitles: SideTitles(showTitles: false),
                           ),
                           bottomTitles: AxisTitles(
@@ -323,7 +324,7 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
                             color: Colors.blue,
                             barWidth: 3,
                             isStrokeCapRound: true,
-                            dotData: FlDotData(show: false),
+                            dotData: const FlDotData(show: false),
                             belowBarData: BarAreaData(
                               show: true,
                               color: Colors.blue.shade100,
@@ -335,7 +336,7 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
                             color: Colors.green,
                             barWidth: 3,
                             isStrokeCapRound: true,
-                            dotData: FlDotData(show: false),
+                            dotData: const FlDotData(show: false),
                           ),
                           LineChartBarData(
                             spots: _syncRateHistory,
@@ -343,7 +344,7 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
                             color: Colors.orange,
                             barWidth: 3,
                             isStrokeCapRound: true,
-                            dotData: FlDotData(show: false),
+                            dotData: const FlDotData(show: false),
                           ),
                         ],
                       ),
@@ -383,7 +384,8 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
   }
 
   Widget _buildRealtimeMetrics() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     return Card(
       elevation: 4,
@@ -456,7 +458,8 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
   }
 
   Widget _buildEntityMetrics() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     if (metrics.entityMetrics.isEmpty) {
       return const SizedBox.shrink();
@@ -545,7 +548,8 @@ class _SyncMetricsDashboardState extends State<SyncMetricsDashboard>
   }
 
   Widget _buildNetworkMetrics() {
-    final metrics = _currentMetrics!;
+    final metrics = _currentMetrics;
+    if (metrics == null) return const SizedBox.shrink();
 
     return Card(
       elevation: 4,

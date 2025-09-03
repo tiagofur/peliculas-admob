@@ -10,13 +10,16 @@ class MonetizationIntegrationExample extends StatefulWidget {
   const MonetizationIntegrationExample({super.key});
 
   @override
-  State<MonetizationIntegrationExample> createState() => _MonetizationIntegrationExampleState();
+  State<MonetizationIntegrationExample> createState() =>
+      _MonetizationIntegrationExampleState();
 }
 
-class _MonetizationIntegrationExampleState extends State<MonetizationIntegrationExample> {
+class _MonetizationIntegrationExampleState
+    extends State<MonetizationIntegrationExample> {
   final MonetizationInitializer _initializer = MonetizationInitializer.instance;
   final AdFrequencyController _controller = AdFrequencyController.instance;
-  final MonetizationAnalyticsService _analytics = MonetizationAnalyticsService.instance;
+  final MonetizationAnalyticsService _analytics =
+      MonetizationAnalyticsService.instance;
 
   Map<String, dynamic>? _systemStatus;
   DetailedMonetizationMetrics? _metrics;
@@ -31,12 +34,12 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final status = _initializer.getSystemStatus();
       final metrics = await _analytics.getDetailedMetrics();
       final healthCheck = await _initializer.performHealthCheck();
-      
+
       setState(() {
         _systemStatus = status;
         _metrics = metrics;
@@ -98,11 +101,15 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
             ),
             const SizedBox(height: 8),
             if (_systemStatus != null) ...[
-              _buildStatusRow('Inicializado', _systemStatus!['initialized'] ?? false),
+              _buildStatusRow(
+                  'Inicializado', _systemStatus?['initialized'] ?? false),
               const SizedBox(height: 8),
-              Text('Sesión: ${_controller.getSessionStats()['sessionId'] ?? 'N/A'}'),
-              Text('Anuncios en sesión: ${_controller.getSessionStats()['sessionAdCount'] ?? 0}'),
-              Text('Clicks en sesión: ${_controller.getSessionStats()['sessionClickCount'] ?? 0}'),
+              Text(
+                  'Sesión: ${_controller.getSessionStats()['sessionId'] ?? 'N/A'}'),
+              Text(
+                  'Anuncios en sesión: ${_controller.getSessionStats()['sessionAdCount'] ?? 0}'),
+              Text(
+                  'Clicks en sesión: ${_controller.getSessionStats()['sessionClickCount'] ?? 0}'),
             ] else
               const Text('Cargando estado del sistema...'),
           ],
@@ -164,21 +171,23 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
               ],
             ),
             const SizedBox(height: 8),
-            Text('Puntuación: ${(healthCheck.overallScore * 100).toStringAsFixed(1)}%'),
+            Text(
+                'Puntuación: ${(healthCheck.overallScore * 100).toStringAsFixed(1)}%'),
             Text('Estado: ${healthCheck.status.name.toUpperCase()}'),
             if (healthCheck.hasIssues) ...[
               const SizedBox(height: 8),
-              const Text('Problemas detectados:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Problemas detectados:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               ...healthCheck.issues.map((issue) => Padding(
-                padding: const EdgeInsets.only(left: 16, top: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('• '),
-                    Expanded(child: Text(issue)),
-                  ],
-                ),
-              )),
+                    padding: const EdgeInsets.only(left: 16, top: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('• '),
+                        Expanded(child: Text(issue)),
+                      ],
+                    ),
+                  )),
             ],
           ],
         ),
@@ -273,7 +282,8 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
     );
   }
 
-  Widget _buildMetricItem(String label, String value, IconData icon, {bool? isHealthy}) {
+  Widget _buildMetricItem(String label, String value, IconData icon,
+      {bool? isHealthy}) {
     Color? color;
     if (isHealthy != null) {
       color = isHealthy ? Colors.green : Colors.red;
@@ -312,17 +322,18 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            
+
             // Banner Ad Example
             const Text('Banner Ad con Control de Frecuencia:'),
             const SizedBox(height: 8),
             ControlledBannerAd(
               onAdShown: () => _showSnackBar('Banner ad mostrado'),
-              onAdBlocked: (reason) => _showSnackBar('Banner ad bloqueado: ${reason.name}'),
+              onAdBlocked: (reason) =>
+                  _showSnackBar('Banner ad bloqueado: ${reason.name}'),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Native Ad Example
             const Text('Native Ad con Control de Frecuencia:'),
             const SizedBox(height: 8),
@@ -330,11 +341,12 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
               height: 100,
               showLabel: true,
               onAdShown: () => _showSnackBar('Native ad mostrado'),
-              onAdBlocked: (reason) => _showSnackBar('Native ad bloqueado: ${reason.name}'),
+              onAdBlocked: (reason) =>
+                  _showSnackBar('Native ad bloqueado: ${reason.name}'),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Grid Ad Example
             const Text('Grid Ad con Control de Frecuencia:'),
             const SizedBox(height: 8),
@@ -344,7 +356,8 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
                 aspectRatio: 1.0,
                 showLabel: true,
                 onAdShown: () => _showSnackBar('Grid ad mostrado'),
-                onAdBlocked: (reason) => _showSnackBar('Grid ad bloqueado: ${reason.name}'),
+                onAdBlocked: (reason) =>
+                    _showSnackBar('Grid ad bloqueado: ${reason.name}'),
               ),
             ),
           ],
@@ -365,31 +378,29 @@ class _MonetizationIntegrationExampleState extends State<MonetizationIntegration
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            
             ElevatedButton(
-              onPressed: () => _updateConfig(MonetizationInitializer.conservativeConfig),
+              onPressed: () =>
+                  _updateConfig(MonetizationInitializer.conservativeConfig),
               child: const Text('Configuración Conservadora'),
             ),
             const SizedBox(height: 8),
-            
             ElevatedButton(
-              onPressed: () => _updateConfig(MonetizationInitializer.balancedConfig),
+              onPressed: () =>
+                  _updateConfig(MonetizationInitializer.balancedConfig),
               child: const Text('Configuración Balanceada'),
             ),
             const SizedBox(height: 8),
-            
             ElevatedButton(
-              onPressed: () => _updateConfig(MonetizationInitializer.aggressiveConfig),
+              onPressed: () =>
+                  _updateConfig(MonetizationInitializer.aggressiveConfig),
               child: const Text('Configuración Agresiva'),
             ),
             const SizedBox(height: 16),
-            
             ElevatedButton(
               onPressed: _triggerUserInteraction,
               child: const Text('Simular Interacción de Usuario'),
             ),
             const SizedBox(height: 8),
-            
             ElevatedButton(
               onPressed: _resetSystem,
               child: const Text('Reiniciar Sistema'),

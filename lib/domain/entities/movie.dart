@@ -1,12 +1,13 @@
 import 'package:hive/hive.dart';
+
 import 'watch_providers.dart';
 
 part 'movie.g.dart';
 
 @HiveType(typeId: 0)
 class Movie {
-  Movie({
-      required this.adult,
+  Movie(
+      {required this.adult,
       required this.backdropPath,
       required this.genreIds,
       required this.id,
@@ -94,6 +95,73 @@ class Movie {
   final Map<String, dynamic>? images;
   final Map<String, dynamic>? reviews;
   final Map<String, dynamic>? similar;
+
+  /// Crea una copia de la película con los campos especificados modificados
+  Movie copyWith({
+    bool? adult,
+    String? backdropPath,
+    List<String>? genreIds,
+    int? id,
+    String? originalLanguage,
+    String? originalTitle,
+    String? overview,
+    double? popularity,
+    String? posterPath,
+    DateTime? releaseDate,
+    String? title,
+    bool? video,
+    double? voteAverage,
+    int? voteCount,
+    int? runtime,
+    int? budget,
+    int? revenue,
+    String? homepage,
+    String? imdbId,
+    String? status,
+    String? tagline,
+    List<String>? productionCompanies,
+    List<String>? productionCountries,
+    List<String>? spokenLanguages,
+    String? belongsToCollection,
+    WatchProviders? watchProviders,
+    Map<String, dynamic>? credits,
+    Map<String, dynamic>? images,
+    Map<String, dynamic>? reviews,
+    Map<String, dynamic>? similar,
+  }) {
+    return Movie(
+      adult: adult ?? this.adult,
+      backdropPath: backdropPath ?? this.backdropPath,
+      genreIds: genreIds ?? this.genreIds,
+      id: id ?? this.id,
+      originalLanguage: originalLanguage ?? this.originalLanguage,
+      originalTitle: originalTitle ?? this.originalTitle,
+      overview: overview ?? this.overview,
+      popularity: popularity ?? this.popularity,
+      posterPath: posterPath ?? this.posterPath,
+      releaseDate: releaseDate ?? this.releaseDate,
+      title: title ?? this.title,
+      video: video ?? this.video,
+      voteAverage: voteAverage ?? this.voteAverage,
+      voteCount: voteCount ?? this.voteCount,
+      runtime: runtime ?? this.runtime,
+      budget: budget ?? this.budget,
+      revenue: revenue ?? this.revenue,
+      homepage: homepage ?? this.homepage,
+      imdbId: imdbId ?? this.imdbId,
+      status: status ?? this.status,
+      tagline: tagline ?? this.tagline,
+      productionCompanies: productionCompanies ?? this.productionCompanies,
+      productionCountries: productionCountries ?? this.productionCountries,
+      spokenLanguages: spokenLanguages ?? this.spokenLanguages,
+      belongsToCollection: belongsToCollection ?? this.belongsToCollection,
+      watchProviders: watchProviders ?? this.watchProviders,
+      credits: credits ?? this.credits,
+      images: images ?? this.images,
+      reviews: reviews ?? this.reviews,
+      similar: similar ?? this.similar,
+    );
+  }
 
   /// Convierte la película a JSON
   Map<String, dynamic> toJson() {

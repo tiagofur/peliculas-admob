@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../achievement_system.dart';
+import '../../../presentation/providers/gamification_providers.dart';
+import '../achievement_system.dart' hide unlockedAchievementsProvider;
 import '../models/achievement.dart';
 import 'achievement_card.dart';
 
@@ -18,14 +19,21 @@ class AchievementGridWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // TODO: Get user progress to show unlocked status
     final achievements = ref.watch(allAchievementsProvider);
+    final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
+    final unlockedIds = unlockedAchievements.map((a) => a.id).toSet();
 
     List<Achievement> filteredAchievements = achievements;
 
     if (category != null) {
       filteredAchievements =
           achievements.where((a) => a.category == category).toList();
+    }
+
+    if (showOnlyUnlocked) {
+      filteredAchievements = filteredAchievements
+          .where((a) => unlockedIds.contains(a.id))
+          .toList();
     }
 
     if (filteredAchievements.isEmpty) {
@@ -45,7 +53,7 @@ class AchievementGridWidget extends ConsumerWidget {
         final achievement = filteredAchievements[index];
         return AchievementCard(
           achievement: achievement,
-          isUnlocked: false, // TODO: Get from user progress
+          isUnlocked: unlockedIds.contains(achievement.id),
         );
       },
     );

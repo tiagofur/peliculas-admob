@@ -89,29 +89,33 @@ class Subscription {
   /// Check if subscription is currently active
   bool get isActive {
     return status == SubscriptionStatus.active &&
-        (endDate == null || endDate!.isAfter(DateTime.now()));
+        (endDate == null || endDate?.isAfter(DateTime.now()) == true);
   }
 
   /// Check if subscription is expiring soon (within 7 days)
   bool get isExpiringSoon {
-    if (endDate == null || !isActive) return false;
+    final end = endDate;
+    if (end == null || !isActive) return false;
     final now = DateTime.now();
-    final difference = endDate!.difference(now);
+    final difference = end.difference(now);
     return difference.inDays <= 7 && difference.inDays >= 0;
   }
 
   /// Get days until expiration
   int? get daysUntilExpiration {
-    if (endDate == null) return null;
+    final end = endDate;
+    if (end == null) return null;
     final now = DateTime.now();
-    final difference = endDate!.difference(now);
+    final difference = end.difference(now);
     return difference.inDays;
   }
 
   /// Get formatted monthly price
   String? get formattedMonthlyPrice {
-    if (monthlyPrice == null || currency == null) return null;
-    return '${currency!}${monthlyPrice!.toStringAsFixed(2)}/month';
+    final price = monthlyPrice;
+    final curr = currency;
+    if (price == null || curr == null) return null;
+    return '$curr${price.toStringAsFixed(2)}/month';
   }
 
   /// Get subscription duration in months

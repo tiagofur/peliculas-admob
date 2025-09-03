@@ -8,12 +8,12 @@ import 'monetization_analytics_service.dart';
 /// Servicio de inicialización para el sistema de monetización
 class MonetizationInitializer {
   MonetizationInitializer._();
-  
+
   static final MonetizationInitializer _instance = MonetizationInitializer._();
   static MonetizationInitializer get instance => _instance;
 
   final BaseLogger _logger = LoggerFactory.getLogger('MonetizationInitializer');
-  
+
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
@@ -35,7 +35,7 @@ class MonetizationInitializer {
 
       // Inicializar controlador de frecuencia
       await AdFrequencyController.instance.initialize(config: finalConfig);
-      
+
       _logger.info('AdFrequencyController initialized');
 
       // El servicio de analytics ya se auto-inicializa cuando se usa
@@ -55,7 +55,6 @@ class MonetizationInitializer {
           'debugMode': enableDebugMode,
         },
       );
-
     } catch (e) {
       _logger.error('Error initializing monetization system: $e');
       rethrow;
@@ -131,10 +130,10 @@ class MonetizationInitializer {
   Future<void> reset() async {
     try {
       _logger.info('Resetting monetization system...');
-      
+
       // Reinicializar el controlador de frecuencia
       await AdFrequencyController.instance.initialize();
-      
+
       _logger.info('Monetization system reset completed');
     } catch (e) {
       _logger.error('Error resetting monetization system: $e');
@@ -150,7 +149,7 @@ class MonetizationInitializer {
       }
 
       await AdFrequencyController.instance.updateConfig(newConfig);
-      
+
       _logger.info('Monetization config updated: ${newConfig.toJson()}');
 
       // Registrar cambio de configuración
@@ -161,7 +160,6 @@ class MonetizationInitializer {
           'newConfig': newConfig.toJson(),
         },
       );
-
     } catch (e) {
       _logger.error('Error updating monetization config: $e');
       rethrow;
@@ -175,8 +173,10 @@ class MonetizationInitializer {
         throw StateError('Monetization system not initialized');
       }
 
-      final frequencyMetrics = await AdFrequencyController.instance.getMonetizationMetrics();
-      final detailedMetrics = await MonetizationAnalyticsService.instance.getDetailedMetrics();
+      final frequencyMetrics =
+          await AdFrequencyController.instance.getMonetizationMetrics();
+      final detailedMetrics =
+          await MonetizationAnalyticsService.instance.getDetailedMetrics();
       final sessionStats = AdFrequencyController.instance.getSessionStats();
 
       return SystemMonetizationReport(
@@ -187,7 +187,6 @@ class MonetizationInitializer {
         systemStatus: getSystemStatus(),
         generatedAt: DateTime.now(),
       );
-
     } catch (e) {
       _logger.error('Error generating system report: $e');
       rethrow;
@@ -198,25 +197,28 @@ class MonetizationInitializer {
   Future<MonetizationHealthCheck> performHealthCheck() async {
     try {
       final report = await getSystemReport();
-      
+
       final issues = <String>[];
       var overallHealth = 1.0;
 
       // Verificar métricas de UX
       if (!report.detailedMetrics.isUserExperienceHealthy) {
-        issues.add('User experience score below threshold (${report.detailedMetrics.userExperienceScore})');
+        issues.add(
+            'User experience score below threshold (${report.detailedMetrics.userExperienceScore})');
         overallHealth -= 0.3;
       }
 
       // Verificar CTR
       if (!report.detailedMetrics.isCTRHealthy) {
-        issues.add('Click-through rate below threshold (${report.detailedMetrics.ctr})');
+        issues.add(
+            'Click-through rate below threshold (${report.detailedMetrics.ctr})');
         overallHealth -= 0.2;
       }
 
       // Verificar tasa de error
       if (!report.detailedMetrics.isErrorRateHealthy) {
-        issues.add('Error rate above threshold (${report.detailedMetrics.errorRate})');
+        issues.add(
+            'Error rate above threshold (${report.detailedMetrics.errorRate})');
         overallHealth -= 0.3;
       }
 
@@ -224,13 +226,14 @@ class MonetizationInitializer {
       final sessionStats = report.sessionStats;
       final sessionAdCount = sessionStats['sessionAdCount'] as int? ?? 0;
       final config = report.config;
-      
+
       if (sessionAdCount >= config.maxAdsPerSession * 0.8) {
-        issues.add('Session approaching ad limit (${sessionAdCount}/${config.maxAdsPerSession})');
+        issues.add(
+            'Session approaching ad limit ($sessionAdCount/${config.maxAdsPerSession})');
         overallHealth -= 0.1;
       }
 
-      final healthStatus = overallHealth >= 0.8 
+      final healthStatus = overallHealth >= 0.8
           ? MonetizationHealthStatus.healthy
           : overallHealth >= 0.6
               ? MonetizationHealthStatus.warning
@@ -243,7 +246,6 @@ class MonetizationInitializer {
         report: report,
         checkedAt: DateTime.now(),
       );
-
     } catch (e) {
       _logger.error('Error performing health check: $e');
       return MonetizationHealthCheck(

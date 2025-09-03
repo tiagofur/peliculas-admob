@@ -150,7 +150,7 @@ class UserNotificationPreferences {
   });
 
   factory UserNotificationPreferences.defaultPreferences() {
-    return UserNotificationPreferences(
+    return const UserNotificationPreferences(
       enabledTypes: {
         NotificationType.newMovies: true,
         NotificationType.personalizedRecommendations: true,
@@ -168,7 +168,8 @@ class UserNotificationPreferences {
         NotificationType.favoriteActorNewMovie: NotificationFrequency.immediate,
         NotificationType.trendingMovies: NotificationFrequency.weekly,
         NotificationType.weeklyWatchlistReminder: NotificationFrequency.weekly,
-        NotificationType.movieReleaseNotification: NotificationFrequency.immediate,
+        NotificationType.movieReleaseNotification:
+            NotificationFrequency.immediate,
       },
       priorities: {
         NotificationType.newMovies: NotificationPriority.normal,
@@ -179,7 +180,7 @@ class UserNotificationPreferences {
         NotificationType.weeklyWatchlistReminder: NotificationPriority.normal,
         NotificationType.movieReleaseNotification: NotificationPriority.high,
       },
-      schedule: const NotificationSchedule(
+      schedule: NotificationSchedule(
         startTime: TimeOfDay(hour: 9, minute: 0),
         endTime: TimeOfDay(hour: 22, minute: 0),
         daysOfWeek: [1, 2, 3, 4, 5, 6, 7],
@@ -457,8 +458,9 @@ class NotificationPreferencesService {
             personalizedRecommendations: value as bool);
         break;
       case 'maxNotificationsPerDay':
-        updatedPreferences =
-            currentPreferences.copyWith(maxNotificationsPerDay: value as int);
+        updatedPreferences = currentPreferences.copyWith(
+            maxNotificationsPerDay:
+                value is int ? value : int.tryParse(value.toString()) ?? 1);
         break;
       default:
         _log('Clave de preferencia no reconocida: $key');

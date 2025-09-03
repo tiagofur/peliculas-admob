@@ -92,7 +92,10 @@ class _MovieMasonryWithAdsState extends State<MovieMasonryWithAds> {
 
         switch (item.type) {
           case AdItemType.movie:
-            return _MovieCard(movie: item.movie!);
+            if (item.movie != null) {
+              return _MovieCard(movie: item.movie!);
+            }
+            return const SizedBox.shrink();
 
           case AdItemType.gridAd:
             return const _GridAdCard();
@@ -354,7 +357,10 @@ class _MasonryWithAdsState extends State<MasonryWithAds> {
 
         switch (item.type) {
           case AdItemType.movie:
-            return _MovieCard(movie: item.movie!);
+            if (item.movie != null) {
+              return _MovieCard(movie: item.movie!);
+            }
+            return const SizedBox.shrink();
 
           case AdItemType.gridAd:
             return const _GridAdCard();

@@ -54,6 +54,7 @@ dependencies:
   isar: ^3.1.0+1
   isar_flutter_libs: ^3.1.0+1
   json_annotation: ^4.8.1
+  firebase_crashlytics: ^5.0.1
 
 dev_dependencies:
   analyzer: ^5.13.0

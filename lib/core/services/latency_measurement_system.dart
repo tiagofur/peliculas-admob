@@ -9,14 +9,17 @@ import '../../core/services/sync_performance_metrics.dart';
 class LatencyMeasurementSystem {
   factory LatencyMeasurementSystem() => _instance;
   LatencyMeasurementSystem._internal();
-  static final LatencyMeasurementSystem _instance = LatencyMeasurementSystem._internal();
+  static final LatencyMeasurementSystem _instance =
+      LatencyMeasurementSystem._internal();
 
   final Map<String, LatencyTracker> _activeTrackers = {};
   final List<LatencyMeasurement> _measurements = [];
-  final StreamController<LatencyAlert> _alertController = StreamController<LatencyAlert>.broadcast();
-  
+  final StreamController<LatencyAlert> _alertController =
+      StreamController<LatencyAlert>.broadcast();
+
   // Configuración según issue #69
-  static const Duration _latencyThreshold = Duration(milliseconds: 1500); // < 1.5s requirement
+  static const Duration _latencyThreshold =
+      Duration(milliseconds: 1500); // < 1.5s requirement
   static const int _maxMeasurements = 1000;
   static const Duration _measurementWindow = Duration(hours: 1);
 
@@ -31,9 +34,10 @@ class LatencyMeasurementSystem {
     required LatencyMeasurementPhase phase,
     Map<String, dynamic>? metadata,
   }) {
-    final trackingId = 'lat_${DateTime.now().millisecondsSinceEpoch}_${eventType}';
+    final trackingId =
+        'lat_${DateTime.now().millisecondsSinceEpoch}_$eventType';
     final startTime = DateTime.now();
-    
+
     final tracker = LatencyTracker(
       trackingId: trackingId,
       eventType: eventType,
@@ -47,9 +51,8 @@ class LatencyMeasurementSystem {
     _activeTrackers[trackingId] = tracker;
 
     developer.log(
-      'Iniciando tracking de latencia: $trackingId para $eventType en $entityType:$entityId',
-      name: 'LatencyTracker'
-    );
+        'Iniciando tracking de latencia: $trackingId para $eventType en $entityType:$entityId',
+        name: 'LatencyTracker');
 
     return trackingId;
   }
@@ -62,7 +65,8 @@ class LatencyMeasurementSystem {
   }) {
     final tracker = _activeTrackers[trackingId];
     if (tracker == null) {
-      developer.log('Tracker no encontrado: $trackingId', name: 'LatencyTracker');
+      developer.log('Tracker no encontrado: $trackingId',
+          name: 'LatencyTracker');
       return;
     }
 
@@ -77,9 +81,8 @@ class LatencyMeasurementSystem {
     tracker.phases.add(phaseData);
 
     developer.log(
-      'Fase $phase completada para $trackingId en ${phaseData.durationFromStart.inMilliseconds}ms',
-      name: 'LatencyTracker'
-    );
+        'Fase $phase completada para $trackingId en ${phaseData.durationFromStart.inMilliseconds}ms',
+        name: 'LatencyTracker');
   }
 
   /// Finaliza el tracking de latencia y registra la medición completa
@@ -129,9 +132,8 @@ class LatencyMeasurementSystem {
     }
 
     developer.log(
-      'Latencia completa para $trackingId: ${totalLatency.inMilliseconds}ms (${success ? 'éxito' : 'fallo'})',
-      name: 'LatencyTracker'
-    );
+        'Latencia completa para $trackingId: ${totalLatency.inMilliseconds}ms (${success ? 'éxito' : 'fallo'})',
+        name: 'LatencyTracker');
 
     return measurement;
   }
@@ -143,8 +145,9 @@ class LatencyMeasurementSystem {
     required List<String> operations,
     int iterations = 10,
   }) async {
-    developer.log('Iniciando test de latencia: $testName', name: 'LatencyTracker');
-    
+    developer.log('Iniciando test de latencia: $testName',
+        name: 'LatencyTracker');
+
     final testStartTime = DateTime.now();
     final measurements = <LatencyMeasurement>[];
 
@@ -158,7 +161,8 @@ class LatencyMeasurementSystem {
           );
           measurements.add(measurement);
         } catch (e) {
-          developer.log('Error en test de latencia: $e', name: 'LatencyTracker');
+          developer.log('Error en test de latencia: $e',
+              name: 'LatencyTracker');
         }
       }
 
@@ -179,13 +183,13 @@ class LatencyMeasurementSystem {
       startTime: testStartTime,
       duration: testDuration,
       measurements: measurements,
-      thresholdExceeded: measurements.where((m) => m.totalLatency > _latencyThreshold).length,
+      thresholdExceeded:
+          measurements.where((m) => m.totalLatency > _latencyThreshold).length,
     );
 
     developer.log(
-      'Test de latencia completado: $testName - ${measurements.length} mediciones en ${testDuration.inMilliseconds}ms',
-      name: 'LatencyTracker'
-    );
+        'Test de latencia completado: $testName - ${measurements.length} mediciones en ${testDuration.inMilliseconds}ms',
+        name: 'LatencyTracker');
 
     return result;
   }
@@ -206,9 +210,8 @@ class LatencyMeasurementSystem {
     }
 
     if (eventType != null) {
-      filteredMeasurements = filteredMeasurements
-          .where((m) => m.eventType == eventType)
-          .toList();
+      filteredMeasurements =
+          filteredMeasurements.where((m) => m.eventType == eventType).toList();
     }
 
     if (timeWindow != null) {
@@ -226,11 +229,14 @@ class LatencyMeasurementSystem {
     final latencies = filteredMeasurements.map((m) => m.totalLatency).toList()
       ..sort((a, b) => a.compareTo(b));
 
-    final totalMs = latencies.fold<int>(0, (sum, duration) => sum + duration.inMilliseconds);
+    final totalMs = latencies.fold<int>(
+        0, (sum, duration) => sum + duration.inMilliseconds);
     final averageMs = totalMs / latencies.length;
 
-    final exceedsThreshold = latencies.where((l) => l > _latencyThreshold).length;
-    final successfulMeasurements = filteredMeasurements.where((m) => m.success).length;
+    final exceedsThreshold =
+        latencies.where((l) => l > _latencyThreshold).length;
+    final successfulMeasurements =
+        filteredMeasurements.where((m) => m.success).length;
 
     return LatencyStatistics(
       totalMeasurements: filteredMeasurements.length,
@@ -256,11 +262,13 @@ class LatencyMeasurementSystem {
 
     // Aplicar filtros
     if (entityType != null) {
-      measurements = measurements.where((m) => m.entityType == entityType).toList();
+      measurements =
+          measurements.where((m) => m.entityType == entityType).toList();
     }
 
     if (eventType != null) {
-      measurements = measurements.where((m) => m.eventType == eventType).toList();
+      measurements =
+          measurements.where((m) => m.eventType == eventType).toList();
     }
 
     // Ordenar por tiempo más reciente y limitar
@@ -272,11 +280,10 @@ class LatencyMeasurementSystem {
   void cleanupOldMeasurements() {
     final cutoff = DateTime.now().subtract(_measurementWindow);
     _measurements.removeWhere((m) => m.startTime.isBefore(cutoff));
-    
+
     developer.log(
-      'Limpieza completada: ${_measurements.length} mediciones restantes',
-      name: 'LatencyTracker'
-    );
+        'Limpieza completada: ${_measurements.length} mediciones restantes',
+        name: 'LatencyTracker');
   }
 
   // === MÉTODOS PRIVADOS ===
@@ -331,7 +338,6 @@ class LatencyMeasurementSystem {
         endPhase: LatencyMeasurementPhase.uiUpdated,
         success: true,
       );
-
     } catch (e) {
       return finishLatencyTracking(
         trackingId: trackingId,
@@ -369,9 +375,8 @@ class LatencyMeasurementSystem {
     _alertController.add(alert);
 
     developer.log(
-      'ALERTA DE LATENCIA: ${measurement.eventType} en ${measurement.entityType} tomó ${measurement.totalLatency.inMilliseconds}ms (threshold: ${_latencyThreshold.inMilliseconds}ms)',
-      name: 'LatencyTracker'
-    );
+        'ALERTA DE LATENCIA: ${measurement.eventType} en ${measurement.entityType} tomó ${measurement.totalLatency.inMilliseconds}ms (threshold: ${_latencyThreshold.inMilliseconds}ms)',
+        name: 'LatencyTracker');
   }
 
   LatencyAlertSeverity _calculateAlertSeverity(Duration latency) {
@@ -384,7 +389,8 @@ class LatencyMeasurementSystem {
     return LatencyAlertSeverity.low;
   }
 
-  Map<LatencyMeasurementPhase, LatencyPhaseStatistics> _groupMeasurementsByPhase(
+  Map<LatencyMeasurementPhase, LatencyPhaseStatistics>
+      _groupMeasurementsByPhase(
     List<LatencyMeasurement> measurements,
   ) {
     final phaseStats = <LatencyMeasurementPhase, List<Duration>>{};
@@ -393,7 +399,8 @@ class LatencyMeasurementSystem {
       for (int i = 0; i < measurement.phases.length - 1; i++) {
         final currentPhase = measurement.phases[i];
         final nextPhase = measurement.phases[i + 1];
-        final phaseDuration = nextPhase.timestamp.difference(currentPhase.timestamp);
+        final phaseDuration =
+            nextPhase.timestamp.difference(currentPhase.timestamp);
 
         phaseStats.putIfAbsent(currentPhase.phase, () => []).add(phaseDuration);
       }
@@ -402,7 +409,8 @@ class LatencyMeasurementSystem {
     final result = <LatencyMeasurementPhase, LatencyPhaseStatistics>{};
     for (final entry in phaseStats.entries) {
       final durations = entry.value..sort((a, b) => a.compareTo(b));
-      final totalMs = durations.fold<int>(0, (sum, d) => sum + d.inMilliseconds);
+      final totalMs =
+          durations.fold<int>(0, (sum, d) => sum + d.inMilliseconds);
 
       result[entry.key] = LatencyPhaseStatistics(
         phase: entry.key,
@@ -429,15 +437,6 @@ enum LatencyMeasurementPhase {
 
 /// Tracker activo de latencia
 class LatencyTracker {
-  final String trackingId;
-  final String eventType;
-  final String entityType;
-  final String entityId;
-  final LatencyMeasurementPhase startPhase;
-  final DateTime startTime;
-  final Map<String, dynamic> metadata;
-  final List<LatencyPhaseData> phases = [];
-
   LatencyTracker({
     required this.trackingId,
     required this.eventType,
@@ -447,37 +446,32 @@ class LatencyTracker {
     required this.startTime,
     required this.metadata,
   });
+  final String trackingId;
+  final String eventType;
+  final String entityType;
+  final String entityId;
+  final LatencyMeasurementPhase startPhase;
+  final DateTime startTime;
+  final Map<String, dynamic> metadata;
+  final List<LatencyPhaseData> phases = [];
 }
 
 /// Datos de una fase específica en la medición
 class LatencyPhaseData {
-  final LatencyMeasurementPhase phase;
-  final DateTime timestamp;
-  final Duration durationFromStart;
-  final Map<String, dynamic> metadata;
-
   LatencyPhaseData({
     required this.phase,
     required this.timestamp,
     required this.durationFromStart,
     required this.metadata,
   });
+  final LatencyMeasurementPhase phase;
+  final DateTime timestamp;
+  final Duration durationFromStart;
+  final Map<String, dynamic> metadata;
 }
 
 /// Medición completa de latencia
 class LatencyMeasurement {
-  final String trackingId;
-  final String eventType;
-  final String entityType;
-  final String entityId;
-  final DateTime startTime;
-  final DateTime endTime;
-  final Duration totalLatency;
-  final List<LatencyPhaseData> phases;
-  final bool success;
-  final String? errorMessage;
-  final Map<String, dynamic> metadata;
-
   LatencyMeasurement({
     required this.trackingId,
     required this.eventType,
@@ -491,19 +485,21 @@ class LatencyMeasurement {
     this.errorMessage,
     required this.metadata,
   });
+  final String trackingId;
+  final String eventType;
+  final String entityType;
+  final String entityId;
+  final DateTime startTime;
+  final DateTime endTime;
+  final Duration totalLatency;
+  final List<LatencyPhaseData> phases;
+  final bool success;
+  final String? errorMessage;
+  final Map<String, dynamic> metadata;
 }
 
 /// Resultado de un test de latencia
 class LatencyTestResult {
-  final String testName;
-  final String entityType;
-  final List<String> operations;
-  final int iterations;
-  final DateTime startTime;
-  final Duration duration;
-  final List<LatencyMeasurement> measurements;
-  final int thresholdExceeded;
-
   LatencyTestResult({
     required this.testName,
     required this.entityType,
@@ -514,26 +510,25 @@ class LatencyTestResult {
     required this.measurements,
     required this.thresholdExceeded,
   });
+  final String testName;
+  final String entityType;
+  final List<String> operations;
+  final int iterations;
+  final DateTime startTime;
+  final Duration duration;
+  final List<LatencyMeasurement> measurements;
+  final int thresholdExceeded;
 
   int get totalMeasurements => measurements.length;
   int get successfulMeasurements => measurements.where((m) => m.success).length;
-  double get successRate => totalMeasurements > 0 ? successfulMeasurements / totalMeasurements : 0.0;
-  double get thresholdExceededRate => totalMeasurements > 0 ? thresholdExceeded / totalMeasurements : 0.0;
+  double get successRate =>
+      totalMeasurements > 0 ? successfulMeasurements / totalMeasurements : 0.0;
+  double get thresholdExceededRate =>
+      totalMeasurements > 0 ? thresholdExceeded / totalMeasurements : 0.0;
 }
 
 /// Estadísticas de latencia
 class LatencyStatistics {
-  final int totalMeasurements;
-  final Duration averageLatency;
-  final Duration minLatency;
-  final Duration maxLatency;
-  final Duration medianLatency;
-  final Duration p95Latency;
-  final Duration p99Latency;
-  final int thresholdExceeded;
-  final double successRate;
-  final Map<LatencyMeasurementPhase, LatencyPhaseStatistics> measurementsByPhase;
-
   LatencyStatistics({
     required this.totalMeasurements,
     required this.averageLatency,
@@ -561,18 +556,24 @@ class LatencyStatistics {
       measurementsByPhase: {},
     );
   }
+  final int totalMeasurements;
+  final Duration averageLatency;
+  final Duration minLatency;
+  final Duration maxLatency;
+  final Duration medianLatency;
+  final Duration p95Latency;
+  final Duration p99Latency;
+  final int thresholdExceeded;
+  final double successRate;
+  final Map<LatencyMeasurementPhase, LatencyPhaseStatistics>
+      measurementsByPhase;
 
-  double get thresholdExceededRate => totalMeasurements > 0 ? thresholdExceeded / totalMeasurements : 0.0;
+  double get thresholdExceededRate =>
+      totalMeasurements > 0 ? thresholdExceeded / totalMeasurements : 0.0;
 }
 
 /// Estadísticas de una fase específica
 class LatencyPhaseStatistics {
-  final LatencyMeasurementPhase phase;
-  final int measurements;
-  final Duration averageDuration;
-  final Duration minDuration;
-  final Duration maxDuration;
-
   LatencyPhaseStatistics({
     required this.phase,
     required this.measurements,
@@ -580,21 +581,25 @@ class LatencyPhaseStatistics {
     required this.minDuration,
     required this.maxDuration,
   });
+  final LatencyMeasurementPhase phase;
+  final int measurements;
+  final Duration averageDuration;
+  final Duration minDuration;
+  final Duration maxDuration;
 }
 
 /// Alerta de latencia
 class LatencyAlert {
-  final LatencyMeasurement measurement;
-  final Duration thresholdExceeded;
-  final DateTime timestamp;
-  final LatencyAlertSeverity severity;
-
   LatencyAlert({
     required this.measurement,
     required this.thresholdExceeded,
     required this.timestamp,
     required this.severity,
   });
+  final LatencyMeasurement measurement;
+  final Duration thresholdExceeded;
+  final DateTime timestamp;
+  final LatencyAlertSeverity severity;
 }
 
 /// Severidad de alerta de latencia

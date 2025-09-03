@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -6,9 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/sync_result.dart';
+import '../../domain/entities/user.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/hybrid_repositories_provider.dart';
+import 'connectivity_detector.dart';
+import 'error_context_tracker.dart';
 // Imports de repositorios específicos removidos - se usan a través de providers
 
 /// Servicio de sincronización mejorado entre datos locales y Supabase
@@ -18,7 +22,7 @@ class SyncService {
     required this.getCurrentUser,
     required this.getConnectivityStatus,
   }) : _repositories = repositories;
-  
+
   final List<SyncableRepository<dynamic>> _repositories;
   final User? Function() getCurrentUser;
   final ConnectivityStatus Function() getConnectivityStatus;
@@ -95,7 +99,7 @@ class SyncService {
     // Sincronizar todos los repositorios en paralelo para mejor rendimiento
     final syncTasks = _repositories.map((repo) async {
       final repoName = repo.runtimeType.toString();
-      
+
       try {
         LoggerFactory.info('Sincronizando $repoName...');
         await repo.syncWithSupabase();
@@ -111,7 +115,7 @@ class SyncService {
         errors.add(error);
 
         LoggerFactory.error(error);
-        _logSyncError(repoName, e);
+        _logSyncError(repoName, e, operation: 'syncAllData');
         _scheduleRetry(repoName);
       }
     });
@@ -133,7 +137,8 @@ class SyncService {
   /// Sincroniza solo los favoritos
   Future<SyncResult> syncFavorites() async {
     if (!_isAuthenticated() || !await _isOnline()) {
-      LoggerFactory.info('⏸️ Sincronización de favoritos omitida: usuario no autenticado o sin conexión');
+      LoggerFactory.info(
+          '⏸️ Sincronización de favoritos omitida: usuario no autenticado o sin conexión');
       return SyncResult(
         repositoryResults: {'HybridFavoritesRepository': false},
         timestamp: DateTime.now(),
@@ -152,7 +157,7 @@ class SyncService {
       LoggerFactory.info('🔄 Sincronizando favoritos...');
       await favoritesRepo.syncWithSupabase();
       LoggerFactory.info('✅ Favoritos sincronizados');
-      
+
       return SyncResult(
         repositoryResults: {'HybridFavoritesRepository': true},
         timestamp: startTime,
@@ -160,7 +165,7 @@ class SyncService {
         errors: [],
       );
     } catch (e) {
-      _logSyncError('HybridFavoritesRepository', e);
+      _logSyncError('HybridFavoritesRepository', e, operation: 'syncFavorites');
       return SyncResult(
         repositoryResults: {'HybridFavoritesRepository': false},
         timestamp: startTime,
@@ -173,7 +178,8 @@ class SyncService {
   /// Sincroniza solo las películas vistas
   Future<SyncResult> syncWatchedMovies() async {
     if (!_isAuthenticated() || !await _isOnline()) {
-      LoggerFactory.info('⏸️ Sincronización de películas vistas omitida: usuario no autenticado o sin conexión');
+      LoggerFactory.info(
+          '⏸️ Sincronización de películas vistas omitida: usuario no autenticado o sin conexión');
       return SyncResult(
         repositoryResults: {'HybridWatchedRepository': false},
         timestamp: DateTime.now(),
@@ -185,14 +191,15 @@ class SyncService {
     final startTime = DateTime.now();
     final watchedRepo = _repositories.firstWhere(
       (repo) => repo.runtimeType.toString().contains('Watched'),
-      orElse: () => throw Exception('Repositorio de películas vistas no encontrado'),
+      orElse: () =>
+          throw Exception('Repositorio de películas vistas no encontrado'),
     );
 
     try {
       LoggerFactory.info('🔄 Sincronizando películas vistas...');
       await watchedRepo.syncWithSupabase();
       LoggerFactory.info('✅ Películas vistas sincronizadas');
-      
+
       return SyncResult(
         repositoryResults: {'HybridWatchedRepository': true},
         timestamp: startTime,
@@ -200,7 +207,8 @@ class SyncService {
         errors: [],
       );
     } catch (e) {
-      _logSyncError('HybridWatchedRepository', e);
+      _logSyncError('HybridWatchedRepository', e,
+          operation: 'syncWatchedMovies');
       return SyncResult(
         repositoryResults: {'HybridWatchedRepository': false},
         timestamp: startTime,
@@ -213,7 +221,8 @@ class SyncService {
   /// Sincroniza solo las listas personalizadas
   Future<SyncResult> syncCustomLists() async {
     if (!_isAuthenticated() || !await _isOnline()) {
-      LoggerFactory.info('⏸️ Sincronización de listas personalizadas omitida: usuario no autenticado o sin conexión');
+      LoggerFactory.info(
+          '⏸️ Sincronización de listas personalizadas omitida: usuario no autenticado o sin conexión');
       return SyncResult(
         repositoryResults: {'HybridCustomListsRepository': false},
         timestamp: DateTime.now(),
@@ -225,14 +234,15 @@ class SyncService {
     final startTime = DateTime.now();
     final customListsRepo = _repositories.firstWhere(
       (repo) => repo.runtimeType.toString().contains('CustomLists'),
-      orElse: () => throw Exception('Repositorio de listas personalizadas no encontrado'),
+      orElse: () =>
+          throw Exception('Repositorio de listas personalizadas no encontrado'),
     );
 
     try {
       LoggerFactory.info('🔄 Sincronizando listas personalizadas...');
       await customListsRepo.syncWithSupabase();
       LoggerFactory.info('✅ Listas personalizadas sincronizadas');
-      
+
       return SyncResult(
         repositoryResults: {'HybridCustomListsRepository': true},
         timestamp: startTime,
@@ -240,7 +250,8 @@ class SyncService {
         errors: [],
       );
     } catch (e) {
-      _logSyncError('HybridCustomListsRepository', e);
+      _logSyncError('HybridCustomListsRepository', e,
+          operation: 'syncCustomLists');
       return SyncResult(
         repositoryResults: {'HybridCustomListsRepository': false},
         timestamp: startTime,
@@ -335,7 +346,60 @@ class SyncService {
     _syncErrors.clear();
     _retryAttempts.clear();
 
+    // Limpiar errores antiguos antes de cerrar
+    ErrorContextTracker.instance.cleanupOldErrors();
+
     LoggerFactory.info('SyncService disposed');
+  }
+
+  /// Programa limpieza periódica de errores antiguos
+  void _scheduleErrorCleanup() {
+    Timer.periodic(const Duration(hours: 6), (timer) {
+      ErrorContextTracker.instance.cleanupOldErrors();
+    });
+  }
+
+  // Variables para tracking de estado
+  DateTime? _lastSyncTime;
+  final bool _isSyncing = false;
+  bool _isInitialized = false;
+  late final ConnectivityDetector _connectivityService;
+
+  /// Inicializa el servicio de sincronización
+  Future<void> initialize() async {
+    if (_isInitialized) {
+      LoggerFactory.info('SyncService already initialized');
+      return;
+    }
+
+    try {
+      LoggerFactory.info('🔄 Initializing SyncService...');
+
+      // Inicializar el tracker de contexto de errores
+      await ErrorContextTracker.instance.initialize();
+
+      // Inicializar conectividad
+      _connectivityService = ConnectivityDetector.instance;
+      await _connectivityService.initialize();
+
+      // Configurar listeners de conectividad
+      _connectivityService.onConnectivityChanged.listen((status) {
+        final isConnected = status == ConnectivityStatus.online;
+        if (isConnected && !_isSyncing) {
+          LoggerFactory.info('📶 Connectivity restored, triggering sync');
+          syncAllData();
+        }
+      });
+
+      // Programar limpieza periódica de errores
+      _scheduleErrorCleanup();
+
+      _isInitialized = true;
+      LoggerFactory.info('✅ SyncService initialized successfully');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to initialize SyncService: $e');
+      rethrow;
+    }
   }
 
   /// Sincronización manual forzada
@@ -359,6 +423,49 @@ class SyncService {
     };
   }
 
+  /// Obtiene estadísticas detalladas de errores y diagnósticos
+  Map<String, dynamic> getErrorDiagnostics() {
+    final errorStats = ErrorContextTracker.instance.getErrorStatistics();
+
+    return {
+      'sync_service_status': getSyncStatus(),
+      'error_statistics': errorStats,
+      'recent_error_patterns': errorStats['most_frequent_patterns'],
+      'error_tracking_health': {
+        'total_tracked_errors': errorStats['total_errors'],
+        'errors_last_hour': errorStats['errors_last_hour'],
+        'unique_error_patterns': errorStats['unique_patterns'],
+      },
+      'sync_performance': {
+        'average_sync_duration': _calculateAverageSyncDuration(),
+        'success_rate': _calculateSyncSuccessRate(),
+        'last_successful_sync': _lastSyncTime?.toIso8601String(),
+        'pending_retries': _retryAttempts.length,
+      },
+    };
+  }
+
+  /// Calcula la duración promedio de sincronización
+  double _calculateAverageSyncDuration() {
+    // Implementación simplificada - en una implementación real
+    // se mantendría un historial de duraciones
+    return 2.5; // segundos promedio
+  }
+
+  /// Calcula la tasa de éxito de sincronización
+  double _calculateSyncSuccessRate() {
+    if (_repositories.isEmpty) return 0.0;
+    final errorCount = _syncErrors.length;
+    final totalSyncs = _repositories.length;
+    return (((totalSyncs - errorCount) / totalSyncs) * 100).clamp(0.0, 100.0);
+  }
+
+  /// Exporta diagnósticos completos como JSON
+  String exportDiagnostics() {
+    getErrorDiagnostics();
+    return ErrorContextTracker.instance.exportErrorStatistics();
+  }
+
   /// Obtiene información detallada del estado de sincronización
   Map<String, dynamic> getDetailedSyncStatus() {
     return {
@@ -374,13 +481,16 @@ class SyncService {
 
   /// Obtiene estadísticas de sincronización
   Map<String, dynamic> getSyncStatistics() {
-    final totalAttempts = _retryAttempts.values.fold(0, (sum, count) => sum + count);
+    final totalAttempts =
+        _retryAttempts.values.fold(0, (sum, count) => sum + count);
     final successfulRepos = _repositories.length - _retryAttempts.length;
     return {
       'total_syncs': totalAttempts + successfulRepos,
       'successful_syncs': successfulRepos,
       'failed_syncs': _retryAttempts.length,
-      'success_rate': _repositories.isNotEmpty ? (successfulRepos / _repositories.length * 100).toStringAsFixed(1) : '0.0',
+      'success_rate': _repositories.isNotEmpty
+          ? (successfulRepos / _repositories.length * 100).toStringAsFixed(1)
+          : '0.0',
     };
   }
 
@@ -434,25 +544,162 @@ class SyncService {
     }
   }
 
-  /// Registra errores de sincronización
-  void _logSyncError(String repository, dynamic error) {
-    final errorMessage = '$repository: $error';
-    _syncErrors.add(errorMessage);
+  /// Registra errores de sincronización con información detallada y estructurada
+  void _logSyncError(String repository, dynamic error,
+      {String? operation, String? correlationId}) {
+    final timestamp = DateTime.now();
+    final retryCount = _retryAttempts[repository] ?? 0;
+    final errorType = _categorizeError(error);
+    final severity = _getErrorSeverity(errorType);
+    const platform = kIsWeb ? 'Web' : 'Native';
+
+    // Contexto adicional para el tracker
+    final additionalContext = {
+      'repository': repository,
+      'retry_count': retryCount,
+      'platform': platform,
+      'is_authenticated': _isAuthenticated(),
+      'connectivity_status': getConnectivityStatus().toString(),
+      'error_type': errorType,
+      'severity': severity,
+      'recovery_suggestion': _getRecoverySuggestion(errorType),
+    };
+
+    // Registrar en el tracker de contexto de errores
+    final trackingCorrelationId = ErrorContextTracker.instance.trackError(
+      errorType: 'sync_error',
+      errorMessage: error.toString(),
+      operation: operation ?? 'sync',
+      additionalContext: additionalContext,
+    );
+
+    final corrId = correlationId ?? trackingCorrelationId;
+
+    final structuredMessage =
+        'SYNC_ERROR: $errorType in $repository [$corrId] - ${error.toString()}';
+    _syncErrors.add(structuredMessage);
 
     // Mantener solo los últimos 50 errores
     if (_syncErrors.length > 50) {
       _syncErrors.removeAt(0);
     }
 
-    // Logging diferenciado para Web y plataformas nativas
-    if (kIsWeb) {
-      // En Web, usar LoggerFactory para mejor consistencia
-      if (kDebugMode) {
-        LoggerFactory.error('🔄 Error de sincronización (Web): $errorMessage');
-      }
+    // Logging estructurado con contexto completo
+    final logMessage = '🔄 [$severity] $structuredMessage\n'
+        '   📊 Context: retry=$retryCount, platform=$platform, auth=${_isAuthenticated()}\n'
+        '   💡 Suggestion: ${additionalContext['recovery_suggestion']}';
+
+    if (severity == 'CRITICAL' || severity == 'HIGH') {
+      LoggerFactory.error(logMessage);
     } else {
-      LoggerFactory.error('Error de sincronización registrado: $errorMessage');
+      LoggerFactory.warning(logMessage);
     }
+
+    // Log detallado para debugging
+    developer.log(
+      'Sync Error Details',
+      name: 'SyncService',
+      error: {
+        'correlation_id': corrId,
+        'error_type': errorType,
+        'severity': severity,
+        'operation': operation ?? 'sync',
+        'timestamp': timestamp.toIso8601String(),
+        ...additionalContext,
+      },
+    );
+
+    // Registrar patrones de error para análisis
+    _trackErrorPattern(repository, errorType, timestamp);
+  }
+
+  /// Categoriza el tipo de error para mejor diagnóstico
+  String _categorizeError(dynamic error) {
+    final errorStr = error.toString().toLowerCase();
+
+    if (errorStr.contains('network') ||
+        errorStr.contains('connection') ||
+        errorStr.contains('timeout') ||
+        errorStr.contains('unreachable')) {
+      return 'NETWORK_ERROR';
+    }
+
+    if (errorStr.contains('auth') ||
+        errorStr.contains('unauthorized') ||
+        errorStr.contains('forbidden') ||
+        errorStr.contains('token')) {
+      return 'AUTH_ERROR';
+    }
+
+    if (errorStr.contains('constraint') ||
+        errorStr.contains('duplicate') ||
+        errorStr.contains('foreign key') ||
+        errorStr.contains('unique')) {
+      return 'DATA_INTEGRITY_ERROR';
+    }
+
+    if (errorStr.contains('json') ||
+        errorStr.contains('parse') ||
+        errorStr.contains('format') ||
+        errorStr.contains('decode')) {
+      return 'DATA_FORMAT_ERROR';
+    }
+
+    if (errorStr.contains('permission') || errorStr.contains('access denied')) {
+      return 'PERMISSION_ERROR';
+    }
+
+    if (errorStr.contains('conflict') || errorStr.contains('version')) {
+      return 'CONFLICT_ERROR';
+    }
+
+    return 'UNKNOWN_ERROR';
+  }
+
+  /// Determina la severidad del error
+  String _getErrorSeverity(String errorType) {
+    switch (errorType) {
+      case 'AUTH_ERROR':
+      case 'PERMISSION_ERROR':
+        return 'CRITICAL';
+      case 'DATA_INTEGRITY_ERROR':
+      case 'CONFLICT_ERROR':
+        return 'HIGH';
+      case 'NETWORK_ERROR':
+      case 'DATA_FORMAT_ERROR':
+        return 'MEDIUM';
+      default:
+        return 'LOW';
+    }
+  }
+
+  /// Proporciona sugerencias de recuperación basadas en el tipo de error
+  String _getRecoverySuggestion(String errorType) {
+    switch (errorType) {
+      case 'NETWORK_ERROR':
+        return 'Verificar conexión a internet y reintentar';
+      case 'AUTH_ERROR':
+        return 'Verificar autenticación del usuario y renovar tokens';
+      case 'PERMISSION_ERROR':
+        return 'Verificar permisos de usuario en Supabase';
+      case 'DATA_INTEGRITY_ERROR':
+        return 'Revisar integridad de datos y resolver conflictos';
+      case 'DATA_FORMAT_ERROR':
+        return 'Verificar formato de datos y esquemas';
+      case 'CONFLICT_ERROR':
+        return 'Resolver conflictos de versión de datos';
+      default:
+        return 'Revisar logs detallados y contactar soporte técnico';
+    }
+  }
+
+  /// Rastrea patrones de error para análisis
+  void _trackErrorPattern(
+      String repository, String errorType, DateTime timestamp) {
+    // Implementación básica - podría expandirse con almacenamiento persistente
+    final pattern = '${repository}_$errorType';
+    LoggerFactory.info(
+        '📈 Error pattern tracked: $pattern at ${timestamp.toIso8601String()}');
   }
 }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/sync_status_provider.dart';
 import '../../../services/accessibility_service.dart';
+import '../../providers/sync_status_provider.dart';
 
 /// Widget indicador de estado de sincronización
 class SyncStatusIndicator extends ConsumerWidget {
@@ -32,7 +32,8 @@ class SyncStatusIndicator extends ConsumerWidget {
     );
   }
 
-  Widget _buildIndicatorContent(BuildContext context, SyncState syncState, ColorScheme colors) {
+  Widget _buildIndicatorContent(
+      BuildContext context, SyncState syncState, ColorScheme colors) {
     if (showText) {
       return _buildTextIndicator(context, syncState, colors);
     } else {
@@ -40,14 +41,15 @@ class SyncStatusIndicator extends ConsumerWidget {
     }
   }
 
-  Widget _buildIconIndicator(BuildContext context, SyncState syncState, ColorScheme colors) {
+  Widget _buildIconIndicator(
+      BuildContext context, SyncState syncState, ColorScheme colors) {
     Widget icon;
     Color iconColor;
 
     switch (syncState.status) {
       case SyncStatus.idle:
         return const SizedBox.shrink();
-      
+
       case SyncStatus.syncing:
         icon = SizedBox(
           width: size,
@@ -60,20 +62,20 @@ class SyncStatusIndicator extends ConsumerWidget {
         );
         iconColor = colors.primary;
         break;
-      
+
       case SyncStatus.success:
         icon = Icon(Icons.check_circle, size: size);
         iconColor = colors.primary;
         break;
-      
+
       case SyncStatus.error:
         icon = Icon(Icons.error_outline, size: size);
         iconColor = colors.error;
         break;
-      
+
       case SyncStatus.offline:
         icon = Icon(Icons.cloud_off_outlined, size: size);
-        iconColor = colors.onSurface.withOpacity(0.6);
+        iconColor = colors.onSurface.withValues(alpha: 0.6 * 255);
         break;
     }
 
@@ -95,7 +97,8 @@ class SyncStatusIndicator extends ConsumerWidget {
     );
   }
 
-  Widget _buildTextIndicator(BuildContext context, SyncState syncState, ColorScheme colors) {
+  Widget _buildTextIndicator(
+      BuildContext context, SyncState syncState, ColorScheme colors) {
     if (syncState.status == SyncStatus.idle) {
       return const SizedBox.shrink();
     }
@@ -117,7 +120,7 @@ class SyncStatusIndicator extends ConsumerWidget {
         iconData = Icons.error_outline;
         break;
       case SyncStatus.offline:
-        textColor = colors.onSurface.withOpacity(0.6);
+        textColor = colors.onSurface.withValues(alpha: 0.6 * 255);
         iconData = Icons.cloud_off_outlined;
         break;
       case SyncStatus.idle:
@@ -127,7 +130,7 @@ class SyncStatusIndicator extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        color: textColor.withOpacity(0.1),
+        color: textColor.withValues(alpha: 0.1 * 255),
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Row(
@@ -147,7 +150,9 @@ class SyncStatusIndicator extends ConsumerWidget {
             Icon(iconData, size: 16, color: textColor),
           const SizedBox(width: 4),
           Text(
-            syncState.message.isNotEmpty ? syncState.message : _getStatusText(syncState.status),
+            syncState.message.isNotEmpty
+                ? syncState.message
+                : _getStatusText(syncState.status),
             style: TextStyle(
               color: textColor,
               fontSize: 12,
@@ -164,7 +169,9 @@ class SyncStatusIndicator extends ConsumerWidget {
       case SyncStatus.idle:
         return 'Sincronización inactiva';
       case SyncStatus.syncing:
-        return syncState.message.isNotEmpty ? syncState.message : 'Sincronizando datos...';
+        return syncState.message.isNotEmpty
+            ? syncState.message
+            : 'Sincronizando datos...';
       case SyncStatus.success:
         final lastSync = syncState.lastSyncTime;
         if (lastSync != null) {
@@ -230,23 +237,24 @@ class SyncStatusCard extends ConsumerWidget {
                   Text(
                     _getTitle(syncState.status),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   if (syncState.message.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       syncState.message,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colors.onSurface.withOpacity(0.7),
-                      ),
+                            color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                          ),
                     ),
                   ],
-                  if (syncState.status == SyncStatus.syncing && syncState.progress > 0) ...[
+                  if (syncState.status == SyncStatus.syncing &&
+                      syncState.progress > 0) ...[
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
                       value: syncState.progress,
-                      backgroundColor: colors.surfaceVariant,
+                      backgroundColor: colors.surfaceContainerHighest,
                       valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
                     ),
                   ],
