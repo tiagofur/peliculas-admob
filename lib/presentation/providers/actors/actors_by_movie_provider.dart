@@ -29,17 +29,29 @@ class ActorsByMovieNotifier extends StateNotifier<Map<String, List<Actor>>> {
   }) : super({});
 
   final GetActorsCallback getActors;
+  bool _disposed = false;
 
   Future<void> loadActors(String movieId) async {
-    if (state[movieId] != null) return;
+    if (_disposed || state[movieId] != null) return;
 
-    final List<Actor> actors = await getActors(movieId);
-    state = {...state, movieId: actors};
+    try {
+      final List<Actor> actors = await getActors(movieId);
+      
+      // Verificar si el notifier fue disposed durante la operación asíncrona
+      if (!_disposed) {
+        state = {...state, movieId: actors};
+      }
+    } catch (e) {
+      // Si hay error y no estamos disposed, podemos manejarlo
+      if (!_disposed) {
+        // Mantener el estado actual sin cambios en caso de error
+      }
+    }
   }
 
   @override
   void dispose() {
-    // Limpiar recursos si es necesario
+    _disposed = true;
     super.dispose();
   }
 }

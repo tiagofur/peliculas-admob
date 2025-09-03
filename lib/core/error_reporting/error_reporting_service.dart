@@ -234,19 +234,36 @@ extension ErrorReportingZone on ErrorReportingService {
     String? zoneName,
     Map<String, dynamic>? customData,
   }) {
-    return runZonedGuarded(
-          body,
-          (error, stackTrace) {
-            reportError(
-              error,
-              stackTrace,
-              reason: zoneName != null ? 'Error in zone: $zoneName' : null,
-              data: customData,
-              fatal: false,
-            );
-          },
-        ) ??
-        (throw StateError('Zone body returned null'));
+    final result = runZonedGuarded(
+      body,
+      (error, stackTrace) {
+        reportError(
+          error,
+          stackTrace,
+          reason: zoneName != null ? 'Error in zone: $zoneName' : null,
+          data: customData,
+          fatal: false,
+        );
+      },
+    );
+    
+    // Handle the case where runZonedGuarded returns null
+    // This can happen when an exception is thrown in the zone
+    if (result == null) {
+      // For void functions, we can return a default value
+      try {
+        return null as R;
+      } catch (e) {
+        // If casting null to R fails, it means R is not nullable
+        // For non-nullable types, throw an error with more context
+        throw StateError(
+          'Zone body returned null in ${zoneName ?? "unknown zone"}. '
+          'This typically indicates an unhandled exception occurred in the zone.'
+        );
+      }
+    }
+    
+    return result;
   }
 
   /// Run async code in a zone with automatic error reporting
@@ -255,19 +272,36 @@ extension ErrorReportingZone on ErrorReportingService {
     String? zoneName,
     Map<String, dynamic>? customData,
   }) async {
-    return await runZonedGuarded(
-          body,
-          (error, stackTrace) {
-            reportError(
-              error,
-              stackTrace,
-              reason:
-                  zoneName != null ? 'Async error in zone: $zoneName' : null,
-              data: customData,
-              fatal: false,
-            );
-          },
-        ) ??
-        (throw StateError('Zone body returned null'));
+    final result = await runZonedGuarded(
+      body,
+      (error, stackTrace) {
+        reportError(
+          error,
+          stackTrace,
+          reason:
+              zoneName != null ? 'Async error in zone: $zoneName' : null,
+          data: customData,
+          fatal: false,
+        );
+      },
+    );
+    
+    // Handle the case where runZonedGuarded returns null
+    // This can happen when an exception is thrown in the zone
+    if (result == null) {
+      // For void functions, we can return a default value
+      try {
+        return null as R;
+      } catch (e) {
+        // If casting null to R fails, it means R is not nullable
+        // For non-nullable types, throw an error with more context
+        throw StateError(
+          'Zone body returned null in ${zoneName ?? "unknown zone"}. '
+          'This typically indicates an unhandled exception occurred in the zone.'
+        );
+      }
+    }
+    
+    return result;
   }
 }

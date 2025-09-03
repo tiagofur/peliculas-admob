@@ -708,6 +708,7 @@ final syncServiceProvider = Provider<SyncService>((ref) {
   final repositories = <SyncableRepository<dynamic>>[
     ref.watch(hybridFavoritesRepositoryProvider),
     ref.watch(hybridWatchedRepositoryProvider),
+    ref.watch(hybridWatchlistRepositoryProvider),
     ref.watch(hybridCustomListsRepositoryProvider),
   ];
 

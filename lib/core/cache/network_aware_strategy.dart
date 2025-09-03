@@ -102,13 +102,13 @@ class NetworkAwareStrategy {
 
       case NetworkCondition.offline:
         return const DownloadStrategy(
-          concurrentDownloads: 0,
-          downloadTimeout: Duration(seconds: 1),
-          retryAttempts: 0,
-          retryDelay: Duration(seconds: 10),
+          concurrentDownloads: 1, // Permitir al menos 1 descarga para verificar conectividad real
+          downloadTimeout: Duration(seconds: 15),
+          retryAttempts: 1,
+          retryDelay: Duration(seconds: 3),
           enablePreloading: false,
           preloadDistance: 0,
-          qualityPreference: ImageQuality.cached,
+          qualityPreference: ImageQuality.low,
           enableProgressiveLoading: false,
         );
 

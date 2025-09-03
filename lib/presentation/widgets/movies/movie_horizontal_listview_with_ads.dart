@@ -280,7 +280,7 @@ class _SlideState extends ConsumerState<_Slide>
                                 fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(20),
                                 enableHeroAnimation: true,
-                                heroTag: 'horizontal-ads-${widget.movie.id}',
+                                heroTag: 'horizontal-ads-${widget.movie.id}-${widget.index}',
                                 placeholder: Container(
                                   height: 220,
                                   width: 150,

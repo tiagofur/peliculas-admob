@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
-import '../../../services/hybrid_image_service.dart';
 import '../../providers/providers.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
@@ -158,54 +157,61 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
                             SizedBox(
                               height: 220,
                               width: 150,
-                              child: OptimizedImage(
-                                imageUrl: widget.movie.posterPath,
+                              child: Image.network(
+                                widget.movie.posterPath,
                                 fit: BoxFit.cover,
-                                borderRadius: BorderRadius.circular(20),
-                                enableHeroAnimation: true,
-                                heroTag: 'list-item-${widget.movie.id}',
-                                placeholder: Container(
-                                  height: 220,
-                                  width: 150,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[200],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.grey),
+                                width: 150,
+                                height: 220,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    height: 220,
+                                    width: 150,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
-                                  ),
-                                ),
-                                errorWidget: Container(
-                                  height: 220,
-                                  width: 150,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[900],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.movie_outlined,
-                                        size: 40,
-                                        color: Colors.grey[600],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.grey),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Imagen no\ndisponible',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 220,
+                                    width: 150,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[900],
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.movie_outlined,
+                                          size: 40,
                                           color: Colors.grey[600],
-                                          fontSize: 10,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Imagen no\ndisponible',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
 

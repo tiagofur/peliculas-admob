@@ -230,7 +230,7 @@ class _SlideState extends ConsumerState<_Slide>
                                 fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(20),
                                 enableHeroAnimation: true,
-                                heroTag: 'horizontal-${widget.movie.id}',
+                                heroTag: 'horizontal-basic-${widget.movie.id}-${widget.index}',
                                 placeholder: Container(
                                   height: 220,
                                   decoration: BoxDecoration(
