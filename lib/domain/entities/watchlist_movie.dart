@@ -66,7 +66,9 @@ class WatchlistMovie {
     this.movieVoteAverage,
     required this.priority,
     required this.addedAt,
-    required this.updatedAt,
+    required this.lastModifiedAt,
+    this.isDeleted = false,
+    this.syncStatus = 'synced',
   });
   @HiveField(0)
   final String id;
@@ -99,7 +101,13 @@ class WatchlistMovie {
   final DateTime addedAt;
 
   @HiveField(10)
-  final DateTime updatedAt;
+  final DateTime lastModifiedAt;
+
+  @HiveField(11)
+  final bool isDeleted;
+
+  @HiveField(12)
+  final String syncStatus;
 
   WatchlistMovie copyWith({
     String? id,
@@ -112,7 +120,9 @@ class WatchlistMovie {
     double? movieVoteAverage,
     WatchlistPriority? priority,
     DateTime? addedAt,
-    DateTime? updatedAt,
+    DateTime? lastModifiedAt,
+    bool? isDeleted,
+    String? syncStatus,
   }) {
     return WatchlistMovie(
       id: id ?? this.id,
@@ -125,7 +135,9 @@ class WatchlistMovie {
       movieVoteAverage: movieVoteAverage ?? this.movieVoteAverage,
       priority: priority ?? this.priority,
       addedAt: addedAt ?? this.addedAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
+      isDeleted: isDeleted ?? this.isDeleted,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 
@@ -135,12 +147,16 @@ class WatchlistMovie {
     return other is WatchlistMovie &&
         other.id == id &&
         other.movieId == movieId &&
-        other.priority == priority;
+        other.priority == priority &&
+        other.isDeleted == isDeleted;
   }
 
   @override
   int get hashCode {
-    return id.hashCode ^ movieId.hashCode ^ priority.hashCode;
+    return id.hashCode ^
+        movieId.hashCode ^
+        priority.hashCode ^
+        isDeleted.hashCode;
   }
 
   @override

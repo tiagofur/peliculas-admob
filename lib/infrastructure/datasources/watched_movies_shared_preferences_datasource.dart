@@ -24,6 +24,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
       final watchedMovie = WatchedMovie(
         movie: movie,
         watchedDate: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
       );
       watchedMoviesJson.add(jsonEncode(_watchedMovieToJson(watchedMovie)));
       await prefs.setStringList(_watchedMoviesKey, watchedMoviesJson);
@@ -79,6 +80,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
     return {
       'movie': _movieToJson(watchedMovie.movie),
       'watchedDate': watchedMovie.watchedDate.toIso8601String(),
+      'lastModifiedAt': watchedMovie.lastModifiedAt.toIso8601String(),
     };
   }
 
@@ -86,6 +88,7 @@ class WatchedMoviesSharedPreferencesDatasource extends WatchedMoviesDatasource {
     return WatchedMovie(
       movie: _movieFromJson(json['movie'] as Map<String, dynamic>? ?? {}),
       watchedDate: DateTime.tryParse(json['watchedDate'] as String? ?? '') ?? DateTime.now(),
+      lastModifiedAt: DateTime.tryParse(json['lastModifiedAt'] as String? ?? '') ?? DateTime.now(),
     );
   }
 

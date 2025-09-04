@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -112,41 +113,100 @@ class AppTheme {
     final baseTheme =
         isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
 
+    // Define fallback fonts for missing characters
+    const fontFallbacks = ['NotoSans', 'NotoColorEmoji'];
+
     if (isHighContrast) {
       // Enhanced contrast and weight for high contrast mode
       return baseTheme.copyWith(
         bodyLarge: baseTheme.bodyLarge?.copyWith(
           fontWeight: FontWeight.w600,
           color: isDark ? Colors.white : Colors.black,
+          fontFamilyFallback: fontFallbacks,
         ),
         bodyMedium: baseTheme.bodyMedium?.copyWith(
           fontWeight: FontWeight.w500,
           color: isDark ? Colors.white : Colors.black,
+          fontFamilyFallback: fontFallbacks,
         ),
         bodySmall: baseTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w500,
           color: isDark ? Colors.white : Colors.black,
+          fontFamilyFallback: fontFallbacks,
         ),
         titleLarge: baseTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
           color: isDark ? Colors.white : Colors.black,
+          fontFamilyFallback: fontFallbacks,
         ),
         titleMedium: baseTheme.titleMedium?.copyWith(
           fontWeight: FontWeight.w600,
           color: isDark ? Colors.white : Colors.black,
+          fontFamilyFallback: fontFallbacks,
         ),
         titleSmall: baseTheme.titleSmall?.copyWith(
           fontWeight: FontWeight.w600,
           color: isDark ? Colors.white : Colors.black,
+          fontFamilyFallback: fontFallbacks,
         ),
       );
     }
 
-    return baseTheme;
+    // Apply fallback fonts to regular theme as well
+    return baseTheme.copyWith(
+      bodyLarge: baseTheme.bodyLarge?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      bodyMedium: baseTheme.bodyMedium?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      bodySmall: baseTheme.bodySmall?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      titleLarge: baseTheme.titleLarge?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      titleMedium: baseTheme.titleMedium?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      titleSmall: baseTheme.titleSmall?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      headlineLarge: baseTheme.headlineLarge?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      headlineMedium: baseTheme.headlineMedium?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      headlineSmall: baseTheme.headlineSmall?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      displayLarge: baseTheme.displayLarge?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      displayMedium: baseTheme.displayMedium?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      displaySmall: baseTheme.displaySmall?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      labelLarge: baseTheme.labelLarge?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      labelMedium: baseTheme.labelMedium?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+      labelSmall: baseTheme.labelSmall?.copyWith(
+        fontFamilyFallback: fontFallbacks,
+      ),
+    );
   }
 
   // Configurar el color de la barra de estado
   void updateSystemUIOverlay([BuildContext? context]) {
+    // SystemChrome no es compatible con web
+    if (kIsWeb) return;
+    
     final isDark = _shouldUseDarkMode(context);
 
     SystemChrome.setSystemUIOverlayStyle(

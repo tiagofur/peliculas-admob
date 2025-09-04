@@ -703,7 +703,7 @@ class MovieReleaseNotificationService {
             final movie = Movie(
               adult: false,
               backdropPath: watchlistMovie.movieBackdropPath ?? '',
-              genreIds: [], // TODO: Se puede agregar si se almacena en watchlist
+              genreIds: [], // Géneros no disponibles en watchlist - se podrían obtener de TMDB si fuera necesario
               id: watchlistMovie.movieId,
               originalLanguage: 'es', // Valor por defecto
               originalTitle: watchlistMovie.movieTitle,
@@ -748,7 +748,7 @@ class MovieReleaseNotificationService {
             final movie = Movie(
               adult: false,
               backdropPath: watchlistMovie.movieBackdropPath ?? '',
-              genreIds: [], // TODO: Se puede agregar si se almacena en watchlist
+              genreIds: [], // Géneros no disponibles en watchlist - se podrían obtener de TMDB si fuera necesario
               id: watchlistMovie.movieId,
               originalLanguage: 'es', // Valor por defecto
               originalTitle: watchlistMovie.movieTitle,

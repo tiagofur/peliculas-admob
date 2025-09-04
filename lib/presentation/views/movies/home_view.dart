@@ -31,6 +31,8 @@ class HomeViewState extends ConsumerState<HomeView>
         ref.read(upcomingMoviesProvider.notifier).loadNextPage();
         // Cargar favoritos al iniciar la app
         ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+        // Cargar recomendaciones paginadas
+        ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
       }
     });
   }
@@ -40,6 +42,7 @@ class HomeViewState extends ConsumerState<HomeView>
     super.build(context);
 
     final initialLoading = ref.watch(initialLoadingProvider);
+    print('🏠 HomeView - initialLoading: $initialLoading');
     if (initialLoading) return const FullScreenLoader();
 
     final slideShowMovies = ref.watch(moviesSlideshowProvider);
@@ -77,6 +80,7 @@ class HomeViewState extends ConsumerState<HomeView>
 
               MovieHorizontalListviewWithAds(
                   movies: nowPlayingMovies,
+                  sectionId: 'now-playing',
                   title: 'En cines',
                   subTitle: 'Lunes 20',
                   loadNextPage: () => ref
@@ -116,6 +120,7 @@ class HomeViewState extends ConsumerState<HomeView>
               // Nueva sección de Tendencias
               MovieHorizontalListviewWithAds(
                 movies: popularMovies,
+                sectionId: 'popular',
                 title: 'Tendencias',
                 subTitle: 'Lo más popular ahora',
                 loadNextPage: () =>
@@ -162,6 +167,7 @@ class HomeViewState extends ConsumerState<HomeView>
 
               MovieHorizontalListviewWithAds(
                 movies: upcomingMovies,
+                sectionId: 'upcoming',
                 title: 'Próximamente',
                 subTitle: 'En este mes',
                 loadNextPage: () =>
@@ -199,6 +205,7 @@ class HomeViewState extends ConsumerState<HomeView>
 
               MovieHorizontalListviewWithAds(
                   movies: topRatedMovies,
+                  sectionId: 'top-rated',
                   title: 'Mejor calificadas',
                   subTitle: 'Desde siempre',
                   loadNextPage: () =>
@@ -254,79 +261,44 @@ class HomeViewState extends ConsumerState<HomeView>
 
   /// Construye la sección de recomendaciones personalizadas
   Widget _buildRecommendationsSection(WidgetRef ref) {
-    final recommendationsAsync = ref.watch(personalizedRecommendationsProvider);
+    final recommendationsState = ref.watch(paginatedRecommendationsProvider);
 
-    return recommendationsAsync.when(
-      data: (recommendations) {
-        if (recommendations.isEmpty) return const SizedBox.shrink();
+    if (recommendationsState.hasError) {
+      return const SizedBox.shrink();
+    }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header con botón para ver todas las recomendaciones
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Recomendado para ti',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Basado en tus gustos',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // Navigate to full recommendations view
-                      context.push('/recommendations');
-                    },
-                    child: const Text('Ver todos'),
-                  ),
-                ],
-              ),
-            ),
-            // Lista horizontal de recomendaciones
-            SizedBox(
-              height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: recommendations.take(10).length,
-                itemBuilder: (context, index) {
-                  final recommendation = recommendations[index];
-                  return _buildRecommendationCard(recommendation, context);
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-        );
-      },
-      loading: () => const Padding(
+    if (recommendationsState.movies.isEmpty &&
+        !recommendationsState.isLoading) {
+      return const SizedBox.shrink();
+    }
+
+    // Lista horizontal de recomendaciones con paginación
+    if (recommendationsState.movies.isNotEmpty) {
+      return MovieHorizontalListviewWithAds(
+        title: 'Recomendado para ti',
+        subTitle: 'Basado en tus gustos',
+        movies: recommendationsState.movies,
+        sectionId: 'recommendations',
+        loadNextPage: () {
+          ref.read(paginatedRecommendationsProvider.notifier).loadNextPage();
+        },
+        enableAds: true,
+      );
+    } else if (recommendationsState.isLoading) {
+      return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(
           child: CircularProgressIndicator(),
         ),
-      ),
-      error: (error, stack) => const SizedBox.shrink(),
-    );
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 
   /// Construye una tarjeta individual de recomendación
-  Widget _buildRecommendationCard(dynamic recommendation, BuildContext context) {
+  Widget _buildRecommendationCard(
+      dynamic recommendation, BuildContext context) {
     return Container(
       width: 120,
       margin: const EdgeInsets.only(right: 12),
@@ -350,7 +322,8 @@ class HomeViewState extends ConsumerState<HomeView>
                 child: recommendation.posterPath.isNotEmpty
                     ? FadeInImage.assetNetwork(
                         placeholder: 'assets/loaders/bottle-loader.gif',
-                        image: 'https://image.tmdb.org/t/p/w500${recommendation.posterPath}',
+                        image:
+                            'https://image.tmdb.org/t/p/w500${recommendation.posterPath}',
                         fit: BoxFit.cover,
                         imageErrorBuilder: (context, error, stackTrace) {
                           return Container(
@@ -386,21 +359,29 @@ class HomeViewState extends ConsumerState<HomeView>
             ),
             // Razón de la recomendación
             Container(
+              width:
+                  120, // Asegurar que no exceda el ancho del contenedor padre
               margin: const EdgeInsets.only(top: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1 * 255),
-                borderRadius: BorderRadius.circular(4),
+                color: Colors.blue.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.3),
+                  width: 0.5,
+                ),
               ),
               child: Text(
                 recommendation.reason,
                 style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.blue[700],
-                  fontWeight: FontWeight.w500,
+                  fontSize: 9,
+                  color: Colors.blue[800],
+                  fontWeight: FontWeight.w600,
+                  height: 1.2,
                 ),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
             ),
           ],

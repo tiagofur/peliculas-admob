@@ -99,7 +99,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
       'emoji': list.emoji,
       'movieIds': list.movieIds,
       'createdAt': list.createdAt.toIso8601String(),
-      'updatedAt': list.updatedAt.toIso8601String(),
+      'lastModifiedAt': list.lastModifiedAt.toIso8601String(),
       'isDefault': list.isDefault,
       'color': list.color,
     };
@@ -113,7 +113,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
       emoji: json['emoji'] as String,
       movieIds: List<int>.from(json['movieIds'] as List),
       createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      lastModifiedAt: DateTime.parse(json['lastModifiedAt'] as String),
       isDefault: json['isDefault'] as bool? ?? false,
       color: json['color'] as String? ?? 'blue',
     );

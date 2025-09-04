@@ -71,6 +71,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       final watchedMovie = WatchedMovie(
         movie: movie,
         watchedDate: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
       );
 
       await _watchedMoviesBox?.add(watchedMovie);

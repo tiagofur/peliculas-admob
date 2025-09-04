@@ -84,3 +84,13 @@ flutter:
   assets:
     - .env
     - assets/loaders/
+
+  fonts:
+    - family: NotoSans
+      fonts:
+        - asset: fonts/NotoSans-Regular.ttf
+        - asset: fonts/NotoSans-Bold.ttf
+          weight: 700
+    - family: NotoColorEmoji
+      fonts:
+        - asset: fonts/NotoColorEmoji.ttf

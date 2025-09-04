@@ -14,10 +14,10 @@ final watchedMoviesRepositoryProvider =
   // Usar SharedPreferences en web, Hive en otras plataformas
   if (kIsWeb) {
     final datasource = WatchedMoviesSharedPreferencesDatasource();
-    return WatchedMoviesRepositoryImpl(datasource);
+    return WatchedMoviesRepositoryImpl(datasource, ref);
   } else {
     final datasource = WatchedMoviesHiveDatasource();
-    return WatchedMoviesRepositoryImpl(datasource);
+    return WatchedMoviesRepositoryImpl(datasource, ref);
   }
 });
 

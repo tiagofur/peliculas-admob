@@ -31,11 +31,29 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   StorageMoviesNotifier({
     required this.favoritesRepository,
     required this.onMovieFavorited,
-  }) : super({});
+  }) : super({}) {
+    // Cargar favoritos existentes al inicializar
+    _loadExistingFavorites();
+  }
 
   int page = 0;
   final FavoritesRepository favoritesRepository;
   final VoidCallback onMovieFavorited;
+  
+  /// Cargar favoritos existentes al inicializar el provider
+  Future<void> _loadExistingFavorites() async {
+    try {
+      final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
+      if (favoriteMoviesMap.isNotEmpty) {
+        state = favoriteMoviesMap;
+      }
+    } catch (e) {
+      // Si hay error cargando, mantener estado vacío pero registrar el error
+      if (kDebugMode) {
+        print('Error cargando favoritos existentes: $e');
+      }
+    }
+  }
 
   Future<List<Movie>> loadNextPage() async {
     // Usar getFavoriteMovies del repositorio híbrido
@@ -73,6 +91,18 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     } else {
       state.remove(movie.id);
       state = {...state};
+    }
+  }
+
+  /// Refrescar el estado completo de favoritos (útil después de sync)
+  Future<void> refreshFavorites() async {
+    try {
+      final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
+      state = favoriteMoviesMap;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error refrescando favoritos: $e');
+      }
     }
   }
 

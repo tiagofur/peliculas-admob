@@ -35,7 +35,7 @@ class SyncableCustomList implements SoftDeletable {
       movieIds: customList.movieIds,
       isPublic: customList.isPublic,
       createdAt: customList.createdAt,
-      updatedAt: customList.updatedAt,
+      updatedAt: customList.lastModifiedAt,
       isDeleted: isDeleted,
       deletedAt: deletedAt,
     );
@@ -89,7 +89,7 @@ class SyncableCustomList implements SoftDeletable {
       movieIds: movieIds,
       isPublic: isPublic,
       createdAt: createdAt,
-      updatedAt: updatedAt,
+      lastModifiedAt: updatedAt,
     );
   }
 
@@ -200,12 +200,7 @@ class SyncableCustomList implements SoftDeletable {
         ')';
   }
 
-  /// Implementación de SoftDeletable
-  @override
-  String get entityId => id;
 
-  @override
-  DateTime get lastModified => updatedAt;
 
   /// Función auxiliar para comparar listas
   bool _listEquals<T>(List<T> a, List<T> b) {

@@ -54,7 +54,7 @@ async function diagnosticSync() {
         movie_overview: "Test overview",
         movie_release_date: "2023-01-01",
         movie_vote_average: 8.5,
-        updated_at: new Date().toISOString(),
+        last_modified_at: new Date().toISOString(),
       };
 
       const { data: insertData, error: insertError } = await supabase
@@ -190,7 +190,7 @@ async function diagnosticSync() {
         "Esta es una película de prueba para verificar la sincronización",
       movie_release_date: "2023-01-01",
       movie_vote_average: 8.5,
-      updated_at: new Date().toISOString(),
+      last_modified_at: new Date().toISOString(),
     };
 
     console.log("⬆️ Insertando favorito de prueba...");

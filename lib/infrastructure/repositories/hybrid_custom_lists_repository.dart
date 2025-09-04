@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
-import '../../core/services/persistent_sync_queue.dart';
+import '../services/persistent_sync_queue.dart';
 import '../../core/sync/conflict_resolution/conflict_detector.dart';
 import '../../core/sync/conflict_resolution/conflict_metrics_service.dart';
 import '../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
@@ -16,7 +16,6 @@ import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../datasources/custom_lists_shared_preferences_datasource.dart';
 import '../services/connectivity_detector.dart';
-// Removed unused import
 import '../sync/conflict_statistics_service.dart';
 
 // Repositorio híbrido que maneja listas personalizadas localmente y sincroniza con Supabase
@@ -35,14 +34,13 @@ class HybridCustomListsRepository
 
     // Inicializar componentes de resolución de conflictos
     _conflictResolver = conflictResolver ?? MultiplataformConflictResolver();
-    // Removed unused _severityClassifier
     _statisticsService = ConflictStatisticsService();
+    _softDeleteManager = softDeleteManager ?? SoftDeleteManager();
     _conflictDetector = conflictDetector ??
         ConflictDetector(
           _softDeleteManager,
           _statisticsService,
         );
-    _softDeleteManager = softDeleteManager ?? SoftDeleteManager();
     _metricsService = metricsService ?? ConflictMetricsService();
 
     // Registrar estrategia específica para listas personalizadas
@@ -55,7 +53,7 @@ class HybridCustomListsRepository
   }
 
   Future<void> _initializeQueue() async {
-    await _syncQueue.initialize();
+    await _syncQueue.init();
   }
 
   final CustomListsSharedPreferencesDatasource _localDatasource;
@@ -65,7 +63,6 @@ class HybridCustomListsRepository
 
   // Componentes del nuevo sistema de resolución de conflictos
   late final MultiplataformConflictResolver _conflictResolver;
-  // Removed unused _severityClassifier
   late final ConflictStatisticsService _statisticsService;
   late final ConflictDetector _conflictDetector;
   late final SoftDeleteManager _softDeleteManager;
@@ -151,7 +148,7 @@ class HybridCustomListsRepository
 
       LoggerFactory.info(
           '📝 Agregando operación a la cola: ${operation.type.name} para lista ${list.name}');
-      await _syncQueue.enqueue(operation);
+      await _syncQueue.addItem(operation.id);
     }
 
     try {
@@ -184,7 +181,7 @@ class HybridCustomListsRepository
 
       LoggerFactory.info(
           '📝 Agregando operación a la cola: ${operation.type.name} para lista ${list.name}');
-      await _syncQueue.enqueue(operation);
+      await _syncQueue.addItem(operation.id);
     }
 
     try {
@@ -214,7 +211,7 @@ class HybridCustomListsRepository
 
       LoggerFactory.info(
           '📝 Agregando operación a la cola: ${operation.type.name} para lista $listId');
-      await _syncQueue.enqueue(operation);
+      await _syncQueue.addItem(operation.id);
     }
 
     try {
@@ -231,7 +228,7 @@ class HybridCustomListsRepository
   Future<void> clearAllCustomLists() async {
     try {
       await _localDatasource.clearAllCustomLists();
-      await _syncQueue.clearCompleted();
+      await _syncQueue.clear();
     } catch (e) {
       throw LocalStorageException(
           'Error al limpiar las listas personalizadas: $e');
@@ -255,7 +252,7 @@ class HybridCustomListsRepository
           'color_hex': list.emoji, // Usando emoji como color por ahora
           'is_public': false,
           'created_at': list.createdAt.toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
+          'last_modified_at': DateTime.now().toIso8601String(),
           'deleted_at': null, // ✅ Marcar como activo (no eliminado)
         });
 
@@ -280,7 +277,7 @@ class HybridCustomListsRepository
       // ✅ Soft delete de elementos de la lista
       await _supabase.from('user_list_items').update({
         'deleted_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'last_modified_at': DateTime.now().toIso8601String(),
       }).eq('list_id', listId);
 
       // ✅ Soft delete de la lista
@@ -288,7 +285,7 @@ class HybridCustomListsRepository
           .from('user_lists')
           .update({
             'deleted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
+            'last_modified_at': DateTime.now().toIso8601String(),
           })
           .eq('id', listId)
           .eq('user_id', userId);
@@ -324,7 +321,7 @@ class HybridCustomListsRepository
           'movie_vote_average': null,
           'order_index': i,
           'added_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
+          'last_modified_at': DateTime.now().toIso8601String(),
           'deleted_at': null, // ✅ Marcar como activo
         });
       }
@@ -392,33 +389,17 @@ class HybridCustomListsRepository
     }
   }
 
-  @override
-  Future<void> markForSync(String itemId) async {
-    // Las operaciones se agregan automáticamente a la cola
-    LoggerFactory.info(
-        '📝 Marcador de sincronización agregado automáticamente: $itemId');
-  }
 
   @override
   Future<bool> hasPendingSync() async {
-    final stats = _syncQueue.getStats();
-    return stats.pendingOperations > 0;
+    return !await _syncQueue.isEmpty;
   }
 
   @override
   Future<List<String>> getPendingSyncItems() async {
-    final operations = _syncQueue.getPendingOperations();
-    return operations
-        .map((op) => '${op.data['listId']}_${op.type.name}')
-        .toList();
+    return await _syncQueue.getItems();
   }
 
-  @override
-  Future<void> clearSyncMarker(String itemId) async {
-    // Las operaciones se limpian automáticamente por la cola
-    LoggerFactory.info(
-        '🧹 Marcador de sincronización limpiado automáticamente: $itemId');
-  }
 
   // Implementación de métodos abstractos faltantes
   @override
@@ -558,13 +539,13 @@ class HybridCustomListsRepository
         // Aplicar soft delete remotamente para la lista
         await _supabase.from('user_lists').update({
           'deleted_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
+          'last_modified_at': DateTime.now().toIso8601String(),
         }).eq('id', resolvedItem.id);
 
         // Aplicar soft delete a los elementos de la lista
         await _supabase.from('user_list_items').update({
           'deleted_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
+          'last_modified_at': DateTime.now().toIso8601String(),
         }).eq('list_id', resolvedItem.id);
 
         // Remover localmente
@@ -588,7 +569,7 @@ class HybridCustomListsRepository
         'color_hex': resolvedItem.emoji,
         'is_public': resolvedItem.isPublic,
         'created_at': resolvedItem.createdAt.toIso8601String(),
-        'updated_at': resolvedItem.updatedAt.toIso8601String(),
+        'last_modified_at': resolvedItem.updatedAt.toIso8601String(),
         'deleted_at': null, // Asegurar que no esté marcado como eliminado
       });
 
@@ -658,7 +639,7 @@ class HybridCustomListsRepository
       movieIds: movieIds,
       isPublic: data['is_public'] as bool? ?? false,
       createdAt: DateTime.tryParse(data['created_at'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(data['updated_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(data['last_modified_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 }

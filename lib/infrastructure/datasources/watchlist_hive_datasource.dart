@@ -46,7 +46,7 @@ class WatchlistHiveDatasource {
       movieVoteAverage: movie.voteAverage,
       priority: priority,
       addedAt: now,
-      updatedAt: now,
+      lastModifiedAt: now,
     );
 
     // Usar movieId como key para facilitar búsqueda
@@ -66,7 +66,7 @@ class WatchlistHiveDatasource {
     if (existingMovie != null) {
       final updatedMovie = existingMovie.copyWith(
         priority: priority,
-        updatedAt: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
       );
       await _watchlistBox.put(movieId, updatedMovie);
     }

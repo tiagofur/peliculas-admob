@@ -30,10 +30,27 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
   Widget build(BuildContext context) {
     final isInWatchlist =
         ref.watch(isMovieInWatchlistProvider(widget.movie.id));
-    final theme = Theme.of(context);
+    final watchlistMovie = ref.watch(watchlistMovieProvider(widget.movie.id));
 
     return isInWatchlist.when(
       data: (inWatchlist) {
+        // Get priority color if movie is in watchlist
+        Color? iconColor;
+        Color? backgroundColor;
+        if (inWatchlist && watchlistMovie.hasValue && watchlistMovie.value != null) {
+          // Usar color específico según la prioridad
+          iconColor = _getPriorityColor(watchlistMovie.value!.priority);
+          backgroundColor = iconColor;
+        } else if (inWatchlist) {
+          // Fallback si está en watchlist pero no hay información de prioridad
+          iconColor = Colors.yellow; // Color por defecto para prioridad normal
+          backgroundColor = Colors.yellow;
+        } else {
+          // NO está en watchlist - usar color blanco con contorno
+          iconColor = Colors.white;
+          backgroundColor = null;
+        }
+
         if (widget.isIconButton) {
           return IconButton(
             onPressed:
@@ -46,7 +63,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                   )
                 : Icon(
                     inWatchlist ? Icons.bookmark : Icons.bookmark_border,
-                    color: inWatchlist ? theme.primaryColor : null,
+                    color: iconColor,
                   ),
             tooltip:
                 inWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
@@ -70,7 +87,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
               ? Text(inWatchlist ? 'En Watchlist' : 'Agregar a Watchlist')
               : const SizedBox.shrink(),
           style: ElevatedButton.styleFrom(
-            backgroundColor: inWatchlist ? theme.primaryColor : null,
+            backgroundColor: backgroundColor,
             foregroundColor: inWatchlist ? Colors.white : null,
           ),
         );
@@ -129,6 +146,13 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
           .read(watchlistProvider.notifier)
           .removeFromWatchlist(widget.movie.id);
 
+      // Refrescar el estado de watchlist para asegurar consistencia
+      await ref.read(watchlistProvider.notifier).refresh();
+
+      // Invalidate providers to update UI immediately
+      ref.invalidate(watchlistMovieProvider(widget.movie.id));
+      ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -170,6 +194,13 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
         await ref
             .read(watchlistProvider.notifier)
             .addToWatchlist(widget.movie, result);
+
+        // Refrescar el estado de watchlist para asegurar consistencia
+        await ref.read(watchlistProvider.notifier).refresh();
+        
+        // Invalidate providers to update UI immediately
+        ref.invalidate(watchlistMovieProvider(widget.movie.id));
+        ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
 
         // Track analytics event for add to watchlist
         await AnalyticsService().trackEvent(
@@ -302,9 +333,21 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
       case WatchlistPriority.alta:
         return Colors.red;
       case WatchlistPriority.normal:
-        return Colors.orange;
+        return Colors.yellow;
       case WatchlistPriority.baja:
         return Colors.green;
     }
+  }
+}
+
+// Helper function for priority colors
+Color _getPriorityColor(WatchlistPriority priority) {
+  switch (priority) {
+    case WatchlistPriority.alta:
+      return Colors.red;
+    case WatchlistPriority.normal:
+      return Colors.yellow;
+    case WatchlistPriority.baja:
+      return Colors.green;
   }
 }

@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
-import '../../core/services/persistent_sync_queue.dart';
+import '../services/persistent_sync_queue.dart';
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../services/connectivity_detector.dart';
@@ -31,7 +31,7 @@ abstract class BaseHybridRepository<T extends Syncable>
   /// Initialize common components for sync functionality
   Future<void> _initializeComponents() async {
     _syncQueue = PersistentSyncQueue();
-    await _syncQueue.initialize();
+    await _syncQueue.init();
     LoggerFactory.info('📦 $runtimeType initialized');
   }
 
@@ -132,30 +132,16 @@ abstract class BaseHybridRepository<T extends Syncable>
   /// Get pending sync operations from the queue
   @override
   Future<List<String>> getPendingSyncItems() async {
-    final operations = _syncQueue.getPendingOperations();
-    return operations.map((op) => op.id).toList();
+    return await _syncQueue.getItems();
   }
 
   /// Check if there are pending sync operations
   @override
   Future<bool> hasPendingSync() async {
-    final stats = _syncQueue.getStats();
-    return stats.pendingOperations > 0;
+    return !await _syncQueue.isEmpty;
   }
 
-  /// Clear sync markers for a specific item
-  @override
-  Future<void> clearSyncMarker(String itemId) async {
-    LoggerFactory.info('🧹 Clearing sync marker for: $itemId');
-    // Sync operations are automatically cleared when completed
-  }
 
-  /// Mark an item for sync (legacy method, now uses sync queue)
-  @override
-  Future<void> markForSync(String itemId) async {
-    LoggerFactory.warning('markForSync legacy method called for: $itemId');
-    // This method is kept for compatibility but should use enqueue with SyncOperation
-  }
 
   /// Clear local data (useful for logout)
   Future<void> clearLocalData() async {

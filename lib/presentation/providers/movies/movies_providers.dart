@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 
-import '../../../domain/entities/movie.dart';
-import '../error_reporting_provider.dart';
+import '../../../domain/entities/entities.dart';
 import 'movies_repository_provider.dart';
 
 enum MoviesState {
@@ -65,71 +65,65 @@ final topRatedMoviesProvider =
 
 typedef MovieCallback = Future<List<Movie>> Function({int page});
 
-class MoviesNotifier extends StateNotifier<MoviesStateData> with ErrorReportingMixin<MoviesStateData> {
+class MoviesNotifier extends StateNotifier<MoviesStateData> {
   MoviesNotifier({
     required this.fetchMoreMovies,
-  }) : super(const MoviesStateData());
+  }) : super(const MoviesStateData()) {
+    if (kDebugMode) {
+      print('🎬 MoviesNotifier creado');
+    }
+  }
 
   int currentPage = 0;
   final MovieCallback fetchMoreMovies;
   static const int maxRetries = 3;
 
-  Future<void> loadNextPage({int retryCount = 0}) async {
-    if (state.state == MoviesState.loading) return;
-
-    // Si es la primera página, mostrar estado de carga
-    if (currentPage == 0) {
-      state = state.copyWith(state: MoviesState.loading);
+  Future<void> loadNextPage() async {
+    if (kDebugMode) {
+      print('🔄 loadNextPage llamado - isLoading: ${state.state == MoviesState.loading}, isLastPage: ${state.hasReachedMax}');
     }
+    
+    if (state.state == MoviesState.loading || state.hasReachedMax) return;
+
+    if (kDebugMode) {
+      print('📥 Iniciando carga de página ${currentPage + 1}');
+    }
+    
+    state = state.copyWith(state: MoviesState.loading);
 
     try {
-      await runWithErrorReporting(
-        () async {
-          currentPage++;
-          final List<Movie> movies = await fetchMoreMovies(page: currentPage);
-          
-          // Simular delay solo en desarrollo
-          await Future.delayed(const Duration(milliseconds: 300));
-          
-          final updatedMovies = [...state.movies, ...movies];
-          state = state.copyWith(
-            movies: updatedMovies,
-            state: MoviesState.loaded,
-            errorMessage: null,
-            hasReachedMax: movies.isEmpty,
-          );
-        },
-        operationName: 'loadNextPage',
-        customData: {
-          'page': currentPage + 1,
-          'retry_count': retryCount,
-          'current_movies_count': state.movies.length,
-        },
-      );
-    } catch (e, stackTrace) {
-      // Report error with context
-      await reportError(
-        e,
-        stackTrace,
-        context: 'loadNextPage',
-        data: {
-          'page': currentPage + 1,
-          'retry_count': retryCount,
-          'max_retries': maxRetries,
-          'current_movies_count': state.movies.length,
-        },
-        fatal: false,
-      );
-
-      // Implementar reintentos automáticos
-      if (retryCount < maxRetries) {
-        await Future.delayed(Duration(seconds: (retryCount + 1) * 2));
-        currentPage--; // Revertir el incremento de página
-        return loadNextPage(retryCount: retryCount + 1);
-      }
+      final movies = await fetchMoreMovies(page: currentPage + 1);
       
-      // Si fallan todos los reintentos, mostrar error
-      currentPage--; // Revertir el incremento de página
+      if (kDebugMode) {
+        print('✅ Películas obtenidas: ${movies.length}');
+      }
+
+      currentPage++;
+
+      if (movies.isEmpty) {
+        if (kDebugMode) {
+          print('🚫 No hay más películas - marcando como última página');
+        }
+        state = state.copyWith(
+          state: MoviesState.loaded,
+          hasReachedMax: true,
+        );
+        return;
+      }
+
+      state = state.copyWith(
+        hasReachedMax: false,
+        state: MoviesState.loaded,
+        movies: [...state.movies, ...movies],
+      );
+      
+      if (kDebugMode) {
+        print('🎯 Estado actualizado - Total películas: ${state.movies.length}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error al cargar películas: $e');
+      }
       state = state.copyWith(
         state: MoviesState.error,
         errorMessage: 'Error al cargar películas: ${e.toString()}',
@@ -138,17 +132,19 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> with ErrorReportingM
   }
 
   Future<void> refresh() async {
-    await runWithErrorReporting(
-      () async {
-        currentPage = 0;
-        state = const MoviesStateData();
-        await loadNextPage();
-      },
-      operationName: 'refresh',
-      customData: {
-        'previous_movies_count': state.movies.length,
-      },
-    );
+    try {
+      currentPage = 0;
+      state = const MoviesStateData();
+      await loadNextPage();
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error al refrescar películas: $e');
+      }
+      state = state.copyWith(
+        state: MoviesState.error,
+        errorMessage: 'Error al refrescar películas: ${e.toString()}',
+      );
+    }
   }
 
   void clearError() {

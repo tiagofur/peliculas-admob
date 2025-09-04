@@ -9,7 +9,7 @@ class SupabaseConfig {
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
-      debug: false,
+      debug: true, // Activar debug para diagnosticar problemas de cache
       realtimeClientOptions: const RealtimeClientOptions(
         eventsPerSecond: 10,
         logLevel: RealtimeLogLevel.info,

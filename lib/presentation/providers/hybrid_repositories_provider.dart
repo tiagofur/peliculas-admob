@@ -10,10 +10,13 @@ import '../../infrastructure/datasources/custom_lists_shared_preferences_datasou
 import '../../infrastructure/datasources/favorite_movies_shared_preferences_datasource.dart';
 import '../../infrastructure/datasources/isar_datasource.dart';
 import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
+import '../../infrastructure/repositories/custom_lists_repository_impl.dart'
+    as impl;
 import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
 import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
 import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
+import '../../infrastructure/repositories/watched_movies_repository_impl.dart';
 
 // Provider for the unified favorites repository interface
 final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
@@ -37,9 +40,9 @@ final watchedMoviesRepositoryProvider =
     Provider<WatchedMoviesRepository>((ref) {
   final watchedHiveDatasource = ref.watch(watchedMoviesHiveDatasourceProvider);
 
-  return HybridWatchedRepository(
-    hiveDatasource: watchedHiveDatasource,
-    ref: ref,
+  return WatchedMoviesRepositoryImpl(
+    watchedHiveDatasource,
+    ref,
   );
 });
 
@@ -58,10 +61,10 @@ final watchedMoviesHiveDatasourceProvider =
 final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
   final localDatasource = ref.watch(customListsLocalDatasourceProvider);
 
-  return HybridCustomListsRepository(
-    localDatasource: localDatasource,
-    ref: ref,
-  ) as CustomListsRepository;
+  return impl.CustomListsRepositoryImpl(
+    localDatasource,
+    ref,
+  );
 });
 
 // Provider for the unified watchlist repository interface

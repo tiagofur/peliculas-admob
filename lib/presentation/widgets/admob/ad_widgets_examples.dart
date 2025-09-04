@@ -69,6 +69,7 @@ class AdWidgetsExamples extends StatelessWidget {
         const SizedBox(height: 8),
         MovieHorizontalListviewWithAds(
           movies: movies,
+          sectionId: 'example-popular',
           title: 'Películas Populares',
           subTitle: 'Ver todas',
           adFrequency: 5,
@@ -366,6 +367,7 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
                   // Lista horizontal con configuración actual
                   MovieHorizontalListviewWithAds(
                     movies: _generateSampleMovies(20),
+                    sectionId: 'config-demo',
                     title: 'Vista Previa - Lista Horizontal',
                     adFrequency: _horizontalAdFrequency,
                     enableAds: _enableHorizontalAds,

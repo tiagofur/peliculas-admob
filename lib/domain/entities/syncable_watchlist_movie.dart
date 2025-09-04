@@ -44,7 +44,7 @@ class SyncableWatchlistMovie implements SoftDeletable, Syncable {
       movieVoteAverage: movie.movieVoteAverage,
       priority: movie.priority,
       addedAt: movie.addedAt,
-      updatedAt: movie.updatedAt,
+      updatedAt: movie.lastModifiedAt,
       deletedAt: deletedAt,
       isSynced: isSynced,
       needsSync: needsSync,
@@ -127,7 +127,7 @@ class SyncableWatchlistMovie implements SoftDeletable, Syncable {
       movieVoteAverage: movieVoteAverage,
       priority: priority,
       addedAt: addedAt,
-      updatedAt: updatedAt,
+      lastModifiedAt: updatedAt,
     );
   }
 

@@ -6,6 +6,10 @@ import 'package:peliculas/core/logging/logger_factory.dart';
 
 /// Tests unitarios para los componentes de caché adaptativo
 void main() {
+  setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+  });
+
   group('Adaptive Cache Components Unit Tests', () {
     test('AdaptiveCacheConfig should initialize with device detection',
         () async {

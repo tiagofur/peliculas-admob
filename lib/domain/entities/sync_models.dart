@@ -76,7 +76,7 @@ class SyncableFavorite extends SyncableEntity {
       movieVoteAverage: json['movie_vote_average'] as double?,
       addedAt: DateTime.parse(json['added_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      updatedAt: DateTime.parse(json['last_modified_at'] as String),
       deletedAt: json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
@@ -176,7 +176,7 @@ class SyncableFavorite extends SyncableEntity {
       'movie_vote_average': movieVoteAverage,
       'added_at': addedAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'last_modified_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
     };
   }
@@ -240,7 +240,7 @@ class SyncableCustomList extends SyncableEntity {
       movieIds: List<int>.from(json['movie_ids'] as List),
       isPublic: json['is_public'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      updatedAt: DateTime.parse(json['last_modified_at'] as String),
       deletedAt: json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
@@ -259,7 +259,7 @@ class SyncableCustomList extends SyncableEntity {
       color: customList.color,
       movieIds: customList.movieIds,
       createdAt: customList.createdAt,
-      updatedAt: customList.updatedAt,
+      updatedAt: customList.lastModifiedAt,
     );
   }
   final String userId;
@@ -282,7 +282,7 @@ class SyncableCustomList extends SyncableEntity {
       'movie_ids': movieIds,
       'is_public': isPublic,
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'last_modified_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
     };
   }
@@ -297,7 +297,7 @@ class SyncableCustomList extends SyncableEntity {
       color: color,
       movieIds: movieIds,
       createdAt: createdAt,
-      updatedAt: updatedAt,
+      lastModifiedAt: updatedAt,
       isDefault: false,
     );
   }
@@ -379,7 +379,7 @@ class SyncableWatchedMovie extends SyncableEntity {
       movieVoteAverage: json['movie_vote_average'] as double?,
       watchedAt: DateTime.parse(json['watched_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      updatedAt: DateTime.parse(json['last_modified_at'] as String),
       deletedAt: json['deleted_at'] != null
           ? DateTime.parse(json['deleted_at'] as String)
           : null,
@@ -461,7 +461,7 @@ class SyncableWatchedMovie extends SyncableEntity {
       'movie_vote_average': movieVoteAverage,
       'watched_at': watchedAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'last_modified_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
     };
   }
@@ -492,6 +492,7 @@ class SyncableWatchedMovie extends SyncableEntity {
     return WatchedMovie(
       movie: movie,
       watchedDate: watchedAt,
+      lastModifiedAt: updatedAt,
     );
   }
 

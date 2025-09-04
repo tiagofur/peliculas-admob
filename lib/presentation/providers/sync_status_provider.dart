@@ -272,6 +272,11 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
     _updateStatus(SyncStatus.success, 'Datos actualizados');
   }
 
+  /// Método público para establecer estado idle
+  void setIdle() {
+    _updateStatus(SyncStatus.idle, '');
+  }
+
   @override
   void dispose() {
     _statusCheckTimer?.cancel();

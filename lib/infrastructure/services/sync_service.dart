@@ -4,10 +4,11 @@ import 'dart:developer' as developer;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/sync_result.dart';
-import '../../domain/entities/user.dart';
+import '../../domain/entities/user.dart' as app_user;
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/hybrid_repositories_provider.dart';
@@ -24,7 +25,7 @@ class SyncService {
   }) : _repositories = repositories;
 
   final List<SyncableRepository<dynamic>> _repositories;
-  final User? Function() getCurrentUser;
+  final app_user.User? Function() getCurrentUser;
   final ConnectivityStatus Function() getConnectivityStatus;
   Timer? _syncTimer;
   Timer? _retryTimer;
@@ -363,7 +364,7 @@ class SyncService {
   DateTime? _lastSyncTime;
   final bool _isSyncing = false;
   bool _isInitialized = false;
-  late final ConnectivityDetector _connectivityService;
+  ConnectivityDetector? _connectivityService;
 
   /// Inicializa el servicio de sincronización
   Future<void> initialize() async {
@@ -380,10 +381,10 @@ class SyncService {
 
       // Inicializar conectividad
       _connectivityService = ConnectivityDetector.instance;
-      await _connectivityService.initialize();
+      await _connectivityService!.initialize();
 
       // Configurar listeners de conectividad
-      _connectivityService.onConnectivityChanged.listen((status) {
+      _connectivityService!.onConnectivityChanged.listen((status) {
         final isConnected = status == ConnectivityStatus.online;
         if (isConnected && !_isSyncing) {
           LoggerFactory.info('📶 Connectivity restored, triggering sync');
@@ -530,9 +531,16 @@ class SyncService {
       // En Web, usar una verificación diferente porque connectivity_plus
       // puede no funcionar correctamente en todos los navegadores
       if (kIsWeb) {
-        // Para Web, asumir que hay conexión a menos que se pueda verificar lo contrario
-        // TODO: Implementar una verificación más robusta para Web si es necesario
-        return true;
+        // Verificación simplificada para Web usando ping a Supabase
+        try {
+          final supabase = Supabase.instance.client;
+          await supabase.from('user_favorites').select('id').limit(1);
+          return true; // Si no lanza excepción, hay conexión
+        } catch (e) {
+          // Si falla la verificación, asumir sin conexión
+          LoggerFactory.warning('Verificación de conectividad Web falló: $e');
+          return false;
+        }
       }
 
       final connectivityResults = await Connectivity().checkConnectivity();

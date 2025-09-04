@@ -385,7 +385,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
                         ),
                         const Spacer(),
                         Text(
-                          'Actualizada ${_formatDate(list.updatedAt)}',
+                          'Actualizada ${_formatDate(list.lastModifiedAt)}',
                           style: TextStyle(
                             fontSize: 10,
                             color: colors.onSurface.withValues(alpha: 0.5),

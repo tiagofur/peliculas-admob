@@ -1,8 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,7 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'config/constants/environment.dart';
 import 'config/deep_links/deep_link_handler.dart';
 import 'config/router/app_router.dart';
-import 'config/theme/app_theme.dart';
+import 'config/theme/app_theme.dart' as app_theme;
 import 'config/theme/custom_scroll_behavior.dart';
 import 'core/config/supabase_config.dart';
 import 'core/error_reporting/error_reporting_service.dart';
@@ -26,6 +27,8 @@ import 'infrastructure/services/app_lifecycle_manager.dart';
 import 'infrastructure/services/auth_session_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
 import 'infrastructure/services/cross_platform_init_service.dart';
+import 'infrastructure/services/realtime_sync_service.dart';
+import 'infrastructure/services/sync_service.dart';
 import 'infrastructure/services/token_refresh_service.dart';
 import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
@@ -229,15 +232,44 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MainApp()));
 }
 
+/// Convierte el ThemeMode personalizado al ThemeMode de Flutter
+material.ThemeMode _convertToFlutterThemeMode(app_theme.ThemeMode themeMode) {
+  switch (themeMode) {
+    case app_theme.ThemeMode.system:
+      return material.ThemeMode.system;
+    case app_theme.ThemeMode.light:
+      return material.ThemeMode.light;
+    case app_theme.ThemeMode.dark:
+      return material.ThemeMode.dark;
+  }
+}
+
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    initializeDateFormatting();
+  material.Widget build(material.BuildContext context, WidgetRef ref) {
+    // Watch locale state first to get current locale
+    final localeState = ref.watch(localeNotifierProvider);
+    final currentLocale = localeState.locale?.languageCode ?? 'es';
+
+    // Initialize date formatting for the current locale
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        initializeDateFormatting(currentLocale, null);
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory.info(
+              'Date formatting already initialized or error: $e');
+        }
+      }
+    });
 
     // INICIALIZAR SYNC LISTENER - Esto es CRÍTICO para que funcione la sincronización automática
     ref.watch(authSyncListenerProvider);
+
+    // INICIALIZAR SINCRONIZACIÓN EN TIEMPO REAL
+    ref.watch(realtimeSyncServiceProvider);
 
     // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
     ref.watch(syncInitializationProvider);
@@ -250,6 +282,18 @@ class MainApp extends ConsumerWidget {
 
     // INICIALIZAR ERROR REPORTING USER CONTEXT
     ref.watch(errorReportingUserContextProvider);
+
+    // INITIALIZE SYNC SERVICE
+    try {
+      ref.read(syncServiceProvider).initialize();
+      if (kDebugMode) {
+        LoggerFactory.info('✅ Sync service initialized');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        LoggerFactory.error('❌ Error initializing sync service: $e');
+      }
+    }
 
     // Remover el splash screen solo en plataformas móviles
     if (!kIsWeb) {
@@ -264,15 +308,12 @@ class MainApp extends ConsumerWidget {
       });
     }
 
-    final AppTheme appTheme = ref.watch(themeNotifierProvider.select(
-      (theme) => AppTheme(
+    final app_theme.AppTheme appTheme = ref.watch(themeNotifierProvider.select(
+      (theme) => app_theme.AppTheme(
         selectedColor: theme.selectedColor,
         themeMode: theme.themeMode,
       ),
     ));
-
-    // Watch locale state
-    final localeState = ref.watch(localeNotifierProvider);
 
     // Usar el router provider con autenticación
     final router = ref.watch(appRouterProvider);
@@ -286,19 +327,24 @@ class MainApp extends ConsumerWidget {
 
     // Usar MaterialApp regular para web para evitar problemas de compatibilidad
     if (kIsWeb) {
-      return ScrollConfiguration(
+      return material.ScrollConfiguration(
         behavior: CustomScrollBehavior(),
-        child: MaterialApp.router(
+        child: material.MaterialApp.router(
           routerConfig: router,
           debugShowCheckedModeBanner: false,
-          theme: appTheme.getTheme(),
+          theme: appTheme.getTheme(context),
+          darkTheme: app_theme.AppTheme(
+            selectedColor: appTheme.selectedColor,
+            themeMode: app_theme.ThemeMode.dark,
+          ).getTheme(context),
+          themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
           locale: localeState.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
             // Actualizar la UI del sistema cuando cambie el tema
             appTheme.updateSystemUIOverlay(context);
-            return child ?? const SizedBox.shrink();
+            return child ?? const material.SizedBox.shrink();
           },
         ),
       );
@@ -307,14 +353,19 @@ class MainApp extends ConsumerWidget {
     return PiPMaterialApp.router(
       routerConfig: router,
       debugShowCheckedModeBanner: false,
-      theme: appTheme.getTheme(),
+      theme: appTheme.getTheme(context),
+      darkTheme: app_theme.AppTheme(
+        selectedColor: appTheme.selectedColor,
+        themeMode: app_theme.ThemeMode.dark,
+      ).getTheme(context),
+      themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
       locale: localeState.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
         // Actualizar la UI del sistema cuando cambie el tema
         appTheme.updateSystemUIOverlay(context);
-        return child ?? const SizedBox.shrink();
+        return child ?? const material.SizedBox.shrink();
       },
       pipParams: const PiPParams(
         pipWindowHeight: 200,

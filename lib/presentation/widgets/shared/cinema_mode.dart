@@ -1,5 +1,6 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -90,6 +91,9 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   }
 
   void _enterCinemaMode() {
+    // SystemChrome no es compatible con web
+    if (kIsWeb) return;
+    
     // Ocultar barra de estado y navegación
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
@@ -101,6 +105,9 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   }
 
   void _exitCinemaMode() {
+    // SystemChrome no es compatible con web
+    if (kIsWeb) return;
+    
     // Restaurar UI del sistema
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 

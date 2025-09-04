@@ -8,6 +8,9 @@ class WatchedMovie {
   WatchedMovie({
     required this.movie,
     required this.watchedDate,
+    required this.lastModifiedAt,
+    this.isDeleted = false,
+    this.syncStatus = 'synced',
   });
 
   @HiveField(0)
@@ -15,6 +18,15 @@ class WatchedMovie {
   
   @HiveField(1)
   final DateTime watchedDate;
+
+  @HiveField(2)
+  final DateTime lastModifiedAt;
+
+  @HiveField(3)
+  final bool isDeleted;
+
+  @HiveField(4)
+  final String syncStatus;
 
   // Métodos de conveniencia para acceder a propiedades de la película
   int get id => movie.id;

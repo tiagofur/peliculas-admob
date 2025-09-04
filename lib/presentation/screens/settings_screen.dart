@@ -5,6 +5,7 @@ import '../../config/theme/app_theme.dart' as app_theme;
 import '../../generated/app_localizations.dart';
 import '../providers/locale/locale_provider.dart';
 import '../providers/theme/theme_provider.dart';
+import '../widgets/sync_debug_widget.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -121,6 +122,9 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
+          // Widget de debug para sincronización (solo en debug mode)
+          const SyncDebugWidget(),
+
           // Información adicional
           Card(
             child: Padding(
@@ -164,45 +168,35 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref,
       ThemeState themeState, AppLocalizations l10n) {
-    return Column(
-      children: [
-        RadioListTile<app_theme.ThemeMode>(
-          value: app_theme.ThemeMode.system,
-          groupValue: themeState.themeMode,
-          onChanged: (value) {
-            if (value != null) {
-              ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-            }
-          },
-          title: Text(l10n.system),
-          subtitle: Text(l10n.systemThemeSubtitle),
-          secondary: const Icon(Icons.brightness_auto),
-        ),
-        RadioListTile<app_theme.ThemeMode>(
-          value: app_theme.ThemeMode.light,
-          groupValue: themeState.themeMode,
-          onChanged: (value) {
-            if (value != null) {
-              ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-            }
-          },
-          title: Text(l10n.light),
-          subtitle: Text(l10n.lightThemeSubtitle),
-          secondary: const Icon(Icons.light_mode),
-        ),
-        RadioListTile<app_theme.ThemeMode>(
-          value: app_theme.ThemeMode.dark,
-          groupValue: themeState.themeMode,
-          onChanged: (value) {
-            if (value != null) {
-              ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-            }
-          },
-          title: Text(l10n.dark),
-          subtitle: Text(l10n.darkThemeSubtitle),
-          secondary: const Icon(Icons.dark_mode),
-        ),
-      ],
+    return RadioGroup<app_theme.ThemeMode>(
+      groupValue: themeState.themeMode,
+      onChanged: (value) {
+        if (value != null) {
+          ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+        }
+      },
+      child: Column(
+        children: [
+          RadioListTile<app_theme.ThemeMode>(
+            value: app_theme.ThemeMode.system,
+            title: Text(l10n.system),
+            subtitle: Text(l10n.systemThemeSubtitle),
+            secondary: const Icon(Icons.brightness_auto),
+          ),
+          RadioListTile<app_theme.ThemeMode>(
+            value: app_theme.ThemeMode.light,
+            title: Text(l10n.light),
+            subtitle: Text(l10n.lightThemeSubtitle),
+            secondary: const Icon(Icons.light_mode),
+          ),
+          RadioListTile<app_theme.ThemeMode>(
+            value: app_theme.ThemeMode.dark,
+            title: Text(l10n.dark),
+            subtitle: Text(l10n.darkThemeSubtitle),
+            secondary: const Icon(Icons.dark_mode),
+          ),
+        ],
+      ),
     );
   }
 
@@ -212,31 +206,27 @@ class SettingsScreen extends ConsumerWidget {
     final currentLocale = localeState.locale ??
         Locale(Localizations.localeOf(context).languageCode);
 
-    return Column(
-      children: [
-        RadioListTile<String>(
-          value: 'es',
-          groupValue: currentLocale.languageCode,
-          onChanged: (value) {
-            if (value != null) {
-              localeNotifier.setLocale(Locale(value));
-            }
-          },
-          title: Text(l10n.spanish),
-          secondary: const Icon(Icons.language),
-        ),
-        RadioListTile<String>(
-          value: 'en',
-          groupValue: currentLocale.languageCode,
-          onChanged: (value) {
-            if (value != null) {
-              localeNotifier.setLocale(Locale(value));
-            }
-          },
-          title: Text(l10n.english),
-          secondary: const Icon(Icons.language),
-        ),
-      ],
+    return RadioGroup<String>(
+      groupValue: currentLocale.languageCode,
+      onChanged: (value) {
+        if (value != null) {
+          localeNotifier.setLocale(Locale(value));
+        }
+      },
+      child: Column(
+        children: [
+          RadioListTile<String>(
+            value: 'es',
+            title: Text(l10n.spanish),
+            secondary: const Icon(Icons.language),
+          ),
+          RadioListTile<String>(
+            value: 'en',
+            title: Text(l10n.english),
+            secondary: const Icon(Icons.language),
+          ),
+        ],
+      ),
     );
   }
 

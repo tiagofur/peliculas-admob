@@ -40,4 +40,13 @@ abstract class CustomListsRepository {
 
   /// Check if there are pending sync operations
   Future<bool> hasPendingSync();
+
+  /// Get default lists
+  Future<List<CustomList>> getDefaultLists();
+
+  /// Save custom lists
+  Future<void> saveCustomLists(List<CustomList> lists);
+
+  /// Save default lists
+  Future<void> saveDefaultLists(List<CustomList> lists);
 }

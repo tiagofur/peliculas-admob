@@ -36,7 +36,7 @@ class SyncPerformanceOptimizer {
           _supabase.from('user_favorites').select().eq('user_id', userId);
 
       if (lastSync != null) {
-        remoteQuery = remoteQuery.gt('updated_at', lastSync.toIso8601String());
+        remoteQuery = remoteQuery.gt('last_modified_at', lastSync.toIso8601String());
       }
 
       await remoteQuery;
@@ -93,10 +93,10 @@ class SyncPerformanceOptimizer {
           _supabase.from('user_watched_movies').select().eq('user_id', userId);
 
       if (lastSync != null) {
-        remoteQuery = remoteQuery.gt('updated_at', lastSync.toIso8601String());
+        remoteQuery = remoteQuery.gt('last_modified_at', lastSync.toIso8601String());
       }
 
-      await remoteQuery.order('updated_at', ascending: false);
+      await remoteQuery.order('last_modified_at', ascending: false);
 
       // Procesar en lotes optimizados
       final batches = _createBatches(localWatched, batchSize);
@@ -147,7 +147,7 @@ class SyncPerformanceOptimizer {
           _supabase.from('user_lists').select().eq('user_id', userId);
 
       if (lastSync != null) {
-        listsQuery = listsQuery.gt('updated_at', lastSync.toIso8601String());
+        listsQuery = listsQuery.gt('last_modified_at', lastSync.toIso8601String());
       }
 
       await listsQuery;
@@ -201,7 +201,7 @@ class SyncPerformanceOptimizer {
               'movie_title': movie.title,
               'movie_poster_path': movie.posterPath,
               'created_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
+              'last_modified_at': DateTime.now().toIso8601String(),
             })
         .toList();
 
@@ -328,7 +328,7 @@ class SyncPerformanceOptimizer {
                 'movie_poster_path': movie.posterPath,
                 'watched_at': DateTime.now().toIso8601String(),
                 'created_at': DateTime.now().toIso8601String(),
-                'updated_at': DateTime.now().toIso8601String(),
+                'last_modified_at': DateTime.now().toIso8601String(),
               })
           .toList();
 
@@ -364,7 +364,7 @@ class SyncPerformanceOptimizer {
                 'description': list.description,
                 'color_hex': list.color,
                 'created_at': list.createdAt.toIso8601String(),
-                'updated_at': list.updatedAt.toIso8601String(),
+                'last_modified_at': list.lastModifiedAt.toIso8601String(),
               })
           .toList();
 

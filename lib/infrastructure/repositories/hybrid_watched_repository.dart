@@ -38,7 +38,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
       movieVoteAverage: data['movie_vote_average']?.toDouble(),
       watchedAt: DateTime.parse(data['watched_at']),
       createdAt: DateTime.parse(data['created_at']),
-      updatedAt: DateTime.parse(data['updated_at']),
+      updatedAt: DateTime.parse(data['last_modified_at']),
       rating: data['rating']?.toDouble(),
       review: data['review'],
       traktId: data['trakt_id'],
@@ -61,7 +61,8 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
       'rating': watchedMovie.rating,
       'review': watchedMovie.review,
       'trakt_id': watchedMovie.traktId,
-      'updated_at': DateTime.now().toIso8601String(),
+      'is_deleted': false,
+      'last_modified_at': DateTime.now().toIso8601String(),
     };
   }
 
@@ -89,7 +90,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     if (userId != null) {
       final operation =
           SyncOperationFactory.markWatched(userId: userId, movieId: movie.id);
-      await syncQueue.enqueue(operation);
+      await syncQueue.addItem(operation.id);
     }
 
     // 3. Sync if online and authenticated
@@ -120,7 +121,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     if (userId != null && isAuthenticated()) {
       final operation =
           SyncOperationFactory.unmarkWatched(userId: userId, movieId: movieId);
-      await syncQueue.enqueue(operation);
+      await syncQueue.addItem(operation.id);
 
       try {
         await checkOnline();
@@ -175,7 +176,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
         'movie_release_date': movie.releaseDate.toIso8601String().split('T')[0],
         'movie_vote_average': movie.voteAverage,
         'watched_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'last_modified_at': DateTime.now().toIso8601String(),
         'deleted_at': null,
       }, onConflict: 'user_id,movie_id');
 
@@ -196,7 +197,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
           .from('user_watched_movies')
           .update({
             'deleted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
+            'last_modified_at': DateTime.now().toIso8601String(),
           })
           .eq('user_id', userId)
           .eq('movie_id', movieId);

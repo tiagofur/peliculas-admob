@@ -1,20 +1,28 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+
 import '../../domain/datasources/watched_movies_datasource.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/watched_movies_repository.dart';
 
 class WatchedMoviesRepositoryImpl extends WatchedMoviesRepository {
-  WatchedMoviesRepositoryImpl(this.datasource);
+  WatchedMoviesRepositoryImpl(this.datasource, this.ref);
 
   final WatchedMoviesDatasource datasource;
+  final Ref ref;
 
   @override
-  Future<void> markAsWatched(Movie movie) {
-    return datasource.markAsWatched(movie);
+  Future<void> markAsWatched(Movie movie) async {
+    await datasource.markAsWatched(movie);
+
+    // La sincronización se manejará automáticamente
   }
 
   @override
-  Future<void> removeFromWatched(int movieId) {
-    return datasource.removeFromWatched(movieId);
+  Future<void> removeFromWatched(int movieId) async {
+    await datasource.removeFromWatched(movieId);
+
+    // La sincronización se manejará automáticamente
   }
 
   @override

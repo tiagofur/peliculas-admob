@@ -16,7 +16,7 @@ class ErrorContextTracker {
   final Map<String, DateTime> _lastErrorTimes = {};
 
   /// Información del dispositivo/plataforma
-  late final Map<String, dynamic> _deviceInfo;
+  Map<String, dynamic>? _deviceInfo;
   bool _isInitialized = false;
 
   /// Inicializa el tracker con información del dispositivo
@@ -84,7 +84,7 @@ class ErrorContextTracker {
       operation: operation,
       tableName: tableName,
       timestamp: timestamp,
-      deviceInfo: _deviceInfo,
+      deviceInfo: _deviceInfo ?? {'platform': 'unknown'},
       additionalContext: additionalContext ?? {},
     );
 
@@ -193,7 +193,7 @@ class ErrorContextTracker {
       'unique_patterns': _errorPatterns.length,
       'error_type_breakdown': errorTypeBreakdown,
       'most_frequent_patterns': _getMostFrequentPatterns(5),
-      'device_info': _deviceInfo,
+      'device_info': _deviceInfo ?? {'platform': 'unknown'},
       'tracking_since': _errorPatterns.values
           .expand((list) => list)
           .map((e) => e.timestamp)

@@ -36,7 +36,17 @@ class WatchlistState {
 /// Notifier para la gestión de watchlist
 class WatchlistNotifier extends StateNotifier<WatchlistState> {
   WatchlistNotifier(this._repository) : super(const WatchlistState()) {
-    loadWatchlist();
+    _initializeWatchlist();
+  }
+  
+  /// Inicializar watchlist cargando todos los datos existentes
+  Future<void> _initializeWatchlist() async {
+    try {
+      // Cargar toda la watchlist al inicio para tener el estado completo
+      await loadWatchlist(limit: 1000, refresh: true);
+    } catch (e) {
+      state = state.copyWith(error: 'Error inicializando watchlist: $e');
+    }
   }
 
   final HybridWatchlistRepository _repository;
@@ -126,7 +136,7 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
         if (movie.movieId == movieId) {
           return movie.copyWith(
             priority: newPriority,
-            updatedAt: DateTime.now(),
+            lastModifiedAt: DateTime.now(),
           );
         }
         return movie;
@@ -187,16 +197,40 @@ final watchlistProvider =
 
 /// Provider para verificar si una película específica está en watchlist
 final isMovieInWatchlistProvider =
-    FutureProvider.family<bool, int>((ref, movieId) async {
-  final repository = ref.watch(hybridWatchlistRepositoryProvider);
-  return await repository.isMovieInWatchlist(movieId);
+    Provider.family.autoDispose<AsyncValue<bool>, int>((ref, movieId) {
+  final watchlistState = ref.watch(watchlistProvider);
+  
+  if (watchlistState.isLoading) {
+    return const AsyncValue.loading();
+  }
+  
+  if (watchlistState.error != null) {
+    return AsyncValue.error(watchlistState.error!, StackTrace.current);
+  }
+  
+  final isInWatchlist = watchlistState.movies.any((movie) => movie.movieId == movieId);
+  return AsyncValue.data(isInWatchlist);
 });
 
 /// Provider para obtener una película específica de watchlist
 final watchlistMovieProvider =
-    FutureProvider.family<WatchlistMovie?, int>((ref, movieId) async {
-  final repository = ref.watch(hybridWatchlistRepositoryProvider);
-  return await repository.getWatchlistMovie(movieId);
+    Provider.family.autoDispose<AsyncValue<WatchlistMovie?>, int>((ref, movieId) {
+  final watchlistState = ref.watch(watchlistProvider);
+  
+  if (watchlistState.isLoading) {
+    return const AsyncValue.loading();
+  }
+  
+  if (watchlistState.error != null) {
+    return AsyncValue.error(watchlistState.error!, StackTrace.current);
+  }
+  
+  try {
+    final movie = watchlistState.movies.firstWhere((movie) => movie.movieId == movieId);
+    return AsyncValue.data(movie);
+  } catch (e) {
+    return const AsyncValue.data(null);
+  }
 });
 
 /// Provider para conteo total de watchlist

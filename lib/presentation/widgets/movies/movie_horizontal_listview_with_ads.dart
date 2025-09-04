@@ -20,6 +20,7 @@ class MovieHorizontalListviewWithAds extends StatefulWidget {
   const MovieHorizontalListviewWithAds({
     super.key,
     required this.movies,
+    required this.sectionId,
     this.title,
     this.subTitle,
     this.loadNextPage,
@@ -28,6 +29,7 @@ class MovieHorizontalListviewWithAds extends StatefulWidget {
   });
 
   final List<Movie> movies;
+  final String sectionId;
   final String? title;
   final String? subTitle;
   final VoidCallback? loadNextPage;
@@ -119,6 +121,7 @@ class _MovieHorizontalListviewWithAdsState
                       child: _Slide(
                         movie: item.movie!,
                         index: index,
+                        sectionId: widget.sectionId,
                       ),
                     );
                   }
@@ -133,10 +136,11 @@ class _MovieHorizontalListviewWithAdsState
 }
 
 class _Slide extends ConsumerStatefulWidget {
-  const _Slide({required this.movie, required this.index});
+  const _Slide({required this.movie, required this.index, required this.sectionId});
 
   final Movie movie;
   final int index;
+  final String sectionId;
 
   @override
   ConsumerState<_Slide> createState() => _SlideState();
@@ -280,7 +284,7 @@ class _SlideState extends ConsumerState<_Slide>
                                 fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(20),
                                 enableHeroAnimation: true,
-                                heroTag: 'horizontal-ads-${widget.movie.id}-${widget.index}',
+                                heroTag: 'horizontal-ads-${widget.sectionId}-${widget.movie.id}-${widget.index}',
                                 placeholder: Container(
                                   height: 220,
                                   width: 150,

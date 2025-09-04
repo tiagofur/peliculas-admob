@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../config/constants/environment.dart';
 import '../../domain/datasources/movies_datasource.dart';
@@ -15,7 +16,8 @@ class MoviedbDatasource extends MoviesDatasource {
       },
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 15),
-      sendTimeout: const Duration(seconds: 10)));
+      // sendTimeout no es compatible con la plataforma web sin un cuerpo de request
+      sendTimeout: kIsWeb ? null : const Duration(seconds: 10)));
 
   List<Movie> _jsonToMovies(Map<String, dynamic> json) {
     final movieDBResponse = MovieDbResponse.fromJson(json);
@@ -30,52 +32,118 @@ class MoviedbDatasource extends MoviesDatasource {
 
   @override
   Future<List<Movie>> getNowPlaying({int page = 1}) async {
+    if (kDebugMode) {
+      print('🌐 API Call: getNowPlaying - página $page');
+      print('🔑 API Key: ${Environment.theMovieDbKey}');
+    }
     try {
       final response =
           await dio.get('/movie/now_playing', queryParameters: {'page': page});
-      return _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('✅ API Response: getNowPlaying - Status: ${response.statusCode}');
+      }
+      final movies = _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('🎬 Películas obtenidas: ${movies.length}');
+      }
+      return movies;
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('❌ DioException en getNowPlaying: ${e.message}');
+        print('❌ Response: ${e.response?.data}');
+      }
       throw Exception('Error al obtener películas en cartelera: ${e.message}');
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ Exception en getNowPlaying: $e');
+      }
       throw Exception('Error inesperado al obtener películas en cartelera: $e');
     }
   }
 
   @override
   Future<List<Movie>> getPopular({int page = 1}) async {
+    if (kDebugMode) {
+      print('🌐 API Call: getPopular - página $page');
+    }
     try {
       final response =
           await dio.get('/movie/popular', queryParameters: {'page': page});
-      return _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('✅ API Response: getPopular - Status: ${response.statusCode}');
+      }
+      final movies = _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('🎬 Películas populares obtenidas: ${movies.length}');
+      }
+      return movies;
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('❌ DioException en getPopular: ${e.message}');
+      }
       throw Exception('Error al obtener películas populares: ${e.message}');
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ Exception en getPopular: $e');
+      }
       throw Exception('Error inesperado al obtener películas populares: $e');
     }
   }
 
   @override
   Future<List<Movie>> getTopRated({int page = 1}) async {
+    if (kDebugMode) {
+      print('🌐 API Call: getTopRated - página $page');
+    }
     try {
       final response =
           await dio.get('/movie/top_rated', queryParameters: {'page': page});
-      return _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('✅ API Response: getTopRated - Status: ${response.statusCode}');
+      }
+      final movies = _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('🎬 Películas top rated obtenidas: ${movies.length}');
+      }
+      return movies;
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('❌ DioException en getTopRated: ${e.message}');
+      }
       throw Exception('Error al obtener películas mejor valoradas: ${e.message}');
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ Exception en getTopRated: $e');
+      }
       throw Exception('Error inesperado al obtener películas mejor valoradas: $e');
     }
   }
 
   @override
   Future<List<Movie>> getUpcoming({int page = 1}) async {
+    if (kDebugMode) {
+      print('🌐 API Call: getUpcoming - página $page');
+    }
     try {
       final response =
           await dio.get('/movie/upcoming', queryParameters: {'page': page});
-      return _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('✅ API Response: getUpcoming - Status: ${response.statusCode}');
+      }
+      final movies = _jsonToMovies(response.data);
+      if (kDebugMode) {
+        print('🎬 Películas upcoming obtenidas: ${movies.length}');
+      }
+      return movies;
     } on DioException catch (e) {
+      if (kDebugMode) {
+        print('❌ DioException en getUpcoming: ${e.message}');
+      }
       throw Exception('Error al obtener próximas películas: ${e.message}');
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ Exception en getUpcoming: $e');
+      }
       throw Exception('Error inesperado al obtener próximas películas: $e');
     }
   }

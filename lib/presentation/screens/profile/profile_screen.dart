@@ -496,81 +496,107 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Consumer(
-                  builder: (context, ref, child) {
-                    final recentRatingsAsync =
-                        ref.watch(ratings.recentRatingsProvider(5));
-                    final ratingStatsAsync =
-                        ref.watch(ratings.userRatingStatsProvider);
+                // TODO: Temporarily disabled due to missing 'user_movie_ratings' table in Supabase
+                // This section uses recentRatingsProvider and userRatingStatsProvider which cause PostgrestException
+                // Re-enable after the database table is properly created and migrated
+                
+                // Consumer(
+                //   builder: (context, ref, child) {
+                //     final recentRatingsAsync =
+                //         ref.watch(ratings.recentRatingsProvider(5));
+                //     final ratingStatsAsync =
+                //         ref.watch(ratings.userRatingStatsProvider);
 
-                    return Column(
-                      children: [
-                        // Estadísticas de valoraciones
-                        ratingStatsAsync.when(
-                          data: (stats) => _buildRatingStats(theme, stats),
-                          loading: () => const CircularProgressIndicator(),
-                          error: (error, stack) => const SizedBox.shrink(),
+                //     return Column(
+                //       children: [
+                //         // Estadísticas de valoraciones
+                //         ratingStatsAsync.when(
+                //           data: (stats) => _buildRatingStats(theme, stats),
+                //           loading: () => const CircularProgressIndicator(),
+                //           error: (error, stack) => const SizedBox.shrink(),
+                //         ),
+                //         const SizedBox(height: 16),
+
+                //         // Valoraciones recientes
+                //         recentRatingsAsync.when(
+                //           data: (ratings) {
+                //             if (ratings.isEmpty) {
+                //               return Column(
+                //                 children: [
+                //                   Icon(
+                //                     Icons.star_border,
+                //                     size: 48,
+                //                     color: theme.colorScheme.onSurface
+                //                         .withValues(alpha: 0.3),
+                //                   ),
+                //                   const SizedBox(height: 8),
+                //                   Text(
+                //                     'Aún no has valorado ninguna película',
+                //                     style: theme.textTheme.bodyMedium?.copyWith(
+                //                       color: theme.colorScheme.onSurface
+                //                           .withValues(alpha: 0.6),
+                //                     ),
+                //                     textAlign: TextAlign.center,
+                //                   ),
+                //                 ],
+                //               );
+                //             }
+
+                //             return Column(
+                //               children: [
+                //                 Text(
+                //                   'Valoraciones Recientes',
+                //                   style: theme.textTheme.bodyLarge?.copyWith(
+                //                     fontWeight: FontWeight.w600,
+                //                   ),
+                //                 ),
+                //                 const SizedBox(height: 12),
+                //                 ...ratings.take(3).map((rating) => Padding(
+                //                       padding: const EdgeInsets.only(bottom: 8),
+                //                       child: _buildRatingItem(theme, rating),
+                //                     )),
+                //                 if (ratings.length > 3)
+                //                   TextButton(
+                //                     onPressed: () => showAllRatings(context),
+                //                     child: const Text(
+                //                         'Ver todas mis valoraciones'),
+                //                   ),
+                //               ],
+                //             );
+                //           },
+                //           loading: () => const CircularProgressIndicator(),
+                //           error: (error, stack) => Text(
+                //             'Error al cargar valoraciones',
+                //             style: theme.textTheme.bodySmall?.copyWith(
+                //               color: Colors.red,
+                //             ),
+                //           ),
+                //         ),
+                //       ],
+                //     );
+                //   },
+                // ),
+                
+                // Temporary placeholder while ratings feature is disabled
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.star_border,
+                        size: 48,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Función de valoraciones temporalmente deshabilitada',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                         ),
-                        const SizedBox(height: 16),
-
-                        // Valoraciones recientes
-                        recentRatingsAsync.when(
-                          data: (ratings) {
-                            if (ratings.isEmpty) {
-                              return Column(
-                                children: [
-                                  Icon(
-                                    Icons.star_border,
-                                    size: 48,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.3),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Aún no has valorado ninguna película',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.6),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              );
-                            }
-
-                            return Column(
-                              children: [
-                                Text(
-                                  'Valoraciones Recientes',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                ...ratings.take(3).map((rating) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 8),
-                                      child: _buildRatingItem(theme, rating),
-                                    )),
-                                if (ratings.length > 3)
-                                  TextButton(
-                                    onPressed: () => showAllRatings(context),
-                                    child: const Text(
-                                        'Ver todas mis valoraciones'),
-                                  ),
-                              ],
-                            );
-                          },
-                          loading: () => const CircularProgressIndicator(),
-                          error: (error, stack) => Text(
-                            'Error al cargar valoraciones',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: Colors.red,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -19,17 +19,26 @@ class WatchedMovieAdapter extends TypeAdapter<WatchedMovie> {
     return WatchedMovie(
       movie: fields[0] as Movie,
       watchedDate: fields[1] as DateTime,
+      lastModifiedAt: fields[2] as DateTime,
+      isDeleted: fields[3] as bool,
+      syncStatus: fields[4] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, WatchedMovie obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.movie)
       ..writeByte(1)
-      ..write(obj.watchedDate);
+      ..write(obj.watchedDate)
+      ..writeByte(2)
+      ..write(obj.lastModifiedAt)
+      ..writeByte(3)
+      ..write(obj.isDeleted)
+      ..writeByte(4)
+      ..write(obj.syncStatus);
   }
 
   @override

@@ -592,7 +592,7 @@ class HiveDatasource extends LocalStorageDatasource {
       // Si ya existe, actualizar la prioridad
       final updatedMovie = existingMovie.copyWith(
         priority: priority,
-        updatedAt: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
       );
 
       final key = watchlistBox.keys.firstWhere(
@@ -621,7 +621,7 @@ class HiveDatasource extends LocalStorageDatasource {
         movieVoteAverage: movie.voteAverage,
         priority: priority,
         addedAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
       );
 
       final box = watchlistBox;
@@ -804,7 +804,7 @@ class HiveDatasource extends LocalStorageDatasource {
           movieBackdropPath: movieToUpdate.movieBackdropPath,
           priority: priority,
           addedAt: movieToUpdate.addedAt,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
 
         await watchlistBox.put(keyToUpdate, updatedMovie);

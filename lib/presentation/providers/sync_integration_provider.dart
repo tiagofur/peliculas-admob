@@ -105,7 +105,7 @@ class SyncIntegration {
         LoggerFactory.info('Usuario desautenticado - limpiando estado de sync');
         // Cancelar notificaciones
         SyncNotificationService.instance.cancelAllSyncNotifications();
-        syncNotifier._updateStatus(SyncStatus.idle, '');
+        syncNotifier.setIdle();
       }
     }
   }
@@ -160,16 +160,3 @@ final syncIntegrationInitProvider = Provider<void>((ref) {
   ref.watch(syncIntegrationProvider);
   return;
 });
-
-// Extensión para acceder a métodos privados desde la integración
-extension SyncStatusNotifierExtension on SyncStatusNotifier {
-  void _updateStatus(SyncStatus status, String message, {double? progress}) {
-    state = state.copyWith(
-      status: status,
-      message: message,
-      progress: progress ?? (status == SyncStatus.success ? 1.0 : state.progress),
-      lastSyncTime: status == SyncStatus.success ? DateTime.now() : state.lastSyncTime,
-      errorMessage: status == SyncStatus.error ? message : null,
-    );
-  }
-}

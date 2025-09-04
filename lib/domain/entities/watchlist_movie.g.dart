@@ -27,14 +27,16 @@ class WatchlistMovieAdapter extends TypeAdapter<WatchlistMovie> {
       movieVoteAverage: fields[7] as double?,
       priority: fields[8] as WatchlistPriority,
       addedAt: fields[9] as DateTime,
-      updatedAt: fields[10] as DateTime,
+      lastModifiedAt: fields[10] as DateTime,
+      isDeleted: fields[11] as bool,
+      syncStatus: fields[12] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, WatchlistMovie obj) {
     writer
-      ..writeByte(11)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -56,7 +58,11 @@ class WatchlistMovieAdapter extends TypeAdapter<WatchlistMovie> {
       ..writeByte(9)
       ..write(obj.addedAt)
       ..writeByte(10)
-      ..write(obj.updatedAt);
+      ..write(obj.lastModifiedAt)
+      ..writeByte(11)
+      ..write(obj.isDeleted)
+      ..writeByte(12)
+      ..write(obj.syncStatus);
   }
 
   @override

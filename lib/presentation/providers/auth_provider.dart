@@ -8,6 +8,7 @@ import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../infrastructure/services/sync_service.dart';
+import '../../infrastructure/services/anonymous_data_migrator.dart';
 
 // Enum para definir el modo de la aplicación
 enum AppMode {
@@ -97,6 +98,8 @@ class AppStateNotifier extends StateNotifier<AppState> {
               mode: AppMode.guest,
               user: null,
             );
+            // Detectar datos locales cuando no hay usuario autenticado
+            _detectLocalDataOnStartup();
           }
         },
         loading: () {},
@@ -106,9 +109,14 @@ class AppStateNotifier extends StateNotifier<AppState> {
             mode: AppMode.guest,
             user: null,
           );
+          // También detectar datos locales en caso de error
+          _detectLocalDataOnStartup();
         },
       );
     });
+    
+    // Detectar datos locales en el startup inicial
+    _detectLocalDataOnStartup();
   }
   final Ref _ref;
 
@@ -146,6 +154,29 @@ class AppStateNotifier extends StateNotifier<AppState> {
   // Método para marcar que hay datos locales
   void setHasLocalData(bool hasData) {
     state = state.copyWith(hasLocalData: hasData);
+  }
+
+  // Método para detectar datos locales en el startup
+  void _detectLocalDataOnStartup() {
+    // Ejecutar en background para no bloquear la UI
+    Future.microtask(() async {
+      try {
+        final migrator = _ref.read(anonymousDataMigratorProvider);
+        final detectedData = await migrator.detectAnonymousData();
+        
+        final hasLocalData = detectedData.isNotEmpty;
+        if (hasLocalData != state.hasLocalData) {
+          state = state.copyWith(hasLocalData: hasLocalData);
+          
+          if (hasLocalData) {
+            final totalItems = detectedData.values.fold(0, (sum, count) => sum + count);
+            LoggerFactory.info('📱 Datos locales detectados al startup: $totalItems items ($detectedData)');
+          }
+        }
+      } catch (e) {
+        LoggerFactory.error('❌ Error detectando datos locales en startup: $e');
+      }
+    });
   }
 }
 
@@ -274,14 +305,50 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
 
   // Método privado para sincronizar datos después de autenticación
   void _syncDataAfterAuth() {
-    // Ejecutar sincronización en background sin bloquear la UI
+    // Ejecutar sincronización y migración en background sin bloquear la UI
     Future.microtask(() async {
       try {
+        LoggerFactory.info('🔄 Iniciando proceso post-autenticación...');
+        
+        final user = _ref.read(currentUserProvider);
+        if (user == null) {
+          LoggerFactory.warning('❌ No hay usuario disponible para migración');
+          return;
+        }
+
+        // 1. Detectar datos locales de usuario anónimo
+        final migrator = _ref.read(anonymousDataMigratorProvider);
+        final detectedData = await migrator.detectAnonymousData();
+        
+        if (detectedData.isNotEmpty) {
+          LoggerFactory.info('📱 Datos locales detectados: $detectedData');
+          
+          // Actualizar estado para indicar que hay datos locales
+          _ref.read(appStateProvider.notifier).setHasLocalData(true);
+          
+          // 2. Migrar datos locales al usuario autenticado
+          LoggerFactory.info('🔄 Migrando datos locales a usuario: ${user.id}');
+          final migrationResult = await migrator.migrateAllData(user.id);
+          
+          if (migrationResult.success) {
+            LoggerFactory.info('✅ Migración completada: ${migrationResult.migratedData}');
+          } else {
+            LoggerFactory.error('⚠️ Migración completada con errores: ${migrationResult.errors}');
+          }
+        } else {
+          LoggerFactory.info('ℹ️ No hay datos locales para migrar');
+        }
+
+        // 3. Ejecutar sincronización normal después de migración
+        LoggerFactory.info('🔄 Iniciando sincronización normal...');
         final syncService = _ref.read(syncServiceProvider);
         await syncService.onUserAuthenticated();
+        
+        LoggerFactory.info('✅ Proceso post-autenticación completado');
+        
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario
-        LoggerFactory.error('Error durante sincronización automática: $e');
+        LoggerFactory.error('❌ Error durante proceso post-autenticación: $e');
       }
     });
   }

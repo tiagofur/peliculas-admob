@@ -8,11 +8,13 @@ class CustomList {
     required this.emoji,
     required this.movieIds,
     required this.createdAt,
-    required this.updatedAt,
+    required this.lastModifiedAt,
     this.userId,
     this.isDefault = false,
     this.isPublic = false,
     this.color = 'blue',
+    this.isDeleted = false,
+    this.syncStatus = 'synced',
   });
 
   factory CustomList.fromJson(Map<String, dynamic> json) {
@@ -27,13 +29,15 @@ class CustomList {
       createdAt: json['createdAt'] != null 
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
-          ? DateTime.parse(json['updatedAt'])
+      lastModifiedAt: json['lastModifiedAt'] != null 
+          ? DateTime.parse(json['lastModifiedAt'])
           : DateTime.now(),
       userId: json['userId'],
       isDefault: json['isDefault'] ?? false,
       isPublic: json['isPublic'] ?? false,
       color: json['color'] ?? 'blue',
+      isDeleted: json['isDeleted'] ?? false,
+      syncStatus: json['syncStatus'] ?? 'synced',
     );
   }
 
@@ -43,11 +47,13 @@ class CustomList {
   final String emoji;
   final List<int> movieIds;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  final DateTime lastModifiedAt;
   final String? userId;
   final bool isDefault;
   final bool isPublic;
   final String color;
+  final bool isDeleted;
+  final String syncStatus;
 
   CustomList copyWith({
     String? id,
@@ -56,11 +62,13 @@ class CustomList {
     String? emoji,
     List<int>? movieIds,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    DateTime? lastModifiedAt,
     String? userId,
     bool? isDefault,
     bool? isPublic,
     String? color,
+    bool? isDeleted,
+    String? syncStatus,
   }) {
     return CustomList(
       id: id ?? this.id,
@@ -69,11 +77,13 @@ class CustomList {
       emoji: emoji ?? this.emoji,
       movieIds: movieIds ?? this.movieIds,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
       userId: userId ?? this.userId,
       isDefault: isDefault ?? this.isDefault,
       isPublic: isPublic ?? this.isPublic,
       color: color ?? this.color,
+      isDeleted: isDeleted ?? this.isDeleted,
+      syncStatus: syncStatus ?? this.syncStatus,
     );
   }
 
@@ -85,11 +95,13 @@ class CustomList {
       'emoji': emoji,
       'movieIds': movieIds,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
+      'lastModifiedAt': lastModifiedAt.toIso8601String(),
       'userId': userId,
       'isDefault': isDefault,
       'isPublic': isPublic,
       'color': color,
+      'isDeleted': isDeleted,
+      'syncStatus': syncStatus,
     };
   }
 
@@ -103,11 +115,13 @@ class CustomList {
         other.emoji == emoji &&
         listEquals(other.movieIds, movieIds) && // Use listEquals for List comparison
         other.createdAt == createdAt &&
-        other.updatedAt == updatedAt &&
+        other.lastModifiedAt == lastModifiedAt &&
         other.userId == userId &&
         other.isDefault == isDefault &&
         other.isPublic == isPublic &&
-        other.color == color;
+        other.color == color &&
+        other.isDeleted == isDeleted &&
+        other.syncStatus == syncStatus;
   }
 
   @override
@@ -118,11 +132,13 @@ class CustomList {
         emoji,
         Object.hashAll(movieIds),
         createdAt,
-        updatedAt,
+        lastModifiedAt,
         userId,
         isDefault,
         isPublic,
         color,
+        isDeleted,
+        syncStatus,
       );
 
   @override

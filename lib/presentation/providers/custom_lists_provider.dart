@@ -5,6 +5,7 @@ import '../../core/gamification/gamification_manager.dart';
 import '../../core/gamification/models/activity_type.dart';
 import '../../core/services/logger_factory.dart';
 import '../../domain/entities/entities.dart';
+import '../../domain/repositories/custom_lists_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import 'gamification_providers.dart';
@@ -70,7 +71,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
           // Preservar movieIds de la lista guardada pero mantener otros datos actualizados
           return initialList.copyWith(
             movieIds: savedList.movieIds,
-            updatedAt: savedList.updatedAt,
+            lastModifiedAt: savedList.lastModifiedAt,
           );
         }).toList();
       } else {
@@ -111,7 +112,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '🍿',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'blue',
       ),
@@ -122,7 +123,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '🛋️',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'green',
       ),
@@ -133,7 +134,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '💕',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'pink',
       ),
@@ -144,7 +145,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '👥',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'orange',
       ),
@@ -155,7 +156,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '🎭',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'purple',
       ),
@@ -166,7 +167,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '💥',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'red',
       ),
@@ -177,7 +178,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '📚',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'teal',
       ),
@@ -188,7 +189,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         emoji: '🌧️',
         movieIds: [],
         createdAt: now,
-        updatedAt: now,
+        lastModifiedAt: now,
         isDefault: true,
         color: 'indigo',
       ),
@@ -217,7 +218,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       emoji: emoji,
       movieIds: [],
       createdAt: now,
-      updatedAt: now,
+      lastModifiedAt: now,
       isDefault: false,
       color: color,
     );
@@ -244,7 +245,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
           description: description,
           emoji: emoji,
           color: color,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -258,7 +259,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
           description: description,
           emoji: emoji,
           color: color,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -291,7 +292,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         final updatedMovieIds = [...list.movieIds, movieId];
         return list.copyWith(
           movieIds: updatedMovieIds,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -304,7 +305,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
         final updatedMovieIds = [...list.movieIds, movieId];
         return list.copyWith(
           movieIds: updatedMovieIds,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -333,7 +334,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
             list.movieIds.where((id) => id != movieId).toList();
         return list.copyWith(
           movieIds: updatedMovieIds,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -345,7 +346,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
             list.movieIds.where((id) => id != movieId).toList();
         return list.copyWith(
           movieIds: updatedMovieIds,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -379,7 +380,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
         return list.copyWith(
           movieIds: movieIds,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -393,7 +394,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
         return list.copyWith(
           movieIds: movieIds,
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -421,7 +422,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       emoji: originalList.emoji,
       movieIds: [...originalList.movieIds],
       createdAt: now,
-      updatedAt: now,
+      lastModifiedAt: now,
       isDefault: false,
       color: originalList.color,
     );
@@ -438,7 +439,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       if (list.id == listId) {
         return list.copyWith(
           movieIds: [],
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -448,7 +449,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       if (list.id == listId) {
         return list.copyWith(
           movieIds: [],
-          updatedAt: DateTime.now(),
+          lastModifiedAt: DateTime.now(),
         );
       }
       return list;
@@ -464,7 +465,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
 // Provider del repositorio
 final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
-  return CustomListsRepositoryImpl(CustomListsSharedPreferencesDatasource());
+  return CustomListsRepositoryImpl(CustomListsSharedPreferencesDatasource(), ref);
 });
 
 // Provider principal unificado

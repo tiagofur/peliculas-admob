@@ -2,18 +2,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
-import '../../core/sync/conflict_resolution/conflict_detector.dart';
-import '../../core/sync/conflict_resolution/conflict_metrics_service.dart';
-import '../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
-import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
-import '../../core/sync/conflict_resolution/strategies/favorites_conflict_strategy.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/sync_models.dart';
-import '../../domain/entities/sync_operation.dart';
-import '../../domain/entities/syncable_favorite_movie.dart';
 import '../../domain/repositories/favorites_repository.dart';
-import '../sync/conflict_statistics_service.dart';
 import 'base_hybrid_repository.dart';
 
 // Repositorio híbrido que maneja favoritos localmente y sincroniza con Supabase
@@ -22,34 +14,9 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
   HybridFavoritesRepository({
     required LocalStorageDatasource datasource,
     required super.ref,
-  }) : _datasource = datasource {
-    _softDeleteManager = SoftDeleteManager();
-    _statisticsService = ConflictStatisticsService();
-    _metricsService = ConflictMetricsService();
-    _conflictDetector = ConflictDetector(
-      _softDeleteManager,
-      _statisticsService,
-    );
-    _conflictResolver = MultiplataformConflictResolver();
-    _initializeFavoritesComponents();
-  }
-
-  Future<void> _initializeFavoritesComponents() async {
-    // Registrar estrategia de resolución para favoritos
-    _conflictResolver.registerStrategy<SyncableFavoriteMovie>(
-      FavoritesConflictStrategy(),
-    );
-
-    // Iniciar sesión de métricas
-    _metricsService.startSession('favorites_sync');
-  }
+  }) : _datasource = datasource;
 
   final LocalStorageDatasource _datasource;
-  late final SoftDeleteManager _softDeleteManager;
-  late final ConflictStatisticsService _statisticsService;
-  late final ConflictMetricsService _metricsService;
-  late final ConflictDetector _conflictDetector;
-  late final MultiplataformConflictResolver _conflictResolver;
 
   // Implements BaseHybridRepository abstract methods
   @override
@@ -73,7 +40,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       movieVoteAverage: data['movie_vote_average']?.toDouble(),
       addedAt: DateTime.parse(data['added_at']),
       createdAt: DateTime.parse(data['added_at']),
-      updatedAt: DateTime.parse(data['updated_at']),
+      updatedAt: DateTime.parse(data['last_modified_at'] ?? data['updated_at'] ?? data['added_at']),
     );
   }
 
@@ -89,7 +56,9 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       'movie_release_date':
           favorite.movieReleaseDate?.toIso8601String().split('T')[0],
       'movie_vote_average': favorite.movieVoteAverage,
-      'updated_at': DateTime.now().toIso8601String(),
+      'added_at': favorite.addedAt.toIso8601String(),
+      'is_deleted': false,
+      'last_modified_at': DateTime.now().toIso8601String(),
     };
   }
 
@@ -105,17 +74,6 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
   // Implements FavoritesRepository interface
   @override
   Future<Map<int, Movie>> getFavoriteMovies() async {
-    if (isAuthenticated()) {
-      try {
-        await checkOnline();
-        // Intentar sincronizar primero
-        await syncWithSupabase();
-      } on SyncException catch (e) {
-        // Si falla la sincronización, se puede registrar el error o notificar al usuario
-        LoggerFactory.error('Error en sincronización automática: $e');
-      }
-    }
-
     try {
       // Obtener datos locales
       final moviesList = await _datasource.loadMovies();
@@ -124,11 +82,6 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       throw LocalStorageException(
           'Error al cargar las películas favoritas: $e');
     }
-  }
-
-  @override
-  Future<void> syncWithRemote() async {
-    await syncWithSupabase();
   }
 
   @override
@@ -151,102 +104,21 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       throw LocalStorageException('Error al cambiar el estado de favorito: $e');
     }
 
-    // 2. Agregar operación a la cola de sincronización
-    final userId = getCurrentUserId();
-    if (userId != null) {
-      final isFavorite = await _datasource.isMovieFavorite(movie.id);
-      final operation = isFavorite
-          ? SyncOperationFactory.addFavorite(userId: userId, movieId: movie.id)
-          : SyncOperationFactory.removeFavorite(
-              userId: userId, movieId: movie.id);
-
-      LoggerFactory.info(
-          '📝 Agregando operación a la cola: ${operation.type.name} para ${movie.title}');
-      await syncQueue.enqueue(operation);
-    } else {
-      LoggerFactory.warning(
-          '❌ No hay usuario para agregar a la cola de sincronización');
-    }
-
-    // 3. Sincronizar si está online y autenticado
-    try {
-      LoggerFactory.info('🌐 Verificando conectividad...');
-      await checkOnline();
-      if (isAuthenticated()) {
-        LoggerFactory.info(
-            '🔑 Usuario autenticado, iniciando sincronización individual...');
-        await _syncSingleItem(movie);
-      } else {
-        LoggerFactory.warning(
-            '❌ Usuario no autenticado, saltando sincronización');
+    // 2. Sincronización inmediata si el usuario está autenticado
+    if (isAuthenticated()) {
+      try {
+        LoggerFactory.info('🔄 Iniciando sincronización inmediata...');
+        await syncWithSupabase();
+        LoggerFactory.info('✅ Sincronización inmediata completada');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Error en sincronización inmediata (continuará en background): $e');
+        // No lanzamos error para no afectar UX, se reintentará después
       }
-    } on SyncException catch (e) {
-      // Si falla, se sincronizará más tarde
-      LoggerFactory.error('❌ Error sincronizando favorito: $e');
-    } catch (e) {
-      LoggerFactory.error('❌ Error inesperado en sincronización: $e');
+    } else {
+      LoggerFactory.info('📝 Usuario no autenticado, cambio guardado localmente');
     }
 
     LoggerFactory.info('🏁 TOGGLE FAVORITE completado para: ${movie.title}');
-  }
-
-  // Sincronizar un elemento individual
-  Future<void> _syncSingleItem(Movie movie) async {
-    LoggerFactory.info(
-        '🔄 Iniciando sincronización individual de: ${movie.title}');
-
-    final userId = getCurrentUserId();
-    if (userId == null) {
-      LoggerFactory.warning(
-          '❌ No hay usuario autenticado para sincronizar ${movie.title}');
-      return;
-    }
-
-    final isFavorite = await _datasource.isMovieFavorite(movie.id);
-
-    LoggerFactory.info(
-        '📊 Estado de ${movie.title}: ${isFavorite ? "FAVORITO" : "NO FAVORITO"}');
-
-    try {
-      if (isFavorite) {
-        LoggerFactory.info('⬆️ Agregando ${movie.title} a Supabase...');
-        // Agregar a Supabase - usar upsert basado en user_id y movie_id
-        await supabase.from('user_favorites').upsert({
-          'user_id': userId,
-          'movie_id': movie.id,
-          'movie_title': movie.title,
-          'movie_poster_path': movie.posterPath,
-          'movie_backdrop_path': movie.backdropPath,
-          'movie_overview': movie.overview,
-          'movie_release_date':
-              movie.releaseDate.toIso8601String().split('T')[0], // Solo fecha
-          'movie_vote_average': movie.voteAverage,
-          'updated_at': DateTime.now().toIso8601String(),
-          'deleted_at': null, // ✅ Marcar como activo (no eliminado)
-        }, onConflict: 'user_id,movie_id');
-        LoggerFactory.info('✅ ${movie.title} agregado a Supabase exitosamente');
-      } else {
-        LoggerFactory.info('⬇️ Soft delete de ${movie.title} en Supabase...');
-        // ✅ Soft delete en lugar de hard delete
-        await supabase
-            .from('user_favorites')
-            .update({
-              'deleted_at': DateTime.now().toIso8601String(),
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('user_id', userId)
-            .eq('movie_id', movie.id);
-        LoggerFactory.info(
-            '✅ ${movie.title} marcado como eliminado en Supabase');
-      }
-
-      LoggerFactory.info(
-          '✅ Sincronización individual completada para ${movie.title}');
-    } on PostgrestException catch (e) {
-      throw SupabaseSyncException(e.message, code: e.code);
-    } catch (e) {
-      throw SupabaseSyncException(e.toString());
-    }
   }
 
   // Verificar si una película es favorita
@@ -321,8 +193,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
           .from('user_favorites')
           .select()
           .eq('user_id', userId)
-          .isFilter('deleted_at',
-              null) // ✅ Solo obtener favoritos activos (no eliminados)
+          .eq('is_deleted', false) // ✅ Solo obtener favoritos activos (no eliminados)
           .order('added_at', ascending: false);
 
       final remoteFavorites =
@@ -390,165 +261,41 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
   }
 
+
+
+
   @override
-  Future<void> resolveConflicts(
-      List<SyncableFavorite> local, List<SyncableFavorite> remote) async {
-    LoggerFactory.info(
-        '🔧 Iniciando resolución de conflictos para ${local.length} locales y ${remote.length} remotos');
+  Future<void> syncWithRemote() async {
+    try {
+      await syncWithSupabase();
+    } catch (e) {
+      LoggerFactory.error('Error sincronizando favoritos: $e');
+      rethrow;
+    }
+  }
 
-    // Convertir a SyncableFavoriteMovie para el resolver
-    final localFavoriteMovies = local
-        .map((f) => SyncableFavoriteMovie(
-              id: f.id,
-              userId: f.userId,
-              movieId: f.movieId,
-              movieTitle: f.movieTitle,
-              moviePosterPath: f.moviePosterPath,
-              movieBackdropPath: f.movieBackdropPath,
-              movieOverview: f.movieOverview,
-              movieReleaseDate: f.movieReleaseDate,
-              movieVoteAverage: f.movieVoteAverage,
-              addedAt: f.addedAt,
-              createdAt: f.createdAt,
-              updatedAt: f.updatedAt,
-              isDeleted: false, // Determinar basado en soft delete
-            ))
-        .toList();
-
-    final remoteFavoriteMovies = remote
-        .map((f) => SyncableFavoriteMovie(
-              id: f.id,
-              userId: f.userId,
-              movieId: f.movieId,
-              movieTitle: f.movieTitle,
-              moviePosterPath: f.moviePosterPath,
-              movieBackdropPath: f.movieBackdropPath,
-              movieOverview: f.movieOverview,
-              movieReleaseDate: f.movieReleaseDate,
-              movieVoteAverage: f.movieVoteAverage,
-              addedAt: f.addedAt,
-              createdAt: f.createdAt,
-              updatedAt: f.updatedAt,
-              isDeleted: false, // Determinar basado en soft delete
-            ))
-        .toList();
-
-    // Detectar conflictos usando el nuevo detector
-    final conflicts = _conflictDetector.detectBatchConflicts(
-      localFavoriteMovies,
-      remoteFavoriteMovies,
-    );
-
-    LoggerFactory.info('⚠️ Conflictos detectados: ${conflicts.length}');
-
-    for (final conflict in conflicts) {
-      try {
-        LoggerFactory.info(
-            '🔧 Resolviendo conflicto ${conflict.type.name} para item ${conflict.localItem.id}');
-
-        // Resolver usando el MultiplataformConflictResolver
-        final resolutionResult = _conflictResolver.resolveConflict(
-          conflict.localItem,
-          conflict.remoteItem,
-          conflict.type,
-        );
-
-        if (resolutionResult.dataLoss ||
-            resolutionResult.severity == ConflictSeverity.high) {
-          LoggerFactory.warning(
-              '⚠️ Conflicto de alta severidad o con pérdida de datos: ${resolutionResult.resolution}');
-          // Por ahora, usar la resolución automática disponible
-        }
-
-        final resolved = resolutionResult.resolvedItem;
-        LoggerFactory.info(
-            '✅ Conflicto resuelto: ${resolutionResult.resolution}');
-
-        // Aplicar resolución localmente
-        final movie = _favoriteMovieToMovie(resolved);
-        await _datasource.toggleFavorite(movie);
-
-        // Aplicar resolución remotamente si no está eliminado
-        if (!resolved.isDeleted) {
-          await supabase.from('user_favorites').upsert({
-            'id': resolved.id,
-            'user_id': resolved.userId,
-            'movie_id': resolved.movieId,
-            'movie_title': resolved.movieTitle,
-            'movie_poster_path': resolved.moviePosterPath,
-            'movie_backdrop_path': resolved.movieBackdropPath,
-            'movie_overview': resolved.movieOverview,
-            'movie_release_date':
-                resolved.movieReleaseDate?.toIso8601String().split('T')[0],
-            'movie_vote_average': resolved.movieVoteAverage,
-            'added_at': resolved.addedAt.toIso8601String(),
-            'updated_at': resolved.updatedAt.toIso8601String(),
-            'deleted_at': null,
-          }, onConflict: 'user_id,movie_id');
-        } else {
-          // Aplicar soft delete
-          _softDeleteManager.markAsDeleted(
-            resolved,
-            reason: 'Conflict resolution - deletion won',
-          );
-
-          await supabase
-              .from('user_favorites')
-              .update({
-                'deleted_at': DateTime.now().toIso8601String(),
-                'updated_at': DateTime.now().toIso8601String(),
-              })
-              .eq('user_id', resolved.userId)
-              .eq('movie_id', resolved.movieId);
-        }
-
-        // Registrar métricas del conflicto
-        LoggerFactory.info(
-            '📊 Conflicto resuelto - Tipo: ${conflict.type.name}, Severidad: ${conflict.severity.name}');
-      } on PostgrestException catch (e) {
-        LoggerFactory.error(
-            '❌ Error PostgreSQL resolviendo conflicto: ${e.message}');
-        throw SupabaseSyncException(
-            'Error resolviendo conflicto para ${conflict.localItem.id}: ${e.message}',
-            code: e.code);
-      } catch (e) {
-        LoggerFactory.error('❌ Error general resolviendo conflicto: $e');
-        throw LocalStorageException(
-            'Error resolviendo conflicto para ${conflict.localItem.id}: $e');
+  @override
+  Future<List<SyncableFavorite>> resolveConflicts(
+    List<SyncableFavorite> localItems,
+    List<SyncableFavorite> remoteItems,
+  ) async {
+    // Usar estrategia de resolución de conflictos para favoritos
+    // Por ahora, priorizar datos remotos más recientes
+    final Map<String, SyncableFavorite> resolved = {};
+    
+    // Agregar todos los elementos locales
+    for (final item in localItems) {
+      resolved[item.id] = item;
+    }
+    
+    // Sobrescribir con elementos remotos más recientes
+    for (final item in remoteItems) {
+      final existing = resolved[item.id];
+      if (existing == null || item.updatedAt.isAfter(existing.updatedAt)) {
+        resolved[item.id] = item;
       }
     }
-
-    // Obtener estadísticas de resolución
-    final resolverStats = _conflictResolver.getConflictStats();
-    final detectorStats = _conflictDetector.getDetectionStats();
-
-    LoggerFactory.info('📊 Estadísticas de resolución: $resolverStats');
-    LoggerFactory.info('📊 Estadísticas de detección: $detectorStats');
-  }
-
-  /// Convierte SyncableFavoriteMovie a Movie
-  Movie _favoriteMovieToMovie(SyncableFavoriteMovie favoriteMovie) {
-    return Movie(
-      id: favoriteMovie.movieId,
-      title: favoriteMovie.movieTitle,
-      posterPath: favoriteMovie.moviePosterPath ?? '',
-      backdropPath: favoriteMovie.movieBackdropPath ?? '',
-      overview: favoriteMovie.movieOverview ?? '',
-      releaseDate: favoriteMovie.movieReleaseDate ?? DateTime.now(),
-      voteAverage: favoriteMovie.movieVoteAverage ?? 0.0,
-      genreIds: [],
-      adult: false,
-      originalLanguage: 'en',
-      originalTitle: favoriteMovie.movieTitle,
-      popularity: 0.0,
-      video: false,
-      voteCount: 0,
-    );
-  }
-
-  @override
-  Future<void> markForSync(String itemId) async {
-    // Método legacy - ahora se usa enqueue con SyncOperation
-    LoggerFactory.warning('markForSync legacy method called for: $itemId');
+    
+    return resolved.values.toList();
   }
 }

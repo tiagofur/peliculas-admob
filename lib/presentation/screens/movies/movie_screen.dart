@@ -87,7 +87,8 @@ class _MovieDetails extends StatelessWidget {
               _MovieInfoBeforeCast(movie: movie),
 
               // Valoración del usuario
-              MovieRatingAndNotes(movie: movie),
+              // TODO: Temporarily disabled due to missing 'user_movie_ratings' table in Supabase
+              // MovieRatingAndNotes(movie: movie),
 
               //* 1. Banner antes de 'Reparto Principal'
               const Padding(
@@ -261,6 +262,10 @@ class _CustomSliverAppBar extends ConsumerWidget {
               achievementsNotifier.trackMovieFavorited();
             }
 
+            // Refrescar el estado de favoritos para asegurar consistencia
+            await ref.read(favoriteMoviesProvider.notifier).refreshFavorites();
+            
+            // Invalidar el provider específico para forzar reconstrucción
             ref.invalidate(isFavoriteProvider(movie.id));
           },
           feedbackType: FeedbackType.success,

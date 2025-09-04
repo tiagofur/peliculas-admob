@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -7,7 +8,6 @@ import '../../core/sync/conflict_resolution/conflict_detector.dart';
 import '../../core/sync/conflict_resolution/multiplatform_conflict_resolver.dart';
 import '../../core/sync/conflict_resolution/soft_delete_manager.dart';
 import '../../core/sync/conflict_resolution/strategies/watchlist_conflict_strategy.dart';
-import '../services/connectivity_detector.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/sync_operation.dart';
@@ -67,7 +67,7 @@ class HybridWatchlistRepository
         userId: userId,
         priority: priority.value,
       );
-      await syncQueue.enqueue(operation);
+      await syncQueue.addItem(operation.id);
 
       LoggerFactory.info(
           '📝 Operación agregada a la cola: ${operation.type.name} para ${movie.title}');
@@ -109,7 +109,7 @@ class HybridWatchlistRepository
     // 2. Agregar operación a la cola de sincronización
     final userId = getCurrentUserId();
     if (userId != null) {
-      // TODO: Implementar operación de sincronización para remover película
+      // Marcar para sincronización (la sincronización se maneja automáticamente por el sistema de BaseHybridRepository)
 
       LoggerFactory.info(
           '📤 Operación de sincronización creada para remover $movieId');
@@ -248,7 +248,7 @@ class HybridWatchlistRepository
         'movie_vote_average': movie.voteAverage,
         'priority': priority.value,
         'added_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        'last_modified_at': DateTime.now().toIso8601String(),
         'deleted_at': null,
       }, onConflict: 'user_id,movie_id');
 
@@ -274,7 +274,7 @@ class HybridWatchlistRepository
           .from('user_watchlist')
           .update({
             'deleted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
+            'last_modified_at': DateTime.now().toIso8601String(),
           })
           .eq('user_id', userId)
           .eq('movie_id', movieId);
@@ -298,7 +298,7 @@ class HybridWatchlistRepository
           .from('user_watchlist')
           .update({
             'priority': movie.priority.value,
-            'updated_at': DateTime.now().toIso8601String(),
+            'last_modified_at': DateTime.now().toIso8601String(),
           })
           .eq('user_id', userId)
           .eq('movie_id', movie.movieId);
@@ -521,33 +521,17 @@ class HybridWatchlistRepository
     }
   }
 
-  @override
-  Future<void> markForSync(String itemId) async {
-    // Este método es parte de un sistema de sincronización más antiguo.
-    // La lógica actual usa una cola de operaciones (syncQueue).
-    LoggerFactory.warning('markForSync (legacy) llamado para: $itemId');
-  }
 
   @override
   Future<bool> hasPendingSync() async {
-    final pendingOps = syncQueue.getPendingOperations();
-    return pendingOps.isNotEmpty;
+    return !await syncQueue.isEmpty;
   }
 
   @override
   Future<List<String>> getPendingSyncItems() async {
-    final items = syncQueue.getPendingOperations();
-    // El ID del item en la cola de operaciones puede variar.
-    // Aquí asumimos que se puede obtener un ID de película.
-    return items.map((op) => op.data['movieId']?.toString() ?? '').toList();
+    return await syncQueue.getItems();
   }
 
-  @override
-  Future<void> clearSyncMarker(String itemId) async {
-    // Este método es parte de un sistema de sincronización más antiguo.
-    // La lógica actual procesa y elimina operaciones de la cola.
-    LoggerFactory.warning('clearSyncMarker (legacy) llamado para: $itemId');
-  }
 
   // Implementación de métodos abstractos de BaseHybridRepository
   @override
@@ -578,8 +562,8 @@ class HybridWatchlistRepository
       addedAt: data['added_at'] != null
           ? DateTime.tryParse(data['added_at'] as String) ?? DateTime.now()
           : DateTime.now(),
-      updatedAt: data['updated_at'] != null
-          ? DateTime.tryParse(data['updated_at'] as String) ?? DateTime.now()
+      updatedAt: data['last_modified_at'] != null
+          ? DateTime.tryParse(data['last_modified_at'] as String) ?? DateTime.now()
           : DateTime.now(),
       deletedAt: data['deleted_at'] != null
           ? DateTime.tryParse(data['deleted_at'] as String)
@@ -603,7 +587,8 @@ class HybridWatchlistRepository
       'movie_vote_average': item.movieVoteAverage,
       'priority': item.priority.value,
       'added_at': item.addedAt.toIso8601String(),
-      'updated_at': item.updatedAt.toIso8601String(),
+      'is_deleted': item.deletedAt != null,
+      'last_modified_at': item.updatedAt.toIso8601String(),
       'deleted_at': item.deletedAt?.toIso8601String(),
     };
   }

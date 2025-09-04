@@ -390,6 +390,42 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Ruta de configuración
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const SettingsScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+            },
+          );
+        },
+      ),
+
+      // Ruta de política de privacidad
+      GoRoute(
+        path: '/privacy-policy',
+        name: 'privacy-policy',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const PrivacyPolicyScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+            },
+          );
+        },
+      ),
+
       // Rutas de Ayuda y Acerca de
       GoRoute(
         path: '/help',

@@ -19,8 +19,8 @@ class AdaptiveCacheConfig {
   static const int _baseConcurrentDownloads = 2;
 
   // Configuración detectada
-  late final DeviceCapabilities _deviceCapabilities;
-  late final CacheConfiguration _cacheConfiguration;
+  DeviceCapabilities? _deviceCapabilities;
+  CacheConfiguration? _cacheConfiguration;
 
   bool _isInitialized = false;
 
@@ -35,14 +35,14 @@ class AdaptiveCacheConfig {
       _deviceCapabilities = await _detectDeviceCapabilities();
 
       // Configurar caché según capacidades
-      _cacheConfiguration = _calculateOptimalConfiguration(_deviceCapabilities);
+      _cacheConfiguration = _calculateOptimalConfiguration(_deviceCapabilities!);
 
       _isInitialized = true;
 
       _logger.info('✅ Configuración adaptativa inicializada: '
-          'memoria=${(_cacheConfiguration.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB, '
-          'disco=${(_cacheConfiguration.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB, '
-          'tier=${_deviceCapabilities.performanceTier}');
+          'memoria=${(_cacheConfiguration!.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB, '
+          'disco=${(_cacheConfiguration!.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB, '
+          'tier=${_deviceCapabilities!.performanceTier}');
     } catch (e) {
       _logger.error('❌ Error inicializando configuración adaptativa: $e');
       // Fallback a configuración segura
@@ -225,17 +225,17 @@ class AdaptiveCacheConfig {
 
   // Getters públicos
   CacheConfiguration get configuration {
-    if (!_isInitialized) {
+    if (!_isInitialized || _cacheConfiguration == null) {
       throw StateError('AdaptiveCacheConfig no ha sido inicializado');
     }
-    return _cacheConfiguration;
+    return _cacheConfiguration!;
   }
 
   DeviceCapabilities get deviceCapabilities {
-    if (!_isInitialized) {
+    if (!_isInitialized || _deviceCapabilities == null) {
       throw StateError('AdaptiveCacheConfig no ha sido inicializado');
     }
-    return _deviceCapabilities;
+    return _deviceCapabilities!;
   }
 
   bool get isInitialized => _isInitialized;
