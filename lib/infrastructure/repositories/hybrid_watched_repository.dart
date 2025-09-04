@@ -1,8 +1,9 @@
 import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
+import '../../domain/entities/sync_models.dart';
 import '../../domain/entities/sync_operation.dart';
-import '../../domain/entities/syncable_watched_movie.dart';
+import '../../domain/entities/syncable_entity.dart';
 import '../../domain/entities/watched_movie.dart';
 import '../../domain/repositories/watched_movies_repository.dart';
 import '../datasources/watched_movies_hive_datasource.dart';
@@ -39,6 +40,10 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
       watchedAt: DateTime.parse(data['watched_at']),
       createdAt: DateTime.parse(data['created_at']),
       updatedAt: DateTime.parse(data['last_modified_at']),
+      deletedAt: data['deleted_at'] != null ? DateTime.parse(data['deleted_at']) : null,
+      syncStatus: SyncItemStatus.synced,
+      syncVersion: data['sync_version'] ?? 1,
+      deviceId: data['device_id'],
       rating: data['rating']?.toDouble(),
       review: data['review'],
       traktId: data['trakt_id'],

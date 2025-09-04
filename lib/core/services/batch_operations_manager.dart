@@ -236,7 +236,7 @@ class BatchOperationsManager {
         }
       }
     } catch (e) {
-      LoggerFactory.error('Error en lote de favoritos', data: {'error': e});
+      LoggerFactory.error('Error en lote de favoritos', data: e != null ? {'error': e} : null);
 
       // Marcar todas como fallidas
       for (final operation in operations) {
@@ -306,7 +306,7 @@ class BatchOperationsManager {
       }
     } catch (e) {
       LoggerFactory.error('Error en lote de películas vistas',
-          data: {'error': e});
+          data: e != null ? {'error': e} : null);
 
       // Marcar todas como fallidas
       for (final operation in operations) {
@@ -478,7 +478,7 @@ class BatchOperationsManager {
       }
     } catch (e) {
       LoggerFactory.error('Error en lote de películas en listas',
-          data: {'error': e});
+          data: e != null ? {'error': e} : null);
 
       // Marcar todas como fallidas
       for (final operation in operations) {
@@ -608,7 +608,7 @@ class BatchOperationsManager {
         }
       }
     } catch (e) {
-      LoggerFactory.error('Error en lote de watchlist', data: {'error': e});
+      LoggerFactory.error('Error en lote de watchlist', data: e != null ? {'error': e} : null);
 
       // Marcar todas como fallidas
       for (final operation in operations) {

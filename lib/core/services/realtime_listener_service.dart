@@ -3,10 +3,10 @@ import 'dart:developer' as developer;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/sync_models.dart';
 import '../../domain/entities/syncable_custom_list.dart';
 import '../../domain/entities/syncable_favorite_movie.dart';
 import '../../domain/entities/syncable_user_movie_rating.dart';
-import '../../domain/entities/syncable_watched_movie.dart';
 import '../../domain/entities/syncable_watchlist_movie.dart';
 import '../../infrastructure/services/multiplatform_sync_manager.dart';
 import '../config/supabase_config.dart';
@@ -144,10 +144,11 @@ class RealtimeListenerService {
   /// Maneja cambios en la tabla favorites
   void _handleFavoriteChange(PostgresChangePayload payload) {
     try {
-      developer.log('Favorite change detected: ${payload.eventType}',
+      developer.log(
+          'Favorite change detected: ${payload.eventType ?? 'unknown'}',
           name: 'RealtimeService');
 
-      final eventKey = 'favorites_${payload.eventType.name}';
+      final eventKey = 'favorites_${payload.eventType.name ?? 'unknown'}';
 
       _throttleService.smartThrottle(
         eventKey,
@@ -190,10 +191,11 @@ class RealtimeListenerService {
   /// Maneja cambios en la tabla watched_movies
   void _handleWatchedMovieChange(PostgresChangePayload payload) {
     try {
-      developer.log('Watched movie change detected: ${payload.eventType}',
+      developer.log(
+          'Watched movie change detected: ${payload.eventType ?? 'unknown'}',
           name: 'RealtimeService');
 
-      final eventKey = 'watched_movies_${payload.eventType.name}';
+      final eventKey = 'watched_movies_${payload.eventType.name ?? 'unknown'}';
 
       _throttleService.smartThrottle(
         eventKey,
@@ -239,10 +241,11 @@ class RealtimeListenerService {
   /// Maneja cambios en la tabla custom_lists
   void _handleCustomListChange(PostgresChangePayload payload) {
     try {
-      developer.log('Custom list change detected: ${payload.eventType}',
+      developer.log(
+          'Custom list change detected: ${payload.eventType ?? 'unknown'}',
           name: 'RealtimeService');
 
-      final eventKey = 'custom_lists_${payload.eventType.name}';
+      final eventKey = 'custom_lists_${payload.eventType.name ?? 'unknown'}';
 
       _throttleService.smartThrottle(
         eventKey,
@@ -285,10 +288,11 @@ class RealtimeListenerService {
   /// Maneja cambios en la tabla user_watchlist
   void _handleWatchlistChange(PostgresChangePayload payload) {
     try {
-      developer.log('Watchlist change detected: ${payload.eventType}',
+      developer.log(
+          'Watchlist change detected: ${payload.eventType ?? 'unknown'}',
           name: 'RealtimeService');
 
-      final eventKey = 'user_watchlist_${payload.eventType.name}';
+      final eventKey = 'user_watchlist_${payload.eventType.name ?? 'unknown'}';
 
       _throttleService.smartThrottle(
         eventKey,
@@ -334,10 +338,11 @@ class RealtimeListenerService {
   /// Maneja cambios en la tabla user_movie_ratings
   void _handleRatingsChange(PostgresChangePayload payload) {
     try {
-      developer.log('Rating change detected: ${payload.eventType}',
+      developer.log('Rating change detected: ${payload.eventType ?? 'unknown'}',
           name: 'RealtimeService');
 
-      final eventKey = 'user_movie_ratings_${payload.eventType.name}';
+      final eventKey =
+          'user_movie_ratings_${payload.eventType.name ?? 'unknown'}';
 
       _throttleService.smartThrottle(
         eventKey,

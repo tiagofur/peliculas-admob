@@ -51,17 +51,25 @@ class SyncService {
       return;
     }
 
-    try {
-      LoggerFactory.info('📤 Ejecutando sincronización completa...');
-      final result = await syncAllData();
-      LoggerFactory.info(
-          '✅ Sincronización completada: ${result.repositoryResults}');
-
-      _startPeriodicSync();
-    } catch (e) {
-      LoggerFactory.error('❌ Error en sincronización post-login: $e');
-      _scheduleRetry('onUserAuthenticated');
-    }
+    // Inicializar sincronización periódica inmediatamente
+    _startPeriodicSync();
+    
+    // Ejecutar primera sincronización en background sin esperar
+    LoggerFactory.info('📤 Programando sincronización inicial en background...');
+    
+    // Fire and forget - no bloquear el hilo principal
+    Future.microtask(() async {
+      try {
+        final result = await syncAllData();
+        LoggerFactory.info(
+            '✅ Sincronización inicial completada: ${result.repositoryResults}');
+      } catch (e) {
+        LoggerFactory.error('❌ Error en sincronización inicial: $e');
+        _scheduleRetry('onUserAuthenticated');
+      }
+    });
+    
+    LoggerFactory.info('✅ Sincronización configurada (continuará en background)');
   }
 
   /// Sincronización completa de todos los repositorios

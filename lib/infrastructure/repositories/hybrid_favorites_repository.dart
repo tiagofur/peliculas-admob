@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/exceptions/sync_exceptions.dart';
@@ -40,7 +42,8 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       movieVoteAverage: data['movie_vote_average']?.toDouble(),
       addedAt: DateTime.parse(data['added_at']),
       createdAt: DateTime.parse(data['added_at']),
-      updatedAt: DateTime.parse(data['last_modified_at'] ?? data['updated_at'] ?? data['added_at']),
+      lastModifiedAt: DateTime.parse(
+          data['last_modified_at'] ?? data['updated_at'] ?? data['added_at']),
     );
   }
 
@@ -104,18 +107,34 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
       throw LocalStorageException('Error al cambiar el estado de favorito: $e');
     }
 
-    // 2. Sincronización inmediata si el usuario está autenticado
+    // 2. Programar sincronización en background si el usuario está autenticado
     if (isAuthenticated()) {
-      try {
-        LoggerFactory.info('🔄 Iniciando sincronización inmediata...');
-        await syncWithSupabase();
-        LoggerFactory.info('✅ Sincronización inmediata completada');
-      } catch (e) {
-        LoggerFactory.warning('⚠️ Error en sincronización inmediata (continuará en background): $e');
-        // No lanzamos error para no afectar UX, se reintentará después
-      }
+      LoggerFactory.info('🔄 Programando sincronización en background...');
+      // Fire and forget - no bloquear la UI
+      Future.microtask(() async {
+        try {
+          await syncWithSupabase().timeout(
+            const Duration(seconds: 30), // Timeout de 30 segundos
+            onTimeout: () {
+              LoggerFactory.warning(
+                  '⏱️ Timeout en sincronización de favoritos - se reintentará después');
+              throw TimeoutException(
+                  'Sync timeout', const Duration(seconds: 30));
+            },
+          );
+          LoggerFactory.info('✅ Sincronización en background completada');
+        } catch (e) {
+          LoggerFactory.warning(
+              '⚠️ Error en sincronización background (se reintentará): $e');
+          // Agregar a la cola de sincronización para reintentar después
+          await syncQueue.addItem(
+              'favorite_sync_${DateTime.now().millisecondsSinceEpoch}');
+        }
+      });
+      LoggerFactory.info('📝 Sincronización programada en background');
     } else {
-      LoggerFactory.info('📝 Usuario no autenticado, cambio guardado localmente');
+      LoggerFactory.info(
+          '📝 Usuario no autenticado, cambio guardado localmente');
     }
 
     LoggerFactory.info('🏁 TOGGLE FAVORITE completado para: ${movie.title}');
@@ -193,8 +212,14 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
           .from('user_favorites')
           .select()
           .eq('user_id', userId)
-          .eq('is_deleted', false) // ✅ Solo obtener favoritos activos (no eliminados)
-          .order('added_at', ascending: false);
+          .eq('is_deleted',
+              false) // ✅ Solo obtener favoritos activos (no eliminados)
+          .order('added_at', ascending: false)
+          .timeout(const Duration(seconds: 10), onTimeout: () {
+        LoggerFactory.warning('⏱️ Timeout obteniendo favoritos remotos');
+        throw TimeoutException(
+            'Remote data fetch timeout', const Duration(seconds: 10));
+      });
 
       final remoteFavorites =
           (response as List).map((data) => mapFromSupabase(data)).toList();
@@ -228,7 +253,11 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
 
         await supabase
             .from('user_favorites')
-            .upsert(mapToSupabase(favorite), onConflict: 'user_id,movie_id');
+            .upsert(mapToSupabase(favorite), onConflict: 'user_id,movie_id')
+            .timeout(const Duration(seconds: 15), onTimeout: () {
+          LoggerFactory.warning('⏱️ Timeout subiendo ${favorite.movieTitle}');
+          throw TimeoutException('Upload timeout', const Duration(seconds: 15));
+        });
 
         LoggerFactory.info('✅ ${favorite.movieTitle} subido exitosamente');
       } on PostgrestException catch (e) {
@@ -261,9 +290,6 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
   }
 
-
-
-
   @override
   Future<void> syncWithRemote() async {
     try {
@@ -282,12 +308,12 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     // Usar estrategia de resolución de conflictos para favoritos
     // Por ahora, priorizar datos remotos más recientes
     final Map<String, SyncableFavorite> resolved = {};
-    
+
     // Agregar todos los elementos locales
     for (final item in localItems) {
       resolved[item.id] = item;
     }
-    
+
     // Sobrescribir con elementos remotos más recientes
     for (final item in remoteItems) {
       final existing = resolved[item.id];
@@ -295,7 +321,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
         resolved[item.id] = item;
       }
     }
-    
+
     return resolved.values.toList();
   }
 }

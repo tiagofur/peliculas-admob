@@ -606,64 +606,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildRatingStats(ThemeData theme, Map<String, dynamic> stats) {
-    final totalRatings = stats['total_ratings'] ?? 0;
-    final averageRating = (stats['average_rating'] ?? 0.0) as double;
 
-    if (totalRatings == 0) return const SizedBox.shrink();
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            children: [
-              Text(
-                totalRatings.toString(),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              Text(
-                'Películas\nvaloradas',
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    averageRating.toStringAsFixed(1),
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.amber,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.star,
-                    color: Colors.amber,
-                    size: 20,
-                  ),
-                ],
-              ),
-              Text(
-                'Promedio',
-                style: theme.textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildRatingItem(ThemeData theme, dynamic rating) {
     return Container(

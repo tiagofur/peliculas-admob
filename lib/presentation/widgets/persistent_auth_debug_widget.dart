@@ -155,8 +155,6 @@ class PersistentAuthDebugWidget extends ConsumerWidget {
         return 'Refresh failed: $error';
       case SessionInvalidatedEvent():
         return 'Session invalidated';
-      default:
-        return 'Unknown event: ${event.toString()}';
     }
   }
 
@@ -172,8 +170,6 @@ class PersistentAuthDebugWidget extends ConsumerWidget {
         return Colors.orange;
       case UserSignedOutEvent():
         return Colors.grey;
-      default:
-        return Colors.black;
     }
   }
 
@@ -203,7 +199,7 @@ class PersistentAuthDebugWidget extends ConsumerWidget {
               onPressed: () async {
                 final authRepo = ref.read(authRepositoryProvider);
                 final sessionInfo = await authRepo.getSessionInfo();
-                debugPrint('Session Info: $sessionInfo');
+                debugPrint('Session Info: ${sessionInfo ?? 'null'}');
 
                 if (ref.context.mounted) {
                   ScaffoldMessenger.of(ref.context).showSnackBar(

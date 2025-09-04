@@ -223,7 +223,7 @@ class AnonymousDataMigrator {
 
     // Actualizar userId para cada favorito
     final updatedFavorites =
-        localData.map((fav) => fav.copyWith(userId: userId)).toList();
+        localData.map((fav) => fav.copyWithFavorite(userId: userId)).toList();
 
     // Subir a Supabase
     await repo.upload(updatedFavorites);
@@ -242,8 +242,9 @@ class AnonymousDataMigrator {
     if (localData.isEmpty) return 0;
 
     // Actualizar userId para cada película vista
-    final updatedWatched =
-        localData.map((watched) => watched.copyWith(userId: userId)).toList();
+    final updatedWatched = localData
+        .map((watched) => watched.copyWithWatchedMovie(userId: userId))
+        .toList();
 
     // Subir a Supabase
     await repo.upload(updatedWatched);

@@ -7,7 +7,6 @@ import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
-import '../../infrastructure/services/sync_service.dart';
 import '../../infrastructure/services/anonymous_data_migrator.dart';
 
 // Enum para definir el modo de la aplicación
@@ -339,12 +338,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           LoggerFactory.info('ℹ️ No hay datos locales para migrar');
         }
 
-        // 3. Ejecutar sincronización normal después de migración
-        LoggerFactory.info('🔄 Iniciando sincronización normal...');
-        final syncService = _ref.read(syncServiceProvider);
-        await syncService.onUserAuthenticated();
+        // 3. NO ejecutar sincronización automática para evitar congelamiento
+        LoggerFactory.info('⚠️ Sincronización automática DESHABILITADA para evitar bloqueos');
+        LoggerFactory.info('💡 El usuario puede sincronizar manualmente desde Settings');
         
-        LoggerFactory.info('✅ Proceso post-autenticación completado');
+        LoggerFactory.info('✅ Proceso post-autenticación completado (sin sincronización automática)');
         
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario

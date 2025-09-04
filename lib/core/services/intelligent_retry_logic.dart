@@ -237,7 +237,7 @@ class IntelligentRetryLogic {
 
           LoggerFactory.error(
               'Operación ${operation.id} falló definitivamente después de $attemptCount intentos',
-              data: {'error': e},
+              data: e != null ? {'error': e} : null,
               stackTrace: stackTrace);
 
           return RetryAttemptResult(

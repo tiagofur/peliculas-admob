@@ -1,6 +1,6 @@
 import 'dart:developer' as developer;
 
-import '../../../../domain/entities/syncable_watched_movie.dart';
+import '../../../../domain/entities/sync_models.dart';
 import '../multiplatform_conflict_resolver.dart';
 
 /// Estrategia de resolución de conflictos para películas vistas

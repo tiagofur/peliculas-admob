@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -72,17 +74,52 @@ abstract class BaseHybridRepository<T extends Syncable>
     try {
       await checkOnline();
 
-      // Get local and remote data
-      final localData = await getLocalData();
-      final remoteData = await getRemoteData();
+      // Add overall timeout for the entire sync operation
+      await Future.microtask(() async {
+        // Get local and remote data with individual timeouts
+        final localDataFuture = getLocalData().timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            LoggerFactory.warning('⏱️ Timeout getting local data for $runtimeType');
+            throw TimeoutException('Local data fetch timeout', const Duration(seconds: 20));
+          },
+        );
+        
+        final remoteDataFuture = getRemoteData().timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            LoggerFactory.warning('⏱️ Timeout getting remote data for $runtimeType');
+            throw TimeoutException('Remote data fetch timeout', const Duration(seconds: 20));
+          },
+        );
 
-      LoggerFactory.info(
-          '📊 $runtimeType sync - Local: ${localData.length}, Remote: ${remoteData.length}');
+        // Execute in parallel with overall timeout
+        final results = await Future.wait([localDataFuture, remoteDataFuture])
+          .timeout(const Duration(seconds: 45), onTimeout: () {
+            LoggerFactory.warning('⏱️ Overall timeout for $runtimeType sync');
+            throw TimeoutException('Overall sync timeout', const Duration(seconds: 45));
+          });
 
-      // Process sync logic
-      await _processSyncData(localData, remoteData);
+        final localData = results[0];
+        final remoteData = results[1];
+
+        LoggerFactory.info(
+            '📊 $runtimeType sync - Local: ${localData.length}, Remote: ${remoteData.length}');
+
+        // Process sync logic with timeout
+        await _processSyncData(localData, remoteData).timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            LoggerFactory.warning('⏱️ Timeout processing sync data for $runtimeType');
+            throw TimeoutException('Sync processing timeout', const Duration(seconds: 60));
+          },
+        );
+      });
 
       LoggerFactory.info('✅ $runtimeType sync completed successfully');
+    } on TimeoutException catch (e) {
+      LoggerFactory.error('⏱️ Timeout in $runtimeType sync: $e');
+      throw SupabaseSyncException('Sync timeout for $runtimeType: $e');
     } on SyncException catch (e) {
       LoggerFactory.error('❌ Sync error in $runtimeType: $e');
       rethrow;
@@ -109,23 +146,57 @@ abstract class BaseHybridRepository<T extends Syncable>
     final conflictRemoteItems =
         remoteData.where((item) => localIds.contains(item.id)).toList();
 
+    // Execute sync operations in parallel with individual error handling
+    final syncTasks = <Future<void>>[];
+
     // Upload new local items
     if (toUpload.isNotEmpty) {
       LoggerFactory.info('⬆️ Uploading ${toUpload.length} new items');
-      await upload(toUpload);
+      syncTasks.add(
+        upload(toUpload).catchError((error) {
+          LoggerFactory.error('❌ Upload failed: $error');
+          throw SupabaseSyncException('Upload failed: $error');
+        })
+      );
     }
 
     // Download new remote items
     if (toDownload.isNotEmpty) {
       LoggerFactory.info('⬇️ Downloading ${toDownload.length} new items');
-      await download(toDownload);
+      syncTasks.add(
+        download(toDownload).catchError((error) {
+          LoggerFactory.error('❌ Download failed: $error');
+          throw SupabaseSyncException('Download failed: $error');
+        })
+      );
     }
 
     // Resolve conflicts
     if (conflictLocalItems.isNotEmpty && conflictRemoteItems.isNotEmpty) {
       LoggerFactory.info(
           '🔧 Resolving conflicts for ${conflictLocalItems.length} items');
-      await resolveConflicts(conflictLocalItems, conflictRemoteItems);
+      syncTasks.add(
+        resolveConflicts(conflictLocalItems, conflictRemoteItems).then((_) {
+          LoggerFactory.info('✅ Conflicts resolved');
+        }).catchError((error) {
+          LoggerFactory.error('❌ Conflict resolution failed: $error');
+          throw SupabaseSyncException('Conflict resolution failed: $error');
+        })
+      );
+    }
+
+    // Execute all sync tasks with timeout and error handling
+    if (syncTasks.isNotEmpty) {
+      try {
+        await Future.wait(syncTasks, eagerError: false)
+          .timeout(const Duration(seconds: 120), onTimeout: () {
+            LoggerFactory.warning('⏱️ Timeout in sync tasks for $runtimeType');
+            throw TimeoutException('Sync tasks timeout', const Duration(seconds: 120));
+          });
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Some sync tasks failed, but continuing: $e');
+        // Don't rethrow to allow partial sync success
+      }
     }
   }
 

@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../debug/sync_test_helper.dart';
 import '../../debug/supabase_direct_test.dart';
 import '../../infrastructure/services/realtime_sync_service.dart';
+import '../../infrastructure/services/safe_sync_service.dart';
 
 /// Widget de debug para probar la sincronización manualmente
 /// Solo se muestra en modo debug
@@ -67,6 +67,10 @@ class _SyncDebugWidgetState extends ConsumerState<SyncDebugWidget> {
                 ElevatedButton(
                   onPressed: _testSupabaseDirect,
                   child: const Text('Test Supabase'),
+                ),
+                ElevatedButton(
+                  onPressed: _resetCircuitBreaker,
+                  child: const Text('Reset Circuit'),
                 ),
                 ElevatedButton(
                   onPressed: _clearResults,
@@ -132,30 +136,78 @@ class _SyncDebugWidgetState extends ConsumerState<SyncDebugWidget> {
     });
 
     try {
-      final syncTestHelper = ref.read(syncTestHelperProvider);
-      final result = await syncTestHelper.runFullSyncTest();
+      final safeSyncService = ref.read(safeSyncServiceProvider);
+      
+      // Check if sync is allowed
+      final status = safeSyncService.getDetailedStatus();
+      if (!status['can_sync']) {
+        final reason = status['state'] == 'circuitOpen' 
+          ? 'Circuit breaker abierto - demasiados fallos recientes'
+          : 'Ya hay una sincronización en progreso';
+        
+        setState(() {
+          _lastTestResult = {
+            'errors': [reason],
+            'sync_blocked': true,
+            'circuit_status': status,
+          };
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🚫 $reason'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Attempt safe sync
+      final result = await safeSyncService.attemptSync();
+      
+      // Format result for display
+      final testResult = {
+        'user_authenticated': true,
+        'sync_result': result.repositoryResults,
+        'duration': result.duration.inSeconds,
+        'timestamp': result.timestamp.toIso8601String(),
+        'errors': result.errors,
+        'circuit_status': status,
+      };
 
       setState(() {
-        _lastTestResult = result;
+        _lastTestResult = testResult;
       });
 
       if (context.mounted) {
-        final errors = result['errors'] as List? ?? [];
+        final errors = result.errors;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Prueba de sync completada. ${errors.isEmpty ? "✅ Sin errores" : "❌ ${errors.length} errores"}',
+              'Prueba de sync segura completada. ${errors.isEmpty ? "✅ Sin errores" : "❌ ${errors.length} errores"}',
             ),
             backgroundColor: errors.isEmpty ? Colors.green : Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
     } catch (e) {
+      setState(() {
+        _lastTestResult = {
+          'errors': ['Error ejecutando prueba: $e'],
+          'exception': e.toString(),
+        };
+      });
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error ejecutando prueba: $e'),
+            content: Text('❌ Error ejecutando prueba segura: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -168,23 +220,73 @@ class _SyncDebugWidgetState extends ConsumerState<SyncDebugWidget> {
 
   Future<void> _forceSyncAll() async {
     try {
-      final syncTestHelper = ref.read(syncTestHelperProvider);
-      await syncTestHelper.forceSyncAll();
-
+      final safeSyncService = ref.read(safeSyncServiceProvider);
+      
+      // Check if sync is allowed
+      final status = safeSyncService.getDetailedStatus();
+      if (!status['can_sync']) {
+        if (context.mounted) {
+          final reason = status['state'] == 'circuitOpen' 
+            ? 'Circuit breaker abierto - demasiados fallos. Espera un momento e inténtalo de nuevo.'
+            : 'Ya hay una sincronización en progreso';
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🚫 $reason'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+      
+      // Show loading indicator
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('🔄 Sincronización forzada iniciada'),
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                SizedBox(width: 12),
+                Text('🔄 Sincronización segura iniciada...'),
+              ],
+            ),
             backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
           ),
         );
       }
+
+      // Attempt sync with safe service
+      final result = await safeSyncService.attemptSync();
+      
+      if (context.mounted) {
+        final hasErrors = result.errors.isNotEmpty;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              hasErrors 
+                ? '❌ Sync completado con errores: ${result.errors.join(", ")}'
+                : '✅ Sincronización completada exitosamente'
+            ),
+            backgroundColor: hasErrors ? Colors.red : Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+      
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error forzando sync: $e'),
+            content: Text('❌ Error en sincronización segura: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -262,6 +364,31 @@ class _SyncDebugWidgetState extends ConsumerState<SyncDebugWidget> {
     }
   }
 
+  void _resetCircuitBreaker() {
+    try {
+      final safeSyncService = ref.read(safeSyncServiceProvider);
+      safeSyncService.forceResetCircuitBreaker();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🔧 Circuit breaker reseteado manualmente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error reseteando circuit breaker: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _clearResults() {
     setState(() {
       _lastTestResult = null;
@@ -271,10 +398,25 @@ class _SyncDebugWidgetState extends ConsumerState<SyncDebugWidget> {
   String _formatTestResult(Map<String, dynamic> result) {
     final buffer = StringBuffer();
 
-    buffer.writeln('👤 Usuario autenticado: ${result['user_authenticated']}');
+    buffer.writeln('👤 Usuario autenticado: ${result['user_authenticated'] ?? 'N/A'}');
     if (result.containsKey('user_id')) {
       buffer.writeln('🆔 User ID: ${result['user_id']}');
     }
+    
+    // Circuit breaker status
+    if (result.containsKey('circuit_status')) {
+      final circuit = result['circuit_status'] as Map<String, dynamic>;
+      buffer.writeln('🔧 Circuit Breaker: ${circuit['state']}');
+      if (circuit['consecutive_failures'] > 0) {
+        buffer.writeln('   Fallos consecutivos: ${circuit['consecutive_failures']}');
+      }
+    }
+    
+    // Sync blocked info
+    if (result['sync_blocked'] == true) {
+      buffer.writeln('🚫 Sincronización BLOQUEADA');
+    }
+    
     buffer.writeln('');
 
     // Si es test directo de Supabase

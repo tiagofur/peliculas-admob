@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
@@ -42,7 +42,7 @@ class HomeViewState extends ConsumerState<HomeView>
     super.build(context);
 
     final initialLoading = ref.watch(initialLoadingProvider);
-    print('🏠 HomeView - initialLoading: $initialLoading');
+    LoggerFactory.info('🏠 HomeView - initialLoading: $initialLoading');
     if (initialLoading) return const FullScreenLoader();
 
     final slideShowMovies = ref.watch(moviesSlideshowProvider);
@@ -294,99 +294,5 @@ class HomeViewState extends ConsumerState<HomeView>
     }
 
     return const SizedBox.shrink();
-  }
-
-  /// Construye una tarjeta individual de recomendación
-  Widget _buildRecommendationCard(
-      dynamic recommendation, BuildContext context) {
-    return Container(
-      width: 120,
-      margin: const EdgeInsets.only(right: 12),
-      child: GestureDetector(
-        onTap: () {
-          context.push('/movie/${recommendation.movieId}');
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Poster de la película
-            Container(
-              width: 120,
-              height: 140,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: Colors.grey[300],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: recommendation.posterPath.isNotEmpty
-                    ? FadeInImage.assetNetwork(
-                        placeholder: 'assets/loaders/bottle-loader.gif',
-                        image:
-                            'https://image.tmdb.org/t/p/w500${recommendation.posterPath}',
-                        fit: BoxFit.cover,
-                        imageErrorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.movie,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        color: Colors.grey[300],
-                        child: const Icon(
-                          Icons.movie,
-                          size: 40,
-                          color: Colors.grey,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Título de la película
-            Text(
-              recommendation.title,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            // Razón de la recomendación
-            Container(
-              width:
-                  120, // Asegurar que no exceda el ancho del contenedor padre
-              margin: const EdgeInsets.only(top: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.3),
-                  width: 0.5,
-                ),
-              ),
-              child: Text(
-                recommendation.reason,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.blue[800],
-                  fontWeight: FontWeight.w600,
-                  height: 1.2,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

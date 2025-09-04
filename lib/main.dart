@@ -28,7 +28,6 @@ import 'infrastructure/services/auth_session_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
 import 'infrastructure/services/cross_platform_init_service.dart';
 import 'infrastructure/services/realtime_sync_service.dart';
-import 'infrastructure/services/sync_service.dart';
 import 'infrastructure/services/token_refresh_service.dart';
 import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
@@ -283,16 +282,9 @@ class MainApp extends ConsumerWidget {
     // INICIALIZAR ERROR REPORTING USER CONTEXT
     ref.watch(errorReportingUserContextProvider);
 
-    // INITIALIZE SYNC SERVICE
-    try {
-      ref.read(syncServiceProvider).initialize();
-      if (kDebugMode) {
-        LoggerFactory.info('✅ Sync service initialized');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        LoggerFactory.error('❌ Error initializing sync service: $e');
-      }
+    // SYNC SERVICE será inicializado automáticamente cuando el usuario se autentique
+    if (kDebugMode) {
+      LoggerFactory.info('✅ Sync service will be initialized on user authentication');
     }
 
     // Remover el splash screen solo en plataformas móviles

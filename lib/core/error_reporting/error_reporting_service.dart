@@ -7,6 +7,21 @@ import '../../services/error_reporting_config.dart';
 import '../logging/logger_factory.dart';
 import 'error_metrics_service.dart';
 
+/// Utility function to clean null values from data maps to prevent
+/// "Cannot send Null" errors in Flutter debugger and Firebase Crashlytics
+Map<String, dynamic>? _cleanErrorDataMap(Map<String, dynamic>? data) {
+  if (data == null) return null;
+  
+  final cleanData = <String, dynamic>{};
+  for (final entry in data.entries) {
+    if (entry.value != null) {
+      cleanData[entry.key] = entry.value;
+    }
+  }
+  
+  return cleanData.isEmpty ? null : cleanData;
+}
+
 /// Service for handling error reporting using Firebase Crashlytics
 /// Integrates with the existing logging system to provide crash reporting
 class ErrorReportingService {
@@ -105,11 +120,13 @@ class ErrorReportingService {
     Map<String, dynamic>? data,
     bool fatal = false,
   }) async {
+    final cleanData = _cleanErrorDataMap(data);
+    
     if (!_isInitialized || !_isEnabled || kIsWeb) {
       // Still log locally even if Crashlytics is not available
       LoggerFactory.error(
         reason ?? 'Error reported: $error',
-        data: data,
+        data: cleanData,
         stackTrace: stackTrace,
       );
       return;
@@ -117,11 +134,11 @@ class ErrorReportingService {
 
     try {
       // Set custom keys for additional context
-      if (data != null) {
-        for (final entry in data.entries) {
+      if (cleanData != null) {
+        for (final entry in cleanData.entries) {
           await FirebaseCrashlytics.instance.setCustomKey(
             entry.key,
-            entry.value?.toString() ?? 'null',
+            entry.value.toString(),
           );
         }
       }
@@ -137,14 +154,14 @@ class ErrorReportingService {
       // Also log locally
       LoggerFactory.error(
         reason ?? 'Error reported: $error',
-        data: data,
+        data: cleanData,
         stackTrace: stackTrace,
       );
     } catch (e) {
       // Fallback to local logging if Crashlytics fails
       LoggerFactory.error(
         'Failed to report error to Crashlytics: $e. Original error: $error',
-        data: data,
+        data: cleanData,
         stackTrace: stackTrace,
       );
     }
@@ -241,7 +258,7 @@ extension ErrorReportingZone on ErrorReportingService {
           error,
           stackTrace,
           reason: zoneName != null ? 'Error in zone: $zoneName' : null,
-          data: customData,
+          data: _cleanErrorDataMap(customData),
           fatal: false,
         );
       },
@@ -280,7 +297,7 @@ extension ErrorReportingZone on ErrorReportingService {
           stackTrace,
           reason:
               zoneName != null ? 'Async error in zone: $zoneName' : null,
-          data: customData,
+          data: _cleanErrorDataMap(customData),
           fatal: false,
         );
       },

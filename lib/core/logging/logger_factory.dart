@@ -2,6 +2,21 @@ import '../error_reporting/error_reporting_service.dart';
 import 'base_logger.dart';
 import 'noop_logger.dart';
 
+/// Utility function to clean null values from data maps to prevent
+/// "Cannot send Null" errors in Flutter debugger
+Map<String, dynamic>? _cleanDataMap(Map<String, dynamic>? data) {
+  if (data == null) return null;
+  
+  final cleanData = <String, dynamic>{};
+  for (final entry in data.entries) {
+    if (entry.value != null) {
+      cleanData[entry.key] = entry.value;
+    }
+  }
+  
+  return cleanData.isEmpty ? null : cleanData;
+}
+
 /// Factory para gestionar instancias de logger con fallback automático
 /// Permite usar logging sin necesidad de configuración previa,
 /// proporcionando automáticamente un NoOpLogger cuando no hay logger configurado
@@ -63,7 +78,7 @@ class LoggerFactory {
     LogCategory category = LogCategory.general,
     Map<String, dynamic>? data,
   }) async {
-    await logger.info(message, category: category, data: data);
+    await logger.info(message, category: category, data: _cleanDataMap(data));
   }
 
   static Future<void> warning(
@@ -71,7 +86,7 @@ class LoggerFactory {
     LogCategory category = LogCategory.general,
     Map<String, dynamic>? data,
   }) async {
-    await logger.warning(message, category: category, data: data);
+    await logger.warning(message, category: category, data: _cleanDataMap(data));
   }
 
   static Future<void> error(
@@ -80,8 +95,9 @@ class LoggerFactory {
     Map<String, dynamic>? data,
     StackTrace? stackTrace,
   }) async {
+    final cleanData = _cleanDataMap(data);
     await logger.error(message,
-        category: category, data: data, stackTrace: stackTrace);
+        category: category, data: cleanData, stackTrace: stackTrace);
 
     // Also report to error reporting service if it's a significant error
     if (category == LogCategory.error || stackTrace != null) {
@@ -89,7 +105,7 @@ class LoggerFactory {
         message,
         stackTrace,
         reason: 'Logger error: ${category.name}',
-        data: data,
+        data: cleanData,
         fatal: false,
       );
     }
@@ -100,7 +116,7 @@ class LoggerFactory {
     LogCategory category = LogCategory.general,
     Map<String, dynamic>? data,
   }) async {
-    await logger.debug(message, category: category, data: data);
+    await logger.debug(message, category: category, data: _cleanDataMap(data));
   }
 
   /// Report a critical error that should be tracked in crash reporting
@@ -113,12 +129,13 @@ class LoggerFactory {
   }) async {
     final message =
         'Critical error${context != null ? ' in $context' : ''}: $error';
+    final cleanData = _cleanDataMap(data);
 
     // Log locally
     await logger.error(
       message,
       category: LogCategory.error,
-      data: data,
+      data: cleanData,
       stackTrace: stackTrace,
     );
 
@@ -127,7 +144,7 @@ class LoggerFactory {
       error,
       stackTrace,
       reason: message,
-      data: data,
+      data: cleanData,
       fatal: fatal,
     );
   }
@@ -177,8 +194,8 @@ class LoggerFactory {
       endpoint: endpoint,
       statusCode: statusCode,
       responseTime: responseTime,
-      requestData: requestData,
-      responseData: responseData,
+      requestData: _cleanDataMap(requestData),
+      responseData: _cleanDataMap(responseData),
       error: error,
     );
   }
@@ -193,7 +210,7 @@ class LoggerFactory {
       operation: operation,
       duration: duration,
       recordsProcessed: recordsProcessed,
-      metrics: metrics,
+      metrics: _cleanDataMap(metrics),
     );
   }
 }
