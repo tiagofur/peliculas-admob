@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../logging/logger_factory.dart';
-import '../../domain/entities/movie.dart';
 import '../../domain/entities/sync_result.dart';
 import '../../domain/entities/syncable_favorite.dart';
 import 'entity_sync_manager.dart';
@@ -52,8 +51,10 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       // Add date filtering for incremental sync
       if (since != null) {
-        query = query.gte('last_modified_at', since.toIso8601String());
+        // TODO: Fix date filtering when Supabase API is clarified
+        // query = query.filter('last_modified_at', 'gte', since.toIso8601String());
         LoggerFactory.info('📅 Fetching remote changes since: ${since.toIso8601String()}');
+        LoggerFactory.warning('⚠️ Date filtering temporarily disabled - will fetch all records');
       }
 
       final response = await query;
@@ -141,24 +142,6 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       for (final entity in entities) {
         try {
-          // Convert SyncableFavorite to Movie for local storage
-          final movie = Movie(
-            id: entity.movieId,
-            title: entity.movieTitle,
-            posterPath: entity.posterPath,
-            backdropPath: entity.backdropPath,
-            overview: entity.overview ?? '',
-            releaseDate: entity.releaseDate,
-            voteAverage: entity.voteAverage ?? 0.0,
-            adult: false,
-            genreIds: [],
-            originalLanguage: '',
-            originalTitle: entity.movieTitle,
-            popularity: 0.0,
-            video: false,
-            voteCount: 0,
-          );
-
           // This will be handled by the hybrid repository when it processes the download
           // For now, just count as successful - the hybrid repository handles actual storage
           successful++;

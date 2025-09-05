@@ -31,7 +31,12 @@ class WatchlistHiveDatasource {
     return _box!; // Safe because we just checked above
   }
 
-  Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) async {
+  Future<void> addToWatchlist(WatchlistMovie watchlistMovie) async {
+    await initialize();
+    await _watchlistBox.put(watchlistMovie.movieId, watchlistMovie);
+  }
+
+  Future<void> addMovieToWatchlist(Movie movie, WatchlistPriority priority) async {
     await initialize();
 
     final now = DateTime.now();
@@ -49,8 +54,7 @@ class WatchlistHiveDatasource {
       lastModifiedAt: now,
     );
 
-    // Usar movieId como key para facilitar búsqueda
-    await _watchlistBox.put(movie.id, watchlistMovie);
+    await addToWatchlist(watchlistMovie);
   }
 
   Future<void> removeFromWatchlist(int movieId) async {

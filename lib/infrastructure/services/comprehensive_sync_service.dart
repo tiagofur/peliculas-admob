@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../core/logging/logger_factory.dart';
+import '../../core/sync/entity_sync_manager.dart';
 import '../../core/sync/favorites_sync_manager.dart';
 import '../../core/sync/watchlist_sync_manager.dart';
 import '../../domain/entities/sync_result.dart';
@@ -30,18 +31,19 @@ class ComprehensiveSyncService {
   bool _isInitialized = false;
   bool _isSyncing = false;
   Timer? _periodicSyncTimer;
-  
+
   // Stream controllers for sync events
-  final StreamController<SyncProgressEvent> _syncProgressController = 
+  final StreamController<SyncProgressEvent> _syncProgressController =
       StreamController<SyncProgressEvent>.broadcast();
-  final StreamController<ComprehensiveSyncResult> _syncResultController = 
+  final StreamController<ComprehensiveSyncResult> _syncResultController =
       StreamController<ComprehensiveSyncResult>.broadcast();
 
   /// Stream de progreso de sincronización
   Stream<SyncProgressEvent> get syncProgress => _syncProgressController.stream;
-  
+
   /// Stream de resultados de sincronización
-  Stream<ComprehensiveSyncResult> get syncResults => _syncResultController.stream;
+  Stream<ComprehensiveSyncResult> get syncResults =>
+      _syncResultController.stream;
 
   /// Indica si el servicio está sincronizando
   bool get isSyncing => _isSyncing;
@@ -64,13 +66,14 @@ class ComprehensiveSyncService {
       );
 
       _isInitialized = true;
-      LoggerFactory.info('✅ ComprehensiveSyncService initialized for user: $userId');
+      LoggerFactory.info(
+          '✅ ComprehensiveSyncService initialized for user: $userId');
 
       // Inicializar sincronización periódica
       _startPeriodicSync();
-
     } catch (e) {
-      LoggerFactory.error('❌ Failed to initialize ComprehensiveSyncService: $e');
+      LoggerFactory.error(
+          '❌ Failed to initialize ComprehensiveSyncService: $e');
       _isInitialized = false;
     }
   }
@@ -82,7 +85,7 @@ class ComprehensiveSyncService {
       const Duration(minutes: 5),
       (_) => _performPeriodicSync(),
     );
-    
+
     LoggerFactory.info('🔄 Periodic sync started (every 5 minutes)');
   }
 
@@ -100,7 +103,8 @@ class ComprehensiveSyncService {
       return;
     }
 
-    final hasConnectivity = await ConnectivityDetector.instance.hasConnectivity();
+    final hasConnectivity =
+        await ConnectivityDetector.instance.testConnection();
     if (!hasConnectivity) {
       LoggerFactory.debug('⏭️ Skipping periodic sync - no connectivity');
       return;
@@ -128,15 +132,17 @@ class ComprehensiveSyncService {
       LoggerFactory.info('🔄 Starting comprehensive full sync');
 
       // Verificar conectividad
-      final hasConnectivity = await ConnectivityDetector.instance.hasConnectivity();
+      final hasConnectivity =
+          await ConnectivityDetector.instance.testConnection();
       if (!hasConnectivity) {
-        LoggerFactory.warning('📶 No connectivity - sync will be queued for later');
+        LoggerFactory.warning(
+            '📶 No connectivity - sync will be queued for later');
         return ComprehensiveSyncResult.noConnectivity();
       }
 
       // Sincronizar favoritos
       final favoritesResult = await _favoritesSyncManager.performFullSync();
-      
+
       // Sincronizar watchlist
       final watchlistResult = await _watchlistSyncManager.performFullSync();
 
@@ -149,17 +155,18 @@ class ComprehensiveSyncService {
       );
 
       _syncResultController.add(result);
-      
+
       if (result.success) {
         LoggerFactory.info('✅ Comprehensive full sync completed successfully');
       } else {
-        LoggerFactory.warning('⚠️ Comprehensive full sync completed with errors');
+        LoggerFactory.warning(
+            '⚠️ Comprehensive full sync completed with errors');
       }
 
       return result;
-
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Comprehensive full sync failed: $e', stackTrace);
+      LoggerFactory.error('❌ Comprehensive full sync failed: $e',
+          stackTrace: stackTrace);
       final result = ComprehensiveSyncResult.error(
         error: e.toString(),
         duration: DateTime.now().difference(startTime),
@@ -167,7 +174,6 @@ class ComprehensiveSyncService {
       );
       _syncResultController.add(result);
       return result;
-
     } finally {
       _isSyncing = false;
     }
@@ -191,17 +197,20 @@ class ComprehensiveSyncService {
       LoggerFactory.info('🔄 Starting comprehensive incremental sync');
 
       // Verificar conectividad
-      final hasConnectivity = await ConnectivityDetector.instance.hasConnectivity();
+      final hasConnectivity =
+          await ConnectivityDetector.instance.testConnection();
       if (!hasConnectivity) {
         LoggerFactory.debug('📶 No connectivity - incremental sync skipped');
         return ComprehensiveSyncResult.noConnectivity();
       }
 
       // Sincronizar favoritos incrementalmente
-      final favoritesResult = await _favoritesSyncManager.performIncrementalSync();
-      
+      final favoritesResult =
+          await _favoritesSyncManager.performIncrementalSync();
+
       // Sincronizar watchlist incrementalmente
-      final watchlistResult = await _watchlistSyncManager.performIncrementalSync();
+      final watchlistResult =
+          await _watchlistSyncManager.performIncrementalSync();
 
       // Crear resultado combinado
       final result = ComprehensiveSyncResult.fromResults(
@@ -216,13 +225,14 @@ class ComprehensiveSyncService {
       if (result.success) {
         LoggerFactory.debug('✅ Comprehensive incremental sync completed');
       } else {
-        LoggerFactory.warning('⚠️ Comprehensive incremental sync completed with errors');
+        LoggerFactory.warning(
+            '⚠️ Comprehensive incremental sync completed with errors');
       }
 
       return result;
-
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Comprehensive incremental sync failed: $e', stackTrace);
+      LoggerFactory.error('❌ Comprehensive incremental sync failed: $e',
+          stackTrace: stackTrace);
       final result = ComprehensiveSyncResult.error(
         error: e.toString(),
         duration: DateTime.now().difference(startTime),
@@ -230,7 +240,6 @@ class ComprehensiveSyncService {
       );
       _syncResultController.add(result);
       return result;
-
     } finally {
       _isSyncing = false;
     }
@@ -248,17 +257,21 @@ class ComprehensiveSyncService {
       LoggerFactory.info('🔄 Starting queue sync');
 
       // Verificar conectividad
-      final hasConnectivity = await ConnectivityDetector.instance.hasConnectivity();
+      final hasConnectivity =
+          await ConnectivityDetector.instance.testConnection();
       if (!hasConnectivity) {
-        LoggerFactory.warning('📶 No connectivity - queue sync will retry later');
+        LoggerFactory.warning(
+            '📶 No connectivity - queue sync will retry later');
         return ComprehensiveSyncResult.noConnectivity();
       }
 
       // Procesar colas de favoritos
-      final favoritesResult = await _favoritesSyncManager.processQueuedOperations();
-      
+      final favoritesResult =
+          await _favoritesSyncManager.processQueuedOperations();
+
       // Procesar colas de watchlist
-      final watchlistResult = await _watchlistSyncManager.processQueuedOperations();
+      final watchlistResult =
+          await _watchlistSyncManager.processQueuedOperations();
 
       // Crear resultado combinado
       final result = ComprehensiveSyncResult.fromResults(
@@ -271,9 +284,8 @@ class ComprehensiveSyncService {
       _syncResultController.add(result);
       LoggerFactory.info('✅ Queue sync completed');
       return result;
-
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Queue sync failed: $e', stackTrace);
+      LoggerFactory.error('❌ Queue sync failed: $e', stackTrace: stackTrace);
       final result = ComprehensiveSyncResult.error(
         error: e.toString(),
         duration: DateTime.now().difference(startTime),
@@ -304,51 +316,32 @@ class ComprehensiveSyncService {
   /// Reinicia el servicio de sincronización
   Future<void> reset() async {
     LoggerFactory.info('🔄 Resetting ComprehensiveSyncService');
-    
+
     _stopPeriodicSync();
     _isSyncing = false;
-    
+
     await _favoritesSyncManager.dispose();
     await _watchlistSyncManager.dispose();
-    
+
     _initialize();
   }
 
   /// Limpia recursos del servicio
   Future<void> dispose() async {
     LoggerFactory.info('🧹 Disposing ComprehensiveSyncService');
-    
+
     _stopPeriodicSync();
-    
+
     await _syncProgressController.close();
     await _syncResultController.close();
-    
+
     if (_isInitialized) {
       await _favoritesSyncManager.dispose();
       await _watchlistSyncManager.dispose();
     }
-    
+
     _isInitialized = false;
   }
-}
-
-/// Evento de progreso de sincronización comprensiva
-class SyncProgressEvent {
-  const SyncProgressEvent({
-    required this.entityType,
-    required this.phase,
-    required this.currentItem,
-    required this.totalItems,
-    this.message,
-  });
-
-  final String entityType;
-  final String phase;
-  final int currentItem;
-  final int totalItems;
-  final String? message;
-
-  double get progress => totalItems > 0 ? currentItem / totalItems : 0.0;
 }
 
 /// Resultado de sincronización comprensiva
@@ -361,13 +354,6 @@ class ComprehensiveSyncResult {
     required this.duration,
     this.error,
   });
-
-  final bool success;
-  final SyncType syncType;
-  final SyncResult favoritesResult;
-  final SyncResult watchlistResult;
-  final Duration duration;
-  final String? error;
 
   /// Crea resultado desde resultados individuales
   factory ComprehensiveSyncResult.fromResults({
@@ -416,7 +402,7 @@ class ComprehensiveSyncResult {
       errors: ['Sync already in progress'],
       duration: Duration.zero,
     );
-    
+
     return ComprehensiveSyncResult(
       success: false,
       syncType: SyncType.none,
@@ -434,7 +420,7 @@ class ComprehensiveSyncResult {
       errors: ['No internet connectivity'],
       duration: Duration.zero,
     );
-    
+
     return ComprehensiveSyncResult(
       success: false,
       syncType: SyncType.none,
@@ -445,16 +431,23 @@ class ComprehensiveSyncResult {
     );
   }
 
-  int get totalItemsProcessed => 
+  final bool success;
+  final SyncType syncType;
+  final SyncResult favoritesResult;
+  final SyncResult watchlistResult;
+  final Duration duration;
+  final String? error;
+
+  int get totalItemsProcessed =>
       favoritesResult.itemsProcessed + watchlistResult.itemsProcessed;
 
-  int get totalItemsSuccessful => 
+  int get totalItemsSuccessful =>
       favoritesResult.itemsSuccessful + watchlistResult.itemsSuccessful;
 
-  int get totalItemsFailed => 
+  int get totalItemsFailed =>
       favoritesResult.itemsFailed + watchlistResult.itemsFailed;
 
-  List<String> get allErrors => 
+  List<String> get allErrors =>
       [...favoritesResult.errors, ...watchlistResult.errors];
 
   @override
@@ -480,7 +473,7 @@ class ComprehensiveSyncStats {
   });
 
   final dynamic favorites; // SyncStats
-  final dynamic watchlist; // SyncStats  
+  final dynamic watchlist; // SyncStats
   final DateTime lastFullSync;
   final DateTime lastIncrementalSync;
 }

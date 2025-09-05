@@ -80,8 +80,14 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
 
   @override
   Future<Map<int, Movie>> getFavoriteMovies() async {
-    final movies = await _localDatasource.loadMovies();
-    return {for (var movie in movies) movie.id: movie};
+    // 🐛 FIX: Cargar TODAS las películas, no solo las primeras 10
+    final movies = await _localDatasource.loadMovies(limit: 1000, offset: 0);
+    final result = {for (var movie in movies) movie.id: movie};
+    
+    // 🐛 DEBUG: Log para detectar corrupción
+    LoggerFactory.info('🔍 getFavoriteMovies returning ${result.length} favorites: ${result.keys.toList()}');
+    
+    return result;
   }
 
   @override

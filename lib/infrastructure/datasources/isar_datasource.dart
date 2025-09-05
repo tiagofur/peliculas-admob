@@ -44,7 +44,7 @@ class HiveDatasource extends LocalStorageDatasource {
       }
 
       _moviesBox = await Hive.openBox<Movie>('movies');
-      _watchlistBox = await Hive.openBox<WatchlistMovie>('watchlist_movies');
+      _watchlistBox = await Hive.openBox<WatchlistMovie>('isar_watchlist_cache');
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
@@ -54,7 +54,7 @@ class HiveDatasource extends LocalStorageDatasource {
       try {
         _moviesBox = await Hive.openBox<Movie>('movies_fallback');
         _watchlistBox =
-            await Hive.openBox<WatchlistMovie>('watchlist_movies_fallback');
+            await Hive.openBox<WatchlistMovie>('isar_watchlist_cache_fallback');
         _isInitialized = true;
       } catch (e2) {
         if (kDebugMode) {

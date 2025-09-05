@@ -6,6 +6,7 @@ import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/debug/simple_favorites_test_widget.dart';
 import '../../widgets/guest_mode_banner.dart';
 import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
 import '../../widgets/widgets.dart';
@@ -77,6 +78,9 @@ class HomeViewState extends ConsumerState<HomeView>
 
               // Banner de modo guest (solo se muestra en modo guest)
               const GuestModeBanner(),
+
+              // Widget de test para favoritos simples (temporal)
+              const SimpleFavoritesTestWidget(),
 
               // Banner discreto después del slideshow
               const BannerAdWidget(),

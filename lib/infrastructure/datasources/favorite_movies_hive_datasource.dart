@@ -1,6 +1,7 @@
 
 import 'package:hive/hive.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
@@ -15,29 +16,58 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
   @override
   Future<bool> isMovieFavorite(int movieId) async {
     final box = await _getBox();
-    return box.values.any((movie) => movie.id == movieId);
+    // ✅ Validación de tipos para evitar corrupción
+    return box.values
+        .where((item) => item is Movie)
+        .cast<Movie>()
+        .any((movie) => movie.id == movieId);
   }
 
   @override
   Future<List<Movie>> loadMovies({int limit = 10, offset = 0}) async {
     final box = await _getBox();
-    final allMovies = box.values.toList();
+    
+    // 🐛 DEBUG: Log raw data from box
+    LoggerFactory.info('🔍 FavoriteMoviesHiveDatasource box contains ${box.length} raw items');
+    
+    // ✅ Validación de tipos para evitar corrupción
+    final allMovies = box.values
+        .where((item) => item is Movie && item.id != null && item.title.isNotEmpty)
+        .cast<Movie>()
+        .toList();
+    
+    // 🐛 DEBUG: Log processed movies
+    LoggerFactory.info('🔍 After validation: ${allMovies.length} valid movies: ${allMovies.map((m) => '${m.id}:${m.title}').toList()}');
+    
     final endIndex = (offset + limit).clamp(0, allMovies.length);
     if (offset >= allMovies.length) return [];
-    return allMovies.sublist(offset, endIndex);
+    
+    final result = allMovies.sublist(offset, endIndex);
+    LoggerFactory.info('🔍 Returning ${result.length} movies (offset: $offset, limit: $limit)');
+    return result;
   }
 
   @override
   Future<void> toggleFavorite(Movie movie) async {
     final box = await _getBox();
+    
+    // 🐛 DEBUG: Log before operation
+    LoggerFactory.info('🔍 toggleFavorite for movie: ${movie.id}:${movie.title}');
+    LoggerFactory.info('🔍 Box before operation: ${box.length} items');
+    
     final existingMovieIndex =
         box.values.toList().indexWhere((m) => m.id == movie.id);
 
     if (existingMovieIndex != -1) {
       await box.deleteAt(existingMovieIndex);
+      LoggerFactory.info('✅ Removed movie ${movie.id} from favorites (was at index $existingMovieIndex)');
     } else {
       await box.add(movie);
+      LoggerFactory.info('✅ Added movie ${movie.id} to favorites');
     }
+    
+    // 🐛 DEBUG: Log after operation  
+    LoggerFactory.info('🔍 Box after operation: ${box.length} items');
   }
 
   @override
@@ -84,15 +114,12 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
 
   @override
   Future<bool> cacheMovie(Movie movie) async {
-    final box = await _getBox();
-    await box.add(movie);
-    return true;
+    throw UnimplementedError('FavoriteMoviesHiveDatasource should not cache individual movies - only favorites');
   }
 
   @override
   Future<void> cacheMovies(List<Movie> movies, String category) async {
-    final box = await _getBox();
-    await box.addAll(movies);
+    throw UnimplementedError('FavoriteMoviesHiveDatasource should not cache all movies - only favorites');
   }
 
   @override

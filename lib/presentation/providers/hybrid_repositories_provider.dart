@@ -6,6 +6,7 @@ import '../../domain/repositories/watchlist_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/datasources/isar_datasource.dart';
 import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
+import '../../infrastructure/datasources/watchlist_hive_datasource.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
 import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
@@ -61,22 +62,25 @@ final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
   );
 });
 
+// Provider para el datasource de Hive de watchlist
+final watchlistHiveDatasourceProvider = Provider<WatchlistHiveDatasource>((ref) {
+  return WatchlistHiveDatasource();
+});
+
 // Provider for the unified watchlist repository interface
 final watchlistRepositoryProvider = Provider<WatchlistRepository>((ref) {
-  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
-
-  return HybridWatchlistRepository(
-    userId: userId,
-  ) as WatchlistRepository;
+  return ref.watch(hybridWatchlistRepositoryProvider);
 });
 
 // Provider específico para HybridWatchlistRepository
 final hybridWatchlistRepositoryProvider =
     Provider<HybridWatchlistRepository>((ref) {
   final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
+  final hiveDatasource = ref.watch(watchlistHiveDatasourceProvider);
 
   return HybridWatchlistRepository(
     userId: userId,
+    hiveDatasource: hiveDatasource,
   );
 });
 

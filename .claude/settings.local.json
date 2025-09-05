@@ -116,7 +116,11 @@
       "Read(/C:\\Users\\Usuario\\source\\repos\\peliculas-admob\\lib\\infrastructure\\repositories/**)",
       "Bash(flutter clean:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(flutter packages pub run build_runner build:*)"
+      "Bash(flutter packages pub run build_runner build:*)",
+      "Bash(cat:*)",
+      "Bash(sed:*)",
+      "Bash(taskkill:*)",
+      "Bash(flutter packages pub run:*)"
     ],
     "deny": [],
     "ask": []

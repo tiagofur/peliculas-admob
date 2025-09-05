@@ -8,6 +8,7 @@ import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../infrastructure/services/anonymous_data_migrator.dart';
+import './hybrid_repositories_provider.dart';
 
 // Enum para definir el modo de la aplicación
 enum AppMode {
@@ -311,21 +312,18 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         
         final user = _ref.read(currentUserProvider);
         if (user == null) {
-          LoggerFactory.warning('❌ No hay usuario disponible para migración');
+          LoggerFactory.warning('❌ No hay usuario disponible para migración y sincronización');
           return;
         }
 
-        // 1. Detectar datos locales de usuario anónimo
+        // 1. Detectar y migrar datos locales de usuario anónimo
         final migrator = _ref.read(anonymousDataMigratorProvider);
         final detectedData = await migrator.detectAnonymousData();
         
         if (detectedData.isNotEmpty) {
           LoggerFactory.info('📱 Datos locales detectados: $detectedData');
-          
-          // Actualizar estado para indicar que hay datos locales
           _ref.read(appStateProvider.notifier).setHasLocalData(true);
           
-          // 2. Migrar datos locales al usuario autenticado
           LoggerFactory.info('🔄 Migrando datos locales a usuario: ${user.id}');
           final migrationResult = await migrator.migrateAllData(user.id);
           
@@ -338,11 +336,16 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           LoggerFactory.info('ℹ️ No hay datos locales para migrar');
         }
 
-        // 3. NO ejecutar sincronización automática para evitar congelamiento
-        LoggerFactory.info('⚠️ Sincronización automática DESHABILITADA para evitar bloqueos');
-        LoggerFactory.info('💡 El usuario puede sincronizar manualmente desde Settings');
-        
-        LoggerFactory.info('✅ Proceso post-autenticación completado (sin sincronización automática)');
+        // 2. Ejecutar sincronización de todas las entidades en segundo plano
+        LoggerFactory.info('🔄 Iniciando sincronización en segundo plano para todas las entidades...');
+
+        // Disparar la sincronización para cada repositorio sin esperar (no await)
+        _ref.read(hybridFavoritesRepositoryProvider).forceSync();
+        _ref.read(hybridWatchlistRepositoryProvider).forceSync();
+        _ref.read(hybridWatchedRepositoryProvider).forceSync();
+        _ref.read(hybridCustomListsRepositoryProvider).forceSync();
+
+        LoggerFactory.info('✅ Sincronización para todas las entidades iniciada en segundo plano.');
         
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario

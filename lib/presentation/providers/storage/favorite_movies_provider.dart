@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -34,24 +36,41 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   }) : super({}) {
     // Cargar favoritos existentes al inicializar
     _loadExistingFavorites();
+    // NO configurar auto-refresh automáticamente para evitar bloqueos
+    // _setupAutoRefresh(); // Se habilitará manualmente cuando sea necesario
   }
 
   int page = 0;
   final FavoritesRepository favoritesRepository;
   final VoidCallback onMovieFavorited;
+  Timer? _refreshTimer;
   
   /// Cargar favoritos existentes al inicializar el provider
   Future<void> _loadExistingFavorites() async {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
+      
+      // 🐛 DEBUG: Log what we're loading initially
+      if (kDebugMode) {
+        print('🔍 [FavoriteProvider] _loadExistingFavorites got ${favoriteMoviesMap.length} favorites');
+        print('🔍 [FavoriteProvider] Favorite IDs: ${favoriteMoviesMap.keys.toList()}');
+      }
+      
       if (favoriteMoviesMap.isNotEmpty) {
         state = favoriteMoviesMap;
         if (kDebugMode) {
           print('✅ Cargados ${favoriteMoviesMap.length} favoritos desde el repositorio híbrido');
         }
+      } else {
+        // Ensure state is empty if no favorites
+        state = {};
+        if (kDebugMode) {
+          print('ℹ️ No favorites found, state set to empty');
+        }
       }
     } catch (e) {
       // Si hay error cargando, mantener estado vacío pero registrar el error
+      state = {};
       if (kDebugMode) {
         print('❌ Error cargando favoritos existentes: $e');
       }
@@ -83,11 +102,23 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   Future<void> toggleFavorite(Movie movie) async {
     final isFavorite = state[movie.id] != null;
 
+    // 🐛 DEBUG: Log state before operation
+    if (kDebugMode) {
+      print('🔍 [FavoriteProvider] BEFORE toggle ${movie.id}:${movie.title}');
+      print('🔍 [FavoriteProvider] Current state has ${state.length} favorites: ${state.keys.toList()}');
+      print('🔍 [FavoriteProvider] isFavorite = $isFavorite');
+    }
+
     // Actualización optimista de la UI
     if (isFavorite) {
       state = Map.from(state)..remove(movie.id);
     } else {
       state = {...state, movie.id: movie};
+    }
+
+    // 🐛 DEBUG: Log state after UI update
+    if (kDebugMode) {
+      print('🔍 [FavoriteProvider] AFTER UI update: ${state.length} favorites: ${state.keys.toList()}');
     }
 
     try {
@@ -116,13 +147,53 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     }
   }
 
+  /// Configura el auto-refresh para detectar cambios en tiempo real
+  void _setupAutoRefresh() {
+    if (_refreshTimer != null) return; // Ya está configurado
+    
+    // Configurar un timer que verifica cambios cada 2 segundos durante sync
+    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      refreshFavorites();
+    });
+  }
+
+  /// Habilita el auto-refresh manualmente (cuando el usuario se autentica)
+  void enableAutoRefresh() {
+    if (kDebugMode) {
+      print('🔄 Habilitando auto-refresh de favoritos');
+    }
+    _setupAutoRefresh();
+  }
+
+  /// Deshabilita el auto-refresh
+  void disableAutoRefresh() {
+    if (kDebugMode) {
+      print('🛑 Deshabilitando auto-refresh de favoritos');
+    }
+    _refreshTimer?.cancel();
+    _refreshTimer = null;
+  }
+
   /// Refrescar el estado completo de favoritos (útil después de sync)
   Future<void> refreshFavorites() async {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
-      state = favoriteMoviesMap;
-      if (kDebugMode) {
-        print('🔄 Favoritos refrescados desde repositorio híbrido');
+      
+      // Solo actualizar si hay cambios reales para evitar rebuilds innecesarios
+      if (!_mapsEqual(state, favoriteMoviesMap)) {
+        final oldCount = state.length;
+        state = favoriteMoviesMap;
+        
+        if (kDebugMode) {
+          final newCount = favoriteMoviesMap.length;
+          if (newCount > oldCount) {
+            print('✅ Favoritos actualizados: +${newCount - oldCount} nuevos favoritos');
+          } else if (newCount < oldCount) {
+            print('🔄 Favoritos actualizados: -${oldCount - newCount} favoritos removidos');
+          } else {
+            print('🔄 Favoritos refrescados desde repositorio híbrido');
+          }
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -131,9 +202,21 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     }
   }
 
+  /// Verifica si dos mapas son iguales
+  bool _mapsEqual(Map<int, Movie> map1, Map<int, Movie> map2) {
+    if (map1.length != map2.length) return false;
+    
+    for (final key in map1.keys) {
+      if (!map2.containsKey(key)) return false;
+      if (map1[key]?.id != map2[key]?.id) return false;
+    }
+    
+    return true;
+  }
+
   @override
   void dispose() {
-    // Limpiar recursos si es necesario
+    _refreshTimer?.cancel();
     super.dispose();
   }
 }

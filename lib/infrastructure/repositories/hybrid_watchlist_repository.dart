@@ -12,6 +12,8 @@ import '../../domain/entities/watchlist_movie.dart';
 import '../../domain/repositories/watchlist_repository.dart';
 import 'base_hybrid_repository.dart';
 
+import '../datasources/watchlist_hive_datasource.dart';
+
 /// Repositorio híbrido para watchlist que combina almacenamiento local y remoto
 /// con sincronización automática usando el sistema de sync de Fase 3
 class HybridWatchlistRepository
@@ -19,6 +21,7 @@ class HybridWatchlistRepository
     implements WatchlistRepository {
   HybridWatchlistRepository({
     required super.userId,
+    required this.hiveDatasource,
     SharedPreferences? prefs,
     GenericEntitySyncManager<SyncableWatchlistItem>? syncManager,
     super.syncCoordinator,
@@ -30,6 +33,7 @@ class HybridWatchlistRepository
                   userId: userId, entityType: 'watchlist_item'),
         );
 
+  final WatchlistHiveDatasource hiveDatasource;
   SharedPreferences? _prefs;
   static const String _storageKey = 'local_watchlist';
 
@@ -45,66 +49,51 @@ class HybridWatchlistRepository
 
   @override
   Future<List<SyncableWatchlistItem>> getLocalData() async {
-    if (_prefs == null) await initializeLocal();
-
     try {
-      final jsonList = _prefs!.getStringList(_storageKey) ?? [];
-      final watchlistItems = jsonList
-          .map((jsonStr) => SyncableWatchlistItem.fromJsonString(jsonStr))
-          .where((item) => item.userId == userId && !item.isDeleted)
+      final movies = await hiveDatasource.getAllWatchlistMovies();
+      final watchlistItems = movies
+          .map((movie) => SyncableWatchlistItem.fromWatchlistMovie(
+                watchlistMovie: movie,
+                userId: userId,
+                deviceId: 'local',
+              ))
           .toList();
 
       LoggerFactory.debug(
-          '📋 Retrieved ${watchlistItems.length} watchlist items locally');
+          '📋 Retrieved ${watchlistItems.length} watchlist items from Hive');
       return watchlistItems;
     } catch (e) {
-      LoggerFactory.error('❌ Failed to get local watchlist items: $e');
+      LoggerFactory.error('❌ Failed to get local watchlist items from Hive: $e');
       return [];
     }
   }
 
   @override
   Future<void> saveToLocal(SyncableWatchlistItem entity) async {
-    if (_prefs == null) await initializeLocal();
-
     try {
-      final currentData = await getLocalData();
-      final updatedData = List<SyncableWatchlistItem>.from(currentData);
-
-      // Reemplazar o agregar la entidad
-      final existingIndex =
-          updatedData.indexWhere((item) => item.id == entity.id);
-      if (existingIndex >= 0) {
-        updatedData[existingIndex] = entity;
-      } else {
-        updatedData.add(entity);
-      }
-
-      final jsonList = updatedData.map((item) => item.toJsonString()).toList();
-      await _prefs!.setStringList(_storageKey, jsonList);
+      final movie = entity.toWatchlistMovie();
+      await hiveDatasource.addToWatchlist(movie);
 
       LoggerFactory.debug(
-          '💾 Saved watchlist item locally: ${entity.movieTitle}');
+          '💾 Saved watchlist item to Hive: ${entity.movieTitle}');
     } catch (e) {
-      LoggerFactory.error('❌ Failed to save watchlist item locally: $e');
+      LoggerFactory.error('❌ Failed to save watchlist item to Hive: $e');
       rethrow;
     }
   }
 
   @override
   Future<void> removeFromLocal(String id) async {
-    if (_prefs == null) await initializeLocal();
-
     try {
-      final currentData = await getLocalData();
-      final updatedData = currentData.where((item) => item.id != id).toList();
+      // Note: The ID of the syncable item is not the movie ID.
+      // We need to find the movie ID from the local data.
+      final localData = await getLocalData();
+      final itemToRemove = localData.firstWhere((item) => item.id == id);
+      await hiveDatasource.removeFromWatchlist(itemToRemove.movieId);
 
-      final jsonList = updatedData.map((item) => item.toJsonString()).toList();
-      await _prefs!.setStringList(_storageKey, jsonList);
-
-      LoggerFactory.debug('🗑️ Removed watchlist item locally: $id');
+      LoggerFactory.debug('🗑️ Removed watchlist item from Hive: $id');
     } catch (e) {
-      LoggerFactory.error('❌ Failed to remove watchlist item locally: $e');
+      LoggerFactory.error('❌ Failed to remove watchlist item from Hive: $e');
       rethrow;
     }
   }

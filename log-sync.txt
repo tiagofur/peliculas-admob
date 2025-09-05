@@ -1,0 +1,154 @@
+Connecting to VM Service at ws://127.0.0.1:58886/AkZBnOQrgf4=/ws
+Connected to the VM Service.
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+Found an existing <meta name="viewport"> tag. Flutter Web uses its own viewport configuration for better compatibility with Flutter. This tag will be replaced.
+supabase.supabase_flutter: INFO: ***** Supabase init completed ***** 
+ImagePreloaderService: INFO: ImagePreloader configured: enabled=true, maxConcurrent=3 
+CacheConfigurationService: INFO: CacheConfigurationService initialized 
+4
+🎬 MoviesNotifier creado
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 0 movies, state: MoviesState.initial
+   popular: 0 movies, state: MoviesState.initial
+   topRated: 0 movies, state: MoviesState.initial
+   upcoming: 0 movies, state: MoviesState.initial
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: true, hasErrors: false, result: true
+DeepLinkHandler: INFO: Current URL: http://localhost:58227/ 
+DeepLinkHandler: INFO: Parsing URL path: / 
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 1
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 1
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 1
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 1
+DeepLinkHandler: INFO: Current URL: http://localhost:58227/ 
+DeepLinkHandler: INFO: Parsing URL path: / 
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 0 movies, state: MoviesState.loading
+   popular: 0 movies, state: MoviesState.loading
+   topRated: 0 movies, state: MoviesState.loading
+   upcoming: 0 movies, state: MoviesState.loading
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: true, hasErrors: false, result: true
+[AppLogger] 2025-09-05T12:25:54.970 [INFO] ChallengeNotificationService initialized
+Got object store box in database favorite_movies.
+Got object store box in database movies_cache_now_playing_1.
+Got object store box in database movies_cache_popular_1.
+Got object store box in database movies_cache_top_rated_1.
+Got object store box in database movies_cache_upcoming_1.
+Got object store box in database watchlist_movies.
+🔍 [FavoriteProvider] _loadExistingFavorites got 0 favorites
+🔍 [FavoriteProvider] Favorite IDs: []
+ℹ️ No favorites found, state set to empty
+🌐 API Call: getNowPlaying - página 1
+🔑 API Key: c0ebc54da33cf71326f548860eb6b5fb
+🌐 API Call: getPopular - página 1
+🌐 API Call: getTopRated - página 1
+🌐 API Call: getUpcoming - página 1
+✅ Watchlist inicializada correctamente con 0 películas
+Got object store box in database watched_movies.
+✅ API Response: getNowPlaying - Status: 200
+🎬 Películas obtenidas: 20
+✅ API Response: getPopular - Status: 200
+🎬 Películas populares obtenidas: 20
+✅ API Response: getTopRated - Status: 200
+🎬 Películas top rated obtenidas: 20
+✅ API Response: getUpcoming - Status: 200
+🎬 Películas upcoming obtenidas: 20
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 20
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 20 movies, state: MoviesState.loaded
+   popular: 0 movies, state: MoviesState.loading
+   topRated: 0 movies, state: MoviesState.loading
+   upcoming: 0 movies, state: MoviesState.loading
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: false, hasErrors: false, result: true
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 20
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 20
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 20 movies, state: MoviesState.loaded
+   popular: 20 movies, state: MoviesState.loaded
+   topRated: 20 movies, state: MoviesState.loaded
+   upcoming: 0 movies, state: MoviesState.loading
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: false, hasErrors: false, result: true
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 20
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 20 movies, state: MoviesState.loaded
+   popular: 20 movies, state: MoviesState.loaded
+   topRated: 20 movies, state: MoviesState.loaded
+   upcoming: 20 movies, state: MoviesState.loaded
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: false, allEmpty: false, hasErrors: false, result: false
+DeepLinkHandler: INFO: Current URL: http://localhost:58227/ 
+DeepLinkHandler: INFO: Parsing URL path: / 
+🔍 [FavoriteProvider] BEFORE toggle 1311031:Demon Slayer: Kimetsu no Yaiba Castillo infinito
+🔍 [FavoriteProvider] Current state has 0 favorites: []
+🔍 [FavoriteProvider] isFavorite = false
+🔍 [FavoriteProvider] AFTER UI update: 1 favorites: [1311031]
+✅ [FavoriteMoviesProvider] Toggle favorite exitoso para: Demon Slayer: Kimetsu no Yaiba Castillo infinito
+DeepLinkHandler: INFO: Current URL: http://localhost:58227/ 
+DeepLinkHandler: INFO: Parsing URL path: / 
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 2
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 2
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 2
+🔄 loadNextPage llamado - isLoading: false, isLastPage: false
+📥 Iniciando carga de página 2
+🔍 [FavoriteProvider] _loadExistingFavorites got 1 favorites
+🔍 [FavoriteProvider] Favorite IDs: [1311031]
+✅ Cargados 1 favoritos desde el repositorio híbrido
+✅ Watchlist inicializada correctamente con 0 películas
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 20 movies, state: MoviesState.loading
+   popular: 20 movies, state: MoviesState.loading
+   topRated: 20 movies, state: MoviesState.loading
+   upcoming: 20 movies, state: MoviesState.loading
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: false, hasErrors: false, result: true
+Got object store box in database movies_cache_now_playing_2.
+Got object store box in database movies_cache_popular_2.
+Got object store box in database movies_cache_top_rated_2.
+Got object store box in database movies_cache_upcoming_2.
+🌐 API Call: getNowPlaying - página 2
+🔑 API Key: c0ebc54da33cf71326f548860eb6b5fb
+🌐 API Call: getPopular - página 2
+🌐 API Call: getTopRated - página 2
+🌐 API Call: getUpcoming - página 2
+✅ API Response: getNowPlaying - Status: 200
+🎬 Películas obtenidas: 20
+✅ API Response: getTopRated - Status: 200
+🎬 Películas top rated obtenidas: 20
+✅ API Response: getUpcoming - Status: 200
+🎬 Películas upcoming obtenidas: 20
+✅ API Response: getPopular - Status: 200
+🎬 Películas populares obtenidas: 20
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 40
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 40 movies, state: MoviesState.loaded
+   popular: 20 movies, state: MoviesState.loading
+   topRated: 20 movies, state: MoviesState.loading
+   upcoming: 20 movies, state: MoviesState.loading
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: false, hasErrors: false, result: true
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 40
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 40 movies, state: MoviesState.loaded
+   popular: 20 movies, state: MoviesState.loading
+   topRated: 40 movies, state: MoviesState.loaded
+   upcoming: 20 movies, state: MoviesState.loading
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: true, allEmpty: false, hasErrors: false, result: true
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 40
+✅ Películas obtenidas: 20
+🎯 Estado actualizado - Total películas: 40
+🔄 InitialLoadingProvider - Checking states:
+   nowPlaying: 40 movies, state: MoviesState.loaded
+   popular: 40 movies, state: MoviesState.loaded
+   topRated: 40 movies, state: MoviesState.loaded
+   upcoming: 40 movies, state: MoviesState.loaded
+🔄 InitialLoadingProvider - isAnyLoadingOrInitial: false, allEmpty: false, hasErrors: false, result: false
