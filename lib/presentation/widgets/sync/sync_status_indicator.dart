@@ -1,209 +1,111 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/sync_integration_provider.dart' as integration;
 
-import '../../../services/accessibility_service.dart';
-import '../../providers/sync_status_provider.dart';
-
-/// Widget indicador de estado de sincronización
 class SyncStatusIndicator extends ConsumerWidget {
   const SyncStatusIndicator({
     super.key,
-    this.size = 20.0,
-    this.showText = false,
-    this.compact = false,
+    this.size = 16,
+    this.showText = true,
   });
 
   final double size;
   final bool showText;
-  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncState = ref.watch(syncStatusProvider);
-    final colors = Theme.of(context).colorScheme;
-
-    if (compact && syncState.status == SyncStatus.idle) {
-      return const SizedBox.shrink();
-    }
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      child: _buildIndicatorContent(context, syncState, colors),
-    );
-  }
-
-  Widget _buildIndicatorContent(
-      BuildContext context, SyncState syncState, ColorScheme colors) {
-    if (showText) {
-      return _buildTextIndicator(context, syncState, colors);
-    } else {
-      return _buildIconIndicator(context, syncState, colors);
-    }
-  }
-
-  Widget _buildIconIndicator(
-      BuildContext context, SyncState syncState, ColorScheme colors) {
-    Widget icon;
-    Color iconColor;
-
-    switch (syncState.status) {
-      case SyncStatus.idle:
-        return const SizedBox.shrink();
-
-      case SyncStatus.syncing:
-        icon = SizedBox(
-          width: size,
-          height: size,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.0,
-            valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-            value: syncState.progress > 0 ? syncState.progress : null,
-          ),
-        );
-        iconColor = colors.primary;
-        break;
-
-      case SyncStatus.success:
-        icon = Icon(Icons.check_circle, size: size);
-        iconColor = colors.primary;
-        break;
-
-      case SyncStatus.error:
-        icon = Icon(Icons.error_outline, size: size);
-        iconColor = colors.error;
-        break;
-
-      case SyncStatus.offline:
-        icon = Icon(Icons.cloud_off_outlined, size: size);
-        iconColor = colors.onSurface.withValues(alpha: 0.6 * 255);
-        break;
-    }
-
-    return Tooltip(
-      message: _getTooltipMessage(syncState),
-      child: Semantics(
-        label: AccessibilityService.getSyncStatusSemantics(
-          _getStatusText(syncState.status),
-          syncState.message,
-        ),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          child: IconTheme(
-            data: IconThemeData(color: iconColor),
-            child: icon,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextIndicator(
-      BuildContext context, SyncState syncState, ColorScheme colors) {
-    if (syncState.status == SyncStatus.idle) {
-      return const SizedBox.shrink();
-    }
-
-    Color textColor;
-    IconData iconData;
-
-    switch (syncState.status) {
-      case SyncStatus.syncing:
-        textColor = colors.primary;
-        iconData = Icons.sync;
-        break;
-      case SyncStatus.success:
-        textColor = colors.primary;
-        iconData = Icons.check_circle_outline;
-        break;
-      case SyncStatus.error:
-        textColor = colors.error;
-        iconData = Icons.error_outline;
-        break;
-      case SyncStatus.offline:
-        textColor = colors.onSurface.withValues(alpha: 0.6 * 255);
-        iconData = Icons.cloud_off_outlined;
-        break;
-      case SyncStatus.idle:
-        return const SizedBox.shrink();
-    }
-
+    final syncState = ref.watch(integration.syncIntegrationProvider);
+    final syncStatus = syncState.globalSyncStatus;
+    final isConnected = syncState.isConnected;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: textColor.withValues(alpha: 0.1 * 255),
-        borderRadius: BorderRadius.circular(12.0),
+        color: _getStatusColor(syncStatus, isConnected).withValues(alpha: 0.1 * 255),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _getStatusColor(syncStatus, isConnected),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (syncState.status == SyncStatus.syncing)
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2.0,
-                valueColor: AlwaysStoppedAnimation<Color>(textColor),
-                value: syncState.progress > 0 ? syncState.progress : null,
-              ),
-            )
-          else
-            Icon(iconData, size: 16, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            syncState.message.isNotEmpty
-                ? syncState.message
-                : _getStatusText(syncState.status),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+          Icon(
+            _getStatusIcon(syncStatus, isConnected),
+            size: size,
+            color: _getStatusColor(syncStatus, isConnected),
           ),
+          if (showText) ...[
+            const SizedBox(width: 6),
+            Text(
+              _getStatusText(syncStatus, isConnected),
+              style: TextStyle(
+                color: _getStatusColor(syncStatus, isConnected),
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  String _getTooltipMessage(SyncState syncState) {
-    switch (syncState.status) {
-      case SyncStatus.idle:
-        return 'Sincronización inactiva';
-      case SyncStatus.syncing:
-        return syncState.message.isNotEmpty
-            ? syncState.message
-            : 'Sincronizando datos...';
-      case SyncStatus.success:
-        final lastSync = syncState.lastSyncTime;
-        if (lastSync != null) {
-          final diff = DateTime.now().difference(lastSync);
-          if (diff.inMinutes < 1) {
-            return 'Datos sincronizados hace unos segundos';
-          } else if (diff.inHours < 1) {
-            return 'Datos sincronizados hace ${diff.inMinutes} minutos';
-          } else {
-            return 'Datos sincronizados hace ${diff.inHours} horas';
-          }
-        }
-        return 'Datos sincronizados';
-      case SyncStatus.error:
-        return syncState.errorMessage ?? 'Error en sincronización';
-      case SyncStatus.offline:
-        return 'Sin conexión a internet';
+  Color _getStatusColor(integration.SyncStatus status, bool isConnected) {
+    if (!isConnected) return Colors.grey;
+    
+    switch (status) {
+      case integration.SyncStatus.syncing:
+        return Colors.blue;
+      case integration.SyncStatus.synced:
+        return Colors.green;
+      case integration.SyncStatus.error:
+        return Colors.red;
+      case integration.SyncStatus.conflicts:
+        return Colors.orange;
+      case integration.SyncStatus.offline:
+        return Colors.grey;
+      default:
+        return Colors.grey;
     }
   }
 
-  String _getStatusText(SyncStatus status) {
+  IconData _getStatusIcon(integration.SyncStatus status, bool isConnected) {
+    if (!isConnected) return Icons.cloud_off;
+    
     switch (status) {
-      case SyncStatus.idle:
-        return '';
-      case SyncStatus.syncing:
-        return 'Sincronizando...';
-      case SyncStatus.success:
-        return 'Actualizado';
-      case SyncStatus.error:
+      case integration.SyncStatus.syncing:
+        return Icons.sync;
+      case integration.SyncStatus.synced:
+        return Icons.cloud_done;
+      case integration.SyncStatus.error:
+        return Icons.error;
+      case integration.SyncStatus.conflicts:
+        return Icons.warning;
+      case integration.SyncStatus.offline:
+        return Icons.cloud_off;
+      default:
+        return Icons.cloud_queue;
+    }
+  }
+
+  String _getStatusText(integration.SyncStatus status, bool isConnected) {
+    if (!isConnected) return 'Sin conexión';
+    
+    switch (status) {
+      case integration.SyncStatus.syncing:
+        return 'Sincronizando';
+      case integration.SyncStatus.synced:
+        return 'Sincronizado';
+      case integration.SyncStatus.error:
         return 'Error';
-      case SyncStatus.offline:
+      case integration.SyncStatus.conflicts:
+        return 'Conflictos';
+      case integration.SyncStatus.offline:
         return 'Sin conexión';
+      default:
+        return 'Esperando';
     }
   }
 }
@@ -214,10 +116,10 @@ class SyncStatusCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncState = ref.watch(syncStatusProvider);
+    final syncState = ref.watch(integration.syncIntegrationProvider);
     final colors = Theme.of(context).colorScheme;
 
-    if (syncState.status == SyncStatus.idle) {
+    if (syncState.globalSyncStatus == integration.SyncStatus.idle) {
       return const SizedBox.shrink();
     }
 
@@ -235,37 +137,35 @@ class SyncStatusCard extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    _getTitle(syncState.status),
+                    _getTitle(syncState.globalSyncStatus),
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                   ),
-                  if (syncState.message.isNotEmpty) ...[
+                  if (syncState.lastError != null && syncState.lastError!.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
-                      syncState.message,
+                      syncState.lastError!,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                            color: colors.onSurface.withValues(alpha: 0.7),
                           ),
                     ),
                   ],
-                  if (syncState.status == SyncStatus.syncing &&
-                      syncState.progress > 0) ...[
+                  if (syncState.globalSyncStatus == integration.SyncStatus.syncing) ...[
                     const SizedBox(height: 8),
                     LinearProgressIndicator(
-                      value: syncState.progress,
-                      backgroundColor: colors.surfaceContainerHighest,
-                      valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
-                    ),
+                       backgroundColor: colors.surfaceContainerHighest,
+                       valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                     ),
                   ],
                 ],
               ),
             ),
-            if (syncState.status == SyncStatus.error)
+            if (syncState.globalSyncStatus == integration.SyncStatus.error)
               IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: () {
-                  ref.read(syncStatusProvider.notifier).startManualSync();
+                  ref.read(integration.syncIntegrationProvider.notifier).triggerManualSync();
                 },
                 tooltip: 'Reintentar sincronización',
               ),
@@ -275,17 +175,19 @@ class SyncStatusCard extends ConsumerWidget {
     );
   }
 
-  String _getTitle(SyncStatus status) {
+  String _getTitle(integration.SyncStatus status) {
     switch (status) {
-      case SyncStatus.idle:
+      case integration.SyncStatus.idle:
         return 'Sincronización';
-      case SyncStatus.syncing:
+      case integration.SyncStatus.syncing:
         return 'Sincronizando datos';
-      case SyncStatus.success:
+      case integration.SyncStatus.synced:
         return 'Datos actualizados';
-      case SyncStatus.error:
+      case integration.SyncStatus.error:
         return 'Error de sincronización';
-      case SyncStatus.offline:
+      case integration.SyncStatus.conflicts:
+        return 'Conflictos detectados';
+      case integration.SyncStatus.offline:
         return 'Sin conexión';
     }
   }

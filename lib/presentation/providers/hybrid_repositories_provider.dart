@@ -1,37 +1,31 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/repositories/custom_lists_repository.dart';
 import '../../domain/repositories/favorites_repository.dart';
 import '../../domain/repositories/watched_movies_repository.dart';
 import '../../domain/repositories/watchlist_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
-import '../../infrastructure/datasources/favorite_movies_shared_preferences_datasource.dart';
 import '../../infrastructure/datasources/isar_datasource.dart';
 import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
-import '../../infrastructure/repositories/custom_lists_repository_impl.dart'
-    as impl;
+import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
 import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
 import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
 import '../../infrastructure/repositories/watched_movies_repository_impl.dart';
+import 'auth_provider.dart';
+
+// Provider para obtener el userId del usuario actual
+final currentUserIdProvider = Provider<String?>((ref) {
+  final user = ref.watch(currentUserProvider);
+  return user?.id;
+});
 
 // Provider for the unified favorites repository interface
 final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
-  // Use the SAME datasource as favoriteMoviesProvider for consistency
-  LocalStorageDatasource datasource;
-
-  if (kIsWeb) {
-    datasource = FavoriteMoviesSharedPreferencesDatasource();
-  } else {
-    datasource = HiveDatasource();
-  }
+  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
 
   return HybridFavoritesRepository(
-    datasource: datasource,
-    ref: ref,
+    userId: userId,
   );
 });
 
@@ -46,7 +40,7 @@ final watchedMoviesRepositoryProvider =
   );
 });
 
-// Provider para el datasource de Hive de favoritos
+// Provider para el datasource de Hive
 final hiveDatasourceProvider = Provider<HiveDatasource>((ref) {
   return HiveDatasource();
 });
@@ -61,7 +55,7 @@ final watchedMoviesHiveDatasourceProvider =
 final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
   final localDatasource = ref.watch(customListsLocalDatasourceProvider);
 
-  return impl.CustomListsRepositoryImpl(
+  return CustomListsRepositoryImpl(
     localDatasource,
     ref,
   );
@@ -69,36 +63,20 @@ final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
 
 // Provider for the unified watchlist repository interface
 final watchlistRepositoryProvider = Provider<WatchlistRepository>((ref) {
-  // Use the same datasource as favorites for consistency
-  LocalStorageDatasource datasource;
-
-  if (kIsWeb) {
-    datasource = FavoriteMoviesSharedPreferencesDatasource();
-  } else {
-    datasource = HiveDatasource();
-  }
+  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
 
   return HybridWatchlistRepository(
-    datasource: datasource,
-    ref: ref,
+    userId: userId,
   ) as WatchlistRepository;
 });
 
 // Provider específico para HybridWatchlistRepository
 final hybridWatchlistRepositoryProvider =
     Provider<HybridWatchlistRepository>((ref) {
-  // Use the same datasource as favorites for consistency
-  LocalStorageDatasource datasource;
-
-  if (kIsWeb) {
-    datasource = FavoriteMoviesSharedPreferencesDatasource();
-  } else {
-    datasource = HiveDatasource();
-  }
+  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
 
   return HybridWatchlistRepository(
-    datasource: datasource,
-    ref: ref,
+    userId: userId,
   );
 });
 
@@ -114,38 +92,28 @@ final customListsLocalDatasourceProvider =
 
 final hybridFavoritesRepositoryProvider =
     Provider<HybridFavoritesRepository>((ref) {
-  // Use the SAME datasource as favoriteMoviesProvider for consistency
-  LocalStorageDatasource datasource;
-
-  if (kIsWeb) {
-    datasource = FavoriteMoviesSharedPreferencesDatasource();
-  } else {
-    datasource = HiveDatasource();
-  }
+  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
 
   return HybridFavoritesRepository(
-    datasource: datasource,
-    ref: ref,
+    userId: userId,
   );
 });
 
 final hybridWatchedRepositoryProvider =
     Provider<HybridWatchedRepository>((ref) {
-  final watchedHiveDatasource = ref.watch(watchedMoviesHiveDatasourceProvider);
+  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
 
   return HybridWatchedRepository(
-    hiveDatasource: watchedHiveDatasource,
-    ref: ref,
+    userId: userId,
   );
 });
 
 final hybridCustomListsRepositoryProvider =
     Provider<HybridCustomListsRepository>((ref) {
-  final localDatasource = ref.watch(customListsLocalDatasourceProvider);
+  final userId = ref.watch(currentUserIdProvider) ?? 'anonymous_user';
 
   return HybridCustomListsRepository(
-    localDatasource: localDatasource,
-    ref: ref,
+    userId: userId,
   );
 });
 // hybridWatchlistRepositoryProvider is now defined above with correct type

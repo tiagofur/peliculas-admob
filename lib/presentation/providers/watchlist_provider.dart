@@ -38,7 +38,7 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
   WatchlistNotifier(this._repository) : super(const WatchlistState()) {
     _initializeWatchlist();
   }
-  
+
   /// Inicializar watchlist cargando todos los datos existentes
   Future<void> _initializeWatchlist() async {
     try {
@@ -99,7 +99,7 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
   /// Agregar película a watchlist
   Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) async {
     try {
-      await _repository.addToWatchlist(movie, priority);
+      await _repository.addToWatchlistWithPriority(movie, priority);
       // Recargar la lista para reflejar los cambios
       await loadWatchlist(refresh: true);
     } catch (e) {
@@ -199,34 +199,36 @@ final watchlistProvider =
 final isMovieInWatchlistProvider =
     Provider.family.autoDispose<AsyncValue<bool>, int>((ref, movieId) {
   final watchlistState = ref.watch(watchlistProvider);
-  
+
   if (watchlistState.isLoading) {
     return const AsyncValue.loading();
   }
-  
+
   if (watchlistState.error != null) {
     return AsyncValue.error(watchlistState.error!, StackTrace.current);
   }
-  
-  final isInWatchlist = watchlistState.movies.any((movie) => movie.movieId == movieId);
+
+  final isInWatchlist =
+      watchlistState.movies.any((movie) => movie.movieId == movieId);
   return AsyncValue.data(isInWatchlist);
 });
 
 /// Provider para obtener una película específica de watchlist
-final watchlistMovieProvider =
-    Provider.family.autoDispose<AsyncValue<WatchlistMovie?>, int>((ref, movieId) {
+final watchlistMovieProvider = Provider.family
+    .autoDispose<AsyncValue<WatchlistMovie?>, int>((ref, movieId) {
   final watchlistState = ref.watch(watchlistProvider);
-  
+
   if (watchlistState.isLoading) {
     return const AsyncValue.loading();
   }
-  
+
   if (watchlistState.error != null) {
     return AsyncValue.error(watchlistState.error!, StackTrace.current);
   }
-  
+
   try {
-    final movie = watchlistState.movies.firstWhere((movie) => movie.movieId == movieId);
+    final movie =
+        watchlistState.movies.firstWhere((movie) => movie.movieId == movieId);
     return AsyncValue.data(movie);
   } catch (e) {
     return const AsyncValue.data(null);

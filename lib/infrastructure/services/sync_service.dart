@@ -62,7 +62,7 @@ class SyncService {
       try {
         final result = await syncAllData();
         LoggerFactory.info(
-            '✅ Sincronización inicial completada: ${result.repositoryResults}');
+            '✅ Sincronización inicial completada: ${result.success ? 'exitosa' : 'con errores'}');
       } catch (e) {
         LoggerFactory.error('❌ Error en sincronización inicial: $e');
         _scheduleRetry('onUserAuthenticated');
@@ -75,26 +75,18 @@ class SyncService {
   /// Sincronización completa de todos los repositorios
   Future<SyncResult> syncAllData() async {
     if (!_isAuthenticated()) {
-      return SyncResult(
-        repositoryResults: {
-          for (var item in _repositories.map((r) => r.runtimeType.toString()))
-            item: false
-        },
-        timestamp: DateTime.now(),
-        duration: Duration.zero,
+      return SyncResult.failure(
+        itemsProcessed: 0,
         errors: ['Usuario no autenticado'],
+        duration: Duration.zero,
       );
     }
 
     if (!await _isOnline()) {
-      return SyncResult(
-        repositoryResults: {
-          for (var item in _repositories.map((r) => r.runtimeType.toString()))
-            item: false
-        },
-        timestamp: DateTime.now(),
-        duration: Duration.zero,
+      return SyncResult.failure(
+        itemsProcessed: 0,
         errors: ['Sin conexión a internet'],
+        duration: Duration.zero,
       );
     }
 
@@ -132,12 +124,18 @@ class SyncService {
     await Future.wait(syncTasks);
 
     final duration = DateTime.now().difference(startTime);
-    final result = SyncResult(
-      repositoryResults: results,
-      timestamp: startTime,
-      duration: duration,
-      errors: errors,
-    );
+    final hasErrors = errors.isNotEmpty;
+    final result = hasErrors
+        ? SyncResult.failure(
+            itemsProcessed: _repositories.length,
+            errors: errors,
+            duration: duration,
+          )
+        : SyncResult.success(
+            itemsProcessed: _repositories.length,
+            duration: duration,
+            message: 'Todos los repositorios sincronizados exitosamente',
+          );
 
     LoggerFactory.info('Sincronización completada: $result');
     return result;
@@ -148,11 +146,10 @@ class SyncService {
     if (!_isAuthenticated() || !await _isOnline()) {
       LoggerFactory.info(
           '⏸️ Sincronización de favoritos omitida: usuario no autenticado o sin conexión');
-      return SyncResult(
-        repositoryResults: {'HybridFavoritesRepository': false},
-        timestamp: DateTime.now(),
-        duration: Duration.zero,
+      return SyncResult.failure(
+        itemsProcessed: 0,
         errors: ['Usuario no autenticado o sin conexión'],
+        duration: Duration.zero,
       );
     }
 
@@ -167,19 +164,17 @@ class SyncService {
       await favoritesRepo.syncWithSupabase();
       LoggerFactory.info('✅ Favoritos sincronizados');
 
-      return SyncResult(
-        repositoryResults: {'HybridFavoritesRepository': true},
-        timestamp: startTime,
+      return SyncResult.success(
+        itemsProcessed: 1,
         duration: DateTime.now().difference(startTime),
-        errors: [],
+        message: 'Favoritos sincronizados exitosamente',
       );
     } catch (e) {
       _logSyncError('HybridFavoritesRepository', e, operation: 'syncFavorites');
-      return SyncResult(
-        repositoryResults: {'HybridFavoritesRepository': false},
-        timestamp: startTime,
-        duration: DateTime.now().difference(startTime),
+      return SyncResult.failure(
+        itemsProcessed: 1,
         errors: ['Error sincronizando favoritos: $e'],
+        duration: DateTime.now().difference(startTime),
       );
     }
   }
@@ -189,11 +184,10 @@ class SyncService {
     if (!_isAuthenticated() || !await _isOnline()) {
       LoggerFactory.info(
           '⏸️ Sincronización de películas vistas omitida: usuario no autenticado o sin conexión');
-      return SyncResult(
-        repositoryResults: {'HybridWatchedRepository': false},
-        timestamp: DateTime.now(),
-        duration: Duration.zero,
+      return SyncResult.failure(
+        itemsProcessed: 0,
         errors: ['Usuario no autenticado o sin conexión'],
+        duration: Duration.zero,
       );
     }
 
@@ -209,20 +203,18 @@ class SyncService {
       await watchedRepo.syncWithSupabase();
       LoggerFactory.info('✅ Películas vistas sincronizadas');
 
-      return SyncResult(
-        repositoryResults: {'HybridWatchedRepository': true},
-        timestamp: startTime,
+      return SyncResult.success(
+        itemsProcessed: 1,
         duration: DateTime.now().difference(startTime),
-        errors: [],
+        message: 'Películas vistas sincronizadas exitosamente',
       );
     } catch (e) {
       _logSyncError('HybridWatchedRepository', e,
           operation: 'syncWatchedMovies');
-      return SyncResult(
-        repositoryResults: {'HybridWatchedRepository': false},
-        timestamp: startTime,
-        duration: DateTime.now().difference(startTime),
+      return SyncResult.failure(
+        itemsProcessed: 1,
         errors: ['Error sincronizando películas vistas: $e'],
+        duration: DateTime.now().difference(startTime),
       );
     }
   }
@@ -232,11 +224,10 @@ class SyncService {
     if (!_isAuthenticated() || !await _isOnline()) {
       LoggerFactory.info(
           '⏸️ Sincronización de listas personalizadas omitida: usuario no autenticado o sin conexión');
-      return SyncResult(
-        repositoryResults: {'HybridCustomListsRepository': false},
-        timestamp: DateTime.now(),
-        duration: Duration.zero,
+      return SyncResult.failure(
+        itemsProcessed: 0,
         errors: ['Usuario no autenticado o sin conexión'],
+        duration: Duration.zero,
       );
     }
 
@@ -252,20 +243,18 @@ class SyncService {
       await customListsRepo.syncWithSupabase();
       LoggerFactory.info('✅ Listas personalizadas sincronizadas');
 
-      return SyncResult(
-        repositoryResults: {'HybridCustomListsRepository': true},
-        timestamp: startTime,
+      return SyncResult.success(
+        itemsProcessed: 1,
         duration: DateTime.now().difference(startTime),
-        errors: [],
+        message: 'Listas personalizadas sincronizadas exitosamente',
       );
     } catch (e) {
       _logSyncError('HybridCustomListsRepository', e,
           operation: 'syncCustomLists');
-      return SyncResult(
-        repositoryResults: {'HybridCustomListsRepository': false},
-        timestamp: startTime,
-        duration: DateTime.now().difference(startTime),
+      return SyncResult.failure(
+        itemsProcessed: 1,
         errors: ['Error sincronizando listas personalizadas: $e'],
+        duration: DateTime.now().difference(startTime),
       );
     }
   }
@@ -282,15 +271,10 @@ class SyncService {
         LoggerFactory.info('Ejecutando sincronización periódica');
         syncAllData().catchError((e) {
           LoggerFactory.error('Error en sincronización periódica: $e');
-          return SyncResult(
-            repositoryResults: {
-              for (var item
-                  in _repositories.map((r) => r.runtimeType.toString()))
-                item: false
-            },
-            timestamp: DateTime.now(),
-            duration: Duration.zero,
+          return SyncResult.failure(
+            itemsProcessed: _repositories.length,
             errors: ['Error en sincronización periódica: $e'],
+            duration: Duration.zero,
           );
         });
       }
@@ -331,15 +315,10 @@ class SyncService {
               'Ejecutando reintento #${attempts + 1} para $operation');
           syncAllData().catchError((e) {
             LoggerFactory.error('Error en reintento de $operation: $e');
-            return SyncResult(
-              repositoryResults: {
-                for (var item
-                    in _repositories.map((r) => r.runtimeType.toString()))
-                  item: false
-              },
-              timestamp: DateTime.now(),
-              duration: Duration.zero,
+            return SyncResult.failure(
+              itemsProcessed: _repositories.length,
               errors: ['Error en reintento de $operation: $e'],
+              duration: Duration.zero,
             );
           });
         }

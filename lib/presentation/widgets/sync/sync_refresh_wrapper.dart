@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/sync_status_provider.dart';
+import '../../providers/sync_status_provider.dart' as status;
 import '../../providers/auth_provider.dart';
 
 /// Widget que proporciona funcionalidad de pull-to-refresh para sincronización
@@ -18,7 +18,7 @@ class SyncRefreshWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appState = ref.watch(appStateProvider);
-    final syncNotifier = ref.read(syncStatusProvider.notifier);
+    final syncNotifier = ref.read(status.syncStatusProvider.notifier);
 
     // Solo mostrar pull-to-refresh si el usuario está autenticado
     if (!appState.isAuthenticated) {
@@ -54,7 +54,7 @@ class ManualSyncButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncState = ref.watch(syncStatusProvider);
+    final syncState = ref.watch(status.syncStatusProvider);
     final appState = ref.watch(appStateProvider);
     
     // Solo mostrar si está autenticado
@@ -62,11 +62,11 @@ class ManualSyncButton extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final isLoading = syncState.status == SyncStatus.syncing;
+    final isLoading = syncState.status == status.SyncStatus.syncing;
 
     return FilledButton.icon(
       onPressed: isLoading ? null : () {
-        ref.read(syncStatusProvider.notifier).startManualSync();
+        ref.read(status.syncStatusProvider.notifier).startManualSync();
       },
       icon: isLoading 
         ? const SizedBox(
@@ -88,11 +88,11 @@ class SyncFloatingActionButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final syncState = ref.watch(syncStatusProvider);
+    final syncState = ref.watch(status.syncStatusProvider);
     final appState = ref.watch(appStateProvider);
     
     // Solo mostrar si está autenticado y hay algún estado relevante
-    if (!appState.isAuthenticated || syncState.status == SyncStatus.idle) {
+    if (!appState.isAuthenticated || syncState.status == status.SyncStatus.idle) {
       return const SizedBox.shrink();
     }
 
@@ -102,46 +102,46 @@ class SyncFloatingActionButton extends ConsumerWidget {
     VoidCallback? onPressed;
 
     switch (syncState.status) {
-      case SyncStatus.syncing:
+      case status.SyncStatus.syncing:
         backgroundColor = Theme.of(context).colorScheme.primary;
         icon = Icons.sync;
         tooltip = 'Sincronizando...';
         onPressed = null; // Deshabilitado durante sync
         break;
-      case SyncStatus.success:
+      case status.SyncStatus.success:
         backgroundColor = Theme.of(context).colorScheme.primary;
         icon = Icons.check;
         tooltip = 'Datos sincronizados';
         onPressed = () {
-          ref.read(syncStatusProvider.notifier).startManualSync();
+          ref.read(status.syncStatusProvider.notifier).startManualSync();
         };
         break;
-      case SyncStatus.error:
+      case status.SyncStatus.error:
         backgroundColor = Theme.of(context).colorScheme.error;
         icon = Icons.refresh;
         tooltip = 'Reintentar sincronización';
         onPressed = () {
-          ref.read(syncStatusProvider.notifier).startManualSync();
+          ref.read(status.syncStatusProvider.notifier).startManualSync();
         };
         break;
-      case SyncStatus.offline:
+      case status.SyncStatus.offline:
         backgroundColor = Theme.of(context).colorScheme.outline;
         icon = Icons.cloud_off;
         tooltip = 'Sin conexión';
         onPressed = null;
         break;
-      case SyncStatus.idle:
+      case status.SyncStatus.idle:
         return const SizedBox.shrink();
     }
 
     return AnimatedScale(
-      scale: syncState.status == SyncStatus.syncing ? 1.1 : 1.0,
+      scale: syncState.status == status.SyncStatus.syncing ? 1.1 : 1.0,
       duration: const Duration(milliseconds: 200),
       child: FloatingActionButton(
         onPressed: onPressed,
         backgroundColor: backgroundColor,
         tooltip: tooltip,
-        child: syncState.status == SyncStatus.syncing
+        child: syncState.status == status.SyncStatus.syncing
           ? const CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),

@@ -17,7 +17,7 @@ class HybridMoviesRepository implements MoviesRepository {
   })  : _traktApiService = traktApiService,
         _tmdbDatasource = tmdbDatasource,
         _localDatasource = localDatasource;
-        
+
   final TraktApiService _traktApiService;
   final MoviesDatasource _tmdbDatasource;
   final LocalStorageDatasource _localDatasource;
@@ -28,7 +28,8 @@ class HybridMoviesRepository implements MoviesRepository {
   /// Check network connectivity
   Future<bool> _hasConnectivity() async {
     try {
-      final connectivityStatus = await ConnectivityDetector.instance.checkConnectivity();
+      final connectivityStatus =
+          await ConnectivityDetector.instance.checkConnectivity();
       return connectivityStatus == ConnectivityStatus.online;
     } catch (e) {
       LoggerFactory.warning('Error checking connectivity: $e');
@@ -66,14 +67,17 @@ class HybridMoviesRepository implements MoviesRepository {
     // 1. Verificar cache en memoria primero (más rápido)
     final cachedData = _getFromCache(cacheKey);
     if (cachedData != null) {
-      LoggerFactory.info('📱 Datos obtenidos del cache en memoria: ${cachedData.length} películas');
+      LoggerFactory.info(
+          '📱 Datos obtenidos del cache en memoria: ${cachedData.length} películas');
       return cachedData;
     }
 
     // 2. Verificar cache offline persistente
-    final offlineCachedMovies = await _localDatasource.getCachedMoviesByCategory(cacheKey);
+    final offlineCachedMovies =
+        await _localDatasource.getCachedMoviesByCategory(cacheKey);
     if (offlineCachedMovies.isNotEmpty) {
-      LoggerFactory.info('📱 Datos obtenidos del cache offline: ${offlineCachedMovies.length} películas');
+      LoggerFactory.info(
+          '📱 Datos obtenidos del cache offline: ${offlineCachedMovies.length} películas');
       // También guardar en cache en memoria para acceso más rápido
       _saveToCache(cacheKey, offlineCachedMovies);
       return offlineCachedMovies;
@@ -82,7 +86,8 @@ class HybridMoviesRepository implements MoviesRepository {
     // 3. Verificar conectividad antes de hacer llamadas de red
     final hasConnection = await _hasConnectivity();
     if (!hasConnection) {
-      LoggerFactory.warning('📱 Sin conectividad - solo disponible cache offline');
+      LoggerFactory.warning(
+          '📱 Sin conectividad - solo disponible cache offline');
       return []; // Return empty list when offline and no cache
     }
 
@@ -94,13 +99,13 @@ class HybridMoviesRepository implements MoviesRepository {
       if (traktMovies.isNotEmpty) {
         LoggerFactory.info(
             '✅ Datos obtenidos de Trakt: ${traktMovies.length} películas');
-        
+
         // Guardar en cache en memoria
         _saveToCache(cacheKey, traktMovies);
-        
+
         // Guardar en cache offline para acceso sin conexión
         await _localDatasource.cacheMovies(traktMovies, cacheKey);
-        
+
         return traktMovies;
       }
     } catch (e) {
@@ -115,13 +120,13 @@ class HybridMoviesRepository implements MoviesRepository {
       if (tmdbMovies.isNotEmpty) {
         LoggerFactory.info(
             '✅ Datos obtenidos de TMDB: ${tmdbMovies.length} películas');
-        
+
         // Guardar en cache en memoria
         _saveToCache(cacheKey, tmdbMovies);
-        
+
         // Guardar en cache offline para acceso sin conexión
         await _localDatasource.cacheMovies(tmdbMovies, cacheKey);
-        
+
         return tmdbMovies;
       }
     } catch (e) {
@@ -129,10 +134,13 @@ class HybridMoviesRepository implements MoviesRepository {
     }
 
     // 6. Si todo falla, intentar obtener cualquier cache antiguo
-    LoggerFactory.warning('⚠️ Todas las fuentes fallaron, verificando cache antiguo...');
-    final oldCachedMovies = await _localDatasource.getCachedMoviesByCategory(cacheKey);
+    LoggerFactory.warning(
+        '⚠️ Todas las fuentes fallaron, verificando cache antiguo...');
+    final oldCachedMovies =
+        await _localDatasource.getCachedMoviesByCategory(cacheKey);
     if (oldCachedMovies.isNotEmpty) {
-      LoggerFactory.info('📱 Usando cache antiguo: ${oldCachedMovies.length} películas');
+      LoggerFactory.info(
+          '📱 Usando cache antiguo: ${oldCachedMovies.length} películas');
       return oldCachedMovies;
     }
 
@@ -184,7 +192,8 @@ class HybridMoviesRepository implements MoviesRepository {
 
         final now = DateTime.now();
         final upcomingMovies = traktMovies.where((movie) {
-          return movie.released != null && (movie.released?.isAfter(now) ?? false);
+          return movie.released != null &&
+              (movie.released?.isAfter(now) ?? false);
         }).toList();
 
         return await TraktMovieMapper.toEntityList(upcomingMovies);
@@ -224,14 +233,16 @@ class HybridMoviesRepository implements MoviesRepository {
     // 1. Verificar cache en memoria para película individual
     final cachedMovies = _getFromCache(cacheKey);
     if (cachedMovies != null && cachedMovies.isNotEmpty) {
-      LoggerFactory.info('📱 Movie obtenida del cache en memoria: ${cachedMovies.first.title}');
+      LoggerFactory.info(
+          '📱 Movie obtenida del cache en memoria: ${cachedMovies.first.title}');
       return cachedMovies.first;
     }
 
     // 2. Verificar cache offline persistente
     final cachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
     if (cachedMovie != null) {
-      LoggerFactory.info('📱 Movie obtenida del cache offline: ${cachedMovie.title}');
+      LoggerFactory.info(
+          '📱 Movie obtenida del cache offline: ${cachedMovie.title}');
       // También guardar en cache en memoria
       _saveToCache(cacheKey, [cachedMovie]);
       return cachedMovie;
@@ -240,7 +251,8 @@ class HybridMoviesRepository implements MoviesRepository {
     // 3. Verificar conectividad antes de hacer llamadas de red
     final hasConnection = await _hasConnectivity();
     if (!hasConnection) {
-      LoggerFactory.warning('📱 Sin conectividad - película no disponible offline');
+      LoggerFactory.warning(
+          '📱 Sin conectividad - película no disponible offline');
       throw Exception('Película no disponible offline: $id');
     }
 
@@ -253,7 +265,7 @@ class HybridMoviesRepository implements MoviesRepository {
       // Guardar en ambos caches
       _saveToCache(cacheKey, [movie]);
       await _localDatasource.cacheMovie(movie);
-      
+
       return movie;
     } catch (e) {
       LoggerFactory.warning('⚠️ Error obteniendo película de Trakt: $e');
@@ -266,18 +278,20 @@ class HybridMoviesRepository implements MoviesRepository {
         // Guardar en ambos caches
         _saveToCache(cacheKey, [movie]);
         await _localDatasource.cacheMovie(movie);
-        
+
         return movie;
       } catch (tmdbError) {
         LoggerFactory.error('❌ Error también en TMDB: $tmdbError');
-        
+
         // 6. Último intento con cache offline (incluso si expirado)
-        final oldCachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
+        final oldCachedMovie =
+            await _localDatasource.getCachedMovie(movieIdInt);
         if (oldCachedMovie != null) {
-          LoggerFactory.info('📱 Usando cache offline antiguo: ${oldCachedMovie.title}');
+          LoggerFactory.info(
+              '📱 Usando cache offline antiguo: ${oldCachedMovie.title}');
           return oldCachedMovie;
         }
-        
+
         throw Exception('Película no encontrada en ninguna fuente: $id');
       }
     }

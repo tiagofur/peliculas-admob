@@ -1,194 +1,87 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../logging/logger_factory.dart';
 
-/// Service to track error reporting metrics and success criteria
-/// Monitors crash-free sessions and core flow error rates
+/// Service for tracking error reporting metrics and performance indicators
 class ErrorMetricsService {
   ErrorMetricsService._();
   static ErrorMetricsService? _instance;
   static ErrorMetricsService get instance =>
       _instance ??= ErrorMetricsService._();
 
-  static const String _sessionCountKey = 'error_metrics_session_count';
-  static const String _crashSessionCountKey =
-      'error_metrics_crash_session_count';
-  static const String _coreFlowAttemptCountKey =
-      'error_metrics_core_flow_attempts';
-  static const String _coreFlowErrorCountKey = 'error_metrics_core_flow_errors';
-  static const String _sessionStartTimeKey = 'error_metrics_session_start_time';
-  static const String _lastMetricsResetKey = 'error_metrics_last_reset';
-
-  SharedPreferences? _prefs;
   bool _isInitialized = false;
-  Timer? _metricsTimer;
-  DateTime? _currentSessionStart;
-  bool _sessionHadCrash = false;
-
-  /// Core flows that we monitor for error rates
-  static const List<String> coreFlows = [
-    'authentication',
-    'movie_search',
-    'movie_details',
-    'watchlist_add',
-    'watchlist_remove',
-    'movie_rating',
-    'user_profile',
-    'sync_operation',
-  ];
+  int _totalSessions = 0;
+  int _crashFreeSessions = 0;
+  int _coreFlowErrors = 0;
+  int _totalCoreFlowAttempts = 0;
+  final List<DateTime> _sessionStartTimes = [];
+  final List<DateTime> _crashTimes = [];
+  final List<String> _errorTypes = [];
 
   /// Initialize the metrics service
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      _prefs = await SharedPreferences.getInstance();
       _isInitialized = true;
-
-      // Start new session
-      await _startNewSession();
-
-      // Reset metrics weekly to keep recent data relevant
-      await _checkAndResetMetricsIfNeeded();
-
-      // Start periodic metrics logging
-      _startPeriodicMetricsLogging();
-
+      _startNewSession();
       LoggerFactory.info('✅ Error metrics service initialized');
     } catch (e) {
-      LoggerFactory.error('❌ Failed to initialize error metrics service: $e');
+      LoggerFactory.error('Failed to initialize error metrics service: $e');
+      rethrow;
     }
   }
 
   /// Start a new session
-  Future<void> _startNewSession() async {
-    if (!_isInitialized || _prefs == null) return;
+  void _startNewSession() {
+    _totalSessions++;
+    _sessionStartTimes.add(DateTime.now());
 
-    _currentSessionStart = DateTime.now();
-    _sessionHadCrash = false;
-
-    try {
-      final prefs = _prefs;
-      if (prefs == null || _currentSessionStart == null) return;
-
-      await prefs.setString(_sessionStartTimeKey,
-          (_currentSessionStart ?? DateTime.now()).toIso8601String());
-
-      // Increment total session count
-      final currentCount = prefs.getInt(_sessionCountKey) ?? 0;
-      await prefs.setInt(_sessionCountKey, currentCount + 1);
-
-      LoggerFactory.info('📊 New session started for metrics tracking');
-    } catch (e) {
-      LoggerFactory.error('Failed to start new session for metrics: $e');
-    }
+    // Assume session is crash-free until proven otherwise
+    _crashFreeSessions++;
   }
 
-  /// Record that current session had a crash
-  Future<void> recordSessionCrash() async {
-    if (!_isInitialized || _prefs == null || _sessionHadCrash) return;
+  /// Record a session crash
+  void recordSessionCrash() {
+    if (!_isInitialized) return;
 
-    _sessionHadCrash = true;
-
-    try {
-      final prefs = _prefs;
-      if (prefs == null) return;
-
-      final currentCrashCount = prefs.getInt(_crashSessionCountKey) ?? 0;
-      await prefs.setInt(_crashSessionCountKey, currentCrashCount + 1);
-
-      LoggerFactory.warning('💥 Session crash recorded for metrics');
-    } catch (e) {
-      LoggerFactory.error('Failed to record session crash: $e');
-    }
-  }
-
-  /// Record a core flow attempt
-  Future<void> recordCoreFlowAttempt(String flowName) async {
-    if (!_isInitialized || _prefs == null) return;
-    if (!coreFlows.contains(flowName)) {
-      LoggerFactory.warning('Unknown core flow attempted: $flowName');
-      return;
-    }
-
-    try {
-      final prefs = _prefs;
-      if (prefs == null) return;
-
-      final currentAttempts = prefs.getInt(_coreFlowAttemptCountKey) ?? 0;
-      await prefs.setInt(_coreFlowAttemptCountKey, currentAttempts + 1);
-
-      if (kDebugMode) {
-        LoggerFactory.debug('📈 Core flow attempt recorded: $flowName');
-      }
-    } catch (e) {
-      LoggerFactory.error('Failed to record core flow attempt: $e');
+    _crashTimes.add(DateTime.now());
+    // Reduce crash-free sessions count
+    if (_crashFreeSessions > 0) {
+      _crashFreeSessions--;
     }
   }
 
   /// Record a core flow error
-  Future<void> recordCoreFlowError(String flowName,
-      {String? errorDetails}) async {
-    if (!_isInitialized || _prefs == null) return;
-    if (!coreFlows.contains(flowName)) {
-      LoggerFactory.warning('Unknown core flow error: $flowName');
-      return;
-    }
+  void recordCoreFlowError(String errorType) {
+    if (!_isInitialized) return;
 
-    try {
-      final prefs = _prefs;
-      if (prefs == null) return;
-
-      final currentErrors = prefs.getInt(_coreFlowErrorCountKey) ?? 0;
-      await prefs.setInt(_coreFlowErrorCountKey, currentErrors + 1);
-
-      LoggerFactory.warning(
-        '❌ Core flow error recorded: $flowName${errorDetails != null ? ' - $errorDetails' : ''}',
-      );
-    } catch (e) {
-      LoggerFactory.error('Failed to record core flow error: $e');
-    }
+    _coreFlowErrors++;
+    _errorTypes.add(errorType);
   }
 
-  /// Get current crash-free session percentage
-  double get crashFreeSessionPercentage {
-    if (!_isInitialized || _prefs == null) return 0.0;
+  /// Record a core flow attempt
+  void recordCoreFlowAttempt() {
+    if (!_isInitialized) return;
 
-    final prefs = _prefs;
-    if (prefs == null) return 0.0;
-
-    final totalSessions = prefs.getInt(_sessionCountKey) ?? 0;
-    final crashSessions = prefs.getInt(_crashSessionCountKey) ?? 0;
-
-    if (totalSessions == 0) return 100.0;
-
-    final crashFreePercentage =
-        ((totalSessions - crashSessions) / totalSessions) * 100;
-    return double.parse(crashFreePercentage.toStringAsFixed(2));
+    _totalCoreFlowAttempts++;
   }
 
-  /// Get current core flow error rate percentage
+  /// Get crash-free session rate (percentage)
+  double get crashFreeSessionRate {
+    if (_totalSessions == 0) return 100.0;
+    return (_crashFreeSessions / _totalSessions) * 100.0;
+  }
+
+  /// Get core flow error rate (percentage)
   double get coreFlowErrorRate {
-    if (!_isInitialized || _prefs == null) return 0.0;
-
-    final prefs = _prefs;
-    if (prefs == null) return 0.0;
-
-    final totalAttempts = prefs.getInt(_coreFlowAttemptCountKey) ?? 0;
-    final totalErrors = prefs.getInt(_coreFlowErrorCountKey) ?? 0;
-
-    if (totalAttempts == 0) return 0.0;
-
-    final errorRate = (totalErrors / totalAttempts) * 100;
-    return double.parse(errorRate.toStringAsFixed(2));
+    if (_totalCoreFlowAttempts == 0) return 0.0;
+    return (_coreFlowErrors / _totalCoreFlowAttempts) * 100.0;
   }
 
   /// Check if crash-free sessions meet success criteria (≥99.7%)
   bool get meetsCrashFreeSuccessCriteria {
-    return crashFreeSessionPercentage >= 99.7;
+    return crashFreeSessionRate >= 99.7;
   }
 
   /// Check if core flow error rate meets success criteria (<5%)
@@ -196,166 +89,80 @@ class ErrorMetricsService {
     return coreFlowErrorRate < 5.0;
   }
 
-  /// Get comprehensive metrics summary
+  /// Get current metrics snapshot
   Map<String, dynamic> get metricsSnapshot {
-    if (!_isInitialized || _prefs == null) {
-      return {
-        'initialized': false,
-        'error': 'Metrics service not initialized',
-      };
-    }
-
-    final prefs = _prefs;
-    if (prefs == null) {
-      return {
-        'initialized': false,
-        'error': 'SharedPreferences not available',
-      };
-    }
-
-    final totalSessions = prefs.getInt(_sessionCountKey) ?? 0;
-    final crashSessions = prefs.getInt(_crashSessionCountKey) ?? 0;
-    final totalAttempts = prefs.getInt(_coreFlowAttemptCountKey) ?? 0;
-    final totalErrors = prefs.getInt(_coreFlowErrorCountKey) ?? 0;
-
     return {
-      'initialized': true,
-      'session_metrics': {
-        'total_sessions': totalSessions,
-        'crash_sessions': crashSessions,
-        'crash_free_sessions': totalSessions - crashSessions,
-        'crash_free_percentage': crashFreeSessionPercentage,
-        'meets_crash_free_criteria': meetsCrashFreeSuccessCriteria,
-        'crash_free_target': 99.7,
-      },
-      'core_flow_metrics': {
-        'total_attempts': totalAttempts,
-        'total_errors': totalErrors,
-        'successful_attempts': totalAttempts - totalErrors,
-        'error_rate_percentage': coreFlowErrorRate,
-        'meets_error_rate_criteria': meetsCoreFlowSuccessCriteria,
-        'error_rate_target': 5.0,
-      },
-      'current_session': {
-        'session_start': _currentSessionStart?.toIso8601String(),
-        'session_had_crash': _sessionHadCrash,
-      },
-      'last_reset': prefs.getString(_lastMetricsResetKey),
+      'initialized': _isInitialized,
+      'total_sessions': _totalSessions,
+      'crash_free_sessions': _crashFreeSessions,
+      'crash_free_rate': crashFreeSessionRate,
+      'core_flow_errors': _coreFlowErrors,
+      'total_core_flow_attempts': _totalCoreFlowAttempts,
+      'core_flow_error_rate': coreFlowErrorRate,
+      'meets_crash_free_criteria': meetsCrashFreeSuccessCriteria,
+      'meets_core_flow_criteria': meetsCoreFlowSuccessCriteria,
+      'recent_crashes': _crashTimes.length,
+      'error_types': _getErrorTypeDistribution(),
     };
   }
 
-  /// Reset metrics (typically done weekly to keep data fresh)
-  Future<void> resetMetrics() async {
-    if (!_isInitialized || _prefs == null) return;
-
-    try {
-      final prefs = _prefs;
-      if (prefs == null) return;
-
-      await prefs.setInt(_sessionCountKey, 0);
-      await prefs.setInt(_crashSessionCountKey, 0);
-      await prefs.setInt(_coreFlowAttemptCountKey, 0);
-      await prefs.setInt(_coreFlowErrorCountKey, 0);
-      await prefs.setString(
-          _lastMetricsResetKey, DateTime.now().toIso8601String());
-
-      LoggerFactory.info('📊 Error metrics reset');
-    } catch (e) {
-      LoggerFactory.error('Failed to reset metrics: $e');
+  /// Get error type distribution
+  Map<String, int> _getErrorTypeDistribution() {
+    final distribution = <String, int>{};
+    for (final errorType in _errorTypes) {
+      distribution[errorType] = (distribution[errorType] ?? 0) + 1;
     }
+    return distribution;
   }
 
-  /// Check if metrics need to be reset (weekly reset)
-  Future<void> _checkAndResetMetricsIfNeeded() async {
-    if (!_isInitialized || _prefs == null) return;
-
-    final prefs = _prefs;
-    if (prefs == null) return;
-
-    final lastResetString = prefs.getString(_lastMetricsResetKey);
-    if (lastResetString == null) {
-      // First time - set reset time but don't reset
-      await prefs.setString(
-          _lastMetricsResetKey, DateTime.now().toIso8601String());
-      return;
-    }
-
-    try {
-      final lastReset = DateTime.parse(lastResetString);
-      final weekAgo = DateTime.now().subtract(const Duration(days: 7));
-
-      if (lastReset.isBefore(weekAgo)) {
-        LoggerFactory.info('📊 Weekly metrics reset due');
-        await resetMetrics();
-      }
-    } catch (e) {
-      LoggerFactory.error('Failed to check metrics reset: $e');
-    }
+  /// Reset all metrics (useful for testing)
+  void reset() {
+    _totalSessions = 0;
+    _crashFreeSessions = 0;
+    _coreFlowErrors = 0;
+    _totalCoreFlowAttempts = 0;
+    _sessionStartTimes.clear();
+    _crashTimes.clear();
+    _errorTypes.clear();
   }
 
-  /// Start periodic metrics logging
-  void _startPeriodicMetricsLogging() {
-    _metricsTimer?.cancel();
+  /// Get detailed analytics for the last N days
+  Map<String, dynamic> getAnalytics({int days = 7}) {
+    final cutoffDate = DateTime.now().subtract(Duration(days: days));
 
-    // Log metrics every hour in debug mode, every 6 hours in release
-    const duration = kDebugMode ? Duration(hours: 1) : Duration(hours: 6);
+    final recentCrashes =
+        _crashTimes.where((time) => time.isAfter(cutoffDate)).length;
 
-    _metricsTimer = Timer.periodic(duration, (timer) {
-      _logCurrentMetrics();
-    });
+    final recentSessions =
+        _sessionStartTimes.where((time) => time.isAfter(cutoffDate)).length;
+
+    return {
+      'period_days': days,
+      'recent_sessions': recentSessions,
+      'recent_crashes': recentCrashes,
+      'recent_crash_rate':
+          recentSessions > 0 ? (recentCrashes / recentSessions) * 100.0 : 0.0,
+      'stability_trend': _calculateStabilityTrend(),
+    };
   }
 
-  /// Log current metrics
-  void _logCurrentMetrics() {
-    final metrics = metricsSnapshot;
-    final sessionMetrics = metrics['session_metrics'] as Map<String, dynamic>;
-    final coreFlowMetrics =
-        metrics['core_flow_metrics'] as Map<String, dynamic>;
+  /// Calculate stability trend (simplified)
+  String _calculateStabilityTrend() {
+    if (_crashTimes.length < 2) return 'stable';
 
-    LoggerFactory.info(
-      '📊 Error Metrics Report: '
-      'Crash-free: ${sessionMetrics['crash_free_percentage']}% '
-      '(${sessionMetrics['meets_crash_free_criteria'] ? '✅' : '❌'} target: ${sessionMetrics['crash_free_target']}%), '
-      'Core flow error rate: ${coreFlowMetrics['error_rate_percentage']}% '
-      '(${coreFlowMetrics['meets_error_rate_criteria'] ? '✅' : '❌'} target: <${coreFlowMetrics['error_rate_target']}%)',
-    );
-  }
+    final recentCrashes = _crashTimes
+        .where((time) =>
+            time.isAfter(DateTime.now().subtract(const Duration(days: 1))))
+        .length;
 
-  /// Dispose resources
-  void dispose() {
-    _metricsTimer?.cancel();
-    _metricsTimer = null;
-  }
-}
+    final olderCrashes = _crashTimes
+        .where((time) =>
+            time.isBefore(DateTime.now().subtract(const Duration(days: 1))) &&
+            time.isAfter(DateTime.now().subtract(const Duration(days: 2))))
+        .length;
 
-/// Helper extension to easily track core flows
-extension CoreFlowTracking on ErrorMetricsService {
-  /// Track a core flow operation with automatic error handling
-  Future<T> trackCoreFlow<T>(
-    String flowName,
-    Future<T> Function() operation,
-  ) async {
-    await recordCoreFlowAttempt(flowName);
-
-    try {
-      final result = await operation();
-      return result;
-    } catch (error, stackTrace) {
-      await recordCoreFlowError(flowName, errorDetails: error.toString());
-
-      // Also report to error reporting service
-      LoggerFactory.reportCriticalError(
-        error,
-        stackTrace,
-        context: 'Core flow: $flowName',
-        data: {
-          'core_flow': flowName,
-          'flow_tracked': true,
-        },
-        fatal: false,
-      );
-
-      rethrow;
-    }
+    if (recentCrashes > olderCrashes) return 'declining';
+    if (recentCrashes < olderCrashes) return 'improving';
+    return 'stable';
   }
 }

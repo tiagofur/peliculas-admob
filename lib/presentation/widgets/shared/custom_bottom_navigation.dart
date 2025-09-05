@@ -41,7 +41,6 @@ class CustomBottomNavigation extends ConsumerWidget {
                 SyncStatusIndicator(
                   size: 16,
                   showText: true,
-                  compact: true,
                 ),
               ],
             ),

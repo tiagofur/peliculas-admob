@@ -3,6 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../domain/entities/syncable_custom_list.dart';
+import '../../domain/entities/syncable_favorite.dart';
+import '../../domain/entities/syncable_watched_movie.dart';
+import '../../domain/entities/syncable_watchlist_item.dart';
 import '../../presentation/providers/hybrid_repositories_provider.dart';
 import '../repositories/hybrid_custom_lists_repository.dart';
 import '../repositories/hybrid_favorites_repository.dart';
@@ -69,8 +73,7 @@ class AnonymousDataMigrator {
       // Detectar películas vistas
       final watchedRepo =
           _ref.read(watchedMoviesRepositoryProvider) as HybridWatchedRepository;
-      final watchedMovies =
-          await watchedRepo.loadWatchedMovies(limit: 10000, offset: 0);
+      final watchedMovies = await watchedRepo.getAll();
       if (watchedMovies.isNotEmpty) {
         detectedData[DataType.watchedMovies] = watchedMovies.length;
         LoggerFactory.info(
@@ -80,7 +83,7 @@ class AnonymousDataMigrator {
       // Detectar watchlist
       final watchlistRepo =
           _ref.read(watchlistRepositoryProvider) as HybridWatchlistRepository;
-      final watchlistMovies = await watchlistRepo.getAllWatchlistMovies();
+      final watchlistMovies = await watchlistRepo.getWatchlistMoviesAsWatchlistMovie();
       if (watchlistMovies.isNotEmpty) {
         detectedData[DataType.watchlist] = watchlistMovies.length;
         LoggerFactory.info(
@@ -90,7 +93,7 @@ class AnonymousDataMigrator {
       // Detectar listas personalizadas
       final customListsRepo = _ref.read(customListsRepositoryProvider)
           as HybridCustomListsRepository;
-      final customLists = await customListsRepo.getCustomLists();
+      final customLists = await customListsRepo.getAll();
       // Filtrar solo listas personalizadas (no las 8 por defecto)
       final personalizedLists =
           customLists.where((list) => !_isDefaultList(list.name)).toList();
@@ -222,8 +225,10 @@ class AnonymousDataMigrator {
     if (localData.isEmpty) return 0;
 
     // Actualizar userId para cada favorito
-    final updatedFavorites =
-        localData.map((fav) => fav.copyWithFavorite(userId: userId)).toList();
+    final List<SyncableFavorite> updatedFavorites = localData
+        .cast<SyncableFavorite>()
+        .map((fav) => fav.copyWithData(userId: userId))
+        .toList();
 
     // Subir a Supabase
     await repo.upload(updatedFavorites);
@@ -242,8 +247,9 @@ class AnonymousDataMigrator {
     if (localData.isEmpty) return 0;
 
     // Actualizar userId para cada película vista
-    final updatedWatched = localData
-        .map((watched) => watched.copyWithWatchedMovie(userId: userId))
+    final List<SyncableWatchedMovie> updatedWatched = localData
+        .cast<SyncableWatchedMovie>()
+        .map((watched) => watched.copyWithData(userId: userId))
         .toList();
 
     // Subir a Supabase
@@ -263,8 +269,10 @@ class AnonymousDataMigrator {
     if (localData.isEmpty) return 0;
 
     // Actualizar userId para cada item de watchlist
-    final updatedWatchlist =
-        localData.map((item) => item.copyWith(userId: userId)).toList();
+    final List<SyncableWatchlistItem> updatedWatchlist = localData
+        .cast<SyncableWatchlistItem>()
+        .map((item) => item.copyWithData(userId: userId))
+        .toList();
 
     // Subir a Supabase
     await repo.upload(updatedWatchlist);
@@ -289,8 +297,10 @@ class AnonymousDataMigrator {
     if (personalizedLists.isEmpty) return 0;
 
     // Actualizar userId para cada lista personalizada
-    final updatedLists =
-        personalizedLists.map((list) => list.copyWith(userId: userId)).toList();
+    final List<SyncableCustomList> updatedLists = personalizedLists
+        .cast<SyncableCustomList>()
+        .map((list) => list.copyWithData(userId: userId))
+        .toList();
 
     // Subir a Supabase
     await repo.upload(updatedLists);

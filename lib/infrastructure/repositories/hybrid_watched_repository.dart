@@ -1,319 +1,294 @@
-import '../../core/exceptions/sync_exceptions.dart';
+import 'dart:async';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
-import '../../domain/entities/sync_models.dart';
-import '../../domain/entities/sync_operation.dart';
-import '../../domain/entities/syncable_entity.dart';
-import '../../domain/entities/watched_movie.dart';
-import '../../domain/repositories/watched_movies_repository.dart';
-import '../datasources/watched_movies_hive_datasource.dart';
+import '../../domain/entities/syncable_watched_movie.dart';
 import 'base_hybrid_repository.dart';
 
-/// Hybrid repository for watched movies that supports local storage and Supabase sync
-class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
-    implements WatchedMoviesRepository {
+/// Repositorio híbrido para películas vistas que combina almacenamiento local y remoto
+/// con sincronización automática usando el sistema de sync de Fase 3
+class HybridWatchedRepository
+    extends BaseHybridRepository<SyncableWatchedMovie> {
   HybridWatchedRepository({
-    required WatchedMoviesHiveDatasource hiveDatasource,
-    required super.ref,
-  }) : _hiveDatasource = hiveDatasource;
+    required super.userId,
+    SharedPreferences? prefs,
+    super.syncManager,
+    super.syncCoordinator,
+  })  : _prefs = prefs,
+        super(
+          entityType: 'watched_movie',
+        );
 
-  final WatchedMoviesHiveDatasource _hiveDatasource;
+  SharedPreferences? _prefs;
+  static const String _storageKey = 'local_watched_movies';
 
-  // Implements BaseHybridRepository abstract methods
-  @override
-  String get tableName => 'user_watched_movies';
-
-  @override
-  SyncableWatchedMovie mapFromSupabase(Map<String, dynamic> data) {
-    return SyncableWatchedMovie(
-      id: data['id'] ?? '${data['user_id']}_${data['movie_id']}_watched',
-      userId: data['user_id'],
-      movieId: data['movie_id'],
-      movieTitle: data['movie_title'],
-      moviePosterPath: data['movie_poster_path'],
-      movieBackdropPath: data['movie_backdrop_path'],
-      movieOverview: data['movie_overview'],
-      movieReleaseDate: data['movie_release_date'] != null
-          ? DateTime.parse(data['movie_release_date'])
-          : null,
-      movieVoteAverage: data['movie_vote_average']?.toDouble(),
-      watchedAt: DateTime.parse(data['watched_at']),
-      createdAt: DateTime.parse(data['created_at']),
-      updatedAt: DateTime.parse(data['last_modified_at']),
-      deletedAt: data['deleted_at'] != null ? DateTime.parse(data['deleted_at']) : null,
-      syncStatus: SyncItemStatus.synced,
-      syncVersion: data['sync_version'] ?? 1,
-      deviceId: data['device_id'],
-      rating: data['rating']?.toDouble(),
-      review: data['review'],
-      traktId: data['trakt_id'],
-    );
-  }
+  // =============================================
+  // IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS
+  // =============================================
 
   @override
-  Map<String, dynamic> mapToSupabase(SyncableWatchedMovie watchedMovie) {
-    return {
-      'user_id': watchedMovie.userId,
-      'movie_id': watchedMovie.movieId,
-      'movie_title': watchedMovie.movieTitle,
-      'movie_poster_path': watchedMovie.moviePosterPath,
-      'movie_backdrop_path': watchedMovie.movieBackdropPath,
-      'movie_overview': watchedMovie.movieOverview,
-      'movie_release_date':
-          watchedMovie.movieReleaseDate?.toIso8601String().split('T')[0],
-      'movie_vote_average': watchedMovie.movieVoteAverage,
-      'watched_at': watchedMovie.watchedAt.toIso8601String(),
-      'rating': watchedMovie.rating,
-      'review': watchedMovie.review,
-      'trakt_id': watchedMovie.traktId,
-      'is_deleted': false,
-      'last_modified_at': DateTime.now().toIso8601String(),
-    };
+  Future<void> initializeLocal() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    LoggerFactory.info('✅ HybridWatchedRepository local storage initialized');
   }
 
-  @override
-  Future<void> clearRepositoryData() async {
-    await _hiveDatasource.clearAll();
-  }
-
-  // Implements WatchedMoviesRepository interface
-  @override
-  Future<void> markAsWatched(Movie movie) async {
-    LoggerFactory.info('🎬 MARK AS WATCHED called for: ${movie.title}');
-
-    try {
-      // 1. Update locally first (Local First)
-      await _hiveDatasource.markAsWatched(movie);
-      LoggerFactory.info('✅ Movie marked as watched locally: ${movie.title}');
-    } catch (e) {
-      LoggerFactory.error('❌ Error marking as watched locally: $e');
-      throw LocalStorageException('Error marking movie as watched: $e');
-    }
-
-    // 2. Add to sync queue
-    final userId = getCurrentUserId();
-    if (userId != null) {
-      final operation =
-          SyncOperationFactory.markWatched(userId: userId, movieId: movie.id);
-      await syncQueue.addItem(operation.id);
-    }
-
-    // 3. Sync if online and authenticated
-    if (isAuthenticated()) {
-      try {
-        await checkOnline();
-        await _syncSingleWatchedItem(movie);
-      } on SyncException catch (e) {
-        LoggerFactory.error('❌ Error syncing watched movie: $e');
-      }
-    }
-  }
-
-  @override
-  Future<void> removeFromWatched(int movieId) async {
-    LoggerFactory.info('🗑️ REMOVE FROM WATCHED called for movie ID: $movieId');
-
-    try {
-      await _hiveDatasource.removeFromWatched(movieId);
-      LoggerFactory.info('✅ Movie removed from watched locally');
-    } catch (e) {
-      LoggerFactory.error('❌ Error removing from watched locally: $e');
-      throw LocalStorageException('Error removing movie from watched: $e');
-    }
-
-    // Sync if authenticated
-    final userId = getCurrentUserId();
-    if (userId != null && isAuthenticated()) {
-      final operation =
-          SyncOperationFactory.unmarkWatched(userId: userId, movieId: movieId);
-      await syncQueue.addItem(operation.id);
-
-      try {
-        await checkOnline();
-        await _syncSingleWatchedRemoval(movieId);
-      } on SyncException catch (e) {
-        LoggerFactory.error('❌ Error syncing removal: $e');
-      }
-    }
-  }
-
-  @override
-  Future<bool> isMovieWatched(int movieId) async {
-    try {
-      return await _hiveDatasource.isMovieWatched(movieId);
-    } catch (e) {
-      throw LocalStorageException('Error checking if movie is watched: $e');
-    }
-  }
-
-  @override
-  Future<List<WatchedMovie>> loadWatchedMovies(
-      {int limit = 10, int offset = 0}) async {
-    if (isAuthenticated()) {
-      try {
-        await checkOnline();
-        await syncWithSupabase();
-      } on SyncException catch (e) {
-        LoggerFactory.error('Error in automatic sync: $e');
-      }
-    }
-
-    try {
-      return await _hiveDatasource.loadWatchedMovies();
-    } catch (e) {
-      throw LocalStorageException('Error loading watched movies: $e');
-    }
-  }
-
-  // Helper sync methods
-  Future<void> _syncSingleWatchedItem(Movie movie) async {
-    final userId = getCurrentUserId();
-    if (userId == null) return;
-
-    try {
-      await supabase.from('user_watched_movies').upsert({
-        'user_id': userId,
-        'movie_id': movie.id,
-        'movie_title': movie.title,
-        'movie_poster_path': movie.posterPath,
-        'movie_backdrop_path': movie.backdropPath,
-        'movie_overview': movie.overview,
-        'movie_release_date': movie.releaseDate.toIso8601String().split('T')[0],
-        'movie_vote_average': movie.voteAverage,
-        'watched_at': DateTime.now().toIso8601String(),
-        'last_modified_at': DateTime.now().toIso8601String(),
-        'deleted_at': null,
-      }, onConflict: 'user_id,movie_id');
-
-      LoggerFactory.info(
-          '✅ ${movie.title} added to watched movies in Supabase');
-    } catch (e) {
-      throw SupabaseSyncException(
-          'Error syncing watched movie ${movie.title}: $e');
-    }
-  }
-
-  Future<void> _syncSingleWatchedRemoval(int movieId) async {
-    final userId = getCurrentUserId();
-    if (userId == null) return;
-
-    try {
-      await supabase
-          .from('user_watched_movies')
-          .update({
-            'deleted_at': DateTime.now().toIso8601String(),
-            'last_modified_at': DateTime.now().toIso8601String(),
-          })
-          .eq('user_id', userId)
-          .eq('movie_id', movieId);
-
-      LoggerFactory.info('✅ Movie ID $movieId marked as deleted in Supabase');
-    } catch (e) {
-      throw SupabaseSyncException('Error removing watched movie $movieId: $e');
-    }
-  }
-
-  // Implements SyncableRepository methods
   @override
   Future<List<SyncableWatchedMovie>> getLocalData() async {
-    try {
-      final watchedMovies = await _hiveDatasource.loadWatchedMovies();
-      final userId = getCurrentUserId();
-      if (userId == null) return [];
+    if (_prefs == null) await initializeLocal();
 
-      return watchedMovies
-          .map((watchedMovie) =>
-              SyncableWatchedMovie.fromWatchedMovie(watchedMovie, userId))
+    try {
+      final jsonList = _prefs!.getStringList(_storageKey) ?? [];
+      final watchedMovies = jsonList
+          .map((jsonStr) => SyncableWatchedMovie.fromJsonString(jsonStr))
+          .where((movie) => movie.userId == userId && !movie.isDeleted)
           .toList();
+
+      LoggerFactory.debug(
+          '📋 Retrieved ${watchedMovies.length} local watched movies for user $userId');
+      return watchedMovies;
     } catch (e) {
-      throw LocalStorageException(
-          'Error getting local watched movies data: $e');
+      LoggerFactory.error('❌ Failed to get local watched movies: $e');
+      return [];
     }
   }
 
   @override
-  Future<List<SyncableWatchedMovie>> getRemoteData() async {
-    final userId = getCurrentUserId();
-    if (userId == null) return [];
+  Future<void> saveToLocal(SyncableWatchedMovie entity) async {
+    if (_prefs == null) await initializeLocal();
 
     try {
-      await checkOnline();
-      final response = await supabase
-          .from('user_watched_movies')
-          .select()
-          .eq('user_id', userId)
-          .isFilter('deleted_at', null)
-          .order('watched_at', ascending: false);
+      final existing = await getLocalData();
+      final updated = <SyncableWatchedMovie>[];
 
-      return (response as List).map((data) => mapFromSupabase(data)).toList();
+      // Remover película existente con el mismo ID
+      for (final movie in existing) {
+        if (movie.id != entity.id) {
+          updated.add(movie);
+        }
+      }
+
+      // Agregar nueva entidad
+      updated.add(entity);
+
+      // Guardar lista actualizada
+      final jsonList = updated.map((movie) => movie.toJsonString()).toList();
+      await _prefs!.setStringList(_storageKey, jsonList);
+
+      LoggerFactory.debug('💾 Saved watched movie locally: ${entity.movieId}');
     } catch (e) {
-      throw SupabaseSyncException(
-          'Error getting remote watched movies data: $e');
+      LoggerFactory.error('❌ Failed to save watched movie locally: $e');
+      rethrow;
     }
   }
 
   @override
-  Future<void> upload(List<SyncableWatchedMovie> watchedMovies) async {
-    if (watchedMovies.isEmpty) return;
+  Future<void> removeFromLocal(String id) async {
+    if (_prefs == null) await initializeLocal();
 
-    for (final watchedMovie in watchedMovies) {
-      try {
-        await supabase.from('user_watched_movies').upsert(
-            mapToSupabase(watchedMovie),
-            onConflict: 'user_id,movie_id');
-      } catch (e) {
-        throw SupabaseSyncException(
-            'Error uploading watched movie ${watchedMovie.movieTitle}: $e');
-      }
+    try {
+      final existing = await getLocalData();
+      final filtered = existing.where((movie) => movie.id != id).toList();
+
+      final jsonList = filtered.map((movie) => movie.toJsonString()).toList();
+      await _prefs!.setStringList(_storageKey, jsonList);
+
+      LoggerFactory.debug('🗑️ Removed watched movie from local storage: $id');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to remove watched movie locally: $e');
+      rethrow;
     }
   }
 
   @override
-  Future<void> download(List<SyncableWatchedMovie> watchedMovies) async {
-    for (final watchedMovie in watchedMovies) {
-      try {
-        final movie = watchedMovie.toMovie();
-        await _hiveDatasource.markAsWatched(movie);
-      } catch (e) {
-        throw LocalStorageException(
-            'Error downloading watched movie ${watchedMovie.id}: $e');
-      }
-    }
+  Future<void> updateLocal(SyncableWatchedMovie entity) async {
+    // Reutilizar saveToLocal ya que maneja actualizaciones
+    await saveToLocal(entity);
   }
 
   @override
-  Future<void> resolveConflicts(List<SyncableWatchedMovie> local,
-      List<SyncableWatchedMovie> remote) async {
-    // Simple conflict resolution: remote wins
-    for (final remoteItem in remote) {
-      final localItem =
-          local.where((item) => item.id == remoteItem.id).firstOrNull;
-      if (localItem != null) {
-        final movie = remoteItem.toMovie();
-        await _hiveDatasource.markAsWatched(movie);
-      }
+  SyncableWatchedMovie convertToModel(SyncableWatchedMovie entity) {
+    return entity;
+  }
+
+  @override
+  SyncableWatchedMovie convertFromModel(dynamic model, String userId) {
+    if (model is SyncableWatchedMovie) {
+      return model;
+    } else {
+      throw ArgumentError(
+          'Model must be a SyncableWatchedMovie, got ${model.runtimeType}');
     }
   }
-}
 
-// Extension to convert SyncableWatchedMovie to Movie
-extension SyncableWatchedMovieExtension on SyncableWatchedMovie {
-  Movie toMovie() {
-    return Movie(
-      id: movieId,
-      title: movieTitle,
-      posterPath: moviePosterPath ?? '',
-      backdropPath: movieBackdropPath ?? '',
-      overview: movieOverview ?? '',
-      releaseDate: movieReleaseDate ?? DateTime.now(),
-      voteAverage: movieVoteAverage ?? 0.0,
-      genreIds: [],
-      adult: false,
-      originalLanguage: 'en',
-      originalTitle: movieTitle,
-      popularity: 0.0,
-      video: false,
-      voteCount: 0,
-    );
+  // =============================================
+  // MÉTODOS ESPECÍFICOS PARA PELÍCULAS VISTAS
+  // =============================================
+
+  /// Verifica si una película está marcada como vista
+  Future<bool> isMovieWatched(int movieId) async {
+    try {
+      final watchedMovies = await getAll();
+      return watchedMovies.any((movie) => movie.movieId == movieId);
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to check if movie is watched: $e');
+      return false;
+    }
+  }
+
+  /// Obtiene película vista por ID de película
+  Future<SyncableWatchedMovie?> getWatchedMovieByMovieId(int movieId) async {
+    try {
+      final watchedMovies = await getAll();
+      final matches = watchedMovies.where((movie) => movie.movieId == movieId);
+      return matches.isNotEmpty ? matches.first : null;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get watched movie by movie ID: $e');
+      return null;
+    }
+  }
+
+  /// Marca una película como vista
+  Future<void> markAsWatched({
+    required int movieId,
+    DateTime? watchedAt,
+    double? rating,
+    String? review,
+  }) async {
+    try {
+      // Verificar si ya está marcada como vista
+      final existing = await getWatchedMovieByMovieId(movieId);
+      if (existing != null) {
+        LoggerFactory.info('ℹ️ Movie $movieId is already marked as watched');
+        return;
+      }
+
+      final watchedMovie = SyncableWatchedMovie.fromMovie(
+        userId: userId,
+        movie: Movie(
+          id: movieId,
+          title: 'Movie $movieId',
+          adult: false,
+          backdropPath: '',
+          genreIds: [],
+          originalLanguage: 'en',
+          originalTitle: 'Movie $movieId',
+          overview: '',
+          popularity: 0.0,
+          posterPath: '',
+          releaseDate: DateTime.now(),
+          video: false,
+          voteAverage: 0.0,
+          voteCount: 0,
+        ),
+        watchedDate: watchedAt ?? DateTime.now(),
+        personalRating: rating,
+        personalNotes: review,
+      );
+
+      await add(watchedMovie);
+      LoggerFactory.info('✅ Marked movie as watched: $movieId');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to mark movie as watched: $e');
+      rethrow;
+    }
+  }
+
+  /// Desmarca una película como vista
+  Future<void> unmarkAsWatched(int movieId) async {
+    try {
+      final watchedMovie = await getWatchedMovieByMovieId(movieId);
+      if (watchedMovie != null) {
+        await remove(watchedMovie.id);
+        LoggerFactory.info('🗑️ Unmarked movie as watched: $movieId');
+      } else {
+        LoggerFactory.info('ℹ️ Movie $movieId was not marked as watched');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to unmark movie as watched: $e');
+      rethrow;
+    }
+  }
+
+  /// Actualiza la calificación y reseña de una película vista
+  Future<void> updateWatchedMovie({
+    required int movieId,
+    double? rating,
+    String? review,
+  }) async {
+    try {
+      final watchedMovie = await getWatchedMovieByMovieId(movieId);
+      if (watchedMovie == null) {
+        throw Exception('Movie $movieId is not marked as watched');
+      }
+
+      final updatedMovie = watchedMovie.copyWithData(
+        personalRating: rating,
+        personalNotes: review,
+        lastModifiedAt: DateTime.now(),
+      );
+
+      await update(updatedMovie);
+      LoggerFactory.info('📝 Updated watched movie: $movieId');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to update watched movie: $e');
+      rethrow;
+    }
+  }
+
+  /// Obtiene todas las películas vistas ordenadas por fecha
+  Future<List<SyncableWatchedMovie>> getWatchedMoviesSorted(
+      {bool ascending = false}) async {
+    try {
+      final watchedMovies = await getLocalData();
+      final sortedMovies = watchedMovies.toList();
+
+      sortedMovies.sort((a, b) {
+        final comparison = a.watchedDate.compareTo(b.watchedDate);
+        return ascending ? comparison : -comparison;
+      });
+
+      return sortedMovies;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get sorted watched movies: $e');
+      return [];
+    }
+  }
+
+  /// Obtiene estadísticas de películas vistas
+  Future<Map<String, dynamic>> getWatchedStats() async {
+    try {
+      final watchedMovies = await getAll();
+
+      final totalWatched = watchedMovies.length;
+      final moviesWithRating =
+          watchedMovies.where((m) => m.personalRating != null).toList();
+      final averageRating = moviesWithRating.isNotEmpty
+          ? moviesWithRating
+                  .map((m) => m.personalRating!)
+                  .reduce((a, b) => a + b) /
+              moviesWithRating.length
+          : 0.0;
+
+      final moviesWithReview = watchedMovies
+          .where((m) => m.personalNotes != null && m.personalNotes!.isNotEmpty)
+          .length;
+
+      return {
+        'totalWatched': totalWatched,
+        'averageRating': averageRating,
+        'moviesWithRating': moviesWithRating.length,
+        'moviesWithReview': moviesWithReview,
+      };
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get watched stats: $e');
+      return {
+        'totalWatched': 0,
+        'averageRating': 0.0,
+        'moviesWithRating': 0,
+        'moviesWithReview': 0,
+      };
+    }
   }
 }

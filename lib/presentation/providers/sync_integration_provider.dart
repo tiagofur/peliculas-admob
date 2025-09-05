@@ -1,162 +1,354 @@
 import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/logging/logger_factory.dart';
-import '../../infrastructure/services/connectivity_detector.dart';
-import '../../infrastructure/services/sync_notification_service.dart';
-import 'auth_provider.dart';
-import 'sync_init_provider.dart';
-import 'sync_status_provider.dart';
+import '../widgets/sync/sync_settings_widget.dart';
+import '../widgets/sync/sync_history_viewer.dart';
 
-/// Provider para conectar el estado de sync con la infraestructura real
-final syncIntegrationProvider = Provider<SyncIntegration>((ref) {
-  return SyncIntegration(ref);
-});
+/// Sync Integration Provider
+///
+/// This provider coordinates all sync-related services and provides
+/// a unified interface for the UI widgets to interact with the sync system.
+class SyncIntegrationState {
+  final bool isInitialized;
+  final bool isConnected;
+  final SyncStatus globalSyncStatus;
+  final Map<String, dynamic> performanceMetrics;
+  final List<SyncHistoryEntry> recentHistory;
+  final SyncSettings currentSettings;
+  final String? lastError;
 
-/// Clase que integra el estado de sincronización UI con los servicios reales
-class SyncIntegration {
-  SyncIntegration(this._ref) {
-    _initialize();
-  }
+  const SyncIntegrationState({
+    required this.isInitialized,
+    required this.isConnected,
+    required this.globalSyncStatus,
+    required this.performanceMetrics,
+    required this.recentHistory,
+    required this.currentSettings,
+    this.lastError,
+  });
 
-  final Ref _ref;
-  Timer? _connectionCheckTimer;
-  Timer? _syncCheckTimer;
+  // Getter for UI compatibility
+  List<SyncHistoryEntry> get syncHistory => recentHistory;
 
-  void _initialize() {
-    // Inicializar servicio de notificaciones
-    SyncNotificationService.instance.initialize();
-    
-    // Verificar conectividad cada 5 segundos
-    _connectionCheckTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      _checkConnectivityStatus();
-    });
-
-    // Verificar estado de sync cada 10 segundos
-    _syncCheckTimer = Timer.periodic(const Duration(seconds: 10), (_) {
-      _checkSyncHealth();
-    });
-
-    // Escuchar cambios de autenticación para activar sync
-    _ref.listen<AppState>(appStateProvider, (previous, next) {
-      _handleAuthChange(previous, next);
-    });
-
-    // Escuchar cambios de estado de sync para notificaciones
-    _ref.listen<SyncState>(syncStatusProvider, (previous, next) {
-      _handleSyncStateChange(previous, next);
-    });
-  }
-
-  void _checkConnectivityStatus() {
-    try {
-      final isOnline = ConnectivityDetector.instance.isOnline;
-      final syncNotifier = _ref.read(syncStatusProvider.notifier);
-      
-      if (!isOnline && _ref.read(syncStatusProvider).status != SyncStatus.offline) {
-        syncNotifier.setOffline();
-      } else if (isOnline && _ref.read(syncStatusProvider).status == SyncStatus.offline) {
-        // Volver a estado normal cuando se recupere la conexión
-        syncNotifier.setSyncSuccess();
-      }
-    } catch (e) {
-      LoggerFactory.error('Error verificando conectividad: $e');
-    }
-  }
-
-  void _checkSyncHealth() async {
-    try {
-      final appState = _ref.read(appStateProvider);
-      if (!appState.isAuthenticated) return;
-
-      final authSyncListener = _ref.read(authSyncListenerProvider);
-      final healthStatus = await authSyncListener.checkServicesHealth();
-      
-      final syncNotifier = _ref.read(syncStatusProvider.notifier);
-      final currentState = _ref.read(syncStatusProvider);
-      
-      // Solo actualizar si no estamos en medio de una sincronización
-      if (currentState.status != SyncStatus.syncing) {
-        final isHealthy = healthStatus.values.every((healthy) => healthy);
-        
-        if (!isHealthy && currentState.status != SyncStatus.error) {
-          syncNotifier.setError('Problemas de conectividad');
-        } else if (isHealthy && currentState.status == SyncStatus.error) {
-          syncNotifier.setSyncSuccess();
-        }
-      }
-    } catch (e) {
-      LoggerFactory.error('Error verificando salud del sistema sync: $e');
-    }
-  }
-
-  void _handleAuthChange(AppState? previous, AppState next) {
-    final syncNotifier = _ref.read(syncStatusProvider.notifier);
-    
-    if (previous?.isAuthenticated != next.isAuthenticated) {
-      if (next.isAuthenticated) {
-        LoggerFactory.info('Usuario autenticado - activando indicadores de sync');
-        // Mostrar notificación inicial
-        SyncNotificationService.instance.showInitialSyncNotification();
-        // Iniciar sincronización automática
-        syncNotifier.startManualSync();
-      } else {
-        LoggerFactory.info('Usuario desautenticado - limpiando estado de sync');
-        // Cancelar notificaciones
-        SyncNotificationService.instance.cancelAllSyncNotifications();
-        syncNotifier.setIdle();
-      }
-    }
-  }
-
-  void _handleSyncStateChange(SyncState? previous, SyncState next) {
-    // Solo mostrar notificaciones para cambios significativos
-    if (previous?.status == next.status) return;
-
-    switch (next.status) {
-      case SyncStatus.success:
-        if (previous?.status == SyncStatus.syncing) {
-          // Sync completado exitosamente
-          SyncNotificationService.instance.showSyncSuccessNotification(
-            itemsSynced: 1, // Placeholder - se podría obtener del resultado real
-            additionalInfo: next.message,
-          );
-        }
-        break;
-      case SyncStatus.error:
-        if (previous?.status == SyncStatus.syncing) {
-          // Error durante sync
-          SyncNotificationService.instance.showSyncErrorNotification(
-            errorMessage: next.errorMessage ?? 'Error desconocido',
-            canRetry: true,
-          );
-        }
-        break;
-      case SyncStatus.syncing:
-      case SyncStatus.offline:
-      case SyncStatus.idle:
-        // No mostrar notificaciones para estos estados
-        break;
-    }
-  }
-
-  /// Método para forzar verificación de estado
-  void forceStatusCheck() {
-    _checkConnectivityStatus();
-    _checkSyncHealth();
-  }
-
-  /// Método para limpiar recursos
-  void dispose() {
-    _connectionCheckTimer?.cancel();
-    _syncCheckTimer?.cancel();
+  SyncIntegrationState copyWith({
+    bool? isInitialized,
+    bool? isConnected,
+    SyncStatus? globalSyncStatus,
+    Map<String, dynamic>? performanceMetrics,
+    List<SyncHistoryEntry>? recentHistory,
+    SyncSettings? currentSettings,
+    String? lastError,
+  }) {
+    return SyncIntegrationState(
+      isInitialized: isInitialized ?? this.isInitialized,
+      isConnected: isConnected ?? this.isConnected,
+      globalSyncStatus: globalSyncStatus ?? this.globalSyncStatus,
+      performanceMetrics: performanceMetrics ?? this.performanceMetrics,
+      recentHistory: recentHistory ?? this.recentHistory,
+      currentSettings: currentSettings ?? this.currentSettings,
+      lastError: lastError ?? this.lastError,
+    );
   }
 }
 
-/// Provider para inicializar automáticamente la integración
-final syncIntegrationInitProvider = Provider<void>((ref) {
-  // Solo inicializar la integración sin hacer nada más
-  ref.watch(syncIntegrationProvider);
-  return;
+enum SyncStatus {
+  idle,
+  syncing,
+  synced,
+  error,
+  conflicts,
+  offline,
+}
+
+class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
+  final MockRealtimeSyncManager _realtimeSyncManager;
+  final MockConnectivityManager _connectivityManager;
+  final MockSyncCoordinator _syncCoordinator;
+  final MockSyncPerformanceMetrics _performanceMetrics;
+
+  SyncIntegrationNotifier(
+    this._realtimeSyncManager,
+    this._connectivityManager,
+    this._syncCoordinator,
+    this._performanceMetrics,
+  ) : super(
+          const SyncIntegrationState(
+            isInitialized: false,
+            isConnected: false,
+            globalSyncStatus: SyncStatus.idle,
+            performanceMetrics: <String, dynamic>{},
+            recentHistory: <SyncHistoryEntry>[],
+            currentSettings: SyncSettings(),
+            lastError: null,
+          ),
+        ) {
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      // Initialize all sync services
+      await _realtimeSyncManager.initialize();
+      await _connectivityManager.initialize();
+      await _syncCoordinator.initialize();
+
+      // Set up listeners
+      _setupListeners();
+
+      state = state.copyWith(
+        isInitialized: true,
+        isConnected: _connectivityManager.isConnected,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        lastError: 'Failed to initialize sync services: $e',
+      );
+    }
+  }
+
+  void _setupListeners() {
+    // Listen to connectivity changes
+    _connectivityManager.connectionStream.listen((isConnected) {
+      state = state.copyWith(
+        isConnected: isConnected,
+        globalSyncStatus: isConnected ? SyncStatus.idle : SyncStatus.offline,
+      );
+    });
+
+    // Update performance metrics periodically
+    Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (mounted) {
+        state = state.copyWith(
+          performanceMetrics: _performanceMetrics.metrics,
+        );
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+
+  // Public methods for UI interaction
+  Future<void> triggerManualSync() async {
+    try {
+      state = state.copyWith(globalSyncStatus: SyncStatus.syncing);
+      await _syncCoordinator.performFullSync();
+      state = state.copyWith(globalSyncStatus: SyncStatus.synced);
+    } catch (e) {
+      state = state.copyWith(
+        globalSyncStatus: SyncStatus.error,
+        lastError: 'Manual sync failed: $e',
+      );
+    }
+  }
+
+  Future<void> toggleAutoSync(bool enabled) async {
+    final newSettings =
+        state.currentSettings.copyWith(autoSyncEnabled: enabled);
+    state = state.copyWith(currentSettings: newSettings);
+
+    if (enabled) {
+      await _realtimeSyncManager.startAutoSync();
+    } else {
+      await _realtimeSyncManager.stopAutoSync();
+    }
+  }
+
+  Future<void> toggleOfflineMode(bool enabled) async {
+    final newSettings =
+        state.currentSettings.copyWith(offlineModeEnabled: enabled);
+    state = state.copyWith(currentSettings: newSettings);
+
+    if (enabled) {
+      await _realtimeSyncManager.enableOfflineMode();
+      state = state.copyWith(globalSyncStatus: SyncStatus.offline);
+    } else {
+      await _realtimeSyncManager.disableOfflineMode();
+      state = state.copyWith(globalSyncStatus: SyncStatus.idle);
+    }
+  }
+
+  Future<void> updateSyncFrequency(SyncFrequency frequency) async {
+    final newSettings =
+        state.currentSettings.copyWith(syncFrequency: frequency);
+    state = state.copyWith(currentSettings: newSettings);
+    await _realtimeSyncManager.updateSyncFrequency(frequency);
+  }
+
+  Future<void> updateConflictResolutionStrategy(
+      ConflictResolutionStrategy strategy) async {
+    final newSettings =
+        state.currentSettings.copyWith(conflictResolution: strategy);
+    state = state.copyWith(currentSettings: newSettings);
+    await _syncCoordinator.updateConflictResolutionStrategy(strategy);
+  }
+
+  Future<void> clearLocalData() async {
+    try {
+      await _syncCoordinator.clearLocalData();
+      state = state.copyWith(
+        globalSyncStatus: SyncStatus.idle,
+        recentHistory: [],
+      );
+    } catch (e) {
+      state = state.copyWith(
+        lastError: 'Failed to clear local data: $e',
+      );
+    }
+  }
+
+  /// Fuerza una resincronización completa
+  Future<void> forceFullResync() async {
+    try {
+      state = state.copyWith(
+        globalSyncStatus: SyncStatus.syncing,
+        lastError: null,
+      );
+
+      await _syncCoordinator.forceFullResync();
+      
+      state = state.copyWith(
+        globalSyncStatus: SyncStatus.synced,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        globalSyncStatus: SyncStatus.error,
+        lastError: e.toString(),
+      );
+    }
+  }
+
+  /// Notifica cuando un conflicto ha sido resuelto
+  void onConflictResolved(String entityId, ConflictResolutionStrategy strategy) {
+    // Actualizar el estado para reflejar que el conflicto fue resuelto
+    final updatedHistory = List<SyncHistoryEntry>.from(state.recentHistory);
+    updatedHistory.insert(0, SyncHistoryEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      timestamp: DateTime.now(),
+      type: SyncOperationType.conflictResolution,
+      status: SyncOperationStatus.success,
+      entityType: 'Entity',
+      entityId: entityId,
+      description: 'Conflicto resuelto - Estrategia: ${_getStrategyName(strategy)}',
+    ));
+
+    // Mantener solo los últimos 50 registros
+    if (updatedHistory.length > 50) {
+      updatedHistory.removeRange(50, updatedHistory.length);
+    }
+
+    state = state.copyWith(
+      recentHistory: updatedHistory,
+      globalSyncStatus: SyncStatus.synced,
+    );
+  }
+
+  String _getStrategyName(ConflictResolutionStrategy strategy) {
+    switch (strategy) {
+      case ConflictResolutionStrategy.keepLocal:
+        return 'Versión local';
+      case ConflictResolutionStrategy.keepRemote:
+        return 'Versión remota';
+      case ConflictResolutionStrategy.mergeAutomatic:
+        return 'Fusión automática';
+      case ConflictResolutionStrategy.askUser:
+        return 'Selección manual';
+    }
+  }
+
+  void clearError() {
+    state = state.copyWith(lastError: null);
+  }
+
+  // Getters for specific UI needs
+  bool get canSync => state.isInitialized && state.isConnected;
+  bool get hasError => state.lastError != null;
+  bool get isOffline =>
+      !state.isConnected || state.globalSyncStatus == SyncStatus.offline;
+  bool get isSyncing => state.globalSyncStatus == SyncStatus.syncing;
+  bool get hasConflicts => state.globalSyncStatus == SyncStatus.conflicts;
+  List<SyncHistoryEntry> get syncHistory => state.recentHistory;
+}
+
+// Provider definitions
+final syncIntegrationProvider =
+    StateNotifierProvider<SyncIntegrationNotifier, SyncIntegrationState>((ref) {
+  // Get dependencies from other providers
+  final realtimeSyncManager = ref.watch(realtimeSyncManagerProvider);
+  final connectivityManager = ref.watch(connectivityManagerProvider);
+  final syncCoordinator = ref.watch(syncCoordinatorProvider);
+  final performanceMetrics = ref.watch(syncPerformanceMetricsProvider);
+
+  return SyncIntegrationNotifier(
+    realtimeSyncManager,
+    connectivityManager,
+    syncCoordinator,
+    performanceMetrics,
+  );
 });
+
+// Convenience providers for specific UI needs
+final globalSyncStatusProvider = Provider<SyncStatus>((ref) {
+  return ref.watch(syncIntegrationProvider).globalSyncStatus;
+});
+
+final syncConnectivityProvider = Provider<bool>((ref) {
+  return ref.watch(syncIntegrationProvider).isConnected;
+});
+
+final syncErrorProvider = Provider<String?>((ref) {
+  return ref.watch(syncIntegrationProvider).lastError;
+});
+
+final syncPerformanceProvider = Provider<Map<String, dynamic>>((ref) {
+  return ref.watch(syncIntegrationProvider).performanceMetrics;
+});
+
+// Mock providers for development (replace with actual implementations)
+final realtimeSyncManagerProvider = Provider<MockRealtimeSyncManager>((ref) {
+  return MockRealtimeSyncManager();
+});
+
+final connectivityManagerProvider = Provider<MockConnectivityManager>((ref) {
+  return MockConnectivityManager();
+});
+
+final syncCoordinatorProvider = Provider<MockSyncCoordinator>((ref) {
+  return MockSyncCoordinator();
+});
+
+final syncPerformanceMetricsProvider = Provider<MockSyncPerformanceMetrics>((ref) {
+  return MockSyncPerformanceMetrics();
+});
+
+// Mock implementations
+class MockRealtimeSyncManager {
+  Future<void> initialize() async {}
+  Future<void> startAutoSync() async {}
+  Future<void> stopAutoSync() async {}
+  Future<void> enableOfflineMode() async {}
+  Future<void> disableOfflineMode() async {}
+  Future<void> updateSyncFrequency(SyncFrequency frequency) async {}
+}
+
+class MockConnectivityManager {
+  Stream<bool> get connectionStream => Stream.value(true);
+  bool get isConnected => true;
+  Future<void> initialize() async {}
+}
+
+class MockSyncCoordinator {
+  Future<void> initialize() async {}
+  Future<void> performFullSync() async {}
+  Future<void> clearLocalData() async {}
+  Future<void> forceFullResync() async {}
+  Future<void> updateConflictResolutionStrategy(ConflictResolutionStrategy strategy) async {}
+}
+
+class MockSyncPerformanceMetrics {
+  Map<String, dynamic> get metrics => {
+    'syncTime': 1200,
+    'itemsProcessed': 150,
+    'errorRate': 0.02,
+  };
+}

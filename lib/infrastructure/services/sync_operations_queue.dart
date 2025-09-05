@@ -1,6 +1,7 @@
 import 'dart:math';
 
-import '../../core/sync/sync_states.dart';
+import '../../core/sync/sync_operation.dart';
+import '../../domain/entities/syncable_entity.dart';
 
 /// Información de una operación de sincronización pendiente
 class SyncOperation {
@@ -158,7 +159,11 @@ class SyncOperation {
 
   /// Indica si la operación está lista para ejecutarse
   bool get isReadyToExecute {
-    return status.canAutoSync && DateTime.now().isAfter(scheduledAt);
+    // Las operaciones pueden auto-sincronizarse excepto cuando están en conflicto, error o procesando
+    final canAutoSync = status != SyncItemStatus.conflict && 
+                       status != SyncItemStatus.error && 
+                       status != SyncItemStatus.processing;
+    return canAutoSync && DateTime.now().isAfter(scheduledAt);
   }
 
   @override

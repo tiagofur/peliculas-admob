@@ -142,7 +142,7 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await _metrics.recordCoreFlowAttempt('authentication');
+                    _metrics.recordCoreFlowAttempt();
                     await _loadConfigData();
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -154,8 +154,7 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await _metrics.recordCoreFlowError('authentication',
-                        errorDetails: 'Debug test error');
+                    _metrics.recordCoreFlowError('authentication');
                     await _loadConfigData();
 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -167,7 +166,7 @@ class _ErrorReportingDebugWidgetState extends State<ErrorReportingDebugWidget> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    await _metrics.resetMetrics();
+                    _metrics.reset();
                     await _loadConfigData();
 
                     ScaffoldMessenger.of(context).showSnackBar(

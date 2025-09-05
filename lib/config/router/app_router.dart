@@ -12,6 +12,7 @@ import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/screens.dart';
 import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/watchlist_screen.dart';
+
 import '../../presentation/views/list_share_web_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
@@ -753,6 +754,8 @@ final appRouter = GoRouter(
         );
       },
     ),
+
+
 
 
   ],

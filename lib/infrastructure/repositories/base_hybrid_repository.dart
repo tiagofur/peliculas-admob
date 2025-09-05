@@ -1,237 +1,468 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
-import '../services/persistent_sync_queue.dart';
+import '../../core/sync/entity_sync_manager.dart';
+import '../../core/sync/sync_coordinator.dart';
+import '../../core/sync/sync_operation.dart';
+import '../../domain/entities/sync_result.dart';
+import '../../domain/entities/syncable_entity.dart';
 import '../../domain/repositories/syncable_repository.dart';
-import '../../presentation/providers/auth_provider.dart';
-import '../services/connectivity_detector.dart';
 
-/// Base abstract class for hybrid repositories that support both local storage
-/// and remote synchronization with Supabase. This class consolidates common
-/// sync logic and provides a consistent interface for all hybrid repositories.
-abstract class BaseHybridRepository<T extends Syncable>
-    implements SyncableRepository<T> {
-  BaseHybridRepository({required Ref ref}) : _ref = ref {
-    _initializeComponents();
+/// Clase base para repositorios híbridos que combinan almacenamiento local y remoto
+/// con sincronización automática usando el sistema de sync de Fase 3
+abstract class BaseHybridRepository<T extends SyncableEntity> implements SyncableRepository<T> {
+  BaseHybridRepository({
+    required this.userId,
+    required this.entityType,
+    EntitySyncManager<T>? syncManager,
+    SyncCoordinator? syncCoordinator,
+  }) : _syncManager = syncManager,
+       _syncCoordinator = syncCoordinator {
+    _initialize();
   }
 
-  final Ref _ref;
-  final SupabaseClient _supabase = Supabase.instance.client;
-  late final PersistentSyncQueue _syncQueue;
+  final String userId;
+  final String entityType;
+  final EntitySyncManager<T>? _syncManager;
+  final SyncCoordinator? _syncCoordinator;
 
-  /// Get access to the sync queue for subclasses
-  PersistentSyncQueue get syncQueue => _syncQueue;
+  final StreamController<RepositoryEvent<T>> _eventController = 
+      StreamController<RepositoryEvent<T>>.broadcast();
 
-  /// Get access to Supabase client for subclasses
-  SupabaseClient get supabase => _supabase;
+  bool _isInitialized = false;
+  
+  /// Stream de eventos del repositorio
+  Stream<RepositoryEvent<T>> get events => _eventController.stream;
 
-  /// Initialize common components for sync functionality
-  Future<void> _initializeComponents() async {
-    _syncQueue = PersistentSyncQueue();
-    await _syncQueue.init();
-    LoggerFactory.info('📦 $runtimeType initialized');
-  }
+  /// Indica si el repositorio está inicializado
+  bool get isInitialized => _isInitialized;
 
-  /// Check if there's internet connectivity
-  @protected
-  Future<void> checkOnline() async {
-    final connectivityStatus = await ConnectivityDetector.instance.checkConnectivity();
-    if (connectivityStatus == ConnectivityStatus.offline) {
-      throw NetworkException();
-    }
-  }
-
-  /// Check if the user is currently authenticated
-  @protected
-  bool isAuthenticated() {
-    final appState = _ref.read(appStateProvider);
-    return appState.isAuthenticated && appState.user != null;
-  }
-
-  /// Get the current user ID
-  @protected
-  String? getCurrentUserId() {
-    return _ref.read(appStateProvider).user?.id;
-  }
-
-  /// Template method for syncing data with Supabase
-  /// This implements the common sync flow for all hybrid repositories
-  @override
-  Future<void> syncWithSupabase() async {
-    if (!isAuthenticated()) {
-      LoggerFactory.warning(
-          '❌ User not authenticated, skipping $runtimeType sync');
-      return;
-    }
-
-    LoggerFactory.info('🔄 Starting $runtimeType sync...');
+  /// Inicialización del repositorio
+  Future<void> _initialize() async {
+    if (_isInitialized) return;
 
     try {
-      await checkOnline();
-
-      // Add overall timeout for the entire sync operation
-      await Future.microtask(() async {
-        // Get local and remote data with individual timeouts
-        final localDataFuture = getLocalData().timeout(
-          const Duration(seconds: 20),
-          onTimeout: () {
-            LoggerFactory.warning('⏱️ Timeout getting local data for $runtimeType');
-            throw TimeoutException('Local data fetch timeout', const Duration(seconds: 20));
-          },
-        );
-        
-        final remoteDataFuture = getRemoteData().timeout(
-          const Duration(seconds: 20),
-          onTimeout: () {
-            LoggerFactory.warning('⏱️ Timeout getting remote data for $runtimeType');
-            throw TimeoutException('Remote data fetch timeout', const Duration(seconds: 20));
-          },
-        );
-
-        // Execute in parallel with overall timeout
-        final results = await Future.wait([localDataFuture, remoteDataFuture])
-          .timeout(const Duration(seconds: 45), onTimeout: () {
-            LoggerFactory.warning('⏱️ Overall timeout for $runtimeType sync');
-            throw TimeoutException('Overall sync timeout', const Duration(seconds: 45));
-          });
-
-        final localData = results[0];
-        final remoteData = results[1];
-
-        LoggerFactory.info(
-            '📊 $runtimeType sync - Local: ${localData.length}, Remote: ${remoteData.length}');
-
-        // Process sync logic with timeout
-        await _processSyncData(localData, remoteData).timeout(
-          const Duration(seconds: 60),
-          onTimeout: () {
-            LoggerFactory.warning('⏱️ Timeout processing sync data for $runtimeType');
-            throw TimeoutException('Sync processing timeout', const Duration(seconds: 60));
-          },
-        );
-      });
-
-      LoggerFactory.info('✅ $runtimeType sync completed successfully');
-    } on TimeoutException catch (e) {
-      LoggerFactory.error('⏱️ Timeout in $runtimeType sync: $e');
-      throw SupabaseSyncException('Sync timeout for $runtimeType: $e');
-    } on SyncException catch (e) {
-      LoggerFactory.error('❌ Sync error in $runtimeType: $e');
-      rethrow;
+      await initializeLocal();
+      _isInitialized = true;
+      
+      _emitEvent(RepositoryEventType.initialized, 'Repository initialized');
+      LoggerFactory.info('✅ BaseHybridRepository<$entityType> initialized');
     } catch (e) {
-      LoggerFactory.error('❌ Unexpected error in $runtimeType sync: $e');
-      throw SupabaseSyncException('Sync failed for $runtimeType: $e');
+      LoggerFactory.error('❌ Failed to initialize repository: $e');
+      _isInitialized = true; // Continue even if initialization fails
     }
   }
 
-  /// Process sync data - to be implemented by subclasses
-  Future<void> _processSyncData(List<T> localData, List<T> remoteData) async {
-    // Find items to upload (local items not in remote)
-    final localIds = localData.map((item) => item.id).toSet();
-    final remoteIds = remoteData.map((item) => item.id).toSet();
+  // =============================================
+  // MÉTODOS ABSTRACTOS - IMPLEMENTAR EN SUBCLASES
+  // =============================================
 
-    final toUpload =
-        localData.where((item) => !remoteIds.contains(item.id)).toList();
-    final toDownload =
-        remoteData.where((item) => !localIds.contains(item.id)).toList();
+  /// Inicializa el almacenamiento local
+  Future<void> initializeLocal();
 
-    // Find conflicts (items that exist both locally and remotely)
-    final conflictLocalItems =
-        localData.where((item) => remoteIds.contains(item.id)).toList();
-    final conflictRemoteItems =
-        remoteData.where((item) => localIds.contains(item.id)).toList();
+  /// Obtiene todos los elementos desde almacenamiento local
+  Future<List<T>> getLocalData();
 
-    // Execute sync operations in parallel with individual error handling
-    final syncTasks = <Future<void>>[];
+  /// Guarda un elemento en almacenamiento local
+  Future<void> saveToLocal(T entity);
 
-    // Upload new local items
-    if (toUpload.isNotEmpty) {
-      LoggerFactory.info('⬆️ Uploading ${toUpload.length} new items');
-      syncTasks.add(
-        upload(toUpload).catchError((error) {
-          LoggerFactory.error('❌ Upload failed: $error');
-          throw SupabaseSyncException('Upload failed: $error');
-        })
-      );
-    }
+  /// Elimina un elemento del almacenamiento local
+  Future<void> removeFromLocal(String id);
 
-    // Download new remote items
-    if (toDownload.isNotEmpty) {
-      LoggerFactory.info('⬇️ Downloading ${toDownload.length} new items');
-      syncTasks.add(
-        download(toDownload).catchError((error) {
-          LoggerFactory.error('❌ Download failed: $error');
-          throw SupabaseSyncException('Download failed: $error');
-        })
-      );
-    }
+  /// Actualiza un elemento en almacenamiento local
+  Future<void> updateLocal(T entity);
 
-    // Resolve conflicts
-    if (conflictLocalItems.isNotEmpty && conflictRemoteItems.isNotEmpty) {
-      LoggerFactory.info(
-          '🔧 Resolving conflicts for ${conflictLocalItems.length} items');
-      syncTasks.add(
-        resolveConflicts(conflictLocalItems, conflictRemoteItems).then((_) {
-          LoggerFactory.info('✅ Conflicts resolved');
-        }).catchError((error) {
-          LoggerFactory.error('❌ Conflict resolution failed: $error');
-          throw SupabaseSyncException('Conflict resolution failed: $error');
-        })
-      );
-    }
+  /// Convierte entidad a modelo de dominio para la UI
+  dynamic convertToModel(T entity);
 
-    // Execute all sync tasks with timeout and error handling
-    if (syncTasks.isNotEmpty) {
+  /// Convierte modelo de dominio a entidad sincronizable
+  T convertFromModel(dynamic model, String userId);
+
+  // =============================================
+  // IMPLEMENTACIÓN DE SyncableRepository
+  // =============================================
+
+  @override
+  Future<void> syncWithSupabase() async {
+    if (!_isInitialized) await _initialize();
+
+    if (_syncManager != null) {
+      LoggerFactory.info('🔄 Starting sync for $entityType via EntitySyncManager');
+      
       try {
-        await Future.wait(syncTasks, eagerError: false)
-          .timeout(const Duration(seconds: 120), onTimeout: () {
-            LoggerFactory.warning('⏱️ Timeout in sync tasks for $runtimeType');
-            throw TimeoutException('Sync tasks timeout', const Duration(seconds: 120));
-          });
+        _emitEvent(RepositoryEventType.syncStarted, 'Sync started');
+        
+        final result = await _syncManager!.performFullSync();
+        
+        _emitEvent(
+          result.success ? RepositoryEventType.syncCompleted : RepositoryEventType.syncError,
+          'Sync ${result.success ? 'completed' : 'failed'}: ${result.toString()}',
+          result: result,
+        );
+
+        LoggerFactory.info('✅ Sync completed for $entityType: ${result.toString()}');
       } catch (e) {
-        LoggerFactory.warning('⚠️ Some sync tasks failed, but continuing: $e');
-        // Don't rethrow to allow partial sync success
+        final error = 'Sync failed for $entityType: $e';
+        LoggerFactory.error('❌ $error');
+        _emitEvent(RepositoryEventType.syncError, error);
+        rethrow;
+      }
+    } else {
+      LoggerFactory.warning('⚠️ No sync manager available for $entityType');
+    }
+  }
+
+  @override
+  Future<List<T>> getRemoteData() async {
+    if (_syncManager != null) {
+      return await _syncManager!.getRemoteChanges();
+    }
+    return [];
+  }
+
+  @override
+  Future<void> upload(List<T> items) async {
+    if (_syncManager != null && items.isNotEmpty) {
+      LoggerFactory.info('📤 Uploading ${items.length} $entityType items');
+      
+      final result = await _syncManager!.uploadChanges(items);
+      
+      LoggerFactory.info('📤 Upload result: ${result.toString()}');
+      
+      if (!result.success) {
+        throw Exception('Upload failed: ${result.errors.join(', ')}');
       }
     }
   }
 
-  /// Get pending sync operations from the queue
   @override
-  Future<List<String>> getPendingSyncItems() async {
-    return await _syncQueue.getItems();
+  Future<void> download(List<T> items) async {
+    if (_syncManager != null && items.isNotEmpty) {
+      LoggerFactory.info('📥 Downloading ${items.length} $entityType items');
+      
+      final result = await _syncManager!.downloadChanges(items);
+      
+      LoggerFactory.info('📥 Download result: ${result.toString()}');
+      
+      if (!result.success) {
+        throw Exception('Download failed: ${result.errors.join(', ')}');
+      }
+    }
   }
 
-  /// Check if there are pending sync operations
+  @override
+  Future<void> resolveConflicts(List<T> local, List<T> remote) async {
+    if (_syncManager != null) {
+      LoggerFactory.info('⚖️ Resolving conflicts between ${local.length} local and ${remote.length} remote $entityType items');
+      
+      final conflicts = await _syncManager!.detectConflicts();
+      
+      if (conflicts.isNotEmpty) {
+        LoggerFactory.info('🔍 Found ${conflicts.length} conflicts to resolve');
+        
+        for (final conflict in conflicts) {
+          try {
+            final resolved = await _syncManager!.resolveConflict(conflict);
+            await updateLocal(resolved);
+            LoggerFactory.debug('✅ Resolved conflict for ${entityType}: ${resolved.id}');
+          } catch (e) {
+            LoggerFactory.error('❌ Failed to resolve conflict: $e');
+          }
+        }
+      }
+    }
+  }
+
   @override
   Future<bool> hasPendingSync() async {
-    return !await _syncQueue.isEmpty;
+    if (_syncCoordinator != null) {
+      final stats = await _syncCoordinator!.getSyncStatistics();
+      final queueStats = stats['queue'] as Map<String, dynamic>? ?? {};
+      final readyCount = queueStats['ready_to_execute'] as int? ?? 0;
+      return readyCount > 0;
+    }
+    return false;
   }
 
-
-
-  /// Clear local data (useful for logout)
-  Future<void> clearLocalData() async {
-    LoggerFactory.info('🧹 Clearing local data for $runtimeType');
-    await _syncQueue.clear();
-    await clearRepositoryData();
+  @override
+  Future<List<String>> getPendingSyncItems() async {
+    if (_syncCoordinator != null) {
+      final stats = await _syncCoordinator!.getSyncStatistics();
+      final queueStats = stats['queue'] as Map<String, dynamic>? ?? {};
+      final pendingItems = queueStats['pending_items'] as List<dynamic>? ?? [];
+      return pendingItems.cast<String>();
+    }
+    return [];
   }
 
-  // Abstract methods to be implemented by subclasses
+  // =============================================
+  // OPERACIONES CRUD HÍBRIDAS
+  // =============================================
 
-  /// Clear repository-specific data
-  Future<void> clearRepositoryData();
+  /// Agrega un elemento (local + queue para sync)
+  Future<void> add(dynamic model) async {
+    if (!_isInitialized) await _initialize();
 
-  /// Get the Supabase table name for this repository
-  String get tableName;
+    try {
+      final entity = convertFromModel(model, userId);
+      
+      // Guardar localmente primero
+      await saveToLocal(entity);
+      
+      // Cola para sincronización
+      await _queueForSync(entity, SyncOperationType.create);
+      
+      _emitEvent(RepositoryEventType.itemAdded, 'Item added locally', entity: entity);
+      LoggerFactory.info('➕ Added $entityType locally: ${entity.id}');
+      
+      // Intentar sincronizar inmediatamente si es posible
+      await _tryImmediateSync();
+      
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to add $entityType: $e');
+      _emitEvent(RepositoryEventType.error, 'Failed to add item: $e');
+      rethrow;
+    }
+  }
 
-  /// Map data from Supabase response to domain entity
-  T mapFromSupabase(Map<String, dynamic> data);
+  /// Actualiza un elemento (local + queue para sync)
+  Future<void> update(dynamic model) async {
+    if (!_isInitialized) await _initialize();
 
-  /// Map domain entity to Supabase format
-  Map<String, dynamic> mapToSupabase(T item);
+    try {
+      final entity = convertFromModel(model, userId);
+      
+      // Actualizar localmente
+      await updateLocal(entity);
+      
+      // Cola para sincronización
+      await _queueForSync(entity, SyncOperationType.update);
+      
+      _emitEvent(RepositoryEventType.itemUpdated, 'Item updated locally', entity: entity);
+      LoggerFactory.info('📝 Updated $entityType locally: ${entity.id}');
+      
+      // Intentar sincronizar inmediatamente si es posible
+      await _tryImmediateSync();
+      
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to update $entityType: $e');
+      _emitEvent(RepositoryEventType.error, 'Failed to update item: $e');
+      rethrow;
+    }
+  }
+
+  /// Elimina un elemento (soft delete local + queue para sync)
+  Future<void> remove(String id) async {
+    if (!_isInitialized) await _initialize();
+
+    try {
+      // Marcar como eliminado localmente
+      await removeFromLocal(id);
+      
+      // Cola para sincronización de eliminación
+      await _queueForSync(null, SyncOperationType.delete, entityId: id);
+      
+      _emitEvent(RepositoryEventType.itemRemoved, 'Item removed locally', entityId: id);
+      LoggerFactory.info('🗑️ Removed $entityType locally: $id');
+      
+      // Intentar sincronizar inmediatamente si es posible
+      await _tryImmediateSync();
+      
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to remove $entityType: $e');
+      _emitEvent(RepositoryEventType.error, 'Failed to remove item: $e');
+      rethrow;
+    }
+  }
+
+  /// Obtiene todos los elementos (solo desde local)
+  Future<List<dynamic>> getAll() async {
+    if (!_isInitialized) await _initialize();
+
+    try {
+      final entities = await getLocalData();
+      final models = entities.map(convertToModel).toList();
+      
+      LoggerFactory.debug('📋 Retrieved ${models.length} $entityType items locally');
+      return models;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get $entityType items: $e');
+      rethrow;
+    }
+  }
+
+  /// Busca un elemento por ID
+  Future<dynamic> getById(String id) async {
+    final all = await getAll();
+    try {
+      // Asumiendo que el modelo tiene un campo 'id'
+      return all.firstWhere((item) => item.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Fuerza sincronización inmediata
+  Future<SyncResult> forceSync() async {
+    if (!_isInitialized) await _initialize();
+
+    if (_syncManager != null) {
+      LoggerFactory.info('🔄 Force sync requested for $entityType');
+      return await _syncManager!.performFullSync();
+    } else {
+      LoggerFactory.warning('⚠️ No sync manager available for forced sync');
+      return SyncResult.success(itemsProcessed: 0, message: 'No sync manager available');
+    }
+  }
+
+  // =============================================
+  // MÉTODOS PRIVADOS
+  // =============================================
+
+  /// Cola una entidad para sincronización
+  Future<void> _queueForSync(T? entity, SyncOperationType operationType, {String? entityId}) async {
+    if (_syncCoordinator != null) {
+      Map<String, dynamic> data;
+      
+      if (entity != null) {
+        data = entity.toSupabaseJson();
+      } else if (operationType == SyncOperationType.delete && entityId != null) {
+        data = {'id': entityId, 'is_deleted': true};
+      } else {
+        LoggerFactory.warning('⚠️ Cannot queue operation - missing entity or entityId');
+        return;
+      }
+
+      await _syncCoordinator!.queueSyncOperation(
+        entityType: entityType,
+        entityId: entity?.id ?? entityId!,
+        type: operationType,
+        data: data,
+        priority: _getOperationPriority(operationType),
+      );
+      
+      LoggerFactory.debug('📋 Queued $operationType for $entityType: ${entity?.id ?? entityId}');
+    }
+  }
+
+  /// Intenta sincronización inmediata si las condiciones son favorables
+  Future<void> _tryImmediateSync() async {
+    if (_syncCoordinator != null && !_syncCoordinator!.isSyncing) {
+      try {
+        // Solo intentar si no estamos ya sincronizando
+        await _syncCoordinator!.syncEntity(entityType);
+      } catch (e) {
+        // No es crítico si falla - la operación queda en cola
+        LoggerFactory.debug('ℹ️ Immediate sync failed (not critical): $e');
+      }
+    }
+  }
+
+  /// Obtiene prioridad para diferentes tipos de operación
+  int _getOperationPriority(SyncOperationType operationType) {
+    switch (operationType) {
+      case SyncOperationType.delete:
+        return 2; // Alta prioridad para eliminaciones
+      case SyncOperationType.create:
+        return 3; // Media-alta para creaciones
+      case SyncOperationType.update:
+        return 4; // Media para actualizaciones
+      case SyncOperationType.merge:
+        return 1; // Máxima prioridad para resoluciones de conflicto
+    }
+  }
+
+  /// Emite un evento del repositorio
+  void _emitEvent(
+    RepositoryEventType type,
+    String message, {
+    T? entity,
+    String? entityId,
+    SyncResult? result,
+  }) {
+    final event = RepositoryEvent<T>(
+      type: type,
+      message: message,
+      timestamp: DateTime.now(),
+      entity: entity,
+      entityId: entityId,
+      result: result,
+    );
+    
+    _eventController.add(event);
+  }
+
+  /// Obtiene estadísticas del repositorio
+  Future<Map<String, dynamic>> getStatistics() async {
+    final localData = await getLocalData();
+    
+    Map<String, dynamic> syncStats = {};
+    if (_syncManager != null) {
+      try {
+        final stats = await _syncManager!.getSyncStatistics();
+        syncStats = {
+          'total_entities': stats.totalEntities,
+          'synced_entities': stats.syncedEntities,
+          'failed_entities': stats.failedEntities,
+          'success_rate': stats.successRate,
+          'last_sync_at': stats.lastSyncAt.toIso8601String(),
+          'conflicts_detected': stats.conflictsDetected,
+          'conflicts_resolved': stats.conflictsResolved,
+        };
+      } catch (e) {
+        LoggerFactory.warning('Failed to get sync stats: $e');
+      }
+    }
+
+    return {
+      'entity_type': entityType,
+      'local_count': localData.length,
+      'is_initialized': _isInitialized,
+      'sync_manager_available': _syncManager != null,
+      'coordinator_available': _syncCoordinator != null,
+      'sync_stats': syncStats,
+    };
+  }
+
+  /// Libera recursos
+  Future<void> dispose() async {
+    await _eventController.close();
+    LoggerFactory.info('🔒 BaseHybridRepository<$entityType> disposed');
+  }
+}
+
+/// Evento del repositorio
+class RepositoryEvent<T extends SyncableEntity> {
+  const RepositoryEvent({
+    required this.type,
+    required this.message,
+    required this.timestamp,
+    this.entity,
+    this.entityId,
+    this.result,
+  });
+
+  final RepositoryEventType type;
+  final String message;
+  final DateTime timestamp;
+  final T? entity;
+  final String? entityId;
+  final SyncResult? result;
+
+  @override
+  String toString() {
+    return 'RepositoryEvent(${type.name}: $message)';
+  }
+}
+
+/// Tipos de eventos del repositorio
+enum RepositoryEventType {
+  initialized,
+  itemAdded,
+  itemUpdated,
+  itemRemoved,
+  syncStarted,
+  syncCompleted,
+  syncError,
+  error,
 }

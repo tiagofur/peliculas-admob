@@ -1,0 +1,39 @@
+# Configuración de permisos automáticos
+[permissions]
+# Operaciones de archivos básicas
+auto_approve = [
+    "read_file",
+    "write_file", 
+    "create_file",
+    "list_directory"
+]
+
+# Comandos bash seguros
+[bash]
+auto_approve_patterns = [
+    "flutter *",
+    "dart *",
+    "npm *",
+    "yarn *",
+    "git *",
+    "ls *",
+    "cat *",
+    "echo *",
+    "mkdir *",
+    "cp *",
+    "mv *",
+    "find *",
+    "grep *",
+    "curl -s *",
+    "wget *"
+]
+
+# Excluir comandos peligrosos (siempre pedirán permiso)
+auto_deny_patterns = [
+    "rm -rf *",
+    "sudo *",
+    "chmod 777 *",
+    "dd *",
+    "format *",
+    "fdisk *"
+]

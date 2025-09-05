@@ -181,11 +181,11 @@ class SafeSyncService {
 
   /// Create a failure result
   SyncResult _createFailureResult(String reason) {
-    return SyncResult(
-      repositoryResults: {},
-      timestamp: DateTime.now(),
-      duration: Duration.zero,
+    return SyncResult.failure(
+      itemsProcessed: 0,
       errors: [reason],
+      duration: Duration.zero,
+      message: 'Sync failed: $reason',
     );
   }
 

@@ -1,327 +1,456 @@
 import 'dart:async';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/exceptions/sync_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
-import '../../domain/datasources/local_storage_datasource.dart';
+import '../../core/sync/entity_sync_manager.dart';
+import '../../core/sync/favorites_sync_manager.dart';
 import '../../domain/entities/movie.dart';
-import '../../domain/entities/sync_models.dart';
+import '../../domain/entities/syncable_favorite.dart';
 import '../../domain/repositories/favorites_repository.dart';
+import '../models/favorite_model.dart';
 import 'base_hybrid_repository.dart';
 
-// Repositorio híbrido que maneja favoritos localmente y sincroniza con Supabase
-class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
+/// Repositorio híbrido para favoritos que combina almacenamiento local y remoto
+/// con sincronización automática usando el sistema de sync de Fase 3
+class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite> 
     implements FavoritesRepository {
   HybridFavoritesRepository({
-    required LocalStorageDatasource datasource,
-    required super.ref,
-  }) : _datasource = datasource;
+    required super.userId,
+    SharedPreferences? prefs,
+    EntitySyncManager<SyncableFavorite>? syncManager,
+    super.syncCoordinator,
+  })  : _prefs = prefs,
+        super(
+          entityType: 'favorite',
+          syncManager: syncManager ?? FavoritesSyncManager(userId: userId),
+        );
 
-  final LocalStorageDatasource _datasource;
+  SharedPreferences? _prefs;
+  static const String _storageKey = 'local_favorites';
 
-  // Implements BaseHybridRepository abstract methods
+  // =============================================
+  // IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS
+  // =============================================
+
   @override
-  String get tableName => 'user_favorites';
-
-  @override
-  SyncableFavorite mapFromSupabase(Map<String, dynamic> data) {
-    return SyncableFavorite(
-      id: data['id'] ??
-          '${data['user_id']}_${data['movie_id']}', // Usar UUID o generar ID
-      userId: data['user_id'],
-      movieId: data['movie_id'],
-      traktId: null, // No usar Trakt ID
-      movieTitle: data['movie_title'],
-      moviePosterPath: data['movie_poster_path'],
-      movieBackdropPath: data['movie_backdrop_path'],
-      movieOverview: data['movie_overview'],
-      movieReleaseDate: data['movie_release_date'] != null
-          ? DateTime.parse(data['movie_release_date'])
-          : null,
-      movieVoteAverage: data['movie_vote_average']?.toDouble(),
-      addedAt: DateTime.parse(data['added_at']),
-      createdAt: DateTime.parse(data['added_at']),
-      lastModifiedAt: DateTime.parse(
-          data['last_modified_at'] ?? data['updated_at'] ?? data['added_at']),
-    );
+  Future<void> initializeLocal() async {
+    _prefs ??= await SharedPreferences.getInstance();
+    LoggerFactory.info('✅ HybridFavoritesRepository local storage initialized');
   }
 
-  @override
-  Map<String, dynamic> mapToSupabase(SyncableFavorite favorite) {
-    return {
-      'user_id': favorite.userId,
-      'movie_id': favorite.movieId,
-      'movie_title': favorite.movieTitle,
-      'movie_poster_path': favorite.moviePosterPath,
-      'movie_backdrop_path': favorite.movieBackdropPath,
-      'movie_overview': favorite.movieOverview,
-      'movie_release_date':
-          favorite.movieReleaseDate?.toIso8601String().split('T')[0],
-      'movie_vote_average': favorite.movieVoteAverage,
-      'added_at': favorite.addedAt.toIso8601String(),
-      'is_deleted': false,
-      'last_modified_at': DateTime.now().toIso8601String(),
-    };
-  }
-
-  @override
-  Future<void> clearRepositoryData() async {
-    // Limpiar todas las películas favoritas una por una
-    final allFavorites = await _datasource.loadMovies();
-    for (final favorite in allFavorites) {
-      await _datasource.toggleFavorite(favorite);
-    }
-  }
-
-  // Implements FavoritesRepository interface
-  @override
-  Future<Map<int, Movie>> getFavoriteMovies() async {
-    try {
-      // Obtener datos locales
-      final moviesList = await _datasource.loadMovies();
-      return {for (var movie in moviesList) movie.id: movie};
-    } catch (e) {
-      throw LocalStorageException(
-          'Error al cargar las películas favoritas: $e');
-    }
-  }
-
-  @override
-  Future<void> clearLocalData() async {
-    await super.clearLocalData();
-  }
-
-  // Agregar/quitar película de favoritos
-  @override
-  Future<void> toggleFavorite(Movie movie) async {
-    LoggerFactory.info('🎬 TOGGLE FAVORITE llamado para: ${movie.title}');
-
-    try {
-      // 1. Actualizar localmente primero (Local First)
-      LoggerFactory.info('💾 Actualizando favorito localmente: ${movie.title}');
-      await _datasource.toggleFavorite(movie);
-      LoggerFactory.info('✅ Favorito actualizado localmente: ${movie.title}');
-    } catch (e) {
-      LoggerFactory.error('❌ Error al actualizar favorito localmente: $e');
-      throw LocalStorageException('Error al cambiar el estado de favorito: $e');
-    }
-
-    // 2. Programar sincronización en background si el usuario está autenticado
-    if (isAuthenticated()) {
-      LoggerFactory.info('🔄 Programando sincronización en background...');
-      // Fire and forget - no bloquear la UI
-      Future.microtask(() async {
-        try {
-          await syncWithSupabase().timeout(
-            const Duration(seconds: 30), // Timeout de 30 segundos
-            onTimeout: () {
-              LoggerFactory.warning(
-                  '⏱️ Timeout en sincronización de favoritos - se reintentará después');
-              throw TimeoutException(
-                  'Sync timeout', const Duration(seconds: 30));
-            },
-          );
-          LoggerFactory.info('✅ Sincronización en background completada');
-        } catch (e) {
-          LoggerFactory.warning(
-              '⚠️ Error en sincronización background (se reintentará): $e');
-          // Agregar a la cola de sincronización para reintentar después
-          await syncQueue.addItem(
-              'favorite_sync_${DateTime.now().millisecondsSinceEpoch}');
-        }
-      });
-      LoggerFactory.info('📝 Sincronización programada en background');
-    } else {
-      LoggerFactory.info(
-          '📝 Usuario no autenticado, cambio guardado localmente');
-    }
-
-    LoggerFactory.info('🏁 TOGGLE FAVORITE completado para: ${movie.title}');
-  }
-
-  // Verificar si una película es favorita
-  @override
-  Future<bool> isMovieFavorite(int movieId) async {
-    // Siempre usar datos locales para respuesta inmediata
-    try {
-      return await _datasource.isMovieFavorite(movieId);
-    } catch (e) {
-      throw LocalStorageException(
-          'Error al verificar si la película es favorita: $e');
-    }
-  }
-
-  // Implementación de SyncableRepository
   @override
   Future<List<SyncableFavorite>> getLocalData() async {
+    if (_prefs == null) await initializeLocal();
+
     try {
-      LoggerFactory.info('🔍 Obteniendo datos locales...');
-      // Obtener TODAS las películas, no solo las primeras 10
-      final moviesList = await _datasource.loadMovies(limit: 10000, offset: 0);
-      LoggerFactory.info(
-          '🔍 HiveDatasource retornó: ${moviesList.length} películas');
-
-      final userId = getCurrentUserId();
-      if (userId == null) {
-        LoggerFactory.warning(
-            '❌ No hay usuario para obtener datos locales de favoritos');
-        return [];
-      }
-      LoggerFactory.info('🔍 Usuario actual: $userId');
-
-      final localFavorites = moviesList
-          .map((movie) => SyncableFavorite.fromMovie(
-                userId: userId,
-                movie: movie,
-              ))
+      final jsonList = _prefs!.getStringList(_storageKey) ?? [];
+      final favorites = jsonList
+          .map((jsonStr) => SyncableFavorite.fromJsonString(jsonStr))
+          .where((fav) => fav.userId == userId && !fav.isDeleted)
           .toList();
 
-      LoggerFactory.info(
-          '📱 Favoritos locales encontrados: ${localFavorites.length}');
-      if (localFavorites.isNotEmpty) {
-        LoggerFactory.info('📱 Primeros favoritos locales:');
-        for (int i = 0; i < localFavorites.length.clamp(0, 3); i++) {
-          final fav = localFavorites[i];
-          LoggerFactory.info('   - ${fav.movieTitle} (ID: ${fav.movieId})');
-        }
-      }
-      return localFavorites;
+      LoggerFactory.debug(
+          '📋 Retrieved ${favorites.length} local favorites for user $userId');
+      return favorites;
     } catch (e) {
-      LoggerFactory.error('❌ Error obteniendo favoritos locales: $e');
-      throw LocalStorageException(
-          'Error al obtener los datos locales de favoritos: $e');
-    }
-  }
-
-  @override
-  Future<List<SyncableFavorite>> getRemoteData() async {
-    final userId = getCurrentUserId();
-    if (userId == null) {
-      LoggerFactory.warning(
-          '❌ No hay usuario para obtener datos remotos de favoritos');
+      LoggerFactory.error('❌ Failed to get local favorites: $e');
       return [];
     }
+  }
+
+  @override
+  Future<void> saveToLocal(SyncableFavorite entity) async {
+    if (_prefs == null) await initializeLocal();
 
     try {
-      await checkOnline();
-      LoggerFactory.info(
-          '☁️ Obteniendo favoritos remotos para usuario: $userId');
+      final existing = await getLocalData();
+      final updated = <SyncableFavorite>[];
 
-      final response = await supabase
-          .from('user_favorites')
-          .select()
-          .eq('user_id', userId)
-          .eq('is_deleted',
-              false) // ✅ Solo obtener favoritos activos (no eliminados)
-          .order('added_at', ascending: false)
-          .timeout(const Duration(seconds: 10), onTimeout: () {
-        LoggerFactory.warning('⏱️ Timeout obteniendo favoritos remotos');
-        throw TimeoutException(
-            'Remote data fetch timeout', const Duration(seconds: 10));
-      });
-
-      final remoteFavorites =
-          (response as List).map((data) => mapFromSupabase(data)).toList();
-      LoggerFactory.info(
-          '☁️ Favoritos remotos encontrados: ${remoteFavorites.length}');
-
-      return remoteFavorites;
-    } on PostgrestException catch (e) {
-      LoggerFactory.error(
-          '❌ Error PostgreSQL obteniendo favoritos remotos: ${e.message} (${e.code})');
-      throw SupabaseSyncException(e.message, code: e.code);
-    } catch (e) {
-      LoggerFactory.error('❌ Error obteniendo favoritos remotos: $e');
-      throw SupabaseSyncException('Error obteniendo favoritos remotos: $e');
-    }
-  }
-
-  @override
-  Future<void> upload(List<SyncableFavorite> favorites) async {
-    LoggerFactory.info('⬆️ UPLOAD iniciado para ${favorites.length} favoritos');
-
-    if (favorites.isEmpty) {
-      LoggerFactory.info('⬆️ No hay favoritos para subir');
-      return;
-    }
-
-    for (final favorite in favorites) {
-      try {
-        LoggerFactory.info(
-            '⬆️ Subiendo ${favorite.movieTitle} (ID: ${favorite.movieId})...');
-
-        await supabase
-            .from('user_favorites')
-            .upsert(mapToSupabase(favorite), onConflict: 'user_id,movie_id')
-            .timeout(const Duration(seconds: 15), onTimeout: () {
-          LoggerFactory.warning('⏱️ Timeout subiendo ${favorite.movieTitle}');
-          throw TimeoutException('Upload timeout', const Duration(seconds: 15));
-        });
-
-        LoggerFactory.info('✅ ${favorite.movieTitle} subido exitosamente');
-      } on PostgrestException catch (e) {
-        LoggerFactory.error(
-            '❌ Error PostgreSQL subiendo ${favorite.movieTitle}: ${e.message}');
-        throw SupabaseSyncException(
-            'Error subiendo favorito ${favorite.movieTitle}: ${e.message}',
-            code: e.code);
-      } catch (e) {
-        LoggerFactory.error(
-            '❌ Error general subiendo ${favorite.movieTitle}: $e');
-        throw SupabaseSyncException(
-            'Error subiendo favorito ${favorite.movieTitle}: $e');
+      // Remover favorito existente con el mismo ID
+      for (final fav in existing) {
+        if (fav.id != entity.id) {
+          updated.add(fav);
+        }
       }
-    }
 
-    LoggerFactory.info('🎉 Upload de ${favorites.length} favoritos completado');
-  }
+      // Agregar nueva entidad
+      updated.add(entity);
 
-  @override
-  Future<void> download(List<SyncableFavorite> favorites) async {
-    for (final favorite in favorites) {
-      try {
-        final movie = favorite.toMovie();
-        await _datasource.toggleFavorite(movie);
-      } catch (e) {
-        throw LocalStorageException(
-            'Error descargando favorito ${favorite.id}: $e');
-      }
-    }
-  }
+      // Guardar lista actualizada
+      final jsonList = updated.map((fav) => fav.toJsonString()).toList();
+      await _prefs!.setStringList(_storageKey, jsonList);
 
-  @override
-  Future<void> syncWithRemote() async {
-    try {
-      await syncWithSupabase();
+      LoggerFactory.debug('💾 Saved favorite locally: ${entity.movieTitle}');
     } catch (e) {
-      LoggerFactory.error('Error sincronizando favoritos: $e');
+      LoggerFactory.error('❌ Failed to save favorite locally: $e');
       rethrow;
     }
   }
 
   @override
-  Future<List<SyncableFavorite>> resolveConflicts(
-    List<SyncableFavorite> localItems,
-    List<SyncableFavorite> remoteItems,
-  ) async {
-    // Usar estrategia de resolución de conflictos para favoritos
-    // Por ahora, priorizar datos remotos más recientes
-    final Map<String, SyncableFavorite> resolved = {};
+  Future<void> removeFromLocal(String id) async {
+    if (_prefs == null) await initializeLocal();
 
-    // Agregar todos los elementos locales
-    for (final item in localItems) {
-      resolved[item.id] = item;
+    try {
+      final existing = await getLocalData();
+      final filtered = existing.where((fav) => fav.id != id).toList();
+
+      final jsonList = filtered.map((fav) => fav.toJsonString()).toList();
+      await _prefs!.setStringList(_storageKey, jsonList);
+
+      LoggerFactory.debug('🗑️ Removed favorite from local storage: $id');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to remove favorite locally: $e');
+      rethrow;
     }
+  }
 
-    // Sobrescribir con elementos remotos más recientes
-    for (final item in remoteItems) {
-      final existing = resolved[item.id];
-      if (existing == null || item.updatedAt.isAfter(existing.updatedAt)) {
-        resolved[item.id] = item;
+  @override
+  Future<void> updateLocal(SyncableFavorite entity) async {
+    // Reutilizar saveToLocal ya que maneja actualizaciones
+    await saveToLocal(entity);
+  }
+
+  @override
+  FavoriteModel convertToModel(SyncableFavorite entity) {
+    return FavoriteModel.fromSyncableEntity(entity);
+  }
+
+  @override
+  SyncableFavorite convertFromModel(dynamic model, String userId) {
+    if (model is FavoriteModel) {
+      return SyncableFavorite.fromFavoriteModel(model, userId);
+    } else {
+      throw ArgumentError(
+          'Model must be a FavoriteModel, got ${model.runtimeType}');
+    }
+  }
+
+  // =============================================
+  // MÉTODOS ESPECÍFICOS PARA FAVORITOS
+  // =============================================
+
+  /// Verifica si una película es favorita
+  Future<bool> isFavorite(int movieId) async {
+    try {
+      final favorites = await getAll();
+      return favorites.any((fav) => fav.movieId == movieId);
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to check if movie is favorite: $e');
+      return false;
+    }
+  }
+
+  /// Obtiene favorito por ID de película
+  Future<FavoriteModel?> getFavoriteByMovieId(int movieId) async {
+    try {
+      final favorites = await getAll();
+      final matches = favorites
+          .cast<FavoriteModel>()
+          .where((fav) => fav.movieId == movieId);
+      return matches.isNotEmpty ? matches.first : null;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get favorite by movie ID: $e');
+      return null;
+    }
+  }
+
+  /// Agrega una película a favoritos
+  Future<void> addFavorite(
+    int movieId, {
+    String? movieTitle,
+    String? posterPath,
+    double? rating,
+    String? overview,
+    DateTime? releaseDate,
+  }) async {
+    try {
+      final favoriteModel = FavoriteModel(
+        id: 'fav_${userId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
+        userId: userId,
+        movieId: movieId,
+        movieTitle: movieTitle ?? 'Unknown Movie',
+        posterPath: posterPath,
+        rating: rating,
+        overview: overview,
+        releaseDate: releaseDate,
+        addedAt: DateTime.now(),
+      );
+
+      await add(favoriteModel);
+      LoggerFactory.info('➕ Added movie to favorites: $movieTitle ($movieId)');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to add favorite: $e');
+      rethrow;
+    }
+  }
+
+  /// Elimina una película de favoritos
+  Future<void> removeFavorite(int movieId) async {
+    try {
+      final existing = await getFavoriteByMovieId(movieId);
+      if (existing != null) {
+        await remove(existing.id);
+        LoggerFactory.info(
+            '🗑️ Removed movie from favorites: ${existing.movieTitle} ($movieId)');
+      } else {
+        LoggerFactory.warning(
+            '⚠️ Tried to remove non-existent favorite: $movieId');
       }
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to remove favorite: $e');
+      rethrow;
     }
+  }
 
-    return resolved.values.toList();
+  /// Alterna el estado de favorito de una película (método específico con parámetros opcionales)
+  Future<bool> toggleFavoriteById(
+    int movieId, {
+    String? movieTitle,
+    String? posterPath,
+    double? rating,
+    String? overview,
+    DateTime? releaseDate,
+  }) async {
+    try {
+      final isCurrentlyFavorite = await isFavorite(movieId);
+
+      if (isCurrentlyFavorite) {
+        await removeFavorite(movieId);
+        LoggerFactory.info('🔄 Toggled favorite OFF: $movieTitle ($movieId)');
+        return false;
+      } else {
+        await addFavorite(
+          movieId,
+          movieTitle: movieTitle,
+          posterPath: posterPath,
+          rating: rating,
+          overview: overview,
+          releaseDate: releaseDate,
+        );
+        LoggerFactory.info('🔄 Toggled favorite ON: $movieTitle ($movieId)');
+        return true;
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to toggle favorite: $e');
+      rethrow;
+    }
+  }
+
+  /// Obtiene favoritos ordenados por fecha de agregado (más recientes primero)
+  Future<List<FavoriteModel>> getFavoritesSorted({
+    int? limit,
+    int? offset,
+  }) async {
+    try {
+      final allFavorites = await getAll();
+      final sortedFavorites = allFavorites.cast<FavoriteModel>().toList()
+        ..sort((a, b) => b.addedAt.compareTo(a.addedAt));
+
+      if (offset != null) {
+        final startIndex = offset.clamp(0, sortedFavorites.length);
+        final endIndex = limit != null
+            ? (startIndex + limit).clamp(startIndex, sortedFavorites.length)
+            : sortedFavorites.length;
+
+        return sortedFavorites.sublist(startIndex, endIndex);
+      }
+
+      if (limit != null) {
+        return sortedFavorites.take(limit).toList();
+      }
+
+      return sortedFavorites;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get sorted favorites: $e');
+      return [];
+    }
+  }
+
+  /// Busca favoritos por título
+  Future<List<FavoriteModel>> searchFavorites(String query) async {
+    if (query.trim().isEmpty) return [];
+
+    try {
+      final allFavorites = await getAll();
+      final queryLower = query.toLowerCase().trim();
+
+      final matches = allFavorites
+          .cast<FavoriteModel>()
+          .where((fav) => fav.movieTitle.toLowerCase().contains(queryLower))
+          .toList()
+        ..sort((a, b) => a.movieTitle.compareTo(b.movieTitle));
+
+      LoggerFactory.debug(
+          '🔍 Found ${matches.length} favorite matches for "$query"');
+      return matches;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to search favorites: $e');
+      return [];
+    }
+  }
+
+  /// Obtiene estadísticas de favoritos
+  Future<Map<String, dynamic>> getFavoritesStatistics() async {
+    try {
+      final baseStats = await getStatistics();
+      final favorites = await getAll();
+      final favoritesTyped = favorites.cast<FavoriteModel>();
+
+      final totalCount = favoritesTyped.length;
+      final yearCounts = <int, int>{};
+      var totalRating = 0.0;
+      var ratedCount = 0;
+
+      for (final favorite in favoritesTyped) {
+        // Contar por año
+        if (favorite.releaseDate != null) {
+          final year = favorite.releaseDate!.year;
+          yearCounts[year] = (yearCounts[year] ?? 0) + 1;
+        }
+
+        // Sumar ratings
+        if (favorite.rating != null && favorite.rating! > 0) {
+          totalRating += favorite.rating!;
+          ratedCount++;
+        }
+      }
+
+      final averageRating = ratedCount > 0 ? totalRating / ratedCount : 0.0;
+      final topYear = yearCounts.isNotEmpty
+          ? yearCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key
+          : null;
+
+      return {
+        ...baseStats,
+        'favorites_stats': {
+          'total_favorites': totalCount,
+          'average_rating': averageRating.toStringAsFixed(1),
+          'top_year': topYear,
+          'year_distribution': yearCounts,
+          'oldest_favorite': favoritesTyped.isNotEmpty
+              ? favoritesTyped
+                  .map((f) => f.addedAt)
+                  .reduce((a, b) => a.isBefore(b) ? a : b)
+                  .toIso8601String()
+              : null,
+          'newest_favorite': favoritesTyped.isNotEmpty
+              ? favoritesTyped
+                  .map((f) => f.addedAt)
+                  .reduce((a, b) => a.isAfter(b) ? a : b)
+                  .toIso8601String()
+              : null,
+        },
+      };
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get favorites statistics: $e');
+      return await getStatistics(); // Fallback to base stats
+    }
+  }
+
+  /// Limpia favoritos locales (para testing o reset)
+  Future<void> clearLocalFavorites() async {
+    try {
+      if (_prefs == null) await initializeLocal();
+      await _prefs!.remove(_storageKey);
+      LoggerFactory.info('🧹 Cleared all local favorites for user $userId');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to clear local favorites: $e');
+      rethrow;
+    }
+  }
+
+  // =============================================
+  // IMPLEMENTACIÓN DE FavoritesRepository
+  // =============================================
+
+  @override
+  Future<Map<int, Movie>> getFavoriteMovies() async {
+    try {
+      final favorites = await getAll();
+      final favoriteMovies = <int, Movie>{};
+      
+      for (final fav in favorites.cast<FavoriteModel>()) {
+        favoriteMovies[fav.movieId] = Movie(
+          id: fav.movieId,
+          title: fav.movieTitle,
+          adult: false,
+          backdropPath: '',
+          genreIds: [],
+          originalLanguage: 'en',
+          originalTitle: fav.movieTitle,
+          overview: fav.overview ?? '',
+          popularity: 0.0,
+          posterPath: fav.posterPath ?? '',
+          releaseDate: fav.releaseDate ?? DateTime.now(),
+          video: false,
+          voteAverage: fav.rating ?? 0.0,
+          voteCount: 0,
+        );
+      }
+      
+      LoggerFactory.debug('📋 Retrieved ${favoriteMovies.length} favorite movies');
+      return favoriteMovies;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get favorite movies: $e');
+      return {};
+    }
+  }
+
+  @override
+  Future<void> toggleFavorite(Movie movie) async {
+    try {
+      final isCurrentlyFavorite = await isFavorite(movie.id);
+      
+      if (isCurrentlyFavorite) {
+        await removeFavorite(movie.id);
+      } else {
+        await addFavorite(
+          movie.id,
+          movieTitle: movie.title,
+          posterPath: movie.posterPath,
+          rating: movie.voteAverage,
+          overview: movie.overview,
+          releaseDate: movie.releaseDate,
+        );
+      }
+      
+      LoggerFactory.info('🔄 Toggled favorite for movie: ${movie.title}');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to toggle favorite: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<bool> isMovieFavorite(int movieId) async {
+    return await isFavorite(movieId);
+  }
+
+  @override
+  Future<void> syncWithRemote() async {
+    try {
+      await forceSync();
+      LoggerFactory.info('🔄 Manual sync completed for favorites');
+    } catch (e) {
+      LoggerFactory.error('❌ Error in manual favorites sync: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> clearLocalData() async {
+    await clearLocalFavorites();
+  }
+
+  @override
+  Future<bool> hasPendingSync() async {
+    try {
+      return await super.hasPendingSync();
+    } catch (e) {
+      LoggerFactory.error('❌ Error checking pending sync: $e');
+      return false;
+    }
   }
 }

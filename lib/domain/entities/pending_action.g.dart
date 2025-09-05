@@ -15,7 +15,7 @@ extension GetPendingActionCollection on Isar {
 
 const PendingActionSchema = CollectionSchema(
   name: r'PendingAction',
-  id: 4776148611406905344,
+  id: 4776148611406905690,
   properties: {
     r'actionType': PropertySchema(
       id: 0,

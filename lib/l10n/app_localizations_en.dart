@@ -111,4 +111,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get challenges => 'Challenges';
+
+  @override
+  String get conflictResolution => 'Conflict Resolution';
+
+  @override
+  String get conflictDetected => 'Synchronization Conflict Detected';
+
+  @override
+  String get conflictDescription =>
+      'A conflict has been detected during synchronization. Please choose how to resolve it:';
+
+  @override
+  String get localVersion => 'Local Version';
+
+  @override
+  String get remoteVersion => 'Remote Version';
+
+  @override
+  String get mergedVersion => 'Merged Version';
+
+  @override
+  String get keepLocal => 'Keep Local';
+
+  @override
+  String get keepRemote => 'Keep Remote';
+
+  @override
+  String get mergeChanges => 'Merge Changes';
+
+  @override
+  String get manualChoice => 'Manual Choice';
+
+  @override
+  String get resolveConflict => 'Resolve Conflict';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get conflictPreview => 'Conflict Preview';
+
+  @override
+  String get mergePreview => 'Merge Preview';
+
+  @override
+  String get conflictHistory => 'Conflict History';
+
+  @override
+  String get noConflictsRecorded => 'No conflicts recorded';
+
+  @override
+  String get conflictsWillAppearHere =>
+      'Synchronization conflicts will appear here when they occur';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get export => 'Export';
+
+  @override
+  String get clearHistory => 'Clear History';
+
+  @override
+  String get filters => 'Filters';
+
+  @override
+  String get searchPlaceholder => 'Search by entity, type or strategy...';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get concurrentModification => 'Concurrent Modification';
+
+  @override
+  String get deleteVsModify => 'Delete vs Modify';
+
+  @override
+  String get duplicateCreation => 'Duplicate Creation';
+
+  @override
+  String get localWins => 'Local Wins';
+
+  @override
+  String get remoteWins => 'Remote Wins';
+
+  @override
+  String get merge => 'Merge';
+
+  @override
+  String get userChoice => 'Manual Choice';
+
+  @override
+  String get resolved => 'Resolved';
+
+  @override
+  String get pending => 'Pending';
+
+  @override
+  String get entity => 'Entity';
+
+  @override
+  String get detected => 'Detected';
+
+  @override
+  String get strategy => 'Strategy';
+
+  @override
+  String get reason => 'Reason';
 }

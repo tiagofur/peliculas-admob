@@ -119,36 +119,38 @@ mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
     Future<R> Function() operation, {
     Map<String, dynamic>? additionalData,
   }) async {
-    return await ErrorMetricsService.instance.trackCoreFlow(
-      flowName,
-      () async {
-        return await ErrorReportingService.instance.runAsyncWithErrorReporting(
-          operation,
-          zoneName: '${runtimeType.toString()}.core_flow.$flowName',
-          customData: {
-            'notifier_type': runtimeType.toString(),
-            'current_state': state.toString(),
-            'core_flow': flowName,
-            ...?additionalData,
-          },
-        );
-      },
-    );
+    ErrorMetricsService.instance.recordCoreFlowAttempt();
+    
+    try {
+      final result = await ErrorReportingService.instance.runAsyncWithErrorReporting(
+        operation,
+        zoneName: '${runtimeType.toString()}.core_flow.$flowName',
+        customData: {
+          'notifier_type': runtimeType.toString(),
+          'current_state': state.toString(),
+          'core_flow': flowName,
+          ...?additionalData,
+        },
+      );
+      
+      LoggerFactory.info('✅ Core flow successful: $flowName in ${runtimeType.toString()}');
+      return result;
+    } catch (error) {
+      ErrorMetricsService.instance.recordCoreFlowError(flowName);
+      rethrow;
+    }
   }
 
   /// Record a successful core flow attempt (without full operation tracking)
   Future<void> recordCoreFlowSuccess(String flowName) async {
-    await ErrorMetricsService.instance.recordCoreFlowAttempt(flowName);
+    ErrorMetricsService.instance.recordCoreFlowAttempt();
     LoggerFactory.info(
         '✅ Core flow successful: $flowName in ${runtimeType.toString()}');
   }
 
   /// Record a core flow error (without full operation tracking)
   Future<void> recordCoreFlowError(String flowName, dynamic error) async {
-    await ErrorMetricsService.instance.recordCoreFlowError(
-      flowName,
-      errorDetails: error.toString(),
-    );
+    ErrorMetricsService.instance.recordCoreFlowError(flowName);
   }
 }
 

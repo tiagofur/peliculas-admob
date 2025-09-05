@@ -34,7 +34,7 @@ import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/locale/locale_provider.dart';
 import 'presentation/providers/multiplatform_sync_provider.dart';
 import 'presentation/providers/sync_init_provider.dart';
-import 'presentation/providers/sync_integration_provider.dart';
+import 'presentation/providers/sync_integration_provider.dart' as integration;
 import 'presentation/providers/theme/theme_provider.dart';
 import 'services/cache_configuration_service.dart';
 import 'services/hybrid_image_service.dart';
@@ -274,7 +274,7 @@ class MainApp extends ConsumerWidget {
     ref.watch(syncInitializationProvider);
 
     // INICIALIZAR INTEGRACIÓN DE SYNC UI
-    ref.watch(syncIntegrationInitProvider);
+    ref.watch(integration.syncIntegrationProvider);
 
     // INICIALIZAR CHALLENGE SYSTEM
     ref.watch(challengeInitializationProvider);

@@ -135,5 +135,149 @@
   "challenges": "Challenges",
   "@challenges": {
     "description": "Challenges tab label"
+  },
+  "conflictResolution": "Conflict Resolution",
+  "@conflictResolution": {
+    "description": "Conflict resolution dialog title"
+  },
+  "conflictDetected": "Synchronization Conflict Detected",
+  "@conflictDetected": {
+    "description": "Conflict detection message"
+  },
+  "conflictDescription": "A conflict has been detected during synchronization. Please choose how to resolve it:",
+  "@conflictDescription": {
+    "description": "Conflict resolution description"
+  },
+  "localVersion": "Local Version",
+  "@localVersion": {
+    "description": "Local version label"
+  },
+  "remoteVersion": "Remote Version",
+  "@remoteVersion": {
+    "description": "Remote version label"
+  },
+  "mergedVersion": "Merged Version",
+  "@mergedVersion": {
+    "description": "Merged version label"
+  },
+  "keepLocal": "Keep Local",
+  "@keepLocal": {
+    "description": "Keep local version button"
+  },
+  "keepRemote": "Keep Remote",
+  "@keepRemote": {
+    "description": "Keep remote version button"
+  },
+  "mergeChanges": "Merge Changes",
+  "@mergeChanges": {
+    "description": "Merge changes button"
+  },
+  "manualChoice": "Manual Choice",
+  "@manualChoice": {
+    "description": "Manual choice button"
+  },
+  "resolveConflict": "Resolve Conflict",
+  "@resolveConflict": {
+    "description": "Resolve conflict button"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  "conflictPreview": "Conflict Preview",
+  "@conflictPreview": {
+    "description": "Conflict preview section title"
+  },
+  "mergePreview": "Merge Preview",
+  "@mergePreview": {
+    "description": "Merge preview section title"
+  },
+  "conflictHistory": "Conflict History",
+  "@conflictHistory": {
+    "description": "Conflict history title"
+  },
+  "noConflictsRecorded": "No conflicts recorded",
+  "@noConflictsRecorded": {
+    "description": "Message when no conflicts are recorded"
+  },
+  "conflictsWillAppearHere": "Synchronization conflicts will appear here when they occur",
+  "@conflictsWillAppearHere": {
+    "description": "Description for empty conflict history"
+  },
+  "refresh": "Refresh",
+  "@refresh": {
+    "description": "Refresh button"
+  },
+  "export": "Export",
+  "@export": {
+    "description": "Export button"
+  },
+  "clearHistory": "Clear History",
+  "@clearHistory": {
+    "description": "Clear history button"
+  },
+  "filters": "Filters",
+  "@filters": {
+    "description": "Filters section title"
+  },
+  "searchPlaceholder": "Search by entity, type or strategy...",
+  "@searchPlaceholder": {
+    "description": "Search field placeholder"
+  },
+  "all": "All",
+  "@all": {
+    "description": "All filter option"
+  },
+  "concurrentModification": "Concurrent Modification",
+  "@concurrentModification": {
+    "description": "Concurrent modification conflict type"
+  },
+  "deleteVsModify": "Delete vs Modify",
+  "@deleteVsModify": {
+    "description": "Delete vs modify conflict type"
+  },
+  "duplicateCreation": "Duplicate Creation",
+  "@duplicateCreation": {
+    "description": "Duplicate creation conflict type"
+  },
+  "localWins": "Local Wins",
+  "@localWins": {
+    "description": "Local wins strategy"
+  },
+  "remoteWins": "Remote Wins",
+  "@remoteWins": {
+    "description": "Remote wins strategy"
+  },
+  "merge": "Merge",
+  "@merge": {
+    "description": "Merge strategy"
+  },
+  "userChoice": "Manual Choice",
+  "@userChoice": {
+    "description": "User choice strategy"
+  },
+  "resolved": "Resolved",
+  "@resolved": {
+    "description": "Resolved status"
+  },
+  "pending": "Pending",
+  "@pending": {
+    "description": "Pending status"
+  },
+  "entity": "Entity",
+  "@entity": {
+    "description": "Entity label"
+  },
+  "detected": "Detected",
+  "@detected": {
+    "description": "Detected label"
+  },
+  "strategy": "Strategy",
+  "@strategy": {
+    "description": "Strategy label"
+  },
+  "reason": "Reason",
+  "@reason": {
+    "description": "Reason label"
   }
 }

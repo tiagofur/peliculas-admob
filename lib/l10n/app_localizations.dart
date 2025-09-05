@@ -301,6 +301,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Challenges'**
   String get challenges;
+
+  /// Conflict resolution dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict Resolution'**
+  String get conflictResolution;
+
+  /// Conflict detection message
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization Conflict Detected'**
+  String get conflictDetected;
+
+  /// Conflict resolution description
+  ///
+  /// In en, this message translates to:
+  /// **'A conflict has been detected during synchronization. Please choose how to resolve it:'**
+  String get conflictDescription;
+
+  /// Local version label
+  ///
+  /// In en, this message translates to:
+  /// **'Local Version'**
+  String get localVersion;
+
+  /// Remote version label
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Version'**
+  String get remoteVersion;
+
+  /// Merged version label
+  ///
+  /// In en, this message translates to:
+  /// **'Merged Version'**
+  String get mergedVersion;
+
+  /// Keep local version button
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Local'**
+  String get keepLocal;
+
+  /// Keep remote version button
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Remote'**
+  String get keepRemote;
+
+  /// Merge changes button
+  ///
+  /// In en, this message translates to:
+  /// **'Merge Changes'**
+  String get mergeChanges;
+
+  /// Manual choice button
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Choice'**
+  String get manualChoice;
+
+  /// Resolve conflict button
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve Conflict'**
+  String get resolveConflict;
+
+  /// Cancel button
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Conflict preview section title
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict Preview'**
+  String get conflictPreview;
+
+  /// Merge preview section title
+  ///
+  /// In en, this message translates to:
+  /// **'Merge Preview'**
+  String get mergePreview;
+
+  /// Conflict history title
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict History'**
+  String get conflictHistory;
+
+  /// Message when no conflicts are recorded
+  ///
+  /// In en, this message translates to:
+  /// **'No conflicts recorded'**
+  String get noConflictsRecorded;
+
+  /// Description for empty conflict history
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization conflicts will appear here when they occur'**
+  String get conflictsWillAppearHere;
+
+  /// Refresh button
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// Export button
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export;
+
+  /// Clear history button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear History'**
+  String get clearHistory;
+
+  /// Filters section title
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filters;
+
+  /// Search field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Search by entity, type or strategy...'**
+  String get searchPlaceholder;
+
+  /// All filter option
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// Concurrent modification conflict type
+  ///
+  /// In en, this message translates to:
+  /// **'Concurrent Modification'**
+  String get concurrentModification;
+
+  /// Delete vs modify conflict type
+  ///
+  /// In en, this message translates to:
+  /// **'Delete vs Modify'**
+  String get deleteVsModify;
+
+  /// Duplicate creation conflict type
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate Creation'**
+  String get duplicateCreation;
+
+  /// Local wins strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Local Wins'**
+  String get localWins;
+
+  /// Remote wins strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Wins'**
+  String get remoteWins;
+
+  /// Merge strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// User choice strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Choice'**
+  String get userChoice;
+
+  /// Resolved status
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get resolved;
+
+  /// Pending status
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// Entity label
+  ///
+  /// In en, this message translates to:
+  /// **'Entity'**
+  String get entity;
+
+  /// Detected label
+  ///
+  /// In en, this message translates to:
+  /// **'Detected'**
+  String get detected;
+
+  /// Strategy label
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy'**
+  String get strategy;
+
+  /// Reason label
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get reason;
 }
 
 class _AppLocalizationsDelegate

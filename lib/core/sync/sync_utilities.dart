@@ -306,4 +306,32 @@ class SyncUtilities {
       'avg_time_per_item_ms': avgTimePerItem,
     };
   }
+
+  // =============================================
+  // SERIALIZACIÓN JSON
+  // =============================================
+
+  /// Codifica un Map a JSON string
+  static String encodeJson(Map<String, dynamic> data) {
+    try {
+      final sanitized = sanitizeJsonData(data);
+      return json.encode(sanitized);
+    } catch (e) {
+      throw FormatException('Failed to encode JSON: $e');
+    }
+  }
+
+  /// Decodifica un JSON string a Map
+  static Map<String, dynamic> decodeJson(String jsonString) {
+    try {
+      final decoded = json.decode(jsonString);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      } else {
+        throw const FormatException('JSON is not a Map<String, dynamic>');
+      }
+    } catch (e) {
+      throw FormatException('Failed to decode JSON: $e');
+    }
+  }
 }

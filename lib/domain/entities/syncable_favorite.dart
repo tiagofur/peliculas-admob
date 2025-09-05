@@ -84,6 +84,30 @@ class SyncableFavorite extends SyncableEntity {
     );
   }
 
+  /// Factory constructor desde FavoriteModel
+  factory SyncableFavorite.fromFavoriteModel(dynamic favoriteModel, String userId) {
+    final now = SyncUtilities.utcNow();
+    return SyncableFavorite(
+      id: favoriteModel.id,
+      userId: userId,
+      movieId: favoriteModel.movieId,
+      movieTitle: favoriteModel.movieTitle,
+      moviePosterPath: favoriteModel.posterPath,
+      movieOverview: favoriteModel.overview,
+      movieReleaseDate: favoriteModel.releaseDate,
+      movieVoteAverage: favoriteModel.rating,
+      addedAt: favoriteModel.addedAt,
+      createdAt: now,
+      lastModifiedAt: now,
+    );
+  }
+
+  /// Factory constructor desde string JSON
+  factory SyncableFavorite.fromJsonString(String jsonString) {
+    final json = SyncUtilities.decodeJson(jsonString);
+    return SyncableFavorite.fromJson(json);
+  }
+
   // Implementación de getters de SyncableEntity
   @override
   final String id;
@@ -441,4 +465,19 @@ class SyncableFavorite extends SyncableEntity {
         'movieTitle: $movieTitle, isDeleted: $isDeleted, '
         'syncVersion: $syncVersion, lastModifiedAt: $lastModifiedAt)';
   }
+
+  // =============================================
+  // CONVERSIÓN PARA REPOSITORIOS HÍBRIDOS
+  // =============================================
+
+  /// Convierte a string JSON para almacenamiento local
+  String toJsonString() {
+    return SyncUtilities.encodeJson(toLocalStorage());
+  }
+
+  // Propiedades de conveniencia para compatibilidad con FavoriteModel
+  String? get posterPath => moviePosterPath;
+  String? get overview => movieOverview;
+  DateTime? get releaseDate => movieReleaseDate;
+  double? get rating => movieVoteAverage;
 }

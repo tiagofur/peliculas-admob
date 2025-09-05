@@ -183,6 +183,12 @@ enum SyncItemStatus {
   /// ⬇️ Pendiente de descargar del servidor
   pendingDownload('pending_download'),
 
+  /// ⬆️ Subiendo al servidor en este momento
+  uploading('uploading'),
+
+  /// ⬇️ Descargando del servidor en este momento
+  downloading('downloading'),
+
   /// ⚠️ Conflicto detectado que requiere resolución
   conflict('conflict'),
 

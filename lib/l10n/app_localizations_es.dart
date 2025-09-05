@@ -111,4 +111,114 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get challenges => 'Desafíos';
+
+  @override
+  String get conflictResolution => 'Resolución de Conflictos';
+
+  @override
+  String get conflictDetected => 'Conflicto de Sincronización Detectado';
+
+  @override
+  String get conflictDescription =>
+      'Se ha detectado un conflicto durante la sincronización. Por favor, elige cómo resolverlo:';
+
+  @override
+  String get localVersion => 'Versión Local';
+
+  @override
+  String get remoteVersion => 'Versión Remota';
+
+  @override
+  String get mergedVersion => 'Versión Fusionada';
+
+  @override
+  String get keepLocal => 'Mantener Local';
+
+  @override
+  String get keepRemote => 'Mantener Remota';
+
+  @override
+  String get mergeChanges => 'Fusionar Cambios';
+
+  @override
+  String get manualChoice => 'Elección Manual';
+
+  @override
+  String get resolveConflict => 'Resolver Conflicto';
+
+  @override
+  String get cancel => 'Cancelar';
+
+  @override
+  String get conflictPreview => 'Vista Previa del Conflicto';
+
+  @override
+  String get mergePreview => 'Vista Previa de Fusión';
+
+  @override
+  String get conflictHistory => 'Historial de Conflictos';
+
+  @override
+  String get noConflictsRecorded => 'No hay conflictos registrados';
+
+  @override
+  String get conflictsWillAppearHere =>
+      'Los conflictos de sincronización aparecerán aquí cuando ocurran';
+
+  @override
+  String get refresh => 'Actualizar';
+
+  @override
+  String get export => 'Exportar';
+
+  @override
+  String get clearHistory => 'Limpiar Historial';
+
+  @override
+  String get filters => 'Filtros';
+
+  @override
+  String get searchPlaceholder => 'Buscar por entidad, tipo o estrategia...';
+
+  @override
+  String get all => 'Todos';
+
+  @override
+  String get concurrentModification => 'Modificación Concurrente';
+
+  @override
+  String get deleteVsModify => 'Eliminar vs Modificar';
+
+  @override
+  String get duplicateCreation => 'Creación Duplicada';
+
+  @override
+  String get localWins => 'Local Gana';
+
+  @override
+  String get remoteWins => 'Remoto Gana';
+
+  @override
+  String get merge => 'Fusionar';
+
+  @override
+  String get userChoice => 'Elección Manual';
+
+  @override
+  String get resolved => 'Resuelto';
+
+  @override
+  String get pending => 'Pendiente';
+
+  @override
+  String get entity => 'Entidad';
+
+  @override
+  String get detected => 'Detectado';
+
+  @override
+  String get strategy => 'Estrategia';
+
+  @override
+  String get reason => 'Razón';
 }
