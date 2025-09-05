@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../core/logging/safe_developer_log.dart';
 import '../../domain/entities/sync_result.dart';
 import '../../domain/entities/user.dart' as app_user;
 import '../../domain/repositories/syncable_repository.dart';
@@ -53,10 +53,11 @@ class SyncService {
 
     // Inicializar sincronización periódica inmediatamente
     _startPeriodicSync();
-    
+
     // Ejecutar primera sincronización en background sin esperar
-    LoggerFactory.info('📤 Programando sincronización inicial en background...');
-    
+    LoggerFactory.info(
+        '📤 Programando sincronización inicial en background...');
+
     // Fire and forget - no bloquear el hilo principal
     Future.microtask(() async {
       try {
@@ -68,8 +69,9 @@ class SyncService {
         _scheduleRetry('onUserAuthenticated');
       }
     });
-    
-    LoggerFactory.info('✅ Sincronización configurada (continuará en background)');
+
+    LoggerFactory.info(
+        '✅ Sincronización configurada (continuará en background)');
   }
 
   /// Sincronización completa de todos los repositorios
@@ -590,18 +592,19 @@ class SyncService {
       LoggerFactory.warning(logMessage);
     }
 
-    // Log detallado para debugging
-    developer.log(
+    // Log detallado para debugging using safe logging
+    final errorDetails = {
+      'correlation_id': corrId,
+      'error_type': errorType,
+      'severity': severity,
+      'operation': operation ?? 'sync',
+      'timestamp': timestamp.toIso8601String(),
+      ...additionalContext,
+    };
+    SafeDeveloperLog.log(
       'Sync Error Details',
       name: 'SyncService',
-      error: {
-        'correlation_id': corrId,
-        'error_type': errorType,
-        'severity': severity,
-        'operation': operation ?? 'sync',
-        'timestamp': timestamp.toIso8601String(),
-        ...additionalContext,
-      },
+      error: errorDetails,
     );
 
     // Registrar patrones de error para análisis

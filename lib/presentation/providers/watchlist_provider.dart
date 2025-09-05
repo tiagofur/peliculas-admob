@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/movie.dart';
@@ -44,8 +45,14 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
     try {
       // Cargar toda la watchlist al inicio para tener el estado completo
       await loadWatchlist(limit: 1000, refresh: true);
+      if (kDebugMode) {
+        print('✅ Watchlist inicializada correctamente con ${state.movies.length} películas');
+      }
     } catch (e) {
       state = state.copyWith(error: 'Error inicializando watchlist: $e');
+      if (kDebugMode) {
+        print('❌ Error inicializando watchlist: $e');
+      }
     }
   }
 
@@ -96,32 +103,71 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
     }
   }
 
-  /// Agregar película a watchlist
-  Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) async {
+  /// Alternar película en watchlist (agregar o remover)
+  Future<void> toggleWatchlist(Movie movie, {WatchlistPriority priority = WatchlistPriority.normal}) async {
+    final isInWatchlist = state.movies.any((m) => m.movieId == movie.id);
+    final previousState = state;
+
+    // Actualización optimista de la UI
+    if (isInWatchlist) {
+      final updatedMovies = state.movies.where((m) => m.movieId != movie.id).toList();
+      state = state.copyWith(
+        movies: updatedMovies,
+        totalCount: state.totalCount > 0 ? state.totalCount - 1 : 0,
+      );
+    } else {
+      // Crear un WatchlistMovie temporal para la UI
+      final newWatchlistMovie = WatchlistMovie(
+        id: 'temp_${movie.id}', // ID temporal
+        movieId: movie.id,
+        movieTitle: movie.title,
+        moviePosterPath: movie.posterPath,
+        movieBackdropPath: movie.backdropPath,
+        movieOverview: movie.overview,
+        movieReleaseDate: movie.releaseDate,
+        movieVoteAverage: movie.voteAverage,
+        addedAt: DateTime.now(),
+        priority: priority,
+        lastModifiedAt: DateTime.now(),
+      );
+      state = state.copyWith(
+        movies: [...state.movies, newWatchlistMovie],
+        totalCount: state.totalCount + 1,
+      );
+    }
+
+    // Realizar la operación real en segundo plano
     try {
-      await _repository.addToWatchlistWithPriority(movie, priority);
-      // Recargar la lista para reflejar los cambios
-      await loadWatchlist(refresh: true);
+      if (isInWatchlist) {
+        await _repository.removeFromWatchlist(movie.id);
+      } else {
+        await _repository.addToWatchlistWithPriority(movie, priority);
+      }
     } catch (e) {
-      state = state.copyWith(error: 'Error al agregar a watchlist: $e');
+      // Revertir el estado en caso de error
+      state = previousState;
+      // Opcional: se podría añadir un manejo de error más explícito para el usuario
     }
   }
 
   /// Remover película de watchlist
   Future<void> removeFromWatchlist(int movieId) async {
+    final previousState = state;
+    
+    // Actualización optimista de la UI
+    final updatedMovies = state.movies.where((m) => m.movieId != movieId).toList();
+    state = state.copyWith(
+      movies: updatedMovies,
+      totalCount: state.totalCount > 0 ? state.totalCount - 1 : 0,
+    );
+
+    // Realizar la operación real en segundo plano
     try {
       await _repository.removeFromWatchlist(movieId);
-      // Remover de la lista local inmediatamente para mejor UX
-      final updatedMovies =
-          state.movies.where((movie) => movie.movieId != movieId).toList();
-      state = state.copyWith(
-        movies: updatedMovies,
-        totalCount: state.totalCount - 1,
-      );
     } catch (e) {
+      // Revertir el estado en caso de error
+      state = previousState;
       state = state.copyWith(error: 'Error al remover de watchlist: $e');
-      // Recargar en caso de error para mantener consistencia
-      await loadWatchlist(refresh: true);
     }
   }
 

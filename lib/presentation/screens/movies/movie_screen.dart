@@ -246,26 +246,8 @@ class _CustomSliverAppBar extends ConsumerWidget {
         ),
         // Botón de favoritos con animación
         _AnimatedActionButton(
-          onPressed: () async {
-            final isFavorite = await ref
-                .read(localStorageRepositoryProvider)
-                .isMovieFavorite(movie.id);
-            final achievementsNotifier =
-                ref.read(achievementsProvider.notifier);
-
-            await ref
-                .read(favoriteMoviesProvider.notifier)
-                .toggleFavorite(movie);
-
-            // Track achievement solo cuando se agrega a favoritos (no cuando se quita)
-            if (!isFavorite) {
-              achievementsNotifier.trackMovieFavorited();
-            }
-
-            // Refrescar el estado de favoritos para asegurar consistencia
-            await ref.read(favoriteMoviesProvider.notifier).refreshFavorites();
-            
-            // Invalidar el provider específico para forzar reconstrucción
+          onPressed: () {
+            ref.read(favoriteMoviesProvider.notifier).toggleFavorite(movie);
             ref.invalidate(isFavoriteProvider(movie.id));
           },
           feedbackType: FeedbackType.success,

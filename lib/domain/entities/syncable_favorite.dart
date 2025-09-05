@@ -99,6 +99,7 @@ class SyncableFavorite extends SyncableEntity {
       addedAt: favoriteModel.addedAt,
       createdAt: now,
       lastModifiedAt: now,
+      deviceId: 'device_${DateTime.now().millisecondsSinceEpoch}',
     );
   }
 
@@ -173,9 +174,9 @@ class SyncableFavorite extends SyncableEntity {
       'user_id': userId,
       'movie_id': movieId,
       'movie_title': movieTitle,
-      'movie_poster_path': moviePosterPath,
-      'movie_backdrop_path': movieBackdropPath,
-      'movie_overview': movieOverview,
+      'movie_poster_path': moviePosterPath ?? '',
+      'movie_backdrop_path': movieBackdropPath ?? '',
+      'movie_overview': movieOverview ?? '',
       'movie_release_date': movieReleaseDate?.toIso8601String(),
       'movie_vote_average': movieVoteAverage,
       'added_at': addedAt.toIso8601String(),
@@ -186,7 +187,7 @@ class SyncableFavorite extends SyncableEntity {
       'device_id': deviceId,
       'tags': tags,
       'personal_rating': personalRating,
-      'personal_notes': personalNotes,
+      'personal_notes': personalNotes ?? '',
     };
   }
 

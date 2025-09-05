@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../core/logging/safe_developer_log.dart';
 import '../../presentation/providers/user_movie_ratings_provider.dart';
 import '../../presentation/providers/watchlist_provider.dart';
 import 'app_lifecycle_manager.dart';
@@ -51,7 +51,7 @@ class MultiplataformSyncManager {
     try {
       // Inicializar el tracker de contexto de errores
       await ErrorContextTracker.instance.initialize();
-      
+
       // Verificar conectividad inicial
       await _checkInitialConnectivity();
 
@@ -470,19 +470,20 @@ class MultiplataformSyncManager {
       LoggerFactory.warning(logMessage);
     }
 
-    // Log detallado para debugging
-    developer.log(
+    // Log detallado para debugging using safe logging
+    final errorDetails = {
+      'correlation_id': correlationId,
+      'error_type': errorType,
+      'severity': severity,
+      'operation': operation ?? 'unknown',
+      'table_name': tableName ?? 'unknown',
+      'timestamp': timestamp.toIso8601String(),
+      ...additionalContext,
+    };
+    SafeDeveloperLog.log(
       'Realtime Error Details',
       name: 'MultiplataformSyncManager',
-      error: {
-        'correlation_id': correlationId,
-        'error_type': errorType,
-        'severity': severity,
-        'operation': operation ?? 'unknown',
-        'table_name': tableName ?? 'unknown',
-        'timestamp': timestamp.toIso8601String(),
-        ...additionalContext,
-      },
+      error: errorDetails,
     );
 
     // Implementar lógica de recuperación basada en el tipo de error

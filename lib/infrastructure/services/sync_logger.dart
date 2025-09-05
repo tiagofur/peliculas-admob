@@ -1,6 +1,6 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/foundation.dart';
+
+import '../../core/logging/safe_developer_log.dart';
 
 /// Niveles de logging para sincronización
 enum SyncLogLevel {
@@ -196,16 +196,14 @@ class SyncLogger {
       _logs.removeAt(0);
     }
 
-    // Output a consola en desarrollo
-    if (kDebugMode) {
-      developer.log(
-        entry.toString(),
-        name: 'SyncLogger',
-        level: _getDeveloperLogLevel(level),
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    // Output a consola en desarrollo using safe logging
+    SafeDeveloperLog.log(
+      entry.toString(),
+      name: 'SyncLogger',
+      level: _getDeveloperLogLevel(level),
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 
   /// Convertir nivel de sync a nivel de developer log

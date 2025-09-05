@@ -12,6 +12,7 @@ import '../../providers/providers.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import '../streaming/streaming_availability_indicator.dart';
+import '../watchlist/add_to_watchlist_button.dart';
 
 class MovieCardWithActions extends ConsumerWidget {
   const MovieCardWithActions({super.key, required this.movie});
@@ -94,6 +95,21 @@ class MovieCardWithActions extends ConsumerWidget {
             right: 8,
             child: Column(
               children: [
+                // Botón de watchlist
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: AddToWatchlistButton(
+                    movie: movie,
+                    isIconButton: true,
+                    showLabel: false,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
                 // Botón favorito
                 _buildActionButton(
                   icon: isFavorite ? Icons.favorite : Icons.favorite_border,

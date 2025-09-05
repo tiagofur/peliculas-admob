@@ -163,4 +163,50 @@ class WatchlistMovie {
   String toString() {
     return 'WatchlistMovie(id: $id, movieId: $movieId, title: $movieTitle, priority: $priority)';
   }
+
+  /// Convierte WatchlistMovie a JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'movieId': movieId,
+      'movieTitle': movieTitle,
+      'moviePosterPath': moviePosterPath,
+      'movieBackdropPath': movieBackdropPath,
+      'movieOverview': movieOverview,
+      'movieReleaseDate': movieReleaseDate?.toIso8601String(),
+      'movieVoteAverage': movieVoteAverage,
+      'priority': priority.value,
+      'addedAt': addedAt.toIso8601String(),
+      'lastModifiedAt': lastModifiedAt.toIso8601String(),
+      'isDeleted': isDeleted,
+      'syncStatus': syncStatus,
+    };
+  }
+
+  /// Crea una instancia de WatchlistMovie desde JSON
+  factory WatchlistMovie.fromJson(Map<String, dynamic> json) {
+    return WatchlistMovie(
+      id: json['id'] ?? '',
+      movieId: json['movieId'] ?? 0,
+      movieTitle: json['movieTitle'] ?? '',
+      moviePosterPath: json['moviePosterPath'],
+      movieBackdropPath: json['movieBackdropPath'],
+      movieOverview: json['movieOverview'],
+      movieReleaseDate: json['movieReleaseDate'] != null 
+          ? DateTime.parse(json['movieReleaseDate'])
+          : null,
+      movieVoteAverage: json['movieVoteAverage']?.toDouble(),
+      priority: json['priority'] != null 
+          ? WatchlistPriority.fromString(json['priority'])
+          : WatchlistPriority.normal,
+      addedAt: json['addedAt'] != null 
+          ? DateTime.parse(json['addedAt'])
+          : DateTime.now(),
+      lastModifiedAt: json['lastModifiedAt'] != null 
+          ? DateTime.parse(json['lastModifiedAt'])
+          : DateTime.now(),
+      isDeleted: json['isDeleted'] ?? false,
+      syncStatus: json['syncStatus'] ?? 'synced',
+    );
+  }
 }

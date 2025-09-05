@@ -163,13 +163,8 @@ class HybridWatchlistRepository
       final watchlistMovie = _convertMovieToWatchlistMovie(movie).copyWith(
         priority: priority,
       );
-      final syncableEntity = SyncableWatchlistItem.fromWatchlistMovie(
-        userId: userId,
-        watchlistMovie: watchlistMovie,
-        deviceId: 'device_${DateTime.now().millisecondsSinceEpoch}',
-      );
 
-      await add(syncableEntity);
+      await add(watchlistMovie);
       LoggerFactory.debug('➕ Added to watchlist: ${movie.title} with priority: ${priority.value}');
     } catch (e) {
       LoggerFactory.error('❌ Error adding to watchlist: $e');

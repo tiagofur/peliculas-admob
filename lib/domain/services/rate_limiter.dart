@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer' as developer;
+
+import '../../core/logging/safe_developer_log.dart';
 
 /// Sistema de rate limiting para controlar las llamadas a APIs
 /// Implementa diferentes estrategias de limitación para TMDB y Trakt.tv
@@ -50,8 +51,8 @@ class RateLimiter {
         'Trakt',
         maxRequests: 1000,
         timeWindow: const Duration(minutes: 5),
-        minInterval:
-            const Duration(milliseconds: 300), // ~3.3 requests por segundo máximo
+        minInterval: const Duration(
+            milliseconds: 300), // ~3.3 requests por segundo máximo
         strategy: RateLimitStrategy.slidingWindow,
       );
 
@@ -60,7 +61,8 @@ class RateLimiter {
         'Migration',
         maxRequests: 20,
         timeWindow: const Duration(minutes: 1),
-        minInterval: const Duration(seconds: 2), // Muy conservador para segundo plano
+        minInterval:
+            const Duration(seconds: 2), // Muy conservador para segundo plano
         strategy: RateLimitStrategy.tokenBucket,
       );
 
@@ -163,7 +165,7 @@ class RateLimiter {
     }
     _waitingQueue.clear();
 
-    developer.log('🔄 Rate limiter resetado: $serviceName');
+    SafeDeveloperLog.log('🔄 Rate limiter resetado: $serviceName');
   }
 
   /// Esperar permiso para hacer una request
@@ -172,7 +174,7 @@ class RateLimiter {
       final waitTime = getWaitTime();
 
       if (waitTime.inMilliseconds > 0) {
-        developer.log(
+        SafeDeveloperLog.log(
             '⏳ Rate limit alcanzado para $serviceName, esperando ${waitTime.inMilliseconds}ms');
 
         // Crear completer para esta request
@@ -217,7 +219,7 @@ class RateLimiter {
     }
 
     final duration = now.difference(startTime);
-    developer.log(
+    SafeDeveloperLog.log(
         '✅ Request completada: $serviceName${operationName != null ? ' ($operationName)' : ''} - ${duration.inMilliseconds}ms');
   }
 
@@ -237,7 +239,7 @@ class RateLimiter {
     }
 
     final duration = now.difference(startTime);
-    developer.log(
+    SafeDeveloperLog.log(
         '❌ Request fallida: $serviceName${operationName != null ? ' ($operationName)' : ''} - ${duration.inMilliseconds}ms - Error: $error');
   }
 

@@ -28,8 +28,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isInWatchlist =
-        ref.watch(isMovieInWatchlistProvider(widget.movie.id));
+    final isInWatchlist = ref.watch(isMovieInWatchlistProvider(widget.movie.id));
     final watchlistMovie = ref.watch(watchlistMovieProvider(widget.movie.id));
 
     return isInWatchlist.when(
@@ -129,114 +128,63 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
   }
 
   Future<void> _handleWatchlistAction(bool isCurrentlyInWatchlist) async {
-    if (isCurrentlyInWatchlist) {
-      await _removeFromWatchlist();
-    } else {
-      await _showAddToWatchlistDialog();
-    }
-  }
-
-  Future<void> _removeFromWatchlist() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await ref
-          .read(watchlistProvider.notifier)
-          .removeFromWatchlist(widget.movie.id);
-
-      // Refrescar el estado de watchlist para asegurar consistencia
-      await ref.read(watchlistProvider.notifier).refresh();
-
-      // Invalidate providers to update UI immediately
-      ref.invalidate(watchlistMovieProvider(widget.movie.id));
-      ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${widget.movie.title} removida de watchlist'),
-            duration: const Duration(seconds: 2),
-          ),
+      if (isCurrentlyInWatchlist) {
+        // Just toggle to remove
+        ref.read(watchlistProvider.notifier).toggleWatchlist(widget.movie);
+        ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${widget.movie.title} removida de watchlist'),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        // Show dialog to get priority, then toggle to add
+        final priority = await showDialog<WatchlistPriority>(
+          context: context,
+          builder: (context) => _AddToWatchlistDialog(movie: widget.movie),
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+        if (priority != null) {
+          ref
+              .read(watchlistProvider.notifier)
+              .toggleWatchlist(widget.movie, priority: priority);
+          ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
+
+          // Track analytics event for add to watchlist
+          await AnalyticsService().trackEvent(
+            AnalyticsEventType.addWatchlist,
+            {
+              'movie_id': widget.movie.id,
+              'movie_title': widget.movie.title,
+              'priority': priority.name,
+              'action': 'add_to_watchlist',
+            },
+          );
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    '${widget.movie.title} agregada a watchlist con ${priority.displayName.toLowerCase()} prioridad'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+        }
       }
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-      }
-    }
-  }
-
-  Future<void> _showAddToWatchlistDialog() async {
-    final result = await showDialog<WatchlistPriority>(
-      context: context,
-      builder: (context) => _AddToWatchlistDialog(movie: widget.movie),
-    );
-
-    if (result != null) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        await ref
-            .read(watchlistProvider.notifier)
-            .addToWatchlist(widget.movie, result);
-
-        // Refrescar el estado de watchlist para asegurar consistencia
-        await ref.read(watchlistProvider.notifier).refresh();
-        
-        // Invalidate providers to update UI immediately
-        ref.invalidate(watchlistMovieProvider(widget.movie.id));
-        ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
-
-        // Track analytics event for add to watchlist
-        await AnalyticsService().trackEvent(
-          AnalyticsEventType.addWatchlist,
-          {
-            'movie_id': widget.movie.id,
-            'movie_title': widget.movie.title,
-            'priority': result.name,
-            'action': 'add_to_watchlist',
-          },
-        );
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  '${widget.movie.title} agregada a watchlist con ${result.displayName.toLowerCase()} prioridad'),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
       }
     }
   }

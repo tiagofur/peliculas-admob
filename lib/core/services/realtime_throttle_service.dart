@@ -1,7 +1,8 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
+
+import '../logging/safe_developer_log.dart';
 
 /// Servicio para throttling y debouncing de eventos de tiempo real
 class RealtimeThrottleService {
@@ -33,11 +34,11 @@ class RealtimeThrottleService {
     _debounceTimers[key] = Timer(delay, () {
       callback();
       _debounceTimers.remove(key);
-      developer.log('Debounced callback executed for key: $key',
+      SafeDeveloperLog.log('Debounced callback executed for key: $key',
           name: 'ThrottleService');
     });
 
-    developer.log(
+    SafeDeveloperLog.log(
         'Debounce timer set for key: $key, delay: ${delay.inMilliseconds}ms',
         name: 'ThrottleService');
   }
@@ -56,12 +57,12 @@ class RealtimeThrottleService {
     if (lastTime == null || now.difference(lastTime) >= interval) {
       _lastThrottleTime[key] = now;
       callback();
-      developer.log('Throttled callback executed for key: $key',
+      SafeDeveloperLog.log('Throttled callback executed for key: $key',
           name: 'ThrottleService');
       return true;
     }
 
-    developer.log('Throttled callback skipped for key: $key',
+    SafeDeveloperLog.log('Throttled callback skipped for key: $key',
         name: 'ThrottleService');
     return false;
   }
@@ -88,13 +89,13 @@ class RealtimeThrottleService {
     if (currentCount < maxEvents) {
       _eventCounts[key] = currentCount + 1;
       callback();
-      developer.log(
+      SafeDeveloperLog.log(
           'Rate limited callback executed for key: $key (${currentCount + 1}/$maxEvents)',
           name: 'ThrottleService');
       return true;
     }
 
-    developer.log(
+    SafeDeveloperLog.log(
         'Rate limit exceeded for key: $key ($currentCount/$maxEvents)',
         name: 'ThrottleService');
     return false;
@@ -127,7 +128,7 @@ class RealtimeThrottleService {
         delay: debounceDelay,
       );
     } else {
-      developer.log('Smart throttle blocked execution for key: $key',
+      SafeDeveloperLog.log('Smart throttle blocked execution for key: $key',
           name: 'ThrottleService');
     }
   }
@@ -136,14 +137,16 @@ class RealtimeThrottleService {
   void cancelDebounce(String key) {
     _debounceTimers[key]?.cancel();
     _debounceTimers.remove(key);
-    developer.log('Debounce cancelled for key: $key', name: 'ThrottleService');
+    SafeDeveloperLog.log('Debounce cancelled for key: $key',
+        name: 'ThrottleService');
   }
 
   /// Resetea el throttling para una clave específica
   void resetThrottle(String key) {
     _lastThrottleTime.remove(key);
     _eventCounts.remove(key);
-    developer.log('Throttle reset for key: $key', name: 'ThrottleService');
+    SafeDeveloperLog.log('Throttle reset for key: $key',
+        name: 'ThrottleService');
   }
 
   /// Cancela todos los timers y resetea todos los contadores
@@ -157,7 +160,7 @@ class RealtimeThrottleService {
     _lastThrottleTime.clear();
     _eventCounts.clear();
 
-    developer.log('All throttling and debouncing reset',
+    SafeDeveloperLog.log('All throttling and debouncing reset',
         name: 'ThrottleService');
   }
 

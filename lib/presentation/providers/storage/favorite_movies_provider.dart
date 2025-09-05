@@ -46,11 +46,14 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
       if (favoriteMoviesMap.isNotEmpty) {
         state = favoriteMoviesMap;
+        if (kDebugMode) {
+          print('✅ Cargados ${favoriteMoviesMap.length} favoritos desde el repositorio híbrido');
+        }
       }
     } catch (e) {
       // Si hay error cargando, mantener estado vacío pero registrar el error
       if (kDebugMode) {
-        print('Error cargando favoritos existentes: $e');
+        print('❌ Error cargando favoritos existentes: $e');
       }
     }
   }
@@ -78,19 +81,38 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   }
 
   Future<void> toggleFavorite(Movie movie) async {
-    // Usar el repositorio híbrido que maneja sincronización automática
-    await favoritesRepository.toggleFavorite(movie);
-    
-    // Verificar el estado actual después del toggle
-    final isMovieInFavorites = await favoritesRepository.isMovieFavorite(movie.id);
+    final isFavorite = state[movie.id] != null;
 
-    if (isMovieInFavorites) {
-      state = {...state, movie.id: movie};
-      // Usar callback en lugar de ref directo
-      onMovieFavorited();
+    // Actualización optimista de la UI
+    if (isFavorite) {
+      state = Map.from(state)..remove(movie.id);
     } else {
-      state.remove(movie.id);
-      state = {...state};
+      state = {...state, movie.id: movie};
+    }
+
+    try {
+      // Llamada al repositorio híbrido en segundo plano - maneja sync automáticamente
+      await favoritesRepository.toggleFavorite(movie);
+      
+      // Opcional: Llamar al callback si la operación fue exitosa
+      if (!isFavorite) {
+        onMovieFavorited();
+      }
+
+      if (kDebugMode) {
+        print('✅ [FavoriteMoviesProvider] Toggle favorite exitoso para: ${movie.title}');
+      }
+
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ [FavoriteMoviesProvider] Error toggling favorite: $e');
+      }
+      // Si falla, revertir la actualización optimista
+      if (isFavorite) {
+        state = {...state, movie.id: movie};
+      } else {
+        state = Map.from(state)..remove(movie.id);
+      }
     }
   }
 
@@ -99,9 +121,12 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
       state = favoriteMoviesMap;
+      if (kDebugMode) {
+        print('🔄 Favoritos refrescados desde repositorio híbrido');
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('Error refrescando favoritos: $e');
+        print('❌ Error refrescando favoritos: $e');
       }
     }
   }

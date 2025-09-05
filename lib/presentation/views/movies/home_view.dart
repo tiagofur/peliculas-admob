@@ -9,6 +9,7 @@ import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/guest_mode_banner.dart';
 import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
 import '../../widgets/widgets.dart';
+import '../../providers/watchlist_provider.dart';
 
 class HomeView extends ConsumerStatefulWidget {
   const HomeView({super.key});
@@ -31,6 +32,8 @@ class HomeViewState extends ConsumerState<HomeView>
         ref.read(upcomingMoviesProvider.notifier).loadNextPage();
         // Cargar favoritos al iniciar la app
         ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+        // Cargar watchlist al iniciar la app (sin trigger paginación)
+        ref.read(watchlistProvider);
         // Cargar recomendaciones paginadas
         ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
       }

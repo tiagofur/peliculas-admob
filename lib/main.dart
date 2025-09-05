@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -33,9 +35,11 @@ import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/locale/locale_provider.dart';
 import 'presentation/providers/multiplatform_sync_provider.dart';
+import 'presentation/providers/storage/favorite_movies_provider.dart';
 import 'presentation/providers/sync_init_provider.dart';
 import 'presentation/providers/sync_integration_provider.dart' as integration;
 import 'presentation/providers/theme/theme_provider.dart';
+import 'presentation/providers/watchlist_provider.dart';
 import 'services/cache_configuration_service.dart';
 import 'services/hybrid_image_service.dart';
 import 'services/image_preloader_service.dart';
@@ -282,9 +286,22 @@ class MainApp extends ConsumerWidget {
     // INICIALIZAR ERROR REPORTING USER CONTEXT
     ref.watch(errorReportingUserContextProvider);
 
+    // INICIALIZAR PROVIDERS DE DATOS CRÍTICOS PARA LA PERSISTENCIA
+    // Esto asegura que se carguen los datos existentes al iniciar la app
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        ref.read(favoriteMoviesProvider);
+        ref.read(watchlistProvider);
+        LoggerFactory.info('✅ Providers de datos inicializados correctamente');
+      } catch (e) {
+        LoggerFactory.error('❌ Error inicializando providers de datos: $e');
+      }
+    });
+
     // SYNC SERVICE será inicializado automáticamente cuando el usuario se autentique
     if (kDebugMode) {
-      LoggerFactory.info('✅ Sync service will be initialized on user authentication');
+      LoggerFactory.info(
+          '✅ Sync service will be initialized on user authentication');
     }
 
     // Remover el splash screen solo en plataformas móviles
