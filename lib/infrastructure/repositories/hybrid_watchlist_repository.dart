@@ -42,6 +42,14 @@ class HybridWatchlistRepository
   // =============================================
 
   @override
+  String get tableName => 'user_watchlist';
+
+  @override
+  SyncableWatchlistItem deserializeFromRemote(Map<String, dynamic> data) {
+    return SyncableWatchlistItem.fromJson(data);
+  }
+
+  @override
   Future<void> initializeLocal() async {
     _prefs ??= await SharedPreferences.getInstance();
     LoggerFactory.info('✅ HybridWatchlistRepository local storage initialized');

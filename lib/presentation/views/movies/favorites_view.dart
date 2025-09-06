@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../generated/app_localizations.dart';
-import '../../providers/providers.dart';
+import '../../providers/storage/direct_favorites_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/sync/sync_refresh_wrapper.dart';
@@ -33,7 +33,7 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
     isLoading = true;
 
     final movies =
-        await ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+        await ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
     isLoading = false;
 
     if (movies.isEmpty) {
@@ -45,7 +45,8 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
   Widget build(BuildContext context) {
     super.build(context);
 
-    final favoriteMovies = ref.watch(favoriteMoviesProvider).values.toList();
+    final favoriteMovies =
+        ref.watch(directFavoriteMoviesProvider).values.toList();
     final l10n = AppLocalizations.of(context)!;
 
     if (favoriteMovies.isEmpty) {
@@ -100,7 +101,9 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
       body: SyncRefreshWrapper(
         onRefresh: () async {
           // Refrescar datos específicos de favoritos
-          await ref.refresh(favoriteMoviesProvider.notifier).loadNextPage();
+          await ref
+              .refresh(directFavoriteMoviesProvider.notifier)
+              .loadNextPage();
         },
         child: Column(
           children: [

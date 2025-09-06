@@ -32,6 +32,14 @@ class HybridCustomListsRepository
   // =============================================
 
   @override
+  String get tableName => 'user_custom_lists';
+
+  @override
+  SyncableCustomList deserializeFromRemote(Map<String, dynamic> data) {
+    return SyncableCustomList.fromJson(data);
+  }
+
+  @override
   Future<void> initializeLocal() async {
     _prefs ??= await SharedPreferences.getInstance();
     LoggerFactory.info(

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/sync/simple_watched_sync.dart';
 import '../../domain/entities/entities.dart';
 import '../../domain/repositories/watched_movies_repository.dart';
 import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
@@ -110,19 +112,60 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   }
 
   Future<void> markAsWatched(Movie movie) async {
-    await repository.markAsWatched(movie);
+    try {
+      // 1. Guardar localmente primero
+      await repository.markAsWatched(movie);
+      
+      // 2. Sincronizar con Supabase
+      final simpleWatchedSync = SimpleWatchedSync.instance;
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      
+      if (currentUser != null) {
+        await simpleWatchedSync.addWatchedMovie(currentUser.id, movie);
+        if (kDebugMode) {
+          print('✅ Película marcada como vista en Supabase: ${movie.title}');
+        }
+      }
 
-    // Track logros usando callback en lugar de ref directo
-    await onMovieWatched(movie);
+      // 3. Track logros usando callback en lugar de ref directo
+      await onMovieWatched(movie);
 
-    // Recargar la lista
-    await _reloadMovies();
+      // 4. Recargar la lista
+      await _reloadMovies();
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error marcando película como vista: $e');
+      }
+      rethrow;
+    }
   }
 
   Future<void> removeFromWatched(int movieId) async {
-    await repository.removeFromWatched(movieId);
-    // Recargar la lista
-    await _reloadMovies();
+    try {
+      // 1. Remover localmente primero
+      await repository.removeFromWatched(movieId);
+      
+      // 2. Sincronizar con Supabase
+      final simpleWatchedSync = SimpleWatchedSync.instance;
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      
+      if (currentUser != null) {
+        await simpleWatchedSync.removeWatchedMovie(currentUser.id, movieId);
+        if (kDebugMode) {
+          print('✅ Película removida de vistas en Supabase: $movieId');
+        }
+      }
+      
+      // 3. Recargar la lista
+      await _reloadMovies();
+      
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error removiendo película de vistas: $e');
+      }
+      rethrow;
+    }
   }
 
   Future<void> _reloadMovies() async {

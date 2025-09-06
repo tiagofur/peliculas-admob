@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
-import '../../providers/providers.dart';
+import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import '../streaming/streaming_availability_indicator.dart';
@@ -23,7 +23,7 @@ class MovieCardWithActions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final random = Random();
     final isWatched = ref.watch(isWatchedProvider(movie.id));
-    final isFavorite = ref.watch(isFavoriteProvider(movie.id));
+    final isFavorite = ref.watch(directIsFavoriteProvider(movie.id));
 
     return FadeInUp(
       from: random.nextInt(100) + 80,
@@ -208,12 +208,14 @@ class MovieCardWithActions extends ConsumerWidget {
   }
 
   void _toggleFavorite(WidgetRef ref, Movie movie, bool currentState) {
-    final favoriteMoviesNotifier = ref.read(favoriteMoviesProvider.notifier);
+    // Usar el provider directo que evita el repositorio híbrido
+    final directFavoritesNotifier =
+        ref.read(directFavoriteMoviesProvider.notifier);
 
-    favoriteMoviesNotifier.toggleFavorite(movie);
+    directFavoritesNotifier.toggleFavorite(movie);
 
     // Invalidar el provider para actualizar la UI
-    ref.invalidate(isFavoriteProvider(movie.id));
+    ref.invalidate(directIsFavoriteProvider(movie.id));
   }
 
   void _toggleWatched(WidgetRef ref, Movie movie, bool currentState) {

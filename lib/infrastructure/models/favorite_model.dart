@@ -1,3 +1,5 @@
+import '../../domain/entities/movie.dart';
+
 /// Modelo de dominio para favoritos - usado en la capa de presentación
 /// Se convierte desde/hacia SyncableFavorite para operaciones de sync
 class FavoriteModel {
@@ -22,6 +24,21 @@ class FavoriteModel {
   final String? overview;
   final DateTime? releaseDate;
   final DateTime addedAt;
+
+  /// Crea un FavoriteModel desde una película
+  factory FavoriteModel.fromMovie(Movie movie, String userId) {
+    return FavoriteModel(
+      id: '${userId}_${movie.id}', // Generar ID único
+      userId: userId,
+      movieId: movie.id,
+      movieTitle: movie.title,
+      posterPath: movie.posterPath,
+      rating: movie.voteAverage,
+      overview: movie.overview,
+      releaseDate: movie.releaseDate,
+      addedAt: DateTime.now(),
+    );
+  }
 
   /// Crea un FavoriteModel desde una SyncableFavorite
   factory FavoriteModel.fromSyncableEntity(dynamic syncableEntity) {
@@ -107,6 +124,26 @@ class FavoriteModel {
 
   @override
   int get hashCode => Object.hash(id, userId, movieId);
+
+  /// Convierte a Movie para compatibilidad con datasources
+  Movie toMovie() {
+    return Movie(
+      id: movieId,
+      title: movieTitle,
+      posterPath: posterPath ?? '',
+      backdropPath: '', // No disponible en favoritos
+      overview: overview ?? '',
+      releaseDate: releaseDate ?? DateTime.now(),
+      voteAverage: rating ?? 0.0,
+      genreIds: [], // No disponible en favoritos
+      adult: false, // Valor por defecto
+      video: false, // Valor por defecto
+      originalLanguage: 'en', // Valor por defecto
+      originalTitle: movieTitle,
+      popularity: 0.0, // Valor por defecto
+      voteCount: 0, // Valor por defecto
+    );
+  }
 
   @override
   String toString() {

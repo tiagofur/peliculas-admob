@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/logging/logger_factory.dart';
 import '../../core/sync/entity_sync_manager.dart';
 import '../../core/sync/sync_coordinator.dart';
@@ -10,14 +12,15 @@ import '../../domain/repositories/syncable_repository.dart';
 
 /// Clase base para repositorios híbridos que combinan almacenamiento local y remoto
 /// con sincronización automática usando el sistema de sync de Fase 3
-abstract class BaseHybridRepository<T extends SyncableEntity> implements SyncableRepository<T> {
+abstract class BaseHybridRepository<T extends SyncableEntity>
+    implements SyncableRepository<T> {
   BaseHybridRepository({
     required this.userId,
     required this.entityType,
     EntitySyncManager<T>? syncManager,
     SyncCoordinator? syncCoordinator,
-  }) : _syncManager = syncManager,
-       _syncCoordinator = syncCoordinator {
+  })  : _syncManager = syncManager,
+        _syncCoordinator = syncCoordinator {
     _initialize();
   }
 
@@ -25,12 +28,13 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   final String entityType;
   final EntitySyncManager<T>? _syncManager;
   final SyncCoordinator? _syncCoordinator;
+  RealtimeChannel? _realtimeChannel;
 
-  final StreamController<RepositoryEvent<T>> _eventController = 
+  final StreamController<RepositoryEvent<T>> _eventController =
       StreamController<RepositoryEvent<T>>.broadcast();
 
   bool _isInitialized = false;
-  
+
   /// Stream de eventos del repositorio
   Stream<RepositoryEvent<T>> get events => _eventController.stream;
 
@@ -44,7 +48,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
     try {
       await initializeLocal();
       _isInitialized = true;
-      
+      _setupRealtimeSubscription();
+
       _emitEvent(RepositoryEventType.initialized, 'Repository initialized');
       LoggerFactory.info('✅ BaseHybridRepository<$entityType> initialized');
     } catch (e) {
@@ -56,6 +61,12 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   // =============================================
   // MÉTODOS ABSTRACTOS - IMPLEMENTAR EN SUBCLASES
   // =============================================
+
+  /// Devuelve el nombre de la tabla de Supabase para la entidad
+  String get tableName;
+
+  /// Deserializa los datos de Supabase a una entidad
+  T deserializeFromRemote(Map<String, dynamic> data);
 
   /// Inicializa el almacenamiento local
   Future<void> initializeLocal();
@@ -88,14 +99,16 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
 
     if (_syncManager != null) {
       LoggerFactory.info('🔄 Starting sync for $entityType via EntitySyncManager');
-      
+
       try {
         _emitEvent(RepositoryEventType.syncStarted, 'Sync started');
-        
+
         final result = await _syncManager!.performFullSync();
-        
+
         _emitEvent(
-          result.success ? RepositoryEventType.syncCompleted : RepositoryEventType.syncError,
+          result.success
+              ? RepositoryEventType.syncCompleted
+              : RepositoryEventType.syncError,
           'Sync ${result.success ? 'completed' : 'failed'}: ${result.toString()}',
           result: result,
         );
@@ -124,11 +137,11 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   Future<void> upload(List<T> items) async {
     if (_syncManager != null && items.isNotEmpty) {
       LoggerFactory.info('📤 Uploading ${items.length} $entityType items');
-      
+
       final result = await _syncManager!.uploadChanges(items);
-      
+
       LoggerFactory.info('📤 Upload result: ${result.toString()}');
-      
+
       if (!result.success) {
         throw Exception('Upload failed: ${result.errors.join(', ')}');
       }
@@ -139,11 +152,11 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   Future<void> download(List<T> items) async {
     if (_syncManager != null && items.isNotEmpty) {
       LoggerFactory.info('📥 Downloading ${items.length} $entityType items');
-      
+
       final result = await _syncManager!.downloadChanges(items);
-      
+
       LoggerFactory.info('📥 Download result: ${result.toString()}');
-      
+
       if (!result.success) {
         throw Exception('Download failed: ${result.errors.join(', ')}');
       }
@@ -153,13 +166,14 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   @override
   Future<void> resolveConflicts(List<T> local, List<T> remote) async {
     if (_syncManager != null) {
-      LoggerFactory.info('⚖️ Resolving conflicts between ${local.length} local and ${remote.length} remote $entityType items');
-      
+      LoggerFactory.info(
+          '⚖️ Resolving conflicts between ${local.length} local and ${remote.length} remote $entityType items');
+
       final conflicts = await _syncManager!.detectConflicts();
-      
+
       if (conflicts.isNotEmpty) {
         LoggerFactory.info('🔍 Found ${conflicts.length} conflicts to resolve');
-        
+
         for (final conflict in conflicts) {
           try {
             final resolved = await _syncManager!.resolveConflict(conflict);
@@ -205,19 +219,19 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
 
     try {
       final entity = convertFromModel(model, userId);
-      
+
       // Guardar localmente primero
       await saveToLocal(entity);
-      
+
       // Cola para sincronización
       await _queueForSync(entity, SyncOperationType.create);
-      
-      _emitEvent(RepositoryEventType.itemAdded, 'Item added locally', entity: entity);
+
+      _emitEvent(RepositoryEventType.itemAdded, 'Item added locally',
+          entity: entity);
       LoggerFactory.info('➕ Added $entityType locally: ${entity.id}');
-      
+
       // Intentar sincronizar inmediatamente si es posible
       await _tryImmediateSync();
-      
     } catch (e) {
       LoggerFactory.error('❌ Failed to add $entityType: $e');
       _emitEvent(RepositoryEventType.error, 'Failed to add item: $e');
@@ -231,19 +245,19 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
 
     try {
       final entity = convertFromModel(model, userId);
-      
+
       // Actualizar localmente
       await updateLocal(entity);
-      
+
       // Cola para sincronización
       await _queueForSync(entity, SyncOperationType.update);
-      
-      _emitEvent(RepositoryEventType.itemUpdated, 'Item updated locally', entity: entity);
+
+      _emitEvent(RepositoryEventType.itemUpdated, 'Item updated locally',
+          entity: entity);
       LoggerFactory.info('📝 Updated $entityType locally: ${entity.id}');
-      
+
       // Intentar sincronizar inmediatamente si es posible
       await _tryImmediateSync();
-      
     } catch (e) {
       LoggerFactory.error('❌ Failed to update $entityType: $e');
       _emitEvent(RepositoryEventType.error, 'Failed to update item: $e');
@@ -258,16 +272,16 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
     try {
       // Marcar como eliminado localmente
       await removeFromLocal(id);
-      
+
       // Cola para sincronización de eliminación
       await _queueForSync(null, SyncOperationType.delete, entityId: id);
-      
-      _emitEvent(RepositoryEventType.itemRemoved, 'Item removed locally', entityId: id);
+
+      _emitEvent(RepositoryEventType.itemRemoved, 'Item removed locally',
+          entityId: id);
       LoggerFactory.info('🗑️ Removed $entityType locally: $id');
-      
+
       // Intentar sincronizar inmediatamente si es posible
       await _tryImmediateSync();
-      
     } catch (e) {
       LoggerFactory.error('❌ Failed to remove $entityType: $e');
       _emitEvent(RepositoryEventType.error, 'Failed to remove item: $e');
@@ -282,8 +296,9 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
     try {
       final entities = await getLocalData();
       final models = entities.map(convertToModel).toList();
-      
-      LoggerFactory.debug('📋 Retrieved ${models.length} $entityType items locally');
+
+      LoggerFactory.debug(
+          '📋 Retrieved ${models.length} $entityType items locally');
       return models;
     } catch (e) {
       LoggerFactory.error('❌ Failed to get $entityType items: $e');
@@ -311,7 +326,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
       return await _syncManager!.performFullSync();
     } else {
       LoggerFactory.warning('⚠️ No sync manager available for forced sync');
-      return SyncResult.success(itemsProcessed: 0, message: 'No sync manager available');
+      return SyncResult.success(
+          itemsProcessed: 0, message: 'No sync manager available');
     }
   }
 
@@ -319,11 +335,53 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   // MÉTODOS PRIVADOS
   // =============================================
 
+  void _setupRealtimeSubscription() {
+    if (userId == 'anonymous_user') return;
+
+    _realtimeChannel = Supabase.instance.client.channel('public:$tableName:user_id=eq.$userId');
+    _realtimeChannel!
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: tableName,
+          callback: (payload) {
+            _handleRealtimePayload(payload);
+          },
+        )
+        .subscribe();
+    LoggerFactory.info('⚡️ Realtime subscription setup for $tableName');
+  }
+
+  void _handleRealtimePayload(PostgresChangePayload payload) {
+    final eventType = payload.eventType;
+    
+    switch (eventType) {
+      case PostgresChangeEvent.insert:
+      case PostgresChangeEvent.update:
+        final entity = deserializeFromRemote(payload.newRecord);
+        saveToLocal(entity);
+        _emitEvent(RepositoryEventType.itemUpdated, 'Realtime item updated', entity: entity);
+        break;
+      case PostgresChangeEvent.delete:
+        final id = payload.oldRecord['id'] as String?;
+        if (id != null) {
+          removeFromLocal(id);
+          _emitEvent(RepositoryEventType.itemRemoved, 'Realtime item removed', entityId: id);
+        }
+        break;
+      case PostgresChangeEvent.all:
+        // Handle other event types or ignore
+        LoggerFactory.debug('Unhandled realtime event type: $eventType');
+        break;
+    }
+  }
+
   /// Cola una entidad para sincronización
-  Future<void> _queueForSync(T? entity, SyncOperationType operationType, {String? entityId}) async {
+  Future<void> _queueForSync(
+      T? entity, SyncOperationType operationType, {String? entityId}) async {
     if (_syncCoordinator != null) {
       Map<String, dynamic> data;
-      
+
       if (entity != null) {
         data = entity.toSupabaseJson();
       } else if (operationType == SyncOperationType.delete && entityId != null) {
@@ -340,8 +398,9 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
         data: data,
         priority: _getOperationPriority(operationType),
       );
-      
-      LoggerFactory.debug('📋 Queued $operationType for $entityType: ${entity?.id ?? entityId}');
+
+      LoggerFactory.debug(
+          '📋 Queued $operationType for $entityType: ${entity?.id ?? entityId}');
     }
   }
 
@@ -388,14 +447,14 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
       entityId: entityId,
       result: result,
     );
-    
+
     _eventController.add(event);
   }
 
   /// Obtiene estadísticas del repositorio
   Future<Map<String, dynamic>> getStatistics() async {
     final localData = await getLocalData();
-    
+
     Map<String, dynamic> syncStats = {};
     if (_syncManager != null) {
       try {
@@ -427,6 +486,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity> implements Syncabl
   /// Libera recursos
   Future<void> dispose() async {
     await _eventController.close();
+    _realtimeChannel?.unsubscribe();
     LoggerFactory.info('🔒 BaseHybridRepository<$entityType> disposed');
   }
 }

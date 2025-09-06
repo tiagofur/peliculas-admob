@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../logging/logger_factory.dart';
 import '../sync/silent_favorites_sync_service.dart';
 import '../../presentation/providers/storage/favorite_movies_provider.dart';
+import '../../presentation/providers/storage/direct_favorites_provider.dart';
 
 /// Servicio que maneja la inicialización de servicios después del login
 /// para evitar bloqueos durante la autenticación
@@ -62,39 +63,33 @@ class PostLoginInitializationService {
     }
   }
 
-  /// Inicializa servicios después del login con delays progresivos
+  /// Inicializa servicios después del login - MODO NO BLOQUEANTE
   void _initializePostLoginServices(String userId, Ref ref) {
-    LoggerFactory.info('🚀 Starting post-login initialization for user: $userId');
+    LoggerFactory.info('🚀 Starting NON-BLOCKING post-login initialization for user: $userId');
 
-    // Paso 1: Habilitar auto-refresh de favoritos (inmediato)
-    Timer(const Duration(milliseconds: 500), () {
+    // SOLO habilitar servicios, NO hacer sync automática para evitar bloqueos
+    Timer(const Duration(milliseconds: 100), () {
       try {
         ref.read(favoriteMoviesProvider.notifier).enableAutoRefresh();
-        LoggerFactory.info('✅ Auto-refresh habilitado para favoritos');
+        LoggerFactory.info('✅ Auto-refresh habilitado (no bloqueante)');
       } catch (e) {
         LoggerFactory.error('❌ Error habilitando auto-refresh: $e');
       }
     });
 
-    // Paso 2: Inicializar sincronización silenciosa (después de 2 segundos)
-    Timer(const Duration(seconds: 2), () {
+    // Inicializar DirectFavoritesProvider para activar listeners de tiempo real
+    Timer(const Duration(milliseconds: 200), () {
       try {
-        SilentFavoritesSyncService.instance.startSilentSync(userId);
-        LoggerFactory.info('✅ Sincronización silenciosa iniciada');
+        // Solo acceder al provider para que se inicialice y configure los listeners
+        ref.read(directFavoriteMoviesProvider.notifier).enableAfterLogin();
+        LoggerFactory.info('✅ DirectFavorites listeners habilitados para sync tiempo real');
       } catch (e) {
-        LoggerFactory.error('❌ Error iniciando sincronización silenciosa: $e');
+        LoggerFactory.error('❌ Error habilitando DirectFavorites listeners: $e');
       }
     });
 
-    // Paso 3: Refrescar datos después de 3 segundos
-    Timer(const Duration(seconds: 3), () {
-      try {
-        ref.read(favoriteMoviesProvider.notifier).refreshFavorites();
-        LoggerFactory.info('✅ Favoritos refrescados después del login');
-      } catch (e) {
-        LoggerFactory.error('❌ Error refrescando favoritos: $e');
-      }
-    });
+    // NO inicializar sync automática - será manual cuando el usuario interactúe
+    LoggerFactory.info('ℹ️ Sync será iniciada manualmente cuando el usuario use favoritos');
   }
 
   /// Limpia servicios cuando el usuario se desconecta

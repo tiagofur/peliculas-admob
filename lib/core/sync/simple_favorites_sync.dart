@@ -72,6 +72,7 @@ class SimpleFavoritesSync {
     try {
       LoggerFactory.info('➕ Agregando favorito: ${movie.title}');
       
+      final now = DateTime.now().toUtc().toIso8601String();
       final favoriteData = {
         'user_id': userId,
         'movie_id': movie.id,
@@ -84,11 +85,32 @@ class SimpleFavoritesSync {
         'is_deleted': false,
         'sync_version': 1,
         'device_id': 'flutter_web_${DateTime.now().millisecondsSinceEpoch}',
+        // Establecer manualmente last_modified_at para evitar que el trigger lo actualice
+        'last_modified_at': now,
+        'created_at': now,
       };
       
-      await _supabase
-          .from('user_favorites')
-          .upsert(favoriteData);
+      // Usar INSERT en lugar de UPSERT para evitar trigger de UPDATE
+      try {
+        await _supabase
+            .from('user_favorites')
+            .insert(favoriteData);
+      } catch (e) {
+        // Si ya existe, intentar con DELETE + INSERT
+        if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
+          await _supabase
+              .from('user_favorites')
+              .delete()
+              .eq('user_id', userId)
+              .eq('movie_id', movie.id);
+              
+          await _supabase
+              .from('user_favorites')
+              .insert(favoriteData);
+        } else {
+          rethrow;
+        }
+      }
       
       LoggerFactory.info('✅ Favorito agregado exitosamente: ${movie.title}');
       
@@ -98,17 +120,15 @@ class SimpleFavoritesSync {
     }
   }
 
-  /// Remueve un favorito de forma simple
+  /// Remueve un favorito de forma simple (DELETE directo)
   Future<void> removeFavorite(String userId, int movieId) async {
     try {
       LoggerFactory.info('🗑️ Removiendo favorito con movieId: $movieId');
       
+      // USAR DELETE DIRECTO para evitar problemas de trigger
       await _supabase
           .from('user_favorites')
-          .update({
-            'is_deleted': true,
-            'last_modified_at': DateTime.now().toIso8601String(),
-          })
+          .delete()
           .eq('user_id', userId)
           .eq('movie_id', movieId);
       

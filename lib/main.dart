@@ -35,7 +35,7 @@ import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/locale/locale_provider.dart';
 import 'presentation/providers/multiplatform_sync_provider.dart';
-import 'presentation/providers/simple_favorites_provider.dart';
+import 'presentation/providers/storage/direct_favorites_provider.dart';
 import 'presentation/providers/sync_init_provider.dart';
 import 'presentation/providers/sync_integration_provider.dart' as integration;
 import 'presentation/providers/theme/theme_provider.dart';
@@ -285,11 +285,11 @@ class MainApp extends ConsumerWidget {
     // INICIALIZAR ERROR REPORTING USER CONTEXT
     ref.watch(errorReportingUserContextProvider);
 
-    // DESACTIVAR TEMPORALMENTE: INICIALIZACIÓN POST-LOGIN
-    // ref.watch(postLoginInitializationProvider);
+    // REACTIVAR: INICIALIZACIÓN POST-LOGIN (con modificaciones anti-bloqueo)
+    // ref.watch(postLoginInitializationProvider); // Temporalmente deshabilitado
 
-    // INICIALIZAR PROVIDER SIMPLE DE FAVORITOS PARA DEBUGGING
-    ref.watch(simpleFavoritesProvider);
+    // INICIALIZAR DIRECTFAVORITES PROVIDER PARA LISTENERS DE TIEMPO REAL
+    ref.watch(directFavoriteMoviesProvider);
 
     // INICIALIZACIÓN LAZY DE PROVIDERS - Solo cuando se necesiten
     // Los providers se inicializarán automáticamente cuando se usen por primera vez

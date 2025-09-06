@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
-import '../../providers/providers.dart';
+import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import 'movie_rating.dart';
@@ -164,7 +164,9 @@ class _SlideState extends ConsumerState<_Slide>
   }
 
   void _toggleFavorite(bool currentValue) {
-    ref.read(favoriteMoviesProvider.notifier).toggleFavorite(widget.movie);
+    ref
+        .read(directFavoriteMoviesProvider.notifier)
+        .toggleFavorite(widget.movie);
   }
 
   void _toggleWatched(bool currentValue) {
@@ -181,7 +183,7 @@ class _SlideState extends ConsumerState<_Slide>
   Widget build(BuildContext context) {
     final textStyles = Theme.of(context).textTheme;
     final isWatched = ref.watch(isWatchedProvider(widget.movie.id));
-    final isFavorite = ref.watch(isFavoriteProvider(widget.movie.id));
+    final isFavorite = ref.watch(directIsFavoriteProvider(widget.movie.id));
 
     return AnimatedBuilder(
       animation: _hoverController,
@@ -230,7 +232,8 @@ class _SlideState extends ConsumerState<_Slide>
                                 fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(20),
                                 enableHeroAnimation: true,
-                                heroTag: 'horizontal-basic-${widget.movie.id}-${widget.index}',
+                                heroTag:
+                                    'horizontal-basic-${widget.movie.id}-${widget.index}',
                                 placeholder: Container(
                                   height: 220,
                                   decoration: BoxDecoration(

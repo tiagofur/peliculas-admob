@@ -10,10 +10,8 @@ import '../datasources/favorite_movies_hive_datasource.dart';
 import '../models/favorite_model.dart';
 import 'base_hybrid_repository.dart';
 
-class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite> 
+class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     implements FavoritesRepository {
-  final FavoriteMoviesHiveDatasource _localDatasource;
-
   HybridFavoritesRepository({
     required super.userId,
     EntitySyncManager<SyncableFavorite>? syncManager,
@@ -23,6 +21,7 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
           entityType: 'favorite',
           syncManager: syncManager ?? FavoritesSyncManager(userId: userId),
         );
+  final FavoriteMoviesHiveDatasource _localDatasource;
 
   @override
   Future<void> initializeLocal() async {
@@ -32,18 +31,35 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
 
   @override
   Future<List<SyncableFavorite>> getLocalData() async {
-    // This method is not used anymore, local data is handled by the datasource
-    return [];
+    final movies = await _localDatasource.loadMovies(limit: 10000, offset: 0);
+    return movies
+        .map((movie) =>
+            convertFromModel(FavoriteModel.fromMovie(movie, userId), userId))
+        .toList();
+  }
+
+  @override
+  String get tableName => 'user_favorites';
+
+  @override
+  SyncableFavorite deserializeFromRemote(Map<String, dynamic> data) {
+    return SyncableFavorite.fromJson(data);
   }
 
   @override
   Future<void> saveToLocal(SyncableFavorite entity) async {
-    // This method is not used anymore, local data is handled by the datasource
+    final favoriteModel = convertToModel(entity);
+    final movie = favoriteModel.toMovie();
+    await _localDatasource.saveFavorite(movie);
   }
 
   @override
   Future<void> removeFromLocal(String id) async {
-    // This method is not used anymore, local data is handled by the datasource
+    // The ID from supabase is the movie ID, so we can use it directly.
+    final movieId = int.tryParse(id);
+    if (movieId != null) {
+      await _localDatasource.removeFavoriteById(movieId);
+    }
   }
 
   @override
@@ -66,16 +82,30 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
   }
 
-  Future<bool> isFavorite(int movieId) async {
-    return await _localDatasource.isMovieFavorite(movieId);
+  
+
+  Future<SyncableFavorite?> getFavoriteByMovieId(int movieId) async {
+    final favorites = await getLocalData();
+    try {
+      return favorites.firstWhere((fav) => fav.movieId == movieId);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> addFavorite(Movie movie) async {
-    await _localDatasource.toggleFavorite(movie);
+    final favorite = FavoriteModel.fromMovie(movie, userId);
+    final syncableFavorite = convertFromModel(favorite, userId);
+    await super.add(syncableFavorite);
   }
 
   Future<void> removeFavorite(Movie movie) async {
-    await _localDatasource.toggleFavorite(movie);
+    final favoriteToRemove = await getFavoriteByMovieId(movie.id);
+    if (favoriteToRemove != null) {
+      await super.remove(favoriteToRemove.id);
+    } else {
+      LoggerFactory.warning('Attempted to remove a favorite that was not found locally: ${movie.title}');
+    }
   }
 
   @override
@@ -83,21 +113,27 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     // 🐛 FIX: Cargar TODAS las películas, no solo las primeras 10
     final movies = await _localDatasource.loadMovies(limit: 1000, offset: 0);
     final result = {for (var movie in movies) movie.id: movie};
-    
+
     // 🐛 DEBUG: Log para detectar corrupción
-    LoggerFactory.info('🔍 getFavoriteMovies returning ${result.length} favorites: ${result.keys.toList()}');
-    
+    LoggerFactory.info(
+        '🔍 getFavoriteMovies returning ${result.length} favorites: ${result.keys.toList()}');
+
     return result;
   }
 
   @override
   Future<void> toggleFavorite(Movie movie) async {
-    await _localDatasource.toggleFavorite(movie);
+    final isCurrentlyFavorite = await isMovieFavorite(movie.id);
+    if (isCurrentlyFavorite) {
+      await removeFavorite(movie);
+    } else {
+      await addFavorite(movie);
+    }
   }
 
   @override
   Future<bool> isMovieFavorite(int movieId) async {
-    return await isFavorite(movieId);
+    return await _localDatasource.isMovieFavorite(movieId);
   }
 
   @override

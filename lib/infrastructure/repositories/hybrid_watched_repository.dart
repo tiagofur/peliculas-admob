@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../core/sync/generic_entity_sync_manager.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
 import 'base_hybrid_repository.dart';
@@ -14,11 +15,14 @@ class HybridWatchedRepository
   HybridWatchedRepository({
     required super.userId,
     SharedPreferences? prefs,
-    super.syncManager,
+    GenericEntitySyncManager<SyncableWatchedMovie>? syncManager,
     super.syncCoordinator,
   })  : _prefs = prefs,
         super(
           entityType: 'watched_movie',
+          syncManager: syncManager ??
+              GenericEntitySyncManager<SyncableWatchedMovie>(
+                  userId: userId, entityType: 'watched_movie'),
         );
 
   SharedPreferences? _prefs;
@@ -27,6 +31,14 @@ class HybridWatchedRepository
   // =============================================
   // IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS
   // =============================================
+
+  @override
+  String get tableName => 'user_watched_movies';
+
+  @override
+  SyncableWatchedMovie deserializeFromRemote(Map<String, dynamic> data) {
+    return SyncableWatchedMovie.fromJson(data);
+  }
 
   @override
   Future<void> initializeLocal() async {

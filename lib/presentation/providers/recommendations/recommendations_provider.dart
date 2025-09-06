@@ -9,7 +9,7 @@ import '../../../domain/entities/watched_movie.dart';
 import '../../../domain/repositories/recommendations_repository.dart';
 import '../../../infrastructure/datasources/recommendations_moviedb_datasource.dart';
 import '../../../infrastructure/repositories/recommendations_repository_impl.dart';
-import '../storage/favorite_movies_provider.dart';
+import '../storage/direct_favorites_provider.dart';
 import '../watched_movies_provider.dart';
 
 // Provider del repositorio de recomendaciones
@@ -36,7 +36,7 @@ final personalizedRecommendationsProvider =
     FutureProvider<List<Recommendation>>((ref) async {
   final repository = ref.watch(recommendationsRepositoryProvider);
   final mlService = ref.watch(mlRecommendationServiceProvider);
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   // Si el usuario tiene favoritos o películas vistas, usar ML
@@ -113,7 +113,7 @@ final recommendationsByMoodProvider =
 final userBehaviorAnalysisProvider =
     FutureProvider<UserBehaviorAnalysis>((ref) async {
   final mlService = ref.watch(mlRecommendationServiceProvider);
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   return await mlService.analyzeUserBehavior(
@@ -128,7 +128,7 @@ final similarMoviesProvider =
   final mlService = ref.watch(mlRecommendationServiceProvider);
 
   // Get movie data first
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   // Find a target movie from favorites or watched movies
@@ -179,7 +179,7 @@ final similarMoviesProvider =
 // Provider para explicaciones de recomendaciones
 final recommendationExplanationProvider =
     FutureProvider.family<String, Recommendation>((ref, recommendation) async {
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
   final mlService = ref.watch(mlRecommendationServiceProvider);
 
@@ -194,7 +194,7 @@ final recommendationExplanationProvider =
 final personalizedInsightsProvider =
     FutureProvider<List<UserInsight>>((ref) async {
   final mlService = ref.watch(mlRecommendationServiceProvider);
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   return await mlService.generatePersonalizedInsights(
@@ -207,7 +207,7 @@ final personalizedInsightsProvider =
 final nextMoviePredictionProvider =
     FutureProvider<List<Recommendation>>((ref) async {
   final mlService = ref.watch(mlRecommendationServiceProvider);
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   final prediction = await mlService.predictNextMovie(
@@ -236,7 +236,7 @@ final nextMoviePredictionProvider =
 // Provider para puntuación de engagement
 final engagementScoreProvider = FutureProvider<double>((ref) async {
   final mlService = ref.watch(mlRecommendationServiceProvider);
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   final engagementScore = await mlService.calculateEngagementScore(
@@ -257,7 +257,7 @@ final discoveryCategoriesProvider =
 // Provider para preferencias del usuario
 final userPreferencesProvider = FutureProvider<UserPreferences>((ref) async {
   final repository = ref.watch(recommendationsRepositoryProvider);
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   if (favoriteMovies.isNotEmpty || watchedMoviesState.movies.isNotEmpty) {
@@ -274,7 +274,7 @@ final userPreferencesProvider = FutureProvider<UserPreferences>((ref) async {
 // Provider para estadísticas básicas del usuario (mantenido para compatibilidad)
 final recommendationsUserStatsProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   return {
@@ -287,7 +287,7 @@ final recommendationsUserStatsProvider =
 
 // Provider para estadísticas básicas del usuario (para recomendaciones)
 final basicUserStatsProvider = Provider<BasicUserStats>((ref) {
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
+  final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   return BasicUserStats(

@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
-import '../../providers/providers.dart';
+import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../screens/movies/movie_screen.dart';
 import '../admob/ad_integration_helper.dart';
@@ -136,7 +136,8 @@ class _MovieHorizontalListviewWithAdsState
 }
 
 class _Slide extends ConsumerStatefulWidget {
-  const _Slide({required this.movie, required this.index, required this.sectionId});
+  const _Slide(
+      {required this.movie, required this.index, required this.sectionId});
 
   final Movie movie;
   final int index;
@@ -218,7 +219,9 @@ class _SlideState extends ConsumerState<_Slide>
   }
 
   void _toggleFavorite(bool currentValue) {
-    ref.read(favoriteMoviesProvider.notifier).toggleFavorite(widget.movie);
+    ref
+        .read(directFavoriteMoviesProvider.notifier)
+        .toggleFavorite(widget.movie);
   }
 
   void _toggleWatched(bool currentValue) {
@@ -235,7 +238,7 @@ class _SlideState extends ConsumerState<_Slide>
   Widget build(BuildContext context) {
     final textStyles = Theme.of(context).textTheme;
     final isWatched = ref.watch(isWatchedProvider(widget.movie.id));
-    final isFavorite = ref.watch(isFavoriteProvider(widget.movie.id));
+    final isFavorite = ref.watch(directIsFavoriteProvider(widget.movie.id));
 
     return AnimatedBuilder(
       animation: _hoverController,
@@ -284,7 +287,8 @@ class _SlideState extends ConsumerState<_Slide>
                                 fit: BoxFit.cover,
                                 borderRadius: BorderRadius.circular(20),
                                 enableHeroAnimation: true,
-                                heroTag: 'horizontal-ads-${widget.sectionId}-${widget.movie.id}-${widget.index}',
+                                heroTag:
+                                    'horizontal-ads-${widget.sectionId}-${widget.movie.id}-${widget.index}',
                                 placeholder: Container(
                                   height: 220,
                                   width: 150,

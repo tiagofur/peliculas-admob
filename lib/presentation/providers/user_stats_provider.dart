@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/entities.dart';
 import 'custom_lists_provider.dart';
-import 'storage/favorite_movies_provider.dart';
+import 'storage/direct_favorites_provider.dart';
 import 'user_movie_ratings_provider.dart';
 import 'watched_movies_provider.dart';
 
@@ -17,7 +17,7 @@ final userStatsDataProvider = Provider.autoDispose<
       List<CustomList> customLists,
       List<CustomList> defaultLists,
     })>((ref) {
-  final favoriteMoviesMap = ref.watch(favoriteMoviesProvider);
+  final favoriteMoviesMap = ref.watch(directFavoriteMoviesProvider);
   final favoriteMovies = favoriteMoviesMap.values.toList();
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
   final customLists = ref.watch(customListsProvider);

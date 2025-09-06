@@ -6,6 +6,7 @@ import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/share_service.dart';
 import '../../providers/providers.dart';
+import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/watched_movies_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -173,8 +174,7 @@ class _Genres extends StatelessWidget {
 
 final isFavoriteProvider =
     Provider.family.autoDispose<bool, int>((ref, int movieId) {
-  final favoriteMovies = ref.watch(favoriteMoviesProvider);
-  return favoriteMovies.containsKey(movieId);
+  return ref.watch(directIsFavoriteProvider(movieId));
 });
 
 final isWatchedProvider =
@@ -247,8 +247,8 @@ class _CustomSliverAppBar extends ConsumerWidget {
         // Botón de favoritos con animación
         _AnimatedActionButton(
           onPressed: () {
-            ref.read(favoriteMoviesProvider.notifier).toggleFavorite(movie);
-            ref.invalidate(isFavoriteProvider(movie.id));
+            ref.read(directFavoriteMoviesProvider.notifier).toggleFavorite(movie);
+            ref.invalidate(directIsFavoriteProvider(movie.id));
           },
           feedbackType: FeedbackType.success,
           child: Icon(

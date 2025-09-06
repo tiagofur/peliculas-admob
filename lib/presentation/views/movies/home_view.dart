@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../providers/providers.dart';
+import '../../providers/storage/direct_favorites_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -32,7 +33,7 @@ class HomeViewState extends ConsumerState<HomeView>
         ref.read(topRatedMoviesProvider.notifier).loadNextPage();
         ref.read(upcomingMoviesProvider.notifier).loadNextPage();
         // Cargar favoritos al iniciar la app
-        ref.read(favoriteMoviesProvider.notifier).loadNextPage();
+        ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
         // Cargar watchlist al iniciar la app (sin trigger paginación)
         ref.read(watchlistProvider);
         // Cargar recomendaciones paginadas

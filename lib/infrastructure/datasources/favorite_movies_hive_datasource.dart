@@ -156,6 +156,27 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
     return box.values.toList();
   }
   
+  Future<void> removeFavoriteById(int movieId) async {
+    final box = await _getBox();
+    final existingMovieIndex =
+        box.values.toList().indexWhere((m) => m.id == movieId);
+
+    if (existingMovieIndex != -1) {
+      await box.deleteAt(existingMovieIndex);
+      LoggerFactory.info('✅ Removed movie $movieId from favorites via ID');
+    }
+  }
+
+  Future<void> saveFavorite(Movie movie) async {
+    final box = await _getBox();
+    final isAlreadyFavorite = box.values.any((m) => m.id == movie.id);
+
+    if (!isAlreadyFavorite) {
+      await box.add(movie);
+      LoggerFactory.info('✅ Saved movie ${movie.id} to favorites');
+    }
+  }
+
   @override
   Future<void> clearAll() async {
     final box = await _getBox();
