@@ -25,21 +25,6 @@ class FavoriteModel {
   final DateTime? releaseDate;
   final DateTime addedAt;
 
-  /// Crea un FavoriteModel desde una película
-  factory FavoriteModel.fromMovie(Movie movie, String userId) {
-    return FavoriteModel(
-      id: '${userId}_${movie.id}', // Generar ID único
-      userId: userId,
-      movieId: movie.id,
-      movieTitle: movie.title,
-      posterPath: movie.posterPath,
-      rating: movie.voteAverage,
-      overview: movie.overview,
-      releaseDate: movie.releaseDate,
-      addedAt: DateTime.now(),
-    );
-  }
-
   /// Crea un FavoriteModel desde una SyncableFavorite
   factory FavoriteModel.fromSyncableEntity(dynamic syncableEntity) {
     // Asumiendo que syncableEntity es SyncableFavorite
