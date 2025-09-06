@@ -3,7 +3,8 @@ import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/logger_factory.dart';
-import '../../core/sync/generic_entity_sync_manager.dart';
+import '../../core/sync/entity_sync_manager.dart';
+import '../../core/sync/watched_sync_manager.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
 import 'base_hybrid_repository.dart';
@@ -15,14 +16,12 @@ class HybridWatchedRepository
   HybridWatchedRepository({
     required super.userId,
     SharedPreferences? prefs,
-    GenericEntitySyncManager<SyncableWatchedMovie>? syncManager,
+    EntitySyncManager<SyncableWatchedMovie>? syncManager,
     super.syncCoordinator,
   })  : _prefs = prefs,
         super(
           entityType: 'watched_movie',
-          syncManager: syncManager ??
-              GenericEntitySyncManager<SyncableWatchedMovie>(
-                  userId: userId, entityType: 'watched_movie'),
+          syncManager: syncManager ?? WatchedSyncManager(userId: userId),
         );
 
   SharedPreferences? _prefs;
