@@ -7,6 +7,7 @@ import '../../core/logging/logger_factory.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/hybrid_repositories_provider.dart';
 import '../../presentation/providers/storage/favorite_movies_provider.dart';
+import '../../presentation/providers/watched_movies_provider.dart';
 import '../../presentation/providers/watchlist_provider.dart';
 
 /// Servicio de sincronización en tiempo real que escucha cambios en Supabase
@@ -223,7 +224,12 @@ class RealtimeSyncService {
       try {
         final watchedRepo = _ref.read(hybridWatchedRepositoryProvider);
         await watchedRepo.syncWithSupabase();
-        LoggerFactory.info('✅ Películas vistas sincronizadas por cambio remoto');
+        
+        // Actualizar también el provider de UI para que se refleje inmediatamente
+        final watchedNotifier = _ref.read(watchedMoviesProvider.notifier);
+        await watchedNotifier.refresh();
+        
+        LoggerFactory.info('✅ Películas vistas sincronizadas y UI actualizada por cambio remoto');
       } catch (e) {
         LoggerFactory.error('❌ Error sincronizando películas vistas por cambio remoto: $e');
       }
