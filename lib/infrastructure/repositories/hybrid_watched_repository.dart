@@ -1,31 +1,30 @@
 import 'dart:async';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../core/logging/logger_factory.dart';
 import '../../core/sync/entity_sync_manager.dart';
 import '../../core/sync/watched_sync_manager.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
+import '../../domain/entities/watched_movie.dart';
+import '../../domain/repositories/watched_movies_repository.dart';
+import '../datasources/watched_movies_hive_datasource.dart';
 import 'base_hybrid_repository.dart';
 
 /// Repositorio híbrido para películas vistas que combina almacenamiento local y remoto
 /// con sincronización automática usando el sistema de sync de Fase 3
-class HybridWatchedRepository
-    extends BaseHybridRepository<SyncableWatchedMovie> {
+class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
+    implements WatchedMoviesRepository {
   HybridWatchedRepository({
     required super.userId,
-    SharedPreferences? prefs,
     EntitySyncManager<SyncableWatchedMovie>? syncManager,
     super.syncCoordinator,
-  })  : _prefs = prefs,
+  })  : _localDatasource = WatchedMoviesHiveDatasource(),
         super(
           entityType: 'watched_movie',
           syncManager: syncManager ?? WatchedSyncManager(userId: userId),
         );
 
-  SharedPreferences? _prefs;
-  static const String _storageKey = 'local_watched_movies';
+  final WatchedMoviesHiveDatasource _localDatasource;
 
   // =============================================
   // IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS
@@ -41,24 +40,21 @@ class HybridWatchedRepository
 
   @override
   Future<void> initializeLocal() async {
-    _prefs ??= await SharedPreferences.getInstance();
+    // La inicialización de Hive es manejada por el datasource
     LoggerFactory.info('✅ HybridWatchedRepository local storage initialized');
   }
 
   @override
   Future<List<SyncableWatchedMovie>> getLocalData() async {
-    if (_prefs == null) await initializeLocal();
-
     try {
-      final jsonList = _prefs!.getStringList(_storageKey) ?? [];
-      final watchedMovies = jsonList
-          .map((jsonStr) => SyncableWatchedMovie.fromJsonString(jsonStr))
-          .where((movie) => movie.userId == userId && !movie.isDeleted)
+      final watchedMovies =
+          await _localDatasource.loadWatchedMovies(limit: 10000);
+      return watchedMovies
+          .map((watched) => SyncableWatchedMovie.fromWatchedMovie(
+                userId: userId,
+                watchedMovie: watched,
+              ))
           .toList();
-
-      LoggerFactory.debug(
-          '📋 Retrieved ${watchedMovies.length} local watched movies for user $userId');
-      return watchedMovies;
     } catch (e) {
       LoggerFactory.error('❌ Failed to get local watched movies: $e');
       return [];
@@ -67,26 +63,9 @@ class HybridWatchedRepository
 
   @override
   Future<void> saveToLocal(SyncableWatchedMovie entity) async {
-    if (_prefs == null) await initializeLocal();
-
     try {
-      final existing = await getLocalData();
-      final updated = <SyncableWatchedMovie>[];
-
-      // Remover película existente con el mismo ID
-      for (final movie in existing) {
-        if (movie.id != entity.id) {
-          updated.add(movie);
-        }
-      }
-
-      // Agregar nueva entidad
-      updated.add(entity);
-
-      // Guardar lista actualizada
-      final jsonList = updated.map((movie) => movie.toJsonString()).toList();
-      await _prefs!.setStringList(_storageKey, jsonList);
-
+      final watchedMovie = entity.toWatchedMovie();
+      await _localDatasource.markAsWatched(watchedMovie.movie);
       LoggerFactory.debug('💾 Saved watched movie locally: ${entity.movieId}');
     } catch (e) {
       LoggerFactory.error('❌ Failed to save watched movie locally: $e');
@@ -96,25 +75,38 @@ class HybridWatchedRepository
 
   @override
   Future<void> removeFromLocal(String id) async {
-    if (_prefs == null) await initializeLocal();
-
     try {
-      final existing = await getLocalData();
-      final filtered = existing.where((movie) => movie.id != id).toList();
-
-      final jsonList = filtered.map((movie) => movie.toJsonString()).toList();
-      await _prefs!.setStringList(_storageKey, jsonList);
-
-      LoggerFactory.debug('🗑️ Removed watched movie from local storage: $id');
+      // El ID de la entidad syncable no es el movie_id, necesitamos encontrarlo
+      final localMovies = await getLocalData();
+      
+      // Try to find by syncable ID first
+      SyncableWatchedMovie? movieToRemove;
+      try {
+        movieToRemove = localMovies.firstWhere((e) => e.id == id);
+      } catch (e) {
+        // If not found by syncable ID, try to parse as movie ID
+        final movieId = int.tryParse(id);
+        if (movieId != null) {
+          movieToRemove = localMovies.where((e) => e.movieId == movieId).firstOrNull;
+        }
+      }
+      
+      if (movieToRemove != null) {
+        await _localDatasource.removeFromWatched(movieToRemove.movieId);
+        LoggerFactory.debug('🗑️ Removed watched movie from local storage: $id (movieId: ${movieToRemove.movieId})');
+      } else {
+        LoggerFactory.warning('⚠️ Movie not found locally for removal: $id');
+        // Don't throw error - movie might already be removed
+      }
     } catch (e) {
       LoggerFactory.error('❌ Failed to remove watched movie locally: $e');
-      rethrow;
+      // Don't rethrow - we want to be resilient to local data inconsistencies
     }
   }
 
   @override
   Future<void> updateLocal(SyncableWatchedMovie entity) async {
-    // Reutilizar saveToLocal ya que maneja actualizaciones
+    // Hive no tiene un `update` directo, re-guardar funciona
     await saveToLocal(entity);
   }
 
@@ -127,9 +119,12 @@ class HybridWatchedRepository
   SyncableWatchedMovie convertFromModel(dynamic model, String userId) {
     if (model is SyncableWatchedMovie) {
       return model;
+    } else if (model is WatchedMovie) {
+      return SyncableWatchedMovie.fromWatchedMovie(
+          userId: userId, watchedMovie: model);
     } else {
       throw ArgumentError(
-          'Model must be a SyncableWatchedMovie, got ${model.runtimeType}');
+          'Model must be a SyncableWatchedMovie or WatchedMovie, got ${model.runtimeType}');
     }
   }
 
@@ -137,21 +132,19 @@ class HybridWatchedRepository
   // MÉTODOS ESPECÍFICOS PARA PELÍCULAS VISTAS
   // =============================================
 
-  /// Verifica si una película está marcada como vista
+  @override
   Future<bool> isMovieWatched(int movieId) async {
     try {
-      final watchedMovies = await getAll();
-      return watchedMovies.any((movie) => movie.movieId == movieId);
+      return await _localDatasource.isMovieWatched(movieId);
     } catch (e) {
       LoggerFactory.error('❌ Failed to check if movie is watched: $e');
       return false;
     }
   }
 
-  /// Obtiene película vista por ID de película
   Future<SyncableWatchedMovie?> getWatchedMovieByMovieId(int movieId) async {
     try {
-      final watchedMovies = await getAll();
+      final watchedMovies = await getLocalData();
       final matches = watchedMovies.where((movie) => movie.movieId == movieId);
       return matches.isNotEmpty ? matches.first : null;
     } catch (e) {
@@ -160,54 +153,30 @@ class HybridWatchedRepository
     }
   }
 
-  /// Marca una película como vista
-  Future<void> markAsWatched({
-    required int movieId,
-    DateTime? watchedAt,
-    double? rating,
-    String? review,
-  }) async {
+  @override
+  Future<void> markAsWatched(Movie movie) async {
     try {
-      // Verificar si ya está marcada como vista
-      final existing = await getWatchedMovieByMovieId(movieId);
-      if (existing != null) {
-        LoggerFactory.info('ℹ️ Movie $movieId is already marked as watched');
+      final existing = await isMovieWatched(movie.id);
+      if (existing) {
+        LoggerFactory.info('ℹ️ Movie ${movie.id} is already marked as watched');
         return;
       }
 
       final watchedMovie = SyncableWatchedMovie.fromMovie(
         userId: userId,
-        movie: Movie(
-          id: movieId,
-          title: 'Movie $movieId',
-          adult: false,
-          backdropPath: '',
-          genreIds: [],
-          originalLanguage: 'en',
-          originalTitle: 'Movie $movieId',
-          overview: '',
-          popularity: 0.0,
-          posterPath: '',
-          releaseDate: DateTime.now(),
-          video: false,
-          voteAverage: 0.0,
-          voteCount: 0,
-        ),
-        watchedDate: watchedAt ?? DateTime.now(),
-        personalRating: rating,
-        personalNotes: review,
+        movie: movie,
       );
 
       await add(watchedMovie);
-      LoggerFactory.info('✅ Marked movie as watched: $movieId');
+      LoggerFactory.info('✅ Marked movie as watched: ${movie.id}');
     } catch (e) {
       LoggerFactory.error('❌ Failed to mark movie as watched: $e');
       rethrow;
     }
   }
 
-  /// Desmarca una película como vista
-  Future<void> unmarkAsWatched(int movieId) async {
+  @override
+  Future<void> removeFromWatched(int movieId) async {
     try {
       final watchedMovie = await getWatchedMovieByMovieId(movieId);
       if (watchedMovie != null) {
@@ -222,7 +191,13 @@ class HybridWatchedRepository
     }
   }
 
-  /// Actualiza la calificación y reseña de una película vista
+  @override
+  Future<List<WatchedMovie>> loadWatchedMovies(
+      {int limit = 10, int offset = 0}) async {
+    return await _localDatasource.loadWatchedMovies(
+        limit: limit, offset: offset);
+  }
+
   Future<void> updateWatchedMovie({
     required int movieId,
     double? rating,
@@ -248,7 +223,6 @@ class HybridWatchedRepository
     }
   }
 
-  /// Obtiene todas las películas vistas ordenadas por fecha
   Future<List<SyncableWatchedMovie>> getWatchedMoviesSorted(
       {bool ascending = false}) async {
     try {
@@ -267,10 +241,9 @@ class HybridWatchedRepository
     }
   }
 
-  /// Obtiene estadísticas de películas vistas
   Future<Map<String, dynamic>> getWatchedStats() async {
     try {
-      final watchedMovies = await getAll();
+      final watchedMovies = await getLocalData();
 
       final totalWatched = watchedMovies.length;
       final moviesWithRating =

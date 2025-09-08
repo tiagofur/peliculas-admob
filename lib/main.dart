@@ -6,7 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
+// Importar flutter_in_app_pip solo en plataformas nativas
+import 'package:flutter_in_app_pip/flutter_in_app_pip.dart'
+    if (dart.library.html) 'core/platform/pip_stub.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -35,7 +37,11 @@ import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/locale/locale_provider.dart';
 import 'presentation/providers/multiplatform_sync_provider.dart';
+import 'presentation/providers/post_login_initialization_provider.dart';
 import 'presentation/providers/storage/direct_favorites_provider.dart';
+import 'presentation/providers/storage/direct_watched_provider.dart';
+import 'presentation/providers/storage/direct_custom_lists_provider.dart';
+import 'presentation/providers/storage/direct_watchlist_provider.dart';
 import 'presentation/providers/sync_init_provider.dart';
 import 'presentation/providers/sync_integration_provider.dart' as integration;
 import 'presentation/providers/theme/theme_provider.dart';
@@ -251,6 +257,8 @@ class MainApp extends ConsumerWidget {
 
   @override
   material.Widget build(material.BuildContext context, WidgetRef ref) {
+    LoggerFactory.info('🏁 MainApp: build() method called - START');
+    
     // Watch locale state first to get current locale
     final localeState = ref.watch(localeNotifierProvider);
     final currentLocale = localeState.locale?.languageCode ?? 'es';
@@ -286,16 +294,22 @@ class MainApp extends ConsumerWidget {
     ref.watch(errorReportingUserContextProvider);
 
     // REACTIVAR: INICIALIZACIÓN POST-LOGIN (con modificaciones anti-bloqueo)
-    // ref.watch(postLoginInitializationProvider); // Temporalmente deshabilitado
+    ref.watch(
+        postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
 
-    // INICIALIZAR DIRECTFAVORITES PROVIDER PARA LISTENERS DE TIEMPO REAL
+    // INICIALIZAR DIRECT PROVIDERS PARA LISTENERS DE TIEMPO REAL
+    LoggerFactory.info('🚀 MainApp: Inicializando DirectProviders (FORZADO)...');
     ref.watch(directFavoriteMoviesProvider);
+    ref.watch(directWatchedMoviesProvider);
+    ref.watch(directWatchlistMoviesProvider);
+    ref.watch(directCustomListsProvider);
+    LoggerFactory.info('✅ MainApp: DirectProviders inicializados (FORZADO)');
 
     // INICIALIZACIÓN LAZY DE PROVIDERS - Solo cuando se necesiten
     // Los providers se inicializarán automáticamente cuando se usen por primera vez
     if (kDebugMode) {
       LoggerFactory.info(
-          '✅ Usando provider simple de favoritos para debugging');
+          '✅ Usando providers directos (favoritos + vistas) para debugging');
     }
 
     // SYNC SERVICE será inicializado automáticamente cuando el usuario se autentique
@@ -359,33 +373,37 @@ class MainApp extends ConsumerWidget {
       );
     }
 
-    return PiPMaterialApp.router(
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
-      theme: appTheme.getTheme(context),
-      darkTheme: app_theme.AppTheme(
-        selectedColor: appTheme.selectedColor,
-        themeMode: app_theme.ThemeMode.dark,
-      ).getTheme(context),
-      themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
-      locale: localeState.locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      builder: (context, child) {
-        // Actualizar la UI del sistema cuando cambie el tema
-        appTheme.updateSystemUIOverlay(context);
-        return child ?? const material.SizedBox.shrink();
-      },
-      pipParams: const PiPParams(
-        pipWindowHeight: 200,
-        pipWindowWidth: 300,
-        bottomSpace: 80,
-        leftSpace: 16,
-        rightSpace: 16,
-        topSpace: 80,
-        movable: true,
-        resizable: false,
-        initialCorner: PIPViewCorner.bottomRight,
+    // Usar PiPMaterialApp solo en plataformas nativas (no web)
+    return material.ScrollConfiguration(
+      behavior: CustomScrollBehavior(),
+      child: PiPMaterialApp.router(
+        routerConfig: router,
+        debugShowCheckedModeBanner: false,
+        theme: appTheme.getTheme(context),
+        darkTheme: app_theme.AppTheme(
+          selectedColor: appTheme.selectedColor,
+          themeMode: app_theme.ThemeMode.dark,
+        ).getTheme(context),
+        themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
+        locale: localeState.locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) {
+          // Actualizar la UI del sistema cuando cambie el tema
+          appTheme.updateSystemUIOverlay(context);
+          return child ?? const material.SizedBox.shrink();
+        },
+        pipParams: const PiPParams(
+          pipWindowHeight: 200,
+          pipWindowWidth: 300,
+          bottomSpace: 80,
+          leftSpace: 16,
+          rightSpace: 16,
+          topSpace: 80,
+          movable: true,
+          resizable: false,
+          initialCorner: PIPViewCorner.bottomRight,
+        ),
       ),
     );
   }

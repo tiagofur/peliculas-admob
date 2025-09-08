@@ -15,15 +15,12 @@ class GamificationIntegrationService {
   GamificationIntegrationService({
     required GamificationManager gamificationManager,
     required AnalyticsService analyticsService,
-    required Ref ref,
   })  : _gamificationManager = gamificationManager,
-        _analyticsService = analyticsService,
-        _ref = ref;
+        _analyticsService = analyticsService;
   static final _logger = LoggerFactory.logger;
 
   final GamificationManager _gamificationManager;
   final AnalyticsService _analyticsService;
-  final Ref _ref;
 
   /// Initialize gamification integration
   Future<void> initialize() async {
@@ -404,6 +401,5 @@ final gamificationIntegrationServiceProvider =
   return GamificationIntegrationService(
     gamificationManager: gamificationManager,
     analyticsService: analyticsService,
-    ref: ref,
   );
 });

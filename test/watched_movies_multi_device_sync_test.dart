@@ -1,14 +1,13 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/core/sync/entity_sync_manager.dart';
+import 'package:peliculas/core/sync/watched_sync_manager.dart';
+import 'package:peliculas/domain/entities/movie.dart';
+import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
+import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
+import 'package:peliculas/presentation/providers/hybrid_repositories_provider.dart';
+import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../lib/core/sync/watched_sync_manager.dart';
-import '../lib/domain/entities/movie.dart';
-import '../lib/domain/entities/syncable_watched_movie.dart';
-import '../lib/infrastructure/repositories/hybrid_watched_repository.dart';
-import '../lib/infrastructure/services/realtime_sync_service.dart';
-import '../lib/presentation/providers/watched_movies_provider.dart';
-import '../lib/presentation/providers/hybrid_repositories_provider.dart';
 
 void main() {
   group('Multi-Device Watched Movies Synchronization Tests', () {
@@ -21,20 +20,20 @@ void main() {
     setUp(() async {
       // Initialize shared preferences for testing
       SharedPreferences.setMockInitialValues({});
-      
+
       // Create two provider containers simulating different devices
       deviceA = ProviderContainer(overrides: [
         currentUserIdProvider.overrideWithValue(testUserId),
       ]);
-      
+
       deviceB = ProviderContainer(overrides: [
         currentUserIdProvider.overrideWithValue(testUserId),
       ]);
-      
+
       // Initialize repositories for both devices
       repoA = deviceA.read(hybridWatchedRepositoryProvider);
       repoB = deviceB.read(hybridWatchedRepositoryProvider);
-      
+
       await repoA.initializeLocal();
       await repoB.initializeLocal();
     });
@@ -51,7 +50,7 @@ void main() {
         title: 'Multi-Device Test Movie',
         adult: false,
         backdropPath: '/multi_backdrop.jpg',
-        genreIds: [1, 2],
+        genreIds: ['1', '2'],
         originalLanguage: 'en',
         originalTitle: 'Multi-Device Test Movie',
         overview: 'Testing multi-device sync',
@@ -64,12 +63,7 @@ void main() {
       );
 
       // Device A marks movie as watched
-      await repoA.markAsWatched(
-        movieId: testMovie.id,
-        watchedAt: DateTime(2023, 12, 25),
-        rating: 4.5,
-        review: 'Excellent movie from Device A',
-      );
+      await repoA.markAsWatched(testMovie);
 
       // Verify movie is watched on Device A
       final isWatchedA = await repoA.isMovieWatched(testMovie.id);
@@ -78,7 +72,7 @@ void main() {
       // Simulate real-time sync by getting remote changes for Device B
       final syncManagerB = WatchedSyncManager(userId: testUserId);
       final remoteChanges = await syncManagerB.getRemoteChanges();
-      
+
       // Download changes to Device B
       if (remoteChanges.isNotEmpty) {
         await syncManagerB.downloadChanges(remoteChanges);
@@ -95,7 +89,8 @@ void main() {
       final watchedMovieB = await repoB.getWatchedMovieByMovieId(testMovie.id);
       expect(watchedMovieB, isNotNull);
       expect(watchedMovieB!.personalRating, equals(4.5));
-      expect(watchedMovieB.personalNotes, equals('Excellent movie from Device A'));
+      expect(
+          watchedMovieB.personalNotes, equals('Excellent movie from Device A'));
     });
 
     test('should handle conflict resolution between devices', () async {
@@ -105,7 +100,7 @@ void main() {
         title: 'Conflict Test Movie',
         adult: false,
         backdropPath: '/conflict_backdrop.jpg',
-        genreIds: [3, 4],
+        genreIds: ['3', '4'],
         originalLanguage: 'es',
         originalTitle: 'Película de Conflicto',
         overview: 'Testing conflict resolution',
@@ -119,20 +114,10 @@ void main() {
 
       // Both devices mark the same movie as watched with different details
       // Device A version (earlier timestamp)
-      await repoA.markAsWatched(
-        movieId: testMovie.id,
-        watchedAt: DateTime(2023, 12, 25, 10, 0),
-        rating: 3.5,
-        review: 'Good movie - Device A review',
-      );
+      await repoA.markAsWatched(testMovie);
 
       // Device B version (later timestamp)
-      await repoB.markAsWatched(
-        movieId: testMovie.id,
-        watchedAt: DateTime(2023, 12, 25, 11, 0),
-        rating: 4.8,
-        review: 'Amazing movie - Device B review',
-      );
+      await repoB.markAsWatched(testMovie);
 
       // Get local data from both devices
       final watchedA = await repoA.getWatchedMovieByMovieId(testMovie.id);
@@ -143,12 +128,13 @@ void main() {
 
       // Simulate conflict resolution
       final syncManagerA = WatchedSyncManager(userId: testUserId);
-      
+
       // Create conflict scenario
       final conflict = ConflictInfo<SyncableWatchedMovie>(
         localEntity: watchedA!,
         remoteEntity: watchedB!,
-        conflictType: ConflictType.dataConflict,
+        conflictType: ConflictType.concurrentModification,
+        detectedAt: DateTime.now(),
       );
 
       // Resolve conflict - should choose later timestamp (Device B)
@@ -165,7 +151,7 @@ void main() {
         title: 'Removal Test Movie',
         adult: false,
         backdropPath: '/removal_backdrop.jpg',
-        genreIds: [5, 6],
+        genreIds: ['5', '6'],
         originalLanguage: 'fr',
         originalTitle: 'Film de Test de Suppression',
         overview: 'Testing removal sync',
@@ -178,12 +164,7 @@ void main() {
       );
 
       // Device A marks movie as watched
-      await repoA.markAsWatched(
-        movieId: testMovie.id,
-        watchedAt: DateTime(2023, 12, 26),
-        rating: 3.0,
-        review: 'Meh movie',
-      );
+      await repoA.markAsWatched(testMovie);
 
       // Verify it's watched on Device A
       expect(await repoA.isMovieWatched(testMovie.id), isTrue);
@@ -202,7 +183,7 @@ void main() {
       expect(await repoB.isMovieWatched(testMovie.id), isTrue);
 
       // Device B removes the movie from watched
-      await repoB.unmarkAsWatched(testMovie.id);
+      await repoB.removeFromWatched(testMovie.id);
       expect(await repoB.isMovieWatched(testMovie.id), isFalse);
 
       // Simulate sync back to Device A
@@ -225,47 +206,40 @@ void main() {
 
     test('should handle rapid updates from multiple devices', () async {
       // Create test movies for rapid updates
-      final movies = List.generate(5, (index) => Movie(
-        id: 4000 + index,
-        title: 'Rapid Update Movie ${index + 1}',
-        adult: false,
-        backdropPath: '/rapid_backdrop_$index.jpg',
-        genreIds: [index + 1],
-        originalLanguage: 'en',
-        originalTitle: 'Rapid Update Movie ${index + 1}',
-        overview: 'Testing rapid updates $index',
-        popularity: 5.0 + index,
-        posterPath: '/rapid_poster_$index.jpg',
-        releaseDate: DateTime(2023, 11, index + 1),
-        video: false,
-        voteAverage: 5.0 + index,
-        voteCount: 10 + index,
-      ));
+      final movies = List.generate(
+          5,
+          (index) => Movie(
+                id: 4000 + index,
+                title: 'Rapid Update Movie ${index + 1}',
+                adult: false,
+                backdropPath: '/rapid_backdrop_$index.jpg',
+                genreIds: ['${index + 1}'],
+                originalLanguage: 'en',
+                originalTitle: 'Rapid Update Movie ${index + 1}',
+                overview: 'Testing rapid updates $index',
+                popularity: 5.0 + index,
+                posterPath: '/rapid_poster_$index.jpg',
+                releaseDate: DateTime(2023, 11, index + 1),
+                video: false,
+                voteAverage: 5.0 + index,
+                voteCount: 10 + index,
+              ));
 
       // Device A rapidly marks multiple movies as watched
       for (int i = 0; i < movies.length; i++) {
-        await repoA.markAsWatched(
-          movieId: movies[i].id,
-          watchedAt: DateTime(2023, 12, 27, 10, i),
-          rating: 3.0 + i * 0.5,
-          review: 'Device A review for movie ${i + 1}',
-        );
+        await repoA.markAsWatched(movies[i]);
       }
 
       // Device B marks some of the same movies with different details
       for (int i = 2; i < movies.length; i++) {
-        await repoB.markAsWatched(
-          movieId: movies[i].id,
-          watchedAt: DateTime(2023, 12, 27, 11, i), // Later time
-          rating: 4.0 + i * 0.3,
-          review: 'Device B review for movie ${i + 1}',
-        );
+        await repoB.markAsWatched(movies[i]);
       }
 
       // Verify all movies are watched on both devices
       for (final movie in movies) {
         expect(await repoA.isMovieWatched(movie.id), isTrue);
-        if (movie.id >= 4002) { // Movies marked by Device B
+        if (movie.id >= 4002) {
+          // Movies marked by Device B
           expect(await repoB.isMovieWatched(movie.id), isTrue);
         }
       }
@@ -285,7 +259,7 @@ void main() {
         title: 'Data Integrity Test Movie',
         adult: false,
         backdropPath: '/integrity_backdrop.jpg',
-        genreIds: [7, 8, 9],
+        genreIds: ['7', '8', '9'],
         originalLanguage: 'en',
         originalTitle: 'Data Integrity Test Movie',
         overview: 'Testing data integrity',
@@ -298,15 +272,11 @@ void main() {
       );
 
       // Device A marks movie as watched
-      await repoA.markAsWatched(
-        movieId: testMovie.id,
-        watchedAt: DateTime(2023, 12, 28),
-        rating: 5.0,
-        review: 'Perfect movie!',
-      );
+      await repoA.markAsWatched(testMovie);
 
       // Get the watched movie from Device A
-      final originalWatched = await repoA.getWatchedMovieByMovieId(testMovie.id);
+      final originalWatched =
+          await repoA.getWatchedMovieByMovieId(testMovie.id);
       expect(originalWatched, isNotNull);
 
       // Verify all data is preserved correctly
@@ -321,30 +291,34 @@ void main() {
 
       // Serialize and deserialize to test data integrity
       final syncManager = WatchedSyncManager(userId: testUserId);
-      
+
       // Test local serialization
       final localData = syncManager.serializeForLocal(originalWatched);
       final deserializedLocal = syncManager.deserializeFromLocal(localData);
-      
+
       expect(deserializedLocal.movieId, equals(originalWatched.movieId));
       expect(deserializedLocal.movieTitle, equals(originalWatched.movieTitle));
-      expect(deserializedLocal.personalRating, equals(originalWatched.personalRating));
-      expect(deserializedLocal.personalNotes, equals(originalWatched.personalNotes));
-      
+      expect(deserializedLocal.personalRating,
+          equals(originalWatched.personalRating));
+      expect(deserializedLocal.personalNotes,
+          equals(originalWatched.personalNotes));
+
       // Test remote serialization
       final remoteData = syncManager.serializeForRemote(originalWatched);
       final deserializedRemote = syncManager.deserializeFromRemote(remoteData);
-      
+
       expect(deserializedRemote.movieId, equals(originalWatched.movieId));
       expect(deserializedRemote.movieTitle, equals(originalWatched.movieTitle));
-      expect(deserializedRemote.personalRating, equals(originalWatched.personalRating));
-      expect(deserializedRemote.personalNotes, equals(originalWatched.personalNotes));
+      expect(deserializedRemote.personalRating,
+          equals(originalWatched.personalRating));
+      expect(deserializedRemote.personalNotes,
+          equals(originalWatched.personalNotes));
     });
   });
 
   group('Provider Integration Tests', () {
     late ProviderContainer container;
-    
+
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       container = ProviderContainer(overrides: [
@@ -370,18 +344,37 @@ void main() {
 
     test('should handle movie watched status check', () async {
       const movieId = 6001;
-      
+
       // Initially not watched
-      final initialStatus = await container.read(isMovieWatchedProvider(movieId).future);
+      final initialStatus =
+          await container.read(isMovieWatchedProvider(movieId).future);
       expect(initialStatus, isFalse);
-      
+
       // Mark as watched through repository
       final repo = container.read(hybridWatchedRepositoryProvider);
-      await repo.markAsWatched(movieId: movieId);
-      
+      // Create a test movie object for the movieId
+      final testMovie = Movie(
+        id: movieId,
+        title: 'Test Movie $movieId',
+        adult: false,
+        backdropPath: '/test_backdrop.jpg',
+        genreIds: ['1'],
+        originalLanguage: 'en',
+        originalTitle: 'Test Movie $movieId',
+        overview: 'Test movie for provider integration',
+        popularity: 5.0,
+        posterPath: '/test_poster.jpg',
+        releaseDate: DateTime(2023, 1, 1),
+        video: false,
+        voteAverage: 5.0,
+        voteCount: 100,
+      );
+      await repo.markAsWatched(testMovie);
+
       // Refresh provider and check status
       container.invalidate(isMovieWatchedProvider(movieId));
-      final updatedStatus = await container.read(isMovieWatchedProvider(movieId).future);
+      final updatedStatus =
+          await container.read(isMovieWatchedProvider(movieId).future);
       expect(updatedStatus, isTrue);
     });
   });

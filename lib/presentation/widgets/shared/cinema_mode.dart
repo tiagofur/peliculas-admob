@@ -3,9 +3,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../services/pip_service.dart';
+
+// Solo importar youtube_player_flutter en plataformas no web
+import 'package:youtube_player_flutter/youtube_player_flutter.dart' if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
 
 class CinemaMode extends StatefulWidget {
   const CinemaMode({
@@ -22,7 +26,7 @@ class CinemaMode extends StatefulWidget {
 }
 
 class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
-  late YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -38,22 +42,24 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
     // Configurar modo cine
     _enterCinemaMode();
 
-    // Configurar controlador de YouTube
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.youtubeId,
-      flags: const YoutubePlayerFlags(
-        hideThumbnail: false,
-        showLiveFullscreenButton: true,
-        mute: false,
-        autoPlay: true,
-        disableDragSeek: false,
-        loop: false,
-        isLive: false,
-        forceHD: true,
-        enableCaption: true,
-        controlsVisibleAtStart: true,
-      ),
-    );
+    // Configurar controlador de YouTube solo en plataformas no web
+    if (!kIsWeb) {
+      _controller = YoutubePlayerController(
+        initialVideoId: widget.youtubeId,
+        flags: const YoutubePlayerFlags(
+          hideThumbnail: false,
+          showLiveFullscreenButton: true,
+          mute: false,
+          autoPlay: true,
+          disableDragSeek: false,
+          loop: false,
+          isLive: false,
+          forceHD: true,
+          enableCaption: true,
+          controlsVisibleAtStart: true,
+        ),
+      );
+    }
 
     // Configurar animaciones
     _fadeController = AnimationController(
@@ -143,7 +149,9 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   @override
   void dispose() {
     _exitCinemaMode();
-    _controller.dispose();
+    if (!kIsWeb && _controller != null) {
+      _controller!.dispose();
+    }
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
@@ -161,15 +169,19 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
             FadeTransition(
               opacity: _fadeAnimation,
               child: Center(
-                child: YoutubePlayer(
-                  controller: _controller,
-                  showVideoProgressIndicator: true,
-                  progressIndicatorColor: Colors.red,
-                  progressColors: const ProgressBarColors(
-                    playedColor: Colors.red,
-                    handleColor: Colors.redAccent,
-                  ),
-                ),
+                child: kIsWeb 
+                    ? _buildWebPlayer() 
+                    : _controller != null 
+                        ? YoutubePlayer(
+                            controller: _controller!,
+                            showVideoProgressIndicator: true,
+                            progressIndicatorColor: Colors.red,
+                            progressColors: const ProgressBarColors(
+                              playedColor: Colors.red,
+                              handleColor: Colors.redAccent,
+                            ),
+                          )
+                        : const SizedBox(),
               ),
             ),
 
@@ -238,6 +250,62 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
         ),
       ),
     );
+  }
+
+  Widget _buildWebPlayer() {
+    return GestureDetector(
+      onTap: _openYouTubeInNewTab,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: NetworkImage('https://img.youtube.com/vi/${widget.youtubeId}/maxresdefault.jpg'),
+            fit: BoxFit.contain,
+          ),
+        ),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.4),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.play_circle_outline,
+                  color: Colors.white,
+                  size: 120,
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Toca para ver en YouTube',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                        color: Colors.black54,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openYouTubeInNewTab() async {
+    final url = Uri.parse('https://www.youtube.com/watch?v=${widget.youtubeId}');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      LoggerFactory.error('No se pudo abrir YouTube: ${widget.youtubeId}');
+    }
   }
 }
 

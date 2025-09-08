@@ -250,7 +250,7 @@ class SimpleSyncHistoryViewer extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: entry.status.getColor(context).withOpacity(0.1),
+          backgroundColor: entry.status.getColor(context).withValues(alpha: 0.1),
           child: Icon(
             entry.status.getIcon(),
             color: entry.status.getColor(context),
@@ -280,7 +280,7 @@ class SimpleSyncHistoryViewer extends ConsumerWidget {
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: entry.status.getColor(context).withOpacity(0.1),
+            color: entry.status.getColor(context).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -632,7 +632,7 @@ class SyncHistoryEntryTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: entry.status.getColor(context).withOpacity(0.1),
+          backgroundColor: entry.status.getColor(context).withValues(alpha: 0.1),
           child: Icon(
             entry.status.getIcon(),
             color: entry.status.getColor(context),
@@ -683,7 +683,7 @@ class SyncHistoryEntryTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: entry.status.getColor(context).withOpacity(0.1),
+                color: entry.status.getColor(context).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(

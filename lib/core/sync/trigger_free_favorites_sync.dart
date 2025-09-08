@@ -23,47 +23,20 @@ class TriggerFreeFavoritesSync {
 
       final now = DateTime.now().toUtc().toIso8601String();
 
-      // Usar SQL directo para evitar triggers de ORM
-      const sql = '''
-        INSERT INTO user_favorites (
-          user_id, 
-          movie_id, 
-          movie_title, 
-          movie_poster_path, 
-          movie_backdrop_path, 
-          movie_overview, 
-          movie_release_date, 
-          movie_vote_average, 
-          is_deleted, 
-          sync_version, 
-          device_id,
-          created_at,
-          last_modified_at
-        ) VALUES (
-          '\$1', \$2, '\$3', '\$4', '\$5', '\$6', '\$7', \$8, false, 1, '\$9', '\$10', '\$11'
-        ) ON CONFLICT (user_id, movie_id) 
-        DO UPDATE SET 
-          movie_title = EXCLUDED.movie_title,
-          is_deleted = false,
-          device_id = EXCLUDED.device_id,
-          last_modified_at = EXCLUDED.last_modified_at
-      ''';
-
-      await _supabase.rpc('exec_sql', params: {
-        'sql_statement': sql,
-        'params': [
-          userId,
-          movie.id,
-          movie.title,
-          movie.posterPath ?? '',
-          movie.backdropPath ?? '',
-          movie.overview ?? '',
-          movie.releaseDate.toIso8601String(),
-          movie.voteAverage,
-          'flutter_web_${DateTime.now().millisecondsSinceEpoch}',
-          now,
-          now,
-        ]
+      // Usar upsert directo para evitar problemas con RPC
+      await _supabase.from('user_favorites').upsert({
+        'user_id': userId,
+        'movie_id': movie.id,
+        'movie_title': movie.title,
+        'movie_poster_path': movie.posterPath,
+        'movie_backdrop_path': movie.backdropPath,
+        'movie_overview': movie.overview,
+        'movie_release_date': movie.releaseDate.toIso8601String(),
+        'movie_vote_average': movie.voteAverage,
+        'added_at': now,
+        'last_modified_at': now,
+        'is_deleted': false,
+        'sync_version': 1,
       });
 
       LoggerFactory.info('✅ [TriggerFree] Favorito agregado: ${movie.title}');
@@ -107,12 +80,15 @@ class TriggerFreeFavoritesSync {
       'user_id': userId,
       'movie_id': movie.id,
       'movie_title': movie.title,
-      'movie_poster_path': movie.posterPath ?? '',
-      'is_deleted': false,
-      'device_id': 'flutter_web_${DateTime.now().millisecondsSinceEpoch}',
-      'created_at': now,
+      'movie_poster_path': movie.posterPath,
+      'movie_backdrop_path': movie.backdropPath,
+      'movie_overview': movie.overview,
+      'movie_release_date': movie.releaseDate.toIso8601String(),
+      'movie_vote_average': movie.voteAverage,
+      'added_at': now,
       'last_modified_at': now,
-      // NO incluir sync_version que puede activar triggers
+      'is_deleted': false,
+      'sync_version': 1,
     };
 
     try {
@@ -140,7 +116,7 @@ class TriggerFreeFavoritesSync {
           .select('*')
           .eq('user_id', userId)
           .eq('is_deleted', false)
-          .order('last_modified_at', ascending: false);
+          .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
       final favorites = data.cast<Map<String, dynamic>>();

@@ -64,6 +64,7 @@ class SimpleWatchedSync {
     try {
       LoggerFactory.info('➕ Añadiendo película vista: ${movie.title}');
 
+      final now = DateTime.now().toUtc().toIso8601String();
       final watchedData = {
         'user_id': userId,
         'movie_id': movie.id,
@@ -71,17 +72,38 @@ class SimpleWatchedSync {
         'movie_poster_path': movie.posterPath,
         'movie_backdrop_path': movie.backdropPath,
         'movie_overview': movie.overview,
-        'movie_release_date': movie.releaseDate.toIso8601String(),
+        'movie_release_date': movie.releaseDate?.toIso8601String(),
         'movie_vote_average': movie.voteAverage,
-        'watched_at': DateTime.now().toIso8601String(),
-        'last_modified_at': DateTime.now().toIso8601String(),
+        'watched_at': now,
         'is_deleted': false,
         'sync_version': 1,
+        'device_id': 'flutter_web_${DateTime.now().millisecondsSinceEpoch}',
+        // Set last_modified_at manually to avoid trigger updates
+        'last_modified_at': now,
+        'created_at': now,
       };
 
-      await _supabase
-          .from('user_watched_movies')
-          .upsert(watchedData, onConflict: 'user_id,movie_id');
+      // Use INSERT instead of UPSERT to avoid trigger issues
+      try {
+        await _supabase
+            .from('user_watched_movies')
+            .insert(watchedData);
+      } catch (e) {
+        // If already exists, try DELETE + INSERT
+        if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
+          await _supabase
+              .from('user_watched_movies')
+              .delete()
+              .eq('user_id', userId)
+              .eq('movie_id', movie.id);
+              
+          await _supabase
+              .from('user_watched_movies')
+              .insert(watchedData);
+        } else {
+          rethrow;
+        }
+      }
 
       LoggerFactory.info(
           '✅ Película vista añadida exitosamente: ${movie.title}');
@@ -91,17 +113,15 @@ class SimpleWatchedSync {
     }
   }
 
-  /// Remueve una película vista (soft delete)
+  /// Remueve una película vista (DELETE directo)
   Future<void> removeWatchedMovie(String userId, int movieId) async {
     try {
       LoggerFactory.info('🗑️ Removiendo película vista con movieId: $movieId');
 
+      // USE DIRECT DELETE to avoid trigger issues (same as favorites)
       await _supabase
           .from('user_watched_movies')
-          .update({
-            'is_deleted': true,
-            'last_modified_at': DateTime.now().toIso8601String(),
-          })
+          .delete()
           .eq('user_id', userId)
           .eq('movie_id', movieId);
 

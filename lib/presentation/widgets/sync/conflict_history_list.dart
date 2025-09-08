@@ -106,7 +106,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   Text(
                     '${_filteredConflicts.length} de ${_allConflicts.length} conflictos',
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                      color: colors.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
               ],
@@ -283,7 +283,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
         Icon(
           Icons.date_range,
           size: 16,
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.6 * 255),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -390,7 +390,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
             Icon(
               _hasActiveFilters() ? Icons.filter_list_off : Icons.history,
               size: 48,
-              color: colors.onSurface.withValues(alpha: 0.5 * 255),
+              color: colors.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -398,7 +398,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   ? 'No hay conflictos que coincidan'
                   : 'No hay conflictos registrados',
               style: theme.textTheme.titleMedium?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                color: colors.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -407,7 +407,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   ? 'Intenta ajustar los filtros para ver más resultados'
                   : 'Los conflictos de sincronización aparecerán aquí cuando ocurran',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.6 * 255),
+                color: colors.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -490,7 +490,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
               Text(
                 _getConflictTypeDescription(conflict.conflictType),
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                  color: colors.onSurface.withValues(alpha: 0.7),
                 ),
               ),
             ],
@@ -525,7 +525,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1 * 255),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Icon(
@@ -555,8 +555,8 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        backgroundColor: colors.tertiaryContainer.withValues(alpha: 0.3 * 255),
-        side: BorderSide(color: colors.tertiary.withValues(alpha: 0.3 * 255)),
+        backgroundColor: colors.tertiaryContainer.withValues(alpha: 0.3),
+        side: BorderSide(color: colors.tertiary.withValues(alpha: 0.3)),
       );
     } else {
       return Chip(
@@ -572,8 +572,8 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
             fontWeight: FontWeight.w500,
           ),
         ),
-        backgroundColor: colors.errorContainer.withValues(alpha: 0.3 * 255),
-        side: BorderSide(color: colors.error.withValues(alpha: 0.3 * 255)),
+        backgroundColor: colors.errorContainer.withValues(alpha: 0.3),
+        side: BorderSide(color: colors.error.withValues(alpha: 0.3)),
       );
     }
   }
@@ -601,9 +601,9 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: colors.tertiaryContainer.withValues(alpha: 0.3 * 255),
+        color: colors.tertiaryContainer.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: colors.tertiary.withValues(alpha: 0.3 * 255)),
+        border: Border.all(color: colors.tertiary.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,7 +650,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
               '$label:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -784,26 +784,40 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<ConflictType?>(
-              title: const Text('Todos'),
-              value: null,
+            RadioGroup<ConflictType?>(
               groupValue: _selectedType,
               onChanged: (value) {
                 setState(() => _selectedType = value);
                 Navigator.pop(context);
                 _applyFilters();
               },
+              child: Column(
+                children: [
+                  ListTile(
+                    title: const Text('Todos'),
+                    leading: const Radio<ConflictType?>(
+                      value: null,
+                    ),
+                    onTap: () {
+                      setState(() => _selectedType = null);
+                      Navigator.pop(context);
+                      _applyFilters();
+                    },
+                  ),
+                  ...ConflictType.values.map((type) => ListTile(
+                        title: Text(_getConflictTypeDescription(type)),
+                        leading: Radio<ConflictType?>(
+                          value: type,
+                        ),
+                        onTap: () {
+                          setState(() => _selectedType = type);
+                          Navigator.pop(context);
+                          _applyFilters();
+                        },
+                      )),
+                ],
+              ),
             ),
-            ...ConflictType.values.map((type) => RadioListTile<ConflictType?>(
-                  title: Text(_getConflictTypeDescription(type)),
-                  value: type,
-                  groupValue: _selectedType,
-                  onChanged: (value) {
-                    setState(() => _selectedType = value);
-                    Navigator.pop(context);
-                    _applyFilters();
-                  },
-                )),
           ],
         ),
       ),
@@ -818,27 +832,40 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioListTile<ConflictStrategy?>(
-              title: const Text('Todas'),
-              value: null,
+            RadioGroup<ConflictStrategy?>(
               groupValue: _selectedStrategy,
               onChanged: (value) {
                 setState(() => _selectedStrategy = value);
                 Navigator.pop(context);
                 _applyFilters();
               },
+              child: Column(
+                children: [
+                  ListTile(
+                    title: const Text('Todas'),
+                    leading: const Radio<ConflictStrategy?>(
+                      value: null,
+                    ),
+                    onTap: () {
+                      setState(() => _selectedStrategy = null);
+                      Navigator.pop(context);
+                      _applyFilters();
+                    },
+                  ),
+                  ...ConflictStrategy.values.map((strategy) => ListTile(
+                        title: Text(_getStrategyLabel(strategy)),
+                        leading: Radio<ConflictStrategy?>(
+                          value: strategy,
+                        ),
+                        onTap: () {
+                          setState(() => _selectedStrategy = strategy);
+                          Navigator.pop(context);
+                          _applyFilters();
+                        },
+                      )),
+                ],
+              ),
             ),
-            ...ConflictStrategy.values
-                .map((strategy) => RadioListTile<ConflictStrategy?>(
-                      title: Text(_getStrategyLabel(strategy)),
-                      value: strategy,
-                      groupValue: _selectedStrategy,
-                      onChanged: (value) {
-                        setState(() => _selectedStrategy = value);
-                        Navigator.pop(context);
-                        _applyFilters();
-                      },
-                    )),
           ],
         ),
       ),

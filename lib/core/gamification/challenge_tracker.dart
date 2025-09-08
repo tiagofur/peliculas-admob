@@ -283,63 +283,10 @@ class ChallengeTracker extends ChangeNotifier {
     }
   }
 
-  /// Get unique genres watched since a specific date
-  Set<String> _getUniqueGenresSince(DateTime since) {
-    // This would typically query a database or local storage
-    // For now, return current genre count as approximation
-    return _genreWatchCount.keys.toSet();
-  }
 
-  /// Get movies watched in a specific period
-  int _getMoviesWatchedInPeriod(DateTime start, DateTime end) {
-    // This would typically query a database or local storage
-    // For now, return approximation based on current data
-    int count = 0;
 
-    final startDate = DateTime(start.year, start.month, start.day);
-    final endDate = DateTime(end.year, end.month, end.day);
 
-    for (var date = startDate;
-        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
-        date = date.add(const Duration(days: 1))) {
-      final dateKey = _getDateKey(date);
-      count += _dailyWatchCount[dateKey] ?? 0;
-    }
 
-    return count;
-  }
-
-  /// Get reviews written in a specific period
-  int _getReviewsWrittenInPeriod(DateTime start, DateTime end) {
-    // This would typically query a database or local storage
-    // For now, return approximation
-    final daysDiff = end.difference(start).inDays;
-    final avgReviewsPerDay = _totalReviewsWritten /
-        DateTime.now().difference(_lastActivityDate).inDays.clamp(1, 365);
-    return (avgReviewsPerDay * daysDiff).round();
-  }
-
-  /// Get shares in a specific period
-  int _getSharesInPeriod(DateTime start, DateTime end) {
-    // This would typically query a database or local storage
-    // For now, return approximation
-    final daysDiff = end.difference(start).inDays;
-    final avgSharesPerDay = _totalMoviesShared /
-        DateTime.now().difference(_lastActivityDate).inDays.clamp(1, 365);
-    return (avgSharesPerDay * daysDiff).round();
-  }
-
-  /// Get discoveries in a specific period
-  int _getDiscoveriesInPeriod(DateTime start, DateTime end,
-      {bool newReleasesOnly = false}) {
-    // This would typically query a database or local storage
-    // For now, return approximation
-    final daysDiff = end.difference(start).inDays;
-    final avgDiscoveriesPerDay = _totalMoviesWatched /
-        DateTime.now().difference(_lastActivityDate).inDays.clamp(1, 365);
-    return (avgDiscoveriesPerDay * daysDiff * (newReleasesOnly ? 0.3 : 1.0))
-        .round();
-  }
 
   /// Update user behavior pattern for challenge generation
   void _updateUserBehaviorPattern() {

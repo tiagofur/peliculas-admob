@@ -123,7 +123,10 @@
       "Bash(flutter packages pub run:*)",
       "Bash(psql:*)",
       "Bash(npm install:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(find:*)",
+      "Bash(del test_anonymous_migration.dart)",
+      "Bash(del:*)"
     ],
     "deny": [],
     "ask": []

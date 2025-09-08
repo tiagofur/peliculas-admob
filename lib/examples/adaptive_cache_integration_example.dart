@@ -13,32 +13,26 @@ import '../core/services/logger_factory.dart';
 class AdaptiveCacheIntegrationExample {
   /// Initialize the adaptive caching system (typically in main.dart)
   static Future<void> initializeAdaptiveCache() async {
-    LoggerFactory.info('🚀 Initializing adaptive image cache system...',
-        tag: 'AdaptiveCacheExample');
+    LoggerFactory.info('AdaptiveCacheExample: 🚀 Initializing adaptive image cache system...');
 
     try {
       // Initialize the entire adaptive caching system
       await ImageCacheManager.instance.initialize();
 
-      LoggerFactory.info('✅ Adaptive cache system initialized successfully',
-          tag: 'AdaptiveCacheExample');
+      LoggerFactory.info('AdaptiveCacheExample: ✅ Adaptive cache system initialized successfully');
 
       // Log initial configuration
       final config = AdaptiveCacheConfig.instance.configuration;
       final capabilities = AdaptiveCacheConfig.instance.deviceCapabilities;
 
       LoggerFactory.info(
-          '📱 Device: ${capabilities.deviceType} (${capabilities.performanceTier})',
-          tag: 'AdaptiveCacheExample');
+          'AdaptiveCacheExample: 📱 Device: ${capabilities.deviceType} (${capabilities.performanceTier})');
       LoggerFactory.info(
-          '💾 Memory cache: ${(config.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB',
-          tag: 'AdaptiveCacheExample');
+          'AdaptiveCacheExample: 💾 Memory cache: ${(config.memoryCacheSize / 1024 / 1024).toStringAsFixed(1)}MB');
       LoggerFactory.info(
-          '💿 Disk cache: ${(config.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB',
-          tag: 'AdaptiveCacheExample');
+          'AdaptiveCacheExample: 💿 Disk cache: ${(config.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB');
     } catch (e) {
-      LoggerFactory.error('❌ Failed to initialize adaptive cache: $e',
-          tag: 'AdaptiveCacheExample');
+      LoggerFactory.error('AdaptiveCacheExample: ❌ Failed to initialize adaptive cache: $e');
       // System will fall back to default configuration
     }
   }
@@ -46,25 +40,22 @@ class AdaptiveCacheIntegrationExample {
   /// Example of monitoring performance (for admin/debug screens)
   static Future<void> showPerformanceReport() async {
     final report = ImageCacheManager.instance.generatePerformanceReport();
-    LoggerFactory.info('\n📊 ADAPTIVE CACHE PERFORMANCE REPORT\n$report',
-        tag: 'AdaptiveCacheExample');
+    LoggerFactory.info('AdaptiveCacheExample: \n📊 ADAPTIVE CACHE PERFORMANCE REPORT\n$report');
 
     // Get enhanced stats for detailed analysis
     final enhancedStats = await ImageCacheManager.instance.getEnhancedStats();
-    LoggerFactory.info('\n🔍 Enhanced Stats: $enhancedStats',
-        tag: 'AdaptiveCacheExample');
+    LoggerFactory.info('AdaptiveCacheExample: \n🔍 Enhanced Stats: $enhancedStats');
 
     // Check performance assessment
     final assessment =
         ImageCachePerformanceMetrics.instance.assessPerformance();
     LoggerFactory.info(
-        '🏥 Health: ${assessment.healthStatus} (Score: ${assessment.score.toStringAsFixed(1)})',
-        tag: 'AdaptiveCacheExample');
+        'AdaptiveCacheExample: 🏥 Health: ${assessment.healthStatus} (Score: ${assessment.score.toStringAsFixed(1)})');
 
     if (assessment.issues.isNotEmpty) {
-      LoggerFactory.warning('⚠️ Issues detected:', tag: 'AdaptiveCacheExample');
+      LoggerFactory.warning('AdaptiveCacheExample: ⚠️ Issues detected:');
       for (final issue in assessment.issues) {
-        LoggerFactory.warning('  - $issue', tag: 'AdaptiveCacheExample');
+        LoggerFactory.warning('AdaptiveCacheExample:   - $issue');
       }
     }
   }
@@ -72,13 +63,11 @@ class AdaptiveCacheIntegrationExample {
   /// Example of refreshing configuration when network changes
   static Future<void> onNetworkChanged() async {
     LoggerFactory.info(
-        '🌐 Network changed, refreshing adaptive configuration...',
-        tag: 'AdaptiveCacheExample');
+        'AdaptiveCacheExample: 🌐 Network changed, refreshing adaptive configuration...');
     await ImageCacheManager.instance.refreshAdaptiveConfiguration();
 
     final networkStatus = NetworkAwareStrategy.instance.getNetworkStatus();
-    LoggerFactory.info('📡 New network status: $networkStatus',
-        tag: 'AdaptiveCacheExample');
+    LoggerFactory.info('AdaptiveCacheExample: 📡 New network status: $networkStatus');
   }
 
   /// Example widget showing how to use cached images (no changes needed!)
@@ -115,11 +104,9 @@ class AdaptiveCacheIntegrationExample {
 
   /// Example of clearing cache when needed
   static Future<void> clearCacheExample() async {
-    LoggerFactory.info('🧹 Clearing image cache...',
-        tag: 'AdaptiveCacheExample');
+    LoggerFactory.info('AdaptiveCacheExample: 🧹 Clearing image cache...');
     await ImageCacheManager.instance.clearCache();
-    LoggerFactory.info('✅ Cache cleared successfully',
-        tag: 'AdaptiveCacheExample');
+    LoggerFactory.info('AdaptiveCacheExample: ✅ Cache cleared successfully');
   }
 }
 
@@ -151,8 +138,7 @@ class MainAppExample extends StatelessWidget {
 
           if (snapshot.hasError) {
             LoggerFactory.warning(
-                '⚠️ Cache initialization error (using fallback): ${snapshot.error}',
-                tag: 'AdaptiveCacheExample');
+                'AdaptiveCacheExample: ⚠️ Cache initialization error (using fallback): ${snapshot.error}');
           }
 
           return const HomeScreen();

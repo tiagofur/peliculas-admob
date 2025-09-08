@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
 import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
@@ -45,14 +45,11 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
     try {
       // Cargar toda la watchlist al inicio para tener el estado completo
       await loadWatchlist(limit: 1000, refresh: true);
-      if (kDebugMode) {
-        print('✅ Watchlist inicializada correctamente con ${state.movies.length} películas');
-      }
+      LoggerFactory.info(
+          '✅ Watchlist inicializada correctamente con ${state.movies.length} películas');
     } catch (e) {
       state = state.copyWith(error: 'Error inicializando watchlist: $e');
-      if (kDebugMode) {
-        print('❌ Error inicializando watchlist: $e');
-      }
+      LoggerFactory.error('❌ Error inicializando watchlist: $e');
     }
   }
 
@@ -104,13 +101,15 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
   }
 
   /// Alternar película en watchlist (agregar o remover)
-  Future<void> toggleWatchlist(Movie movie, {WatchlistPriority priority = WatchlistPriority.normal}) async {
+  Future<void> toggleWatchlist(Movie movie,
+      {WatchlistPriority priority = WatchlistPriority.normal}) async {
     final isInWatchlist = state.movies.any((m) => m.movieId == movie.id);
     final previousState = state;
 
     // Actualización optimista de la UI
     if (isInWatchlist) {
-      final updatedMovies = state.movies.where((m) => m.movieId != movie.id).toList();
+      final updatedMovies =
+          state.movies.where((m) => m.movieId != movie.id).toList();
       state = state.copyWith(
         movies: updatedMovies,
         totalCount: state.totalCount > 0 ? state.totalCount - 1 : 0,
@@ -153,9 +152,10 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
   /// Remover película de watchlist
   Future<void> removeFromWatchlist(int movieId) async {
     final previousState = state;
-    
+
     // Actualización optimista de la UI
-    final updatedMovies = state.movies.where((m) => m.movieId != movieId).toList();
+    final updatedMovies =
+        state.movies.where((m) => m.movieId != movieId).toList();
     state = state.copyWith(
       movies: updatedMovies,
       totalCount: state.totalCount > 0 ? state.totalCount - 1 : 0,

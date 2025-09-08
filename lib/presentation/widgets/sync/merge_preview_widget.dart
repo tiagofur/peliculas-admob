@@ -137,8 +137,8 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
           fontWeight: FontWeight.w500,
         ),
       ),
-      backgroundColor: chipColor.withValues(alpha: 0.1 * 255),
-      side: BorderSide(color: chipColor.withValues(alpha: 0.3 * 255)),
+      backgroundColor: chipColor.withValues(alpha: 0.1),
+      side: BorderSide(color: chipColor.withValues(alpha: 0.3)),
     );
   }
 
@@ -159,7 +159,7 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
           Text(
             'Generando vista previa...',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             ),
           ),
         ],
@@ -261,13 +261,13 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: field.hasConflict
-            ? colors.errorContainer.withValues(alpha: 0.1 * 255)
+            ? colors.errorContainer.withValues(alpha: 0.1)
             : colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: field.hasConflict
-              ? colors.error.withValues(alpha: 0.3 * 255)
-              : colors.outline.withValues(alpha: 0.2 * 255),
+              ? colors.error.withValues(alpha: 0.3)
+              : colors.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -379,11 +379,11 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: _getStrategyColor(context, currentStrategy)
-              .withValues(alpha: 0.1 * 255),
+              .withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
             color: _getStrategyColor(context, currentStrategy)
-                .withValues(alpha: 0.3 * 255),
+                .withValues(alpha: 0.3),
           ),
         ),
         child: Row(
@@ -432,10 +432,10 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colors.primaryContainer.withValues(alpha: 0.3 * 255),
+            color: colors.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border:
-                Border.all(color: colors.primary.withValues(alpha: 0.3 * 255)),
+                Border.all(color: colors.primary.withValues(alpha: 0.3)),
           ),
           child: _previewEntity != null
               ? _buildEntityPreview(context, _previewEntity!)
@@ -463,7 +463,7 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
               'Vista previa del resultado fusionado:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.8 * 255),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -482,13 +482,13 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
         Icon(
           Icons.info_outline,
           size: 16,
-          color: theme.colorScheme.onSurface.withValues(alpha: 0.5 * 255),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         const SizedBox(width: 8),
         Text(
           'Vista previa no disponible',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
             fontStyle: FontStyle.italic,
           ),
         ),
@@ -576,7 +576,7 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
               '$label:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),

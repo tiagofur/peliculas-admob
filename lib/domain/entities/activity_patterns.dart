@@ -78,7 +78,7 @@ class ActivityPatterns {
     
     if (weeklyData.isNotEmpty) {
       final weekendMovies = (weeklyData[6] ?? 0) + (weeklyData[7] ?? 0);
-      final weekdayMovies = weeklyData.values.reduce((a, b) => a + b) - weekendMovies;
+      final weekdayMovies = weeklyData.values.toList().reduce((a, b) => a + b) - weekendMovies;
       
       if (weekendMovies > weekdayMovies) {
         trends.add('Prefiere ver películas los fines de semana');

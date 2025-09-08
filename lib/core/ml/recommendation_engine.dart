@@ -646,11 +646,11 @@ class RecommendationEngine {
 
     // Analizar películas vistas
     for (final movie in watched) {
-      for (final genreId in movie.movie.genreIds ?? []) {
+      for (final genreId in movie.movie.genreIds) {
         final genreKey = 'genre_$genreId';
         genreCount[genreKey] = (genreCount[genreKey] ?? 0) + 1;
         genreRating[genreKey] =
-            (genreRating[genreKey] ?? 0.0) + (movie.movie.voteAverage ?? 5.0);
+            (genreRating[genreKey] ?? 0.0) + movie.movie.voteAverage;
       }
     }
 
@@ -675,7 +675,7 @@ class RecommendationEngine {
 
     // Analizar frecuencia de visualización
     final watchDates = watched
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList()
       ..sort();
@@ -707,7 +707,7 @@ class RecommendationEngine {
           movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     for (final movie in watched) {
-      allGenres.addAll((movie.genreIds ?? [])
+      allGenres.addAll(movie.genreIds
           .map((g) => int.tryParse(g) ?? 0)
           .where((g) => g > 0));
     }
@@ -733,7 +733,7 @@ class RecommendationEngine {
     }
 
     for (final movie in watched) {
-      totalPopularity += movie.movie.popularity ?? 0.0;
+      totalPopularity += movie.movie.popularity;
       count++;
     }
 

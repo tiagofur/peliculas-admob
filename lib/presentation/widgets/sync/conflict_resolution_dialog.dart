@@ -9,7 +9,6 @@ import '../../../domain/entities/syncable_entity.dart';
 import '../../providers/sync_integration_provider.dart' as integration;
 import 'conflict_preview_widget.dart';
 import 'merge_preview_widget.dart';
-import 'sync_settings_widget.dart' show ConflictResolutionStrategy;
 
 /// Modal principal para resolver conflictos de sincronización
 class ConflictResolutionDialog<T extends SyncableEntity>
@@ -144,7 +143,7 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.outline.withValues(alpha: 0.2 * 255)),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,7 +180,7 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
               '$label:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),
@@ -233,21 +232,31 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
             return const SizedBox.shrink();
           }
 
-          return RadioListTile<ConflictStrategy>(
+          return ListTile(
             title: Text(_getStrategyTitle(strategy)),
             subtitle: Text(
               _getStrategyDescription(strategy),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
-            value: strategy,
-            groupValue: _selectedStrategy,
-            onChanged: _isResolving
+            leading: Radio<ConflictStrategy>(
+              value: strategy,
+              groupValue: _selectedStrategy,
+              onChanged: _isResolving
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _selectedStrategy = value;
+                        _errorMessage = null;
+                      });
+                    },
+            ),
+            onTap: _isResolving
                 ? null
-                : (value) {
+                : () {
                     setState(() {
-                      _selectedStrategy = value;
+                      _selectedStrategy = strategy;
                       _errorMessage = null;
                     });
                   },
@@ -338,7 +347,7 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.outline.withValues(alpha: 0.2 * 255)),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,17 +495,17 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
   }
 
   /// Convierte ConflictStrategy a ConflictResolutionStrategy local
-  ConflictResolutionStrategy _convertToLocalStrategy(
+  strategy.ConflictResolutionStrategy _convertToLocalStrategy(
       ConflictStrategy conflictStrategy) {
     switch (conflictStrategy) {
       case ConflictStrategy.localWins:
-        return ConflictResolutionStrategy.keepLocal;
+        return strategy.ConflictResolutionStrategy.clientWins;
       case ConflictStrategy.remoteWins:
-        return ConflictResolutionStrategy.keepRemote;
+        return strategy.ConflictResolutionStrategy.serverWins;
       case ConflictStrategy.merge:
-        return ConflictResolutionStrategy.mergeAutomatic;
+        return strategy.ConflictResolutionStrategy.merge;
       case ConflictStrategy.userChoice:
-        return ConflictResolutionStrategy.askUser;
+        return strategy.ConflictResolutionStrategy.userChoice;
     }
   }
 }

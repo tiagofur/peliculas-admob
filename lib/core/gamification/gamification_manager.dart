@@ -866,32 +866,7 @@ class GamificationManager extends ChangeNotifier {
     return completed;
   }
 
-  // Helper method to save data to storage
-  Future<void> _saveToStorage(String key, Map<String, dynamic> data) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(key, jsonEncode(data));
-    } catch (e) {
-      LoggerFactory.error('Error saving data to storage for key $key: $e',
-          category: LogCategory.general);
-    }
-  }
 
-  // Helper method to load data from storage
-  Future<Map<String, dynamic>?> _loadFromStorage(String key) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final data = prefs.getString(key);
-      if (data != null) {
-        return jsonDecode(data) as Map<String, dynamic>;
-      }
-      return null;
-    } catch (e) {
-      LoggerFactory.error('Error loading data from storage for key $key: $e',
-          category: LogCategory.general);
-      return null;
-    }
-  }
 
   // Limpieza
   @override

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../domain/repositories/custom_lists_repository.dart';
 import '../../domain/repositories/favorites_repository.dart';
-import '../../domain/repositories/watched_movies_repository.dart';
 import '../../domain/repositories/watchlist_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/datasources/isar_datasource.dart';
@@ -12,7 +12,6 @@ import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
 import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
 import '../../infrastructure/repositories/hybrid_watchlist_repository.dart';
-import '../../infrastructure/repositories/watched_movies_repository_impl.dart';
 import 'auth_provider.dart';
 
 // Provider para obtener el userId del usuario actual
@@ -27,17 +26,6 @@ final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
 
   return HybridFavoritesRepository(
     userId: userId,
-  );
-});
-
-// Provider for the unified watched movies repository interface
-final watchedMoviesRepositoryProvider =
-    Provider<WatchedMoviesRepository>((ref) {
-  final watchedHiveDatasource = ref.watch(watchedMoviesHiveDatasourceProvider);
-
-  return WatchedMoviesRepositoryImpl(
-    watchedHiveDatasource,
-    ref,
   );
 });
 
@@ -63,7 +51,8 @@ final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
 });
 
 // Provider para el datasource de Hive de watchlist
-final watchlistHiveDatasourceProvider = Provider<WatchlistHiveDatasource>((ref) {
+final watchlistHiveDatasourceProvider =
+    Provider<WatchlistHiveDatasource>((ref) {
   return WatchlistHiveDatasource();
 });
 

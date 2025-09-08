@@ -1,10 +1,11 @@
-import 'package:isar/isar.dart';
+// import 'package:isar/isar.dart';
 
-part 'user_favorite.g.dart';
+// part 'user_favorite.g.dart';
 
-@collection
+// @collection
 class UserFavorite {
-  Id? id = Isar.autoIncrement;
+  // Id? id = Isar.autoIncrement;
+  int? id;
 
   late int movieId;
 

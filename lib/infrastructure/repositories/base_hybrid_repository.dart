@@ -72,6 +72,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   Future<void> initializeLocal();
 
   /// Obtiene todos los elementos desde almacenamiento local
+  @override
   Future<List<T>> getLocalData();
 
   /// Guarda un elemento en almacenamiento local
@@ -98,7 +99,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     if (!_isInitialized) await _initialize();
 
     if (_syncManager != null) {
-      LoggerFactory.info('🔄 Starting sync for $entityType via EntitySyncManager');
+      LoggerFactory.info(
+          '🔄 Starting sync for $entityType via EntitySyncManager');
 
       try {
         _emitEvent(RepositoryEventType.syncStarted, 'Sync started');
@@ -113,7 +115,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
           result: result,
         );
 
-        LoggerFactory.info('✅ Sync completed for $entityType: ${result.toString()}');
+        LoggerFactory.info(
+            '✅ Sync completed for $entityType: ${result.toString()}');
       } catch (e) {
         final error = 'Sync failed for $entityType: $e';
         LoggerFactory.error('❌ $error');
@@ -178,7 +181,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
           try {
             final resolved = await _syncManager!.resolveConflict(conflict);
             await updateLocal(resolved);
-            LoggerFactory.debug('✅ Resolved conflict for ${entityType}: ${resolved.id}');
+            LoggerFactory.debug(
+                '✅ Resolved conflict for $entityType: ${resolved.id}');
           } catch (e) {
             LoggerFactory.error('❌ Failed to resolve conflict: $e');
           }
@@ -338,7 +342,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   void _setupRealtimeSubscription() {
     if (userId == 'anonymous_user') return;
 
-    _realtimeChannel = Supabase.instance.client.channel('public:$tableName:user_id=eq.$userId');
+    _realtimeChannel = Supabase.instance.client
+        .channel('public:$tableName:user_id=eq.$userId');
     _realtimeChannel!
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -354,19 +359,23 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
 
   void _handleRealtimePayload(PostgresChangePayload payload) {
     final eventType = payload.eventType;
-    
+    LoggerFactory.info(
+        'Realtime event: $eventType, data: ${payload.oldRecord}');
+
     switch (eventType) {
       case PostgresChangeEvent.insert:
       case PostgresChangeEvent.update:
         final entity = deserializeFromRemote(payload.newRecord);
         saveToLocal(entity);
-        _emitEvent(RepositoryEventType.itemUpdated, 'Realtime item updated', entity: entity);
+        _emitEvent(RepositoryEventType.itemUpdated, 'Realtime item updated',
+            entity: entity);
         break;
       case PostgresChangeEvent.delete:
-        final id = payload.oldRecord['id'] as String?;
-        if (id != null) {
-          removeFromLocal(id);
-          _emitEvent(RepositoryEventType.itemRemoved, 'Realtime item removed', entityId: id);
+        final movieId = payload.oldRecord['movie_id']?.toString();
+        if (movieId != null) {
+          removeFromLocal(movieId);
+          _emitEvent(RepositoryEventType.itemRemoved, 'Realtime item removed',
+              entityId: movieId);
         }
         break;
       case PostgresChangeEvent.all:
@@ -377,17 +386,19 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   }
 
   /// Cola una entidad para sincronización
-  Future<void> _queueForSync(
-      T? entity, SyncOperationType operationType, {String? entityId}) async {
+  Future<void> _queueForSync(T? entity, SyncOperationType operationType,
+      {String? entityId}) async {
     if (_syncCoordinator != null) {
       Map<String, dynamic> data;
 
       if (entity != null) {
         data = entity.toSupabaseJson();
-      } else if (operationType == SyncOperationType.delete && entityId != null) {
+      } else if (operationType == SyncOperationType.delete &&
+          entityId != null) {
         data = {'id': entityId, 'is_deleted': true};
       } else {
-        LoggerFactory.warning('⚠️ Cannot queue operation - missing entity or entityId');
+        LoggerFactory.warning(
+            '⚠️ Cannot queue operation - missing entity or entityId');
         return;
       }
 

@@ -17,7 +17,7 @@
         <!-- AdMob Application ID - MUST be inside <application> but outside <activity> -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3460220325831299~7925363454"/>
+            android:value="ca-app-pub-4576016092724628~6992270713"/>
             
         <!-- Firebase Cloud Messaging default notification channel -->
         <meta-data

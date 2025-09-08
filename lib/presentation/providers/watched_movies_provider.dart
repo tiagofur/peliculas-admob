@@ -1,7 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/entities.dart';
+import '../../domain/entities/syncable_watched_movie.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
 import 'achievements/achievements_provider.dart';
 import 'hybrid_repositories_provider.dart';
@@ -70,49 +71,59 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
 
   Future<void> loadNextPage() async {
     if (state.isLoading || state.isLastPage) return;
+    if (!mounted) return;
 
     state = state.copyWith(isLoading: true);
 
     try {
       // Use hybrid repository to get watched movies with pagination
       final allWatchedMovies = await repository.getWatchedMoviesSorted();
-      
+
       // Simulate pagination by slicing the sorted list
       final startIndex = state.currentPage * _limit;
       final endIndex = startIndex + _limit;
-      
+
       if (startIndex >= allWatchedMovies.length) {
-        state = state.copyWith(
-          isLoading: false,
-          isLastPage: true,
-        );
+        if (mounted) {
+          state = state.copyWith(
+            isLoading: false,
+            isLastPage: true,
+          );
+        }
         return;
       }
-      
-      final pageMovies = allWatchedMovies.skip(startIndex).take(_limit).toList();
+
+      final pageMovies =
+          allWatchedMovies.skip(startIndex).take(_limit).toList();
 
       if (pageMovies.isEmpty) {
+        if (mounted) {
+          state = state.copyWith(
+            isLoading: false,
+            isLastPage: true,
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        state = state.copyWith(
+          isLoading: false,
+          movies: [...state.movies, ...pageMovies],
+          currentPage: state.currentPage + 1,
+          isLastPage:
+              pageMovies.length < _limit || endIndex >= allWatchedMovies.length,
+        );
+      }
+    } catch (e) {
+      LoggerFactory.error(
+          'WatchedMoviesProvider: Error loading watched movies: $e');
+      if (mounted) {
         state = state.copyWith(
           isLoading: false,
           isLastPage: true,
         );
-        return;
       }
-
-      state = state.copyWith(
-        isLoading: false,
-        movies: [...state.movies, ...pageMovies],
-        currentPage: state.currentPage + 1,
-        isLastPage: pageMovies.length < _limit || endIndex >= allWatchedMovies.length,
-      );
-    } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error loading watched movies: $e');
-      }
-      state = state.copyWith(
-        isLoading: false,
-        isLastPage: true,
-      );
     }
   }
 
@@ -120,11 +131,8 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
     try {
       // Use hybrid repository for offline-first approach
       // This will automatically queue the operation for sync when online
-      await repository.markAsWatched(
-        movieId: movie.id,
-        watchedAt: DateTime.now(),
-      );
-      
+      await repository.markAsWatched(movie);
+
       // Trigger sync with Supabase (will handle offline queue)
       await repository.syncWithSupabase();
 
@@ -133,14 +141,12 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
 
       // Recargar la lista
       await _reloadMovies();
-      
-      if (kDebugMode) {
-        print('✅ Película marcada como vista: ${movie.title}');
-      }
+
+      LoggerFactory.info(
+          'WatchedMoviesProvider: Película marcada como vista: ${movie.title}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error marcando película como vista: $e');
-      }
+      LoggerFactory.error(
+          'WatchedMoviesProvider: Error marcando película como vista: $e');
       rethrow;
     }
   }
@@ -148,26 +154,25 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   Future<void> removeFromWatched(int movieId) async {
     try {
       // Use hybrid repository for offline-first approach
-      await repository.unmarkAsWatched(movieId);
-      
+      await repository.removeFromWatched(movieId);
+
       // Trigger sync with Supabase (will handle offline queue)
       await repository.syncWithSupabase();
-      
+
       // Recargar la lista
       await _reloadMovies();
-      
-      if (kDebugMode) {
-        print('✅ Película removida de vistas: $movieId');
-      }
+
+      LoggerFactory.info(
+          'WatchedMoviesProvider: Película removida de vistas: $movieId');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error removiendo película de vistas: $e');
-      }
+      LoggerFactory.error(
+          'WatchedMoviesProvider: Error removiendo película de vistas: $e');
       rethrow;
     }
   }
 
   Future<void> _reloadMovies() async {
+    if (!mounted) return;
     state = const WatchedMoviesState();
     await loadNextPage();
   }

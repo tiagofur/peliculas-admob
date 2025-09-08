@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
 
@@ -13,7 +14,7 @@ class WatchlistStateSimple {
     this.isLoading = false,
     this.error,
   });
-  
+
   final List<WatchlistMovie> movies;
   final bool isLoading;
   final String? error;
@@ -38,15 +39,15 @@ class WatchlistNotifierSimple extends StateNotifier<WatchlistStateSimple> {
   }
 
   static const String _watchlistKey = 'watchlist_movies';
-  
+
   /// Cargar watchlist existente al inicializar el provider
   Future<void> _loadExistingWatchlist() async {
     state = state.copyWith(isLoading: true);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final watchlistJson = prefs.getStringList(_watchlistKey) ?? [];
-      
+
       final List<WatchlistMovie> watchlistMovies = [];
       for (final movieJson in watchlistJson) {
         try {
@@ -54,25 +55,23 @@ class WatchlistNotifierSimple extends StateNotifier<WatchlistStateSimple> {
           final watchlistMovie = WatchlistMovie.fromJson(movieData);
           watchlistMovies.add(watchlistMovie);
         } catch (e) {
-          if (kDebugMode) {
-            print('Error deserializando película de watchlist: $e');
-          }
+          LoggerFactory.error('Error deserializando película de watchlist: $e');
         }
       }
-      
+
       state = state.copyWith(movies: watchlistMovies, isLoading: false);
     } catch (e) {
-      if (kDebugMode) {
-        print('Error cargando watchlist existente: $e');
-      }
-      state = state.copyWith(isLoading: false, error: 'Error cargando watchlist: $e');
+      LoggerFactory.error('Error cargando watchlist existente: $e');
+      state = state.copyWith(
+          isLoading: false, error: 'Error cargando watchlist: $e');
     }
   }
 
   /// Alternar película en watchlist
-  Future<void> toggleWatchlist(Movie movie, {WatchlistPriority priority = WatchlistPriority.normal}) async {
+  Future<void> toggleWatchlist(Movie movie,
+      {WatchlistPriority priority = WatchlistPriority.normal}) async {
     final isInWatchlist = state.movies.any((m) => m.movieId == movie.id);
-    
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final watchlistJson = prefs.getStringList(_watchlistKey) ?? [];
@@ -83,8 +82,9 @@ class WatchlistNotifierSimple extends StateNotifier<WatchlistStateSimple> {
           final movieData = jsonDecode(movieJson);
           return movieData['movieId'] == movie.id;
         });
-        
-        final updatedMovies = state.movies.where((m) => m.movieId != movie.id).toList();
+
+        final updatedMovies =
+            state.movies.where((m) => m.movieId != movie.id).toList();
         state = state.copyWith(movies: updatedMovies);
       } else {
         // Agregar a watchlist
@@ -101,20 +101,17 @@ class WatchlistNotifierSimple extends StateNotifier<WatchlistStateSimple> {
           priority: priority,
           lastModifiedAt: DateTime.now(),
         );
-        
+
         watchlistJson.add(jsonEncode(newWatchlistMovie.toJson()));
-        
+
         final updatedMovies = [...state.movies, newWatchlistMovie];
         state = state.copyWith(movies: updatedMovies);
       }
 
       // Guardar en SharedPreferences
       await prefs.setStringList(_watchlistKey, watchlistJson);
-
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ [WatchlistProvider] Error toggling watchlist: $e');
-      }
+      LoggerFactory.error('❌ [WatchlistProvider] Error toggling watchlist: $e');
       // Recargar desde SharedPreferences para asegurar consistencia
       await _loadExistingWatchlist();
     }
@@ -145,12 +142,13 @@ final isMovieInWatchlistProviderSimple =
 });
 
 /// Provider para obtener una película específica de watchlist
-final watchlistMovieProviderSimple = Provider.family
-    .autoDispose<WatchlistMovie?, int>((ref, movieId) {
+final watchlistMovieProviderSimple =
+    Provider.family.autoDispose<WatchlistMovie?, int>((ref, movieId) {
   final watchlistState = ref.watch(watchlistProviderSimple);
-  
+
   try {
-    return watchlistState.movies.firstWhere((movie) => movie.movieId == movieId);
+    return watchlistState.movies
+        .firstWhere((movie) => movie.movieId == movieId);
   } catch (e) {
     return null;
   }

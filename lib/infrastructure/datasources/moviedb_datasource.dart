@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../config/constants/environment.dart';
+import '../../core/logging/logger_factory.dart';
 import '../../domain/datasources/movies_datasource.dart';
 import '../../domain/entities/entities.dart';
 import '../mappers/mappers.dart';
@@ -32,118 +33,84 @@ class MoviedbDatasource extends MoviesDatasource {
 
   @override
   Future<List<Movie>> getNowPlaying({int page = 1}) async {
-    if (kDebugMode) {
-      print('🌐 API Call: getNowPlaying - página $page');
-      print('🔑 API Key: ${Environment.theMovieDbKey}');
-    }
+    LoggerFactory.info('🌐 API Call: getNowPlaying - página $page');
+    LoggerFactory.info('🔑 API Key: ${Environment.theMovieDbKey}');
     try {
       final response =
           await dio.get('/movie/now_playing', queryParameters: {'page': page});
-      if (kDebugMode) {
-        print('✅ API Response: getNowPlaying - Status: ${response.statusCode}');
-      }
+      LoggerFactory.info(
+          '✅ API Response: getNowPlaying - Status: ${response.statusCode}');
       final movies = _jsonToMovies(response.data);
-      if (kDebugMode) {
-        print('🎬 Películas obtenidas: ${movies.length}');
-      }
+      LoggerFactory.info('🎬 Películas obtenidas: ${movies.length}');
       return movies;
     } on DioException catch (e) {
-      if (kDebugMode) {
-        print('❌ DioException en getNowPlaying: ${e.message}');
-        print('❌ Response: ${e.response?.data}');
-      }
+      LoggerFactory.error('❌ DioException en getNowPlaying: ${e.message}');
+      LoggerFactory.error('❌ Response: ${e.response?.data}');
       throw Exception('Error al obtener películas en cartelera: ${e.message}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Exception en getNowPlaying: $e');
-      }
+      LoggerFactory.error('❌ Exception en getNowPlaying: $e');
       throw Exception('Error inesperado al obtener películas en cartelera: $e');
     }
   }
 
   @override
   Future<List<Movie>> getPopular({int page = 1}) async {
-    if (kDebugMode) {
-      print('🌐 API Call: getPopular - página $page');
-    }
+    LoggerFactory.info('🌐 API Call: getPopular - página $page');
     try {
       final response =
           await dio.get('/movie/popular', queryParameters: {'page': page});
-      if (kDebugMode) {
-        print('✅ API Response: getPopular - Status: ${response.statusCode}');
-      }
+      LoggerFactory.info(
+          '✅ API Response: getPopular - Status: ${response.statusCode}');
       final movies = _jsonToMovies(response.data);
-      if (kDebugMode) {
-        print('🎬 Películas populares obtenidas: ${movies.length}');
-      }
+      LoggerFactory.info('🎬 Películas populares obtenidas: ${movies.length}');
       return movies;
     } on DioException catch (e) {
-      if (kDebugMode) {
-        print('❌ DioException en getPopular: ${e.message}');
-      }
+      LoggerFactory.error('❌ DioException en getPopular: ${e.message}');
       throw Exception('Error al obtener películas populares: ${e.message}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Exception en getPopular: $e');
-      }
+      LoggerFactory.error('❌ Exception en getPopular: $e');
       throw Exception('Error inesperado al obtener películas populares: $e');
     }
   }
 
   @override
   Future<List<Movie>> getTopRated({int page = 1}) async {
-    if (kDebugMode) {
-      print('🌐 API Call: getTopRated - página $page');
-    }
+    LoggerFactory.info('🌐 API Call: getTopRated - página $page');
     try {
       final response =
           await dio.get('/movie/top_rated', queryParameters: {'page': page});
-      if (kDebugMode) {
-        print('✅ API Response: getTopRated - Status: ${response.statusCode}');
-      }
+      LoggerFactory.info(
+          '✅ API Response: getTopRated - Status: ${response.statusCode}');
       final movies = _jsonToMovies(response.data);
-      if (kDebugMode) {
-        print('🎬 Películas top rated obtenidas: ${movies.length}');
-      }
+      LoggerFactory.info('🎬 Películas top rated obtenidas: ${movies.length}');
       return movies;
     } on DioException catch (e) {
-      if (kDebugMode) {
-        print('❌ DioException en getTopRated: ${e.message}');
-      }
-      throw Exception('Error al obtener películas mejor valoradas: ${e.message}');
+      LoggerFactory.error('❌ DioException en getTopRated: ${e.message}');
+      throw Exception(
+          'Error al obtener películas mejor valoradas: ${e.message}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Exception en getTopRated: $e');
-      }
-      throw Exception('Error inesperado al obtener películas mejor valoradas: $e');
+      LoggerFactory.error('❌ Exception en getTopRated: $e');
+      throw Exception(
+          'Error inesperado al obtener películas mejor valoradas: $e');
     }
   }
 
   @override
   Future<List<Movie>> getUpcoming({int page = 1}) async {
-    if (kDebugMode) {
-      print('🌐 API Call: getUpcoming - página $page');
-    }
+    LoggerFactory.info('🌐 API Call: getUpcoming - página $page');
     try {
       final response =
           await dio.get('/movie/upcoming', queryParameters: {'page': page});
-      if (kDebugMode) {
-        print('✅ API Response: getUpcoming - Status: ${response.statusCode}');
-      }
+      LoggerFactory.info(
+          '✅ API Response: getUpcoming - Status: ${response.statusCode}');
       final movies = _jsonToMovies(response.data);
-      if (kDebugMode) {
-        print('🎬 Películas upcoming obtenidas: ${movies.length}');
-      }
+      LoggerFactory.info('🎬 Películas upcoming obtenidas: ${movies.length}');
       return movies;
     } on DioException catch (e) {
-      if (kDebugMode) {
-        print('❌ DioException en getUpcoming: ${e.message}');
-      }
+      LoggerFactory.error('❌ DioException en getUpcoming: ${e.message}');
       throw Exception('Error al obtener próximas películas: ${e.message}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Exception en getUpcoming: $e');
-      }
+      LoggerFactory.error('❌ Exception en getUpcoming: $e');
       throw Exception('Error inesperado al obtener próximas películas: $e');
     }
   }
@@ -153,7 +120,8 @@ class MoviedbDatasource extends MoviesDatasource {
     try {
       // Usar append_to_response para obtener datos adicionales en una sola llamada
       final response = await dio.get('/movie/$id', queryParameters: {
-        'append_to_response': 'credits,videos,images,reviews,similar,keywords,watch/providers'
+        'append_to_response':
+            'credits,videos,images,reviews,similar,keywords,watch/providers'
       });
       if (response.statusCode != 200) {
         throw Exception('Película con id: $id no encontrada');
@@ -167,14 +135,15 @@ class MoviedbDatasource extends MoviesDatasource {
       }
       throw Exception('Error al obtener detalles de la película: ${e.message}');
     } catch (e) {
-      throw Exception('Error inesperado al obtener detalles de la película: $e');
+      throw Exception(
+          'Error inesperado al obtener detalles de la película: $e');
     }
   }
 
   @override
   Future<List<Movie>> searchMovies(String query) async {
     if (query.isEmpty) return [];
-    
+
     try {
       final response =
           await dio.get('/search/movie', queryParameters: {'query': query});
@@ -202,7 +171,8 @@ class MoviedbDatasource extends MoviesDatasource {
   Future<List<Video>> getYoutubeVideosById(int movieId) async {
     try {
       final response = await dio.get('/movie/$movieId/videos');
-      final moviedbVideosReponse = MoviedbVideosResponse.fromJson(response.data);
+      final moviedbVideosReponse =
+          MoviedbVideosResponse.fromJson(response.data);
       final videos = <Video>[];
 
       for (final moviedbVideo in moviedbVideosReponse.results) {

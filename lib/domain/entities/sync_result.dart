@@ -10,27 +10,6 @@ class SyncResult {
     this.message,
   });
 
-  /// Indica si la operación fue exitosa
-  final bool success;
-
-  /// Número total de items procesados
-  final int itemsProcessed;
-
-  /// Número de items procesados exitosamente
-  final int itemsSuccessful;
-
-  /// Número de items que fallaron
-  final int itemsFailed;
-
-  /// Lista de errores ocurridos durante la sincronización
-  final List<String> errors;
-
-  /// Duración de la operación
-  final Duration? duration;
-
-  /// Mensaje descriptivo del resultado
-  final String? message;
-
   /// Constructor para resultado exitoso
   factory SyncResult.success({
     required int itemsProcessed,
@@ -66,6 +45,27 @@ class SyncResult {
       message: message,
     );
   }
+
+  /// Indica si la operación fue exitosa
+  final bool success;
+
+  /// Número total de items procesados
+  final int itemsProcessed;
+
+  /// Número de items procesados exitosamente
+  final int itemsSuccessful;
+
+  /// Número de items que fallaron
+  final int itemsFailed;
+
+  /// Lista de errores ocurridos durante la sincronización
+  final List<String> errors;
+
+  /// Duración de la operación
+  final Duration? duration;
+
+  /// Mensaje descriptivo del resultado
+  final String? message;
 
   /// Tasa de éxito (0.0 - 1.0)
   double get successRate =>

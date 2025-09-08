@@ -58,6 +58,63 @@ class SyncOperation {
     this.deviceId,
   });
 
+  /// Factory constructor para crear una nueva operación
+  factory SyncOperation.create({
+    required String entityType,
+    required String entityId,
+    required SyncOperationType type,
+    required Map<String, dynamic> data,
+    required String userId,
+    DateTime? scheduledAt,
+    int priority = 5,
+    int maxRetries = 3,
+    String? deviceId,
+  }) {
+    final now = SyncUtilities.utcNow();
+    return SyncOperation(
+      id: SyncUtilities.generateUuid(),
+      entityType: entityType,
+      entityId: entityId,
+      type: type,
+      data: SyncUtilities.sanitizeJsonData(data),
+      userId: userId,
+      createdAt: now,
+      scheduledAt: scheduledAt ?? now,
+      priority: priority,
+      maxRetries: maxRetries,
+      deviceId: deviceId,
+    );
+  }
+
+  /// Factory constructor desde JSON
+  factory SyncOperation.fromJson(Map<String, dynamic> json) {
+    return SyncOperation(
+      id: json['id'] as String,
+      entityType: json['entity_type'] as String,
+      entityId: json['entity_id'] as String,
+      type: SyncOperationType.fromString(json['type'] as String),
+      data: Map<String, dynamic>.from(json['data'] as Map),
+      userId: json['user_id'] as String,
+      createdAt: SyncUtilities.dateTimeFromIso(json['created_at'] as String) ??
+          DateTime.now(),
+      scheduledAt:
+          SyncUtilities.dateTimeFromIso(json['scheduled_at'] as String) ??
+              DateTime.now(),
+      lastAttemptAt:
+          SyncUtilities.dateTimeFromIso(json['last_attempt_at'] as String?),
+      status: SyncOperationStatus.fromString(
+          json['status'] as String? ?? 'PENDING'),
+      retryCount: json['retry_count'] as int? ?? 0,
+      maxRetries: json['max_retries'] as int? ?? 3,
+      priority: json['priority'] as int? ?? 5,
+      errorMessage: json['error_message'] as String?,
+      conflictData: json['conflict_data'] != null
+          ? Map<String, dynamic>.from(json['conflict_data'] as Map)
+          : null,
+      deviceId: json['device_id'] as String?,
+    );
+  }
+
   /// ID único de la operación
   final String id;
 
@@ -106,60 +163,6 @@ class SyncOperation {
   /// ID del dispositivo que creó la operación
   final String? deviceId;
 
-  /// Factory constructor para crear una nueva operación
-  factory SyncOperation.create({
-    required String entityType,
-    required String entityId,
-    required SyncOperationType type,
-    required Map<String, dynamic> data,
-    required String userId,
-    DateTime? scheduledAt,
-    int priority = 5,
-    int maxRetries = 3,
-    String? deviceId,
-  }) {
-    final now = SyncUtilities.utcNow();
-    return SyncOperation(
-      id: SyncUtilities.generateUuid(),
-      entityType: entityType,
-      entityId: entityId,
-      type: type,
-      data: SyncUtilities.sanitizeJsonData(data),
-      userId: userId,
-      createdAt: now,
-      scheduledAt: scheduledAt ?? now,
-      priority: priority,
-      maxRetries: maxRetries,
-      deviceId: deviceId,
-    );
-  }
-
-  /// Factory constructor desde JSON
-  factory SyncOperation.fromJson(Map<String, dynamic> json) {
-    return SyncOperation(
-      id: json['id'] as String,
-      entityType: json['entity_type'] as String,
-      entityId: json['entity_id'] as String,
-      type: SyncOperationType.fromString(json['type'] as String),
-      data: Map<String, dynamic>.from(json['data'] as Map),
-      userId: json['user_id'] as String,
-      createdAt: SyncUtilities.dateTimeFromIso(json['created_at'] as String) ?? 
-          DateTime.now(),
-      scheduledAt: SyncUtilities.dateTimeFromIso(json['scheduled_at'] as String) ?? 
-          DateTime.now(),
-      lastAttemptAt: SyncUtilities.dateTimeFromIso(json['last_attempt_at'] as String?),
-      status: SyncOperationStatus.fromString(json['status'] as String? ?? 'PENDING'),
-      retryCount: json['retry_count'] as int? ?? 0,
-      maxRetries: json['max_retries'] as int? ?? 3,
-      priority: json['priority'] as int? ?? 5,
-      errorMessage: json['error_message'] as String?,
-      conflictData: json['conflict_data'] != null 
-          ? Map<String, dynamic>.from(json['conflict_data'] as Map)
-          : null,
-      deviceId: json['device_id'] as String?,
-    );
-  }
-
   /// Convierte a JSON para almacenamiento
   Map<String, dynamic> toJson() {
     return {
@@ -171,7 +174,7 @@ class SyncOperation {
       'user_id': userId,
       'created_at': SyncUtilities.dateTimeToIso(createdAt),
       'scheduled_at': SyncUtilities.dateTimeToIso(scheduledAt),
-      'last_attempt_at': lastAttemptAt != null 
+      'last_attempt_at': lastAttemptAt != null
           ? SyncUtilities.dateTimeToIso(lastAttemptAt!)
           : null,
       'status': status.value,
@@ -186,9 +189,9 @@ class SyncOperation {
 
   /// Indica si la operación puede ser reintentada
   bool get canRetry {
-    return retryCount < maxRetries && 
-           status == SyncOperationStatus.failed &&
-           SyncUtilities.isRetryableError(errorMessage);
+    return retryCount < maxRetries &&
+        status == SyncOperationStatus.failed &&
+        SyncUtilities.isRetryableError(errorMessage);
   }
 
   /// Indica si la operación está pendiente
@@ -211,8 +214,7 @@ class SyncOperation {
 
   /// Indica si la operación está lista para ejecutar
   bool get isReadyToExecute {
-    return (isPending || (isFailed && canRetry)) && 
-           !isScheduled;
+    return (isPending || (isFailed && canRetry)) && !isScheduled;
   }
 
   /// Calcula el delay para el próximo intento usando exponential backoff

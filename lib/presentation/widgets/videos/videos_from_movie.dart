@@ -1,12 +1,16 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/video.dart';
 import '../../providers/movies/movies_repository_provider.dart';
 import '../../services/pip_service.dart';
 import '../shared/cinema_mode.dart';
+
+// Solo importar youtube_player_flutter en plataformas no web
+import 'package:youtube_player_flutter/youtube_player_flutter.dart' if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
 
 final FutureProviderFamily<List<Video>, int> videosFromMovieProvider =
     FutureProvider.family((ref, int movieId) {
@@ -144,11 +148,16 @@ class _VideosList extends StatelessWidget {
         const SizedBox(height: 10),
 
         //* Aunque tengo varios videos, sólo quiero mostrar el primero
-        _YouTubeVideoPlayer(
-          youtubeId: videos.first.youtubeKey,
-          name: videos.first.name,
-          videos: videos,
-        )
+        kIsWeb 
+            ? _WebYouTubePlayer(
+                youtubeId: videos.first.youtubeKey,
+                name: videos.first.name,
+              )
+            : _YouTubeVideoPlayer(
+                youtubeId: videos.first.youtubeKey,
+                name: videos.first.name,
+                videos: videos,
+              )
 
         //* Si se desean mostrar todos los videos
         // ...videos.map(
@@ -175,31 +184,36 @@ class _YouTubeVideoPlayer extends StatefulWidget {
 }
 
 class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
-  late YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.youtubeId,
-      flags: const YoutubePlayerFlags(
-        hideThumbnail: true,
-        showLiveFullscreenButton: false,
-        mute: false,
-        autoPlay: false,
-        disableDragSeek: true,
-        loop: false,
-        isLive: false,
-        forceHD: false,
-        enableCaption: false,
-      ),
-    );
+    // Solo inicializar el controller en plataformas no web
+    if (!kIsWeb) {
+      _controller = YoutubePlayerController(
+        initialVideoId: widget.youtubeId,
+        flags: const YoutubePlayerFlags(
+          hideThumbnail: true,
+          showLiveFullscreenButton: false,
+          mute: false,
+          autoPlay: false,
+          disableDragSeek: true,
+          loop: false,
+          isLive: false,
+          forceHD: false,
+          enableCaption: false,
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (!kIsWeb && _controller != null) {
+      _controller!.dispose();
+    }
     super.dispose();
   }
 
@@ -271,8 +285,145 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
               ],
             ),
             const SizedBox(height: 8),
-            YoutubePlayer(controller: _controller),
+            if (!kIsWeb && _controller != null) YoutubePlayer(controller: _controller!),
+            if (kIsWeb) _buildWebFallback(),
           ],
         ));
+  }
+
+  Widget _buildWebFallback() {
+    return Container(
+      height: 200,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.play_circle_outline,
+              color: Colors.white,
+              size: 48,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Ver en YouTube',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => _openYouTubeVideo(),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Abrir YouTube'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openYouTubeVideo() async {
+    final url = Uri.parse('https://www.youtube.com/watch?v=${widget.youtubeId}');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      LoggerFactory.error('No se pudo abrir YouTube: ${widget.youtubeId}');
+    }
+  }
+}
+
+// Widget específico para web
+class _WebYouTubePlayer extends StatelessWidget {
+  const _WebYouTubePlayer({
+    required this.youtubeId,
+    required this.name,
+  });
+
+  final String youtubeId;
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _openYouTubeVideo,
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('YouTube'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Thumbnail con overlay de play
+          GestureDetector(
+            onTap: _openYouTubeVideo,
+            child: Container(
+              height: 200,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: NetworkImage('https://img.youtube.com/vi/$youtubeId/maxresdefault.jpg'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.black.withValues(alpha: 0.3),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.play_circle_outline,
+                    color: Colors.white,
+                    size: 64,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openYouTubeVideo() async {
+    final url = Uri.parse('https://www.youtube.com/watch?v=$youtubeId');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      LoggerFactory.error('No se pudo abrir YouTube: $youtubeId');
+    }
   }
 }

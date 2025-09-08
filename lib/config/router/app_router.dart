@@ -184,16 +184,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             ],
           ),
 
-          // Rama para la pantalla de "Streaming"
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/streaming',
-                name: 'streaming-dashboard',
-                builder: (context, state) => const StreamingDashboardScreen(),
-              ),
-            ],
-          ),
+
+
         ],
       ),
       GoRoute(

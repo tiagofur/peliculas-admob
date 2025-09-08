@@ -1,10 +1,11 @@
-import 'package:isar/isar.dart';
+// import 'package:isar/isar.dart';
 
-part 'pending_action.g.dart';
+// part 'pending_action.g.dart';
 
-@collection
+// @collection
 class PendingAction {
-  Id? id = Isar.autoIncrement;
+  // Id? id = Isar.autoIncrement;
+  int? id;
 
   late String actionType;
 

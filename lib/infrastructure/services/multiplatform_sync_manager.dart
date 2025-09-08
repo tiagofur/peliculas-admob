@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../core/logging/safe_developer_log.dart';
 import '../../presentation/providers/user_movie_ratings_provider.dart';
-import '../../presentation/providers/watchlist_provider.dart';
 import 'app_lifecycle_manager.dart';
 import 'connectivity_detector.dart';
 import 'error_context_tracker.dart';
@@ -397,11 +396,9 @@ class MultiplataformSyncManager {
     try {
       switch (tableName) {
         case 'user_watchlist':
-          LoggerFactory.info('🔄 Invalidating watchlist providers');
-          container.invalidate(watchlistProvider);
-          container.invalidate(watchlistCountProvider);
-          container.invalidate(isMovieInWatchlistProvider);
-          container.invalidate(watchlistMovieProvider);
+          LoggerFactory.info('🔄 Watchlist providers updated via real-time sync');
+          // El sistema directo se actualiza automáticamente vía real-time listeners
+          // No necesitamos invalidar providers manualmente
           break;
 
         case 'user_movie_ratings':

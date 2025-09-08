@@ -1,4 +1,3 @@
-
 import 'package:hive/hive.dart';
 
 import '../../core/logging/logger_factory.dart';
@@ -18,7 +17,7 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
     final box = await _getBox();
     // ✅ Validación de tipos para evitar corrupción
     return box.values
-        .where((item) => item is Movie)
+        .whereType<Movie>()
         .cast<Movie>()
         .any((movie) => movie.id == movieId);
   }
@@ -26,47 +25,52 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
   @override
   Future<List<Movie>> loadMovies({int limit = 10, offset = 0}) async {
     final box = await _getBox();
-    
+
     // 🐛 DEBUG: Log raw data from box
-    LoggerFactory.info('🔍 FavoriteMoviesHiveDatasource box contains ${box.length} raw items');
-    
+    LoggerFactory.info(
+        '🔍 FavoriteMoviesHiveDatasource box contains ${box.length} raw items');
+
     // ✅ Validación de tipos para evitar corrupción
     final allMovies = box.values
-        .where((item) => item is Movie && item.id != null && item.title.isNotEmpty)
+        .where((item) => item.title.isNotEmpty)
         .cast<Movie>()
         .toList();
-    
+
     // 🐛 DEBUG: Log processed movies
-    LoggerFactory.info('🔍 After validation: ${allMovies.length} valid movies: ${allMovies.map((m) => '${m.id}:${m.title}').toList()}');
-    
+    LoggerFactory.info(
+        '🔍 After validation: ${allMovies.length} valid movies: ${allMovies.map((m) => '${m.id}:${m.title}').toList()}');
+
     final endIndex = (offset + limit).clamp(0, allMovies.length);
     if (offset >= allMovies.length) return [];
-    
+
     final result = allMovies.sublist(offset, endIndex);
-    LoggerFactory.info('🔍 Returning ${result.length} movies (offset: $offset, limit: $limit)');
+    LoggerFactory.info(
+        '🔍 Returning ${result.length} movies (offset: $offset, limit: $limit)');
     return result;
   }
 
   @override
   Future<void> toggleFavorite(Movie movie) async {
     final box = await _getBox();
-    
+
     // 🐛 DEBUG: Log before operation
-    LoggerFactory.info('🔍 toggleFavorite for movie: ${movie.id}:${movie.title}');
+    LoggerFactory.info(
+        '🔍 toggleFavorite for movie: ${movie.id}:${movie.title}');
     LoggerFactory.info('🔍 Box before operation: ${box.length} items');
-    
+
     final existingMovieIndex =
         box.values.toList().indexWhere((m) => m.id == movie.id);
 
     if (existingMovieIndex != -1) {
       await box.deleteAt(existingMovieIndex);
-      LoggerFactory.info('✅ Removed movie ${movie.id} from favorites (was at index $existingMovieIndex)');
+      LoggerFactory.info(
+          '✅ Removed movie ${movie.id} from favorites (was at index $existingMovieIndex)');
     } else {
       await box.add(movie);
       LoggerFactory.info('✅ Added movie ${movie.id} to favorites');
     }
-    
-    // 🐛 DEBUG: Log after operation  
+
+    // 🐛 DEBUG: Log after operation
     LoggerFactory.info('🔍 Box after operation: ${box.length} items');
   }
 
@@ -114,12 +118,14 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
 
   @override
   Future<bool> cacheMovie(Movie movie) async {
-    throw UnimplementedError('FavoriteMoviesHiveDatasource should not cache individual movies - only favorites');
+    throw UnimplementedError(
+        'FavoriteMoviesHiveDatasource should not cache individual movies - only favorites');
   }
 
   @override
   Future<void> cacheMovies(List<Movie> movies, String category) async {
-    throw UnimplementedError('FavoriteMoviesHiveDatasource should not cache all movies - only favorites');
+    throw UnimplementedError(
+        'FavoriteMoviesHiveDatasource should not cache all movies - only favorites');
   }
 
   @override
@@ -144,7 +150,7 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
   Future<Movie?> getCachedMovie(int movieId) async {
     final box = await _getBox();
     try {
-      return box.values.firstWhere((movie) => movie.id == movieId);
+      return box.values.toList().firstWhere((movie) => movie.id == movieId);
     } catch (e) {
       return null;
     }
@@ -155,7 +161,7 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
     final box = await _getBox();
     return box.values.toList();
   }
-  
+
   Future<void> removeFavoriteById(int movieId) async {
     final box = await _getBox();
     final existingMovieIndex =
@@ -169,7 +175,7 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
 
   Future<void> saveFavorite(Movie movie) async {
     final box = await _getBox();
-    final isAlreadyFavorite = box.values.any((m) => m.id == movie.id);
+    final isAlreadyFavorite = box.values.toList().any((m) => m.id == movie.id);
 
     if (!isAlreadyFavorite) {
       await box.add(movie);

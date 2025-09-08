@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../generated/app_localizations.dart';
-import '../../providers/watched_movies_provider.dart';
-import '../../widgets/movies/movie_masonry_with_ads.dart';
+import '../../providers/storage/direct_watched_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/sync/sync_refresh_wrapper.dart';
-import '../../widgets/sync/sync_status_indicator.dart';
+
 
 class WatchedView extends ConsumerStatefulWidget {
   const WatchedView({super.key});
@@ -19,17 +19,15 @@ class WatchedView extends ConsumerStatefulWidget {
 class WatchedViewState extends ConsumerState<WatchedView>
     with AutomaticKeepAliveClientMixin {
   void loadNextPage() {
-    ref.read(watchedMoviesProvider.notifier).loadNextPage();
+    ref.read(directWatchedMoviesProvider.notifier).loadNextPage();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    final watchedMoviesState = ref.watch(watchedMoviesProvider);
-    final watchedMovies = watchedMoviesState.movies
-        .map((watchedMovie) => watchedMovie.movie)
-        .toList();
+    final watchedMoviesMap = ref.watch(directWatchedMoviesProvider);
+    final watchedMovies = watchedMoviesMap.values.toList();
     final l10n = AppLocalizations.of(context)!;
 
     if (watchedMovies.isEmpty) {
@@ -42,16 +40,18 @@ class WatchedViewState extends ConsumerState<WatchedView>
             child: Column(
               children: [
                 // Indicador de sync en la parte superior
-                const SyncStatusCard(),
+                // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
                 Expanded(
                   child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Icon(Icons.visibility_outlined, size: 60, color: colors.primary),
+                        Icon(Icons.visibility_outlined,
+                            size: 60, color: colors.primary),
                         Text(l10n.notWatchedYet,
-                            style: TextStyle(fontSize: 30, color: colors.primary)),
+                            style:
+                                TextStyle(fontSize: 30, color: colors.primary)),
                         Text(l10n.noWatchedMessage,
                             style: const TextStyle(fontSize: 20)),
                         const SizedBox(height: 20),
@@ -82,19 +82,17 @@ class WatchedViewState extends ConsumerState<WatchedView>
       body: SyncRefreshWrapper(
         onRefresh: () async {
           // Refrescar datos específicos de películas vistas
-          ref.read(watchedMoviesProvider.notifier).loadNextPage();
+          ref.read(directWatchedMoviesProvider.notifier).refresh();
         },
         child: Column(
           children: [
             // Indicador de sync compacto
-            const SyncStatusCard(),
+            // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: WatchedMasonryWithAds(
-                  loadNextPage: loadNextPage, 
-                  movies: watchedMovies
-                ),
+                    loadNextPage: loadNextPage, movies: watchedMovies),
               ),
             ),
           ],

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
-import '../providers/watchlist_provider.dart';
-import '../widgets/shared/loading_indicator.dart';
+import '../providers/storage/direct_watchlist_provider.dart';
 import '../widgets/watchlist/priority_filter_chip.dart';
 import '../widgets/watchlist/watchlist_movie_card.dart';
 
@@ -21,28 +21,32 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
   WatchlistPriority? _selectedPriority;
 
   @override
-  void initState() {
-    super.initState();
-    // Cargar watchlist al inicializar
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(watchlistProvider.notifier).loadWatchlist(refresh: true);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final watchlistState = ref.watch(watchlistProvider);
-    final watchlistNotifier = ref.read(watchlistProvider.notifier);
+    // Usar el sistema directo que mantiene datos en tiempo real
+    final watchlistMovies = ref.watch(directWatchlistMoviesProvider);
+    
+    // Filtrar por prioridad si está seleccionada
+    List<WatchlistMovie> filteredMovies = watchlistMovies.values.toList();
+    if (_selectedPriority != null) {
+      filteredMovies = filteredMovies
+          .where((movie) => movie.priority == _selectedPriority)
+          .toList();
+    }
+    
+    // Ordenar por fecha de agregado (más recientes primero)
+    filteredMovies.sort((a, b) => b.addedAt.compareTo(a.addedAt));
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi Watchlist'),
+        title: Text('Mi Watchlist (${filteredMovies.length})'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              watchlistNotifier.refresh();
+              // Forzar recarga de datos
+              ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
             },
+            tooltip: 'Actualizar',
           ),
         ],
       ),
@@ -53,7 +57,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
 
           // Lista de películas
           Expanded(
-            child: _buildWatchlistContent(watchlistState, watchlistNotifier),
+            child: _buildWatchlistContent(filteredMovies),
           ),
         ],
       ),
@@ -74,7 +78,6 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = null;
                 });
-                ref.read(watchlistProvider.notifier).filterByPriority(null);
               },
             ),
             const SizedBox(width: 8),
@@ -86,9 +89,6 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = WatchlistPriority.alta;
                 });
-                ref
-                    .read(watchlistProvider.notifier)
-                    .filterByPriority(WatchlistPriority.alta);
               },
             ),
             const SizedBox(width: 8),
@@ -100,9 +100,6 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = WatchlistPriority.normal;
                 });
-                ref
-                    .read(watchlistProvider.notifier)
-                    .filterByPriority(WatchlistPriority.normal);
               },
             ),
             const SizedBox(width: 8),
@@ -114,9 +111,6 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 setState(() {
                   _selectedPriority = WatchlistPriority.baja;
                 });
-                ref
-                    .read(watchlistProvider.notifier)
-                    .filterByPriority(WatchlistPriority.baja);
               },
             ),
           ],
@@ -125,42 +119,15 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
     );
   }
 
-  Widget _buildWatchlistContent(
-      WatchlistState state, WatchlistNotifier notifier) {
-    if (state.isLoading && state.movies.isEmpty) {
-      return const Center(child: LoadingIndicator());
-    }
-
-    if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              state.error!,
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                notifier.clearError();
-                notifier.refresh();
-              },
-              child: const Text('Reintentar'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (state.movies.isEmpty) {
+  Widget _buildWatchlistContent(List<WatchlistMovie> movies) {
+    // Si no hay películas en la watchlist
+    if (movies.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.movie_outlined,
+              Icons.bookmark_border,
               size: 64,
               color: Colors.grey[400],
             ),
@@ -180,12 +147,12 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
-                context.go('/');
+                context.go('/home');
               },
-              icon: const Icon(Icons.search),
+              icon: const Icon(Icons.home),
               label: const Text('Explorar Películas'),
             ),
           ],
@@ -193,27 +160,22 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
       );
     }
 
+    // Mostrar la lista de películas
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: state.movies.length + (state.isLoading ? 1 : 0),
+      padding: const EdgeInsets.all(16),
+      itemCount: movies.length,
       itemBuilder: (context, index) {
-        if (index >= state.movies.length) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: LoadingIndicator(),
-            ),
-          );
-        }
-
-        final movie = state.movies[index];
+        final movie = movies[index];
         return WatchlistMovieCard(
           movie: movie,
           onRemove: () {
-            _showRemoveConfirmationDialog(movie, notifier);
+            _showRemoveConfirmationDialog(movie);
           },
           onPriorityChanged: (newPriority) {
-            notifier.updatePriority(movie.movieId, newPriority);
+            ref.read(directWatchlistMoviesProvider.notifier).changePriority(
+              movie.movieId, 
+              newPriority
+            );
           },
           onTap: () {
             context.push('/movie/${movie.movieId}');
@@ -223,8 +185,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
     );
   }
 
-  void _showRemoveConfirmationDialog(
-      WatchlistMovie movie, WatchlistNotifier notifier) {
+  void _showRemoveConfirmationDialog(WatchlistMovie movie) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -237,17 +198,39 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
-              notifier.removeFromWatchlist(movie.movieId);
-
-              // Mostrar snackbar de confirmación
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${movie.movieTitle} removida de watchlist'),
-                  duration: const Duration(seconds: 2),
-                ),
+              
+              // Crear objeto Movie para el método toggleWatchlist
+              final movieEntity = Movie(
+                id: movie.movieId,
+                title: movie.movieTitle,
+                overview: movie.movieOverview ?? '',
+                releaseDate: movie.movieReleaseDate ?? DateTime.now(),
+                posterPath: movie.moviePosterPath ?? '',
+                backdropPath: movie.movieBackdropPath ?? '',
+                genreIds: const [],
+                originalLanguage: 'en',
+                originalTitle: movie.movieTitle,
+                popularity: 0.0,
+                voteAverage: movie.movieVoteAverage ?? 0.0,
+                voteCount: 0,
+                adult: false,
+                video: false,
               );
+              
+              // Remover usando el provider directo
+              await ref.read(directWatchlistMoviesProvider.notifier).toggleWatchlist(movieEntity);
+
+              // Mostrar snackbar de confirmación de forma más segura
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${movie.movieTitle} removida de watchlist'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
             },
             child: const Text('Remover'),
           ),

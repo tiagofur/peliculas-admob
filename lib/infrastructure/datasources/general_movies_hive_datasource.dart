@@ -10,7 +10,7 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
   static const String _boxPrefix = 'movies_cache_';
 
   Future<Box<Movie>> _getBoxForCategory(String category) async {
-    return await Hive.openBox<Movie>('${_boxPrefix}$category');
+    return await Hive.openBox<Movie>('$_boxPrefix$category');
   }
 
   @override
@@ -28,26 +28,34 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
     await box.clear();
     // Add new movies
     await box.addAll(movies);
-    LoggerFactory.info('✅ Cached ${movies.length} movies for category: $category');
+    LoggerFactory.info(
+        '✅ Cached ${movies.length} movies for category: $category');
   }
 
   @override
   Future<List<Movie>> getCachedMoviesByCategory(String category) async {
     final box = await _getBoxForCategory(category);
     final movies = box.values.toList();
-    LoggerFactory.info('🔍 Retrieved ${movies.length} movies from cache for category: $category');
+    LoggerFactory.info(
+        '🔍 Retrieved ${movies.length} movies from cache for category: $category');
     return movies;
   }
 
   @override
   Future<Movie?> getCachedMovie(int movieId) async {
     // Search in all category boxes (including page variations)
-    final categories = ['general', 'now_playing_1', 'popular_1', 'top_rated_1', 'upcoming_1'];
-    
+    final categories = [
+      'general',
+      'now_playing_1',
+      'popular_1',
+      'top_rated_1',
+      'upcoming_1'
+    ];
+
     for (final category in categories) {
       try {
         final box = await _getBoxForCategory(category);
-        final movie = box.values.firstWhere((movie) => movie.id == movieId);
+        final movie = box.values.toList().firstWhere((movie) => movie.id == movieId);
         return movie;
       } catch (e) {
         // Continue to next category
@@ -59,8 +67,15 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
   @override
   Future<void> clearAllCache() async {
     // Clear all possible cache boxes
-    final categoryPatterns = ['general', 'now_playing_', 'popular_', 'top_rated_', 'upcoming_', 'movie_'];
-    
+    final categoryPatterns = [
+      'general',
+      'now_playing_',
+      'popular_',
+      'top_rated_',
+      'upcoming_',
+      'movie_'
+    ];
+
     for (int page = 1; page <= 5; page++) {
       for (final pattern in categoryPatterns) {
         try {
@@ -82,9 +97,16 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
 
   @override
   Future<int> getCacheSize() async {
-    final categoryPatterns = ['general', 'now_playing_', 'popular_', 'top_rated_', 'upcoming_', 'movie_'];
+    final categoryPatterns = [
+      'general',
+      'now_playing_',
+      'popular_',
+      'top_rated_',
+      'upcoming_',
+      'movie_'
+    ];
     int totalSize = 0;
-    
+
     for (int page = 1; page <= 5; page++) {
       for (final pattern in categoryPatterns) {
         try {
@@ -120,7 +142,7 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
     throw UnimplementedError('Use FavoriteMoviesHiveDatasource for favorites');
   }
 
-  // Watchlist methods - not implemented for general cache  
+  // Watchlist methods - not implemented for general cache
   @override
   Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) {
     throw UnimplementedError('Use WatchlistHiveDatasource for watchlist');

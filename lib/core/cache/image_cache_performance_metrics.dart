@@ -27,7 +27,6 @@ class ImageCachePerformanceMetrics {
 
   // Configuración de ventana de métricas
   static const int _maxSamples = 1000;
-  static const Duration _metricsWindow = Duration(minutes: 30);
 
   // Control de tiempo
   DateTime? _metricsStartTime;

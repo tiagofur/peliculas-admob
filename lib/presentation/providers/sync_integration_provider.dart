@@ -1,22 +1,98 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../widgets/sync/sync_settings_widget.dart';
+import '../../core/sync/conflict_resolution/strategies/conflict_strategy.dart';
 import '../widgets/sync/sync_history_viewer.dart';
+
+/// Frecuencia de sincronización
+enum SyncFrequency {
+  realtime('realtime'),
+  every5Minutes('every_5_minutes'),
+  every15Minutes('every_15_minutes'),
+  every30Minutes('every_30_minutes'),
+  hourly('hourly'),
+  daily('daily'),
+  manual('manual');
+
+  const SyncFrequency(this.value);
+  final String value;
+
+  static SyncFrequency fromString(String value) {
+    return SyncFrequency.values.firstWhere(
+      (frequency) => frequency.value == value,
+      orElse: () => SyncFrequency.every15Minutes,
+    );
+  }
+}
+
+/// Configuración de sincronización
+class SyncSettings {
+  const SyncSettings({
+    this.autoSyncEnabled = true,
+    this.offlineModeEnabled = false,
+    this.syncFrequency = SyncFrequency.every15Minutes,
+    this.conflictResolution = ConflictResolutionStrategy.lastWriteWins,
+    this.backgroundSyncEnabled = true,
+    this.wifiOnlySync = false,
+  });
+
+  factory SyncSettings.fromJson(Map<String, dynamic> json) {
+    return SyncSettings(
+      autoSyncEnabled: json['autoSyncEnabled'] as bool? ?? true,
+      offlineModeEnabled: json['offlineModeEnabled'] as bool? ?? false,
+      syncFrequency: SyncFrequency.fromString(
+          json['syncFrequency'] as String? ?? 'every_15_minutes'),
+      conflictResolution: ConflictResolutionStrategy.fromString(
+          json['conflictResolution'] as String? ?? 'last_write_wins'),
+      backgroundSyncEnabled: json['backgroundSyncEnabled'] as bool? ?? true,
+      wifiOnlySync: json['wifiOnlySync'] as bool? ?? false,
+    );
+  }
+
+  final bool autoSyncEnabled;
+  final bool offlineModeEnabled;
+  final SyncFrequency syncFrequency;
+  final ConflictResolutionStrategy conflictResolution;
+  final bool backgroundSyncEnabled;
+  final bool wifiOnlySync;
+
+  SyncSettings copyWith({
+    bool? autoSyncEnabled,
+    bool? offlineModeEnabled,
+    SyncFrequency? syncFrequency,
+    ConflictResolutionStrategy? conflictResolution,
+    bool? backgroundSyncEnabled,
+    bool? wifiOnlySync,
+  }) {
+    return SyncSettings(
+      autoSyncEnabled: autoSyncEnabled ?? this.autoSyncEnabled,
+      offlineModeEnabled: offlineModeEnabled ?? this.offlineModeEnabled,
+      syncFrequency: syncFrequency ?? this.syncFrequency,
+      conflictResolution: conflictResolution ?? this.conflictResolution,
+      backgroundSyncEnabled:
+          backgroundSyncEnabled ?? this.backgroundSyncEnabled,
+      wifiOnlySync: wifiOnlySync ?? this.wifiOnlySync,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'autoSyncEnabled': autoSyncEnabled,
+      'offlineModeEnabled': offlineModeEnabled,
+      'syncFrequency': syncFrequency.value,
+      'conflictResolution': conflictResolution.value,
+      'backgroundSyncEnabled': backgroundSyncEnabled,
+      'wifiOnlySync': wifiOnlySync,
+    };
+  }
+}
 
 /// Sync Integration Provider
 ///
 /// This provider coordinates all sync-related services and provides
 /// a unified interface for the UI widgets to interact with the sync system.
 class SyncIntegrationState {
-  final bool isInitialized;
-  final bool isConnected;
-  final SyncStatus globalSyncStatus;
-  final Map<String, dynamic> performanceMetrics;
-  final List<SyncHistoryEntry> recentHistory;
-  final SyncSettings currentSettings;
-  final String? lastError;
-
   const SyncIntegrationState({
     required this.isInitialized,
     required this.isConnected,
@@ -26,6 +102,13 @@ class SyncIntegrationState {
     required this.currentSettings,
     this.lastError,
   });
+  final bool isInitialized;
+  final bool isConnected;
+  final SyncStatus globalSyncStatus;
+  final Map<String, dynamic> performanceMetrics;
+  final List<SyncHistoryEntry> recentHistory;
+  final SyncSettings currentSettings;
+  final String? lastError;
 
   // Getter for UI compatibility
   List<SyncHistoryEntry> get syncHistory => recentHistory;
@@ -61,11 +144,6 @@ enum SyncStatus {
 }
 
 class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
-  final MockRealtimeSyncManager _realtimeSyncManager;
-  final MockConnectivityManager _connectivityManager;
-  final MockSyncCoordinator _syncCoordinator;
-  final MockSyncPerformanceMetrics _performanceMetrics;
-
   SyncIntegrationNotifier(
     this._realtimeSyncManager,
     this._connectivityManager,
@@ -84,6 +162,10 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
         ) {
     _initialize();
   }
+  final MockRealtimeSyncManager _realtimeSyncManager;
+  final MockConnectivityManager _connectivityManager;
+  final MockSyncCoordinator _syncCoordinator;
+  final MockSyncPerformanceMetrics _performanceMetrics;
 
   Future<void> _initialize() async {
     try {
@@ -126,7 +208,6 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
       }
     });
   }
-
 
   // Public methods for UI interaction
   Future<void> triggerManualSync() async {
@@ -206,7 +287,7 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
       );
 
       await _syncCoordinator.forceFullResync();
-      
+
       state = state.copyWith(
         globalSyncStatus: SyncStatus.synced,
       );
@@ -219,18 +300,22 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
   }
 
   /// Notifica cuando un conflicto ha sido resuelto
-  void onConflictResolved(String entityId, ConflictResolutionStrategy strategy) {
+  void onConflictResolved(
+      String entityId, ConflictResolutionStrategy strategy) {
     // Actualizar el estado para reflejar que el conflicto fue resuelto
     final updatedHistory = List<SyncHistoryEntry>.from(state.recentHistory);
-    updatedHistory.insert(0, SyncHistoryEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      timestamp: DateTime.now(),
-      type: SyncOperationType.conflictResolution,
-      status: SyncOperationStatus.success,
-      entityType: 'Entity',
-      entityId: entityId,
-      description: 'Conflicto resuelto - Estrategia: ${_getStrategyName(strategy)}',
-    ));
+    updatedHistory.insert(
+        0,
+        SyncHistoryEntry(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          timestamp: DateTime.now(),
+          type: SyncOperationType.conflictResolution,
+          status: SyncOperationStatus.success,
+          entityType: 'Entity',
+          entityId: entityId,
+          description:
+              'Conflicto resuelto - Estrategia: ${_getStrategyName(strategy)}',
+        ));
 
     // Mantener solo los últimos 50 registros
     if (updatedHistory.length > 50) {
@@ -245,14 +330,26 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
 
   String _getStrategyName(ConflictResolutionStrategy strategy) {
     switch (strategy) {
-      case ConflictResolutionStrategy.keepLocal:
-        return 'Versión local';
-      case ConflictResolutionStrategy.keepRemote:
-        return 'Versión remota';
-      case ConflictResolutionStrategy.mergeAutomatic:
-        return 'Fusión automática';
-      case ConflictResolutionStrategy.askUser:
+      case ConflictResolutionStrategy.lastWriteWins:
+        return 'Última escritura gana';
+      case ConflictResolutionStrategy.userChoice:
         return 'Selección manual';
+      case ConflictResolutionStrategy.merge:
+        return 'Fusión';
+      case ConflictResolutionStrategy.serverWins:
+        return 'Servidor gana';
+      case ConflictResolutionStrategy.clientWins:
+        return 'Cliente gana';
+      case ConflictResolutionStrategy.custom:
+        return 'Personalizada';
+      case ConflictResolutionStrategy.autoMerge:
+        return 'Fusión automática';
+      case ConflictResolutionStrategy.priorityBased:
+        return 'Basada en prioridad';
+      case ConflictResolutionStrategy.versionBased:
+        return 'Basada en versión';
+      case ConflictResolutionStrategy.fieldSpecific:
+        return 'Específica por campo';
     }
   }
 
@@ -317,7 +414,8 @@ final syncCoordinatorProvider = Provider<MockSyncCoordinator>((ref) {
   return MockSyncCoordinator();
 });
 
-final syncPerformanceMetricsProvider = Provider<MockSyncPerformanceMetrics>((ref) {
+final syncPerformanceMetricsProvider =
+    Provider<MockSyncPerformanceMetrics>((ref) {
   return MockSyncPerformanceMetrics();
 });
 
@@ -342,13 +440,14 @@ class MockSyncCoordinator {
   Future<void> performFullSync() async {}
   Future<void> clearLocalData() async {}
   Future<void> forceFullResync() async {}
-  Future<void> updateConflictResolutionStrategy(ConflictResolutionStrategy strategy) async {}
+  Future<void> updateConflictResolutionStrategy(
+      ConflictResolutionStrategy strategy) async {}
 }
 
 class MockSyncPerformanceMetrics {
   Map<String, dynamic> get metrics => {
-    'syncTime': 1200,
-    'itemsProcessed': 150,
-    'errorRate': 0.02,
-  };
+        'syncTime': 1200,
+        'itemsProcessed': 150,
+        'errorRate': 0.02,
+      };
 }

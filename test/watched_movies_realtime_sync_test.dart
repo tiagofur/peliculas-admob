@@ -1,11 +1,11 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/core/sync/entity_sync_manager.dart';
+import 'package:peliculas/core/sync/watched_sync_manager.dart';
+import 'package:peliculas/domain/entities/movie.dart';
+import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
+import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../lib/core/sync/watched_sync_manager.dart';
-import '../lib/domain/entities/movie.dart';
-import '../lib/domain/entities/syncable_watched_movie.dart';
-import '../lib/infrastructure/repositories/hybrid_watched_repository.dart';
 
 void main() {
   group('Watched Movies Real-time Sync Integration Tests', () {
@@ -17,18 +17,18 @@ void main() {
     setUp(() async {
       // Initialize shared preferences for testing
       SharedPreferences.setMockInitialValues({});
-      
+
       container = ProviderContainer();
-      
+
       // Initialize sync manager
       syncManager = WatchedSyncManager(userId: testUserId);
-      
+
       // Initialize repository with sync manager
       repository = HybridWatchedRepository(
         userId: testUserId,
         syncManager: syncManager,
       );
-      
+
       await repository.initializeLocal();
     });
 
@@ -41,19 +41,22 @@ void main() {
       expect(syncManager.entityType, equals('watched_movie'));
     });
 
-    test('should initialize HybridWatchedRepository with WatchedSyncManager', () {
+    test('should initialize HybridWatchedRepository with WatchedSyncManager',
+        () {
       expect(repository.userId, equals(testUserId));
       expect(repository.tableName, equals('user_watched_movies'));
     });
 
-    test('should serialize and deserialize SyncableWatchedMovie for local storage', () {
+    test(
+        'should serialize and deserialize SyncableWatchedMovie for local storage',
+        () {
       // Create test movie
       final testMovie = Movie(
         id: 123,
         title: 'Test Movie',
         adult: false,
         backdropPath: '/backdrop.jpg',
-        genreIds: [1, 2, 3],
+        genreIds: ['1', '2', '3'],
         originalLanguage: 'en',
         originalTitle: 'Test Movie Original',
         overview: 'Test movie overview',
@@ -90,14 +93,16 @@ void main() {
       expect(deserializedLocal.personalNotes, equals('Great movie!'));
     });
 
-    test('should serialize and deserialize SyncableWatchedMovie for remote storage', () {
+    test(
+        'should serialize and deserialize SyncableWatchedMovie for remote storage',
+        () {
       // Create test movie
       final testMovie = Movie(
         id: 456,
         title: 'Remote Test Movie',
         adult: false,
         backdropPath: '/remote_backdrop.jpg',
-        genreIds: [4, 5, 6],
+        genreIds: ['4', '5', '6'],
         originalLanguage: 'es',
         originalTitle: 'Película de Prueba Remota',
         overview: 'Overview of remote test movie',
@@ -147,7 +152,7 @@ void main() {
         title: 'Repository Test Movie',
         adult: false,
         backdropPath: '/repo_backdrop.jpg',
-        genreIds: [7, 8, 9],
+        genreIds: ['7', '8', '9'],
         originalLanguage: 'fr',
         originalTitle: 'Film de Test du Référentiel',
         overview: 'Repository test movie overview',
@@ -160,19 +165,15 @@ void main() {
       );
 
       // Test marking as watched
-      await repository.markAsWatched(
-        movieId: testMovie.id,
-        watchedAt: DateTime(2023, 12, 20),
-        rating: 4.2,
-        review: 'Excellent film!',
-      );
+      await repository.markAsWatched(testMovie);
 
       // Test checking if movie is watched
       final isWatched = await repository.isMovieWatched(testMovie.id);
       expect(isWatched, isTrue);
 
       // Test getting watched movie by movie ID
-      final watchedMovie = await repository.getWatchedMovieByMovieId(testMovie.id);
+      final watchedMovie =
+          await repository.getWatchedMovieByMovieId(testMovie.id);
       expect(watchedMovie, isNotNull);
       expect(watchedMovie!.movieId, equals(testMovie.id));
       expect(watchedMovie.personalRating, equals(4.2));
@@ -185,12 +186,13 @@ void main() {
         review: 'Updated: Truly excellent!',
       );
 
-      final updatedMovie = await repository.getWatchedMovieByMovieId(testMovie.id);
+      final updatedMovie =
+          await repository.getWatchedMovieByMovieId(testMovie.id);
       expect(updatedMovie!.personalRating, equals(4.8));
       expect(updatedMovie.personalNotes, equals('Updated: Truly excellent!'));
 
       // Test unmarking as watched
-      await repository.unmarkAsWatched(testMovie.id);
+      await repository.removeFromWatched(testMovie.id);
       final isStillWatched = await repository.isMovieWatched(testMovie.id);
       expect(isStillWatched, isFalse);
     });
@@ -198,12 +200,23 @@ void main() {
     test('should get watched statistics', () async {
       // Add multiple watched movies
       for (int i = 1; i <= 5; i++) {
-        await repository.markAsWatched(
-          movieId: i,
-          watchedAt: DateTime(2023, 12, i),
-          rating: i.toDouble(),
-          review: i % 2 == 0 ? 'Review for movie $i' : null,
+        final testMovie = Movie(
+          id: i,
+          title: 'Test Movie $i',
+          adult: false,
+          backdropPath: '',
+          genreIds: [],
+          originalLanguage: 'en',
+          originalTitle: 'Test Movie $i',
+          overview: '',
+          popularity: 0.0,
+          posterPath: '',
+          releaseDate: DateTime.now(),
+          video: false,
+          voteAverage: 0.0,
+          voteCount: 0,
         );
+        await repository.markAsWatched(testMovie);
       }
 
       final stats = await repository.getWatchedStats();
@@ -223,26 +236,45 @@ void main() {
       ];
 
       for (int i = 0; i < dates.length; i++) {
-        await repository.markAsWatched(
-          movieId: 100 + i,
-          watchedAt: dates[i],
+        final testMovie = Movie(
+          id: 100 + i,
+          title: 'Sorted Test Movie ${100 + i}',
+          adult: false,
+          backdropPath: '',
+          genreIds: [],
+          originalLanguage: 'en',
+          originalTitle: 'Sorted Test Movie ${100 + i}',
+          overview: '',
+          popularity: 0.0,
+          posterPath: '',
+          releaseDate: DateTime.now(),
+          video: false,
+          voteAverage: 0.0,
+          voteCount: 0,
         );
+        await repository.markAsWatched(testMovie);
       }
 
       // Test descending order (default)
       final sortedDesc = await repository.getWatchedMoviesSorted();
       expect(sortedDesc.length, equals(4));
-      expect(sortedDesc[0].watchedDate, equals(DateTime(2023, 12, 10))); // Latest first
-      expect(sortedDesc[3].watchedDate, equals(DateTime(2023, 12, 1)));  // Earliest last
+      expect(sortedDesc[0].watchedDate,
+          equals(DateTime(2023, 12, 10))); // Latest first
+      expect(sortedDesc[3].watchedDate,
+          equals(DateTime(2023, 12, 1))); // Earliest last
 
       // Test ascending order
-      final sortedAsc = await repository.getWatchedMoviesSorted(ascending: true);
+      final sortedAsc =
+          await repository.getWatchedMoviesSorted(ascending: true);
       expect(sortedAsc.length, equals(4));
-      expect(sortedAsc[0].watchedDate, equals(DateTime(2023, 12, 1)));  // Earliest first
-      expect(sortedAsc[3].watchedDate, equals(DateTime(2023, 12, 10))); // Latest last
+      expect(sortedAsc[0].watchedDate,
+          equals(DateTime(2023, 12, 1))); // Earliest first
+      expect(sortedAsc[3].watchedDate,
+          equals(DateTime(2023, 12, 10))); // Latest last
     });
 
-    test('should handle conflict resolution with last write wins strategy', () async {
+    test('should handle conflict resolution with last write wins strategy',
+        () async {
       // Create two versions of the same watched movie with different timestamps
       final movie = Movie(
         id: 999,
@@ -284,7 +316,8 @@ void main() {
       final conflict = ConflictInfo<SyncableWatchedMovie>(
         localEntity: localEntity,
         remoteEntity: remoteEntity,
-        conflictType: ConflictType.dataConflict,
+        conflictType: ConflictType.concurrentModification,
+        detectedAt: DateTime.now(),
       );
 
       // Resolve conflict - should choose remote (later timestamp)

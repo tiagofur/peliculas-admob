@@ -7,7 +7,7 @@ import '../../providers/storage/direct_favorites_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/sync/sync_refresh_wrapper.dart';
-import '../../widgets/sync/sync_status_indicator.dart';
+
 
 class FavoritesView extends ConsumerStatefulWidget {
   const FavoritesView({super.key});
@@ -59,7 +59,7 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
             child: Column(
               children: [
                 // Indicador de sync en la parte superior
-                const SyncStatusCard(),
+                // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
                 Expanded(
                   child: Center(
                     child: Column(
@@ -108,7 +108,7 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
         child: Column(
           children: [
             // Indicador de sync compacto
-            const SyncStatusCard(),
+            // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),

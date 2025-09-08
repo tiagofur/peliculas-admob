@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../generated/app_localizations.dart';
-import '../sync/sync_status_indicator.dart';
+
 
 class CustomBottomNavigation extends ConsumerWidget {
   const CustomBottomNavigation({
@@ -31,21 +31,6 @@ class CustomBottomNavigation extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Indicador de sincronización en la parte superior del bottom nav
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SyncStatusIndicator(
-                  size: 16,
-                  showText: true,
-                ),
-              ],
-            ),
-          ),
-          // Bottom navigation bar
           BottomNavigationBar(
             currentIndex: currentIndex,
             onTap: onItemTapped,
@@ -76,16 +61,6 @@ class CustomBottomNavigation extends ConsumerWidget {
                 icon: const Icon(Icons.bar_chart_outlined),
                 activeIcon: const Icon(Icons.bar_chart),
                 label: l10n.statistics
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.play_circle_outline),
-                activeIcon: const Icon(Icons.play_circle),
-                label: l10n.streaming
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(Icons.emoji_events_outlined),
-                activeIcon: const Icon(Icons.emoji_events),
-                label: l10n.challenges
               ),
             ],
           ),

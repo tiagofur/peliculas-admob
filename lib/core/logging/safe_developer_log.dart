@@ -1,7 +1,10 @@
 import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 
-/// Utility class to safely handle developer.log calls and prevent 
+import 'logger_factory.dart';
+
+/// Utility class to safely handle developer.log calls and prevent
 /// "Cannot send Null" errors in Flutter's debug service
 class SafeDeveloperLog {
   /// Safely call developer.log with null-safe parameters
@@ -43,10 +46,9 @@ class SafeDeveloperLog {
         );
       }
     } catch (e) {
-      // Fallback to print if developer.log fails
-      if (kDebugMode) {
-        print('SafeDeveloperLog error: $e. Original message: $message');
-      }
+      // Fallback to LoggerFactory if developer.log fails
+      LoggerFactory.error(
+          'SafeDeveloperLog error: $e. Original message: $message');
     }
   }
 
@@ -66,7 +68,7 @@ class SafeDeveloperLog {
         return error.toString();
       }
     }
-    
+
     // For other types, convert to string to be safe
     return error.toString();
   }

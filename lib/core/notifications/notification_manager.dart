@@ -237,7 +237,6 @@ class NotificationManager {
 
   NotificationPreferences _preferences = const NotificationPreferences();
   final Map<String, Timer> _scheduledNotifications = {};
-  final List<NotificationConfig> _notificationQueue = [];
   int _dailyNotificationCount = 0;
   DateTime _lastResetDate = DateTime.now();
 
@@ -274,7 +273,7 @@ class NotificationManager {
       _resetDailyCountIfNeeded();
 
       _log('Sistema de notificaciones inicializado correctamente');
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       _log('Error inicializando notificaciones: $e');
     }
   }
@@ -348,7 +347,7 @@ class NotificationManager {
       } else {
         _log('Permisos de notificaciones push denegados');
       }
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       _log('Error inicializando Firebase Messaging: $e');
     }
   }
@@ -447,7 +446,7 @@ class NotificationManager {
       await preferencesService.incrementDailyCount();
 
       _log('Notificación inteligente programada: ${config.title}');
-    } catch (e, stackTrace) {
+    } catch (e, _) {
       _log('Error programando notificación inteligente: $e');
     }
   }
@@ -649,8 +648,6 @@ class NotificationManager {
         return 'Recordatorios de Lista';
       case NotificationType.movieReleaseNotification:
         return 'Estrenos de Películas';
-      default:
-        return 'Notificaciones';
     }
   }
 
@@ -868,13 +865,7 @@ class NotificationManager {
     }
   }
 
-  String _getMovieNotificationIcon() {
-    return 'movie_icon';
-  }
 
-  String _getRecommendationNotificationIcon() {
-    return 'recommendation_icon';
-  }
 
   String _getActorNotificationIcon() {
     return 'actor_icon';

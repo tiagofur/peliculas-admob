@@ -109,8 +109,8 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      backgroundColor: chipColor.withValues(alpha: 0.1 * 255),
-      side: BorderSide(color: chipColor.withValues(alpha: 0.3 * 255)),
+      backgroundColor: chipColor.withValues(alpha: 0.1),
+      side: BorderSide(color: chipColor.withValues(alpha: 0.3)),
     );
   }
 
@@ -149,7 +149,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
               title,
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: colors.onSurface.withValues(alpha: 0.8 * 255),
+                color: colors.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -163,7 +163,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: (isLocal ? colors.tertiary : colors.secondary)
-                  .withValues(alpha: 0.3 * 255),
+                  .withValues(alpha: 0.3),
             ),
           ),
           child: _buildEntityDetails(context, entity),
@@ -191,7 +191,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
               'Resultado de Fusión',
               style: theme.textTheme.labelLarge?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: colors.onSurface.withValues(alpha: 0.8 * 255),
+                color: colors.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -201,10 +201,10 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colors.primaryContainer.withValues(alpha: 0.3 * 255),
+            color: colors.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border:
-                Border.all(color: colors.primary.withValues(alpha: 0.3 * 255)),
+                Border.all(color: colors.primary.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +213,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
                 'Vista previa de fusión automática:',
                 style: theme.textTheme.bodySmall?.copyWith(
                   fontStyle: FontStyle.italic,
-                  color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                  color: colors.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               const SizedBox(height: 8),
@@ -256,10 +256,10 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colors.tertiaryContainer.withValues(alpha: 0.3 * 255),
+              color: colors.tertiaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                  color: colors.tertiary.withValues(alpha: 0.3 * 255)),
+                  color: colors.tertiary.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +286,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
         const SizedBox(width: 8),
         Icon(
           Icons.compare_arrows,
-          color: colors.onSurface.withValues(alpha: 0.5 * 255),
+          color: colors.onSurface.withValues(alpha: 0.5),
           size: 20,
         ),
         const SizedBox(width: 8),
@@ -294,10 +294,10 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: colors.secondaryContainer.withValues(alpha: 0.3 * 255),
+              color: colors.secondaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(6),
               border: Border.all(
-                  color: colors.secondary.withValues(alpha: 0.3 * 255)),
+                  color: colors.secondary.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +364,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
             Text(
               'No se encontraron diferencias significativas',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.7 * 255),
+                color: colors.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -385,10 +385,10 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: colors.errorContainer.withValues(alpha: 0.3 * 255),
+            color: colors.errorContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border:
-                Border.all(color: colors.error.withValues(alpha: 0.3 * 255)),
+                Border.all(color: colors.error.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -569,7 +569,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
               '$label:',
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7 * 255),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ),

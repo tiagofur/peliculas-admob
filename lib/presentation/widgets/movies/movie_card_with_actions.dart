@@ -9,8 +9,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
-import '../../providers/watched_movies_provider.dart';
-import '../../screens/movies/movie_screen.dart';
+import '../../providers/storage/direct_watched_provider.dart';
 import '../streaming/streaming_availability_indicator.dart';
 import '../watchlist/add_to_watchlist_button.dart';
 
@@ -22,7 +21,7 @@ class MovieCardWithActions extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final random = Random();
-    final isWatched = ref.watch(isWatchedProvider(movie.id));
+    final isWatched = ref.watch(directIsWatchedProvider(movie.id));
     final isFavorite = ref.watch(directIsFavoriteProvider(movie.id));
 
     return FadeInUp(
@@ -219,15 +218,13 @@ class MovieCardWithActions extends ConsumerWidget {
   }
 
   void _toggleWatched(WidgetRef ref, Movie movie, bool currentState) {
-    final watchedMoviesNotifier = ref.read(watchedMoviesProvider.notifier);
+    final directWatchedNotifier =
+        ref.read(directWatchedMoviesProvider.notifier);
 
-    if (currentState) {
-      watchedMoviesNotifier.removeFromWatched(movie.id);
-    } else {
-      watchedMoviesNotifier.markAsWatched(movie);
-    }
+    // El DirectWatchedNotifier usa toggleWatched que maneja ambos estados
+    directWatchedNotifier.toggleWatched(movie);
 
     // Invalidar el provider para actualizar la UI
-    ref.invalidate(isWatchedProvider(movie.id));
+    ref.invalidate(directIsWatchedProvider(movie.id));
   }
 }

@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/sync/sync_utilities.dart';
@@ -37,9 +37,10 @@ class DeviceSyncManager {
     try {
       await _loadDeviceInfo();
       await _registerDevice();
-      LoggerFactory.info('✅ DeviceSyncManager initialized for device: $_deviceId');
+      LoggerFactory.info(
+          '✅ DeviceSyncManager initialized for device: $_deviceId');
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Failed to initialize DeviceSyncManager: $e', stackTrace: stackTrace);
+      LoggerFactory.error('❌ Failed to initialize DeviceSyncManager: $e');
       rethrow;
     }
   }
@@ -47,7 +48,7 @@ class DeviceSyncManager {
   /// Carga información del dispositivo desde storage local
   Future<void> _loadDeviceInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Cargar o generar device ID
     _deviceId = prefs.getString(_deviceIdKey);
     if (_deviceId == null) {
@@ -63,7 +64,8 @@ class DeviceSyncManager {
     } else {
       _deviceInfo = await _generateDeviceInfo();
       await prefs.setString(_deviceInfoKey, jsonEncode(_deviceInfo));
-      LoggerFactory.info('📱 Generated device info for: ${_deviceInfo?['name']}');
+      LoggerFactory.info(
+          '📱 Generated device info for: ${_deviceInfo?['name']}');
     }
 
     // Cargar último timestamp de sync
@@ -114,7 +116,8 @@ class DeviceSyncManager {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        LoggerFactory.warning('⚠️ No authenticated user - device registration skipped');
+        LoggerFactory.warning(
+            '⚠️ No authenticated user - device registration skipped');
         return;
       }
 
@@ -123,12 +126,10 @@ class DeviceSyncManager {
       _deviceInfo!['user_id'] = userId;
 
       // Registrar/actualizar en Supabase
-      await _supabase
-          .from('user_devices')
-          .upsert(_deviceInfo!);
+      await _supabase.from('user_devices').upsert(_deviceInfo!);
 
-      LoggerFactory.info('📱 Device registered/updated in Supabase: $_deviceId');
-
+      LoggerFactory.info(
+          '📱 Device registered/updated in Supabase: $_deviceId');
     } catch (e) {
       // No es crítico si falla el registro, continuar sin error
       LoggerFactory.warning('⚠️ Failed to register device in Supabase: $e');
@@ -150,11 +151,12 @@ class DeviceSyncManager {
           .order('last_seen', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      
-      return data.map((item) => DeviceInfo.fromJson(Map<String, dynamic>.from(item))).toList();
 
+      return data
+          .map((item) => DeviceInfo.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Failed to get user devices: $e', stackTrace: stackTrace);
+      LoggerFactory.error('❌ Failed to get user devices: $e');
       return [];
     }
   }
@@ -180,7 +182,6 @@ class DeviceSyncManager {
       }
 
       return null;
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to get sync status: $e');
       return null;
@@ -209,27 +210,26 @@ class DeviceSyncManager {
         'is_syncing': isSyncing ?? false,
       };
 
-      await _supabase
-          .from('sync_status')
-          .upsert(syncStatus);
+      await _supabase.from('sync_status').upsert(syncStatus);
 
       // Actualizar timestamp local si es necesario
-      if (lastSyncAt != null && 
-          (_lastSyncTimestamp == null || lastSyncAt.isAfter(_lastSyncTimestamp!))) {
+      if (lastSyncAt != null &&
+          (_lastSyncTimestamp == null ||
+              lastSyncAt.isAfter(_lastSyncTimestamp!))) {
         _lastSyncTimestamp = lastSyncAt;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_lastSyncKey, lastSyncAt.toIso8601String());
       }
 
       LoggerFactory.debug('✅ Updated sync status for $tableName');
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to update sync status: $e');
     }
   }
 
   /// Detecta si hay conflictos de sincronización entre dispositivos
-  Future<List<SyncConflict>> detectMultiDeviceConflicts(String tableName) async {
+  Future<List<SyncConflict>> detectMultiDeviceConflicts(
+      String tableName) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return [];
@@ -243,11 +243,12 @@ class DeviceSyncManager {
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
-      
-      return data.map((item) => SyncConflict.fromJson(Map<String, dynamic>.from(item))).toList();
 
+      return data
+          .map((item) => SyncConflict.fromJson(Map<String, dynamic>.from(item)))
+          .toList();
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Failed to detect multi-device conflicts: $e', stackTrace: stackTrace);
+      LoggerFactory.error('❌ Failed to detect multi-device conflicts: $e');
       return [];
     }
   }
@@ -277,12 +278,10 @@ class DeviceSyncManager {
         'created_at': DateTime.now().toIso8601String(),
       };
 
-      await _supabase
-          .from('sync_conflicts')
-          .insert(conflict);
+      await _supabase.from('sync_conflicts').insert(conflict);
 
-      LoggerFactory.warning('⚠️ Sync conflict reported for $tableName:$recordId');
-
+      LoggerFactory.warning(
+          '⚠️ Sync conflict reported for $tableName:$recordId');
     } catch (e) {
       LoggerFactory.error('❌ Failed to report sync conflict: $e');
     }
@@ -291,37 +290,36 @@ class DeviceSyncManager {
   /// Marca un conflicto como resuelto
   Future<void> markConflictResolved(String conflictId) async {
     try {
-      await _supabase
-          .from('sync_conflicts')
-          .update({
-            'is_resolved': true,
-            'resolved_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', conflictId);
+      await _supabase.from('sync_conflicts').update({
+        'is_resolved': true,
+        'resolved_at': DateTime.now().toIso8601String(),
+      }).eq('id', conflictId);
 
       LoggerFactory.info('✅ Conflict marked as resolved: $conflictId');
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to mark conflict as resolved: $e');
     }
   }
 
   /// Fuerza la sincronización desde un dispositivo específico
-  Future<SyncResult> forceSyncFromDevice(String sourceDeviceId, String tableName) async {
+  Future<SyncResult> forceSyncFromDevice(
+      String sourceDeviceId, String tableName) async {
     final startTime = DateTime.now();
-    
+
     try {
-      LoggerFactory.info('🔄 Forcing sync from device $sourceDeviceId for $tableName');
+      LoggerFactory.info(
+          '🔄 Forcing sync from device $sourceDeviceId for $tableName');
 
       // Obtener el estado de sync del dispositivo origen
-      final sourceStatus = await _getDeviceSyncStatus(sourceDeviceId, tableName);
+      final sourceStatus =
+          await _getDeviceSyncStatus(sourceDeviceId, tableName);
       if (sourceStatus == null) {
         throw Exception('Source device sync status not found');
       }
 
       // TODO: Implementar lógica de sincronización específica desde dispositivo
       // Por ahora, simplemente marcamos como completado
-      
+
       await updateSyncStatus(
         tableName: tableName,
         lastSyncAt: DateTime.now(),
@@ -336,9 +334,8 @@ class DeviceSyncManager {
 
       LoggerFactory.info('✅ Forced sync completed: ${result.toString()}');
       return result;
-
     } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Forced sync failed: $e', stackTrace: stackTrace);
+      LoggerFactory.error('❌ Forced sync failed: $e');
       return SyncResult.failure(
         itemsProcessed: 0,
         errors: ['Forced sync failed: $e'],
@@ -348,7 +345,8 @@ class DeviceSyncManager {
   }
 
   /// Obtiene el estado de sync de un dispositivo específico
-  Future<SyncStatus?> _getDeviceSyncStatus(String deviceId, String tableName) async {
+  Future<SyncStatus?> _getDeviceSyncStatus(
+      String deviceId, String tableName) async {
     try {
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) return null;
@@ -366,7 +364,6 @@ class DeviceSyncManager {
       }
 
       return null;
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to get device sync status: $e');
       return null;
@@ -388,7 +385,6 @@ class DeviceSyncManager {
           .lt('last_seen', cutoffDate.toIso8601String());
 
       LoggerFactory.info('🧹 Cleaned up old devices (inactive > 30 days)');
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to cleanup old devices: $e');
     }
@@ -424,14 +420,6 @@ class DeviceInfo {
     this.userId,
   });
 
-  final String id;
-  final String name;
-  final String platform;
-  final String appVersion;
-  final DateTime createdAt;
-  final DateTime lastSeen;
-  final String? userId;
-
   factory DeviceInfo.fromJson(Map<String, dynamic> json) {
     return DeviceInfo(
       id: json['id'] as String,
@@ -444,9 +432,18 @@ class DeviceInfo {
     );
   }
 
+  final String id;
+  final String name;
+  final String platform;
+  final String appVersion;
+  final DateTime createdAt;
+  final DateTime lastSeen;
+  final String? userId;
+
   bool get isOnline => DateTime.now().difference(lastSeen).inMinutes < 5;
-  
-  String get statusDescription => isOnline ? 'Online' : 'Last seen ${_formatLastSeen()}';
+
+  String get statusDescription =>
+      isOnline ? 'Online' : 'Last seen ${_formatLastSeen()}';
 
   String _formatLastSeen() {
     final difference = DateTime.now().difference(lastSeen);
@@ -477,14 +474,6 @@ class SyncStatus {
     required this.createdAt,
   });
 
-  final String userId;
-  final String deviceId;
-  final String tableName;
-  final DateTime lastSyncAt;
-  final String syncDirection;
-  final bool isSyncing;
-  final DateTime createdAt;
-
   factory SyncStatus.fromJson(Map<String, dynamic> json) {
     return SyncStatus(
       userId: json['user_id'] as String,
@@ -496,6 +485,14 @@ class SyncStatus {
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
+
+  final String userId;
+  final String deviceId;
+  final String tableName;
+  final DateTime lastSyncAt;
+  final String syncDirection;
+  final bool isSyncing;
+  final DateTime createdAt;
 
   @override
   String toString() {
@@ -519,18 +516,6 @@ class SyncConflict {
     this.resolvedAt,
   });
 
-  final String id;
-  final String userId;
-  final String tableName;
-  final String recordId;
-  final String conflictType;
-  final Map<String, dynamic> localData;
-  final Map<String, dynamic> remoteData;
-  final String resolutionStrategy;
-  final bool isResolved;
-  final DateTime createdAt;
-  final DateTime? resolvedAt;
-
   factory SyncConflict.fromJson(Map<String, dynamic> json) {
     return SyncConflict(
       id: json['id'] as String,
@@ -543,11 +528,23 @@ class SyncConflict {
       resolutionStrategy: json['resolution_strategy'] as String,
       isResolved: json['is_resolved'] as bool,
       createdAt: DateTime.parse(json['created_at'] as String),
-      resolvedAt: json['resolved_at'] != null 
+      resolvedAt: json['resolved_at'] != null
           ? DateTime.parse(json['resolved_at'] as String)
           : null,
     );
   }
+
+  final String id;
+  final String userId;
+  final String tableName;
+  final String recordId;
+  final String conflictType;
+  final Map<String, dynamic> localData;
+  final Map<String, dynamic> remoteData;
+  final String resolutionStrategy;
+  final bool isResolved;
+  final DateTime createdAt;
+  final DateTime? resolvedAt;
 
   @override
   String toString() {

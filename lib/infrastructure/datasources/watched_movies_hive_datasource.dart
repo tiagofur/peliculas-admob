@@ -92,7 +92,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       final box = _watchedMoviesBox;
       if (box == null) return;
       
-      final existingMovieKey = box.keys.cast<int>().firstWhere(
+      final existingMovieKey = box.keys.toList().cast<int>().firstWhere(
             (key) => box.get(key)?.movie.id == movieId,
             orElse: () => -1,
           );
@@ -116,7 +116,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       final box = _watchedMoviesBox;
       if (box == null) return false;
       
-      final watchedMovies = box.values
+      final watchedMovies = box.values.toList()
           .where((watchedMovie) => watchedMovie.movie.id == movieId);
       return watchedMovies.isNotEmpty;
     } catch (e) {

@@ -49,7 +49,7 @@ class EntitySyncBadge extends ConsumerWidget {
         color: backgroundColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: iconColor.withOpacity(0.3),
+          color: iconColor.withAlpha((0.3 * 255).round()),
           width: 1,
         ),
       ),
@@ -104,19 +104,19 @@ class EntitySyncBadge extends ConsumerWidget {
   Color _getBackgroundColor(ColorScheme colors) {
     switch (status) {
       case SyncItemStatus.synced:
-        return colors.primary.withOpacity(0.1);
+        return colors.primary.withAlpha((0.1 * 255).round());
       case SyncItemStatus.pendingUpload:
       case SyncItemStatus.uploading:
-        return colors.tertiary.withOpacity(0.1);
+        return colors.tertiary.withAlpha((0.1 * 255).round());
       case SyncItemStatus.pendingDownload:
       case SyncItemStatus.downloading:
-        return colors.secondary.withOpacity(0.1);
+        return colors.secondary.withAlpha((0.1 * 255).round());
       case SyncItemStatus.conflict:
-        return colors.error.withOpacity(0.1);
+        return colors.error.withAlpha((0.1 * 255).round());
       case SyncItemStatus.error:
-        return colors.error.withOpacity(0.1);
+        return colors.error.withAlpha((0.1 * 255).round());
       case SyncItemStatus.processing:
-        return colors.secondary.withOpacity(0.1);
+        return colors.secondary.withAlpha((0.1 * 255).round());
     }
   }
 
@@ -168,7 +168,7 @@ class EntitySyncBadgeExpanded extends ConsumerWidget {
         color: _getBackgroundColor(colors),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getIconColor(colors).withOpacity(0.3),
+          color: _getIconColor(colors).withAlpha((0.3 * 255).round()),
           width: 1,
         ),
       ),
@@ -251,19 +251,19 @@ class EntitySyncBadgeExpanded extends ConsumerWidget {
   Color _getBackgroundColor(ColorScheme colors) {
     switch (status) {
       case SyncItemStatus.synced:
-        return colors.primary.withOpacity(0.1);
+        return colors.primary.withAlpha((0.1 * 255).round());
       case SyncItemStatus.pendingUpload:
       case SyncItemStatus.uploading:
-        return colors.tertiary.withOpacity(0.1);
+        return colors.tertiary.withAlpha((0.1 * 255).round());
       case SyncItemStatus.pendingDownload:
       case SyncItemStatus.downloading:
-        return colors.secondary.withOpacity(0.1);
+        return colors.secondary.withAlpha((0.1 * 255).round());
       case SyncItemStatus.conflict:
-        return colors.error.withOpacity(0.1);
+        return colors.error.withAlpha((0.1 * 255).round());
       case SyncItemStatus.error:
-        return colors.error.withOpacity(0.1);
+        return colors.error.withAlpha((0.1 * 255).round());
       case SyncItemStatus.processing:
-        return colors.secondary.withOpacity(0.1);
+        return colors.secondary.withAlpha((0.1 * 255).round());
     }
   }
 

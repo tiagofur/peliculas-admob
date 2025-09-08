@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
+
+// Solo importar youtube_player_flutter en plataformas no web
+import 'package:youtube_player_flutter/youtube_player_flutter.dart' if (dart.library.html) '../../core/platform/web_youtube_stub.dart';
 
 class PipService {
   factory PipService() => _instance;
@@ -16,6 +19,12 @@ class PipService {
     required String youtubeId,
     required String movieTitle,
   }) async {
+    // PiP no está disponible en web
+    if (kIsWeb) {
+      LoggerFactory.info('PiP no disponible en plataforma web');
+      return false;
+    }
+
     try {
       final pipWidget = PiPWidget(
         onPiPClose: () {
@@ -38,6 +47,12 @@ class PipService {
 
   /// Sale del modo Picture-in-Picture
   Future<void> exitPipMode() async {
+    // PiP no está disponible en web
+    if (kIsWeb) {
+      LoggerFactory.info('PiP no disponible en plataforma web');
+      return;
+    }
+
     try {
       PictureInPicture.stopPiP();
     } catch (e) {
@@ -47,8 +62,8 @@ class PipService {
 
   /// Verifica si el dispositivo soporta PiP
   bool get isPipSupported {
-    // flutter_in_app_pip funciona en todas las plataformas
-    return true;
+    // PiP no está disponible en web
+    return !kIsWeb;
   }
 
   /// Actualiza los parámetros del PiP
@@ -57,6 +72,12 @@ class PipService {
     double? width,
     PIPViewCorner? corner,
   }) {
+    // PiP no está disponible en web
+    if (kIsWeb) {
+      LoggerFactory.info('PiP no disponible en plataforma web');
+      return;
+    }
+
     PictureInPicture.updatePiPParams(
       pipParams: PiPParams(
         pipWindowHeight: height ?? 200,
@@ -87,25 +108,30 @@ class _PipVideoPlayer extends StatefulWidget {
 }
 
 class _PipVideoPlayerState extends State<_PipVideoPlayer> {
-  late YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.youtubeId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
-        mute: false,
-        enableCaption: false,
-        loop: false,
-      ),
-    );
+    // Solo crear el controller en plataformas no web
+    if (!kIsWeb) {
+      _controller = YoutubePlayerController(
+        initialVideoId: widget.youtubeId,
+        flags: const YoutubePlayerFlags(
+          autoPlay: true,
+          mute: false,
+          enableCaption: false,
+          loop: false,
+        ),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    if (!kIsWeb && _controller != null) {
+      _controller!.dispose();
+    }
     super.dispose();
   }
 
@@ -160,21 +186,28 @@ class _PipVideoPlayerState extends State<_PipVideoPlayer> {
                 bottomLeft: Radius.circular(8),
                 bottomRight: Radius.circular(8),
               ),
-              child: Overlay(
-                initialEntries: [
-                  OverlayEntry(
-                    builder: (context) => YoutubePlayer(
-                      controller: _controller,
-                      showVideoProgressIndicator: true,
-                      progressIndicatorColor: Colors.red,
-                      progressColors: const ProgressBarColors(
-                        playedColor: Colors.red,
-                        handleColor: Colors.redAccent,
+              child: kIsWeb 
+                  ? const Center(
+                      child: Text(
+                        'PiP no disponible en web',
+                        style: TextStyle(color: Colors.white),
                       ),
+                    )
+                  : Overlay(
+                      initialEntries: [
+                        OverlayEntry(
+                          builder: (context) => YoutubePlayer(
+                            controller: _controller!,
+                            showVideoProgressIndicator: true,
+                            progressIndicatorColor: Colors.red,
+                            progressColors: const ProgressBarColors(
+                              playedColor: Colors.red,
+                              handleColor: Colors.redAccent,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
           ),
         ],

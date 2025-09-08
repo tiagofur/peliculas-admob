@@ -498,10 +498,6 @@ class MLRecommendationService {
     return moodMap[mood.toLowerCase()] ?? moodMap['happy']!;
   }
 
-  List<int> _getMoodGenres(String mood) {
-    final characteristics = _getMoodCharacteristics(mood);
-    return List<int>.from(characteristics['genres'] ?? []);
-  }
 
   double _calculateMoodScore(
       Movie movie, Map<String, dynamic> moodCharacteristics) {

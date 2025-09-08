@@ -38,6 +38,40 @@ class Movie {
       this.reviews,
       this.similar});
 
+  /// Crea una instancia de Movie desde JSON
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      id: json['id'] ?? 0,
+      adult: json['adult'] ?? false,
+      backdropPath: json['backdrop_path'] ?? '',
+      genreIds:
+          json['genre_ids'] != null ? List<String>.from(json['genre_ids']) : [],
+      originalLanguage: json['original_language'] ?? '',
+      originalTitle: json['original_title'] ?? '',
+      overview: json['overview'] ?? '',
+      popularity: json['popularity']?.toDouble() ?? 0.0,
+      posterPath: json['poster_path'] ?? '',
+      releaseDate: json['release_date'] != null
+          ? DateTime.parse(json['release_date'])
+          : DateTime.now(),
+      title: json['title'] ?? '',
+      video: json['video'] ?? false,
+      voteAverage: json['vote_average']?.toDouble() ?? 0.0,
+      voteCount: json['vote_count'] ?? 0,
+      runtime: json['runtime'],
+      budget: json['budget'],
+      revenue: json['revenue'],
+      homepage: json['homepage'],
+      imdbId: json['imdb_id'],
+      status: json['status'],
+      tagline: json['tagline'],
+      productionCompanies: json['production_companies'],
+      productionCountries: json['production_countries'],
+      spokenLanguages: json['spoken_languages'],
+      belongsToCollection: json['belongs_to_collection'],
+    );
+  }
+
   @HiveField(0)
   final bool adult;
   @HiveField(1)
@@ -192,40 +226,5 @@ class Movie {
       'spoken_languages': spokenLanguages,
       'belongs_to_collection': belongsToCollection,
     };
-  }
-
-  /// Crea una instancia de Movie desde JSON
-  factory Movie.fromJson(Map<String, dynamic> json) {
-    return Movie(
-      id: json['id'] ?? 0,
-      adult: json['adult'] ?? false,
-      backdropPath: json['backdrop_path'] ?? '',
-      genreIds: json['genre_ids'] != null 
-          ? List<String>.from(json['genre_ids'])
-          : [],
-      originalLanguage: json['original_language'] ?? '',
-      originalTitle: json['original_title'] ?? '',
-      overview: json['overview'] ?? '',
-      popularity: json['popularity']?.toDouble() ?? 0.0,
-      posterPath: json['poster_path'] ?? '',
-      releaseDate: json['release_date'] != null 
-          ? DateTime.parse(json['release_date'])
-          : DateTime.now(),
-      title: json['title'] ?? '',
-      video: json['video'] ?? false,
-      voteAverage: json['vote_average']?.toDouble() ?? 0.0,
-      voteCount: json['vote_count'] ?? 0,
-      runtime: json['runtime'],
-      budget: json['budget'],
-      revenue: json['revenue'],
-      homepage: json['homepage'],
-      imdbId: json['imdb_id'],
-      status: json['status'],
-      tagline: json['tagline'],
-      productionCompanies: json['production_companies'],
-      productionCountries: json['production_countries'],
-      spokenLanguages: json['spoken_languages'],
-      belongsToCollection: json['belongs_to_collection'],
-    );
   }
 }

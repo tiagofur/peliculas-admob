@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/entities.dart';
-import '../../providers/providers.dart';
+import '../../providers/storage/direct_custom_lists_provider.dart';
 
 class MovieListsWidget extends ConsumerStatefulWidget {
   const MovieListsWidget({super.key, required this.movie});
@@ -34,8 +34,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
 
   @override
   Widget build(BuildContext context) {
-    final allLists = ref.watch(listsProvider);
-    final listsContainingMovie = ref.watch(movieListsProvider(widget.movie.id));
+    final allLists = ref.watch(directCustomListsWithMoviesProvider);
+    final listsContainingMovie = ref.watch(directMovieListsProvider(widget.movie.id));
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -315,11 +315,11 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   void _toggleMovieInList(CustomList list, bool isInList) {
     if (isInList) {
       ref
-          .read(allListsProvider.notifier)
+          .read(directCustomListsProvider.notifier)
           .removeMovieFromList(list.id, widget.movie.id);
     } else {
       ref
-          .read(allListsProvider.notifier)
+          .read(directCustomListsProvider.notifier)
           .addMovieToList(list.id, widget.movie.id);
     }
   }
@@ -393,6 +393,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
   String _selectedEmoji = '🎬';
   String _selectedColor = 'blue';
   bool _addCurrentMovie = true;
+  bool _isButtonEnabled = false;
 
   final List<String> _emojis = [
     '🎬',
@@ -464,6 +465,13 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
+    
+    // Listener para habilitar/deshabilitar el botón dinámicamente
+    _nameController.addListener(() {
+      setState(() {
+        _isButtonEnabled = _nameController.text.trim().isNotEmpty;
+      });
+    });
   }
 
   @override
@@ -682,12 +690,11 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
-                    onPressed: () async {
-                      if (_nameController.text.trim().isEmpty) return;
+                    onPressed: _isButtonEnabled ? () async {
 
                       try {
-                        // Crear la lista
-                        ref.read(allListsProvider.notifier).createList(
+                        // Crear la lista usando Direct provider
+                        await ref.read(directCustomListsProvider.notifier).createList(
                               name: _nameController.text.trim(),
                               description: _descriptionController.text.trim(),
                               emoji: _selectedEmoji,
@@ -699,11 +706,11 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                         if (_addCurrentMovie) {
                           // Obtener el ID de la lista recién creada y agregar la película
-                          final customLists = ref.read(customListsProvider);
+                          final customLists = ref.read(directCustomListsWithMoviesProvider).where((l) => !l.isDefault).toList();
                           if (customLists.isNotEmpty) {
                             final newList = customLists.last;
-                            ref
-                                .read(allListsProvider.notifier)
+                            await ref
+                                .read(directCustomListsProvider.notifier)
                                 .addMovieToList(newList.id, widget.movieId);
                           }
                         }
@@ -721,8 +728,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                                 action: SnackBarAction(
                                   label: 'Ver',
                                   onPressed: () {
-                                    final customLists =
-                                        ref.read(customListsProvider);
+                                    final customLists = ref.read(directCustomListsWithMoviesProvider).where((l) => !l.isDefault).toList();
                                     if (customLists.isNotEmpty) {
                                       final newList = customLists.last;
                                       GoRouter.of(scaffoldContext)
@@ -745,7 +751,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                           );
                         }
                       }
-                    },
+                    } : null,
                     child: const Text('Crear'),
                   ),
                 ],

@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/watchlist_movie.dart';
-import '../../providers/watchlist_provider.dart';
+import '../../providers/storage/direct_watchlist_provider.dart';
 
 class AddToWatchlistButton extends ConsumerStatefulWidget {
   const AddToWatchlistButton({
@@ -28,102 +28,66 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
 
   @override
   Widget build(BuildContext context) {
-    final isInWatchlist = ref.watch(isMovieInWatchlistProvider(widget.movie.id));
-    final watchlistMovie = ref.watch(watchlistMovieProvider(widget.movie.id));
+    final directWatchlistMovies = ref.watch(directWatchlistMoviesProvider);
+    final isInWatchlist = directWatchlistMovies.containsKey(widget.movie.id);
+    final watchlistMovie = directWatchlistMovies[widget.movie.id];
 
-    return isInWatchlist.when(
-      data: (inWatchlist) {
-        // Get priority color if movie is in watchlist
-        Color? iconColor;
-        Color? backgroundColor;
-        if (inWatchlist && watchlistMovie.hasValue && watchlistMovie.value != null) {
-          // Usar color específico según la prioridad
-          iconColor = _getPriorityColor(watchlistMovie.value!.priority);
-          backgroundColor = iconColor;
-        } else if (inWatchlist) {
-          // Fallback si está en watchlist pero no hay información de prioridad
-          iconColor = Colors.yellow; // Color por defecto para prioridad normal
-          backgroundColor = Colors.yellow;
-        } else {
-          // NO está en watchlist - usar color blanco con contorno
-          iconColor = Colors.white;
-          backgroundColor = null;
-        }
+    // Get priority color if movie is in watchlist
+    Color? iconColor;
+    Color? backgroundColor;
+    if (isInWatchlist && watchlistMovie != null) {
+      // Usar color específico según la prioridad
+      iconColor = _getPriorityColor(watchlistMovie.priority);
+      backgroundColor = iconColor;
+    } else if (isInWatchlist) {
+      // Fallback si está en watchlist pero no hay información de prioridad
+      iconColor = Colors.yellow; // Color por defecto para prioridad normal
+      backgroundColor = Colors.yellow;
+    } else {
+      // NO está en watchlist - usar color blanco con contorno
+      iconColor = Colors.white;
+      backgroundColor = null;
+    }
 
-        if (widget.isIconButton) {
-          return IconButton(
-            onPressed:
-                _isLoading ? null : () => _handleWatchlistAction(inWatchlist),
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(
-                    inWatchlist ? Icons.bookmark : Icons.bookmark_border,
-                    color: iconColor,
-                  ),
-            tooltip:
-                inWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
-          );
-        }
-
-        return ElevatedButton.icon(
-          onPressed:
-              _isLoading ? null : () => _handleWatchlistAction(inWatchlist),
-          icon: _isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(
-                  inWatchlist ? Icons.bookmark : Icons.bookmark_border,
-                  size: 20,
-                ),
-          label: widget.showLabel
-              ? Text(inWatchlist ? 'En Watchlist' : 'Agregar a Watchlist')
-              : const SizedBox.shrink(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: backgroundColor,
-            foregroundColor: inWatchlist ? Colors.white : null,
-          ),
-        );
-      },
-      loading: () => widget.isIconButton
-          ? const IconButton(
-              onPressed: null,
-              icon: SizedBox(
+    if (widget.isIconButton) {
+      return IconButton(
+        onPressed:
+            _isLoading ? null : () => _handleWatchlistAction(isInWatchlist),
+        icon: _isLoading
+            ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(
+                isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
+                color: iconColor,
               ),
+        tooltip:
+            isInWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
+      );
+    }
+
+    return ElevatedButton.icon(
+      onPressed:
+          _isLoading ? null : () => _handleWatchlistAction(isInWatchlist),
+      icon: _isLoading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : ElevatedButton.icon(
-              onPressed: null,
-              icon: const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              label: widget.showLabel
-                  ? const Text('Cargando...')
-                  : const SizedBox.shrink(),
+          : Icon(
+              isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
+              size: 20,
             ),
-      error: (_, __) => widget.isIconButton
-          ? IconButton(
-              onPressed: () => _handleWatchlistAction(false),
-              icon: const Icon(Icons.bookmark_border),
-              tooltip: 'Agregar a watchlist',
-            )
-          : ElevatedButton.icon(
-              onPressed: () => _handleWatchlistAction(false),
-              icon: const Icon(Icons.bookmark_border, size: 20),
-              label: widget.showLabel
-                  ? const Text('Agregar a Watchlist')
-                  : const SizedBox.shrink(),
-            ),
+      label: widget.showLabel
+          ? Text(isInWatchlist ? 'En Watchlist' : 'Agregar a Watchlist')
+          : const SizedBox.shrink(),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor,
+        foregroundColor: isInWatchlist ? Colors.white : null,
+      ),
     );
   }
 
@@ -134,9 +98,10 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
 
     try {
       if (isCurrentlyInWatchlist) {
-        // Just toggle to remove
-        ref.read(watchlistProvider.notifier).toggleWatchlist(widget.movie);
-        ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
+        // Use direct provider for real-time sync
+        await ref
+            .read(directWatchlistMoviesProvider.notifier)
+            .toggleWatchlist(widget.movie);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -153,10 +118,10 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
         );
 
         if (priority != null) {
-          ref
-              .read(watchlistProvider.notifier)
+          // Use direct provider for real-time sync
+          await ref
+              .read(directWatchlistMoviesProvider.notifier)
               .toggleWatchlist(widget.movie, priority: priority);
-          ref.invalidate(isMovieInWatchlistProvider(widget.movie.id));
 
           // Track analytics event for add to watchlist
           await AnalyticsService().trackEvent(
@@ -241,38 +206,38 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
   }
 
   Widget _buildPriorityOptions() {
-    return RadioGroup<WatchlistPriority>(
-      groupValue: _selectedPriority,
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _selectedPriority = value;
-          });
-        }
-      },
-      child: Column(
-        children: WatchlistPriority.values.map((priority) {
-          return RadioListTile<WatchlistPriority>(
+    return Column(
+      children: WatchlistPriority.values.map((priority) {
+        return ListTile(
+          leading: Radio<WatchlistPriority>(
             value: priority,
-            title: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(priority),
-                    shape: BoxShape.circle,
-                  ),
+            groupValue: _selectedPriority,
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedPriority = value;
+                });
+              }
+            },
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _getPriorityColor(priority),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 12),
-                Text(priority.displayName),
-              ],
-            ),
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-          );
-        }).toList(),
-      ),
+              ),
+              const SizedBox(width: 12),
+              Text(priority.displayName),
+            ],
+          ),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+        );
+      }).toList(),
     );
   }
 

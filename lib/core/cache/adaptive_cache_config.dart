@@ -16,7 +16,6 @@ class AdaptiveCacheConfig {
   // Configuración por defecto
   static const int _baseMemoryCache = 50 * 1024 * 1024; // 50MB base
   static const int _baseDiskCache = 250 * 1024 * 1024; // 250MB base
-  static const int _baseConcurrentDownloads = 2;
 
   // Configuración detectada
   DeviceCapabilities? _deviceCapabilities;

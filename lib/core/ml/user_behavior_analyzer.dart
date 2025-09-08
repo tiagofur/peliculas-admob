@@ -239,14 +239,14 @@ class UserBehaviorAnalyzer {
       List<WatchedMovie> watchedMovies) async {
     final analysis = GenreAnalysis();
 
-    final genreCount = <int, int>{};
-    final genreRatings = <int, List<double>>{};
+    final genreCount = <String, int>{};
+    final genreRatings = <String, List<double>>{};
 
     for (final movie in watchedMovies) {
-      for (final genreId in movie.genreIds ?? []) {
+      for (final genreId in movie.genreIds) {
         genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
         genreRatings[genreId] = (genreRatings[genreId] ?? [])
-          ..add(movie.voteAverage ?? 5.0);
+          ..add(movie.voteAverage);
       }
     }
 
@@ -255,7 +255,7 @@ class UserBehaviorAnalyzer {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     // Géneros mejor valorados
-    final genreAvgRatings = <int, double>{};
+    final genreAvgRatings = <String, double>{};
     for (final entry in genreRatings.entries) {
       genreAvgRatings[entry.key] =
           entry.value.reduce((a, b) => a + b) / entry.value.length;
@@ -276,7 +276,7 @@ class UserBehaviorAnalyzer {
 
     if (watchedMovies.isEmpty) return analysis;
 
-    final ratings = watchedMovies.map((m) => m.voteAverage ?? 5.0).toList();
+    final ratings = watchedMovies.map((m) => m.voteAverage).toList();
 
     // Estadísticas básicas
     analysis.averageRating = ratings.reduce((a, b) => a + b) / ratings.length;
@@ -357,7 +357,7 @@ class UserBehaviorAnalyzer {
     // Diversidad de géneros
     final allGenres = <int>{};
     for (final movie in watchedMovies) {
-      allGenres.addAll((movie.genreIds ?? [])
+      allGenres.addAll(movie.genreIds
           .map((g) => int.tryParse(g) ?? 0)
           .where((g) => g > 0));
     }
@@ -365,7 +365,6 @@ class UserBehaviorAnalyzer {
 
     // Diversidad de años
     final years = watchedMovies
-        .where((m) => m.releaseDate != null)
         .map((m) => m.releaseDate.year)
         .toSet();
     analysis.yearDiversity = years.length / max(1, watchedMovies.length);
@@ -394,8 +393,8 @@ class UserBehaviorAnalyzer {
     // Analizar secuencias de géneros
     final genreSequences = <String>[];
     for (int i = 1; i < watchedMovies.length; i++) {
-      final prevGenres = watchedMovies[i - 1].genreIds ?? [];
-      final currGenres = watchedMovies[i].genreIds ?? [];
+      final prevGenres = watchedMovies[i - 1].genreIds;
+      final currGenres = watchedMovies[i].genreIds;
 
       for (final prevGenre in prevGenres) {
         for (final currGenre in currGenres) {
@@ -423,7 +422,7 @@ class UserBehaviorAnalyzer {
     final cycles = <String, dynamic>{};
 
     final watchDates = watchedMovies
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList()
       ..sort();
@@ -478,7 +477,7 @@ class UserBehaviorAnalyzer {
     // Analizar películas vistas
     for (final movie in watched) {
       for (final entry in moodGenres.entries) {
-        if ((movie.genreIds ?? [])
+        if (movie.genreIds
             .any((id) => entry.value.contains(int.tryParse(id) ?? 0))) {
           moodCounts[entry.key] = (moodCounts[entry.key] ?? 0) + 1;
         }
@@ -543,7 +542,7 @@ class UserBehaviorAnalyzer {
     if (watchedMovies.isEmpty) return 0.0;
 
     final watchDates = watchedMovies
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList()
       ..sort();
@@ -567,7 +566,7 @@ class UserBehaviorAnalyzer {
           movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     for (final movie in watched) {
-      allGenres.addAll((movie.genreIds ?? [])
+      allGenres.addAll(movie.genreIds
           .map((g) => int.tryParse(g) ?? 0)
           .where((g) => g > 0));
     }
@@ -602,7 +601,7 @@ class UserBehaviorAnalyzer {
   Future<double> _calculateConsistencyScore(
       List<WatchedMovie> watchedMovies) async {
     final watchDates = watchedMovies
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList()
       ..sort();
@@ -643,7 +642,7 @@ class UserBehaviorAnalyzer {
     final anomalies = <BehaviorAnomaly>[];
 
     final watchDates = watchedMovies
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList()
       ..sort();
@@ -693,7 +692,7 @@ class UserBehaviorAnalyzer {
     final secondGenres = <int, int>{};
 
     for (final movie in firstHalf) {
-      for (final genreStr in movie.genreIds ?? []) {
+      for (final genreStr in movie.genreIds) {
         final genre = int.tryParse(genreStr) ?? 0;
         if (genre > 0) {
           firstGenres[genre] = (firstGenres[genre] ?? 0) + 1;
@@ -702,7 +701,7 @@ class UserBehaviorAnalyzer {
     }
 
     for (final movie in secondHalf) {
-      for (final genreStr in movie.genreIds ?? []) {
+      for (final genreStr in movie.genreIds) {
         final genre = int.tryParse(genreStr) ?? 0;
         if (genre > 0) {
           secondGenres[genre] = (secondGenres[genre] ?? 0) + 1;
@@ -733,7 +732,7 @@ class UserBehaviorAnalyzer {
     final anomalies = <BehaviorAnomaly>[];
 
     final watchDates = watchedMovies
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList()
       ..sort();
@@ -774,7 +773,7 @@ class UserBehaviorAnalyzer {
     }
 
     for (final movie in watched) {
-      for (final genre in movie.genreIds ?? []) {
+      for (final genre in movie.genreIds) {
         final genreId = int.tryParse(genre) ?? 0;
         if (genreId > 0) {
           genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
@@ -803,7 +802,7 @@ class UserBehaviorAnalyzer {
   Future<UserInsight?> _generateTemporalInsight(
       List<WatchedMovie> watched) async {
     final watchDates = watched
-        .where((m) => m.watchedDate != null)
+        .where((m) => true) // All watchedDate values are non-null
         .map((m) => m.watchedDate)
         .toList();
 
@@ -846,7 +845,7 @@ class UserBehaviorAnalyzer {
           movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     for (final movie in watched) {
-      allGenres.addAll((movie.genreIds ?? [])
+      allGenres.addAll(movie.genreIds
           .map((g) => int.tryParse(g) ?? 0)
           .where((g) => g > 0));
     }
@@ -889,7 +888,7 @@ class UserBehaviorAnalyzer {
       allRatings.add(movie.voteAverage);
     }
     for (final movie in watched) {
-      allRatings.add(movie.voteAverage ?? 5.0);
+      allRatings.add(movie.voteAverage);
     }
 
     if (allRatings.isEmpty) return null;
@@ -982,8 +981,8 @@ class TemporalAnalysis {
 }
 
 class GenreAnalysis {
-  List<MapEntry<int, int>> topGenres = [];
-  List<MapEntry<int, double>> bestRatedGenres = [];
+  List<MapEntry<String, int>> topGenres = [];
+  List<MapEntry<String, double>> bestRatedGenres = [];
   double genreDiversity = 0.0;
 }
 

@@ -5,7 +5,7 @@ import '../../config/theme/app_theme.dart' as app_theme;
 import '../../generated/app_localizations.dart';
 import '../providers/locale/locale_provider.dart';
 import '../providers/theme/theme_provider.dart';
-import '../widgets/sync_debug_widget.dart';
+
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -121,9 +121,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: 16),
-
-          // Widget de debug para sincronización (solo en debug mode)
-          const SyncDebugWidget(),
 
           // Información adicional
           Card(

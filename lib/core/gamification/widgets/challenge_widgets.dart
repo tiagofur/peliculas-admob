@@ -26,8 +26,8 @@ class ChallengeCard extends ConsumerWidget {
 
   double get progressPercentage {
     if (challenge.targetValue <= 0) return 0.0;
-    final current = challenge.currentProgress ?? 0;
-    final target = challenge.targetValue ?? 1;
+    final current = challenge.currentProgress;
+    final target = challenge.targetValue;
     return (current / target).clamp(0.0, 1.0);
   }
 
@@ -136,10 +136,6 @@ class ChallengeCard extends ConsumerWidget {
       case ChallengeType.discoveryQuest:
         iconData = Icons.new_releases;
         iconColor = Colors.red;
-        break;
-      default:
-        iconData = Icons.star;
-        iconColor = Colors.grey;
         break;
     }
 

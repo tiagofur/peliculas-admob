@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import 'movies_providers.dart';
 
 final initialLoadingProvider = Provider<bool>((ref) {
@@ -9,13 +9,15 @@ final initialLoadingProvider = Provider<bool>((ref) {
   final topRatedState = ref.watch(topRatedMoviesProvider);
   final upcomingState = ref.watch(upcomingMoviesProvider);
 
-  if (kDebugMode) {
-    print('🔄 InitialLoadingProvider - Checking states:');
-    print('   nowPlaying: ${nowPlayingState.movies.length} movies, state: ${nowPlayingState.state}');
-    print('   popular: ${popularState.movies.length} movies, state: ${popularState.state}');
-    print('   topRated: ${topRatedState.movies.length} movies, state: ${topRatedState.state}');
-    print('   upcoming: ${upcomingState.movies.length} movies, state: ${upcomingState.state}');
-  }
+  LoggerFactory.debug('InitialLoadingProvider: Checking states:');
+  LoggerFactory.debug(
+      'InitialLoadingProvider: nowPlaying: ${nowPlayingState.movies.length} movies, state: ${nowPlayingState.state}');
+  LoggerFactory.debug(
+      'InitialLoadingProvider: popular: ${popularState.movies.length} movies, state: ${popularState.state}');
+  LoggerFactory.debug(
+      'InitialLoadingProvider: topRated: ${topRatedState.movies.length} movies, state: ${topRatedState.state}');
+  LoggerFactory.debug(
+      'InitialLoadingProvider: upcoming: ${upcomingState.movies.length} movies, state: ${upcomingState.state}');
 
   // Si algún provider está cargando o en estado inicial
   final isAnyLoadingOrInitial = nowPlayingState.state == MoviesState.loading ||
@@ -40,10 +42,9 @@ final initialLoadingProvider = Provider<bool>((ref) {
       upcomingState.state == MoviesState.error;
 
   final result = (isAnyLoadingOrInitial || allEmpty) && !hasErrors;
-  
-  if (kDebugMode) {
-    print('🔄 InitialLoadingProvider - isAnyLoadingOrInitial: $isAnyLoadingOrInitial, allEmpty: $allEmpty, hasErrors: $hasErrors, result: $result');
-  }
-  
+
+  LoggerFactory.debug(
+      'InitialLoadingProvider: isAnyLoadingOrInitial: $isAnyLoadingOrInitial, allEmpty: $allEmpty, hasErrors: $hasErrors, result: $result');
+
   return result;
 });

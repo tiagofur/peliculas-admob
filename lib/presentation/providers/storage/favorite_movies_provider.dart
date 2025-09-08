@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/simple_favorites_sync.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/repositories/favorites_repository.dart';
@@ -46,36 +47,31 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   final FavoritesRepository favoritesRepository;
   final VoidCallback onMovieFavorited;
   Timer? _refreshTimer;
-  
+
   /// Cargar favoritos existentes al inicializar el provider
   Future<void> _loadExistingFavorites() async {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
-      
+
       // 🐛 DEBUG: Log what we're loading initially
-      if (kDebugMode) {
-        print('🔍 [FavoriteProvider] _loadExistingFavorites got ${favoriteMoviesMap.length} favorites');
-        print('🔍 [FavoriteProvider] Favorite IDs: ${favoriteMoviesMap.keys.toList()}');
-      }
-      
+      LoggerFactory.debug(
+          '🔍 [FavoriteProvider] _loadExistingFavorites got ${favoriteMoviesMap.length} favorites');
+      LoggerFactory.debug(
+          '🔍 [FavoriteProvider] Favorite IDs: ${favoriteMoviesMap.keys.toList()}');
+
       if (favoriteMoviesMap.isNotEmpty) {
         state = favoriteMoviesMap;
-        if (kDebugMode) {
-          print('✅ Cargados ${favoriteMoviesMap.length} favoritos desde el repositorio híbrido');
-        }
+        LoggerFactory.info(
+            '✅ Cargados ${favoriteMoviesMap.length} favoritos desde el repositorio híbrido');
       } else {
         // Ensure state is empty if no favorites
         state = {};
-        if (kDebugMode) {
-          print('ℹ️ No favorites found, state set to empty');
-        }
+        LoggerFactory.info('ℹ️ No favorites found, state set to empty');
       }
     } catch (e) {
       // Si hay error cargando, mantener estado vacío pero registrar el error
       state = {};
-      if (kDebugMode) {
-        print('❌ Error cargando favoritos existentes: $e');
-      }
+      LoggerFactory.error('❌ Error cargando favoritos existentes: $e');
     }
   }
 
@@ -83,12 +79,13 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     // Usar getFavoriteMovies del repositorio híbrido
     final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
     final movies = favoriteMoviesMap.values.toList();
-    
+
     // Paginar los resultados localmente
     final startIndex = page * 10;
     final endIndex = (startIndex + 20).clamp(0, movies.length);
-    final paginatedMovies = movies.sublist(startIndex.clamp(0, movies.length), endIndex);
-    
+    final paginatedMovies =
+        movies.sublist(startIndex.clamp(0, movies.length), endIndex);
+
     page++;
 
     final tempMoviesMap = <int, Movie>{};
@@ -104,9 +101,8 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   Future<void> toggleFavorite(Movie movie) async {
     final isFavorite = state[movie.id] != null;
 
-    if (kDebugMode) {
-      print('🔍 [FavoriteProvider] Toggle ${movie.id}:${movie.title} (current: $isFavorite)');
-    }
+    LoggerFactory.debug(
+        '🔍 [FavoriteProvider] Toggle ${movie.id}:${movie.title} (current: $isFavorite)');
 
     // Actualización optimista de la UI
     if (isFavorite) {
@@ -119,33 +115,24 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
       // SIMPLIFICADO: Solo usar SimpleFavoritesSync directamente
       final simpleFavoritesSync = SimpleFavoritesSync.instance;
       final currentUser = Supabase.instance.client.auth.currentUser;
-      
+
       if (currentUser != null) {
         if (isFavorite) {
           // Remover de Supabase
           await simpleFavoritesSync.removeFavorite(currentUser.id, movie.id);
-          if (kDebugMode) {
-            print('✅ Favorito removido: ${movie.title}');
-          }
+          LoggerFactory.info('✅ Favorito removido: ${movie.title}');
         } else {
           // Agregar a Supabase
           await simpleFavoritesSync.addFavorite(currentUser.id, movie);
-          if (kDebugMode) {
-            print('✅ Favorito añadido: ${movie.title}');
-          }
+          LoggerFactory.info('✅ Favorito añadido: ${movie.title}');
           // Callback solo si se agregó
           onMovieFavorited();
         }
       } else {
-        if (kDebugMode) {
-          print('ℹ️ No hay usuario logueado, solo cambio local');
-        }
+        LoggerFactory.info('ℹ️ No hay usuario logueado, solo cambio local');
       }
-
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error en toggle favorito: $e');
-      }
+      LoggerFactory.error('❌ Error en toggle favorito: $e');
       // Revertir cambio optimista
       if (isFavorite) {
         state = {...state, movie.id: movie};
@@ -158,34 +145,26 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Sincroniza con Supabase en segundo plano sin bloquear UI
   void _syncToSupabaseBackground(Movie movie, bool isAdding) async {
     try {
-      if (kDebugMode) {
-        print('🔄 Sync to Supabase: ${isAdding ? 'adding' : 'removing'} ${movie.title}');
-      }
-      
+      LoggerFactory.debug(
+          '🔄 Sync to Supabase: ${isAdding ? 'adding' : 'removing'} ${movie.title}');
+
       // Usar SimpleFavoritesSync para envío a Supabase
       final simpleFavoritesSync = SimpleFavoritesSync.instance;
       final currentUser = Supabase.instance.client.auth.currentUser;
-      
+
       if (currentUser != null) {
         if (isAdding) {
           await simpleFavoritesSync.addFavorite(currentUser.id, movie);
         } else {
           await simpleFavoritesSync.removeFavorite(currentUser.id, movie.id);
         }
-        
-        if (kDebugMode) {
-          print('✅ Supabase sync completed: ${movie.title}');
-        }
+
+        LoggerFactory.info('✅ Supabase sync completed: ${movie.title}');
       } else {
-        if (kDebugMode) {
-          print('ℹ️ No user logged in, skipping Supabase sync');
-        }
+        LoggerFactory.info('ℹ️ No user logged in, skipping Supabase sync');
       }
-      
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error syncing to Supabase: $e');
-      }
+      LoggerFactory.error('❌ Error syncing to Supabase: $e');
       // No revertir UI - el usuario ya ve el cambio local
       // La sync se puede reintentar más tarde
     }
@@ -194,25 +173,22 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Configura el auto-refresh para detectar cambios en tiempo real
   void _setupAutoRefresh() {
     if (_refreshTimer != null) return; // Ya está configurado
-    
+
     // DESACTIVADO TEMPORALMENTE: Causaba conflictos con cambios manuales
     // Configurar un timer que verifica cambios cada 2 segundos durante sync
     // _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
     //   refreshFavorites();
     // });
-    
-    if (kDebugMode) {
-      print('ℹ️ Auto-refresh desactivado para evitar conflictos');
-    }
+
+    LoggerFactory.info('ℹ️ Auto-refresh desactivado para evitar conflictos');
   }
 
   /// Habilita el auto-refresh manualmente (cuando el usuario se autentica)
   void enableAutoRefresh() {
-    if (kDebugMode) {
-      print('🔄 Habilitando auto-refresh de favoritos (desactivado temporalmente)');
-    }
+    LoggerFactory.info(
+        '🔄 Habilitando auto-refresh de favoritos (desactivado temporalmente)');
     _setupAutoRefresh();
-    
+
     // DESACTIVADO: También iniciar sync desde Supabase (no bloqueante)
     // Timer(const Duration(seconds: 1), () {
     //   _syncFromSupabaseBackground();
@@ -224,14 +200,14 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) return;
-      
-      if (kDebugMode) {
-        print('📥 Iniciando sync FROM Supabase para: ${currentUser.id}');
-      }
-      
+
+      LoggerFactory.debug(
+          '📥 Iniciando sync FROM Supabase para: ${currentUser.id}');
+
       final simpleFavoritesSync = SimpleFavoritesSync.instance;
-      final remoteFavorites = await simpleFavoritesSync.performSimpleSync(currentUser.id);
-      
+      final remoteFavorites =
+          await simpleFavoritesSync.performSimpleSync(currentUser.id);
+
       // Agregar favoritos remotos al estado actual (merge, no replace)
       final currentState = Map<int, Movie>.from(state);
       for (final movie in remoteFavorites) {
@@ -239,27 +215,21 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
           currentState[movie.id] = movie;
         }
       }
-      
+
       // Solo actualizar estado si hay cambios
       if (currentState.length != state.length) {
         state = currentState;
-        if (kDebugMode) {
-          print('✅ Sync FROM Supabase completado: ${remoteFavorites.length} remotos, ${state.length} total');
-        }
+        LoggerFactory.info(
+            '✅ Sync FROM Supabase completado: ${remoteFavorites.length} remotos, ${state.length} total');
       }
-      
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error en sync FROM Supabase: $e');
-      }
+      LoggerFactory.error('❌ Error en sync FROM Supabase: $e');
     }
   }
 
   /// Deshabilita el auto-refresh
   void disableAutoRefresh() {
-    if (kDebugMode) {
-      print('🛑 Deshabilitando auto-refresh de favoritos');
-    }
+    LoggerFactory.info('🛑 Deshabilitando auto-refresh de favoritos');
     _refreshTimer?.cancel();
     _refreshTimer = null;
   }
@@ -268,39 +238,38 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   Future<void> refreshFavorites() async {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
-      
+
       // Solo actualizar si hay cambios reales para evitar rebuilds innecesarios
       if (!_mapsEqual(state, favoriteMoviesMap)) {
         final oldCount = state.length;
         state = favoriteMoviesMap;
-        
-        if (kDebugMode) {
-          final newCount = favoriteMoviesMap.length;
-          if (newCount > oldCount) {
-            print('✅ Favoritos actualizados: +${newCount - oldCount} nuevos favoritos');
-          } else if (newCount < oldCount) {
-            print('🔄 Favoritos actualizados: -${oldCount - newCount} favoritos removidos');
-          } else {
-            print('🔄 Favoritos refrescados desde repositorio híbrido');
-          }
+
+        final newCount = favoriteMoviesMap.length;
+        if (newCount > oldCount) {
+          LoggerFactory.info(
+              '✅ Favoritos actualizados: +${newCount - oldCount} nuevos favoritos');
+        } else if (newCount < oldCount) {
+          LoggerFactory.info(
+              '🔄 Favoritos actualizados: -${oldCount - newCount} favoritos removidos');
+        } else {
+          LoggerFactory.info(
+              '🔄 Favoritos refrescados desde repositorio híbrido');
         }
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error refrescando favoritos: $e');
-      }
+      LoggerFactory.error('❌ Error refrescando favoritos: $e');
     }
   }
 
   /// Verifica si dos mapas son iguales
   bool _mapsEqual(Map<int, Movie> map1, Map<int, Movie> map2) {
     if (map1.length != map2.length) return false;
-    
+
     for (final key in map1.keys) {
       if (!map2.containsKey(key)) return false;
       if (map1[key]?.id != map2[key]?.id) return false;
     }
-    
+
     return true;
   }
 

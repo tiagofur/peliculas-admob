@@ -13,98 +13,120 @@ class TriggerFreeWatchedSync {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Obtener todas las películas vistas del usuario
+  /// Obtiene películas vistas del usuario (igual que favoritos)
   Future<List<Movie>> getUserWatchedMovies(String userId) async {
     try {
-      LoggerFactory.info('🎬 [WatchedSync] Obteniendo películas vistas para usuario: $userId');
+      LoggerFactory.info('📥 [TriggerFree] Obteniendo películas vistas: $userId');
 
       final response = await _supabase
           .from('user_watched_movies')
           .select('*')
           .eq('user_id', userId)
           .eq('is_deleted', false)
-          .order('created_at', ascending: false);
+          .order('watched_at', ascending: false);
 
-      LoggerFactory.info('🎬 [WatchedSync] Respuesta Supabase: ${response.length} películas vistas');
+      final List<dynamic> data = response as List<dynamic>;
+      final watchedMovies = data.cast<Map<String, dynamic>>();
 
-      final movies = <Movie>[];
-      for (final item in response) {
-        try {
-          final movie = Movie(
-            id: item['movie_id'] as int,
-            title: item['movie_title'] as String,
-            posterPath: item['movie_poster_path'] as String? ?? '',
-            backdropPath: item['movie_backdrop_path'] as String? ?? '',
-            overview: item['movie_overview'] as String? ?? '',
-            releaseDate: item['movie_release_date'] != null
-                ? (DateTime.tryParse(item['movie_release_date'] as String) ?? DateTime.now())
-                : DateTime.now(),
-            voteAverage: (item['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
-            genreIds: [],
-            adult: false,
-            originalLanguage: 'en',
-            originalTitle: item['movie_title'] as String,
-            popularity: 0.0,
-            video: false,
-            voteCount: 0,
-          );
-          movies.add(movie);
-        } catch (e) {
-          LoggerFactory.error('❌ [WatchedSync] Error procesando película vista: $e');
-        }
-      }
+      final movies = watchedMovies.map((data) => _dataToMovie(data)).toList();
 
-      LoggerFactory.info('✅ [WatchedSync] ${movies.length} películas vistas procesadas');
+      LoggerFactory.info(
+          '✅ [TriggerFree] Encontradas ${movies.length} películas vistas');
+
       return movies;
     } catch (e) {
-      LoggerFactory.error('❌ [WatchedSync] Error obteniendo películas vistas: $e');
+      LoggerFactory.error('❌ [TriggerFree] Error obteniendo películas vistas: $e');
       return [];
     }
   }
 
-  /// Añadir película vista usando INSERT directo (evita triggers)
+  /// Añadir película vista usando upsert y fallback (igual que favoritos)
   Future<void> addWatchedMovie(String userId, Movie movie) async {
     try {
-      LoggerFactory.info('➕ [WatchedSync] Añadiendo película vista: ${movie.title}');
+      LoggerFactory.info('➕ [TriggerFree] Agregando película vista: ${movie.title}');
 
-      // Usar INSERT directo para evitar triggers
-      await _supabase.from('user_watched_movies').insert({
+      final now = DateTime.now().toUtc().toIso8601String();
+
+      // Usar upsert directo para evitar problemas con RPC (igual que favoritos)
+      await _supabase.from('user_watched_movies').upsert({
         'user_id': userId,
         'movie_id': movie.id,
         'movie_title': movie.title,
         'movie_poster_path': movie.posterPath,
         'movie_backdrop_path': movie.backdropPath,
         'movie_overview': movie.overview,
-        'movie_release_date': movie.releaseDate.toIso8601String(),
+        'movie_release_date': movie.releaseDate?.toIso8601String(),
         'movie_vote_average': movie.voteAverage,
+        'watched_at': now,
+        'last_modified_at': now,
         'is_deleted': false,
-        'created_at': DateTime.now().toUtc().toIso8601String(),
-        'last_modified_at': DateTime.now().toUtc().toIso8601String(),
+        'sync_version': 1,
       });
 
-      LoggerFactory.info('✅ [WatchedSync] Película vista añadida correctamente: ${movie.title}');
+      LoggerFactory.info('✅ [TriggerFree] Película vista agregada: ${movie.title}');
     } catch (e) {
-      LoggerFactory.error('❌ [WatchedSync] Error añadiendo película vista: $e');
-      rethrow;
+      LoggerFactory.error('❌ [TriggerFree] Error agregando película vista: $e');
+
+      // Fallback: intentar con método original (igual que favoritos)
+      try {
+        LoggerFactory.info('🔄 [TriggerFree] Intentando fallback...');
+        await _addWatchedFallback(userId, movie);
+      } catch (e2) {
+        LoggerFactory.error('❌ [TriggerFree] Fallback también falló: $e2');
+        rethrow;
+      }
     }
   }
 
-  /// Remover película vista usando DELETE directo (evita triggers)
+  /// Remueve una película vista usando DELETE directo (igual que favoritos)
   Future<void> removeWatchedMovie(String userId, int movieId) async {
     try {
-      LoggerFactory.info('🗑️ [WatchedSync] Removiendo película vista: $movieId');
+      LoggerFactory.info('🗑️ [TriggerFree] Removiendo película vista: $movieId');
 
-      // Usar DELETE directo para evitar triggers
+      // DELETE no debería activar triggers UPDATE (igual que favoritos)
       await _supabase
           .from('user_watched_movies')
           .delete()
           .eq('user_id', userId)
           .eq('movie_id', movieId);
 
-      LoggerFactory.info('✅ [WatchedSync] Película vista removida correctamente: $movieId');
+      LoggerFactory.info('✅ [TriggerFree] Película vista removida: $movieId');
     } catch (e) {
-      LoggerFactory.error('❌ [WatchedSync] Error removiendo película vista: $e');
+      LoggerFactory.error('❌ [TriggerFree] Error removiendo película vista: $e');
       rethrow;
+    }
+  }
+
+  /// Fallback que usa el método básico sin campos problemáticos (igual que favoritos)
+  Future<void> _addWatchedFallback(String userId, Movie movie) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    final watchedData = {
+      'user_id': userId,
+      'movie_id': movie.id,
+      'movie_title': movie.title,
+      'movie_poster_path': movie.posterPath,
+      'movie_backdrop_path': movie.backdropPath,
+      'movie_overview': movie.overview,
+      'movie_release_date': movie.releaseDate?.toIso8601String(),
+      'movie_vote_average': movie.voteAverage,
+      'watched_at': now,
+      'last_modified_at': now,
+      'is_deleted': false,
+      'sync_version': 1,
+    };
+
+    try {
+      // Intentar INSERT primero
+      await _supabase.from('user_watched_movies').insert(watchedData);
+    } catch (e) {
+      if (e.toString().contains('duplicate') ||
+          e.toString().contains('unique')) {
+        // Si ya existe, hacer DELETE + INSERT
+        await removeWatchedMovie(userId, movie.id);
+        await _supabase.from('user_watched_movies').insert(watchedData);
+      } else {
+        rethrow;
+      }
     }
   }
 
@@ -126,17 +148,41 @@ class TriggerFreeWatchedSync {
     }
   }
 
-  /// Sincronización manual de películas vistas
-  Future<void> syncWatchedMovies(String userId) async {
+  /// Test básico de conectividad (igual que favoritos)
+  Future<bool> testConnection() async {
     try {
-      LoggerFactory.info('🔄 [WatchedSync] Iniciando sincronización manual...');
-      
-      final movies = await getUserWatchedMovies(userId);
-      
-      LoggerFactory.info('✅ [WatchedSync] Sincronización completada: ${movies.length} películas vistas');
+      LoggerFactory.info('🔗 [TriggerFree] Probando conexión...');
+
+      await _supabase.from('user_watched_movies').select('count').limit(1);
+
+      LoggerFactory.info('✅ [TriggerFree] Conexión exitosa');
+      return true;
     } catch (e) {
-      LoggerFactory.error('❌ [WatchedSync] Error en sincronización: $e');
-      rethrow;
+      LoggerFactory.error('❌ [TriggerFree] Error de conexión: $e');
+      return false;
     }
+  }
+
+  /// Convierte data de BD a Movie (igual que favoritos)
+  Movie _dataToMovie(Map<String, dynamic> data) {
+    return Movie(
+      id: data['movie_id'] as int,
+      title: data['movie_title'] as String,
+      posterPath: data['movie_poster_path'] as String? ?? '',
+      backdropPath: data['movie_backdrop_path'] as String? ?? '',
+      overview: data['movie_overview'] as String? ?? '',
+      releaseDate: data['movie_release_date'] != null
+          ? (DateTime.tryParse(data['movie_release_date'] as String) ??
+              DateTime.now())
+          : DateTime.now(),
+      voteAverage: (data['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
+      genreIds: [], // No disponible en watched
+      adult: false,
+      originalLanguage: 'en',
+      originalTitle: data['movie_title'] as String,
+      popularity: 0.0,
+      video: false,
+      voteCount: 0,
+    );
   }
 }

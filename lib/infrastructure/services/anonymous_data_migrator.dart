@@ -8,9 +8,12 @@ import '../../domain/entities/syncable_favorite.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
 import '../../domain/entities/syncable_watchlist_item.dart';
 import '../../presentation/providers/hybrid_repositories_provider.dart';
+import '../datasources/favorite_movies_hive_datasource.dart';
+import '../datasources/watched_movies_hive_datasource.dart';
+import '../datasources/watchlist_hive_datasource.dart';
+import '../models/favorite_model.dart';
 import '../repositories/hybrid_custom_lists_repository.dart';
 import '../repositories/hybrid_favorites_repository.dart';
-import '../repositories/hybrid_watched_repository.dart';
 import '../repositories/hybrid_watchlist_repository.dart';
 import 'connectivity_detector.dart';
 
@@ -60,30 +63,27 @@ class AnonymousDataMigrator {
     try {
       LoggerFactory.info('🔍 Detectando datos locales anónimos...');
 
-      // Detectar favoritos
-      final favoritesRepo =
-          _ref.read(favoritesRepositoryProvider) as HybridFavoritesRepository;
-      final favoriteMovies = await favoritesRepo.getFavoriteMovies();
+      // Detectar favoritos directamente del datasource
+      final favoritesDatasource = FavoriteMoviesHiveDatasource();
+      final favoriteMovies = await favoritesDatasource.loadMovies(limit: 10000, offset: 0);
       if (favoriteMovies.isNotEmpty) {
         detectedData[DataType.favorites] = favoriteMovies.length;
         LoggerFactory.info(
             '📱 Favoritos encontrados: ${favoriteMovies.length}');
       }
 
-      // Detectar películas vistas
-      final watchedRepo =
-          _ref.read(watchedMoviesRepositoryProvider) as HybridWatchedRepository;
-      final watchedMovies = await watchedRepo.getAll();
+      // Detectar películas vistas directamente del datasource
+      final watchedDatasource = WatchedMoviesHiveDatasource();
+      final watchedMovies = await watchedDatasource.loadWatchedMovies(limit: 10000);
       if (watchedMovies.isNotEmpty) {
         detectedData[DataType.watchedMovies] = watchedMovies.length;
         LoggerFactory.info(
             '📱 Películas vistas encontradas: ${watchedMovies.length}');
       }
 
-      // Detectar watchlist
-      final watchlistRepo =
-          _ref.read(watchlistRepositoryProvider) as HybridWatchlistRepository;
-      final watchlistMovies = await watchlistRepo.getWatchlistMoviesAsWatchlistMovie();
+      // Detectar watchlist directamente del datasource
+      final watchlistDatasource = WatchlistHiveDatasource();
+      final watchlistMovies = await watchlistDatasource.getAllWatchlistMovies();
       if (watchlistMovies.isNotEmpty) {
         detectedData[DataType.watchlist] = watchlistMovies.length;
         LoggerFactory.info(
@@ -218,68 +218,107 @@ class AnonymousDataMigrator {
 
   /// Migra favoritos locales a Supabase
   Future<int> _migrateFavorites(String userId) async {
-    final repo =
-        _ref.read(favoritesRepositoryProvider) as HybridFavoritesRepository;
-    final localData = await repo.getLocalData();
+    try {
+      // Obtener datos directamente del datasource local
+      final favoritesDatasource = FavoriteMoviesHiveDatasource();
+      final localMovies = await favoritesDatasource.loadMovies(limit: 10000, offset: 0);
 
-    if (localData.isEmpty) return 0;
+      if (localMovies.isEmpty) {
+        LoggerFactory.info('ℹ️ No hay favoritos locales para migrar');
+        return 0;
+      }
 
-    // Actualizar userId para cada favorito
-    final List<SyncableFavorite> updatedFavorites = localData
-        .cast<SyncableFavorite>()
-        .map((fav) => fav.copyWithData(userId: userId))
-        .toList();
+      LoggerFactory.info('🔄 Migrando ${localMovies.length} favoritos locales...');
 
-    // Subir a Supabase
-    await repo.upload(updatedFavorites);
+      // Convertir películas a entidades syncables con el nuevo userId
+      final List<SyncableFavorite> syncableFavorites = localMovies
+          .map((movie) => SyncableFavorite.fromFavoriteModel(
+                FavoriteModel.fromMovie(movie, userId),
+                userId,
+              ))
+          .toList();
 
-    LoggerFactory.info(
-        '📤 ${updatedFavorites.length} favoritos migrados para usuario $userId');
-    return updatedFavorites.length;
+      // Obtener el repositorio híbrido y subir a Supabase
+      final repo = _ref.read(favoritesRepositoryProvider) as HybridFavoritesRepository;
+      await repo.upload(syncableFavorites);
+
+      LoggerFactory.info(
+          '📤 ${syncableFavorites.length} favoritos migrados para usuario $userId');
+      return syncableFavorites.length;
+    } catch (e) {
+      LoggerFactory.error('❌ Error migrando favoritos: $e');
+      rethrow;
+    }
   }
 
   /// Migra películas vistas locales a Supabase
   Future<int> _migrateWatchedMovies(String userId) async {
-    final repo =
-        _ref.read(watchedMoviesRepositoryProvider) as HybridWatchedRepository;
-    final localData = await repo.getLocalData();
+    try {
+      // Obtener datos directamente del datasource local
+      final watchedDatasource = WatchedMoviesHiveDatasource();
+      final localWatchedMovies = await watchedDatasource.loadWatchedMovies(limit: 10000);
 
-    if (localData.isEmpty) return 0;
+      if (localWatchedMovies.isEmpty) {
+        LoggerFactory.info('ℹ️ No hay películas vistas locales para migrar');
+        return 0;
+      }
 
-    // Actualizar userId para cada película vista
-    final List<SyncableWatchedMovie> updatedWatched = localData
-        .cast<SyncableWatchedMovie>()
-        .map((watched) => watched.copyWithData(userId: userId))
-        .toList();
+      LoggerFactory.info('🔄 Migrando ${localWatchedMovies.length} películas vistas locales...');
 
-    // Subir a Supabase
-    await repo.upload(updatedWatched);
+      // Convertir películas vistas a entidades syncables con el nuevo userId
+      final List<SyncableWatchedMovie> syncableWatched = localWatchedMovies
+          .map((watchedMovie) => SyncableWatchedMovie.fromWatchedMovie(
+                userId: userId,
+                watchedMovie: watchedMovie,
+              ))
+          .toList();
 
-    LoggerFactory.info(
-        '📤 ${updatedWatched.length} películas vistas migradas para usuario $userId');
-    return updatedWatched.length;
+      // Obtener el repositorio híbrido y subir a Supabase
+      final repo = _ref.read(hybridWatchedRepositoryProvider);
+      await repo.upload(syncableWatched);
+
+      LoggerFactory.info(
+          '📤 ${syncableWatched.length} películas vistas migradas para usuario $userId');
+      return syncableWatched.length;
+    } catch (e) {
+      LoggerFactory.error('❌ Error migrando películas vistas: $e');
+      rethrow;
+    }
   }
 
   /// Migra watchlist local a Supabase
   Future<int> _migrateWatchlist(String userId) async {
-    final repo =
-        _ref.read(watchlistRepositoryProvider) as HybridWatchlistRepository;
-    final localData = await repo.getLocalData();
+    try {
+      // Obtener datos directamente del datasource local
+      final watchlistDatasource = WatchlistHiveDatasource();
+      final localWatchlistMovies = await watchlistDatasource.getAllWatchlistMovies();
 
-    if (localData.isEmpty) return 0;
+      if (localWatchlistMovies.isEmpty) {
+        LoggerFactory.info('ℹ️ No hay items en watchlist locales para migrar');
+        return 0;
+      }
 
-    // Actualizar userId para cada item de watchlist
-    final List<SyncableWatchlistItem> updatedWatchlist = localData
-        .cast<SyncableWatchlistItem>()
-        .map((item) => item.copyWithData(userId: userId))
-        .toList();
+      LoggerFactory.info('🔄 Migrando ${localWatchlistMovies.length} items de watchlist locales...');
 
-    // Subir a Supabase
-    await repo.upload(updatedWatchlist);
+      // Convertir WatchlistMovies a entidades syncables con el nuevo userId
+      final List<SyncableWatchlistItem> syncableWatchlist = localWatchlistMovies
+          .map((watchlistMovie) => SyncableWatchlistItem.fromWatchlistMovie(
+                userId: userId,
+                watchlistMovie: watchlistMovie,
+              ))
+          .toList();
 
-    LoggerFactory.info(
-        '📤 ${updatedWatchlist.length} items de watchlist migrados para usuario $userId');
-    return updatedWatchlist.length;
+      // Obtener el repositorio híbrido y subir a Supabase
+      final repo = _ref.read(watchlistRepositoryProvider) as HybridWatchlistRepository;
+      await repo.upload(syncableWatchlist);
+
+      LoggerFactory.info(
+          '📤 ${syncableWatchlist.length} items de watchlist migrados para usuario $userId');
+      return syncableWatchlist.length;
+    } catch (e) {
+      LoggerFactory.error('❌ Error migrando watchlist: $e');
+      rethrow;
+    }
   }
 
   /// Migra listas personalizadas locales a Supabase

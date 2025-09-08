@@ -70,19 +70,19 @@ class SilentSyncSnackbar extends ConsumerWidget {
   void _showCompletionSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
+        content: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.sync_alt, 
               color: Colors.white, 
               size: 16,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Flexible(
               child: Text(
                 'Favoritos sincronizados',
-                style: const TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: 12),
               ),
             ),
           ],
@@ -102,19 +102,19 @@ class SilentSyncSnackbar extends ConsumerWidget {
   void _showErrorSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
+        content: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.sync_problem, 
               color: Colors.white, 
               size: 16,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Flexible(
               child: Text(
                 'Error en sincronización',
-                style: const TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: 12),
               ),
             ),
           ],

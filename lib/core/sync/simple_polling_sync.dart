@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../logging/logger_factory.dart';
 
 /// Servicio de polling simple para sincronización en tiempo real
 /// Se ejecuta en segundo plano cada X segundos para sincronizar con Supabase
@@ -19,9 +20,7 @@ class SimplePollingSync {
   /// Inicializa el polling para un usuario
   void startPolling(String userId) {
     if (_isPolling && _currentUserId == userId) {
-      if (kDebugMode) {
-        print('🔄 Polling ya está activo para usuario: $userId');
-      }
+      LoggerFactory.info('🔄 Polling ya está activo para usuario: $userId');
       return;
     }
 
@@ -32,9 +31,7 @@ class SimplePollingSync {
     _lastSyncTime = DateTime.now().subtract(
         const Duration(seconds: 30)); // Sync últimos 30 segundos al iniciar
 
-    if (kDebugMode) {
-      print('🚀 Iniciando polling para usuario: $userId');
-    }
+    LoggerFactory.info('🚀 Iniciando polling para usuario: $userId');
 
     // Polling cada 10 segundos
     _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -57,9 +54,7 @@ class SimplePollingSync {
     _isPolling = false;
     _currentUserId = null;
 
-    if (kDebugMode) {
-      print('🛑 Polling detenido');
-    }
+    LoggerFactory.info('🛑 Polling detenido');
   }
 
   /// Realiza la sincronización de polling
@@ -67,18 +62,14 @@ class SimplePollingSync {
     if (!_isPolling || _currentUserId == null) return;
 
     try {
-      if (kDebugMode) {
-        print('🔄 Polling sync para usuario: $_currentUserId');
-      }
+      LoggerFactory.debug('🔄 Polling sync para usuario: $_currentUserId');
 
       // Obtener favoritos de Supabase modificados desde la última sync
       final newFavorites = await _getFavoritesModifiedAfter(_lastSyncTime!);
 
       if (newFavorites.isNotEmpty) {
-        if (kDebugMode) {
-          print(
-              '📥 Polling encontró ${newFavorites.length} favoritos nuevos/modificados');
-        }
+        LoggerFactory.info(
+            '📥 Polling encontró ${newFavorites.length} favoritos nuevos/modificados');
 
         // Notificar a los listeners que hay cambios
         _notifyFavoritesChanged(newFavorites);
@@ -86,9 +77,7 @@ class SimplePollingSync {
 
       _lastSyncTime = DateTime.now();
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error en polling sync: $e');
-      }
+      LoggerFactory.error('❌ Error en polling sync: $e');
     }
   }
 
@@ -106,9 +95,7 @@ class SimplePollingSync {
       final List<dynamic> data = response as List<dynamic>;
       return data.cast<Map<String, dynamic>>();
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error obteniendo favoritos modificados: $e');
-      }
+      LoggerFactory.error('❌ Error obteniendo favoritos modificados: $e');
       return [];
     }
   }

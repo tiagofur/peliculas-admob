@@ -91,10 +91,10 @@ class SyncableWatchedMovie extends SyncableEntity {
   /// Factory constructor desde JSON
   factory SyncableWatchedMovie.fromJson(Map<String, dynamic> json) {
     return SyncableWatchedMovie(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      movieId: json['movie_id'] as int,
-      movieTitle: json['movie_title'] as String,
+      id: json['id'] as String? ?? 'unknown_${DateTime.now().millisecondsSinceEpoch}',
+      userId: json['user_id'] as String? ?? 'unknown_user',
+      movieId: json['movie_id'] as int? ?? 0,
+      movieTitle: json['movie_title'] as String? ?? 'Unknown Movie',
       moviePosterPath: json['movie_poster_path'] as String?,
       movieBackdropPath: json['movie_backdrop_path'] as String?,
       movieOverview: json['movie_overview'] as String?,
@@ -102,9 +102,17 @@ class SyncableWatchedMovie extends SyncableEntity {
           ? DateTime.parse(json['movie_release_date'] as String)
           : null,
       movieVoteAverage: json['movie_vote_average']?.toDouble(),
-      watchedDate: DateTime.parse(json['watched_date'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      lastModifiedAt: DateTime.parse(json['last_modified_at'] as String),
+      watchedDate: json['watched_at'] != null
+          ? DateTime.parse(json['watched_at'] as String)
+          : (json['watched_date'] != null 
+              ? DateTime.parse(json['watched_date'] as String)
+              : DateTime.now()),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'] as String)
+          : DateTime.now(),
+      lastModifiedAt: json['last_modified_at'] != null
+          ? DateTime.parse(json['last_modified_at'] as String)
+          : DateTime.now(),
       isDeleted: json['is_deleted'] as bool? ?? false,
       syncVersion: json['sync_version'] as int? ?? 0,
       deviceId: json['device_id'] as String?,
@@ -194,7 +202,7 @@ class SyncableWatchedMovie extends SyncableEntity {
       'movie_overview': movieOverview,
       'movie_release_date': movieReleaseDate?.toIso8601String(),
       'movie_vote_average': movieVoteAverage,
-      'watched_date': watchedDate.toIso8601String(),
+      'watched_at': watchedDate.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'last_modified_at': lastModifiedAt.toIso8601String(),
       'is_deleted': isDeleted,

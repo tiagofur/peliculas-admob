@@ -7,7 +7,8 @@ import '../../../domain/entities/movie.dart';
 import '../../../services/share_service.dart';
 import '../../providers/providers.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
-import '../../providers/watched_movies_provider.dart';
+import '../../providers/storage/direct_watched_provider.dart';
+import '../../providers/storage/direct_watchlist_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/watchlist/add_to_watchlist_button.dart';
@@ -179,9 +180,14 @@ final isFavoriteProvider =
 
 final isWatchedProvider =
     Provider.family.autoDispose<bool, int>((ref, int movieId) {
-  final watchedMoviesState = ref.watch(watchedMoviesProvider);
-  return watchedMoviesState.movies
-      .any((watchedMovie) => watchedMovie.movie.id == movieId);
+  final directWatchedMovies = ref.watch(directWatchedMoviesProvider);
+  return directWatchedMovies.containsKey(movieId);
+});
+
+final isInWatchlistProvider =
+    Provider.family.autoDispose<bool, int>((ref, int movieId) {
+  final directWatchlistMovies = ref.watch(directWatchlistMoviesProvider);
+  return directWatchlistMovies.containsKey(movieId);
 });
 
 class _CustomSliverAppBar extends ConsumerWidget {
@@ -218,25 +224,10 @@ class _CustomSliverAppBar extends ConsumerWidget {
         // Botón de marcar como vista con animación
         _AnimatedActionButton(
           onPressed: () async {
-            final isWatched = await ref
-                .read(watchedMoviesRepositoryProvider)
-                .isMovieWatched(movie.id);
-            final achievementsNotifier =
-                ref.read(achievementsProvider.notifier);
-
-            if (isWatched) {
-              await ref
-                  .read(watchedMoviesProvider.notifier)
-                  .removeFromWatched(movie.id);
-            } else {
-              await ref
-                  .read(watchedMoviesProvider.notifier)
-                  .markAsWatched(movie);
-              // Track achievement cuando se marca como vista
-              achievementsNotifier.trackMovieWatched(movie);
-            }
-
-            ref.invalidate(isWatchedProvider(movie.id));
+            // Use direct provider for real-time sync
+            await ref
+                .read(directWatchedMoviesProvider.notifier)
+                .toggleWatched(movie);
           },
           feedbackType: FeedbackType.success,
           child: Icon(

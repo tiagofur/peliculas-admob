@@ -4,15 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peliculas/core/sync/entity_sync_manager.dart';
 import 'package:peliculas/domain/entities/syncable_entity.dart';
-import 'package:peliculas/domain/repositories/watched_movies_repository.dart';
-import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
+import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
+import 'package:peliculas/presentation/providers/hybrid_repositories_provider.dart';
 import 'package:peliculas/presentation/widgets/sync/conflict_history_list.dart';
 import 'package:peliculas/presentation/widgets/sync/conflict_preview_widget.dart';
 import 'package:peliculas/presentation/widgets/sync/conflict_resolution_dialog.dart';
 import 'package:peliculas/presentation/widgets/sync/merge_preview_widget.dart';
 
-class MockWatchedMoviesRepository extends Mock
-    implements WatchedMoviesRepository {}
+class MockHybridWatchedRepository extends Mock
+    implements HybridWatchedRepository {}
 
 /// Test implementation of SyncableEntity for testing purposes
 class TestSyncableEntity extends SyncableEntity {
@@ -325,15 +325,15 @@ void main() {
     group('ConflictHistoryList Tests', () {
       testWidgets('should display empty state when no conflicts',
           (tester) async {
-        final mockWatchedMoviesRepository = MockWatchedMoviesRepository();
-        when(mockWatchedMoviesRepository.loadWatchedMovies())
+        final mockHybridWatchedRepository = MockHybridWatchedRepository();
+        when(mockHybridWatchedRepository.loadWatchedMovies())
             .thenAnswer((_) async => []);
 
         await tester.pumpWidget(
           ProviderScope(
             overrides: [
-              watchedMoviesRepositoryProvider
-                  .overrideWithValue(mockWatchedMoviesRepository),
+              hybridWatchedRepositoryProvider
+                  .overrideWithValue(mockHybridWatchedRepository),
             ],
             child: const MaterialApp(
               home: Scaffold(

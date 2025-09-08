@@ -26,7 +26,7 @@ class CombinedStatsView extends ConsumerWidget {
                 totalMovies: (statsMap['totalFavorites'] ?? 0) +
                     (statsMap['totalWatched'] ?? 0),
                 averageRating: statsMap['averageRating'] ?? 0.0,
-                topGenres: List<String>.from(statsMap['favoriteGenres'] ?? []),
+                topGenres: (statsMap['favoriteGenres'] as Map<String, int>?)?.keys.toList() ?? [],
                 watchingStreak: 0,
               ),
               loading: () => recommendations.BasicUserStats(

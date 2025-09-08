@@ -1,13 +1,12 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/core/sync/entity_sync_manager.dart';
+import 'package:peliculas/core/sync/watched_sync_manager.dart';
+import 'package:peliculas/domain/entities/movie.dart';
+import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
+import 'package:peliculas/presentation/providers/hybrid_repositories_provider.dart';
+import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../lib/core/sync/watched_sync_manager.dart';
-import '../lib/domain/entities/movie.dart';
-import '../lib/domain/entities/syncable_watched_movie.dart';
-import '../lib/infrastructure/repositories/hybrid_watched_repository.dart';
-import '../lib/presentation/providers/watched_movies_provider.dart';
-import '../lib/presentation/providers/hybrid_repositories_provider.dart';
 
 void main() {
   group('Watched Movies Real-time Sync Integration Tests', () {
@@ -25,11 +24,12 @@ void main() {
       container.dispose();
     });
 
-    testWidgets('Complete watched movies sync flow integration test', (tester) async {
+    testWidgets('Complete watched movies sync flow integration test',
+        (tester) async {
       // Get repository and notifier
       final repository = container.read(hybridWatchedRepositoryProvider);
       final notifier = container.read(watchedMoviesProvider.notifier);
-      
+
       await repository.initializeLocal();
 
       // Create test movie
@@ -38,7 +38,7 @@ void main() {
         title: 'Integration Test Movie',
         adult: false,
         backdropPath: '/integration_backdrop.jpg',
-        genreIds: [1, 2, 3],
+        genreIds: ['1', '2', '3'],
         originalLanguage: 'en',
         originalTitle: 'Integration Test Movie',
         overview: 'Testing complete integration flow',
@@ -58,7 +58,8 @@ void main() {
       expect(isWatched, isTrue);
 
       // Verify: Movie appears in watched list
-      final watchedMovie = await repository.getWatchedMovieByMovieId(testMovie.id);
+      final watchedMovie =
+          await repository.getWatchedMovieByMovieId(testMovie.id);
       expect(watchedMovie, isNotNull);
       expect(watchedMovie!.movieId, equals(testMovie.id));
       expect(watchedMovie.movieTitle, equals(testMovie.title));
@@ -73,14 +74,14 @@ void main() {
 
     test('Sync manager queue operations work correctly', () async {
       final syncManager = WatchedSyncManager(userId: testUserId);
-      
+
       // Create test watched movie
       final testMovie = Movie(
         id: 7002,
         title: 'Queue Test Movie',
         adult: false,
         backdropPath: '/queue_backdrop.jpg',
-        genreIds: [4, 5],
+        genreIds: ['4', '5'],
         originalLanguage: 'es',
         originalTitle: 'Película de Prueba de Cola',
         overview: 'Testing queue operations',
@@ -118,18 +119,18 @@ void main() {
 
     test('Conflict detection and resolution works', () async {
       final syncManager = WatchedSyncManager(userId: testUserId);
-      
+
       // Test conflict detection (should return empty list for now)
       final conflicts = await syncManager.detectConflicts();
       expect(conflicts, isEmpty);
-      
+
       // Create test conflict scenario
       final testMovie = Movie(
         id: 7003,
         title: 'Conflict Resolution Movie',
         adult: false,
         backdropPath: '/conflict_res_backdrop.jpg',
-        genreIds: [6, 7],
+        genreIds: ['6', '7'],
         originalLanguage: 'fr',
         originalTitle: 'Film de Résolution de Conflit',
         overview: 'Testing conflict resolution',
@@ -163,12 +164,13 @@ void main() {
       final conflict = ConflictInfo<SyncableWatchedMovie>(
         localEntity: localEntity,
         remoteEntity: remoteEntity,
-        conflictType: ConflictType.dataConflict,
+        conflictType: ConflictType.concurrentModification,
+        detectedAt: DateTime.now(),
       );
 
       // Test conflict resolution
       final resolved = await syncManager.resolveConflict(conflict);
-      
+
       // Should choose remote version (later timestamp)
       expect(resolved.personalRating, equals(4.2));
       expect(resolved.personalNotes, equals('Remote version'));
@@ -178,7 +180,7 @@ void main() {
     test('Provider state management works correctly', () async {
       final notifier = container.read(watchedMoviesProvider.notifier);
       final initialState = container.read(watchedMoviesProvider);
-      
+
       // Initial state should be empty
       expect(initialState.movies, isEmpty);
       expect(initialState.isLoading, isFalse);
@@ -187,7 +189,7 @@ void main() {
 
       // Test refresh functionality
       await notifier.refresh();
-      
+
       // State should still be valid after refresh
       final refreshedState = container.read(watchedMoviesProvider);
       expect(refreshedState.movies, isA<List<SyncableWatchedMovie>>());
@@ -196,7 +198,7 @@ void main() {
 
     test('Upload and download changes work correctly', () async {
       final syncManager = WatchedSyncManager(userId: testUserId);
-      
+
       // Create test watched movies
       final testMovies = [
         Movie(
@@ -204,7 +206,7 @@ void main() {
           title: 'Upload Test Movie 1',
           adult: false,
           backdropPath: '/upload1_backdrop.jpg',
-          genreIds: [8],
+          genreIds: ['8'],
           originalLanguage: 'en',
           originalTitle: 'Upload Test Movie 1',
           overview: 'Testing upload 1',
@@ -220,7 +222,7 @@ void main() {
           title: 'Upload Test Movie 2',
           adult: false,
           backdropPath: '/upload2_backdrop.jpg',
-          genreIds: [9],
+          genreIds: ['9'],
           originalLanguage: 'en',
           originalTitle: 'Upload Test Movie 2',
           overview: 'Testing upload 2',
@@ -233,15 +235,15 @@ void main() {
         ),
       ];
 
-      final watchedMovies = testMovies.map((movie) => 
-        SyncableWatchedMovie.fromMovie(
-          userId: testUserId,
-          movie: movie,
-          watchedDate: DateTime(2023, 12, 30),
-          personalRating: 4.0,
-          personalNotes: 'Upload test',
-        )
-      ).toList();
+      final watchedMovies = testMovies
+          .map((movie) => SyncableWatchedMovie.fromMovie(
+                userId: testUserId,
+                movie: movie,
+                watchedDate: DateTime(2023, 12, 30),
+                personalRating: 4.0,
+                personalNotes: 'Upload test',
+              ))
+          .toList();
 
       // Test upload changes
       final uploadResult = await syncManager.uploadChanges(watchedMovies);
@@ -257,13 +259,13 @@ void main() {
 
     test('Data serialization maintains integrity', () async {
       final syncManager = WatchedSyncManager(userId: testUserId);
-      
+
       final testMovie = Movie(
         id: 7006,
         title: 'Serialization Test Movie',
         adult: false,
         backdropPath: '/serialization_backdrop.jpg',
-        genreIds: [10, 11, 12],
+        genreIds: ['10', '11', '12'],
         originalLanguage: 'de',
         originalTitle: 'Serialisierungstest Film',
         overview: 'Testing data serialization integrity',
@@ -288,28 +290,36 @@ void main() {
       // Test local serialization roundtrip
       final localData = syncManager.serializeForLocal(originalWatched);
       final localDeserialized = syncManager.deserializeFromLocal(localData);
-      
+
       expect(localDeserialized.id, equals(originalWatched.id));
       expect(localDeserialized.userId, equals(originalWatched.userId));
       expect(localDeserialized.movieId, equals(originalWatched.movieId));
       expect(localDeserialized.movieTitle, equals(originalWatched.movieTitle));
-      expect(localDeserialized.personalRating, equals(originalWatched.personalRating));
-      expect(localDeserialized.personalNotes, equals(originalWatched.personalNotes));
-      expect(localDeserialized.watchedLocation, equals(originalWatched.watchedLocation));
-      expect(localDeserialized.rewatchCount, equals(originalWatched.rewatchCount));
+      expect(localDeserialized.personalRating,
+          equals(originalWatched.personalRating));
+      expect(localDeserialized.personalNotes,
+          equals(originalWatched.personalNotes));
+      expect(localDeserialized.watchedLocation,
+          equals(originalWatched.watchedLocation));
+      expect(
+          localDeserialized.rewatchCount, equals(originalWatched.rewatchCount));
 
       // Test remote serialization roundtrip
       final remoteData = syncManager.serializeForRemote(originalWatched);
       final remoteDeserialized = syncManager.deserializeFromRemote(remoteData);
-      
+
       expect(remoteDeserialized.id, equals(originalWatched.id));
       expect(remoteDeserialized.userId, equals(originalWatched.userId));
       expect(remoteDeserialized.movieId, equals(originalWatched.movieId));
       expect(remoteDeserialized.movieTitle, equals(originalWatched.movieTitle));
-      expect(remoteDeserialized.personalRating, equals(originalWatched.personalRating));
-      expect(remoteDeserialized.personalNotes, equals(originalWatched.personalNotes));
-      expect(remoteDeserialized.watchedLocation, equals(originalWatched.watchedLocation));
-      expect(remoteDeserialized.rewatchCount, equals(originalWatched.rewatchCount));
+      expect(remoteDeserialized.personalRating,
+          equals(originalWatched.personalRating));
+      expect(remoteDeserialized.personalNotes,
+          equals(originalWatched.personalNotes));
+      expect(remoteDeserialized.watchedLocation,
+          equals(originalWatched.watchedLocation));
+      expect(remoteDeserialized.rewatchCount,
+          equals(originalWatched.rewatchCount));
     });
   });
 }

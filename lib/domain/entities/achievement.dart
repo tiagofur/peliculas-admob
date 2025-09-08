@@ -1,7 +1,5 @@
 import 'package:hive/hive.dart';
 
-part 'achievement.g.dart';
-
 @HiveType(typeId: 2)
 class Achievement {
   Achievement({
@@ -18,28 +16,28 @@ class Achievement {
 
   @HiveField(0)
   final String id;
-  
+
   @HiveField(1)
   final String title;
-  
+
   @HiveField(2)
   final String description;
-  
+
   @HiveField(3)
   final String iconName;
-  
+
   @HiveField(4)
   final int targetValue;
-  
+
   @HiveField(5)
   final int currentValue;
-  
+
   @HiveField(6)
   final bool isUnlocked;
-  
+
   @HiveField(7)
   final DateTime? unlockedDate;
-  
+
   @HiveField(8)
   final AchievementCategory category;
 
@@ -68,7 +66,7 @@ class Achievement {
   }
 
   double get progress => currentValue / targetValue;
-  
+
   bool get isCompleted => currentValue >= targetValue;
 }
 
@@ -76,13 +74,13 @@ class Achievement {
 enum AchievementCategory {
   @HiveField(0)
   movies,
-  
+
   @HiveField(1)
   favorites,
-  
+
   @HiveField(2)
   exploration,
-  
+
   @HiveField(3)
   social,
 }

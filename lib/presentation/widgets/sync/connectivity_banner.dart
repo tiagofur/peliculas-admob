@@ -213,8 +213,8 @@ class ConnectivityStatusChip extends ConsumerWidget {
         return _ChipData(
           icon: Icons.wifi,
           iconColor: colors.primary,
-          backgroundColor: colors.primary.withOpacity(0.1),
-          borderColor: colors.primary.withOpacity(0.3),
+          backgroundColor: colors.primary.withValues(alpha: 0.1),
+          borderColor: colors.primary.withValues(alpha: 0.3),
           textColor: colors.primary,
           label: 'Online',
         );
@@ -223,8 +223,8 @@ class ConnectivityStatusChip extends ConsumerWidget {
         return _ChipData(
           icon: Icons.wifi_off,
           iconColor: colors.error,
-          backgroundColor: colors.error.withOpacity(0.1),
-          borderColor: colors.error.withOpacity(0.3),
+          backgroundColor: colors.error.withValues(alpha: 0.1),
+          borderColor: colors.error.withValues(alpha: 0.3),
           textColor: colors.error,
           label: 'Offline',
         );
@@ -233,8 +233,8 @@ class ConnectivityStatusChip extends ConsumerWidget {
         return _ChipData(
           icon: Icons.signal_wifi_bad,
           iconColor: colors.tertiary,
-          backgroundColor: colors.tertiary.withOpacity(0.1),
-          borderColor: colors.tertiary.withOpacity(0.3),
+          backgroundColor: colors.tertiary.withValues(alpha: 0.1),
+          borderColor: colors.tertiary.withValues(alpha: 0.3),
           textColor: colors.tertiary,
           label: 'Limitado',
         );
@@ -243,8 +243,8 @@ class ConnectivityStatusChip extends ConsumerWidget {
         return _ChipData(
           icon: Icons.airplanemode_active,
           iconColor: colors.secondary,
-          backgroundColor: colors.secondary.withOpacity(0.1),
-          borderColor: colors.secondary.withOpacity(0.3),
+          backgroundColor: colors.secondary.withValues(alpha: 0.1),
+          borderColor: colors.secondary.withValues(alpha: 0.3),
           textColor: colors.secondary,
           label: 'Manual',
         );
@@ -352,7 +352,7 @@ class ConnectivityFloatingIndicator extends ConsumerWidget {
           icon: Icons.wifi,
           iconColor: colors.primary,
           backgroundColor: colors.surface,
-          borderColor: colors.primary.withOpacity(0.3),
+          borderColor: colors.primary.withValues(alpha: 0.3),
           textColor: colors.primary,
           label: 'Online',
         );
@@ -362,7 +362,7 @@ class ConnectivityFloatingIndicator extends ConsumerWidget {
           icon: Icons.wifi_off,
           iconColor: colors.error,
           backgroundColor: colors.surface,
-          borderColor: colors.error.withOpacity(0.3),
+          borderColor: colors.error.withValues(alpha: 0.3),
           textColor: colors.error,
           label: 'Sin conexión',
         );
@@ -372,7 +372,7 @@ class ConnectivityFloatingIndicator extends ConsumerWidget {
           icon: Icons.signal_wifi_bad,
           iconColor: colors.tertiary,
           backgroundColor: colors.surface,
-          borderColor: colors.tertiary.withOpacity(0.3),
+          borderColor: colors.tertiary.withValues(alpha: 0.3),
           textColor: colors.tertiary,
           label: 'Reconectando',
         );
@@ -382,7 +382,7 @@ class ConnectivityFloatingIndicator extends ConsumerWidget {
           icon: Icons.airplanemode_active,
           iconColor: colors.secondary,
           backgroundColor: colors.surface,
-          borderColor: colors.secondary.withOpacity(0.3),
+          borderColor: colors.secondary.withValues(alpha: 0.3),
           textColor: colors.secondary,
           label: 'Modo offline',
         );

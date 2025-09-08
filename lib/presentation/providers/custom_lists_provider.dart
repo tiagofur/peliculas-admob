@@ -97,7 +97,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       await _repository.saveCustomLists(state.customLists);
       await _repository.saveDefaultLists(state.defaultLists);
     } catch (e) {
-      LoggerFactory.error('Error saving lists: $e', tag: 'CustomListsProvider');
+      LoggerFactory.error('CustomListsProvider: Error saving lists: $e');
     }
   }
 

@@ -15,16 +15,6 @@ class FavoriteModel {
     this.releaseDate,
   });
 
-  final String id;
-  final String userId;
-  final int movieId;
-  final String movieTitle;
-  final String? posterPath;
-  final double? rating;
-  final String? overview;
-  final DateTime? releaseDate;
-  final DateTime addedAt;
-
   /// Crea un FavoriteModel desde una SyncableFavorite
   factory FavoriteModel.fromSyncableEntity(dynamic syncableEntity) {
     // Asumiendo que syncableEntity es SyncableFavorite
@@ -41,6 +31,21 @@ class FavoriteModel {
     );
   }
 
+  /// Crea un FavoriteModel desde un Movie
+  factory FavoriteModel.fromMovie(Movie movie, String userId) {
+    return FavoriteModel(
+      id: '${userId}_${movie.id}_${DateTime.now().millisecondsSinceEpoch}',
+      userId: userId,
+      movieId: movie.id,
+      movieTitle: movie.title,
+      posterPath: movie.posterPath,
+      rating: movie.voteAverage,
+      overview: movie.overview,
+      releaseDate: movie.releaseDate,
+      addedAt: DateTime.now(),
+    );
+  }
+
   /// Crea desde Map de serialización local
   factory FavoriteModel.fromJson(Map<String, dynamic> json) {
     return FavoriteModel(
@@ -51,12 +56,22 @@ class FavoriteModel {
       posterPath: json['poster_path'] as String?,
       rating: json['rating']?.toDouble(),
       overview: json['overview'] as String?,
-      releaseDate: json['release_date'] != null 
+      releaseDate: json['release_date'] != null
           ? DateTime.parse(json['release_date'] as String)
           : null,
       addedAt: DateTime.parse(json['added_at'] as String),
     );
   }
+
+  final String id;
+  final String userId;
+  final int movieId;
+  final String movieTitle;
+  final String? posterPath;
+  final double? rating;
+  final String? overview;
+  final DateTime? releaseDate;
+  final DateTime addedAt;
 
   /// Convierte a Map para serialización local
   Map<String, dynamic> toJson() {

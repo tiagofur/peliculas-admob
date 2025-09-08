@@ -1,8 +1,8 @@
-import 'package:isar/isar.dart';
+// import 'package:isar/isar.dart';
 
-part 'person.g.dart';
+// part 'person.g.dart';
 
-@collection
+// @collection
 class Person {
   Person();
 
@@ -23,9 +23,10 @@ class Person {
     gender = json['gender'];
     updatedAt = DateTime.now();
   }
-  Id? id;
+  // Id? id;
+  int? id;
 
-  @Index()
+  // @Index()
   int tmdbId = 0;
 
   String name = '';

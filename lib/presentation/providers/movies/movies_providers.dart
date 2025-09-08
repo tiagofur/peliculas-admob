@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
 import 'movies_repository_provider.dart';
 
@@ -69,9 +69,7 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   MoviesNotifier({
     required this.fetchMoreMovies,
   }) : super(const MoviesStateData()) {
-    if (kDebugMode) {
-      print('🎬 MoviesNotifier creado');
-    }
+    LoggerFactory.debug('MoviesNotifier: MoviesNotifier creado');
   }
 
   int currentPage = 0;
@@ -79,31 +77,27 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   static const int maxRetries = 3;
 
   Future<void> loadNextPage() async {
-    if (kDebugMode) {
-      print('🔄 loadNextPage llamado - isLoading: ${state.state == MoviesState.loading}, isLastPage: ${state.hasReachedMax}');
-    }
-    
+    LoggerFactory.debug(
+        'MoviesNotifier: loadNextPage llamado - isLoading: ${state.state == MoviesState.loading}, isLastPage: ${state.hasReachedMax}');
+
     if (state.state == MoviesState.loading || state.hasReachedMax) return;
 
-    if (kDebugMode) {
-      print('📥 Iniciando carga de página ${currentPage + 1}');
-    }
-    
+    LoggerFactory.debug(
+        'MoviesNotifier: Iniciando carga de página ${currentPage + 1}');
+
     state = state.copyWith(state: MoviesState.loading);
 
     try {
       final movies = await fetchMoreMovies(page: currentPage + 1);
-      
-      if (kDebugMode) {
-        print('✅ Películas obtenidas: ${movies.length}');
-      }
+
+      LoggerFactory.debug(
+          'MoviesNotifier: Películas obtenidas: ${movies.length}');
 
       currentPage++;
 
       if (movies.isEmpty) {
-        if (kDebugMode) {
-          print('🚫 No hay más películas - marcando como última página');
-        }
+        LoggerFactory.debug(
+            'MoviesNotifier: No hay más películas - marcando como última página');
         state = state.copyWith(
           state: MoviesState.loaded,
           hasReachedMax: true,
@@ -116,14 +110,11 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
         state: MoviesState.loaded,
         movies: [...state.movies, ...movies],
       );
-      
-      if (kDebugMode) {
-        print('🎯 Estado actualizado - Total películas: ${state.movies.length}');
-      }
+
+      LoggerFactory.debug(
+          'MoviesNotifier: Estado actualizado - Total películas: ${state.movies.length}');
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error al cargar películas: $e');
-      }
+      LoggerFactory.error('MoviesNotifier: Error al cargar películas: $e');
       state = state.copyWith(
         state: MoviesState.error,
         errorMessage: 'Error al cargar películas: ${e.toString()}',
@@ -137,9 +128,7 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
       state = const MoviesStateData();
       await loadNextPage();
     } catch (e) {
-      if (kDebugMode) {
-        print('❌ Error al refrescar películas: $e');
-      }
+      LoggerFactory.error('MoviesNotifier: Error al refrescar películas: $e');
       state = state.copyWith(
         state: MoviesState.error,
         errorMessage: 'Error al refrescar películas: ${e.toString()}',

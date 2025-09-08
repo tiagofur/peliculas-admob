@@ -9,6 +9,8 @@ import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../infrastructure/services/anonymous_data_migrator.dart';
 import './hybrid_repositories_provider.dart';
+import './storage/direct_watched_provider.dart';
+import './storage/direct_watchlist_provider.dart';
 
 // Enum para definir el modo de la aplicación
 enum AppMode {
@@ -114,7 +116,7 @@ class AppStateNotifier extends StateNotifier<AppState> {
         },
       );
     });
-    
+
     // Detectar datos locales en el startup inicial
     _detectLocalDataOnStartup();
   }
@@ -163,14 +165,16 @@ class AppStateNotifier extends StateNotifier<AppState> {
       try {
         final migrator = _ref.read(anonymousDataMigratorProvider);
         final detectedData = await migrator.detectAnonymousData();
-        
+
         final hasLocalData = detectedData.isNotEmpty;
         if (hasLocalData != state.hasLocalData) {
           state = state.copyWith(hasLocalData: hasLocalData);
-          
+
           if (hasLocalData) {
-            final totalItems = detectedData.values.fold(0, (sum, count) => sum + count);
-            LoggerFactory.info('📱 Datos locales detectados al startup: $totalItems items ($detectedData)');
+            final totalItems =
+                detectedData.values.fold(0, (sum, count) => sum + count);
+            LoggerFactory.info(
+                '📱 Datos locales detectados al startup: $totalItems items ($detectedData)');
           }
         }
       } catch (e) {
@@ -309,35 +313,39 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     Future.microtask(() async {
       try {
         LoggerFactory.info('🔄 Iniciando proceso post-autenticación...');
-        
+
         final user = _ref.read(currentUserProvider);
         if (user == null) {
-          LoggerFactory.warning('❌ No hay usuario disponible para migración y sincronización');
+          LoggerFactory.warning(
+              '❌ No hay usuario disponible para migración y sincronización');
           return;
         }
 
         // 1. Detectar y migrar datos locales de usuario anónimo
         final migrator = _ref.read(anonymousDataMigratorProvider);
         final detectedData = await migrator.detectAnonymousData();
-        
+
         if (detectedData.isNotEmpty) {
           LoggerFactory.info('📱 Datos locales detectados: $detectedData');
           _ref.read(appStateProvider.notifier).setHasLocalData(true);
-          
+
           LoggerFactory.info('🔄 Migrando datos locales a usuario: ${user.id}');
           final migrationResult = await migrator.migrateAllData(user.id);
-          
+
           if (migrationResult.success) {
-            LoggerFactory.info('✅ Migración completada: ${migrationResult.migratedData}');
+            LoggerFactory.info(
+                '✅ Migración completada: ${migrationResult.migratedData}');
           } else {
-            LoggerFactory.error('⚠️ Migración completada con errores: ${migrationResult.errors}');
+            LoggerFactory.error(
+                '⚠️ Migración completada con errores: ${migrationResult.errors}');
           }
         } else {
           LoggerFactory.info('ℹ️ No hay datos locales para migrar');
         }
 
         // 2. Ejecutar sincronización de todas las entidades en segundo plano
-        LoggerFactory.info('🔄 Iniciando sincronización en segundo plano para todas las entidades...');
+        LoggerFactory.info(
+            '🔄 Iniciando sincronización en segundo plano para todas las entidades...');
 
         // Disparar la sincronización para cada repositorio sin esperar (no await)
         _ref.read(hybridFavoritesRepositoryProvider).forceSync();
@@ -345,8 +353,12 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         _ref.read(hybridWatchedRepositoryProvider).forceSync();
         _ref.read(hybridCustomListsRepositoryProvider).forceSync();
 
-        LoggerFactory.info('✅ Sincronización para todas las entidades iniciada en segundo plano.');
-        
+        // Habilitar los providers directos
+        _ref.read(directWatchedMoviesProvider.notifier).enableAfterLogin();
+        _ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
+
+        LoggerFactory.info(
+            '✅ Sincronización para todas las entidades iniciada en segundo plano.');
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario
         LoggerFactory.error('❌ Error durante proceso post-autenticación: $e');

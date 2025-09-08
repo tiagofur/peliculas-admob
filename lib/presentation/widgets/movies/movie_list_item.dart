@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/movie.dart';
 import '../../providers/providers.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
-import '../../providers/watched_movies_provider.dart';
-import '../../screens/movies/movie_screen.dart';
+import '../../providers/storage/direct_watched_provider.dart';
 import 'movie_rating.dart';
 
 class MovieListItem extends ConsumerStatefulWidget {
@@ -103,23 +102,19 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
   }
 
   void _toggleFavorite(bool currentValue) {
-    ref.read(directFavoriteMoviesProvider.notifier).toggleFavorite(widget.movie);
+    ref
+        .read(directFavoriteMoviesProvider.notifier)
+        .toggleFavorite(widget.movie);
   }
 
   void _toggleWatched(bool currentValue) {
-    if (currentValue) {
-      ref
-          .read(watchedMoviesProvider.notifier)
-          .removeFromWatched(widget.movie.id);
-    } else {
-      ref.read(watchedMoviesProvider.notifier).markAsWatched(widget.movie);
-    }
+    ref.read(directWatchedMoviesProvider.notifier).toggleWatched(widget.movie);
   }
 
   @override
   Widget build(BuildContext context) {
     final textStyles = Theme.of(context).textTheme;
-    final isWatched = ref.watch(isWatchedProvider(widget.movie.id));
+    final isWatched = ref.watch(directIsWatchedProvider(widget.movie.id));
     final isFavorite = ref.watch(directIsFavoriteProvider(widget.movie.id));
 
     return AnimatedBuilder(
