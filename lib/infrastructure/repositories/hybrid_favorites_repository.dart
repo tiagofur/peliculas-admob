@@ -82,8 +82,6 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     }
   }
 
-  
-
   Future<SyncableFavorite?> getFavoriteByMovieId(int movieId) async {
     final favorites = await getLocalData();
     try {
@@ -104,7 +102,8 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     if (favoriteToRemove != null) {
       await super.remove(favoriteToRemove.id);
     } else {
-      LoggerFactory.warning('Attempted to remove a favorite that was not found locally: ${movie.title}');
+      LoggerFactory.warning(
+          'Attempted to remove a favorite that was not found locally: ${movie.title}');
     }
   }
 
@@ -113,10 +112,6 @@ class HybridFavoritesRepository extends BaseHybridRepository<SyncableFavorite>
     // 🐛 FIX: Cargar TODAS las películas, no solo las primeras 10
     final movies = await _localDatasource.loadMovies(limit: 1000, offset: 0);
     final result = {for (var movie in movies) movie.id: movie};
-
-    // 🐛 DEBUG: Log para detectar corrupción
-    LoggerFactory.info(
-        '🔍 getFavoriteMovies returning ${result.length} favorites: ${result.keys.toList()}');
 
     return result;
   }

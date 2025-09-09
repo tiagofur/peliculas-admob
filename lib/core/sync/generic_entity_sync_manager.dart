@@ -7,7 +7,8 @@ import 'entity_sync_manager.dart';
 
 /// Implementación genérica del EntitySyncManager
 /// Proporciona funcionalidad básica para cualquier tipo de entidad sincronizable
-class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManager<T> {
+class GenericEntitySyncManager<T extends SyncableEntity>
+    extends EntitySyncManager<T> {
   GenericEntitySyncManager({
     required super.entityType,
     required super.userId,
@@ -18,7 +19,8 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
   Future<List<T>> getLocalPendingSync({DateTime? since}) async {
     // Implementación básica - retorna lista vacía
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('📋 Getting local pending sync for $entityType (generic implementation)');
+    LoggerFactory.info(
+        '📋 Getting local pending sync for $entityType (generic implementation)');
     return <T>[];
   }
 
@@ -26,7 +28,8 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
   Future<List<T>> getRemoteChanges({DateTime? since}) async {
     // Implementación básica - retorna lista vacía
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('📥 Getting remote changes for $entityType (generic implementation)');
+    LoggerFactory.info(
+        '📥 Getting remote changes for $entityType (generic implementation)');
     return <T>[];
   }
 
@@ -34,8 +37,9 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
   Future<SyncResult> uploadChanges(List<T> entities) async {
     // Implementación básica - simula éxito
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('📤 Uploading ${entities.length} changes for $entityType (generic implementation)');
-    
+    LoggerFactory.info(
+        '📤 Uploading ${entities.length} changes for $entityType (generic implementation)');
+
     return SyncResult.success(
       itemsProcessed: entities.length,
       itemsSuccessful: entities.length,
@@ -48,8 +52,9 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
   Future<SyncResult> downloadChanges(List<T> entities) async {
     // Implementación básica - simula éxito
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('📥 Downloading ${entities.length} changes for $entityType (generic implementation)');
-    
+    LoggerFactory.info(
+        '📥 Downloading ${entities.length} changes for $entityType (generic implementation)');
+
     return SyncResult.success(
       itemsProcessed: entities.length,
       itemsSuccessful: entities.length,
@@ -62,7 +67,8 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
   Future<List<ConflictInfo<T>>> detectConflicts() async {
     // Implementación básica - no detecta conflictos
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('🔍 Detecting conflicts for $entityType (generic implementation)');
+    LoggerFactory.info(
+        '🔍 Detecting conflicts for $entityType (generic implementation)');
     return <ConflictInfo<T>>[];
   }
 
@@ -70,7 +76,8 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
   Future<T> resolveConflict(ConflictInfo<T> conflict) async {
     // Implementación básica - usa estrategia remoteWins
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('⚖️ Resolving conflict for $entityType (generic implementation)');
+    LoggerFactory.info(
+        '⚖️ Resolving conflict for $entityType (generic implementation)');
     return conflict.remoteEntity;
   }
 
@@ -82,7 +89,8 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
       // Intenta usar el método toJson si existe
       return (entity as dynamic).toJson() as Map<String, dynamic>;
     } catch (e) {
-      LoggerFactory.warning('⚠️ Failed to serialize $entityType for local storage: $e');
+      LoggerFactory.warning(
+          '⚠️ Failed to serialize $entityType for local storage: $e');
       return <String, dynamic>{
         'id': entity.id,
         'userId': entity.userId,
@@ -120,4 +128,3 @@ class GenericEntitySyncManager<T extends SyncableEntity> extends EntitySyncManag
     return deserializeFromLocal(data);
   }
 }
-

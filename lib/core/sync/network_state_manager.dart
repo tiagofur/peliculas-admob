@@ -76,9 +76,10 @@ class NetworkInfo {
   bool get isOnline => state == NetworkState.online;
   bool get isOffline => state == NetworkState.offline;
   bool get isLimited => state == NetworkState.limited;
-  
+
   bool get canSync => isOnline || isLimited;
-  bool get shouldSyncLarge => isOnline && connectionType == ConnectionType.wifi && !isMetered;
+  bool get shouldSyncLarge =>
+      isOnline && connectionType == ConnectionType.wifi && !isMetered;
 
   @override
   String toString() {
@@ -101,13 +102,19 @@ class NetworkStateEvent {
   final DateTime timestamp;
   final NetworkInfo networkInfo;
 
-  bool get wentOnline => previousState != NetworkState.online && currentState == NetworkState.online;
-  bool get wentOffline => previousState != NetworkState.offline && currentState == NetworkState.offline;
-  bool get connectionImproved => 
-      (previousState == NetworkState.limited && currentState == NetworkState.online) ||
-      (previousState == NetworkState.offline && currentState != NetworkState.offline);
-  bool get connectionDegraded =>
-      (previousState == NetworkState.online && currentState != NetworkState.online);
+  bool get wentOnline =>
+      previousState != NetworkState.online &&
+      currentState == NetworkState.online;
+  bool get wentOffline =>
+      previousState != NetworkState.offline &&
+      currentState == NetworkState.offline;
+  bool get connectionImproved =>
+      (previousState == NetworkState.limited &&
+          currentState == NetworkState.online) ||
+      (previousState == NetworkState.offline &&
+          currentState != NetworkState.offline);
+  bool get connectionDegraded => (previousState == NetworkState.online &&
+      currentState != NetworkState.online);
 
   @override
   String toString() {
@@ -125,19 +132,19 @@ class NetworkStateManager {
 
   final SyncCoordinator? _syncCoordinator;
   final Connectivity _connectivity = Connectivity();
-  
-  final StreamController<NetworkStateEvent> _stateController = 
+
+  final StreamController<NetworkStateEvent> _stateController =
       StreamController<NetworkStateEvent>.broadcast();
 
   NetworkState _currentState = NetworkState.unknown;
   ConnectionType _currentConnectionType = ConnectionType.unknown;
   DateTime? _lastOnlineAt;
   DateTime? _lastStateChange;
-  
+
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _networkTestTimer;
   Timer? _autoSyncTimer;
-  
+
   bool _isInitialized = false;
   bool _autoSyncEnabled = true;
   Duration _autoSyncInterval = const Duration(minutes: 15);
@@ -153,14 +160,15 @@ class NetworkStateManager {
 
   /// Información completa de la red
   NetworkInfo get currentNetworkInfo => NetworkInfo(
-    state: _currentState,
-    connectionType: _currentConnectionType,
-    isConnected: _currentState != NetworkState.offline,
-    lastOnlineAt: _lastOnlineAt,
-    offlineDuration: _lastOnlineAt != null && _currentState == NetworkState.offline
-        ? DateTime.now().difference(_lastOnlineAt!)
-        : null,
-  );
+        state: _currentState,
+        connectionType: _currentConnectionType,
+        isConnected: _currentState != NetworkState.offline,
+        lastOnlineAt: _lastOnlineAt,
+        offlineDuration:
+            _lastOnlineAt != null && _currentState == NetworkState.offline
+                ? DateTime.now().difference(_lastOnlineAt!)
+                : null,
+      );
 
   /// Indica si la sincronización automática está habilitada
   bool get isAutoSyncEnabled => _autoSyncEnabled;
@@ -175,19 +183,22 @@ class NetworkStateManager {
     try {
       // Estado inicial
       final initialConnectivity = await _connectivity.checkConnectivity();
-      final primaryConnection = initialConnectivity.isNotEmpty 
-          ? initialConnectivity.first 
+      final primaryConnection = initialConnectivity.isNotEmpty
+          ? initialConnectivity.first
           : ConnectivityResult.none;
-      _currentConnectionType = ConnectionType.fromConnectivityResult(primaryConnection);
-      
+      _currentConnectionType =
+          ConnectionType.fromConnectivityResult(primaryConnection);
+
       // Probar conexión real
       await _testNetworkState();
 
       // Escuchar cambios de conectividad
-      _connectivitySubscription = _connectivity.onConnectivityChanged.listen(_onConnectivityChanged);
+      _connectivitySubscription =
+          _connectivity.onConnectivityChanged.listen(_onConnectivityChanged);
 
       // Timer periódico para verificar estado de red
-      _networkTestTimer = Timer.periodic(const Duration(seconds: 30), (_) => _testNetworkState());
+      _networkTestTimer = Timer.periodic(
+          const Duration(seconds: 30), (_) => _testNetworkState());
 
       // Configurar auto-sync
       if (_autoSyncEnabled) {
@@ -195,8 +206,8 @@ class NetworkStateManager {
       }
 
       _isInitialized = true;
-      LoggerFactory.info('✅ NetworkStateManager initialized: ${currentNetworkInfo.toString()}');
-
+      LoggerFactory.info(
+          '✅ NetworkStateManager initialized: ${currentNetworkInfo.toString()}');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize NetworkStateManager: $e');
       _isInitialized = true; // Continue even if initialization fails
@@ -205,13 +216,16 @@ class NetworkStateManager {
 
   /// Maneja cambios de conectividad del sistema
   Future<void> _onConnectivityChanged(List<ConnectivityResult> results) async {
-    final primaryResult = results.isNotEmpty ? results.first : ConnectivityResult.none;
-    final newConnectionType = ConnectionType.fromConnectivityResult(primaryResult);
-    
+    final primaryResult =
+        results.isNotEmpty ? results.first : ConnectivityResult.none;
+    final newConnectionType =
+        ConnectionType.fromConnectivityResult(primaryResult);
+
     if (newConnectionType != _currentConnectionType) {
-      LoggerFactory.info('📶 Connectivity changed: ${_currentConnectionType.value} → ${newConnectionType.value}');
+      LoggerFactory.info(
+          '📶 Connectivity changed: ${_currentConnectionType.value} → ${newConnectionType.value}');
       _currentConnectionType = newConnectionType;
-      
+
       // Re-evaluar estado de red
       await _testNetworkState();
     }
@@ -228,11 +242,11 @@ class NetworkStateManager {
       } else {
         // Probar conectividad real con ping
         final isReachable = await _testInternetConnectivity();
-        
+
         if (isReachable) {
           // Evaluar calidad de conexión
           final latency = await _measureLatency();
-          
+
           if (latency != null && latency.inMilliseconds > 5000) {
             newState = NetworkState.limited; // Conexión muy lenta
           } else {
@@ -269,11 +283,11 @@ class NetworkStateManager {
   Future<Duration?> _measureLatency() async {
     try {
       final stopwatch = Stopwatch()..start();
-      
+
       await InternetAddress.lookup('google.com').timeout(
         const Duration(seconds: 5),
       );
-      
+
       stopwatch.stop();
       return stopwatch.elapsed;
     } catch (e) {
@@ -283,7 +297,8 @@ class NetworkStateManager {
   }
 
   /// Actualiza el estado de red y emite eventos
-  Future<void> _updateNetworkState(NetworkState previousState, NetworkState newState) async {
+  Future<void> _updateNetworkState(
+      NetworkState previousState, NetworkState newState) async {
     _currentState = newState;
     _lastStateChange = DateTime.now();
 
@@ -299,7 +314,7 @@ class NetworkStateManager {
     );
 
     _stateController.add(event);
-    
+
     LoggerFactory.info('📶 Network state changed: ${event.toString()}');
 
     // Reaccionar a cambios de estado
@@ -311,10 +326,10 @@ class NetworkStateManager {
     // Cuando volvemos online, sincronizar pendientes
     if (event.wentOnline && _syncCoordinator != null) {
       LoggerFactory.info('🔄 Network restored, triggering sync');
-      
+
       // Esperar un poco para que la conexión se estabilice
       await Future.delayed(const Duration(seconds: 2));
-      
+
       try {
         await _syncCoordinator!.performFullSync();
       } catch (e) {
@@ -338,14 +353,16 @@ class NetworkStateManager {
   void _scheduleAutoSync() {
     _cancelAutoSync();
 
-    if (!_autoSyncEnabled || _syncCoordinator == null || !currentNetworkInfo.canSync) {
+    if (!_autoSyncEnabled ||
+        _syncCoordinator == null ||
+        !currentNetworkInfo.canSync) {
       return;
     }
 
     _autoSyncTimer = Timer.periodic(_autoSyncInterval, (timer) async {
       if (currentNetworkInfo.canSync) {
         LoggerFactory.info('⏰ Auto-sync triggered');
-        
+
         try {
           await _syncCoordinator!.performFullSync();
         } catch (e) {
@@ -356,7 +373,8 @@ class NetworkStateManager {
       }
     });
 
-    LoggerFactory.info('⏰ Auto-sync scheduled every ${_autoSyncInterval.inMinutes} minutes');
+    LoggerFactory.info(
+        '⏰ Auto-sync scheduled every ${_autoSyncInterval.inMinutes} minutes');
   }
 
   /// Cancela sincronización automática
@@ -371,7 +389,7 @@ class NetworkStateManager {
     Duration? interval,
   }) {
     _autoSyncEnabled = enabled;
-    
+
     if (interval != null) {
       _autoSyncInterval = interval;
     }
@@ -382,7 +400,8 @@ class NetworkStateManager {
       _cancelAutoSync();
     }
 
-    LoggerFactory.info('⚙️ Auto-sync configured: enabled=$enabled, interval=${_autoSyncInterval.inMinutes}min');
+    LoggerFactory.info(
+        '⚙️ Auto-sync configured: enabled=$enabled, interval=${_autoSyncInterval.inMinutes}min');
   }
 
   /// Fuerza una verificación de estado de red
@@ -396,7 +415,8 @@ class NetworkStateManager {
     if (_syncCoordinator == null) return false;
 
     if (!currentNetworkInfo.canSync) {
-      LoggerFactory.warning('⚠️ Cannot sync - network not suitable: ${currentNetworkInfo.toString()}');
+      LoggerFactory.warning(
+          '⚠️ Cannot sync - network not suitable: ${currentNetworkInfo.toString()}');
       return false;
     }
 
@@ -412,9 +432,9 @@ class NetworkStateManager {
 
   /// Indica si se debe sincronizar automáticamente ahora
   bool shouldAutoSync() {
-    return _autoSyncEnabled && 
-           currentNetworkInfo.canSync && 
-           _syncCoordinator != null;
+    return _autoSyncEnabled &&
+        currentNetworkInfo.canSync &&
+        _syncCoordinator != null;
   }
 
   /// Obtiene estadísticas de red
@@ -437,9 +457,9 @@ class NetworkStateManager {
     await _connectivitySubscription?.cancel();
     _networkTestTimer?.cancel();
     _cancelAutoSync();
-    
+
     await _stateController.close();
-    
+
     LoggerFactory.info('🔒 NetworkStateManager disposed');
   }
 }

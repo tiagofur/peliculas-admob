@@ -117,7 +117,7 @@ class _GridAdWidgetState extends State<GridAdWidget> {
                 child: _buildAdContent(colors, textStyles),
               ),
             ),
-            
+
             // Etiqueta opcional
             if (widget.showLabel) ...[
               const SizedBox(height: 4),
@@ -151,11 +151,11 @@ class _GridAdWidgetState extends State<GridAdWidget> {
     if (_isAdLoaded && nativeAd != null) {
       return AdWidget(ad: nativeAd);
     }
-    
+
     if (_isAdFailed) {
       return _buildErrorState(colors, textStyles);
     }
-    
+
     return _buildLoadingState(colors);
   }
 

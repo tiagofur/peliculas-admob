@@ -57,11 +57,11 @@ class AccessibilityService {
   }
 
   /// Create semantic label for star rating
-  static String getStarRatingSemantics(int rating, int maxRating) {
+  static String getStarRatingSemantics(double rating, int maxRating) {
     if (rating == 0) {
       return 'Sin calificación de $maxRating estrellas';
     }
-    return 'Calificación $rating de $maxRating estrellas';
+    return 'Calificación ${rating.toInt()} de $maxRating estrellas';
   }
 
   /// Create semantic label for movie poster

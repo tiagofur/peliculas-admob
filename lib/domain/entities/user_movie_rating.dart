@@ -6,7 +6,7 @@ class UserMovieRating {
     required this.movieTitle,
     this.moviePosterPath,
     required this.rating,
-    this.personalNote,
+    this.review,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -14,15 +14,19 @@ class UserMovieRating {
   /// Factory constructor para crear desde JSON
   factory UserMovieRating.fromJson(Map<String, dynamic> json) {
     return UserMovieRating(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      movieId: json['movie_id'] as int,
-      movieTitle: json['movie_title'] as String,
-      moviePosterPath: json['movie_poster_path'] as String?,
-      rating: json['rating'] as int,
-      personalNote: json['personal_note'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      movieId: json['movie_id'] as int? ?? 0,
+      movieTitle: json['movie_title']?.toString() ?? '',
+      moviePosterPath: json['movie_poster_path']?.toString(),
+      rating: (json['rating'] as num?)?.toDouble() ?? 1.0,
+      review: json['review']?.toString(),
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'].toString()) 
+          : DateTime.now(),
+      updatedAt: json['last_modified_at'] != null 
+          ? DateTime.parse(json['last_modified_at'].toString()) 
+          : DateTime.now(),
     );
   }
   final String id;
@@ -30,8 +34,8 @@ class UserMovieRating {
   final int movieId;
   final String movieTitle;
   final String? moviePosterPath;
-  final int rating; // 1-5 stars
-  final String? personalNote;
+  final double rating; // 1.0-10.0 stars
+  final String? review;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -44,9 +48,9 @@ class UserMovieRating {
       'movie_title': movieTitle,
       'movie_poster_path': moviePosterPath,
       'rating': rating,
-      'personal_note': personalNote,
+      'review': review,
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'last_modified_at': updatedAt.toIso8601String(),
     };
   }
 
@@ -58,7 +62,7 @@ class UserMovieRating {
       'movie_title': movieTitle,
       'movie_poster_path': moviePosterPath,
       'rating': rating,
-      'personal_note': personalNote,
+      'review': review,
     };
   }
 
@@ -68,7 +72,7 @@ class UserMovieRating {
       'movie_title': movieTitle,
       'movie_poster_path': moviePosterPath,
       'rating': rating,
-      'personal_note': personalNote,
+      'review': review,
     };
   }
 
@@ -79,8 +83,8 @@ class UserMovieRating {
     int? movieId,
     String? movieTitle,
     String? moviePosterPath,
-    int? rating,
-    String? personalNote,
+    double? rating,
+    String? review,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -91,20 +95,21 @@ class UserMovieRating {
       movieTitle: movieTitle ?? this.movieTitle,
       moviePosterPath: moviePosterPath ?? this.moviePosterPath,
       rating: rating ?? this.rating,
-      personalNote: personalNote ?? this.personalNote,
+      review: review ?? this.review,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
   /// Valida que el rating esté en el rango correcto
-  bool get isValidRating => rating >= 1 && rating <= 5;
+  bool get isValidRating => rating >= 1.0 && rating <= 10.0;
 
-  /// Valida que la nota personal no exceda el límite
-  bool get isValidNote => personalNote == null || (personalNote?.length ?? 0) <= 500;
+  /// Valida que la reseña no exceda el límite
+  bool get isValidReview =>
+      review == null || (review?.length ?? 0) <= 500;
 
   /// Valida que la entidad sea válida
-  bool get isValid => isValidRating && isValidNote;
+  bool get isValid => isValidRating && isValidReview;
 
   @override
   bool operator ==(Object other) {
@@ -117,7 +122,7 @@ class UserMovieRating {
         other.movieTitle == movieTitle &&
         other.moviePosterPath == moviePosterPath &&
         other.rating == rating &&
-        other.personalNote == personalNote &&
+        other.review == review &&
         other.createdAt == createdAt &&
         other.updatedAt == updatedAt;
   }
@@ -130,7 +135,7 @@ class UserMovieRating {
         movieTitle.hashCode ^
         (moviePosterPath?.hashCode ?? 0) ^
         rating.hashCode ^
-        (personalNote?.hashCode ?? 0) ^
+        (review?.hashCode ?? 0) ^
         createdAt.hashCode ^
         updatedAt.hashCode;
   }
@@ -138,7 +143,7 @@ class UserMovieRating {
   @override
   String toString() {
     return 'UserMovieRating(id: $id, userId: $userId, movieId: $movieId, '
-        'movieTitle: $movieTitle, rating: $rating, personalNote: $personalNote, '
+        'movieTitle: $movieTitle, rating: $rating, review: $review, '
         'createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

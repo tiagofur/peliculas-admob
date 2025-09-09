@@ -24,7 +24,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
   Widget build(BuildContext context) {
     // Usar el sistema directo que mantiene datos en tiempo real
     final watchlistMovies = ref.watch(directWatchlistMoviesProvider);
-    
+
     // Filtrar por prioridad si está seleccionada
     List<WatchlistMovie> filteredMovies = watchlistMovies.values.toList();
     if (_selectedPriority != null) {
@@ -32,7 +32,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
           .where((movie) => movie.priority == _selectedPriority)
           .toList();
     }
-    
+
     // Ordenar por fecha de agregado (más recientes primero)
     filteredMovies.sort((a, b) => b.addedAt.compareTo(a.addedAt));
 
@@ -44,7 +44,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: () {
               // Forzar recarga de datos
-              ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
+              ref
+                  .read(directWatchlistMoviesProvider.notifier)
+                  .enableAfterLogin();
             },
             tooltip: 'Actualizar',
           ),
@@ -172,10 +174,9 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
             _showRemoveConfirmationDialog(movie);
           },
           onPriorityChanged: (newPriority) {
-            ref.read(directWatchlistMoviesProvider.notifier).changePriority(
-              movie.movieId, 
-              newPriority
-            );
+            ref
+                .read(directWatchlistMoviesProvider.notifier)
+                .changePriority(movie.movieId, newPriority);
           },
           onTap: () {
             context.push('/movie/${movie.movieId}');
@@ -200,7 +201,7 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
           TextButton(
             onPressed: () async {
               Navigator.of(context).pop();
-              
+
               // Crear objeto Movie para el método toggleWatchlist
               final movieEntity = Movie(
                 id: movie.movieId,
@@ -218,9 +219,11 @@ class _WatchlistScreenState extends ConsumerState<WatchlistScreen> {
                 adult: false,
                 video: false,
               );
-              
+
               // Remover usando el provider directo
-              await ref.read(directWatchlistMoviesProvider.notifier).toggleWatchlist(movieEntity);
+              await ref
+                  .read(directWatchlistMoviesProvider.notifier)
+                  .toggleWatchlist(movieEntity);
 
               // Mostrar snackbar de confirmación de forma más segura
               if (context.mounted) {

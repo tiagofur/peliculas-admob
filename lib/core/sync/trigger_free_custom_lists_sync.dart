@@ -7,8 +7,9 @@ import '../logging/logger_factory.dart';
 /// usando operaciones directas INSERT/DELETE en lugar de UPSERT para Listas Personalizadas
 class TriggerFreeCustomListsSync {
   TriggerFreeCustomListsSync._internal();
-  
-  static final TriggerFreeCustomListsSync _instance = TriggerFreeCustomListsSync._internal();
+
+  static final TriggerFreeCustomListsSync _instance =
+      TriggerFreeCustomListsSync._internal();
   static TriggerFreeCustomListsSync get instance => _instance;
 
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -28,7 +29,8 @@ class TriggerFreeCustomListsSync {
       final List<dynamic> data = response as List<dynamic>;
       final listsData = data.cast<Map<String, dynamic>>();
 
-      final customLists = listsData.map((data) => _dataToCustomList(data)).toList();
+      final customLists =
+          listsData.map((data) => _dataToCustomList(data)).toList();
 
       LoggerFactory.info(
           '✅ [TriggerFree] Encontradas ${customLists.length} listas');
@@ -55,14 +57,16 @@ class TriggerFreeCustomListsSync {
       final List<dynamic> data = response as List<dynamic>;
       final itemsData = data.cast<Map<String, dynamic>>();
 
-      final movieIds = itemsData.map((data) => data['movie_id'] as int).toList();
+      final movieIds =
+          itemsData.map((data) => data['movie_id'] as int).toList();
 
       LoggerFactory.info(
           '✅ [TriggerFree] Encontrados ${movieIds.length} items en lista $listId');
 
       return movieIds;
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error obteniendo items de lista: $e');
+      LoggerFactory.error(
+          '❌ [TriggerFree] Error obteniendo items de lista: $e');
       return [];
     }
   }
@@ -74,16 +78,20 @@ class TriggerFreeCustomListsSync {
 
       // final now = DateTime.now().toUtc().toIso8601String();
 
-      final response = await _supabase.from('user_lists').insert({
-        'id': list.id,
-        'user_id': userId,
-        'name': list.name,
-        'description': list.description,
-        'color_hex': _colorNameToHex(list.color),
-        'is_public': false,
-        'sync_version': 1,
-        'is_deleted': false,
-      }).select().single();
+      final response = await _supabase
+          .from('user_lists')
+          .insert({
+            'id': list.id,
+            'user_id': userId,
+            'name': list.name,
+            'description': list.description,
+            'color_hex': _colorNameToHex(list.color),
+            'is_public': false,
+            'sync_version': 1,
+            'is_deleted': false,
+          })
+          .select()
+          .single();
 
       final createdList = _dataToCustomList(response);
 
@@ -102,14 +110,18 @@ class TriggerFreeCustomListsSync {
 
       // final now = DateTime.now().toUtc().toIso8601String();
 
-      await _supabase.from('user_lists').update({
-        'name': list.name,
-        'description': list.description,
-        // Campos opcionales - solo usar los que existen
-        // 'emoji': list.emoji,
-        // 'color': list.color,
-        // 'sync_version': 1,
-      }).eq('id', list.id).eq('user_id', userId);
+      await _supabase
+          .from('user_lists')
+          .update({
+            'name': list.name,
+            'description': list.description,
+            // Campos opcionales - solo usar los que existen
+            // 'emoji': list.emoji,
+            // 'color': list.color,
+            // 'sync_version': 1,
+          })
+          .eq('id', list.id)
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ [TriggerFree] Lista actualizada: ${list.name}');
     } catch (e) {
@@ -124,10 +136,7 @@ class TriggerFreeCustomListsSync {
       LoggerFactory.info('🗑️ [TriggerFree] Eliminando lista: $listId');
 
       // Primero eliminar todos los items de la lista
-      await _supabase
-          .from('user_list_items')
-          .delete()
-          .eq('list_id', listId);
+      await _supabase.from('user_list_items').delete().eq('list_id', listId);
 
       // Luego eliminar la lista
       await _supabase
@@ -146,7 +155,8 @@ class TriggerFreeCustomListsSync {
   /// Añadir película a lista
   Future<void> addMovieToList(String userId, String listId, int movieId) async {
     try {
-      LoggerFactory.info('➕ [TriggerFree] Agregando película $movieId a lista $listId');
+      LoggerFactory.info(
+          '➕ [TriggerFree] Agregando película $movieId a lista $listId');
 
       // final now = DateTime.now().toUtc().toIso8601String();
 
@@ -155,22 +165,26 @@ class TriggerFreeCustomListsSync {
       await _supabase.from('user_list_items').insert({
         'list_id': listId,
         'movie_id': movieId,
-        'movie_title': 'Movie $movieId', // Título temporal - debería venir de TMDB
+        'movie_title':
+            'Movie $movieId', // Título temporal - debería venir de TMDB
         'is_deleted': false,
         'sync_version': 1,
       });
 
       LoggerFactory.info('✅ [TriggerFree] Película agregada a lista');
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error agregando película a lista: $e');
+      LoggerFactory.error(
+          '❌ [TriggerFree] Error agregando película a lista: $e');
       rethrow;
     }
   }
 
   /// Remover película de lista usando DELETE directo
-  Future<void> removeMovieFromList(String userId, String listId, int movieId) async {
+  Future<void> removeMovieFromList(
+      String userId, String listId, int movieId) async {
     try {
-      LoggerFactory.info('🗑️ [TriggerFree] Removiendo película $movieId de lista $listId');
+      LoggerFactory.info(
+          '🗑️ [TriggerFree] Removiendo película $movieId de lista $listId');
 
       await _supabase
           .from('user_list_items')
@@ -180,7 +194,8 @@ class TriggerFreeCustomListsSync {
 
       LoggerFactory.info('✅ [TriggerFree] Película removida de lista');
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error removiendo película de lista: $e');
+      LoggerFactory.error(
+          '❌ [TriggerFree] Error removiendo película de lista: $e');
       rethrow;
     }
   }
@@ -198,7 +213,8 @@ class TriggerFreeCustomListsSync {
 
       return (response as List).isNotEmpty;
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error verificando película en lista: $e');
+      LoggerFactory.error(
+          '❌ [TriggerFree] Error verificando película en lista: $e');
       return false;
     }
   }
@@ -208,7 +224,7 @@ class TriggerFreeCustomListsSync {
     // Convertir color hex de vuelta a nombre de color para compatibilidad
     String colorHex = data['color_hex'] as String? ?? '#2196F3';
     String colorName = _hexToColorName(colorHex);
-    
+
     return CustomList(
       id: data['id'] as String,
       name: data['name'] as String,
@@ -216,8 +232,11 @@ class TriggerFreeCustomListsSync {
       emoji: data['emoji'] as String? ?? '📝', // Default si no existe
       color: colorName,
       movieIds: [], // Los IDs se cargan por separado
-      createdAt: DateTime.parse(data['created_at'] as String? ?? DateTime.now().toIso8601String()),
-      lastModifiedAt: DateTime.parse(data['last_modified_at'] as String? ?? data['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+          data['created_at'] as String? ?? DateTime.now().toIso8601String()),
+      lastModifiedAt: DateTime.parse(data['last_modified_at'] as String? ??
+          data['created_at'] as String? ??
+          DateTime.now().toIso8601String()),
       isDefault: data['is_default'] as bool? ?? false,
     );
   }

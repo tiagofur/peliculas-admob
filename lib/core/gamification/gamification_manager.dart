@@ -866,8 +866,6 @@ class GamificationManager extends ChangeNotifier {
     return completed;
   }
 
-
-
   // Limpieza
   @override
   void dispose() {

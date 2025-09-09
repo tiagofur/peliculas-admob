@@ -275,8 +275,8 @@ CREATE POLICY "Users can create movie ratings" ON user_movie_ratings
         auth.uid() = user_id 
         AND movie_id > 0
         AND char_length(movie_title) > 0
-        AND rating >= 1 
-        AND rating <= 5
+        AND rating >= 1.0 
+        AND rating <= 10.0
         AND (personal_note IS NULL OR char_length(personal_note) <= 500)
     );
 
@@ -284,8 +284,8 @@ CREATE POLICY "Users can update their movie ratings" ON user_movie_ratings
     FOR UPDATE USING (auth.uid() = user_id)
     WITH CHECK (
         auth.uid() = user_id 
-        AND rating >= 1 
-        AND rating <= 5
+        AND rating >= 1.0 
+        AND rating <= 10.0
         AND (personal_note IS NULL OR char_length(personal_note) <= 500)
     );
 

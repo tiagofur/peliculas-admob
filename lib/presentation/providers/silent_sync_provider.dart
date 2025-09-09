@@ -52,19 +52,21 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
   }
 
   final Ref _ref;
-  final SilentFavoritesSyncService _syncService = SilentFavoritesSyncService.instance;
+  final SilentFavoritesSyncService _syncService =
+      SilentFavoritesSyncService.instance;
   StreamSubscription<SyncProgressUpdate>? _progressSubscription;
   StreamSubscription<AuthState>? _authSubscription;
 
   void _initializeService() {
     // Escuchar progreso de sincronización
-    _progressSubscription = _syncService.syncProgress.listen(_handleSyncProgress);
-    
+    _progressSubscription =
+        _syncService.syncProgress.listen(_handleSyncProgress);
+
     // Escuchar cambios de autenticación
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
       _onAuthStateChange,
     );
-    
+
     // Si ya hay un usuario autenticado, iniciar sync
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     if (currentUserId != null) {
@@ -94,9 +96,9 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
   /// Maneja el progreso de sincronización
   void _handleSyncProgress(SyncProgressUpdate update) {
     state = state.copyWith(
-      isActive: update.type != SyncProgressType.completed && 
-                update.type != SyncProgressType.stopped &&
-                update.type != SyncProgressType.error,
+      isActive: update.type != SyncProgressType.completed &&
+          update.type != SyncProgressType.stopped &&
+          update.type != SyncProgressType.error,
       currentMessage: update.message,
       progress: update.progress,
       currentType: update.type,
@@ -104,7 +106,8 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
     );
 
     // Si se sincronizó un favorito, actualizar el provider
-    if (update.type == SyncProgressType.itemSynced && update.syncedMovie != null) {
+    if (update.type == SyncProgressType.itemSynced &&
+        update.syncedMovie != null) {
       _refreshFavoritesProvider();
     }
 
@@ -117,7 +120,8 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
   /// Maneja cambios de autenticación
   void _handleAuthChange(String? userId) {
     if (userId != null) {
-      LoggerFactory.info('🔐 User authenticated, starting silent sync: $userId');
+      LoggerFactory.info(
+          '🔐 User authenticated, starting silent sync: $userId');
       _startSilentSyncDelayed(userId);
     } else {
       LoggerFactory.info('🔐 User logged out, stopping silent sync');
@@ -165,7 +169,8 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
 }
 
 /// Provider de la sincronización silenciosa
-final silentSyncProvider = StateNotifierProvider<SilentSyncNotifier, SilentSyncState>((ref) {
+final silentSyncProvider =
+    StateNotifierProvider<SilentSyncNotifier, SilentSyncState>((ref) {
   return SilentSyncNotifier(ref);
 });
 

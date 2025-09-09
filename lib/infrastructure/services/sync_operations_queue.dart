@@ -160,9 +160,9 @@ class SyncOperation {
   /// Indica si la operación está lista para ejecutarse
   bool get isReadyToExecute {
     // Las operaciones pueden auto-sincronizarse excepto cuando están en conflicto, error o procesando
-    final canAutoSync = status != SyncItemStatus.conflict && 
-                       status != SyncItemStatus.error && 
-                       status != SyncItemStatus.processing;
+    final canAutoSync = status != SyncItemStatus.conflict &&
+        status != SyncItemStatus.error &&
+        status != SyncItemStatus.processing;
     return canAutoSync && DateTime.now().isAfter(scheduledAt);
   }
 

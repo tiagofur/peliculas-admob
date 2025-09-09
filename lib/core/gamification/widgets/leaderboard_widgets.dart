@@ -84,7 +84,8 @@ class _LeaderboardViewState extends ConsumerState<LeaderboardView>
           controller: _tabController,
           isScrollable: true,
           labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          unselectedLabelColor:
+              theme.colorScheme.onSurface.withValues(alpha: 0.6),
           indicatorColor: theme.colorScheme.primary,
           tabs: _categories.map((category) {
             return Tab(
@@ -347,14 +348,15 @@ class TopRankCard extends StatelessWidget {
                             const CircularProgressIndicator(),
                         errorWidget: (context, url, error) => Icon(
                           Icons.person,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.5),
                         ),
                       ),
                     )
                   : Icon(
-                        Icons.person,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
+                      Icons.person,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
             ),
             Positioned(
               right: -2,

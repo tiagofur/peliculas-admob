@@ -11,12 +11,12 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
   CachedMovieRepositoryImpl({
     required MoviesDatasource networkDatasource,
     required LocalStorageDatasource localDatasource,
-  }) : _networkDatasource = networkDatasource,
-       _localDatasource = localDatasource;
+  })  : _networkDatasource = networkDatasource,
+        _localDatasource = localDatasource;
 
   final MoviesDatasource _networkDatasource;
   final LocalStorageDatasource _localDatasource;
-  
+
   final Map<String, List<Movie>> _memoryCache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
   final Duration _memoryCacheTimeout = const Duration(minutes: 30);
@@ -26,8 +26,8 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       return connectivityResult.contains(ConnectivityResult.mobile) ||
-             connectivityResult.contains(ConnectivityResult.wifi) ||
-             connectivityResult.contains(ConnectivityResult.ethernet);
+          connectivityResult.contains(ConnectivityResult.wifi) ||
+          connectivityResult.contains(ConnectivityResult.ethernet);
     } catch (e) {
       LoggerFactory.warning('Error checking connectivity: $e');
       return false;
@@ -63,14 +63,17 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     // 1. Check memory cache first (fastest)
     final memoryCached = _getFromMemoryCache(cacheKey);
     if (memoryCached != null) {
-      LoggerFactory.info('📱 Retrieved from memory cache: ${memoryCached.length} movies');
+      LoggerFactory.info(
+          '📱 Retrieved from memory cache: ${memoryCached.length} movies');
       return memoryCached;
     }
 
     // 2. Check offline cache
-    final offlineCached = await _localDatasource.getCachedMoviesByCategory(cacheKey);
+    final offlineCached =
+        await _localDatasource.getCachedMoviesByCategory(cacheKey);
     if (offlineCached.isNotEmpty) {
-      LoggerFactory.info('📱 Retrieved from offline cache: ${offlineCached.length} movies');
+      LoggerFactory.info(
+          '📱 Retrieved from offline cache: ${offlineCached.length} movies');
       _saveToMemoryCache(cacheKey, offlineCached);
       return offlineCached;
     }
@@ -86,12 +89,12 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     try {
       LoggerFactory.info('🌐 Fetching from network: $cacheKey');
       final networkData = await networkCall();
-      
+
       if (networkData.isNotEmpty) {
         // Save to both caches
         _saveToMemoryCache(cacheKey, networkData);
         await _localDatasource.cacheMovies(networkData, cacheKey);
-        
+
         LoggerFactory.info('✅ Fetched and cached ${networkData.length} movies');
         return networkData;
       }
@@ -100,9 +103,11 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     }
 
     // 5. Last resort: try to get any cached data (even expired)
-    final expiredCache = await _localDatasource.getCachedMoviesByCategory(cacheKey);
+    final expiredCache =
+        await _localDatasource.getCachedMoviesByCategory(cacheKey);
     if (expiredCache.isNotEmpty) {
-      LoggerFactory.info('📱 Using expired cache: ${expiredCache.length} movies');
+      LoggerFactory.info(
+          '📱 Using expired cache: ${expiredCache.length} movies');
       return expiredCache;
     }
 
@@ -150,7 +155,8 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     // 1. Check memory cache
     final memoryCached = _getFromMemoryCache(cacheKey);
     if (memoryCached != null && memoryCached.isNotEmpty) {
-      LoggerFactory.info('📱 Movie from memory cache: ${memoryCached.first.title}');
+      LoggerFactory.info(
+          '📱 Movie from memory cache: ${memoryCached.first.title}');
       return memoryCached.first;
     }
 
@@ -172,23 +178,24 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     try {
       LoggerFactory.info('🌐 Fetching movie from network: $id');
       final movie = await _networkDatasource.getMovieById(id);
-      
+
       // Save to both caches
       _saveToMemoryCache(cacheKey, [movie]);
       await _localDatasource.cacheMovie(movie);
-      
+
       LoggerFactory.info('✅ Fetched and cached movie: ${movie.title}');
       return movie;
     } catch (e) {
       LoggerFactory.error('❌ Network error for movie $id: $e');
-      
+
       // Last resort: try cached again (maybe it was there but expired)
       final expiredMovie = await _localDatasource.getCachedMovie(movieIdInt);
       if (expiredMovie != null) {
-        LoggerFactory.info('📱 Using expired cache for movie: ${expiredMovie.title}');
+        LoggerFactory.info(
+            '📱 Using expired cache for movie: ${expiredMovie.title}');
         return expiredMovie;
       }
-      
+
       throw Exception('Movie not found: $id');
     }
   }
@@ -196,7 +203,7 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
   @override
   Future<List<Movie>> searchMovies(String query) {
     if (query.trim().isEmpty) return Future.value([]);
-    
+
     return _getMoviesWithCache(
       'search_${query.hashCode}',
       () => _networkDatasource.searchMovies(query),
@@ -216,7 +223,8 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     // Videos are not cached as they change frequently and are less critical for offline use
     final hasConnection = await _hasConnectivity();
     if (!hasConnection) {
-      LoggerFactory.warning('📱 No connectivity - videos not available offline');
+      LoggerFactory.warning(
+          '📱 No connectivity - videos not available offline');
       return [];
     }
 

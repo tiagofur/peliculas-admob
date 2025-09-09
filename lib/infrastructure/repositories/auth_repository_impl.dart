@@ -102,7 +102,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Stream<domain.User?> get authStateChanges => _authStateController?.stream ?? const Stream.empty();
+  Stream<domain.User?> get authStateChanges =>
+      _authStateController?.stream ?? const Stream.empty();
 
   @override
   domain.User? get currentUser {

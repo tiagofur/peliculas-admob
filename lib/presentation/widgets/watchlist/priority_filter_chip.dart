@@ -35,7 +35,8 @@ class PriorityFilterChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
+            color:
+                isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             fontSize: 14,
           ),

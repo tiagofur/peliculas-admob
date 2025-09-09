@@ -121,7 +121,11 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Películas complejas y fascinantes',
       emoji: '🧠',
       color: Colors.purple,
-      associatedGenres: ['878', '9648', '53'], // Ciencia Ficción, Misterio, Thriller
+      associatedGenres: [
+        '878',
+        '9648',
+        '53'
+      ], // Ciencia Ficción, Misterio, Thriller
       filters: {
         'with_genres': '878,9648,53',
         'vote_average.gte': 7.0,
@@ -197,15 +201,15 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
 // Provider para las secciones de descubrimiento
 final discoverySections = Provider<List<DiscoverySection>>((ref) {
   final categories = ref.watch(discoveryCategories);
-  
+
   return [
     DiscoverySection(
       id: 'romantic',
       title: 'Romance & Parejas',
       subtitle: 'Para momentos especiales',
-      categories: categories.where((c) => 
-        c.id == 'romantic_night' || c.id == 'date_movies'
-      ).toList(),
+      categories: categories
+          .where((c) => c.id == 'romantic_night' || c.id == 'date_movies')
+          .toList(),
       icon: Icons.favorite,
       color: Colors.pink,
     ),
@@ -213,9 +217,9 @@ final discoverySections = Provider<List<DiscoverySection>>((ref) {
       id: 'classics',
       title: 'Clásicos & Joyas',
       subtitle: 'Tesoros cinematográficos',
-      categories: categories.where((c) => 
-        c.id == 'forgotten_classics' || c.id == 'hidden_gems'
-      ).toList(),
+      categories: categories
+          .where((c) => c.id == 'forgotten_classics' || c.id == 'hidden_gems')
+          .toList(),
       icon: Icons.star,
       color: Colors.amber,
     ),
@@ -223,9 +227,9 @@ final discoverySections = Provider<List<DiscoverySection>>((ref) {
       id: 'family',
       title: 'Familia & Diversión',
       subtitle: 'Para todos los gustos',
-      categories: categories.where((c) => 
-        c.id == 'family_fun' || c.id == 'weekend_fun'
-      ).toList(),
+      categories: categories
+          .where((c) => c.id == 'family_fun' || c.id == 'weekend_fun')
+          .toList(),
       icon: Icons.family_restroom,
       color: Colors.green,
     ),
@@ -233,9 +237,9 @@ final discoverySections = Provider<List<DiscoverySection>>((ref) {
       id: 'thrills',
       title: 'Emociones Fuertes',
       subtitle: 'Adrenalina y suspense',
-      categories: categories.where((c) => 
-        c.id == 'adrenaline_rush' || c.id == 'mind_bending'
-      ).toList(),
+      categories: categories
+          .where((c) => c.id == 'adrenaline_rush' || c.id == 'mind_bending')
+          .toList(),
       icon: Icons.flash_on,
       color: Colors.red,
     ),
@@ -243,9 +247,9 @@ final discoverySections = Provider<List<DiscoverySection>>((ref) {
       id: 'mood',
       title: 'Por Estado de Ánimo',
       subtitle: 'Según como te sientes',
-      categories: categories.where((c) => 
-        c.id == 'rainy_day' || c.id == 'feel_good'
-      ).toList(),
+      categories: categories
+          .where((c) => c.id == 'rainy_day' || c.id == 'feel_good')
+          .toList(),
       icon: Icons.mood,
       color: Colors.blue,
     ),
@@ -253,9 +257,9 @@ final discoverySections = Provider<List<DiscoverySection>>((ref) {
       id: 'international',
       title: 'Cine Internacional',
       subtitle: 'Lo mejor del mundo',
-      categories: categories.where((c) => 
-        c.id == 'world_cinema' || c.id == 'award_winners'
-      ).toList(),
+      categories: categories
+          .where((c) => c.id == 'world_cinema' || c.id == 'award_winners')
+          .toList(),
       icon: Icons.public,
       color: Colors.indigo,
     ),
@@ -268,14 +272,16 @@ final userFavoriteCategoriesProvider = StateProvider<List<String>>((ref) {
 });
 
 // Provider para obtener películas de una categoría específica
-final categoryMoviesProvider = FutureProvider.family<List<Movie>, String>((ref, categoryId) async {
+final categoryMoviesProvider =
+    FutureProvider.family<List<Movie>, String>((ref, categoryId) async {
   // Aquí implementarías la lógica para obtener películas basadas en la categoría
   // Por ahora retornamos una lista vacía
   return [];
 });
 
 // Provider para gestionar el estado de descubrimiento
-class DiscoveryNotifier extends StateNotifier<AsyncValue<List<DiscoveryCategory>>> {
+class DiscoveryNotifier
+    extends StateNotifier<AsyncValue<List<DiscoveryCategory>>> {
   DiscoveryNotifier() : super(const AsyncValue.loading()) {
     _loadCategories();
   }
@@ -298,6 +304,7 @@ class DiscoveryNotifier extends StateNotifier<AsyncValue<List<DiscoveryCategory>
   }
 }
 
-final discoveryNotifierProvider = StateNotifierProvider<DiscoveryNotifier, AsyncValue<List<DiscoveryCategory>>>((ref) {
+final discoveryNotifierProvider = StateNotifierProvider<DiscoveryNotifier,
+    AsyncValue<List<DiscoveryCategory>>>((ref) {
   return DiscoveryNotifier();
 });

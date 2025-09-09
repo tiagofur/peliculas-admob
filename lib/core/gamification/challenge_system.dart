@@ -454,13 +454,6 @@ class ChallengeSystem extends ChangeNotifier {
     return ChallengeDifficulty.easy;
   }
 
-
-
-
-
-
-
-
   /// Update challenge progress and handle completion
   void updateChallengeProgress(String challengeId, int progress,
       [BuildContext? context]) {
@@ -480,12 +473,6 @@ class ChallengeSystem extends ChangeNotifier {
     notifyListeners();
     _saveToStorage();
   }
-
-
-
-
-
-
 
   /// Generate new challenges based on current state
   Future<void> generateNewChallenges() async {

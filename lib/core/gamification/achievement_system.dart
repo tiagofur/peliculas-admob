@@ -36,7 +36,8 @@ class AchievementSystemService {
     final recent = _unlockedAchievements
         .where((achievement) => achievement.unlockedAt != null)
         .toList()
-      ..sort((a, b) => (b.unlockedAt ?? DateTime(1970)).compareTo(a.unlockedAt ?? DateTime(1970)));
+      ..sort((a, b) => (b.unlockedAt ?? DateTime(1970))
+          .compareTo(a.unlockedAt ?? DateTime(1970)));
     return recent.take(10).toList();
   }
 
@@ -79,8 +80,7 @@ class AchievementSystemService {
     }
     final achievement = _achievements[achievementIndex];
 
-    _achievements[achievementIndex] =
-        achievement.copyWith(progress: progress);
+    _achievements[achievementIndex] = achievement.copyWith(progress: progress);
 
     // Auto-unlock if target reached
     if (progress >= achievement.maxProgress && !achievement.isUnlocked) {

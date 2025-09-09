@@ -39,8 +39,7 @@ class SyncService {
 
   /// Sincronización automática después del login
   Future<void> onUserAuthenticated() async {
-    LoggerFactory.info(
-        'Usuario autenticado - iniciando sincronización automática');
+
 
     final user = getCurrentUser();
     if (user != null) {
@@ -62,10 +61,9 @@ class SyncService {
     Future.microtask(() async {
       try {
         final result = await syncAllData();
-        LoggerFactory.info(
-            '✅ Sincronización inicial completada: ${result.success ? 'exitosa' : 'con errores'}');
+        LoggerFactory.info('✅ Sincronización inicial completada sin errores');
       } catch (e) {
-        LoggerFactory.error('❌ Error en sincronización inicial: $e');
+
         _scheduleRetry('onUserAuthenticated');
       }
     });
@@ -96,8 +94,7 @@ class SyncService {
     final results = <String, bool>{};
     final errors = <String>[];
 
-    LoggerFactory.info(
-        'Iniciando sincronización completa de ${_repositories.length} repositorios');
+
 
     // Sincronizar todos los repositorios en paralelo para mejor rendimiento
     final syncTasks = _repositories.map((repo) async {
@@ -139,7 +136,7 @@ class SyncService {
             message: 'Todos los repositorios sincronizados exitosamente',
           );
 
-    LoggerFactory.info('Sincronización completada: $result');
+
     return result;
   }
 
@@ -162,9 +159,7 @@ class SyncService {
     );
 
     try {
-      LoggerFactory.info('🔄 Sincronizando favoritos...');
-      await favoritesRepo.syncWithSupabase();
-      LoggerFactory.info('✅ Favoritos sincronizados');
+        await favoritesRepo.syncWithSupabase();
 
       return SyncResult.success(
         itemsProcessed: 1,
@@ -201,9 +196,7 @@ class SyncService {
     );
 
     try {
-      LoggerFactory.info('🔄 Sincronizando películas vistas...');
-      await watchedRepo.syncWithSupabase();
-      LoggerFactory.info('✅ Películas vistas sincronizadas');
+        await watchedRepo.syncWithSupabase();
 
       return SyncResult.success(
         itemsProcessed: 1,
@@ -241,9 +234,7 @@ class SyncService {
     );
 
     try {
-      LoggerFactory.info('🔄 Sincronizando listas personalizadas...');
-      await customListsRepo.syncWithSupabase();
-      LoggerFactory.info('✅ Listas personalizadas sincronizadas');
+        await customListsRepo.syncWithSupabase();
 
       return SyncResult.success(
         itemsProcessed: 1,

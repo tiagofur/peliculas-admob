@@ -2,12 +2,7 @@ import 'dart:async';
 import 'sync_logger.dart';
 
 /// Niveles de severidad para las alertas de sincronización
-enum AlertSeverity {
-  info,
-  warning,
-  error,
-  critical
-}
+enum AlertSeverity { info, warning, error, critical }
 
 /// Tipos de alertas de sincronización
 enum AlertType {
@@ -22,16 +17,10 @@ enum AlertType {
 }
 
 /// Canales de notificación para las alertas
-enum AlertChannel {
-  inApp,
-  push,
-  email,
-  log
-}
+enum AlertChannel { inApp, push, email, log }
 
 /// Modelo para una alerta de sincronización
 class SyncAlert {
-
   const SyncAlert({
     required this.id,
     required this.type,
@@ -104,7 +93,6 @@ class SyncAlert {
 
 /// Configuración para el sistema de alertas
 class AlertConfig {
-
   const AlertConfig({
     this.enableInAppNotifications = true,
     this.enablePushNotifications = false,
@@ -124,8 +112,17 @@ class AlertConfig {
     this.severityChannelMap = const {
       AlertSeverity.info: [AlertChannel.log],
       AlertSeverity.warning: [AlertChannel.inApp, AlertChannel.log],
-      AlertSeverity.error: [AlertChannel.inApp, AlertChannel.push, AlertChannel.log],
-      AlertSeverity.critical: [AlertChannel.inApp, AlertChannel.push, AlertChannel.email, AlertChannel.log],
+      AlertSeverity.error: [
+        AlertChannel.inApp,
+        AlertChannel.push,
+        AlertChannel.log
+      ],
+      AlertSeverity.critical: [
+        AlertChannel.inApp,
+        AlertChannel.push,
+        AlertChannel.email,
+        AlertChannel.log
+      ],
     },
   });
   final bool enableInAppNotifications;
@@ -144,11 +141,12 @@ class SyncAlertSystem {
   static final SyncAlertSystem _instance = SyncAlertSystem._internal();
 
   final SyncLogger _logger = SyncLogger();
-  
+
   AlertConfig _config = const AlertConfig();
   final List<SyncAlert> _activeAlerts = [];
   final Map<String, DateTime> _alertThrottleMap = {};
-  final StreamController<SyncAlert> _alertStreamController = StreamController<SyncAlert>.broadcast();
+  final StreamController<SyncAlert> _alertStreamController =
+      StreamController<SyncAlert>.broadcast();
 
   /// Stream de alertas activas
   Stream<SyncAlert> get alertStream => _alertStreamController.stream;
@@ -184,11 +182,14 @@ class SyncAlertSystem {
   }) async {
     try {
       // Determinar severidad basada en configuración
-      final alertSeverity = severity ?? _config.alertSeverityMap[type] ?? AlertSeverity.info;
-      
+      final alertSeverity =
+          severity ?? _config.alertSeverityMap[type] ?? AlertSeverity.info;
+
       // Determinar canales basados en severidad
-      final alertChannels = channels ?? _config.severityChannelMap[alertSeverity] ?? [AlertChannel.log];
-      
+      final alertChannels = channels ??
+          _config.severityChannelMap[alertSeverity] ??
+          [AlertChannel.log];
+
       // Verificar throttling
       final throttleKey = '${type.name}_${alertSeverity.name}';
       if (_shouldThrottleAlert(throttleKey)) {
@@ -224,7 +225,7 @@ class SyncAlertSystem {
 
       // Agregar a alertas activas
       _activeAlerts.add(alert);
-      
+
       // Actualizar throttle
       _alertThrottleMap[throttleKey] = DateTime.now();
 
@@ -259,7 +260,8 @@ class SyncAlertSystem {
   /// Resolver una alerta
   Future<void> resolveAlert(String alertId, {String? resolutionNote}) async {
     try {
-      final alertIndex = _activeAlerts.indexWhere((alert) => alert.id == alertId);
+      final alertIndex =
+          _activeAlerts.indexWhere((alert) => alert.id == alertId);
       if (alertIndex == -1) {
         _logger.warning(
           'SyncAlertSystem',
@@ -301,13 +303,13 @@ class SyncAlertSystem {
 
   /// Limpiar alertas resueltas antiguas
   void cleanupResolvedAlerts({Duration? olderThan}) {
-    final cutoffTime = DateTime.now().subtract(olderThan ?? const Duration(days: 7));
-    
-    _activeAlerts.removeWhere((alert) => 
-      alert.isResolved && 
-      alert.resolvedAt != null && 
-      alert.resolvedAt?.isBefore(cutoffTime) == true
-    );
+    final cutoffTime =
+        DateTime.now().subtract(olderThan ?? const Duration(days: 7));
+
+    _activeAlerts.removeWhere((alert) =>
+        alert.isResolved &&
+        alert.resolvedAt != null &&
+        alert.resolvedAt?.isBefore(cutoffTime) == true);
 
     _logger.debug(
       'SyncAlertSystem',
@@ -336,17 +338,18 @@ class SyncAlertSystem {
   bool _shouldThrottleAlert(String throttleKey) {
     final lastAlertTime = _alertThrottleMap[throttleKey];
     if (lastAlertTime == null) return false;
-    
-    return DateTime.now().difference(lastAlertTime) < _config.alertThrottleDuration;
+
+    return DateTime.now().difference(lastAlertTime) <
+        _config.alertThrottleDuration;
   }
 
   /// Verificar si se ha excedido el límite de alertas por hora
   bool _isAlertLimitExceeded() {
     final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
-    final recentAlerts = _activeAlerts.where(
-      (alert) => alert.timestamp.isAfter(oneHourAgo)
-    ).length;
-    
+    final recentAlerts = _activeAlerts
+        .where((alert) => alert.timestamp.isAfter(oneHourAgo))
+        .length;
+
     return recentAlerts >= _config.maxAlertsPerHour;
   }
 
@@ -382,7 +385,7 @@ class SyncAlertSystem {
   /// Enviar notificación in-app
   Future<void> _sendInAppNotification(SyncAlert alert) async {
     if (!_config.enableInAppNotifications) return;
-    
+
     // Implementar notificación in-app usando SnackBar o similar
     // Esta implementación dependerá del contexto de la UI
     _logger.debug(
@@ -395,7 +398,7 @@ class SyncAlertSystem {
   /// Enviar notificación push
   Future<void> _sendPushNotification(SyncAlert alert) async {
     if (!_config.enablePushNotifications) return;
-    
+
     // Implementar notificación push usando Firebase Cloud Messaging
     _logger.debug(
       'SyncAlertSystem',
@@ -407,7 +410,7 @@ class SyncAlertSystem {
   /// Enviar notificación por email
   Future<void> _sendEmailNotification(SyncAlert alert) async {
     if (!_config.enableEmailNotifications) return;
-    
+
     // Implementar notificación por email
     _logger.debug(
       'SyncAlertSystem',

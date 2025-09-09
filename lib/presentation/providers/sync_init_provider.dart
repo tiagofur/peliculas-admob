@@ -36,14 +36,12 @@ class AuthSyncListener {
     // Escuchar cambios en el estado de autenticación usando callback
     listenToAuthChanges((previous, next) async {
       // Si el usuario acaba de autenticarse
-      if (previous?.isAuthenticated == false &&
-          next.isAuthenticated == true) {
+      if (previous?.isAuthenticated == false && next.isAuthenticated == true) {
         await _handleUserAuthenticated();
       }
 
       // Si el usuario acaba de cerrar sesión
-      if (previous?.isAuthenticated == true &&
-          next.isAuthenticated == false) {
+      if (previous?.isAuthenticated == true && next.isAuthenticated == false) {
         await _handleUserLoggedOut();
       }
     });
@@ -52,12 +50,14 @@ class AuthSyncListener {
   /// Manejar cuando el usuario se autentica
   Future<void> _handleUserAuthenticated() async {
     try {
-      LoggerFactory.info('🔐 Usuario autenticado - SYNC AUTOMÁTICO DESHABILITADO');
+      LoggerFactory.info(
+          '🔐 Usuario autenticado - SYNC AUTOMÁTICO DESHABILITADO');
 
       // NO inicializar ningún servicio de sincronización automática para evitar bloqueos
-      LoggerFactory.info('⚠️ Sincronización automática deshabilitada para evitar congelamiento');
-      LoggerFactory.info('💡 El usuario puede sincronizar manualmente desde Settings');
-      
+      LoggerFactory.info(
+          '⚠️ Sincronización automática deshabilitada para evitar congelamiento');
+      LoggerFactory.info(
+          '💡 El usuario puede sincronizar manualmente desde Settings');
     } catch (e) {
       LoggerFactory.error('❌ Error en configuración post-login: $e');
     }
@@ -74,9 +74,7 @@ class AuthSyncListener {
       // Detener sincronización y limpiar recursos
       syncService.dispose();
 
-      // Opcionalmente limpiar datos locales
-      // final initService = _ref.read(crossPlatformInitProvider);
-      // await initService.clearAllData();
+      // Datos locales se mantienen para próximo login
 
       LoggerFactory.info('✅ Limpieza post-logout completada');
     } catch (e) {

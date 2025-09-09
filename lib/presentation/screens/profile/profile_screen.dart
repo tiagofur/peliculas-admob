@@ -2,15 +2,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
+import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/movie_ratings_provider.dart';
 import '../../providers/user_movie_ratings_provider.dart' as ratings;
 import '../../widgets/profile_avatar.dart';
+import '../../widgets/ratings/star_rating_widget.dart';
+import '../../widgets/sync/minimal_sync_indicator.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -89,40 +94,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
         ],
       ),
-      body: userProfile.when(
-        data: (profile) =>
-            _buildProfileContent(theme, profile, userStats.value),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: theme.colorScheme.error,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Error al cargar el perfil',
-                style: theme.textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+      body: Column(
+        children: [
+          const MinimalSyncIndicator(),
+          Expanded(
+            child: userProfile.when(
+              data: (profile) =>
+                  _buildProfileContent(theme, profile, userStats.value),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: theme.colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error al cargar el perfil',
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      error.toString(),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: () => ref.refresh(currentUserProfileProvider),
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: () => ref.refresh(currentUserProfileProvider),
-                child: const Text('Reintentar'),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -496,41 +508,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                // TODO: Temporarily disabled due to missing 'user_movie_ratings' table in Supabase
-                // This section uses recentRatingsProvider and userRatingStatsProvider which cause PostgrestException
-                // Re-enable after the database table is properly created and migrated
-                
-                // Consumer(
-                //   builder: (context, ref, child) {
-                //     final recentRatingsAsync =
-                //         ref.watch(ratings.recentRatingsProvider(5));
-                //     final ratingStatsAsync =
-                //         ref.watch(ratings.userRatingStatsProvider);
+                // Rating statistics and recent ratings section
+                Consumer(
+                  builder: (context, ref, child) {
+                    final recentRatingsAsync = ref.watch(recentRatingsProvider);
+                    final ratingStats = ref.watch(userRatingStatsProvider);
 
-                //     return Column(
-                //       children: [
-                //         // Estadísticas de valoraciones
-                //         ratingStatsAsync.when(
-                //           data: (stats) => _buildRatingStats(theme, stats),
-                //           loading: () => const CircularProgressIndicator(),
-                //           error: (error, stack) => const SizedBox.shrink(),
-                //         ),
-                //         const SizedBox(height: 16),
-
-                //         // Valoraciones recientes
-                //         recentRatingsAsync.when(
-                //           data: (ratings) {
-                //             if (ratings.isEmpty) {
-                //               return Column(
-                //                 children: [
-                //                   Icon(
-                //                     Icons.star_border,
-                //                     size: 48,
-                //                     color: theme.colorScheme.onSurface
-                //                         .withValues(alpha: 0.3),
-                //                   ),
-                //                   const SizedBox(height: 8),
-                //                   Text(
+                    return Column(
+                      children: [
+                        // User rating statistics
+                        if (ratingStats != null &&
+                            ratingStats['totalRatings'] > 0)
+                          _buildRatingStats(theme, ratingStats),
+                        const SizedBox(height: 16),
+                        // Recent ratings
+                        recentRatingsAsync.when(
+                          data: (recentRatings) => recentRatings.isNotEmpty
+                              ? _buildRecentRatings(theme, recentRatings)
+                              : const SizedBox.shrink(),
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          error: (error, stack) => const SizedBox.shrink(),
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 //                     'Aún no has valorado ninguna película',
                 //                     style: theme.textTheme.bodyMedium?.copyWith(
                 //                       color: theme.colorScheme.onSurface
@@ -576,8 +580,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 //     );
                 //   },
                 // ),
-                
-                // Temporary placeholder while ratings feature is disabled
+
                 Container(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -585,13 +588,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Icon(
                         Icons.star_border,
                         size: 48,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Función de valoraciones temporalmente deshabilitada',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -605,8 +610,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
     );
   }
-
-
 
   Widget _buildRatingItem(ThemeData theme, dynamic rating) {
     return Container(
@@ -984,5 +987,179 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         },
       ),
     );
+  }
+
+  /// Builds the rating statistics section
+  Widget _buildRatingStats(ThemeData theme, Map<String, dynamic> stats) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.star, color: Colors.amber, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Your Ratings',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Total',
+                  stats['totalRatings'].toString(),
+                  Icons.movie,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Average',
+                  '${stats['averageRating']}/10',
+                  Icons.star_half,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'With Reviews',
+                  stats['ratingsWithReview'].toString(),
+                  Icons.rate_review,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  theme,
+                  'Recent',
+                  stats['recentRatingsCount'].toString(),
+                  Icons.schedule,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds a small stat card
+  Widget _buildStatCard(
+      ThemeData theme, String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the recent ratings section
+  Widget _buildRecentRatings(
+      ThemeData theme, List<SyncableMovieRating> ratings) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history, color: Colors.green, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Recent Ratings',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...ratings.take(5).map((rating) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    SimpleStarRating(
+                      rating: rating.rating / 2, // Convert to 5-star scale
+                      size: 14,
+                      showRating: false,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        rating.movieTitle,
+                        style: theme.textTheme.bodyMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      '${rating.rating}/10',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: () => _showAllRatings(context),
+            child: const Text('View All Ratings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Shows all user ratings in a dedicated screen
+  void _showAllRatings(BuildContext context) {
+    context.go('/ratings');
   }
 }

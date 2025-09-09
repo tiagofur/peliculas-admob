@@ -37,7 +37,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
       // AdMob no es compatible con web
       return;
     }
-    
+
     _nativeAd = NativeAd(
       adUnitId: AdHelper.nativeAdUnitId,
       factoryId: 'listTile',
@@ -49,7 +49,6 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
           });
         },
         onAdFailedToLoad: (ad, error) {
-          //print('Error al cargar anuncio nativo: ${error.message}');
           ad.dispose();
         },
       ),
@@ -63,7 +62,7 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
       // AdMob no es compatible con web
       return const SizedBox.shrink();
     }
-    
+
     final nativeAd = _nativeAd;
     if (_nativeAdIsLoaded && nativeAd != null) {
       final adWidget = Container(

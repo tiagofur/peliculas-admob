@@ -1,5 +1,3 @@
-
-
 export 'movies/achievements_view.dart';
 export 'movies/statistics_view.dart';
 export 'movies/home_view.dart';

@@ -10,40 +10,40 @@ abstract class LocalStorageDatasource {
 
   // Watchlist methods
   Future<void> addToWatchlist(Movie movie, WatchlistPriority priority);
-  
+
   Future<void> removeFromWatchlist(int movieId);
-  
+
   Future<void> updateWatchlistPriority(int movieId, WatchlistPriority priority);
-  
+
   Future<bool> isMovieInWatchlist(int movieId);
-  
+
   Future<List<WatchlistMovie>> loadWatchlistMovies({
-    int limit = 10, 
+    int limit = 10,
     int offset = 0,
     WatchlistPriority? priority,
   });
-  
+
   Future<WatchlistMovie?> getWatchlistMovie(int movieId);
-  
+
   Future<int> getWatchlistCount();
-  
+
   Future<List<WatchlistMovie>> getAllWatchlistMovies();
 
   // Offline cache methods
   Future<bool> cacheMovie(Movie movie);
-  
+
   Future<Movie?> getCachedMovie(int movieId);
-  
+
   Future<void> cacheMovies(List<Movie> movies, String category);
-  
+
   Future<List<Movie>> getCachedMoviesByCategory(String category);
-  
+
   Future<void> clearExpiredCache();
-  
+
   Future<int> getCacheSize();
-  
+
   Future<void> clearAllCache();
-  
+
   /// Clear all data (favorites, watchlist, cache)
   Future<void> clearAll();
 }

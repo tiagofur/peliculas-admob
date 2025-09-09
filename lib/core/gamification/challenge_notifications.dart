@@ -266,7 +266,8 @@ class ChallengeNotificationService extends ChangeNotifier {
       'reward_badges': challenge.rewardBadges,
     });
 
-    LoggerFactory.info('Challenge completed notification sent: ${challenge.title}');
+    LoggerFactory.info(
+        'Challenge completed notification sent: ${challenge.title}');
   }
 
   /// Send notification for expiring challenge

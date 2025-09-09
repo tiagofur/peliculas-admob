@@ -23,7 +23,8 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
   DirectWatchedNotifier({
     required this.onMovieWatched,
   }) : super({}) {
-    LoggerFactory.info('🎬 DirectWatchedNotifier: Constructor llamado, inicializando...');
+    LoggerFactory.info(
+        '🎬 DirectWatchedNotifier: Constructor llamado, inicializando...');
     _loadWatchedFromSupabase();
     _setupRealtimeListeners();
     LoggerFactory.info('🎬 DirectWatchedNotifier: Inicialización completada');
@@ -136,17 +137,17 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
       // Crear canal de tiempo real para la tabla user_watched_movies
       // Usar un canal único con timestamp para evitar conflictos
-      final channelName = 'watched_realtime_${DateTime.now().millisecondsSinceEpoch}';
+      final channelName =
+          'watched_realtime_${DateTime.now().millisecondsSinceEpoch}';
       LoggerFactory.info('🔊 DirectWatched: Creando canal: $channelName');
-      
-      _realtimeChannel = Supabase.instance.client
-          .channel(channelName)
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'user_watched_movies',
-            callback: _handleRealtimeChange,
-          );
+
+      _realtimeChannel =
+          Supabase.instance.client.channel(channelName).onPostgresChanges(
+                event: PostgresChangeEvent.all,
+                schema: 'public',
+                table: 'user_watched_movies',
+                callback: _handleRealtimeChange,
+              );
 
       // Suscribir al canal con logging mejorado
       _realtimeChannel!.subscribe((status, [error]) {
@@ -160,80 +161,91 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
         }
       });
     } catch (e) {
-      LoggerFactory.error(
-          '❌ DirectWatched: Error configurando listeners: $e');
+      LoggerFactory.error('❌ DirectWatched: Error configurando listeners: $e');
     }
   }
 
   /// Manejar cambios de tiempo real desde Supabase
   void _handleRealtimeChange(PostgresChangePayload payload) {
     try {
-      LoggerFactory.info(
-          '🔊 DirectWatched: ===== CAMBIO RECIBIDO =====');
+      LoggerFactory.info('🔊 DirectWatched: ===== CAMBIO RECIBIDO =====');
       LoggerFactory.info(
           '🔊 DirectWatched: Tipo de evento: ${payload.eventType}');
       LoggerFactory.info('🔍 DirectWatched: newRecord: ${payload.newRecord}');
       LoggerFactory.info('🔍 DirectWatched: oldRecord: ${payload.oldRecord}');
 
       // Para eventos DELETE, newRecord estará vacío y oldRecord tendrá los datos
-      final data = payload.newRecord.isNotEmpty 
-          ? payload.newRecord 
-          : payload.oldRecord;
+      final data =
+          payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
 
       LoggerFactory.info('🔍 DirectWatched: Datos a procesar: $data');
 
       final userId = data['user_id'] as String?;
       final movieId = data['movie_id'] as int?;
       final supabaseRecordId = data['id'] as String?;
-      
+
       LoggerFactory.info('🔍 DirectWatched: user_id del evento: $userId');
       LoggerFactory.info('🔍 DirectWatched: user_id actual: $_currentUserId');
       LoggerFactory.info('🔍 DirectWatched: movie_id del evento: $movieId');
-      LoggerFactory.info('🔍 DirectWatched: supabase record_id: $supabaseRecordId');
-      
+      LoggerFactory.info(
+          '🔍 DirectWatched: supabase record_id: $supabaseRecordId');
+
       // Si no tenemos user_id pero es un DELETE y tenemos supabase record_id,
       // podemos intentar encontrar la película por el estado actual
-      if (userId == null && payload.eventType == PostgresChangeEvent.delete && supabaseRecordId != null) {
-        LoggerFactory.info('🔍 DirectWatched: DELETE sin user_id, buscando por record_id en estado actual');
+      if (userId == null &&
+          payload.eventType == PostgresChangeEvent.delete &&
+          supabaseRecordId != null) {
+        LoggerFactory.info(
+            '🔍 DirectWatched: DELETE sin user_id, buscando por record_id en estado actual');
         _handleDeleteBySupabaseId(supabaseRecordId);
         return;
       }
-      
+
       if (userId != _currentUserId) {
         LoggerFactory.info(
             '🔊 DirectWatched: Cambio de otro usuario, ignorando');
         return;
       }
-      
+
       // Si no tenemos movie_id pero es un DELETE, intentar buscar por supabase record_id
-      if (movieId == null && payload.eventType == PostgresChangeEvent.delete && supabaseRecordId != null) {
-        LoggerFactory.info('🔍 DirectWatched: DELETE sin movie_id, buscando por record_id');
+      if (movieId == null &&
+          payload.eventType == PostgresChangeEvent.delete &&
+          supabaseRecordId != null) {
+        LoggerFactory.info(
+            '🔍 DirectWatched: DELETE sin movie_id, buscando por record_id');
         _handleDeleteBySupabaseId(supabaseRecordId);
         return;
       }
-      
+
       if (movieId == null) {
-        LoggerFactory.error('❌ DirectWatched: movie_id es null, ignorando evento');
+        LoggerFactory.error(
+            '❌ DirectWatched: movie_id es null, ignorando evento');
         return;
       }
 
-      LoggerFactory.info('🔊 DirectWatched: ✅ Procesando cambio del usuario actual');
+      LoggerFactory.info(
+          '🔊 DirectWatched: ✅ Procesando cambio del usuario actual');
 
       switch (payload.eventType) {
         case PostgresChangeEvent.insert:
-          LoggerFactory.info('➕ DirectWatched: Procesando INSERT para movie: $movieId');
+          LoggerFactory.info(
+              '➕ DirectWatched: Procesando INSERT para movie: $movieId');
           _handleRemoteInsert(data);
           break;
         case PostgresChangeEvent.delete:
-          LoggerFactory.info('🗑️ DirectWatched: ===== PROCESANDO DELETE =====');
-          LoggerFactory.info('🗑️ DirectWatched: Movie ID a eliminar: $movieId');
-          LoggerFactory.info('🗑️ DirectWatched: Estado actual antes del DELETE: ${state.keys.toList()}');
-          
+          LoggerFactory.info(
+              '🗑️ DirectWatched: ===== PROCESANDO DELETE =====');
+          LoggerFactory.info(
+              '🗑️ DirectWatched: Movie ID a eliminar: $movieId');
+          LoggerFactory.info(
+              '🗑️ DirectWatched: Estado actual antes del DELETE: ${state.keys.toList()}');
+
           // Procesar DELETE inmediatamente sin delay
           _handleRemoteDelete(movieId);
           break;
         case PostgresChangeEvent.update:
-          LoggerFactory.info('🔄 DirectWatched: Procesando UPDATE para movie: $movieId');
+          LoggerFactory.info(
+              '🔄 DirectWatched: Procesando UPDATE para movie: $movieId');
           _handleRemoteUpdate(data);
           break;
         case PostgresChangeEvent.all:
@@ -243,7 +255,8 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
       }
     } catch (e) {
       LoggerFactory.error('❌ DirectWatched: Error procesando cambio: $e');
-      LoggerFactory.error('❌ DirectWatched: Stack trace: ${StackTrace.current}');
+      LoggerFactory.error(
+          '❌ DirectWatched: Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -271,79 +284,98 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
   /// Manejar eliminación remota (otro dispositivo removió vista)
   void _handleRemoteDelete(int movieId) {
     try {
-      LoggerFactory.info('🗑️ DirectWatched: ===== _handleRemoteDelete INICIADO =====');
+      LoggerFactory.info(
+          '🗑️ DirectWatched: ===== _handleRemoteDelete INICIADO =====');
       LoggerFactory.info('🗑️ DirectWatched: Movie ID a procesar: $movieId');
-      LoggerFactory.info('🗑️ DirectWatched: Estado actual keys: ${state.keys.toList()}');
-      LoggerFactory.info('🗑️ DirectWatched: Estado actual contiene $movieId? ${state.containsKey(movieId)}');
-      
+      LoggerFactory.info(
+          '🗑️ DirectWatched: Estado actual keys: ${state.keys.toList()}');
+      LoggerFactory.info(
+          '🗑️ DirectWatched: Estado actual contiene $movieId? ${state.containsKey(movieId)}');
+
       if (state.containsKey(movieId)) {
         final movie = state[movieId];
         final oldState = Map<int, Movie>.from(state);
-        
-        LoggerFactory.info('🗑️ DirectWatched: Movie a eliminar: ${movie?.title} (ID: $movieId)');
-        LoggerFactory.info('🗑️ DirectWatched: Estado antes de eliminar: ${oldState.keys.length} vistas');
-        
+
+        LoggerFactory.info(
+            '🗑️ DirectWatched: Movie a eliminar: ${movie?.title} (ID: $movieId)');
+        LoggerFactory.info(
+            '🗑️ DirectWatched: Estado antes de eliminar: ${oldState.keys.length} vistas');
+
         state = Map.from(state)..remove(movieId);
-        
-        LoggerFactory.info('🗑️ DirectWatched: Estado después de eliminar: ${state.keys.length} vistas');
-        LoggerFactory.info('✅ DirectWatched: 🎉 VISTA REMOVIDA REMOTAMENTE: ${movie?.title} (ID: $movieId)');
-        LoggerFactory.info('🗑️ DirectWatched: Nuevas keys del estado: ${state.keys.toList()}');
+
+        LoggerFactory.info(
+            '🗑️ DirectWatched: Estado después de eliminar: ${state.keys.length} vistas');
+        LoggerFactory.info(
+            '✅ DirectWatched: 🎉 VISTA REMOVIDA REMOTAMENTE: ${movie?.title} (ID: $movieId)');
+        LoggerFactory.info(
+            '🗑️ DirectWatched: Nuevas keys del estado: ${state.keys.toList()}');
       } else {
         LoggerFactory.warning(
             '⚠️ DirectWatched: Intento de remover vista que no existe localmente: $movieId');
-        LoggerFactory.info('🗑️ DirectWatched: Vistas actuales en estado: ${state.keys.toList()}');
+        LoggerFactory.info(
+            '🗑️ DirectWatched: Vistas actuales en estado: ${state.keys.toList()}');
       }
     } catch (e) {
       LoggerFactory.error('❌ DirectWatched: Error en eliminación remota: $e');
-      LoggerFactory.error('❌ DirectWatched: Stack trace: ${StackTrace.current}');
+      LoggerFactory.error(
+          '❌ DirectWatched: Stack trace: ${StackTrace.current}');
     }
   }
 
   /// Manejar eliminación usando el ID de Supabase cuando no tenemos movie_id
   void _handleDeleteBySupabaseId(String supabaseRecordId) async {
     try {
-      LoggerFactory.info('🗑️ DirectWatched: ===== _handleDeleteBySupabaseId INICIADO =====');
-      LoggerFactory.info('🗑️ DirectWatched: Supabase record ID: $supabaseRecordId');
-      LoggerFactory.info('🗑️ DirectWatched: Estado actual keys: ${state.keys.toList()}');
-      
+      LoggerFactory.info(
+          '🗑️ DirectWatched: ===== _handleDeleteBySupabaseId INICIADO =====');
+      LoggerFactory.info(
+          '🗑️ DirectWatched: Supabase record ID: $supabaseRecordId');
+      LoggerFactory.info(
+          '🗑️ DirectWatched: Estado actual keys: ${state.keys.toList()}');
+
       // Opción: Forzar un refresh completo desde Supabase
-      LoggerFactory.info('🔄 DirectWatched: Forzando refresh completo para detectar cambios');
+      LoggerFactory.info(
+          '🔄 DirectWatched: Forzando refresh completo para detectar cambios');
       final currentUser = Supabase.instance.client.auth.currentUser;
-      
+
       if (currentUser != null) {
         final remoteWatched = await _sync.getUserWatchedMovies(currentUser.id);
         final remoteMoviesMap = <int, Movie>{};
         for (final movie in remoteWatched) {
           remoteMoviesMap[movie.id] = movie;
         }
-        
+
         // Comparar con el estado actual para detectar qué se eliminó
         final currentMovieIds = state.keys.toSet();
         final remoteMovieIds = remoteMoviesMap.keys.toSet();
         final deletedMovieIds = currentMovieIds.difference(remoteMovieIds);
-        
+
         if (deletedMovieIds.isNotEmpty) {
-          LoggerFactory.info('🗑️ DirectWatched: Detected deleted movies: $deletedMovieIds');
-          
+          LoggerFactory.info(
+              '🗑️ DirectWatched: Detected deleted movies: $deletedMovieIds');
+
           // Eliminar las películas que ya no están en el remoto
           final newState = Map<int, Movie>.from(state);
           for (final deletedId in deletedMovieIds) {
             final deletedMovie = newState.remove(deletedId);
-            LoggerFactory.info('✅ DirectWatched: Removed movie: ${deletedMovie?.title} (ID: $deletedId)');
+            LoggerFactory.info(
+                '✅ DirectWatched: Removed movie: ${deletedMovie?.title} (ID: $deletedId)');
           }
-          
+
           state = newState;
-          LoggerFactory.info('🗑️ DirectWatched: State updated after comparison');
+          LoggerFactory.info(
+              '🗑️ DirectWatched: State updated after comparison');
         } else {
-          LoggerFactory.info('🔍 DirectWatched: No differences found in comparison');
+          LoggerFactory.info(
+              '🔍 DirectWatched: No differences found in comparison');
         }
       } else {
         LoggerFactory.warning('⚠️ DirectWatched: No current user for refresh');
       }
-      
     } catch (e) {
-      LoggerFactory.error('❌ DirectWatched: Error en eliminación por Supabase ID: $e');
-      LoggerFactory.error('❌ DirectWatched: Stack trace: ${StackTrace.current}');
+      LoggerFactory.error(
+          '❌ DirectWatched: Error en eliminación por Supabase ID: $e');
+      LoggerFactory.error(
+          '❌ DirectWatched: Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -373,9 +405,10 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
           '🔄 DirectWatched: Procesando evento genérico: ${payload.eventType}');
 
       // Si no hay datos, intentar usar oldRecord para eliminaciones (mismo que favoritos)
-      final eventData = (data != null && data.isNotEmpty) ? data : payload.oldRecord;
+      final eventData =
+          (data != null && data.isNotEmpty) ? data : payload.oldRecord;
 
-      final eventMovieId = movieId ?? eventData?['movie_id'] as int?;
+      final eventMovieId = movieId ?? eventData['movie_id'] as int?;
       if (eventMovieId == null) {
         LoggerFactory.warning(
             '⚠️ DirectWatched: No se pudo obtener movie_id del evento');
@@ -383,7 +416,7 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
       }
 
       // Determinar el tipo de acción basándose en los datos disponibles
-      final isDeleted = eventData?['is_deleted'] as bool? ?? false;
+      final isDeleted = eventData['is_deleted'] as bool? ?? false;
       final hasNewRecord = payload.newRecord.isNotEmpty;
       final hasOldRecord = payload.oldRecord.isNotEmpty;
 
@@ -447,15 +480,16 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
   Future<void> enableAfterLogin() async {
     LoggerFactory.info(
         'DirectWatched: Usuario autenticado, cargando vistas...');
-    
+
     // Reconfigurar realtime listeners para el usuario recién autenticado
     await _realtimeChannel?.unsubscribe();
     _setupRealtimeListeners();
-    
+
     // Cargar datos desde Supabase
     await _loadWatchedFromSupabase();
-    
-    LoggerFactory.info('✅ DirectWatched: Vistas cargadas y listeners reconfigurados');
+
+    LoggerFactory.info(
+        '✅ DirectWatched: Vistas cargadas y listeners reconfigurados');
   }
 
   @override

@@ -18,6 +18,7 @@ final progressSummaryProvider = FutureProvider<ProgressSummary>((ref) async {
   return await progressTrackingService.getProgressSummary();
 });
 
-final progressTrackingServiceProvider = Provider<ProgressTrackingService>((ref) {
+final progressTrackingServiceProvider =
+    Provider<ProgressTrackingService>((ref) {
   return ProgressTrackingService(ref.watch(gamificationManagerProvider));
 });

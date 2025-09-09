@@ -35,7 +35,7 @@ abstract class AuthRepository {
 
   // Operaciones de perfil
   Future<UserProfile?> getUserProfile(String userId);
-  
+
   Future<UserProfile> updateUserProfile({
     required String userId,
     String? fullName,
@@ -45,7 +45,7 @@ abstract class AuthRepository {
 
   // Operaciones de estadísticas
   Future<UserStats?> getUserStats(String userId);
-  
+
   Future<UserStats> updateUserStats({
     required String userId,
     int? moviesWatched,
@@ -63,13 +63,13 @@ abstract class AuthRepository {
 
   // Operaciones de validación
   Future<bool> isEmailAvailable(String email);
-  
+
   // Operaciones de sesión persistente
   Future<bool> hasPersistedSession();
   Future<bool> validateCurrentSession();
   Future<void> refreshToken();
   Future<Map<String, dynamic>?> getSessionInfo();
-  
+
   // Limpieza de recursos
   void dispose();
 }

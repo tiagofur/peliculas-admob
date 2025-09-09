@@ -38,7 +38,8 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
-        LoggerFactory.error('Error inicializando Hive para películas vistas: $e');
+        LoggerFactory.error(
+            'Error inicializando Hive para películas vistas: $e');
       }
       // En caso de error, intentar con un nombre de box diferente
       try {
@@ -91,7 +92,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
 
       final box = _watchedMoviesBox;
       if (box == null) return;
-      
+
       final existingMovieKey = box.keys.toList().cast<int>().firstWhere(
             (key) => box.get(key)?.movie.id == movieId,
             orElse: () => -1,
@@ -115,8 +116,9 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
 
       final box = _watchedMoviesBox;
       if (box == null) return false;
-      
-      final watchedMovies = box.values.toList()
+
+      final watchedMovies = box.values
+          .toList()
           .where((watchedMovie) => watchedMovie.movie.id == movieId);
       return watchedMovies.isNotEmpty;
     } catch (e) {
@@ -136,7 +138,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
 
       final box = _watchedMoviesBox;
       if (box == null) return [];
-      
+
       final allWatchedMovies = box.values.toList();
 
       // Ordenar por fecha de visualización (más recientes primero)

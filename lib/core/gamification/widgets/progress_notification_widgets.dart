@@ -39,14 +39,14 @@ class _ProgressNotificationOverlayState
   @override
   Widget build(BuildContext context) {
     // Listen to progress updates
-    ref.listen<AsyncValue<ProgressUpdate>>(
-        progressUpdatesProvider, (previous, next) {
+    ref.listen<AsyncValue<ProgressUpdate>>(progressUpdatesProvider,
+        (previous, next) {
       next.whenData((update) => _showProgressNotification(update));
     });
 
     // Listen to milestone notifications
-    ref.listen<AsyncValue<MilestoneReached>>(
-        milestoneNotificationsProvider, (previous, next) {
+    ref.listen<AsyncValue<MilestoneReached>>(milestoneNotificationsProvider,
+        (previous, next) {
       next.whenData((milestone) => _showMilestoneNotification(milestone));
     });
 

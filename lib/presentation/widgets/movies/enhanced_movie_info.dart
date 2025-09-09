@@ -724,7 +724,8 @@ class _TechnicalDetails extends StatelessWidget {
                 Expanded(
                   child: _DetailItem(
                     label: 'Presupuesto',
-                    value: '\$${HumanFormats.number((movie.budget ?? 0).toDouble())}',
+                    value:
+                        '\$${HumanFormats.number((movie.budget ?? 0).toDouble())}',
                     icon: Icons.attach_money,
                   ),
                 ),

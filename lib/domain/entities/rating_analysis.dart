@@ -15,15 +15,19 @@ class RatingAnalysis {
     required List<WatchedMovie> watchedMovies,
   }) {
     // Calificación promedio de favoritas
-    final averageFavoriteRating = favoriteMovies.isEmpty 
-        ? 0.0 
-        : favoriteMovies.map((m) => m.voteAverage).reduce((a, b) => a + b) / favoriteMovies.length;
-    
+    final averageFavoriteRating = favoriteMovies.isEmpty
+        ? 0.0
+        : favoriteMovies.map((m) => m.voteAverage).reduce((a, b) => a + b) /
+            favoriteMovies.length;
+
     // Calificación promedio de vistas
-    final averageWatchedRating = watchedMovies.isEmpty 
-        ? 0.0 
-        : watchedMovies.map((m) => _getSimulatedRating(m.movie.id)).reduce((a, b) => a + b) / watchedMovies.length;
-    
+    final averageWatchedRating = watchedMovies.isEmpty
+        ? 0.0
+        : watchedMovies
+                .map((m) => _getSimulatedRating(m.movie.id))
+                .reduce((a, b) => a + b) /
+            watchedMovies.length;
+
     // Distribución de calificaciones
     final ratingDistribution = <String, int>{
       '9.0-10.0': 0,
@@ -33,7 +37,7 @@ class RatingAnalysis {
       '5.0-5.9': 0,
       '<5.0': 0,
     };
-    
+
     for (final movie in favoriteMovies) {
       final rating = movie.voteAverage;
       if (rating >= 9.0) {
@@ -50,7 +54,7 @@ class RatingAnalysis {
         ratingDistribution['<5.0'] = ratingDistribution['<5.0']! + 1;
       }
     }
-    
+
     // Preferencia de calidad
     String qualityPreference;
     if (averageFavoriteRating >= 8.0) {
@@ -60,13 +64,14 @@ class RatingAnalysis {
     } else {
       qualityPreference = 'Mixed';
     }
-    
+
     // Alineación crítica
-    final highRatedMovies = favoriteMovies.where((m) => m.voteAverage >= 7.5).length;
-    final criticalAlignment = favoriteMovies.isEmpty 
-        ? 0.0 
+    final highRatedMovies =
+        favoriteMovies.where((m) => m.voteAverage >= 7.5).length;
+    final criticalAlignment = favoriteMovies.isEmpty
+        ? 0.0
         : (highRatedMovies / favoriteMovies.length) * 100;
-    
+
     return RatingAnalysis(
       averageFavoriteRating: averageFavoriteRating,
       averageWatchedRating: averageWatchedRating,

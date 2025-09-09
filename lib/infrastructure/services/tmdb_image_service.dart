@@ -117,7 +117,8 @@ class TmdbImageService {
     }
 
     if (_imageCache.containsKey(tmdbId)) {
-      return _imageCache[tmdbId] ?? const MovieImages(posterUrl: null, backdropUrl: null);
+      return _imageCache[tmdbId] ??
+          const MovieImages(posterUrl: null, backdropUrl: null);
     }
 
     final images = await getMovieImages(tmdbId);

@@ -10,7 +10,8 @@ import '../../services/pip_service.dart';
 import '../shared/cinema_mode.dart';
 
 // Solo importar youtube_player_flutter en plataformas no web
-import 'package:youtube_player_flutter/youtube_player_flutter.dart' if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart'
+    if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
 
 final FutureProviderFamily<List<Video>, int> videosFromMovieProvider =
     FutureProvider.family((ref, int movieId) {
@@ -148,7 +149,7 @@ class _VideosList extends StatelessWidget {
         const SizedBox(height: 10),
 
         //* Aunque tengo varios videos, sólo quiero mostrar el primero
-        kIsWeb 
+        kIsWeb
             ? _WebYouTubePlayer(
                 youtubeId: videos.first.youtubeKey,
                 name: videos.first.name,
@@ -285,7 +286,8 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
               ],
             ),
             const SizedBox(height: 8),
-            if (!kIsWeb && _controller != null) YoutubePlayer(controller: _controller!),
+            if (!kIsWeb && _controller != null)
+              YoutubePlayer(controller: _controller!),
             if (kIsWeb) _buildWebFallback(),
           ],
         ));
@@ -333,7 +335,8 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
   }
 
   Future<void> _openYouTubeVideo() async {
-    final url = Uri.parse('https://www.youtube.com/watch?v=${widget.youtubeId}');
+    final url =
+        Uri.parse('https://www.youtube.com/watch?v=${widget.youtubeId}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
@@ -379,7 +382,8 @@ class _WebYouTubePlayer extends StatelessWidget {
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(0, 32),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 ),
               ),
             ],
@@ -394,7 +398,8 @@ class _WebYouTubePlayer extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
-                  image: NetworkImage('https://img.youtube.com/vi/$youtubeId/maxresdefault.jpg'),
+                  image: NetworkImage(
+                      'https://img.youtube.com/vi/$youtubeId/maxresdefault.jpg'),
                   fit: BoxFit.cover,
                 ),
               ),

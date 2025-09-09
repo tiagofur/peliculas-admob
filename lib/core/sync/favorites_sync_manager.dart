@@ -11,7 +11,7 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
   FavoritesSyncManager({
     required super.userId,
     SupabaseClient? supabaseClient,
-  }) : _supabase = supabaseClient ?? Supabase.instance.client,
+  })  : _supabase = supabaseClient ?? Supabase.instance.client,
         super(entityType: 'favorite');
 
   final SupabaseClient _supabase;
@@ -26,11 +26,12 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
     try {
       // Get local favorites that need syncing from the persistent queue
       final queuedOperations = await super.processQueuedOperations();
-      
+
       // For now, we'll get pending operations from the sync queue
       // In a complete implementation, this would also check local storage timestamps
-      LoggerFactory.info('🔍 Found ${queuedOperations.itemsProcessed} pending sync operations for favorites');
-      
+      LoggerFactory.info(
+          '🔍 Found ${queuedOperations.itemsProcessed} pending sync operations for favorites');
+
       // Return empty list as operations are processed through the queue system
       return [];
     } catch (e) {
@@ -51,10 +52,9 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       // Add date filtering for incremental sync
       if (since != null) {
-        // TODO: Fix date filtering when Supabase API is clarified
-        // query = query.filter('last_modified_at', 'gte', since.toIso8601String());
-        LoggerFactory.info('📅 Fetching remote changes since: ${since.toIso8601String()}');
-        LoggerFactory.warning('⚠️ Date filtering temporarily disabled - will fetch all records');
+        query = query.gte('last_modified_at', since.toIso8601String());
+        LoggerFactory.info(
+            '📅 Fetching remote changes since: ${since.toIso8601String()}');
       }
 
       final response = await query;
@@ -66,7 +66,6 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       LoggerFactory.info('📥 Retrieved ${favorites.length} remote favorites');
       return favorites;
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to fetch remote changes: $e');
       rethrow;
@@ -89,15 +88,12 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
       for (final entity in entities) {
         try {
           final data = serializeForRemote(entity);
-          
+
           // Usar upsert para crear o actualizar
-          await _supabase
-              .from(_tableName)
-              .upsert(data);
+          await _supabase.from(_tableName).upsert(data);
 
           successful++;
           LoggerFactory.debug('✅ Uploaded favorite: ${entity.movieTitle}');
-
         } catch (e) {
           final error = 'Failed to upload favorite ${entity.id}: $e';
           errors.add(error);
@@ -116,7 +112,6 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       LoggerFactory.info('📤 Upload completed: ${result.toString()}');
       return result;
-
     } catch (e) {
       LoggerFactory.error('❌ Upload batch failed: $e');
       return SyncResult.failure(
@@ -146,7 +141,6 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
           // For now, just count as successful - the hybrid repository handles actual storage
           successful++;
           LoggerFactory.debug('✅ Downloaded favorite: ${entity.movieTitle}');
-
         } catch (e) {
           final error = 'Failed to save favorite ${entity.id}: $e';
           errors.add(error);
@@ -165,7 +159,6 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       LoggerFactory.info('📥 Download completed: ${result.toString()}');
       return result;
-
     } catch (e) {
       LoggerFactory.error('❌ Download batch failed: $e');
       return SyncResult.failure(
@@ -181,11 +174,10 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
     // Para favoritos, los conflictos son menos comunes
     // Implementación simple por ahora
     final conflicts = <ConflictInfo<SyncableFavorite>>[];
-    
+
     try {
       // TODO: Implementar detección de conflictos cuando tengamos storage local
       LoggerFactory.debug('🔍 No conflicts detected for favorites');
-      
     } catch (e) {
       LoggerFactory.error('❌ Conflict detection failed: $e');
     }
@@ -194,13 +186,16 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
   }
 
   @override
-  Future<SyncableFavorite> resolveConflict(ConflictInfo<SyncableFavorite> conflict) async {
+  Future<SyncableFavorite> resolveConflict(
+      ConflictInfo<SyncableFavorite> conflict) async {
     // Estrategia simple: "last write wins"
-    final resolved = conflict.localEntity.hasPrecedenceOver(conflict.remoteEntity)
-        ? conflict.localEntity
-        : conflict.remoteEntity;
+    final resolved =
+        conflict.localEntity.hasPrecedenceOver(conflict.remoteEntity)
+            ? conflict.localEntity
+            : conflict.remoteEntity;
 
-    LoggerFactory.info('⚖️ Resolved conflict for favorite ${resolved.movieTitle}: ${conflict.conflictType.name}');
+    LoggerFactory.info(
+        '⚖️ Resolved conflict for favorite ${resolved.movieTitle}: ${conflict.conflictType.name}');
     return resolved;
   }
 
@@ -249,7 +244,10 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
     await queueOperation(
       type: SyncOperationType.delete,
       entityId: favoriteId,
-      data: {'is_deleted': true, 'deleted_at': DateTime.now().toIso8601String()},
+      data: {
+        'is_deleted': true,
+        'deleted_at': DateTime.now().toIso8601String()
+      },
       priority: 2, // Alta prioridad para eliminaciones
     );
 
@@ -259,29 +257,32 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
   /// Sincroniza favoritos específicamente
   Future<SyncResult> syncFavorites() async {
     LoggerFactory.info('🔄 Starting favorites sync');
-    
+
     // Primero procesar operaciones en cola
     final queueResult = await processQueuedOperations();
-    
+
     // Luego realizar sync completo
     final syncResult = await performFullSync();
-    
+
     // Combinar resultados
-    final totalProcessed = queueResult.itemsProcessed + syncResult.itemsProcessed;
-    final totalSuccessful = queueResult.itemsSuccessful + syncResult.itemsSuccessful;
+    final totalProcessed =
+        queueResult.itemsProcessed + syncResult.itemsProcessed;
+    final totalSuccessful =
+        queueResult.itemsSuccessful + syncResult.itemsSuccessful;
     final allErrors = [...queueResult.errors, ...syncResult.errors];
-    
+
     final combinedResult = SyncResult(
       success: allErrors.isEmpty,
       itemsProcessed: totalProcessed,
       itemsSuccessful: totalSuccessful,
       itemsFailed: totalProcessed - totalSuccessful,
       errors: allErrors,
-      duration: (queueResult.duration ?? Duration.zero) + 
-                (syncResult.duration ?? Duration.zero),
+      duration: (queueResult.duration ?? Duration.zero) +
+          (syncResult.duration ?? Duration.zero),
     );
 
-    LoggerFactory.info('✅ Favorites sync completed: ${combinedResult.toString()}');
+    LoggerFactory.info(
+        '✅ Favorites sync completed: ${combinedResult.toString()}');
     return combinedResult;
   }
 }

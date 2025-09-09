@@ -10,7 +10,7 @@ class GuestModeBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appState = ref.watch(appStateProvider);
-    
+
     // Solo mostrar en modo guest
     if (appState.mode != AppMode.guest) {
       return const SizedBox.shrink();
@@ -51,9 +51,9 @@ class GuestModeBanner extends ConsumerWidget {
               Text(
                 '¡Desbloquea más funciones!',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
             ],
           ),
@@ -61,8 +61,8 @@ class GuestModeBanner extends ConsumerWidget {
           Text(
             'Crea una cuenta gratuita y obtén:',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
           ),
           const SizedBox(height: 8),
           _buildBenefit(
@@ -137,15 +137,18 @@ class GuestModeBanner extends ConsumerWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
               ),
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
+                    ),
               ),
             ],
           ),

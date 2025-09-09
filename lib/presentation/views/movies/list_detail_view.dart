@@ -335,11 +335,12 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
 
   void _shareList(CustomList customList) async {
     try {
-      await ShareService.shareMovieList(context: context, 
+      await ShareService.shareMovieList(
+        context: context,
         listId: customList.id.toString(),
         listName: customList.name,
-        listDescription: customList.description.isNotEmpty 
-            ? customList.description 
+        listDescription: customList.description.isNotEmpty
+            ? customList.description
             : 'Una colección de ${customList.movieIds.length} películas seleccionadas',
         movieCount: customList.movieIds.length,
       );

@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
-
 /// Métricas de rendimiento para el sistema de sincronización
 class SyncPerformanceMetrics {
   factory SyncPerformanceMetrics() => _instance;
   SyncPerformanceMetrics._internal();
 
-  static final SyncPerformanceMetrics _instance = SyncPerformanceMetrics._internal();
+  static final SyncPerformanceMetrics _instance =
+      SyncPerformanceMetrics._internal();
   static SyncPerformanceMetrics get instance => _instance;
 
   // Contadores de eventos
@@ -21,6 +21,16 @@ class SyncPerformanceMetrics {
   int _realtimeEventsProcessed = 0;
   int _throttledEvents = 0;
   int _networkReconnections = 0;
+  
+  // Métricas de batch processing
+  int _totalBatches = 0;
+  int _totalBatchSize = 0;
+  int _maxBatchSize = 0;
+  int _minBatchSize = 0;
+  
+  // Métricas de throttling efficiency
+  double _throttlingEfficiencySum = 0.0;
+  int _throttlingEfficiencyCount = 0;
 
   // Métricas de tiempo
   final Queue<Duration> _syncDurations = Queue<Duration>();
@@ -42,16 +52,17 @@ class SyncPerformanceMetrics {
   static const Duration _metricsWindow = Duration(hours: 1);
 
   // Streams para notificaciones en tiempo real
-  final StreamController<MetricsSnapshot> _metricsController = 
+  final StreamController<MetricsSnapshot> _metricsController =
       StreamController<MetricsSnapshot>.broadcast();
-  
+
   Stream<MetricsSnapshot> get metricsStream => _metricsController.stream;
 
   // Timer para limpiar métricas antiguas
   Timer? _cleanupTimer;
 
   void initialize() {
-    _cleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) => _cleanupOldMetrics());
+    _cleanupTimer =
+        Timer.periodic(const Duration(minutes: 5), (_) => _cleanupOldMetrics());
   }
 
   void dispose() {
@@ -63,14 +74,15 @@ class SyncPerformanceMetrics {
 
   /// Inicia el seguimiento de una operación de sincronización
   String startSyncOperation(String operationType, [String? entityId]) {
-    final operationId = '${operationType}_${DateTime.now().millisecondsSinceEpoch}';
+    final operationId =
+        '${operationType}_${DateTime.now().millisecondsSinceEpoch}';
     _operationStartTimes[operationId] = DateTime.now();
     _totalSyncOperations++;
-    
+
     if (entityId != null) {
       _getEntityMetrics(entityId).operationsStarted++;
     }
-    
+
     _notifyMetricsUpdate();
     return operationId;
   }
@@ -82,7 +94,7 @@ class SyncPerformanceMetrics {
 
     final duration = DateTime.now().difference(startTime);
     _syncDurations.add(duration);
-    
+
     if (_syncDurations.length > _maxHistorySize) {
       _syncDurations.removeFirst();
     }
@@ -107,21 +119,22 @@ class SyncPerformanceMetrics {
     final conflictId = 'conflict_${DateTime.now().millisecondsSinceEpoch}';
     _conflictsDetected++;
     _operationStartTimes[conflictId] = DateTime.now();
-    
+
     _getEntityMetrics(entityId).conflictsDetected++;
     _notifyMetricsUpdate();
-    
+
     return conflictId;
   }
 
   /// Registra la resolución de un conflicto
-  void recordConflictResolved(String conflictId, bool success, [String? entityId]) {
+  void recordConflictResolved(String conflictId, bool success,
+      [String? entityId]) {
     final startTime = _operationStartTimes.remove(conflictId);
     if (startTime == null) return;
 
     final duration = DateTime.now().difference(startTime);
     _conflictResolutionTimes.add(duration);
-    
+
     if (_conflictResolutionTimes.length > _maxHistorySize) {
       _conflictResolutionTimes.removeFirst();
     }
@@ -144,10 +157,11 @@ class SyncPerformanceMetrics {
   }
 
   /// Registra un evento de tiempo real procesado
-  void recordRealtimeEventProcessed(String eventType, String table, Duration processingTime) {
+  void recordRealtimeEventProcessed(
+      String eventType, String table, Duration processingTime) {
     _realtimeEventsProcessed++;
     _realtimeProcessingTimes.add(processingTime);
-    
+
     if (_realtimeProcessingTimes.length > _maxHistorySize) {
       _realtimeProcessingTimes.removeFirst();
     }
@@ -155,7 +169,7 @@ class SyncPerformanceMetrics {
     final entityMetrics = _getEntityMetrics(table);
     entityMetrics.realtimeEventsProcessed++;
     entityMetrics.totalProcessingTime += processingTime;
-    
+
     _notifyMetricsUpdate();
   }
 
@@ -165,12 +179,46 @@ class SyncPerformanceMetrics {
     _getEntityMetrics(table).throttledEvents++;
     _notifyMetricsUpdate();
   }
+  
+  /// Registra el tamaño de un batch procesado
+  void recordBatchSize(String entityId, int batchSize) {
+    // Actualizar métricas globales
+    _totalBatches++;
+    _totalBatchSize += batchSize;
+    if (batchSize > _maxBatchSize) _maxBatchSize = batchSize;
+    if (_minBatchSize == 0 || batchSize < _minBatchSize) _minBatchSize = batchSize;
+    
+    // Actualizar métricas por entidad
+    final entityMetrics = _entityMetrics.putIfAbsent(entityId, () => EntityMetrics(entityId));
+    entityMetrics.totalBatches++;
+    entityMetrics.totalBatchSize += batchSize;
+    if (batchSize > entityMetrics.maxBatchSize) entityMetrics.maxBatchSize = batchSize;
+    if (entityMetrics.minBatchSize == 0 || batchSize < entityMetrics.minBatchSize) {
+      entityMetrics.minBatchSize = batchSize;
+    }
+    
+    _notifyMetricsUpdate();
+  }
+  
+  /// Registra la eficiencia del throttling (0.0 - 1.0)
+  void recordThrottlingEfficiency(String entityId, double efficiency) {
+    // Actualizar métricas globales
+    _throttlingEfficiencySum += efficiency;
+    _throttlingEfficiencyCount++;
+    
+    // Actualizar métricas por entidad
+    final entityMetrics = _entityMetrics.putIfAbsent(entityId, () => EntityMetrics(entityId));
+    entityMetrics.throttlingEfficiencySum += efficiency;
+    entityMetrics.throttlingEfficiencyCount++;
+    
+    _notifyMetricsUpdate();
+  }
 
   /// Registra un evento de red
   void recordNetworkEvent(bool isOnline) {
     final now = DateTime.now();
     _networkEvents.add(now);
-    
+
     if (_networkEvents.length > _maxHistorySize) {
       _networkEvents.removeFirst();
     }
@@ -202,20 +250,35 @@ class SyncPerformanceMetrics {
       totalSyncOperations: _totalSyncOperations,
       successfulSyncs: _successfulSyncs,
       failedSyncs: _failedSyncs,
-      successRate: _totalSyncOperations > 0 ? _successfulSyncs / _totalSyncOperations : 0.0,
+      successRate: _totalSyncOperations > 0
+          ? _successfulSyncs / _totalSyncOperations
+          : 0.0,
       conflictsDetected: _conflictsDetected,
       conflictsResolved: _conflictsResolved,
-      conflictResolutionRate: _conflictsDetected > 0 ? _conflictsResolved / _conflictsDetected : 0.0,
+      conflictResolutionRate: _conflictsDetected > 0
+          ? _conflictsResolved / _conflictsDetected
+          : 0.0,
       realtimeEventsReceived: _realtimeEventsReceived,
       realtimeEventsProcessed: _realtimeEventsProcessed,
-      realtimeProcessingRate: _realtimeEventsReceived > 0 ? _realtimeEventsProcessed / _realtimeEventsReceived : 0.0,
+      realtimeProcessingRate: _realtimeEventsReceived > 0
+          ? _realtimeEventsProcessed / _realtimeEventsReceived
+          : 0.0,
       throttledEvents: _throttledEvents,
+      totalBatches: _totalBatches,
+      averageBatchSize: _totalBatches > 0 ? _totalBatchSize / _totalBatches : 0.0,
+      maxBatchSize: _maxBatchSize,
+      minBatchSize: _minBatchSize,
+      averageThrottlingEfficiency: _throttlingEfficiencyCount > 0 
+          ? _throttlingEfficiencySum / _throttlingEfficiencyCount 
+          : 0.0,
       networkReconnections: _networkReconnections,
       totalOfflineTime: _getTotalOfflineTime(),
       isOnline: _isOnline,
       averageSyncDuration: _calculateAverageDuration(_syncDurations),
-      averageConflictResolutionTime: _calculateAverageDuration(_conflictResolutionTimes),
-      averageRealtimeProcessingTime: _calculateAverageDuration(_realtimeProcessingTimes),
+      averageConflictResolutionTime:
+          _calculateAverageDuration(_conflictResolutionTimes),
+      averageRealtimeProcessingTime:
+          _calculateAverageDuration(_realtimeProcessingTimes),
       syncDurationPercentiles: _calculatePercentiles(_syncDurations),
       entityMetrics: Map.from(_entityMetrics),
       networkStability: _calculateNetworkStability(),
@@ -226,34 +289,35 @@ class SyncPerformanceMetrics {
   /// Calcula la duración promedio de una lista de duraciones
   Duration _calculateAverageDuration(Queue<Duration> durations) {
     if (durations.isEmpty) return Duration.zero;
-    
-    final totalMs = durations.fold<int>(0, (sum, duration) => sum + duration.inMilliseconds);
+
+    final totalMs = durations.fold<int>(
+        0, (sum, duration) => sum + duration.inMilliseconds);
     return Duration(milliseconds: totalMs ~/ durations.length);
   }
 
   /// Calcula percentiles para una lista de duraciones
   Map<int, Duration> _calculatePercentiles(Queue<Duration> durations) {
     if (durations.isEmpty) return {};
-    
+
     final sortedDurations = durations.toList()..sort((a, b) => a.compareTo(b));
     final percentiles = <int, Duration>{};
-    
+
     for (final p in [50, 75, 90, 95, 99]) {
       final index = ((p / 100) * (sortedDurations.length - 1)).round();
       percentiles[p] = sortedDurations[index];
     }
-    
+
     return percentiles;
   }
 
   /// Calcula la estabilidad de la red
   double _calculateNetworkStability() {
     if (_networkEvents.isEmpty) return 1.0;
-    
-    final recentEvents = _networkEvents.where(
-      (event) => DateTime.now().difference(event) <= _metricsWindow
-    ).length;
-    
+
+    final recentEvents = _networkEvents
+        .where((event) => DateTime.now().difference(event) <= _metricsWindow)
+        .length;
+
     // Menos eventos de red = más estabilidad
     return max(0.0, 1.0 - (recentEvents / 100.0));
   }
@@ -305,12 +369,13 @@ class SyncPerformanceMetrics {
   /// Limpia métricas antiguas para evitar uso excesivo de memoria
   void _cleanupOldMetrics() {
     final cutoff = DateTime.now().subtract(_metricsWindow);
-    
+
     // Limpiar eventos de red antiguos
     _networkEvents.removeWhere((event) => event.isBefore(cutoff));
-    
+
     // Limpiar operaciones que no han terminado (posibles memory leaks)
-    _operationStartTimes.removeWhere((key, startTime) => startTime.isBefore(cutoff));
+    _operationStartTimes
+        .removeWhere((key, startTime) => startTime.isBefore(cutoff));
   }
 
   /// Notifica a los listeners sobre actualizaciones de métricas
@@ -332,17 +397,27 @@ class SyncPerformanceMetrics {
     _throttledEvents = 0;
     _networkReconnections = 0;
     
+    // Reset batch metrics
+    _totalBatches = 0;
+    _totalBatchSize = 0;
+    _maxBatchSize = 0;
+    _minBatchSize = 0;
+    
+    // Reset throttling efficiency metrics
+    _throttlingEfficiencySum = 0.0;
+    _throttlingEfficiencyCount = 0;
+
     _syncDurations.clear();
     _conflictResolutionTimes.clear();
     _realtimeProcessingTimes.clear();
     _operationStartTimes.clear();
     _networkEvents.clear();
     _entityMetrics.clear();
-    
+
     _totalOfflineTime = Duration.zero;
     _lastDisconnectionTime = null;
     _isOnline = true;
-    
+
     _notifyMetricsUpdate();
   }
 
@@ -358,44 +433,64 @@ class SyncPerformanceMetrics {
   String generatePerformanceReport() {
     final snapshot = getSnapshot();
     final buffer = StringBuffer();
-    
+
     buffer.writeln('=== REPORTE DE RENDIMIENTO DE SINCRONIZACIÓN ===');
     buffer.writeln('Timestamp: ${snapshot.timestamp}');
     buffer.writeln();
-    
+
     buffer.writeln('OPERACIONES DE SINCRONIZACIÓN:');
     buffer.writeln('  Total: ${snapshot.totalSyncOperations}');
     buffer.writeln('  Exitosas: ${snapshot.successfulSyncs}');
     buffer.writeln('  Fallidas: ${snapshot.failedSyncs}');
-    buffer.writeln('  Tasa de éxito: ${(snapshot.successRate * 100).toStringAsFixed(1)}%');
+    buffer.writeln(
+        '  Tasa de éxito: ${(snapshot.successRate * 100).toStringAsFixed(1)}%');
     buffer.writeln();
-    
+
     buffer.writeln('RESOLUCIÓN DE CONFLICTOS:');
     buffer.writeln('  Detectados: ${snapshot.conflictsDetected}');
     buffer.writeln('  Resueltos: ${snapshot.conflictsResolved}');
-    buffer.writeln('  Tasa de resolución: ${(snapshot.conflictResolutionRate * 100).toStringAsFixed(1)}%');
+    buffer.writeln(
+        '  Tasa de resolución: ${(snapshot.conflictResolutionRate * 100).toStringAsFixed(1)}%');
     buffer.writeln();
-    
+
     buffer.writeln('EVENTOS EN TIEMPO REAL:');
     buffer.writeln('  Recibidos: ${snapshot.realtimeEventsReceived}');
     buffer.writeln('  Procesados: ${snapshot.realtimeEventsProcessed}');
     buffer.writeln('  Throttled: ${snapshot.throttledEvents}');
-    buffer.writeln('  Tasa de procesamiento: ${(snapshot.realtimeProcessingRate * 100).toStringAsFixed(1)}%');
+    buffer.writeln(
+        '  Tasa de procesamiento: ${(snapshot.realtimeProcessingRate * 100).toStringAsFixed(1)}%');
     buffer.writeln();
-    
+
+    buffer.writeln('BATCH PROCESSING:');
+    buffer.writeln('  Total batches: ${snapshot.totalBatches}');
+    buffer.writeln('  Tamaño promedio: ${snapshot.averageBatchSize.toStringAsFixed(1)}');
+    buffer.writeln('  Tamaño máximo: ${snapshot.maxBatchSize}');
+    buffer.writeln('  Tamaño mínimo: ${snapshot.minBatchSize}');
+    buffer.writeln();
+
+    buffer.writeln('THROTTLING EFFICIENCY:');
+    buffer.writeln('  Eficiencia promedio: ${(snapshot.averageThrottlingEfficiency * 100).toStringAsFixed(1)}%');
+    buffer.writeln();
+
     buffer.writeln('RED:');
     buffer.writeln('  Estado: ${snapshot.isOnline ? "Online" : "Offline"}');
     buffer.writeln('  Reconexiones: ${snapshot.networkReconnections}');
-    buffer.writeln('  Tiempo offline total: ${snapshot.totalOfflineTime.inMinutes} minutos');
-    buffer.writeln('  Estabilidad: ${(snapshot.networkStability * 100).toStringAsFixed(1)}%');
+    buffer.writeln(
+        '  Tiempo offline total: ${snapshot.totalOfflineTime.inMinutes} minutos');
+    buffer.writeln(
+        '  Estabilidad: ${(snapshot.networkStability * 100).toStringAsFixed(1)}%');
     buffer.writeln();
-    
+
     buffer.writeln('RENDIMIENTO:');
-    buffer.writeln('  Score general: ${(snapshot.performanceScore * 100).toStringAsFixed(1)}%');
-    buffer.writeln('  Duración promedio sync: ${snapshot.averageSyncDuration.inMilliseconds}ms');
-    buffer.writeln('  Tiempo promedio resolución conflictos: ${snapshot.averageConflictResolutionTime.inMilliseconds}ms');
-    buffer.writeln('  Tiempo promedio procesamiento realtime: ${snapshot.averageRealtimeProcessingTime.inMilliseconds}ms');
-    
+    buffer.writeln(
+        '  Score general: ${(snapshot.performanceScore * 100).toStringAsFixed(1)}%');
+    buffer.writeln(
+        '  Duración promedio sync: ${snapshot.averageSyncDuration.inMilliseconds}ms');
+    buffer.writeln(
+        '  Tiempo promedio resolución conflictos: ${snapshot.averageConflictResolutionTime.inMilliseconds}ms');
+    buffer.writeln(
+        '  Tiempo promedio procesamiento realtime: ${snapshot.averageRealtimeProcessingTime.inMilliseconds}ms');
+
     return buffer.toString();
   }
 }
@@ -414,13 +509,34 @@ class EntityMetrics {
   int realtimeEventsProcessed = 0;
   int throttledEvents = 0;
   Duration totalProcessingTime = Duration.zero;
+  
+  // Métricas de batch processing
+  int totalBatches = 0;
+  int totalBatchSize = 0;
+  int maxBatchSize = 0;
+  int minBatchSize = 0;
+  
+  // Métricas de throttling efficiency
+  double throttlingEfficiencySum = 0.0;
+  int throttlingEfficiencyCount = 0;
 
-  double get successRate => operationsStarted > 0 ? successfulOperations / operationsStarted : 0.0;
-  double get conflictResolutionRate => conflictsDetected > 0 ? conflictsResolved / conflictsDetected : 0.0;
-  double get realtimeProcessingRate => realtimeEventsReceived > 0 ? realtimeEventsProcessed / realtimeEventsReceived : 0.0;
-  Duration get averageProcessingTime => realtimeEventsProcessed > 0 
-      ? Duration(milliseconds: totalProcessingTime.inMilliseconds ~/ realtimeEventsProcessed)
+  double get successRate =>
+      operationsStarted > 0 ? successfulOperations / operationsStarted : 0.0;
+  double get conflictResolutionRate =>
+      conflictsDetected > 0 ? conflictsResolved / conflictsDetected : 0.0;
+  double get realtimeProcessingRate => realtimeEventsReceived > 0
+      ? realtimeEventsProcessed / realtimeEventsReceived
+      : 0.0;
+  Duration get averageProcessingTime => realtimeEventsProcessed > 0
+      ? Duration(
+          milliseconds:
+              totalProcessingTime.inMilliseconds ~/ realtimeEventsProcessed)
       : Duration.zero;
+  
+  double get averageBatchSize => totalBatches > 0 ? totalBatchSize / totalBatches : 0.0;
+  double get averageThrottlingEfficiency => throttlingEfficiencyCount > 0 
+      ? throttlingEfficiencySum / throttlingEfficiencyCount 
+      : 0.0;
 
   Map<String, dynamic> toJson() {
     return {
@@ -438,6 +554,12 @@ class EntityMetrics {
       'throttledEvents': throttledEvents,
       'totalProcessingTimeMs': totalProcessingTime.inMilliseconds,
       'averageProcessingTimeMs': averageProcessingTime.inMilliseconds,
+      'totalBatches': totalBatches,
+      'totalBatchSize': totalBatchSize,
+      'averageBatchSize': averageBatchSize,
+      'maxBatchSize': maxBatchSize,
+      'minBatchSize': minBatchSize,
+      'averageThrottlingEfficiency': averageThrottlingEfficiency,
     };
   }
 }
@@ -457,6 +579,11 @@ class MetricsSnapshot {
     required this.realtimeEventsProcessed,
     required this.realtimeProcessingRate,
     required this.throttledEvents,
+    required this.totalBatches,
+    required this.averageBatchSize,
+    required this.maxBatchSize,
+    required this.minBatchSize,
+    required this.averageThrottlingEfficiency,
     required this.networkReconnections,
     required this.totalOfflineTime,
     required this.isOnline,
@@ -481,6 +608,11 @@ class MetricsSnapshot {
   final int realtimeEventsProcessed;
   final double realtimeProcessingRate;
   final int throttledEvents;
+  final int totalBatches;
+  final double averageBatchSize;
+  final int maxBatchSize;
+  final int minBatchSize;
+  final double averageThrottlingEfficiency;
   final int networkReconnections;
   final Duration totalOfflineTime;
   final bool isOnline;
@@ -506,18 +638,23 @@ class MetricsSnapshot {
       'realtimeEventsProcessed': realtimeEventsProcessed,
       'realtimeProcessingRate': realtimeProcessingRate,
       'throttledEvents': throttledEvents,
+      'totalBatches': totalBatches,
+      'averageBatchSize': averageBatchSize,
+      'maxBatchSize': maxBatchSize,
+      'minBatchSize': minBatchSize,
+      'averageThrottlingEfficiency': averageThrottlingEfficiency,
       'networkReconnections': networkReconnections,
       'totalOfflineTimeMs': totalOfflineTime.inMilliseconds,
       'isOnline': isOnline,
       'averageSyncDurationMs': averageSyncDuration.inMilliseconds,
-      'averageConflictResolutionTimeMs': averageConflictResolutionTime.inMilliseconds,
-      'averageRealtimeProcessingTimeMs': averageRealtimeProcessingTime.inMilliseconds,
-      'syncDurationPercentiles': syncDurationPercentiles.map(
-        (key, value) => MapEntry(key.toString(), value.inMilliseconds)
-      ),
-      'entityMetrics': entityMetrics.map(
-        (key, value) => MapEntry(key, value.toJson())
-      ),
+      'averageConflictResolutionTimeMs':
+          averageConflictResolutionTime.inMilliseconds,
+      'averageRealtimeProcessingTimeMs':
+          averageRealtimeProcessingTime.inMilliseconds,
+      'syncDurationPercentiles': syncDurationPercentiles
+          .map((key, value) => MapEntry(key.toString(), value.inMilliseconds)),
+      'entityMetrics':
+          entityMetrics.map((key, value) => MapEntry(key, value.toJson())),
       'networkStability': networkStability,
       'performanceScore': performanceScore,
     };

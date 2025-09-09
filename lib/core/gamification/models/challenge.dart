@@ -50,13 +50,13 @@ class Challenge {
 
   // Getter for backward compatibility
   int get rewardPoints => pointsReward;
-  
+
   // Additional getters
   ChallengeType get type => ChallengeType.values.firstWhere(
-    (e) => e.toString().split('.').last == challengeType,
-    orElse: () => ChallengeType.genreExplorer,
-  );
-  
+        (e) => e.toString().split('.').last == challengeType,
+        orElse: () => ChallengeType.genreExplorer,
+      );
+
   Duration get timeRemaining {
     final now = DateTime.now();
     if (now.isAfter(endDate)) {

@@ -9,7 +9,8 @@ import '../../../core/logging/logger_factory.dart';
 import '../../services/pip_service.dart';
 
 // Solo importar youtube_player_flutter en plataformas no web
-import 'package:youtube_player_flutter/youtube_player_flutter.dart' if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart'
+    if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
 
 class CinemaMode extends StatefulWidget {
   const CinemaMode({
@@ -99,7 +100,7 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   void _enterCinemaMode() {
     // SystemChrome no es compatible con web
     if (kIsWeb) return;
-    
+
     // Ocultar barra de estado y navegación
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
@@ -113,7 +114,7 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   void _exitCinemaMode() {
     // SystemChrome no es compatible con web
     if (kIsWeb) return;
-    
+
     // Restaurar UI del sistema
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
@@ -169,9 +170,9 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
             FadeTransition(
               opacity: _fadeAnimation,
               child: Center(
-                child: kIsWeb 
-                    ? _buildWebPlayer() 
-                    : _controller != null 
+                child: kIsWeb
+                    ? _buildWebPlayer()
+                    : _controller != null
                         ? YoutubePlayer(
                             controller: _controller!,
                             showVideoProgressIndicator: true,
@@ -260,7 +261,8 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
         height: double.infinity,
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: NetworkImage('https://img.youtube.com/vi/${widget.youtubeId}/maxresdefault.jpg'),
+            image: NetworkImage(
+                'https://img.youtube.com/vi/${widget.youtubeId}/maxresdefault.jpg'),
             fit: BoxFit.contain,
           ),
         ),
@@ -300,7 +302,8 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   }
 
   Future<void> _openYouTubeInNewTab() async {
-    final url = Uri.parse('https://www.youtube.com/watch?v=${widget.youtubeId}');
+    final url =
+        Uri.parse('https://www.youtube.com/watch?v=${widget.youtubeId}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {

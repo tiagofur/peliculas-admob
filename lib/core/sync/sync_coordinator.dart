@@ -14,9 +14,9 @@ import 'sync_operation.dart';
 class SyncCoordinator {
   SyncCoordinator({
     required this.userId,
-  }) : _syncQueue = PersistentSyncQueue(userId: userId),
-       _conflictResolver = ConflictResolver(),
-       _connectivityManager = ConnectivityManager() {
+  })  : _syncQueue = PersistentSyncQueue(userId: userId),
+        _conflictResolver = ConflictResolver(),
+        _connectivityManager = ConnectivityManager() {
     _initialize();
   }
 
@@ -24,9 +24,9 @@ class SyncCoordinator {
   final PersistentSyncQueue _syncQueue;
   final ConflictResolver _conflictResolver;
   final ConnectivityManager _connectivityManager;
-  
+
   final Map<String, EntitySyncManager> _syncManagers = {};
-  final StreamController<SyncCoordinatorEvent> _eventController = 
+  final StreamController<SyncCoordinatorEvent> _eventController =
       StreamController<SyncCoordinatorEvent>.broadcast();
 
   RealtimeSyncManager? _realtimeSyncManager;
@@ -52,16 +52,17 @@ class SyncCoordinator {
     try {
       // Registrar managers de entidades
       await _registerSyncManagers();
-      
+
       // Inicializar RealtimeSyncManager
       await _initializeRealtimeSync();
-      
+
       // Configurar listeners de conectividad
       await _setupConnectivityListeners();
-      
+
       _isInitialized = true;
-      _emitEvent(SyncCoordinatorEventType.initialized, 'SyncCoordinator initialized');
-      
+      _emitEvent(
+          SyncCoordinatorEventType.initialized, 'SyncCoordinator initialized');
+
       LoggerFactory.info('✅ SyncCoordinator initialized for user: $userId');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize SyncCoordinator: $e');
@@ -73,11 +74,10 @@ class SyncCoordinator {
   Future<void> _registerSyncManagers() async {
     // Registrar manager de favoritos
     _syncManagers['favorite'] = FavoritesSyncManager(userId: userId);
-    
-    // TODO: Registrar otros managers cuando estén implementados
+
     // _syncManagers['watchlist'] = WatchlistSyncManager(userId: userId);
     // _syncManagers['custom_list'] = CustomListSyncManager(userId: userId);
-    
+
     LoggerFactory.info('📋 Registered ${_syncManagers.length} sync managers');
   }
 
@@ -89,7 +89,7 @@ class SyncCoordinator {
         syncCoordinator: this,
         connectivityManager: _connectivityManager,
       );
-      
+
       await _realtimeSyncManager!.initialize();
       LoggerFactory.info('🔄 RealtimeSyncManager initialized');
     } catch (e) {
@@ -108,15 +108,16 @@ class SyncCoordinator {
           LoggerFactory.error('❌ Connection status listener error: $error');
         },
       );
-      
+
       // Listener de eventos de sincronización en background
-      _backgroundSyncSubscription = _connectivityManager.backgroundSyncEvents.listen(
+      _backgroundSyncSubscription =
+          _connectivityManager.backgroundSyncEvents.listen(
         _handleBackgroundSyncEvent,
         onError: (error) {
           LoggerFactory.error('❌ Background sync listener error: $error');
         },
       );
-      
+
       LoggerFactory.info('📡 Connectivity listeners configured');
     } catch (e) {
       LoggerFactory.error('❌ Failed to setup connectivity listeners: $e');
@@ -126,13 +127,13 @@ class SyncCoordinator {
   /// Maneja cambios en el estado de conexión
   void _handleConnectionStatusChange(ConnectionStatus status) {
     LoggerFactory.info('🌐 Connection status changed: ${status.name}');
-    
+
     _emitEvent(
       SyncCoordinatorEventType.connectionStatusChanged,
       'Connection status: ${status.name}',
       metadata: {'status': status.name},
     );
-    
+
     // Reactivar sincronización en tiempo real si se restaura la conexión
     if (status == ConnectionStatus.online && _realtimeSyncManager != null) {
       _realtimeSyncManager!.resumeListeners();
@@ -142,7 +143,7 @@ class SyncCoordinator {
   /// Maneja eventos de sincronización en background
   void _handleBackgroundSyncEvent(BackgroundSyncEvent event) {
     LoggerFactory.info('📱 Background sync event: ${event.type}');
-    
+
     switch (event.type) {
       case 'backgroundSyncTriggered':
         _triggerBackgroundSync();
@@ -157,7 +158,7 @@ class SyncCoordinator {
         // Otros eventos se manejan automáticamente
         break;
     }
-    
+
     _emitEvent(
       SyncCoordinatorEventType.backgroundSyncEvent,
       'Background sync event: ${event.type}',
@@ -172,10 +173,11 @@ class SyncCoordinator {
   /// Dispara sincronización en background
   void _triggerBackgroundSync() {
     if (_isSyncing) {
-      LoggerFactory.info('⚠️ Sync already in progress, skipping background sync');
+      LoggerFactory.info(
+          '⚠️ Sync already in progress, skipping background sync');
       return;
     }
-    
+
     // Ejecutar sincronización en background sin bloquear
     performFullSync().then((result) {
       LoggerFactory.info('📱 Background sync completed: ${result.toString()}');
@@ -199,7 +201,7 @@ class SyncCoordinator {
   /// Ejecuta sincronización completa de todas las entidades
   Future<SyncResult> performFullSync() async {
     if (!_isInitialized) await _initialize();
-    
+
     if (_isSyncing) {
       LoggerFactory.warning('⚠️ Sync already in progress, skipping');
       return SyncResult.failure(
@@ -210,23 +212,25 @@ class SyncCoordinator {
 
     _isSyncing = true;
     _emitEvent(SyncCoordinatorEventType.syncStarted, 'Full sync started');
-    
+
     final startTime = DateTime.now();
     var totalProcessed = 0;
     var totalSuccessful = 0;
     final allErrors = <String>[];
 
     try {
-      LoggerFactory.info('🔄 Starting full sync for ${_syncManagers.length} entity types');
+      LoggerFactory.info(
+          '🔄 Starting full sync for ${_syncManagers.length} entity types');
 
       // Fase 1: Procesar cola de operaciones pendientes
-      _emitEvent(SyncCoordinatorEventType.processingQueue, 'Processing pending operations');
+      _emitEvent(SyncCoordinatorEventType.processingQueue,
+          'Processing pending operations');
       final queueStats = await _syncQueue.getQueueStatistics();
       final readyOperations = queueStats['ready_to_execute'] ?? 0;
-      
+
       if (readyOperations > 0) {
         LoggerFactory.info('📋 Processing $readyOperations queued operations');
-        
+
         for (final manager in _syncManagers.values) {
           final queueResult = await manager.processQueuedOperations();
           totalProcessed += queueResult.itemsProcessed;
@@ -237,22 +241,22 @@ class SyncCoordinator {
 
       // Fase 2: Sincronización por entidad
       _emitEvent(SyncCoordinatorEventType.syncingEntities, 'Syncing entities');
-      
+
       for (final entry in _syncManagers.entries) {
         final entityType = entry.key;
         final manager = entry.value;
-        
+
         try {
           LoggerFactory.info('🔄 Syncing $entityType');
-          _emitEvent(SyncCoordinatorEventType.syncingEntity, 'Syncing $entityType');
-          
+          _emitEvent(
+              SyncCoordinatorEventType.syncingEntity, 'Syncing $entityType');
+
           final syncResult = await manager.performFullSync();
           totalProcessed += syncResult.itemsProcessed;
           totalSuccessful += syncResult.itemsSuccessful;
           allErrors.addAll(syncResult.errors);
-          
+
           LoggerFactory.info('✅ $entityType sync: ${syncResult.toString()}');
-          
         } catch (e) {
           final error = 'Failed to sync $entityType: $e';
           allErrors.add(error);
@@ -271,18 +275,19 @@ class SyncCoordinator {
       );
 
       _emitEvent(
-        allErrors.isEmpty ? SyncCoordinatorEventType.syncCompleted : SyncCoordinatorEventType.syncError,
+        allErrors.isEmpty
+            ? SyncCoordinatorEventType.syncCompleted
+            : SyncCoordinatorEventType.syncError,
         'Full sync completed: ${finalResult.toString()}',
         result: finalResult,
       );
 
       LoggerFactory.info('🎉 Full sync completed: ${finalResult.toString()}');
       return finalResult;
-
     } catch (e) {
       final error = 'Full sync failed: $e';
       LoggerFactory.error(error);
-      
+
       final failureResult = SyncResult.failure(
         itemsProcessed: totalProcessed,
         itemsSuccessful: totalSuccessful,
@@ -290,9 +295,9 @@ class SyncCoordinator {
         duration: DateTime.now().difference(startTime),
       );
 
-      _emitEvent(SyncCoordinatorEventType.syncError, error, result: failureResult);
+      _emitEvent(SyncCoordinatorEventType.syncError, error,
+          result: failureResult);
       return failureResult;
-      
     } finally {
       _isSyncing = false;
     }
@@ -310,12 +315,14 @@ class SyncCoordinator {
     }
 
     _emitEvent(SyncCoordinatorEventType.syncingEntity, 'Syncing $entityType');
-    
+
     try {
       final result = await manager.performFullSync();
-      
+
       _emitEvent(
-        result.success ? SyncCoordinatorEventType.entitySynced : SyncCoordinatorEventType.syncError,
+        result.success
+            ? SyncCoordinatorEventType.entitySynced
+            : SyncCoordinatorEventType.syncError,
         'Entity $entityType sync: ${result.toString()}',
         result: result,
       );
@@ -324,10 +331,12 @@ class SyncCoordinator {
     } catch (e) {
       final error = 'Failed to sync $entityType: $e';
       LoggerFactory.error(error);
-      
-      final failureResult = SyncResult.failure(itemsProcessed: 0, errors: [error]);
-      _emitEvent(SyncCoordinatorEventType.syncError, error, result: failureResult);
-      
+
+      final failureResult =
+          SyncResult.failure(itemsProcessed: 0, errors: [error]);
+      _emitEvent(SyncCoordinatorEventType.syncError, error,
+          result: failureResult);
+
       return failureResult;
     }
   }
@@ -350,7 +359,7 @@ class SyncCoordinator {
         data: data,
         priority: priority,
       );
-      
+
       _emitEvent(
         SyncCoordinatorEventType.operationQueued,
         'Queued $type operation for $entityType($entityId)',
@@ -410,7 +419,8 @@ class SyncCoordinator {
   ConnectionStatus get connectionStatus => _connectivityManager.currentStatus;
 
   /// Stream de estado de conexión
-  Stream<ConnectionStatus> get connectionStatusStream => _connectivityManager.connectionStatus;
+  Stream<ConnectionStatus> get connectionStatusStream =>
+      _connectivityManager.connectionStatus;
 
   /// Habilita modo offline manual
   Future<void> enableOfflineMode() async {
@@ -471,7 +481,7 @@ class SyncCoordinator {
     _isSyncing = false;
     await _syncQueue.clear();
     _conflictResolver.clearStats();
-    
+
     _emitEvent(SyncCoordinatorEventType.reset, 'SyncCoordinator reset');
     LoggerFactory.info('🧹 SyncCoordinator reset completed');
   }
@@ -490,33 +500,99 @@ class SyncCoordinator {
       result: result,
       metadata: metadata,
     );
-    
+
     _eventController.add(event);
   }
 
   /// Libera recursos
   Future<void> dispose() async {
-    _isSyncing = false;
-    
-    // Cerrar subscripciones
-    await _connectionSubscription?.cancel();
-    await _backgroundSyncSubscription?.cancel();
-    
-    // Cerrar RealtimeSyncManager
-    await _realtimeSyncManager?.dispose();
-    
-    // Cerrar ConnectivityManager
-    await _connectivityManager.dispose();
-    
-    // Cerrar managers
-    for (final manager in _syncManagers.values) {
-      await manager.dispose();
+    try {
+      LoggerFactory.info('🔒 Starting SyncCoordinator disposal...');
+      
+      // Marcar como no sincronizando para prevenir nuevas operaciones
+      _isSyncing = false;
+      _isInitialized = false;
+
+      // Cerrar subscripciones con manejo de errores
+      try {
+        await _connectionSubscription?.cancel();
+        LoggerFactory.info('✅ Connection subscription cancelled');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Failed to cancel connection subscription: $e');
+      }
+      
+      try {
+        await _backgroundSyncSubscription?.cancel();
+        LoggerFactory.info('✅ Background sync subscription cancelled');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Failed to cancel background sync subscription: $e');
+      }
+
+      // Cerrar RealtimeSyncManager con timeout
+      try {
+        await _realtimeSyncManager?.dispose().timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            LoggerFactory.warning('⚠️ RealtimeSyncManager disposal timed out');
+          },
+        );
+        LoggerFactory.info('✅ RealtimeSyncManager disposed');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Failed to dispose RealtimeSyncManager: $e');
+      }
+
+      // Cerrar ConnectivityManager
+      try {
+        await _connectivityManager.dispose();
+        LoggerFactory.info('✅ ConnectivityManager disposed');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Failed to dispose ConnectivityManager: $e');
+      }
+
+      // Cerrar managers con manejo de errores individual
+      final managerDisposalFutures = _syncManagers.entries.map((entry) async {
+        final entityType = entry.key;
+        final manager = entry.value;
+        
+        try {
+          await manager.dispose().timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              LoggerFactory.warning('⚠️ Manager disposal timed out for $entityType');
+            },
+          );
+          LoggerFactory.info('✅ Manager disposed: $entityType');
+        } catch (e) {
+          LoggerFactory.warning('⚠️ Failed to dispose manager $entityType: $e');
+        }
+      });
+      
+      await Future.wait(managerDisposalFutures, eagerError: false);
+      _syncManagers.clear();
+
+      // Cerrar streams de forma segura
+      try {
+        if (!_eventController.isClosed) {
+          await _eventController.close();
+        }
+        LoggerFactory.info('✅ Event controller closed');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Failed to close event controller: $e');
+      }
+
+      LoggerFactory.info('✅ SyncCoordinator disposed successfully');
+    } catch (e) {
+      LoggerFactory.error('❌ Error during SyncCoordinator disposal: $e');
+      
+      // Forzar limpieza en caso de error
+      _isSyncing = false;
+      _isInitialized = false;
+      _syncManagers.clear();
+      
+      if (!_eventController.isClosed) {
+        _eventController.close();
+      }
     }
-    
-    // Cerrar streams
-    await _eventController.close();
-    
-    LoggerFactory.info('🔒 SyncCoordinator disposed');
   }
 }
 
@@ -559,4 +635,3 @@ enum SyncCoordinatorEventType {
   backgroundSyncEvent,
   realtimeSyncEvent,
 }
-

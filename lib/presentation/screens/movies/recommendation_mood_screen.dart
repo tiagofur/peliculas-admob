@@ -16,13 +16,16 @@ class RecommendationMoodScreen extends ConsumerStatefulWidget {
   final String mood;
 
   @override
-  RecommendationMoodScreenState createState() => RecommendationMoodScreenState();
+  RecommendationMoodScreenState createState() =>
+      RecommendationMoodScreenState();
 }
 
-class RecommendationMoodScreenState extends ConsumerState<RecommendationMoodScreen> {
+class RecommendationMoodScreenState
+    extends ConsumerState<RecommendationMoodScreen> {
   @override
   Widget build(BuildContext context) {
-    final recommendationsAsync = ref.watch(recommendationsByMoodProvider(widget.mood));
+    final recommendationsAsync =
+        ref.watch(recommendationsByMoodProvider(widget.mood));
     final moodInfo = _getMoodInfo(widget.mood);
 
     return Scaffold(
@@ -111,7 +114,8 @@ class RecommendationMoodScreenState extends ConsumerState<RecommendationMoodScre
                 return SliverPadding(
                   padding: const EdgeInsets.all(16),
                   sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: 0.7,
                       crossAxisSpacing: 16,
@@ -171,7 +175,8 @@ class RecommendationMoodScreenState extends ConsumerState<RecommendationMoodScre
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
-                          ref.invalidate(recommendationsByMoodProvider(widget.mood));
+                          ref.invalidate(
+                              recommendationsByMoodProvider(widget.mood));
                         },
                         child: const Text('Reintentar'),
                       ),
@@ -203,7 +208,8 @@ class RecommendationMoodScreenState extends ConsumerState<RecommendationMoodScre
       case 'excited':
         return {
           'title': 'Películas emocionantes',
-          'description': 'Acción y aventura para mantenerte al borde del asiento',
+          'description':
+              'Acción y aventura para mantenerte al borde del asiento',
           'icon': Icons.flash_on,
         };
       case 'relaxed':

@@ -33,7 +33,7 @@ class SyncRefreshWrapper extends ConsumerWidget {
         } else {
           // Sincronización por defecto
           syncNotifier.startManualSync();
-          
+
           // Esperar un poco para que la UI se actualice
           await Future.delayed(const Duration(milliseconds: 1500));
         }
@@ -56,7 +56,7 @@ class ManualSyncButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(status.syncStatusProvider);
     final appState = ref.watch(appStateProvider);
-    
+
     // Solo mostrar si está autenticado
     if (!appState.isAuthenticated) {
       return const SizedBox.shrink();
@@ -65,19 +65,21 @@ class ManualSyncButton extends ConsumerWidget {
     final isLoading = syncState.status == status.SyncStatus.syncing;
 
     return FilledButton.icon(
-      onPressed: isLoading ? null : () {
-        ref.read(status.syncStatusProvider.notifier).startManualSync();
-      },
-      icon: isLoading 
-        ? const SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : const Icon(Icons.sync),
-      label: showText 
-        ? Text(isLoading ? 'Sincronizando...' : 'Sincronizar')
-        : const SizedBox.shrink(),
+      onPressed: isLoading
+          ? null
+          : () {
+              ref.read(status.syncStatusProvider.notifier).startManualSync();
+            },
+      icon: isLoading
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.sync),
+      label: showText
+          ? Text(isLoading ? 'Sincronizando...' : 'Sincronizar')
+          : const SizedBox.shrink(),
     );
   }
 }
@@ -90,9 +92,10 @@ class SyncFloatingActionButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(status.syncStatusProvider);
     final appState = ref.watch(appStateProvider);
-    
+
     // Solo mostrar si está autenticado y hay algún estado relevante
-    if (!appState.isAuthenticated || syncState.status == status.SyncStatus.idle) {
+    if (!appState.isAuthenticated ||
+        syncState.status == status.SyncStatus.idle) {
       return const SizedBox.shrink();
     }
 
@@ -142,11 +145,11 @@ class SyncFloatingActionButton extends ConsumerWidget {
         backgroundColor: backgroundColor,
         tooltip: tooltip,
         child: syncState.status == status.SyncStatus.syncing
-          ? const CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            )
-          : Icon(icon),
+            ? const CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              )
+            : Icon(icon),
       ),
     );
   }

@@ -15,7 +15,7 @@ final simpleWatchedProvider =
   return SimpleWatchedNotifier(
     onMovieWatched: () {
       // Note: We call achievements tracking from within the provider
-      // This matches the favorites pattern exactly  
+      // This matches the favorites pattern exactly
     },
   );
 });
@@ -46,18 +46,15 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
       }
 
       final simpleWatchedSync = SimpleWatchedSync.instance;
-      final watchedMovies = await simpleWatchedSync.performSimpleSync(currentUser.id);
-      
+      final watchedMovies =
+          await simpleWatchedSync.performSimpleSync(currentUser.id);
+
       final watchedMoviesMap = <int, Movie>{};
       for (final movie in watchedMovies) {
         watchedMoviesMap[movie.id] = movie;
       }
 
-      // 🐛 DEBUG: Log what we're loading initially
-      LoggerFactory.debug(
-          '🔍 [WatchedProvider] _loadExistingWatched got ${watchedMoviesMap.length} watched');
-      LoggerFactory.debug(
-          '🔍 [WatchedProvider] Watched IDs: ${watchedMoviesMap.keys.toList()}');
+
 
       if (watchedMoviesMap.isNotEmpty) {
         state = watchedMoviesMap;
@@ -157,8 +154,7 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
   void _setupAutoRefresh() {
     if (_refreshTimer != null) return; // Already configured
 
-    // DISABLED TEMPORARILY: Caused conflicts like in favorites
-    LoggerFactory.info('ℹ️ Auto-refresh disabled to avoid conflicts (same as favorites)');
+
   }
 
   /// Sync FROM Supabase in background (same as favorites)
@@ -207,8 +203,9 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
       if (currentUser == null) return;
 
       final simpleWatchedSync = SimpleWatchedSync.instance;
-      final watchedMoviesData = await simpleWatchedSync.performSimpleSync(currentUser.id);
-      
+      final watchedMoviesData =
+          await simpleWatchedSync.performSimpleSync(currentUser.id);
+
       final watchedMoviesMap = <int, Movie>{};
       for (final movie in watchedMoviesData) {
         watchedMoviesMap[movie.id] = movie;
@@ -227,8 +224,7 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
           LoggerFactory.info(
               '🔄 Watched movies updated: -${oldCount - newCount} watched removed');
         } else {
-          LoggerFactory.info(
-              '🔄 Watched movies refreshed from simple sync');
+          LoggerFactory.info('🔄 Watched movies refreshed from simple sync');
         }
       }
     } catch (e) {

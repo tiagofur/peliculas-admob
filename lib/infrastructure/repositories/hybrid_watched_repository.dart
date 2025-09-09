@@ -78,7 +78,7 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     try {
       // El ID de la entidad syncable no es el movie_id, necesitamos encontrarlo
       final localMovies = await getLocalData();
-      
+
       // Try to find by syncable ID first
       SyncableWatchedMovie? movieToRemove;
       try {
@@ -87,13 +87,15 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
         // If not found by syncable ID, try to parse as movie ID
         final movieId = int.tryParse(id);
         if (movieId != null) {
-          movieToRemove = localMovies.where((e) => e.movieId == movieId).firstOrNull;
+          movieToRemove =
+              localMovies.where((e) => e.movieId == movieId).firstOrNull;
         }
       }
-      
+
       if (movieToRemove != null) {
         await _localDatasource.removeFromWatched(movieToRemove.movieId);
-        LoggerFactory.debug('🗑️ Removed watched movie from local storage: $id (movieId: ${movieToRemove.movieId})');
+        LoggerFactory.debug(
+            '🗑️ Removed watched movie from local storage: $id (movieId: ${movieToRemove.movieId})');
       } else {
         LoggerFactory.warning('⚠️ Movie not found locally for removal: $id');
         // Don't throw error - movie might already be removed

@@ -314,7 +314,8 @@ class FeedbackAnimationWidget extends StatefulWidget {
   final Duration duration;
 
   @override
-  State<FeedbackAnimationWidget> createState() => _FeedbackAnimationWidgetState();
+  State<FeedbackAnimationWidget> createState() =>
+      _FeedbackAnimationWidgetState();
 }
 
 class _FeedbackAnimationWidgetState extends State<FeedbackAnimationWidget>

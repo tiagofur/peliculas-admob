@@ -87,13 +87,13 @@ class MovieCollection {
       description: json['description'] ?? '',
       emoji: json['emoji'] ?? '🎬',
       color: json['color'] != null ? Color(json['color']) : Colors.blue,
-      movieIds: json['movieIds'] != null 
+      movieIds: json['movieIds'] != null
           ? List<String>.from(json['movieIds'])
           : <String>[],
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      updatedAt: json['updatedAt'] != null 
+      updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
       isCustom: json['isCustom'] ?? false,

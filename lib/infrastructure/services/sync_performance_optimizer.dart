@@ -36,7 +36,8 @@ class SyncPerformanceOptimizer {
           _supabase.from('user_favorites').select().eq('user_id', userId);
 
       if (lastSync != null) {
-        remoteQuery = remoteQuery.gt('last_modified_at', lastSync.toIso8601String());
+        remoteQuery =
+            remoteQuery.gt('last_modified_at', lastSync.toIso8601String());
       }
 
       await remoteQuery;
@@ -93,7 +94,8 @@ class SyncPerformanceOptimizer {
           _supabase.from('user_watched_movies').select().eq('user_id', userId);
 
       if (lastSync != null) {
-        remoteQuery = remoteQuery.gt('last_modified_at', lastSync.toIso8601String());
+        remoteQuery =
+            remoteQuery.gt('last_modified_at', lastSync.toIso8601String());
       }
 
       await remoteQuery.order('last_modified_at', ascending: false);
@@ -147,7 +149,8 @@ class SyncPerformanceOptimizer {
           _supabase.from('user_lists').select().eq('user_id', userId);
 
       if (lastSync != null) {
-        listsQuery = listsQuery.gt('last_modified_at', lastSync.toIso8601String());
+        listsQuery =
+            listsQuery.gt('last_modified_at', lastSync.toIso8601String());
       }
 
       await listsQuery;

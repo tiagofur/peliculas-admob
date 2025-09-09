@@ -71,7 +71,8 @@ class HybridWatchlistRepository
           '📋 Retrieved ${watchlistItems.length} watchlist items from Hive');
       return watchlistItems;
     } catch (e) {
-      LoggerFactory.error('❌ Failed to get local watchlist items from Hive: $e');
+      LoggerFactory.error(
+          '❌ Failed to get local watchlist items from Hive: $e');
       return [];
     }
   }
@@ -155,14 +156,16 @@ class HybridWatchlistRepository
   }
 
   /// Agregar película a watchlist con prioridad específica
-  Future<void> addToWatchlistWithPriority(Movie movie, WatchlistPriority priority) async {
+  Future<void> addToWatchlistWithPriority(
+      Movie movie, WatchlistPriority priority) async {
     try {
       final watchlistMovie = _convertMovieToWatchlistMovie(movie).copyWith(
         priority: priority,
       );
 
       await add(watchlistMovie);
-      LoggerFactory.debug('➕ Added to watchlist: ${movie.title} with priority: ${priority.value}');
+      LoggerFactory.debug(
+          '➕ Added to watchlist: ${movie.title} with priority: ${priority.value}');
     } catch (e) {
       LoggerFactory.error('❌ Error adding to watchlist: $e');
       rethrow;
@@ -556,19 +559,19 @@ class HybridWatchlistRepository
   }) async {
     try {
       final allMovies = await getWatchlistMoviesAsWatchlistMovie();
-      
+
       // Filtrar por prioridad si se especifica
-      List<WatchlistMovie> filteredMovies = priority != null 
+      List<WatchlistMovie> filteredMovies = priority != null
           ? allMovies.where((movie) => movie.priority == priority).toList()
           : allMovies;
-      
+
       // Ordenar por prioridad y fecha
       filteredMovies.sort((a, b) {
         final priorityComparison = a.priority.index.compareTo(b.priority.index);
         if (priorityComparison != 0) return priorityComparison;
         return b.addedAt.compareTo(a.addedAt);
       });
-      
+
       // Aplicar paginación
       return filteredMovies.skip(offset).take(limit).toList();
     } catch (e) {

@@ -23,7 +23,8 @@ class PostLoginInitializationState {
     return PostLoginInitializationState(
       isInitialized: isInitialized ?? this.isInitialized,
       currentUserId: currentUserId ?? this.currentUserId,
-      lastInitializationTime: lastInitializationTime ?? this.lastInitializationTime,
+      lastInitializationTime:
+          lastInitializationTime ?? this.lastInitializationTime,
     );
   }
 
@@ -34,26 +35,30 @@ class PostLoginInitializationState {
 }
 
 /// Notifier para el servicio de inicialización post-login
-class PostLoginInitializationNotifier extends StateNotifier<PostLoginInitializationState> {
-  PostLoginInitializationNotifier(this._ref) : super(const PostLoginInitializationState()) {
+class PostLoginInitializationNotifier
+    extends StateNotifier<PostLoginInitializationState> {
+  PostLoginInitializationNotifier(this._ref)
+      : super(const PostLoginInitializationState()) {
     _initializeService();
   }
 
   final Ref _ref;
-  final PostLoginInitializationService _service = PostLoginInitializationService.instance;
+  final PostLoginInitializationService _service =
+      PostLoginInitializationService.instance;
 
   void _initializeService() {
     try {
       _service.initialize(_ref);
-      
+
       state = state.copyWith(
         isInitialized: true,
         lastInitializationTime: DateTime.now(),
       );
-      
+
       LoggerFactory.info('✅ PostLoginInitializationProvider initialized');
     } catch (e) {
-      LoggerFactory.error('❌ Error initializing PostLoginInitializationProvider: $e');
+      LoggerFactory.error(
+          '❌ Error initializing PostLoginInitializationProvider: $e');
     }
   }
 
@@ -61,12 +66,12 @@ class PostLoginInitializationNotifier extends StateNotifier<PostLoginInitializat
   void forceInitialization(String userId) {
     try {
       _service.forceInitialization(userId, _ref);
-      
+
       state = state.copyWith(
         currentUserId: userId,
         lastInitializationTime: DateTime.now(),
       );
-      
+
       LoggerFactory.info('✅ Forced initialization for user: $userId');
     } catch (e) {
       LoggerFactory.error('❌ Error in forced initialization: $e');
@@ -79,14 +84,16 @@ class PostLoginInitializationNotifier extends StateNotifier<PostLoginInitializat
       _service.dispose();
       LoggerFactory.info('✅ PostLoginInitializationNotifier disposed');
     } catch (e) {
-      LoggerFactory.error('❌ Error disposing PostLoginInitializationNotifier: $e');
+      LoggerFactory.error(
+          '❌ Error disposing PostLoginInitializationNotifier: $e');
     }
     super.dispose();
   }
 }
 
 /// Provider para el servicio de inicialización post-login
-final postLoginInitializationProvider = StateNotifierProvider<PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
+final postLoginInitializationProvider = StateNotifierProvider<
+    PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
   return PostLoginInitializationNotifier(ref);
 });
 

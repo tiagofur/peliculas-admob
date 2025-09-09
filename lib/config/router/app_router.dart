@@ -9,6 +9,7 @@ import '../../presentation/screens/app_info/about_screen.dart';
 import '../../presentation/screens/app_info/help_screen.dart';
 import '../../presentation/screens/app_info/privacy_policy_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
+import '../../presentation/screens/ratings/user_ratings_screen.dart';
 import '../../presentation/screens/screens.dart';
 import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/watchlist_screen.dart';
@@ -19,9 +20,9 @@ import '../../presentation/views/recommendation_share_web_view.dart';
 import '../../presentation/views/views.dart';
 import '../../presentation/widgets/shared/page_transitions.dart';
 
-
 // Global navigator key para navegación desde notificaciones
-final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> globalNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 // Provider para el router con acceso al estado de autenticación
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -183,9 +184,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-
-
-
         ],
       ),
       GoRoute(
@@ -205,7 +203,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const RecommendationsView(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(
                 page: child,
                 duration: const Duration(milliseconds: 500),
@@ -391,11 +390,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const SettingsScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(
                 page: child,
                 duration: const Duration(milliseconds: 500),
-              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+              ).transitionsBuilder(
+                  context, animation, secondaryAnimation, child);
             },
           );
         },
@@ -409,11 +410,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const PrivacyPolicyScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(
                 page: child,
                 duration: const Duration(milliseconds: 500),
-              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+              ).transitionsBuilder(
+                  context, animation, secondaryAnimation, child);
             },
           );
         },
@@ -427,11 +430,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const HelpScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(
                 page: child,
                 duration: const Duration(milliseconds: 500),
-              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+              ).transitionsBuilder(
+                  context, animation, secondaryAnimation, child);
             },
           );
         },
@@ -443,11 +448,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const AboutScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(
                 page: child,
                 duration: const Duration(milliseconds: 500),
-              ).transitionsBuilder(context, animation, secondaryAnimation, child);
+              ).transitionsBuilder(
+                  context, animation, secondaryAnimation, child);
             },
           );
         },
@@ -711,6 +718,24 @@ final appRouter = GoRouter(
       },
     ),
 
+    // Ruta de calificaciones del usuario
+    GoRoute(
+      path: '/ratings',
+      name: UserRatingsScreen.name,
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const UserRatingsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return CinematicPageTransitions.slideUpTransition(
+              page: child,
+              duration: const Duration(milliseconds: 500),
+            ).transitionsBuilder(context, animation, secondaryAnimation, child);
+          },
+        );
+      },
+    ),
+
     // Ruta de configuración
     GoRoute(
       path: '/settings',
@@ -746,9 +771,5 @@ final appRouter = GoRouter(
         );
       },
     ),
-
-
-
-
   ],
 );

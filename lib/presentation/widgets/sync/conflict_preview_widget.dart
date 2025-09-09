@@ -203,8 +203,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
           decoration: BoxDecoration(
             color: colors.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
-            border:
-                Border.all(color: colors.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,8 +257,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
             decoration: BoxDecoration(
               color: colors.tertiaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                  color: colors.tertiary.withValues(alpha: 0.3)),
+              border: Border.all(color: colors.tertiary.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,8 +294,8 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
             decoration: BoxDecoration(
               color: colors.secondaryContainer.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(
-                  color: colors.secondary.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: colors.secondary.withValues(alpha: 0.3)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,8 +385,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
           decoration: BoxDecoration(
             color: colors.errorContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
-            border:
-                Border.all(color: colors.error.withValues(alpha: 0.3)),
+            border: Border.all(color: colors.error.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -513,7 +510,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
         _buildDetailRow(context, 'Película', item.movieTitle),
         _buildDetailRow(context, 'Agregado', _formatDate(item.addedAt)),
         _buildDetailRow(
-            context, 'Prioridad', item.priority.toString() ?? 'Normal'),
+            context, 'Prioridad', item.priority.toString()),
         if (item.personalNotes != null && item.personalNotes!.isNotEmpty)
           _buildDetailRow(context, 'Notas', item.personalNotes!, maxLines: 2),
         _buildDetailRow(
@@ -546,7 +543,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
       children: [
         _buildDetailRow(context, 'ID', entity.id),
         _buildDetailRow(context, 'Tipo', entity.entityType),
-        _buildDetailRow(context, 'Usuario', entity.userId ?? 'N/A'),
+        _buildDetailRow(context, 'Usuario', entity.userId),
         _buildDetailRow(context, 'Creado', _formatDate(entity.createdAt)),
         _buildDetailRow(
             context, 'Modificado', _formatDate(entity.lastModifiedAt)),

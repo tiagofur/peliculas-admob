@@ -296,7 +296,8 @@ class _GamificationDashboardState extends ConsumerState<GamificationDashboard>
           _buildSectionHeader('Insignias'),
           const SizedBox(height: 12),
           Consumer(builder: (context, ref, _) {
-            final unlockedAchievements = ref.watch(unlockedAchievementsProvider);
+            final unlockedAchievements =
+                ref.watch(unlockedAchievementsProvider);
             return BadgeDisplay(
               unlockedAchievements: unlockedAchievements,
               isHorizontal: true,

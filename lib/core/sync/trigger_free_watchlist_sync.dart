@@ -8,8 +8,9 @@ import '../logging/logger_factory.dart';
 /// usando operaciones directas INSERT/DELETE en lugar de UPSERT para Watchlist
 class TriggerFreeWatchlistSync {
   TriggerFreeWatchlistSync._internal();
-  
-  static final TriggerFreeWatchlistSync _instance = TriggerFreeWatchlistSync._internal();
+
+  static final TriggerFreeWatchlistSync _instance =
+      TriggerFreeWatchlistSync._internal();
   static TriggerFreeWatchlistSync get instance => _instance;
 
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -29,7 +30,8 @@ class TriggerFreeWatchlistSync {
       final List<dynamic> data = response as List<dynamic>;
       final watchlistData = data.cast<Map<String, dynamic>>();
 
-      final watchlistMovies = watchlistData.map((data) => _dataToWatchlistMovie(data)).toList();
+      final watchlistMovies =
+          watchlistData.map((data) => _dataToWatchlistMovie(data)).toList();
 
       LoggerFactory.info(
           '✅ [TriggerFree] Encontrados ${watchlistMovies.length} items en watchlist');
@@ -42,9 +44,11 @@ class TriggerFreeWatchlistSync {
   }
 
   /// Añadir película a watchlist usando upsert
-  Future<void> addToWatchlist(String userId, Movie movie, {WatchlistPriority priority = WatchlistPriority.normal}) async {
+  Future<void> addToWatchlist(String userId, Movie movie,
+      {WatchlistPriority priority = WatchlistPriority.normal}) async {
     try {
-      LoggerFactory.info('➕ [TriggerFree] Agregando a watchlist: ${movie.title}');
+      LoggerFactory.info(
+          '➕ [TriggerFree] Agregando a watchlist: ${movie.title}');
 
       final now = DateTime.now().toUtc().toIso8601String();
 
@@ -65,7 +69,8 @@ class TriggerFreeWatchlistSync {
         'sync_version': 1,
       });
 
-      LoggerFactory.info('✅ [TriggerFree] Película agregada a watchlist: ${movie.title}');
+      LoggerFactory.info(
+          '✅ [TriggerFree] Película agregada a watchlist: ${movie.title}');
     } catch (e) {
       LoggerFactory.error('❌ [TriggerFree] Error agregando a watchlist: $e');
 
@@ -92,7 +97,8 @@ class TriggerFreeWatchlistSync {
           .eq('user_id', userId)
           .eq('movie_id', movieId);
 
-      LoggerFactory.info('✅ [TriggerFree] Película removida de watchlist: $movieId');
+      LoggerFactory.info(
+          '✅ [TriggerFree] Película removida de watchlist: $movieId');
     } catch (e) {
       LoggerFactory.error('❌ [TriggerFree] Error removiendo de watchlist: $e');
       rethrow;
@@ -100,9 +106,11 @@ class TriggerFreeWatchlistSync {
   }
 
   /// Cambia la prioridad de un item en la watchlist
-  Future<void> changePriority(String userId, int movieId, WatchlistPriority newPriority) async {
+  Future<void> changePriority(
+      String userId, int movieId, WatchlistPriority newPriority) async {
     try {
-      LoggerFactory.info('🔄 [TriggerFree] Cambiando prioridad: $movieId -> ${newPriority.name}');
+      LoggerFactory.info(
+          '🔄 [TriggerFree] Cambiando prioridad: $movieId -> ${newPriority.name}');
 
       await _supabase
           .from('user_watchlist')
@@ -122,8 +130,10 @@ class TriggerFreeWatchlistSync {
   }
 
   /// Fallback que usa el método básico sin campos problemáticos
-  Future<void> _addToWatchlistFallback(String userId, Movie movie, WatchlistPriority priority) async {
-    LoggerFactory.info('🔄 [TriggerFree] Ejecutando fallback para watchlist...');
+  Future<void> _addToWatchlistFallback(
+      String userId, Movie movie, WatchlistPriority priority) async {
+    LoggerFactory.info(
+        '🔄 [TriggerFree] Ejecutando fallback para watchlist...');
 
     final now = DateTime.now().toUtc().toIso8601String();
 
@@ -148,13 +158,14 @@ class TriggerFreeWatchlistSync {
       moviePosterPath: data['movie_poster_path'] as String?,
       movieBackdropPath: data['movie_backdrop_path'] as String?,
       movieOverview: data['movie_overview'] as String?,
-      movieReleaseDate: data['movie_release_date'] != null 
-          ? DateTime.parse(data['movie_release_date'] as String) 
+      movieReleaseDate: data['movie_release_date'] != null
+          ? DateTime.parse(data['movie_release_date'] as String)
           : null,
       movieVoteAverage: (data['movie_vote_average'] as num?)?.toDouble(),
       priority: _parsePriority(data['priority'] as String?),
       addedAt: DateTime.parse(data['added_at'] as String),
-      lastModifiedAt: DateTime.parse(data['last_modified_at'] as String? ?? data['added_at'] as String),
+      lastModifiedAt: DateTime.parse(
+          data['last_modified_at'] as String? ?? data['added_at'] as String),
     );
   }
 

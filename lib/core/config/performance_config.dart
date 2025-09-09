@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class PerformanceConfig {
   factory PerformanceConfig() => _instance;
   const PerformanceConfig._internal();
-  
+
   static const PerformanceConfig _instance = PerformanceConfig._internal();
 
   /// Configuración de throttling para diferentes tipos de eventos
@@ -109,14 +109,15 @@ class PerformanceConfig {
     final maxDelay = reconnectionConfig.maxDelayMs;
     final multiplier = reconnectionConfig.backoffMultiplier;
     final jitter = reconnectionConfig.jitterMs;
-    
+
     int delay = (baseDelay * (multiplier * attemptNumber)).round();
     delay = delay > maxDelay ? maxDelay : delay;
-    
+
     // Agregar jitter para evitar thundering herd
-    final jitterAmount = (jitter * (0.5 + (DateTime.now().millisecondsSinceEpoch % 1000) / 2000));
+    final jitterAmount = (jitter *
+        (0.5 + (DateTime.now().millisecondsSinceEpoch % 1000) / 2000));
     delay += jitterAmount.round();
-    
+
     return delay;
   }
 
@@ -126,9 +127,10 @@ class PerformanceConfig {
   }
 
   /// Configuración adaptativa basada en el rendimiento actual
-  static ThrottleConfig getAdaptiveThrottleConfig(String entityType, double currentPerformance) {
+  static ThrottleConfig getAdaptiveThrottleConfig(
+      String entityType, double currentPerformance) {
     final baseConfig = getThrottleConfig(entityType);
-    
+
     if (currentPerformance < 0.5) {
       // Rendimiento muy bajo - throttling más agresivo
       return ThrottleConfig(
@@ -154,7 +156,7 @@ class PerformanceConfig {
         batchSize: (baseConfig.batchSize * 1.2).round(),
       );
     }
-    
+
     return baseConfig;
   }
 }

@@ -50,7 +50,8 @@ class ImagePreloaderService {
       return;
     }
 
-    _logger.info('Starting adaptive preload for ${movies.length} popular movies');
+    _logger
+        .info('Starting adaptive preload for ${movies.length} popular movies');
 
     // Ordenar por popularidad (voteAverage * voteCount)
     final sortedMovies = List<Movie>.from(movies)
@@ -66,7 +67,9 @@ class ImagePreloaderService {
 
       // Ajustar delay según condiciones de red
       final adaptiveDelay = Duration(
-        milliseconds: (delay.inMilliseconds * (networkStrategy.retryDelay.inSeconds / 3)).round(),
+        milliseconds:
+            (delay.inMilliseconds * (networkStrategy.retryDelay.inSeconds / 3))
+                .round(),
       );
 
       if (i > 0) {

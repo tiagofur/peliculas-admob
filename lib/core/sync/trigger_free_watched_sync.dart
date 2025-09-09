@@ -7,8 +7,9 @@ import '../logging/logger_factory.dart';
 /// usando operaciones directas INSERT/DELETE en lugar de UPSERT
 class TriggerFreeWatchedSync {
   TriggerFreeWatchedSync._internal();
-  
-  static final TriggerFreeWatchedSync _instance = TriggerFreeWatchedSync._internal();
+
+  static final TriggerFreeWatchedSync _instance =
+      TriggerFreeWatchedSync._internal();
   static TriggerFreeWatchedSync get instance => _instance;
 
   final SupabaseClient _supabase = Supabase.instance.client;
@@ -16,7 +17,8 @@ class TriggerFreeWatchedSync {
   /// Obtiene películas vistas del usuario (igual que favoritos)
   Future<List<Movie>> getUserWatchedMovies(String userId) async {
     try {
-      LoggerFactory.info('📥 [TriggerFree] Obteniendo películas vistas: $userId');
+      LoggerFactory.info(
+          '📥 [TriggerFree] Obteniendo películas vistas: $userId');
 
       final response = await _supabase
           .from('user_watched_movies')
@@ -35,7 +37,8 @@ class TriggerFreeWatchedSync {
 
       return movies;
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error obteniendo películas vistas: $e');
+      LoggerFactory.error(
+          '❌ [TriggerFree] Error obteniendo películas vistas: $e');
       return [];
     }
   }
@@ -43,7 +46,8 @@ class TriggerFreeWatchedSync {
   /// Añadir película vista usando upsert y fallback (igual que favoritos)
   Future<void> addWatchedMovie(String userId, Movie movie) async {
     try {
-      LoggerFactory.info('➕ [TriggerFree] Agregando película vista: ${movie.title}');
+      LoggerFactory.info(
+          '➕ [TriggerFree] Agregando película vista: ${movie.title}');
 
       final now = DateTime.now().toUtc().toIso8601String();
 
@@ -55,7 +59,7 @@ class TriggerFreeWatchedSync {
         'movie_poster_path': movie.posterPath,
         'movie_backdrop_path': movie.backdropPath,
         'movie_overview': movie.overview,
-        'movie_release_date': movie.releaseDate?.toIso8601String(),
+        'movie_release_date': movie.releaseDate.toIso8601String(),
         'movie_vote_average': movie.voteAverage,
         'watched_at': now,
         'last_modified_at': now,
@@ -63,7 +67,8 @@ class TriggerFreeWatchedSync {
         'sync_version': 1,
       });
 
-      LoggerFactory.info('✅ [TriggerFree] Película vista agregada: ${movie.title}');
+      LoggerFactory.info(
+          '✅ [TriggerFree] Película vista agregada: ${movie.title}');
     } catch (e) {
       LoggerFactory.error('❌ [TriggerFree] Error agregando película vista: $e');
 
@@ -81,7 +86,8 @@ class TriggerFreeWatchedSync {
   /// Remueve una película vista usando DELETE directo (igual que favoritos)
   Future<void> removeWatchedMovie(String userId, int movieId) async {
     try {
-      LoggerFactory.info('🗑️ [TriggerFree] Removiendo película vista: $movieId');
+      LoggerFactory.info(
+          '🗑️ [TriggerFree] Removiendo película vista: $movieId');
 
       // DELETE no debería activar triggers UPDATE (igual que favoritos)
       await _supabase
@@ -92,7 +98,8 @@ class TriggerFreeWatchedSync {
 
       LoggerFactory.info('✅ [TriggerFree] Película vista removida: $movieId');
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error removiendo película vista: $e');
+      LoggerFactory.error(
+          '❌ [TriggerFree] Error removiendo película vista: $e');
       rethrow;
     }
   }
@@ -107,7 +114,7 @@ class TriggerFreeWatchedSync {
       'movie_poster_path': movie.posterPath,
       'movie_backdrop_path': movie.backdropPath,
       'movie_overview': movie.overview,
-      'movie_release_date': movie.releaseDate?.toIso8601String(),
+      'movie_release_date': movie.releaseDate.toIso8601String(),
       'movie_vote_average': movie.voteAverage,
       'watched_at': now,
       'last_modified_at': now,
@@ -143,7 +150,8 @@ class TriggerFreeWatchedSync {
 
       return response != null;
     } catch (e) {
-      LoggerFactory.error('❌ [WatchedSync] Error verificando película vista: $e');
+      LoggerFactory.error(
+          '❌ [WatchedSync] Error verificando película vista: $e');
       return false;
     }
   }

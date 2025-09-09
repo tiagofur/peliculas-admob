@@ -47,7 +47,9 @@ final personalizedRecommendationsProvider =
       final mlRecommendations = await mlService.getMLEnhancedRecommendations(
         userId: 1, // En implementación real, obtener del contexto de usuario
         favoriteMovies: favoriteMoviesList,
-        watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+        watchedMovies: watchedMoviesState.movies
+            .map((movie) => movie.toWatchedMovie())
+            .toList(),
         limit: 20,
       );
 
@@ -71,8 +73,10 @@ final personalizedRecommendationsProvider =
     }
 
     if (watchedMoviesState.movies.isNotEmpty) {
-      final watchedRecs = await datasource
-          .getRecommendationsBasedOnWatched(watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList());
+      final watchedRecs = await datasource.getRecommendationsBasedOnWatched(
+          watchedMoviesState.movies
+              .map((movie) => movie.toWatchedMovie())
+              .toList());
       recommendations.addAll(watchedRecs.take(8));
     }
 
@@ -121,7 +125,9 @@ final userBehaviorAnalysisProvider =
   final favoriteMoviesList = favoriteMovies.values.toList();
   return await mlService.analyzeUserBehavior(
     favoriteMovies: favoriteMoviesList,
-    watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((movie) => movie.toWatchedMovie())
+        .toList(),
   );
 });
 
@@ -175,7 +181,9 @@ final similarMoviesProvider =
   return await mlService.findSimilarMovies(
     targetMovie: targetMovie!,
     favoriteMovies: favoriteMoviesList,
-    watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((movie) => movie.toWatchedMovie())
+        .toList(),
     limit: 10,
   );
 });
@@ -191,7 +199,9 @@ final recommendationExplanationProvider =
   return mlService.explainRecommendation(
     recommendation,
     favoriteMovies: favoriteMoviesList,
-    watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((movie) => movie.toWatchedMovie())
+        .toList(),
   );
 });
 
@@ -205,7 +215,9 @@ final personalizedInsightsProvider =
   final favoriteMoviesList = favoriteMovies.values.toList();
   return await mlService.generatePersonalizedInsights(
     favoriteMovies: favoriteMoviesList,
-    watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((movie) => movie.toWatchedMovie())
+        .toList(),
   );
 });
 
@@ -219,7 +231,9 @@ final nextMoviePredictionProvider =
   final favoriteMoviesList = favoriteMovies.values.toList();
   final prediction = await mlService.predictNextMovie(
     favoriteMovies: favoriteMoviesList,
-    watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((movie) => movie.toWatchedMovie())
+        .toList(),
   );
 
   // Convert MoviePrediction to List<Recommendation>
@@ -249,7 +263,9 @@ final engagementScoreProvider = FutureProvider<double>((ref) async {
   final favoriteMoviesList = favoriteMovies.values.toList();
   final engagementScore = await mlService.calculateEngagementScore(
     favoriteMovies: favoriteMoviesList,
-    watchedMovies: watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((movie) => movie.toWatchedMovie())
+        .toList(),
   );
 
   return engagementScore.totalScore;
@@ -301,13 +317,15 @@ final basicUserStatsProvider = Provider<BasicUserStats>((ref) {
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   final favoriteMoviesList = favoriteMovies.values.toList();
-  
+
   return BasicUserStats(
     totalFavorites: favoriteMovies.length,
     totalWatched: watchedMoviesState.movies.length,
     totalMovies: favoriteMovies.length + watchedMoviesState.movies.length,
     averageRating: _calculateAverageRating(favoriteMoviesList),
-    topGenres: _getTopGenres(favoriteMoviesList, 3).map((id) => _getGenreName(id)).toList(),
+    topGenres: _getTopGenres(favoriteMoviesList, 3)
+        .map((id) => _getGenreName(id))
+        .toList(),
     watchingStreak: _calculateWatchingStreak(watchedMoviesState.movies),
   );
 });

@@ -9,7 +9,8 @@ final analyticsServiceProvider = Provider<AnalyticsService>((ref) {
 });
 
 /// Provider para el dashboard de analíticas
-final analyticsDashboardProvider = FutureProvider<AnalyticsDashboard>((ref) async {
+final analyticsDashboardProvider =
+    FutureProvider<AnalyticsDashboard>((ref) async {
   final analyticsService = ref.read(analyticsServiceProvider);
   return await analyticsService.getDashboard();
 });

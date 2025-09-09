@@ -1,4 +1,3 @@
-
 export 'actors/actors_by_movie.dart';
 
 export 'achievements/achievement_card.dart';
@@ -15,7 +14,6 @@ export 'movies/enhanced_movie_info.dart';
 export 'movies/movie_lists_widget.dart';
 export 'movies/movie_rating.dart';
 export 'movies/similar_movies.dart';
-
 
 export 'shared/custom_appbar.dart';
 export 'shared/custom_bottom_navigation.dart';

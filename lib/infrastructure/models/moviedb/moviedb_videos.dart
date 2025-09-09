@@ -6,8 +6,8 @@ class MoviedbVideosResponse {
   factory MoviedbVideosResponse.fromJson(Map<String, dynamic> json) =>
       MoviedbVideosResponse(
         id: json['id'] ?? 0,
-        results:
-            List<Result>.from(json['results']?.map((x) => Result.fromJson(x)) ?? []),
+        results: List<Result>.from(
+            json['results']?.map((x) => Result.fromJson(x)) ?? []),
       );
 
   final int id;
@@ -41,7 +41,7 @@ class Result {
         size: json['size'] ?? 0,
         type: json['type'] ?? '',
         official: json['official'] ?? false,
-        publishedAt: json['published_at'] != null 
+        publishedAt: json['published_at'] != null
             ? DateTime.parse(json['published_at'])
             : DateTime.now(),
         id: json['id'] ?? '',

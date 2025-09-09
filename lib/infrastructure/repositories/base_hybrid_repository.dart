@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
@@ -40,6 +41,10 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
 
   /// Indica si el repositorio está inicializado
   bool get isInitialized => _isInitialized;
+
+  /// Accessor protegido para el sync manager
+  @protected
+  EntitySyncManager<T>? get syncManager => _syncManager;
 
   /// Inicialización del repositorio
   Future<void> _initialize() async {

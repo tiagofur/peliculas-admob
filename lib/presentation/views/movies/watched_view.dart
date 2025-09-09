@@ -7,7 +7,7 @@ import '../../providers/storage/direct_watched_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/sync/sync_refresh_wrapper.dart';
-
+import '../../widgets/sync/minimal_sync_indicator.dart';
 
 class WatchedView extends ConsumerStatefulWidget {
   const WatchedView({super.key});
@@ -39,8 +39,8 @@ class WatchedViewState extends ConsumerState<WatchedView>
             height: MediaQuery.of(context).size.height * 0.8,
             child: Column(
               children: [
-                // Indicador de sync en la parte superior
-                // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
+                // Indicador de sync minimalista en la parte superior
+                const MinimalSyncIndicator(),
                 Expanded(
                   child: Center(
                     child: Column(
@@ -86,8 +86,8 @@ class WatchedViewState extends ConsumerState<WatchedView>
         },
         child: Column(
           children: [
-            // Indicador de sync compacto
-            // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
+            // Indicador de sync minimalista
+            const MinimalSyncIndicator(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),

@@ -5,7 +5,6 @@ import '../../providers/sync_integration_provider.dart' as integration;
 
 /// Entrada del historial de sincronización
 class SyncHistoryEntry {
-
   const SyncHistoryEntry({
     required this.id,
     required this.timestamp,
@@ -91,7 +90,8 @@ enum SyncOperationStatus {
 }
 
 /// Provider para el historial de sincronización
-final syncHistoryProvider = StateNotifierProvider<SyncHistoryNotifier, List<SyncHistoryEntry>>((ref) {
+final syncHistoryProvider =
+    StateNotifierProvider<SyncHistoryNotifier, List<SyncHistoryEntry>>((ref) {
   return SyncHistoryNotifier();
 });
 
@@ -119,9 +119,10 @@ class SyncHistoryNotifier extends StateNotifier<List<SyncHistoryEntry>> {
   }
 
   List<SyncHistoryEntry> getEntriesInDateRange(DateTime start, DateTime end) {
-    return state.where((entry) => 
-        entry.timestamp.isAfter(start) && entry.timestamp.isBefore(end)
-    ).toList();
+    return state
+        .where((entry) =>
+            entry.timestamp.isAfter(start) && entry.timestamp.isBefore(end))
+        .toList();
   }
 
   static List<SyncHistoryEntry> _generateMockHistory() {
@@ -215,7 +216,9 @@ class SimpleSyncHistoryViewer extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
-                    ref.read(integration.syncIntegrationProvider.notifier).triggerManualSync();
+                    ref
+                        .read(integration.syncIntegrationProvider.notifier)
+                        .triggerManualSync();
                   },
                 ),
               ],
@@ -245,12 +248,13 @@ class SimpleSyncHistoryViewer extends ConsumerWidget {
 
   Widget _buildHistoryEntry(BuildContext context, SyncHistoryEntry entry) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: entry.status.getColor(context).withValues(alpha: 0.1),
+          backgroundColor:
+              entry.status.getColor(context).withValues(alpha: 0.1),
           child: Icon(
             entry.status.getIcon(),
             color: entry.status.getColor(context),
@@ -359,10 +363,10 @@ class _SyncHistoryViewerState extends ConsumerState<SyncHistoryViewer> {
               },
             ),
           ),
-          
+
           // Estadísticas rápidas
           _buildQuickStats(history),
-          
+
           // Lista de historial
           Expanded(
             child: filteredHistory.isEmpty
@@ -384,15 +388,19 @@ class _SyncHistoryViewerState extends ConsumerState<SyncHistoryViewer> {
 
   Widget _buildQuickStats(List<SyncHistoryEntry> history) {
     final today = DateTime.now();
-    final todayEntries = history.where((entry) => 
-        entry.timestamp.day == today.day &&
-        entry.timestamp.month == today.month &&
-        entry.timestamp.year == today.year
-    ).toList();
-    
-    final successCount = todayEntries.where((e) => e.status == SyncOperationStatus.success).length;
-    final errorCount = todayEntries.where((e) => e.status == SyncOperationStatus.error).length;
-    
+    final todayEntries = history
+        .where((entry) =>
+            entry.timestamp.day == today.day &&
+            entry.timestamp.month == today.month &&
+            entry.timestamp.year == today.year)
+        .toList();
+
+    final successCount = todayEntries
+        .where((e) => e.status == SyncOperationStatus.success)
+        .length;
+    final errorCount =
+        todayEntries.where((e) => e.status == SyncOperationStatus.error).length;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Card(
@@ -497,34 +505,46 @@ class _SyncHistoryViewerState extends ConsumerState<SyncHistoryViewer> {
 
     // Filtro por estado
     if (_filterStatus != null) {
-      filtered = filtered.where((entry) => entry.status == _filterStatus).toList();
+      filtered =
+          filtered.where((entry) => entry.status == _filterStatus).toList();
     }
 
     // Filtro por rango de fechas
     if (_filterStartDate != null && _filterEndDate != null) {
-      filtered = filtered.where((entry) => 
-          entry.timestamp.isAfter(_filterStartDate!) && 
-          entry.timestamp.isBefore(_filterEndDate!)
-      ).toList();
+      filtered = filtered
+          .where((entry) =>
+              entry.timestamp.isAfter(_filterStartDate!) &&
+              entry.timestamp.isBefore(_filterEndDate!))
+          .toList();
     }
 
     // Filtro por búsqueda
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((entry) => 
-          entry.description?.toLowerCase().contains(_searchQuery.toLowerCase()) == true ||
-          entry.entityType?.toLowerCase().contains(_searchQuery.toLowerCase()) == true ||
-          entry.errorMessage?.toLowerCase().contains(_searchQuery.toLowerCase()) == true
-      ).toList();
+      filtered = filtered
+          .where((entry) =>
+              entry.description
+                      ?.toLowerCase()
+                      .contains(_searchQuery.toLowerCase()) ==
+                  true ||
+              entry.entityType
+                      ?.toLowerCase()
+                      .contains(_searchQuery.toLowerCase()) ==
+                  true ||
+              entry.errorMessage
+                      ?.toLowerCase()
+                      .contains(_searchQuery.toLowerCase()) ==
+                  true)
+          .toList();
     }
 
     return filtered;
   }
 
   bool _hasActiveFilters() {
-    return _filterType != null || 
-           _filterStatus != null || 
-           (_filterStartDate != null && _filterEndDate != null) ||
-           _searchQuery.isNotEmpty;
+    return _filterType != null ||
+        _filterStatus != null ||
+        (_filterStartDate != null && _filterEndDate != null) ||
+        _searchQuery.isNotEmpty;
   }
 
   void _showFilterDialog() {
@@ -575,7 +595,8 @@ class _SyncHistoryViewerState extends ConsumerState<SyncHistoryViewer> {
 
   void _exportHistory() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Exportación de historial - Por implementar')),
+      const SnackBar(
+          content: Text('Exportación de historial - Por implementar')),
     );
   }
 
@@ -615,7 +636,6 @@ class _SyncHistoryViewerState extends ConsumerState<SyncHistoryViewer> {
 
 /// Widget para mostrar una entrada del historial
 class SyncHistoryEntryTile extends StatelessWidget {
-
   const SyncHistoryEntryTile({
     super.key,
     required this.entry,
@@ -627,12 +647,13 @@ class SyncHistoryEntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
-    
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: entry.status.getColor(context).withValues(alpha: 0.1),
+          backgroundColor:
+              entry.status.getColor(context).withValues(alpha: 0.1),
           child: Icon(
             entry.status.getIcon(),
             color: entry.status.getColor(context),
@@ -720,7 +741,6 @@ class SyncHistoryEntryTile extends StatelessWidget {
 
 /// Diálogo de filtros
 class SyncHistoryFilterDialog extends StatefulWidget {
-
   const SyncHistoryFilterDialog({
     super.key,
     this.currentType,
@@ -734,11 +754,13 @@ class SyncHistoryFilterDialog extends StatefulWidget {
   final SyncOperationStatus? currentStatus;
   final DateTime? currentStartDate;
   final DateTime? currentEndDate;
-  final Function(SyncOperationType?, SyncOperationStatus?, DateTime?, DateTime?) onApply;
+  final Function(SyncOperationType?, SyncOperationStatus?, DateTime?, DateTime?)
+      onApply;
   final VoidCallback onClear;
 
   @override
-  State<SyncHistoryFilterDialog> createState() => _SyncHistoryFilterDialogState();
+  State<SyncHistoryFilterDialog> createState() =>
+      _SyncHistoryFilterDialogState();
 }
 
 class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
@@ -782,8 +804,8 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
                   value: null,
                   child: Text('Todos los tipos'),
                 ),
-                ...SyncOperationType.values.map((type) => 
-                  DropdownMenuItem(
+                ...SyncOperationType.values.map(
+                  (type) => DropdownMenuItem(
                     value: type,
                     child: Text(type.displayName),
                   ),
@@ -792,7 +814,7 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
               onChanged: (value) => setState(() => _selectedType = value),
             ),
             const SizedBox(height: 16),
-            
+
             // Filtro por estado
             Text(
               'Estado',
@@ -810,8 +832,8 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
                   value: null,
                   child: Text('Todos los estados'),
                 ),
-                ...SyncOperationStatus.values.map((status) => 
-                  DropdownMenuItem(
+                ...SyncOperationStatus.values.map(
+                  (status) => DropdownMenuItem(
                     value: status,
                     child: Text(status.displayName),
                   ),
@@ -820,7 +842,7 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
               onChanged: (value) => setState(() => _selectedStatus = value),
             ),
             const SizedBox(height: 16),
-            
+
             // Filtro por fecha
             Text(
               'Rango de Fechas',
@@ -869,7 +891,8 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
         ),
         ElevatedButton(
           onPressed: () {
-            widget.onApply(_selectedType, _selectedStatus, _startDate, _endDate);
+            widget.onApply(
+                _selectedType, _selectedStatus, _startDate, _endDate);
             Navigator.of(context).pop();
           },
           child: const Text('Aplicar'),
@@ -885,7 +908,7 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now(),
     );
-    
+
     if (date != null) {
       setState(() {
         if (isStartDate) {
@@ -900,14 +923,13 @@ class _SyncHistoryFilterDialogState extends State<SyncHistoryFilterDialog> {
 
 /// Diálogo de detalles de entrada
 class SyncHistoryEntryDialog extends StatelessWidget {
-
   const SyncHistoryEntryDialog({super.key, required this.entry});
   final SyncHistoryEntry entry;
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm:ss');
-    
+
     return AlertDialog(
       title: Text(entry.type.displayName),
       content: SingleChildScrollView(
@@ -915,7 +937,7 @@ class SyncHistoryEntryDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow('Estado', entry.status.displayName, 
+            _buildDetailRow('Estado', entry.status.displayName,
                 color: entry.status.getColor(context)),
             _buildDetailRow('Fecha', dateFormat.format(entry.timestamp)),
             if (entry.description != null)
@@ -927,13 +949,16 @@ class SyncHistoryEntryDialog extends StatelessWidget {
             if (entry.duration != null)
               _buildDetailRow('Duración', _formatDuration(entry.duration!)),
             if (entry.itemsProcessed != null)
-              _buildDetailRow('Elementos Procesados', entry.itemsProcessed.toString()),
+              _buildDetailRow(
+                  'Elementos Procesados', entry.itemsProcessed.toString()),
             if (entry.itemsSuccess != null)
-              _buildDetailRow('Elementos Exitosos', entry.itemsSuccess.toString()),
+              _buildDetailRow(
+                  'Elementos Exitosos', entry.itemsSuccess.toString()),
             if (entry.itemsError != null)
-              _buildDetailRow('Elementos con Error', entry.itemsError.toString()),
+              _buildDetailRow(
+                  'Elementos con Error', entry.itemsError.toString()),
             if (entry.errorMessage != null)
-              _buildDetailRow('Mensaje de Error', entry.errorMessage!, 
+              _buildDetailRow('Mensaje de Error', entry.errorMessage!,
                   color: Theme.of(context).colorScheme.error),
           ],
         ),

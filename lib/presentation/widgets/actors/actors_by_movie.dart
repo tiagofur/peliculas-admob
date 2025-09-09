@@ -59,7 +59,8 @@ class ActorsByMovie extends ConsumerWidget {
                         child: const Center(
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.grey),
                           ),
                         ),
                       ),

@@ -101,13 +101,13 @@ class SyncableWatchlistItem extends SyncableEntity {
         (p) => p.toString().split('.').last == json['priority'],
         orElse: () => WatchlistPriority.normal,
       ),
-      addedAt: json['added_at'] != null 
+      addedAt: json['added_at'] != null
           ? DateTime.parse(json['added_at'] as String)
           : DateTime.now(),
-      createdAt: json['created_at'] != null 
+      createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
-      lastModifiedAt: json['last_modified_at'] != null 
+      lastModifiedAt: json['last_modified_at'] != null
           ? DateTime.parse(json['last_modified_at'] as String)
           : DateTime.now(),
       isDeleted: json['is_deleted'] as bool? ?? false,

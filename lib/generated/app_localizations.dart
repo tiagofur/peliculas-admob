@@ -8,7 +8,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -16,9 +17,11 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -37,7 +40,8 @@ abstract class AppLocalizations {
   String get themeMode => 'Theme Mode';
   String get themeColor => 'Theme Color';
   String get information => 'Information';
-  String get systemThemeDescription => 'The \'System\' mode will automatically follow your device\'s theme setting.';
+  String get systemThemeDescription =>
+      'The \'System\' mode will automatically follow your device\'s theme setting.';
   String get system => 'System';
   String get systemThemeSubtitle => 'Follow device configuration';
   String get light => 'Light';
@@ -48,7 +52,8 @@ abstract class AppLocalizations {
   String get selectLanguage => 'Select Language';
   String get spanish => 'Spanish';
   String get english => 'English';
-  String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
+  String get languageDescription =>
+      'Change the app language. The app will restart to apply the new language.';
   String get home => 'Home';
   String get favorites => 'Favorites';
   String get watchlist => 'Watchlist';
@@ -67,7 +72,8 @@ abstract class AppLocalizations {
   String get challenges => 'Challenges';
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -76,7 +82,8 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'es'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'es'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -84,8 +91,10 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
 
 AppLocalizations _lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
-    case 'en': return AppLocalizationsEn();
-    case 'es': return AppLocalizationsEs();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
   }
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
@@ -111,7 +120,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get information => 'Information';
   @override
-  String get systemThemeDescription => 'The \'System\' mode will automatically follow your device\'s theme setting.';
+  String get systemThemeDescription =>
+      'The \'System\' mode will automatically follow your device\'s theme setting.';
   @override
   String get system => 'System';
   @override
@@ -133,7 +143,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get english => 'English';
   @override
-  String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
+  String get languageDescription =>
+      'Change the app language. The app will restart to apply the new language.';
   @override
   String get home => 'Home';
   @override
@@ -185,7 +196,8 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get information => 'Información';
   @override
-  String get systemThemeDescription => 'El modo \'Sistema\' seguirá automáticamente la configuración de tema de tu dispositivo.';
+  String get systemThemeDescription =>
+      'El modo \'Sistema\' seguirá automáticamente la configuración de tema de tu dispositivo.';
   @override
   String get system => 'Sistema';
   @override
@@ -207,7 +219,8 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get english => 'Inglés';
   @override
-  String get languageDescription => 'Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.';
+  String get languageDescription =>
+      'Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.';
   @override
   String get home => 'Inicio';
   @override

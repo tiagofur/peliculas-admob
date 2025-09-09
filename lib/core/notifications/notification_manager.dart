@@ -865,8 +865,6 @@ class NotificationManager {
     }
   }
 
-
-
   String _getActorNotificationIcon() {
     return 'actor_icon';
   }

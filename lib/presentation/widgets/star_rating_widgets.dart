@@ -6,7 +6,7 @@ class StarRatingInput extends StatefulWidget {
     super.key,
     required this.onRatingChanged,
     this.initialRating = 0,
-    this.maxRating = 5,
+    this.maxRating = 5, // 5 stars representing 2-point increments
     this.size = 32.0,
     this.color = Colors.amber,
     this.borderColor,
@@ -14,8 +14,8 @@ class StarRatingInput extends StatefulWidget {
     this.allowHalfRating = false,
   });
 
-  final Function(int rating) onRatingChanged;
-  final int initialRating;
+  final Function(double rating) onRatingChanged;
+  final double initialRating;
   final int maxRating;
   final double size;
   final Color color;
@@ -28,7 +28,7 @@ class StarRatingInput extends StatefulWidget {
 }
 
 class _StarRatingInputState extends State<StarRatingInput> {
-  late int _currentRating;
+  late double _currentRating;
 
   @override
   void initState() {
@@ -44,7 +44,9 @@ class _StarRatingInputState extends State<StarRatingInput> {
     }
   }
 
-  void _updateRating(int rating) {
+  void _updateRating(int starIndex) {
+    // Convert star index (1-5) to rating value (2, 4, 6, 8, 10)
+    final double rating = starIndex * 2.0;
     if (rating != _currentRating) {
       setState(() {
         _currentRating = rating;
@@ -55,21 +57,27 @@ class _StarRatingInputState extends State<StarRatingInput> {
 
   @override
   Widget build(BuildContext context) {
-    final accessibleSize = AccessibilityService.getAccessibleButtonSize(context);
-    final semanticLabel = AccessibilityService.getStarRatingSemantics(_currentRating, widget.maxRating);
-    
+    final accessibleSize =
+        AccessibilityService.getAccessibleButtonSize(context);
+    final semanticLabel = AccessibilityService.getStarRatingSemantics(
+        _currentRating, widget.maxRating);
+
     return Semantics(
-      label: 'Calificación interactiva. $semanticLabel. Toque las estrellas para calificar.',
+      label:
+          'Calificación interactiva. $semanticLabel. Toque las estrellas para calificar.',
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(widget.maxRating, (index) {
-          final starNumber = index + 1;
+          final starIndex = index + 1;
+          final starValue = starIndex * 2.0; // Each star represents 2 points
+          final isStarFilled = starValue <= _currentRating;
+          
           return Semantics(
             button: true,
-            label: 'Calificar con $starNumber de ${widget.maxRating} estrellas',
-            onTap: () => _updateRating(starNumber),
+            label: 'Calificar con $starIndex de ${widget.maxRating} estrellas (valor ${starValue.toInt()})',
+            onTap: () => _updateRating(starIndex),
             child: GestureDetector(
-              onTap: () => _updateRating(starNumber),
+              onTap: () => _updateRating(starIndex),
               child: Container(
                 padding: EdgeInsets.all(widget.spacing),
                 constraints: BoxConstraints(
@@ -78,13 +86,12 @@ class _StarRatingInputState extends State<StarRatingInput> {
                 ),
                 child: Center(
                   child: Icon(
-                    starNumber <= _currentRating
-                        ? Icons.star
-                        : Icons.star_border,
+                    isStarFilled ? Icons.star : Icons.star_border,
                     size: widget.size,
-                    color: starNumber <= _currentRating
+                    color: isStarFilled
                         ? widget.color
-                        : (widget.borderColor ?? widget.color.withValues(alpha: 0.3 * 255)),
+                        : (widget.borderColor ??
+                            widget.color.withValues(alpha: 0.3 * 255)),
                   ),
                 ),
               ),
@@ -100,7 +107,7 @@ class StarRatingDisplay extends StatelessWidget {
   const StarRatingDisplay({
     super.key,
     required this.rating,
-    this.maxRating = 5,
+    this.maxRating = 5, // 5 stars representing 2-point increments
     this.size = 20.0,
     this.color = Colors.amber,
     this.spacing = 2.0,
@@ -108,7 +115,7 @@ class StarRatingDisplay extends StatelessWidget {
     this.valueStyle,
   });
 
-  final int rating;
+  final double rating;
   final int maxRating;
   final double size;
   final Color color;
@@ -118,8 +125,9 @@ class StarRatingDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final semanticLabel = AccessibilityService.getStarRatingSemantics(rating, maxRating);
-    
+    final semanticLabel =
+        AccessibilityService.getStarRatingSemantics(rating, maxRating);
+
     return Semantics(
       label: semanticLabel,
       readOnly: true,
@@ -127,29 +135,31 @@ class StarRatingDisplay extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           ...List.generate(maxRating, (index) {
-            final starNumber = index + 1;
+            final starIndex = index + 1;
+            final starValue = starIndex * 2.0; // Each star represents 2 points
+            final isStarFilled = starValue <= rating;
+            
             return Padding(
               padding: EdgeInsets.only(
                 right: index < maxRating - 1 ? spacing : 0,
               ),
               child: Icon(
-                starNumber <= rating
-                    ? Icons.star
-                    : Icons.star_border,
+                isStarFilled ? Icons.star : Icons.star_border,
                 size: size,
-                color: starNumber <= rating
+                color: isStarFilled
                     ? color
                     : color.withValues(alpha: 0.3 * 255),
-                semanticLabel: starNumber <= rating ? 'Estrella llena' : 'Estrella vacía',
+                semanticLabel:
+                    isStarFilled ? 'Estrella llena' : 'Estrella vacía',
               ),
             );
           }),
           if (showValue) ...[
             SizedBox(width: spacing * 2),
             Semantics(
-              label: 'Valor numérico: $rating de $maxRating',
+              label: 'Valor numérico: $rating de 10',
               child: Text(
-                '$rating/$maxRating',
+                '$rating/10',
                 style: valueStyle ?? Theme.of(context).textTheme.bodyMedium,
               ),
             ),
@@ -165,7 +175,7 @@ class InteractiveStarRating extends StatefulWidget {
     super.key,
     required this.onRatingChanged,
     this.initialRating = 0,
-    this.maxRating = 5,
+    this.maxRating = 5, // 5 stars representing 2-point increments
     this.size = 32.0,
     this.color = Colors.amber,
     this.spacing = 4.0,
@@ -173,8 +183,8 @@ class InteractiveStarRating extends StatefulWidget {
     this.enabled = true,
   });
 
-  final Function(int rating) onRatingChanged;
-  final int initialRating;
+  final Function(double rating) onRatingChanged;
+  final double initialRating;
   final int maxRating;
   final double size;
   final Color color;
@@ -187,8 +197,8 @@ class InteractiveStarRating extends StatefulWidget {
 }
 
 class _InteractiveStarRatingState extends State<InteractiveStarRating> {
-  late int _currentRating;
-  int _hoverRating = 0;
+  late double _currentRating;
+  double _hoverRating = 0;
 
   @override
   void initState() {
@@ -204,26 +214,33 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
     }
   }
 
-  String _getRatingLabel(int rating) {
+  String _getRatingLabel(double rating) {
     switch (rating) {
       case 1:
-        return 'Muy mala';
       case 2:
-        return 'Mala';
+        return 'Muy mala';
       case 3:
-        return 'Regular';
       case 4:
-        return 'Buena';
+        return 'Mala';
       case 5:
+      case 6:
+        return 'Regular';
+      case 7:
+      case 8:
+        return 'Buena';
+      case 9:
+      case 10:
         return 'Excelente';
       default:
         return 'Sin calificar';
     }
   }
 
-  void _updateRating(int rating) {
+  void _updateRating(int starIndex) {
     if (!widget.enabled) return;
-    
+
+    // Convert star index (1-5) to rating value (2, 4, 6, 8, 10)
+    final double rating = starIndex * 2.0;
     if (rating != _currentRating) {
       setState(() {
         _currentRating = rating;
@@ -235,11 +252,13 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
   @override
   Widget build(BuildContext context) {
     final displayRating = _hoverRating > 0 ? _hoverRating : _currentRating;
-    final accessibleSize = AccessibilityService.getAccessibleButtonSize(context);
-    final semanticLabel = AccessibilityService.getStarRatingSemantics(_currentRating, widget.maxRating);
-    
+    final accessibleSize =
+        AccessibilityService.getAccessibleButtonSize(context);
+    final semanticLabel = AccessibilityService.getStarRatingSemantics(
+        _currentRating, widget.maxRating);
+
     return Semantics(
-      label: widget.enabled 
+      label: widget.enabled
           ? 'Calificación interactiva. $semanticLabel. Seleccione una estrella para calificar.'
           : 'Calificación no editable. $semanticLabel',
       child: Column(
@@ -248,19 +267,27 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(widget.maxRating, (index) {
-              final starNumber = index + 1;
+              final starIndex = index + 1;
+              final starValue = starIndex * 2.0; // Each star represents 2 points
+              final isStarFilled = starValue <= displayRating;
+              
               return Semantics(
                 button: widget.enabled,
                 enabled: widget.enabled,
-                label: widget.enabled 
-                    ? 'Calificar con $starNumber de ${widget.maxRating} estrellas - ${_getRatingLabel(starNumber)}'
-                    : 'Estrella $starNumber de ${widget.maxRating}',
-                onTap: widget.enabled ? () => _updateRating(starNumber) : null,
+                label: widget.enabled
+                    ? 'Calificar con $starIndex de ${widget.maxRating} estrellas (valor ${starValue.toInt()}) - ${_getRatingLabel(starValue)}'
+                    : 'Estrella $starIndex de ${widget.maxRating} (valor ${starValue.toInt()})',
+                onTap: widget.enabled ? () => _updateRating(starIndex) : null,
                 child: MouseRegion(
-                  onEnter: widget.enabled ? (_) => setState(() => _hoverRating = starNumber) : null,
-                  onExit: widget.enabled ? (_) => setState(() => _hoverRating = 0) : null,
+                  onEnter: widget.enabled
+                      ? (_) => setState(() => _hoverRating = starValue)
+                      : null,
+                  onExit: widget.enabled
+                      ? (_) => setState(() => _hoverRating = 0)
+                      : null,
                   child: GestureDetector(
-                    onTap: widget.enabled ? () => _updateRating(starNumber) : null,
+                    onTap:
+                        widget.enabled ? () => _updateRating(starIndex) : null,
                     child: Container(
                       padding: EdgeInsets.all(widget.spacing),
                       constraints: BoxConstraints(
@@ -269,12 +296,10 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
                       ),
                       child: Center(
                         child: Icon(
-                          starNumber <= displayRating
-                              ? Icons.star
-                              : Icons.star_border,
+                          isStarFilled ? Icons.star : Icons.star_border,
                           size: widget.size,
                           color: widget.enabled
-                              ? (starNumber <= displayRating
+                              ? (isStarFilled
                                   ? widget.color
                                   : widget.color.withValues(alpha: 0.3 * 255))
                               : Colors.grey,
@@ -289,12 +314,13 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
           if (widget.showLabels) ...[
             const SizedBox(height: 8),
             Semantics(
-              label: 'Etiqueta de calificación: ${_getRatingLabel(displayRating)}',
+              label:
+                  'Etiqueta de calificación: ${_getRatingLabel(displayRating)}',
               child: Text(
                 _getRatingLabel(displayRating),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: widget.enabled ? null : Colors.grey,
-                ),
+                      color: widget.enabled ? null : Colors.grey,
+                    ),
               ),
             ),
           ],

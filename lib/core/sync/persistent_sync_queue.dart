@@ -15,7 +15,6 @@ class PersistentSyncQueue {
     _init();
   }
 
-  
   final String? _userId;
   late final String _queueKey;
   final List<SyncOperation> _operations = [];
@@ -30,8 +29,9 @@ class PersistentSyncQueue {
       _prefs = await SharedPreferences.getInstance();
       await _loadOperations();
       _initialized = true;
-      
-      LoggerFactory.info('✅ PersistentSyncQueue initialized with ${_operations.length} operations');
+
+      LoggerFactory.info(
+          '✅ PersistentSyncQueue initialized with ${_operations.length} operations');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize PersistentSyncQueue: $e');
       _initialized = true; // Continue even if loading fails
@@ -59,7 +59,8 @@ class PersistentSyncQueue {
 
       for (final item in jsonList) {
         try {
-          final operation = SyncOperation.fromJson(Map<String, dynamic>.from(item));
+          final operation =
+              SyncOperation.fromJson(Map<String, dynamic>.from(item));
           _operations.add(operation);
         } catch (e) {
           LoggerFactory.error('Failed to parse operation: $e');
@@ -68,8 +69,9 @@ class PersistentSyncQueue {
 
       // Ordenar por prioridad y fecha de creación
       _sortOperations();
-      
-      LoggerFactory.info('Loaded ${_operations.length} operations from storage');
+
+      LoggerFactory.info(
+          'Loaded ${_operations.length} operations from storage');
     } catch (e) {
       LoggerFactory.error('Failed to load operations: $e');
     }
@@ -83,7 +85,7 @@ class PersistentSyncQueue {
       final jsonList = _operations.map((op) => op.toJson()).toList();
       final jsonString = json.encode(jsonList);
       await _prefs!.setString(_queueKey, jsonString);
-      
+
       LoggerFactory.debug('Saved ${_operations.length} operations to storage');
     } catch (e) {
       LoggerFactory.error('Failed to save operations: $e');
@@ -96,7 +98,7 @@ class PersistentSyncQueue {
       // Primero por prioridad (menor número = mayor prioridad)
       final priorityComparison = a.priority.compareTo(b.priority);
       if (priorityComparison != 0) return priorityComparison;
-      
+
       // Luego por fecha de creación (más antiguas primero)
       return a.createdAt.compareTo(b.createdAt);
     });
@@ -147,14 +149,15 @@ class PersistentSyncQueue {
     await _ensureInitialized();
 
     final readyOperations = <SyncOperation>[];
-    
+
     for (final operation in _operations) {
       if (operation.isReadyToExecute && readyOperations.length < maxCount) {
         readyOperations.add(operation);
       }
     }
 
-    LoggerFactory.debug('Dequeued batch of ${readyOperations.length} operations');
+    LoggerFactory.debug(
+        'Dequeued batch of ${readyOperations.length} operations');
     return readyOperations;
   }
 
@@ -166,10 +169,11 @@ class PersistentSyncQueue {
     if (index != -1) {
       _operations[index] = updatedOperation;
       await _saveOperations();
-      
+
       LoggerFactory.debug('Updated operation: ${updatedOperation.toString()}');
     } else {
-      LoggerFactory.warning('Operation not found for update: ${updatedOperation.id}');
+      LoggerFactory.warning(
+          'Operation not found for update: ${updatedOperation.id}');
     }
   }
 
@@ -181,11 +185,11 @@ class PersistentSyncQueue {
     if (index != -1) {
       final operation = _operations[index];
       _operations[index] = operation.markAsCompleted();
-      
+
       // Opcional: eliminar operaciones completadas después de un tiempo
       _scheduleCleanup();
       await _saveOperations();
-      
+
       LoggerFactory.info('Marked operation as completed: $operationId');
     }
   }
@@ -198,17 +202,19 @@ class PersistentSyncQueue {
     if (index != -1) {
       final operation = _operations[index];
       final updatedOperation = operation.markAsFailed(errorMessage);
-      
+
       if (updatedOperation.canRetry) {
         // Programar reintento
         _operations[index] = updatedOperation.scheduleRetry();
-        LoggerFactory.info('Scheduled retry for operation: $operationId (attempt ${updatedOperation.retryCount + 1}/${updatedOperation.maxRetries})');
+        LoggerFactory.info(
+            'Scheduled retry for operation: $operationId (attempt ${updatedOperation.retryCount + 1}/${updatedOperation.maxRetries})');
       } else {
         // Máximo de reintentos alcanzado
         _operations[index] = updatedOperation;
-        LoggerFactory.error('Operation failed permanently: $operationId - $errorMessage');
+        LoggerFactory.error(
+            'Operation failed permanently: $operationId - $errorMessage');
       }
-      
+
       await _saveOperations();
     }
   }
@@ -216,21 +222,22 @@ class PersistentSyncQueue {
   /// Obtiene todas las operaciones de un tipo específico
   Future<List<SyncOperation>> getOperationsByType(String entityType) async {
     await _ensureInitialized();
-    
+
     return _operations.where((op) => op.entityType == entityType).toList();
   }
 
   /// Obtiene operaciones por estado
-  Future<List<SyncOperation>> getOperationsByStatus(SyncOperationStatus status) async {
+  Future<List<SyncOperation>> getOperationsByStatus(
+      SyncOperationStatus status) async {
     await _ensureInitialized();
-    
+
     return _operations.where((op) => op.status == status).toList();
   }
 
   /// Obtiene estadísticas de la cola
   Future<Map<String, int>> getQueueStatistics() async {
     await _ensureInitialized();
-    
+
     final stats = <String, int>{
       'total': _operations.length,
       'pending': 0,
@@ -242,9 +249,9 @@ class PersistentSyncQueue {
     };
 
     for (final operation in _operations) {
-      stats[operation.status.value.toLowerCase()] = 
+      stats[operation.status.value.toLowerCase()] =
           (stats[operation.status.value.toLowerCase()] ?? 0) + 1;
-      
+
       if (operation.isReadyToExecute) {
         stats['ready_to_execute'] = (stats['ready_to_execute'] ?? 0) + 1;
       }
@@ -263,7 +270,7 @@ class PersistentSyncQueue {
         status: SyncOperationStatus.cancelled,
         lastAttemptAt: SyncUtilities.utcNow(),
       );
-      
+
       await _saveOperations();
       LoggerFactory.info('Cancelled operation: $operationId');
     }
@@ -275,7 +282,8 @@ class PersistentSyncQueue {
 
     int cancelledCount = 0;
     for (int i = 0; i < _operations.length; i++) {
-      if (_operations[i].entityType == entityType && !_operations[i].isCompleted) {
+      if (_operations[i].entityType == entityType &&
+          !_operations[i].isCompleted) {
         _operations[i] = _operations[i].copyWith(
           status: SyncOperationStatus.cancelled,
           lastAttemptAt: SyncUtilities.utcNow(),
@@ -286,7 +294,8 @@ class PersistentSyncQueue {
 
     if (cancelledCount > 0) {
       await _saveOperations();
-      LoggerFactory.info('Cancelled $cancelledCount operations of type: $entityType');
+      LoggerFactory.info(
+          'Cancelled $cancelledCount operations of type: $entityType');
     }
   }
 
@@ -294,12 +303,13 @@ class PersistentSyncQueue {
   Future<void> cleanup({Duration? olderThan}) async {
     await _ensureInitialized();
 
-    final cutoffTime = DateTime.now().subtract(olderThan ?? const Duration(days: 7));
+    final cutoffTime =
+        DateTime.now().subtract(olderThan ?? const Duration(days: 7));
     final initialCount = _operations.length;
 
     _operations.removeWhere((operation) {
       return (operation.isCompleted || operation.isCancelled) &&
-             operation.createdAt.isBefore(cutoffTime);
+          operation.createdAt.isBefore(cutoffTime);
     });
 
     final removedCount = initialCount - _operations.length;
@@ -320,10 +330,10 @@ class PersistentSyncQueue {
   /// Limpia completamente la cola (para testing o reset)
   Future<void> clear() async {
     await _ensureInitialized();
-    
+
     _operations.clear();
     await _saveOperations();
-    
+
     LoggerFactory.info('Cleared all operations from queue');
   }
 

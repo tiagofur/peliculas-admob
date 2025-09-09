@@ -32,7 +32,7 @@ class CustomListsState {
   CustomList? getListWithMovies(String listId) {
     final list = lists[listId];
     if (list == null) return null;
-    
+
     final movieIds = listItems[listId] ?? [];
     return list.copyWith(movieIds: movieIds);
   }
@@ -63,7 +63,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   DirectCustomListsNotifier({
     required this.onListCreated,
   }) : super(const CustomListsState()) {
-    LoggerFactory.info('🚀 [DIRECT CUSTOM LISTS] Constructor llamado, inicializando...');
+    LoggerFactory.info(
+        '🚀 [DIRECT CUSTOM LISTS] Constructor llamado, inicializando...');
     _loadListsFromSupabase();
     _setupRealtimeListeners();
     LoggerFactory.info('✅ [DIRECT CUSTOM LISTS] Inicialización completada');
@@ -132,7 +133,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     const uuid = Uuid();
     final listId = uuid.v4();
     final now = DateTime.now();
-    
+
     final newList = CustomList(
       id: listId,
       name: name,
@@ -153,35 +154,39 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     final updatedItems = Map<String, List<int>>.from(state.listItems);
     updatedLists[listId] = newList;
     updatedItems[listId] = [];
-    
+
     state = state.copyWith(
       lists: updatedLists,
       listItems: updatedItems,
     );
 
     try {
-      LoggerFactory.info('🔄 [CREAR LISTA] Llamando a TriggerFreeCustomListsSync...');
+      LoggerFactory.info(
+          '🔄 [CREAR LISTA] Llamando a TriggerFreeCustomListsSync...');
       final createdList = await _sync.createList(currentUser.id, newList);
       if (createdList != null) {
-        LoggerFactory.info('✅ [CREAR LISTA] Lista creada exitosamente en Supabase: ${newList.name}');
+        LoggerFactory.info(
+            '✅ [CREAR LISTA] Lista creada exitosamente en Supabase: ${newList.name}');
         onListCreated(createdList);
       } else {
-        LoggerFactory.error('❌ [CREAR LISTA] TriggerFreeCustomListsSync retornó null');
+        LoggerFactory.error(
+            '❌ [CREAR LISTA] TriggerFreeCustomListsSync retornó null');
       }
     } catch (e) {
-      LoggerFactory.error('❌ [CREAR LISTA] Error en TriggerFreeCustomListsSync: $e');
-      
+      LoggerFactory.error(
+          '❌ [CREAR LISTA] Error en TriggerFreeCustomListsSync: $e');
+
       // Revertir cambio optimista en caso de error
       final revertedLists = Map<String, CustomList>.from(state.lists);
       final revertedItems = Map<String, List<int>>.from(state.listItems);
       revertedLists.remove(listId);
       revertedItems.remove(listId);
-      
+
       state = state.copyWith(
         lists: revertedLists,
         listItems: revertedItems,
       );
-      
+
       rethrow;
     }
   }
@@ -211,23 +216,24 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       color: color,
       lastModifiedAt: DateTime.now(),
     );
-    
+
     final updatedLists = Map<String, CustomList>.from(state.lists);
     updatedLists[listId] = updatedList;
-    
+
     state = state.copyWith(lists: updatedLists);
 
     try {
       await _sync.updateList(currentUser.id, updatedList);
-      LoggerFactory.info('DirectCustomLists: Lista actualizada: ${updatedList.name}');
+      LoggerFactory.info(
+          'DirectCustomLists: Lista actualizada: ${updatedList.name}');
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error actualizando lista: $e');
-      
+
       // Revertir cambio optimista en caso de error
       final revertedLists = Map<String, CustomList>.from(state.lists);
       revertedLists[listId] = currentList;
       state = state.copyWith(lists: revertedLists);
-      
+
       rethrow;
     }
   }
@@ -248,7 +254,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     final updatedItems = Map<String, List<int>>.from(state.listItems);
     final removedList = updatedLists.remove(listId);
     final removedItems = updatedItems.remove(listId);
-    
+
     state = state.copyWith(
       lists: updatedLists,
       listItems: updatedItems,
@@ -256,10 +262,11 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
 
     try {
       await _sync.deleteList(currentUser.id, listId);
-      LoggerFactory.info('DirectCustomLists: Lista eliminada: ${currentList.name}');
+      LoggerFactory.info(
+          'DirectCustomLists: Lista eliminada: ${currentList.name}');
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error eliminando lista: $e');
-      
+
       // Revertir cambio optimista en caso de error
       if (removedList != null) {
         final revertedLists = Map<String, CustomList>.from(state.lists);
@@ -273,7 +280,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           listItems: revertedItems,
         );
       }
-      
+
       rethrow;
     }
   }
@@ -292,20 +299,21 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     // Actualización optimista de la UI
     final updatedItems = Map<String, List<int>>.from(state.listItems);
     updatedItems[listId] = [...currentItems, movieId];
-    
+
     state = state.copyWith(listItems: updatedItems);
 
     try {
       await _sync.addMovieToList(currentUser.id, listId, movieId);
       LoggerFactory.info('DirectCustomLists: Película agregada a lista');
     } catch (e) {
-      LoggerFactory.error('DirectCustomLists: Error agregando película a lista: $e');
-      
+      LoggerFactory.error(
+          'DirectCustomLists: Error agregando película a lista: $e');
+
       // Revertir cambio optimista en caso de error
       final revertedItems = Map<String, List<int>>.from(state.listItems);
       revertedItems[listId] = currentItems;
       state = state.copyWith(listItems: revertedItems);
-      
+
       rethrow;
     }
   }
@@ -324,20 +332,21 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     // Actualización optimista de la UI
     final updatedItems = Map<String, List<int>>.from(state.listItems);
     updatedItems[listId] = currentItems.where((id) => id != movieId).toList();
-    
+
     state = state.copyWith(listItems: updatedItems);
 
     try {
       await _sync.removeMovieFromList(currentUser.id, listId, movieId);
       LoggerFactory.info('DirectCustomLists: Película removida de lista');
     } catch (e) {
-      LoggerFactory.error('DirectCustomLists: Error removiendo película de lista: $e');
-      
+      LoggerFactory.error(
+          'DirectCustomLists: Error removiendo película de lista: $e');
+
       // Revertir cambio optimista en caso de error
       final revertedItems = Map<String, List<int>>.from(state.listItems);
       revertedItems[listId] = currentItems;
       state = state.copyWith(listItems: revertedItems);
-      
+
       rethrow;
     }
   }
@@ -355,25 +364,31 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   /// Configurar listeners de tiempo real
   void _setupRealtimeListeners() {
     try {
-      LoggerFactory.info('📡 [REAL-TIME CUSTOM LISTS] Configurando listeners de tiempo real...');
+      LoggerFactory.info(
+          '📡 [REAL-TIME CUSTOM LISTS] Configurando listeners de tiempo real...');
 
       // Listener para cambios en listas
       _listsChannel = Supabase.instance.client
-          .channel('custom_lists_realtime_${DateTime.now().millisecondsSinceEpoch}')
+          .channel(
+              'custom_lists_realtime_${DateTime.now().millisecondsSinceEpoch}')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_lists',
             callback: _handleListsRealtimeEvent,
-            filter: _currentUserId != null 
-                ? PostgresChangeFilter(type: PostgresChangeFilterType.eq, column: 'user_id', value: _currentUserId)
+            filter: _currentUserId != null
+                ? PostgresChangeFilter(
+                    type: PostgresChangeFilterType.eq,
+                    column: 'user_id',
+                    value: _currentUserId)
                 : null,
           )
           .subscribe();
 
-      // Listener para cambios en items de listas  
+      // Listener para cambios en items de listas
       _listItemsChannel = Supabase.instance.client
-          .channel('list_items_realtime_${DateTime.now().millisecondsSinceEpoch}')
+          .channel(
+              'list_items_realtime_${DateTime.now().millisecondsSinceEpoch}')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
@@ -382,17 +397,21 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           )
           .subscribe();
 
-      LoggerFactory.info('✅ DirectCustomLists: Listeners de tiempo real configurados');
+      LoggerFactory.info(
+          '✅ DirectCustomLists: Listeners de tiempo real configurados');
     } catch (e) {
-      LoggerFactory.error('❌ DirectCustomLists: Error configurando listeners: $e');
+      LoggerFactory.error(
+          '❌ DirectCustomLists: Error configurando listeners: $e');
     }
   }
 
   /// Maneja eventos de tiempo real para listas
   void _handleListsRealtimeEvent(PostgresChangePayload payload) {
     try {
-      LoggerFactory.info('🔴 DirectCustomLists: Evento en listas: ${payload.eventType}');
-      LoggerFactory.debug('🔴 DirectCustomLists: Payload: ${payload.newRecord}');
+      LoggerFactory.info(
+          '🔴 DirectCustomLists: Evento en listas: ${payload.eventType}');
+      LoggerFactory.debug(
+          '🔴 DirectCustomLists: Payload: ${payload.newRecord}');
 
       final newRecord = payload.newRecord;
       final oldRecord = payload.oldRecord;
@@ -411,15 +430,17 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           break;
       }
     } catch (e) {
-      LoggerFactory.error('❌ DirectCustomLists: Error manejando evento de listas: $e');
+      LoggerFactory.error(
+          '❌ DirectCustomLists: Error manejando evento de listas: $e');
     }
   }
 
   /// Maneja eventos de tiempo real para items de listas
   void _handleListItemsRealtimeEvent(PostgresChangePayload payload) {
     try {
-      LoggerFactory.info('🔴 DirectCustomLists: Evento en items: ${payload.eventType}');
-      
+      LoggerFactory.info(
+          '🔴 DirectCustomLists: Evento en items: ${payload.eventType}');
+
       final newRecord = payload.newRecord;
       final oldRecord = payload.oldRecord;
 
@@ -437,7 +458,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           break;
       }
     } catch (e) {
-      LoggerFactory.error('❌ DirectCustomLists: Error manejando evento de items: $e');
+      LoggerFactory.error(
+          '❌ DirectCustomLists: Error manejando evento de items: $e');
     }
   }
 
@@ -448,26 +470,29 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     final listId = record['id'] as String;
     final customList = _recordToCustomList(record);
 
-    LoggerFactory.info('➕ DirectCustomLists: Insertando lista ${customList.name}');
+    LoggerFactory.info(
+        '➕ DirectCustomLists: Insertando lista ${customList.name}');
 
     final updatedLists = Map<String, CustomList>.from(state.lists);
     final updatedItems = Map<String, List<int>>.from(state.listItems);
-    
+
     updatedLists[listId] = customList;
     if (!updatedItems.containsKey(listId)) {
       updatedItems[listId] = [];
     }
-    
+
     state = state.copyWith(lists: updatedLists, listItems: updatedItems);
   }
 
-  void _handleListUpdate(Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
+  void _handleListUpdate(
+      Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
     if (newRecord['user_id'] != _currentUserId) return;
 
     final listId = newRecord['id'] as String;
 
     if (newRecord['is_deleted'] == true) {
-      LoggerFactory.info('🗑️ DirectCustomLists: Lista eliminada ${newRecord['name']}');
+      LoggerFactory.info(
+          '🗑️ DirectCustomLists: Lista eliminada ${newRecord['name']}');
       final updatedLists = Map<String, CustomList>.from(state.lists);
       final updatedItems = Map<String, List<int>>.from(state.listItems);
       updatedLists.remove(listId);
@@ -475,7 +500,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       state = state.copyWith(lists: updatedLists, listItems: updatedItems);
     } else {
       final customList = _recordToCustomList(newRecord);
-      LoggerFactory.info('🔄 DirectCustomLists: Actualizando lista ${customList.name}');
+      LoggerFactory.info(
+          '🔄 DirectCustomLists: Actualizando lista ${customList.name}');
       final updatedLists = Map<String, CustomList>.from(state.lists);
       updatedLists[listId] = customList;
       state = state.copyWith(lists: updatedLists);
@@ -486,7 +512,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     if (record['user_id'] != _currentUserId) return;
 
     final listId = record['id'] as String;
-    LoggerFactory.info('🗑️ DirectCustomLists: Eliminando lista ${record['name']}');
+    LoggerFactory.info(
+        '🗑️ DirectCustomLists: Eliminando lista ${record['name']}');
 
     final updatedLists = Map<String, CustomList>.from(state.lists);
     final updatedItems = Map<String, List<int>>.from(state.listItems);
@@ -504,18 +531,20 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     // Solo procesar si tenemos esta lista
     if (!state.lists.containsKey(listId)) return;
 
-    LoggerFactory.info('➕ DirectCustomLists: Agregando película $movieId a lista $listId');
+    LoggerFactory.info(
+        '➕ DirectCustomLists: Agregando película $movieId a lista $listId');
 
     final updatedItems = Map<String, List<int>>.from(state.listItems);
     final currentItems = updatedItems[listId] ?? [];
-    
+
     if (!currentItems.contains(movieId)) {
       updatedItems[listId] = [...currentItems, movieId];
       state = state.copyWith(listItems: updatedItems);
     }
   }
 
-  void _handleItemUpdate(Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
+  void _handleItemUpdate(
+      Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
     final listId = newRecord['list_id'] as String;
     final movieId = newRecord['movie_id'] as int;
 
@@ -523,7 +552,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     if (!state.lists.containsKey(listId)) return;
 
     if (newRecord['is_deleted'] == true) {
-      LoggerFactory.info('🗑️ DirectCustomLists: Item eliminado $movieId de lista $listId');
+      LoggerFactory.info(
+          '🗑️ DirectCustomLists: Item eliminado $movieId de lista $listId');
       final updatedItems = Map<String, List<int>>.from(state.listItems);
       final currentItems = updatedItems[listId] ?? [];
       updatedItems[listId] = currentItems.where((id) => id != movieId).toList();
@@ -538,7 +568,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     // Solo procesar si tenemos esta lista
     if (!state.lists.containsKey(listId)) return;
 
-    LoggerFactory.info('🗑️ DirectCustomLists: Eliminando item $movieId de lista $listId');
+    LoggerFactory.info(
+        '🗑️ DirectCustomLists: Eliminando item $movieId de lista $listId');
 
     final updatedItems = Map<String, List<int>>.from(state.listItems);
     final currentItems = updatedItems[listId] ?? [];
@@ -556,14 +587,16 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       color: record['color'] as String? ?? 'blue',
       movieIds: [], // Se cargan por separado
       createdAt: DateTime.parse(record['created_at'] as String),
-      lastModifiedAt: DateTime.parse(record['last_modified_at'] as String? ?? record['created_at'] as String),
+      lastModifiedAt: DateTime.parse(record['last_modified_at'] as String? ??
+          record['created_at'] as String),
       isDefault: record['is_default'] as bool? ?? false,
     );
   }
 
   /// Habilita el provider después del login
   void enableAfterLogin() {
-    LoggerFactory.info('🔐 DirectCustomLists: Habilitando después del login...');
+    LoggerFactory.info(
+        '🔐 DirectCustomLists: Habilitando después del login...');
     _loadListsFromSupabase();
     _setupRealtimeListeners();
   }
@@ -577,11 +610,11 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   /// Obtiene todas las listas que contienen una película específica
   List<CustomList> getListsContainingMovie(int movieId) {
     final result = <CustomList>[];
-    
+
     for (final entry in state.listItems.entries) {
       final listId = entry.key;
       final movieIds = entry.value;
-      
+
       if (movieIds.contains(movieId)) {
         final list = state.lists[listId];
         if (list != null) {
@@ -589,7 +622,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
         }
       }
     }
-    
+
     return result;
   }
 
@@ -623,13 +656,15 @@ final directCustomListsWithMoviesProvider = Provider<List<CustomList>>((ref) {
 });
 
 /// Provider para verificar si una película está en una lista específica
-final isMovieInDirectListProvider = Provider.family<bool, ({String listId, int movieId})>((ref, params) {
+final isMovieInDirectListProvider =
+    Provider.family<bool, ({String listId, int movieId})>((ref, params) {
   final notifier = ref.read(directCustomListsProvider.notifier);
   return notifier.isMovieInList(params.listId, params.movieId);
 });
 
 /// Provider para obtener las listas que contienen una película específica
-final directMovieListsProvider = Provider.family<List<CustomList>, int>((ref, movieId) {
+final directMovieListsProvider =
+    Provider.family<List<CustomList>, int>((ref, movieId) {
   final notifier = ref.read(directCustomListsProvider.notifier);
   return notifier.getListsContainingMovie(movieId);
 });

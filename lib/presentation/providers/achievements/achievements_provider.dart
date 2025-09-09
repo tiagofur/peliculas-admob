@@ -13,13 +13,15 @@ final achievementsRepositoryProvider = Provider<AchievementsRepository>((ref) {
 });
 
 // Provider para todos los logros
-final achievementsProvider = StateNotifierProvider<AchievementsNotifier, AchievementsState>((ref) {
+final achievementsProvider =
+    StateNotifierProvider<AchievementsNotifier, AchievementsState>((ref) {
   final repository = ref.watch(achievementsRepositoryProvider);
   return AchievementsNotifier(repository);
 });
 
 // Provider para logros desbloqueados
-final unlockedAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+final unlockedAchievementsProvider =
+    FutureProvider<List<Achievement>>((ref) async {
   final repository = ref.watch(achievementsRepositoryProvider);
   return repository.getUnlockedAchievements();
 });
@@ -49,19 +51,22 @@ class AchievementsState {
   }
 
   // Getters para filtrar logros por categoría
-  List<Achievement> get movieAchievements => 
-      achievements.where((a) => a.category == AchievementCategory.movies).toList();
-  
-  List<Achievement> get favoriteAchievements => 
-      achievements.where((a) => a.category == AchievementCategory.favorites).toList();
-  
-  List<Achievement> get explorationAchievements => 
-      achievements.where((a) => a.category == AchievementCategory.exploration).toList();
-  
-  List<Achievement> get unlockedAchievements => 
+  List<Achievement> get movieAchievements => achievements
+      .where((a) => a.category == AchievementCategory.movies)
+      .toList();
+
+  List<Achievement> get favoriteAchievements => achievements
+      .where((a) => a.category == AchievementCategory.favorites)
+      .toList();
+
+  List<Achievement> get explorationAchievements => achievements
+      .where((a) => a.category == AchievementCategory.exploration)
+      .toList();
+
+  List<Achievement> get unlockedAchievements =>
       achievements.where((a) => a.isUnlocked).toList();
-  
-  List<Achievement> get lockedAchievements => 
+
+  List<Achievement> get lockedAchievements =>
       achievements.where((a) => !a.isUnlocked).toList();
 }
 
@@ -75,7 +80,7 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
 
   Future<void> _initialize() async {
     state = state.copyWith(isLoading: true);
-    
+
     try {
       await repository.initializeDefaultAchievements();
       await loadAchievements();
@@ -106,20 +111,20 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
   Future<void> trackMovieWatched(Movie movie) async {
     try {
       final previousAchievements = List<Achievement>.from(state.achievements);
-      
+
       await repository.trackMovieWatched();
-      
+
       // Track género explorado
       for (final genre in movie.genreIds) {
         await repository.trackGenreExplored(genre);
       }
-      
+
       // Track década explorada
       final year = movie.releaseDate.year;
       await repository.trackDecadeExplored(year);
-      
+
       await loadAchievements();
-      
+
       // Mostrar notificaciones de logros nuevos
       final newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
       for (final achievement in newlyUnlocked) {
@@ -133,10 +138,10 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
   Future<void> trackMovieFavorited() async {
     try {
       final previousAchievements = List<Achievement>.from(state.achievements);
-      
+
       await repository.trackMovieFavorited();
       await loadAchievements();
-      
+
       // Mostrar notificaciones de logros nuevos
       final newlyUnlocked = getNewlyUnlockedAchievements(previousAchievements);
       for (final achievement in newlyUnlocked) {
@@ -152,12 +157,15 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
   }
 
   // Método para obtener logros recién desbloqueados
-  List<Achievement> getNewlyUnlockedAchievements(List<Achievement> previousAchievements) {
+  List<Achievement> getNewlyUnlockedAchievements(
+      List<Achievement> previousAchievements) {
     final currentUnlocked = state.unlockedAchievements;
-    final previousUnlocked = previousAchievements.where((Achievement a) => a.isUnlocked).toList();
-    
+    final previousUnlocked =
+        previousAchievements.where((Achievement a) => a.isUnlocked).toList();
+
     return currentUnlocked.where((Achievement current) {
-      return !previousUnlocked.any((Achievement previous) => previous.id == current.id);
+      return !previousUnlocked
+          .any((Achievement previous) => previous.id == current.id);
     }).toList();
   }
 

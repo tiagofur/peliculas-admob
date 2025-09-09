@@ -126,7 +126,8 @@
       "Bash(node:*)",
       "Bash(find:*)",
       "Bash(del test_anonymous_migration.dart)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

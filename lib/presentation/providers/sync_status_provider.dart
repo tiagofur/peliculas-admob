@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/logging/logger_factory.dart';
 import 'auth_provider.dart';
 import 'sync_init_provider.dart';
 
@@ -120,7 +119,6 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
       // usaremos una aproximación basada en el estado de la app
       _updateSyncStatusFromSystemState();
     } catch (e) {
-      LoggerFactory.error('Error verificando estado de sincronización: $e');
       if (!state.hasError) {
         _updateStatus(SyncStatus.error, 'Error verificando sincronización');
       }
@@ -166,7 +164,6 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
         }
       }
     } catch (e) {
-      LoggerFactory.error('Error actualizando estado desde sistema: $e');
       // En caso de error, mantener el estado actual
     }
   }
@@ -208,15 +205,12 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void startManualSync() {
     final appState = _ref.read(appStateProvider);
     if (!appState.isAuthenticated) {
-      LoggerFactory.warning(
-          'Intento de sincronización sin usuario autenticado');
       return;
     }
 
     _updateStatus(SyncStatus.syncing, 'Iniciando sincronización...',
         progress: 0.1);
 
-    // Intentar ejecutar sincronización real a través del AuthSyncListener
     _triggerActualSync();
   }
 
@@ -227,13 +221,9 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
       // Simular progreso inicial
       _updateProgressSteps();
 
-      // Ejecutar sincronización real
       await authSyncListener.forceSyncAll();
-
-      // Éxito
       _updateStatus(SyncStatus.success, 'Sincronización completada');
     } catch (e) {
-      LoggerFactory.error('Error en sincronización manual: $e');
       _updateStatus(SyncStatus.error, 'Error: ${e.toString()}');
     }
   }

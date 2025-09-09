@@ -36,7 +36,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final authState = ref.watch(authNotifierProvider);
-    
+
     // Escuchar cambios en el estado de autenticación
     ref.listen<AsyncValue<void>>(authNotifierProvider, (previous, next) {
       next.when(
@@ -85,7 +85,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     // Header
                     _buildHeader(theme),
                     const SizedBox(height: 32),
-                    
+
                     // Campos del formulario
                     _buildFullNameField(theme),
                     const SizedBox(height: 16),
@@ -95,19 +95,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     const SizedBox(height: 16),
                     _buildConfirmPasswordField(theme),
                     const SizedBox(height: 16),
-                    
+
                     // Términos y condiciones
                     _buildTermsCheckbox(theme),
                     const SizedBox(height: 32),
-                    
+
                     // Botón de registro
                     _buildRegisterButton(authState),
                     const SizedBox(height: 24),
-                    
+
                     // Divider
                     _buildDivider(theme),
                     const SizedBox(height: 24),
-                    
+
                     // Login
                     _buildLoginSection(theme),
                   ],
@@ -197,7 +197,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         if (value == null || value.isEmpty) {
           return 'Por favor ingresa tu email';
         }
-        if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+        if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+            .hasMatch(value)) {
           return 'Por favor ingresa un email válido';
         }
         return null;
@@ -317,7 +318,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Widget _buildRegisterButton(AsyncValue<void> authState) {
     final isLoading = authState.isLoading;
-    
+
     return FilledButton(
       onPressed: (isLoading || !_acceptTerms) ? null : _handleRegister,
       style: FilledButton.styleFrom(
@@ -414,10 +415,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (_formKey.currentState?.validate() ?? false) {
       ref.read(authNotifierProvider.notifier).signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        fullName: _fullNameController.text.trim(),
-      );
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            fullName: _fullNameController.text.trim(),
+          );
     }
   }
 
@@ -447,8 +448,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             onPressed: () {
               Navigator.of(context).pop();
               ref.read(authNotifierProvider.notifier).resendConfirmationEmail(
-                _emailController.text.trim(),
-              );
+                    _emailController.text.trim(),
+                  );
             },
             child: const Text('Reenviar email'),
           ),

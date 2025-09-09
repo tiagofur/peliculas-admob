@@ -16,13 +16,16 @@ class RecommendationCategoryScreen extends ConsumerStatefulWidget {
   final String categoryId;
 
   @override
-  RecommendationCategoryScreenState createState() => RecommendationCategoryScreenState();
+  RecommendationCategoryScreenState createState() =>
+      RecommendationCategoryScreenState();
 }
 
-class RecommendationCategoryScreenState extends ConsumerState<RecommendationCategoryScreen> {
+class RecommendationCategoryScreenState
+    extends ConsumerState<RecommendationCategoryScreen> {
   @override
   Widget build(BuildContext context) {
-    final recommendationsAsync = ref.watch(recommendationsByCategoryProvider(widget.categoryId));
+    final recommendationsAsync =
+        ref.watch(recommendationsByCategoryProvider(widget.categoryId));
     final categoryInfo = _getCategoryInfo(widget.categoryId);
 
     return Scaffold(
@@ -111,7 +114,8 @@ class RecommendationCategoryScreenState extends ConsumerState<RecommendationCate
                 return SliverPadding(
                   padding: const EdgeInsets.all(16),
                   sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       childAspectRatio: 0.7,
                       crossAxisSpacing: 16,
@@ -171,7 +175,8 @@ class RecommendationCategoryScreenState extends ConsumerState<RecommendationCate
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
-                          ref.invalidate(recommendationsByCategoryProvider(widget.categoryId));
+                          ref.invalidate(recommendationsByCategoryProvider(
+                              widget.categoryId));
                         },
                         child: const Text('Reintentar'),
                       ),

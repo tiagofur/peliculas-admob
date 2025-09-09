@@ -7,7 +7,7 @@ import '../../providers/storage/direct_favorites_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 import '../../widgets/sync/sync_refresh_wrapper.dart';
-
+import '../../widgets/sync/minimal_sync_indicator.dart';
 
 class FavoritesView extends ConsumerStatefulWidget {
   const FavoritesView({super.key});
@@ -58,8 +58,8 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
             height: MediaQuery.of(context).size.height * 0.8,
             child: Column(
               children: [
-                // Indicador de sync en la parte superior
-                // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
+                // Indicador de sync minimalista en la parte superior
+                const MinimalSyncIndicator(),
                 Expanded(
                   child: Center(
                     child: Column(
@@ -107,8 +107,8 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
         },
         child: Column(
           children: [
-            // Indicador de sync compacto
-            // const SyncStatusCard(), // TODO: Implement SyncStatusCard widget
+            // Indicador de sync minimalista
+            const MinimalSyncIndicator(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),

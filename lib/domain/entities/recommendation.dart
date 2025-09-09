@@ -88,7 +88,8 @@ class UserPreferences {
       favoriteGenres: favoriteGenres ?? this.favoriteGenres,
       favoriteActors: favoriteActors ?? this.favoriteActors,
       favoriteDirectors: favoriteDirectors ?? this.favoriteDirectors,
-      averageRatingPreference: averageRatingPreference ?? this.averageRatingPreference,
+      averageRatingPreference:
+          averageRatingPreference ?? this.averageRatingPreference,
       preferredLanguages: preferredLanguages ?? this.preferredLanguages,
       genreCount: genreCount ?? this.genreCount,
       genreRating: genreRating ?? this.genreRating,

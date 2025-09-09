@@ -7,15 +7,16 @@ class HiveCleanupService {
   /// Limpia solo la caja de favoritos corruptos
   static Future<void> clearFavoritesBox() async {
     LoggerFactory.warning('🧹 Limpiando caja de favoritos corruptos...');
-    
+
     try {
       if (await Hive.boxExists('favorite_movies')) {
         final box = await Hive.openBox('favorite_movies');
         final itemCount = box.length;
         await box.clear();
         await box.close();
-        
-        LoggerFactory.info('✅ Limpiada caja de favoritos ($itemCount elementos)');
+
+        LoggerFactory.info(
+            '✅ Limpiada caja de favoritos ($itemCount elementos)');
       }
     } catch (e) {
       LoggerFactory.error('❌ Error limpiando favoritos: $e');
@@ -128,7 +129,7 @@ class HiveCleanupService {
     try {
       // Solo validar, no limpiar automáticamente para evitar loops
       final integrity = await validateDataIntegrity();
-      
+
       bool hasCorruption = false;
       for (final entry in integrity.entries) {
         if (entry.value == 0) {
@@ -138,15 +139,16 @@ class HiveCleanupService {
       }
 
       if (hasCorruption) {
-        LoggerFactory.info('ℹ️ Corrupción detectada pero será manejada por el flujo normal de la app');
+        LoggerFactory.info(
+            'ℹ️ Corrupción detectada pero será manejada por el flujo normal de la app');
       } else {
         LoggerFactory.info('✅ Integridad de datos validada correctamente');
       }
-      
+
       return false; // No ejecutar limpieza automática
-      
     } catch (e) {
-      LoggerFactory.info('ℹ️ Error en validación (normal en primera ejecución): $e');
+      LoggerFactory.info(
+          'ℹ️ Error en validación (normal en primera ejecución): $e');
       return false;
     }
   }

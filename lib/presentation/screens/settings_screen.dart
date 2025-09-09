@@ -6,7 +6,6 @@ import '../../generated/app_localizations.dart';
 import '../providers/locale/locale_provider.dart';
 import '../providers/theme/theme_provider.dart';
 
-
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 

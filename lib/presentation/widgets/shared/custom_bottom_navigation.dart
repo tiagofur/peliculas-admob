@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../generated/app_localizations.dart';
 
-
 class CustomBottomNavigation extends ConsumerWidget {
   const CustomBottomNavigation({
-    super.key, 
+    super.key,
     required this.currentIndex,
     required this.onItemTapped,
   });
@@ -50,18 +49,14 @@ class CustomBottomNavigation extends ConsumerWidget {
             iconSize: 24,
             items: [
               BottomNavigationBarItem(
-                icon: const Icon(Icons.home_max), 
-                label: l10n.home
-              ),
+                  icon: const Icon(Icons.home_max), label: l10n.home),
               BottomNavigationBarItem(
-                icon: const Icon(Icons.library_books_outlined), 
-                label: l10n.myLibrary
-              ),
+                  icon: const Icon(Icons.library_books_outlined),
+                  label: l10n.myLibrary),
               BottomNavigationBarItem(
-                icon: const Icon(Icons.bar_chart_outlined),
-                activeIcon: const Icon(Icons.bar_chart),
-                label: l10n.statistics
-              ),
+                  icon: const Icon(Icons.bar_chart_outlined),
+                  activeIcon: const Icon(Icons.bar_chart),
+                  label: l10n.statistics),
             ],
           ),
         ],

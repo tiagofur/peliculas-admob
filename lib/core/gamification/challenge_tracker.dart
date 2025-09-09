@@ -223,11 +223,12 @@ class ChallengeTracker extends ChangeNotifier {
       if (challenge.isCompleted || challenge.isExpired) continue;
 
       // Update progress using specific challenge implementation
-      final updatedChallenge = ReviewMasterChallenge.updateProgress(challenge, DateTime.now());
+      final updatedChallenge =
+          ReviewMasterChallenge.updateProgress(challenge, DateTime.now());
       if (updatedChallenge != null) {
         // Update the challenge in the system
-        _challengeSystem.updateChallengeProgress(
-            updatedChallenge.id, updatedChallenge.currentProgress, _currentContext);
+        _challengeSystem.updateChallengeProgress(updatedChallenge.id,
+            updatedChallenge.currentProgress, _currentContext);
       }
       // Check if challenge was completed and update system
       if (challenge.isCompleted) {
@@ -246,11 +247,12 @@ class ChallengeTracker extends ChangeNotifier {
       if (challenge.isCompleted || challenge.isExpired) continue;
 
       // Update progress using specific challenge implementation
-      final updatedChallenge = SocialSharerChallenge.updateProgress(challenge, movieId, platform);
+      final updatedChallenge =
+          SocialSharerChallenge.updateProgress(challenge, movieId, platform);
       if (updatedChallenge != null) {
         // Update the challenge in the system
-        _challengeSystem.updateChallengeProgress(
-            updatedChallenge.id, updatedChallenge.currentProgress, _currentContext);
+        _challengeSystem.updateChallengeProgress(updatedChallenge.id,
+            updatedChallenge.currentProgress, _currentContext);
       }
       // Check if challenge was completed and update system
       if (challenge.isCompleted) {
@@ -282,11 +284,6 @@ class ChallengeTracker extends ChangeNotifier {
       }
     }
   }
-
-
-
-
-
 
   /// Update user behavior pattern for challenge generation
   void _updateUserBehaviorPattern() {

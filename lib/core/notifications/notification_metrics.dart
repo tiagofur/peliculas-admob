@@ -29,14 +29,14 @@ class NotificationDeliveryMetrics {
       ),
       sentAt: DateTime.parse(json['sentAt'] as String),
       scheduledFor: DateTime.parse(json['scheduledFor'] as String),
-      deliveredAt: json['deliveredAt'] != null 
-          ? DateTime.parse(json['deliveredAt'] as String) 
+      deliveredAt: json['deliveredAt'] != null
+          ? DateTime.parse(json['deliveredAt'] as String)
           : null,
-      clickedAt: json['clickedAt'] != null 
-          ? DateTime.parse(json['clickedAt'] as String) 
+      clickedAt: json['clickedAt'] != null
+          ? DateTime.parse(json['clickedAt'] as String)
           : null,
-      dismissedAt: json['dismissedAt'] != null 
-          ? DateTime.parse(json['dismissedAt'] as String) 
+      dismissedAt: json['dismissedAt'] != null
+          ? DateTime.parse(json['dismissedAt'] as String)
           : null,
       failed: json['failed'] as bool? ?? false,
       failureReason: json['failureReason'] as String?,
@@ -164,7 +164,7 @@ class NotificationMetricsService {
   final _logger = LoggerFactory.logger;
   final List<NotificationDeliveryMetrics> _metrics = [];
   Timer? _cleanupTimer;
-  
+
   static const String _prefsKey = 'notification_metrics';
   static const int _maxMetricsToKeep = 1000;
   static const Duration _metricsRetentionPeriod = Duration(days: 30);
@@ -192,8 +192,9 @@ class NotificationMetricsService {
 
     _metrics.add(metrics);
     await _saveMetrics();
-    
-    _logger.info('Métrica registrada - Enviada: $notificationId (${type.name})');
+
+    _logger
+        .info('Métrica registrada - Enviada: $notificationId (${type.name})');
   }
 
   /// Registra que una notificación fue entregada
@@ -201,13 +202,14 @@ class NotificationMetricsService {
     required String notificationId,
     DateTime? deliveredAt,
   }) async {
-    final index = _metrics.indexWhere((m) => m.notificationId == notificationId);
+    final index =
+        _metrics.indexWhere((m) => m.notificationId == notificationId);
     if (index != -1) {
       _metrics[index] = _metrics[index].copyWith(
         deliveredAt: deliveredAt ?? DateTime.now(),
       );
       await _saveMetrics();
-      
+
       _logger.info('Métrica actualizada - Entregada: $notificationId');
     }
   }
@@ -217,13 +219,14 @@ class NotificationMetricsService {
     required String notificationId,
     DateTime? clickedAt,
   }) async {
-    final index = _metrics.indexWhere((m) => m.notificationId == notificationId);
+    final index =
+        _metrics.indexWhere((m) => m.notificationId == notificationId);
     if (index != -1) {
       _metrics[index] = _metrics[index].copyWith(
         clickedAt: clickedAt ?? DateTime.now(),
       );
       await _saveMetrics();
-      
+
       _logger.info('Métrica actualizada - Clickeada: $notificationId');
     }
   }
@@ -233,13 +236,14 @@ class NotificationMetricsService {
     required String notificationId,
     DateTime? dismissedAt,
   }) async {
-    final index = _metrics.indexWhere((m) => m.notificationId == notificationId);
+    final index =
+        _metrics.indexWhere((m) => m.notificationId == notificationId);
     if (index != -1) {
       _metrics[index] = _metrics[index].copyWith(
         dismissedAt: dismissedAt ?? DateTime.now(),
       );
       await _saveMetrics();
-      
+
       _logger.info('Métrica actualizada - Dismisseda: $notificationId');
     }
   }
@@ -249,14 +253,15 @@ class NotificationMetricsService {
     required String notificationId,
     required String reason,
   }) async {
-    final index = _metrics.indexWhere((m) => m.notificationId == notificationId);
+    final index =
+        _metrics.indexWhere((m) => m.notificationId == notificationId);
     if (index != -1) {
       _metrics[index] = _metrics[index].copyWith(
         failed: true,
         failureReason: reason,
       );
       await _saveMetrics();
-      
+
       _logger.error('Métrica actualizada - Falló: $notificationId - $reason');
     }
   }
@@ -267,8 +272,10 @@ class NotificationMetricsService {
     NotificationType? type,
   }) {
     final now = DateTime.now();
-    final startDate = period != null ? now.subtract(period) : DateTime.fromMillisecondsSinceEpoch(0);
-    
+    final startDate = period != null
+        ? now.subtract(period)
+        : DateTime.fromMillisecondsSinceEpoch(0);
+
     final filteredMetrics = _metrics.where((m) {
       if (m.sentAt.isBefore(startDate)) return false;
       if (type != null && m.type != type) return false;
@@ -295,13 +302,20 @@ class NotificationMetricsService {
     final totalClicked = filteredMetrics.where((m) => m.wasClicked).length;
     final totalFailed = filteredMetrics.where((m) => m.failed).length;
 
-    final deliveredMetrics = filteredMetrics.where((m) => m.deliveryLatencyMs != null);
+    final deliveredMetrics =
+        filteredMetrics.where((m) => m.deliveryLatencyMs != null);
     final avgDeliveryLatency = deliveredMetrics.isNotEmpty
-        ? deliveredMetrics.map((m) => m.deliveryLatencyMs!).reduce((a, b) => a + b) / deliveredMetrics.length
+        ? deliveredMetrics
+                .map((m) => m.deliveryLatencyMs!)
+                .reduce((a, b) => a + b) /
+            deliveredMetrics.length
         : 0.0;
 
     final avgSchedulingLatency = filteredMetrics.isNotEmpty
-        ? filteredMetrics.map((m) => m.schedulingLatencyMs).reduce((a, b) => a + b) / filteredMetrics.length
+        ? filteredMetrics
+                .map((m) => m.schedulingLatencyMs)
+                .reduce((a, b) => a + b) /
+            filteredMetrics.length
         : 0.0;
 
     return NotificationStats(
@@ -312,25 +326,30 @@ class NotificationMetricsService {
       averageDeliveryLatencyMs: avgDeliveryLatency,
       averageSchedulingLatencyMs: avgSchedulingLatency,
       deliveryRate: totalSent > 0 ? totalDelivered / totalSent : 0.0,
-      clickThroughRate: totalDelivered > 0 ? totalClicked / totalDelivered : 0.0,
+      clickThroughRate:
+          totalDelivered > 0 ? totalClicked / totalDelivered : 0.0,
       failureRate: totalSent > 0 ? totalFailed / totalSent : 0.0,
       period: period?.toString() ?? 'All time',
     );
   }
 
   /// Obtiene estadísticas de las últimas 24 horas
-  NotificationStats get last24HoursStats => getStats(period: const Duration(hours: 24));
+  NotificationStats get last24HoursStats =>
+      getStats(period: const Duration(hours: 24));
 
   /// Obtiene estadísticas de la última semana
-  NotificationStats get lastWeekStats => getStats(period: const Duration(days: 7));
+  NotificationStats get lastWeekStats =>
+      getStats(period: const Duration(days: 7));
 
   /// Obtiene estadísticas del último mes
-  NotificationStats get lastMonthStats => getStats(period: const Duration(days: 30));
+  NotificationStats get lastMonthStats =>
+      getStats(period: const Duration(days: 30));
 
   /// Verifica si la tasa de entrega cumple con el objetivo (>95%)
   bool get isDeliveryRateHealthy {
     final stats = last24HoursStats;
-    return stats.deliveryRate >= 0.95 || stats.totalSent < 5; // Requiere al menos 5 notificaciones para evaluar
+    return stats.deliveryRate >= 0.95 ||
+        stats.totalSent < 5; // Requiere al menos 5 notificaciones para evaluar
   }
 
   /// Verifica si la latencia promedio está dentro del rango aceptable (<5 segundos)
@@ -359,14 +378,14 @@ class NotificationMetricsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final metricsJson = prefs.getString(_prefsKey);
-      
+
       if (metricsJson != null) {
         final metricsList = jsonDecode(metricsJson) as List;
         _metrics.clear();
         _metrics.addAll(
           metricsList.map((json) => NotificationDeliveryMetrics.fromJson(json)),
         );
-        
+
         _logger.info('${_metrics.length} métricas de notificaciones cargadas');
       }
     } catch (e) {
@@ -396,19 +415,21 @@ class NotificationMetricsService {
   void _cleanupOldMetrics() {
     final now = DateTime.now();
     final cutoffDate = now.subtract(_metricsRetentionPeriod);
-    
+
     final initialCount = _metrics.length;
     _metrics.removeWhere((m) => m.sentAt.isBefore(cutoffDate));
-    
+
     // También limitar por cantidad
     if (_metrics.length > _maxMetricsToKeep) {
-      _metrics.sort((a, b) => b.sentAt.compareTo(a.sentAt)); // Más recientes primero
+      _metrics.sort(
+          (a, b) => b.sentAt.compareTo(a.sentAt)); // Más recientes primero
       _metrics.removeRange(_maxMetricsToKeep, _metrics.length);
     }
-    
+
     final removedCount = initialCount - _metrics.length;
     if (removedCount > 0) {
-      _logger.info('Limpieza de métricas: $removedCount métricas antiguas eliminadas');
+      _logger.info(
+          'Limpieza de métricas: $removedCount métricas antiguas eliminadas');
       _saveMetrics(); // Guardar cambios
     }
   }

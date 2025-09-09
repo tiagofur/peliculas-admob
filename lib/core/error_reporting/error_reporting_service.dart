@@ -11,14 +11,14 @@ import 'error_metrics_service.dart';
 /// "Cannot send Null" errors in Flutter debugger and Firebase Crashlytics
 Map<String, dynamic>? _cleanErrorDataMap(Map<String, dynamic>? data) {
   if (data == null) return null;
-  
+
   final cleanData = <String, dynamic>{};
   for (final entry in data.entries) {
     if (entry.value != null) {
       cleanData[entry.key] = entry.value;
     }
   }
-  
+
   return cleanData.isEmpty ? null : cleanData;
 }
 
@@ -121,7 +121,7 @@ class ErrorReportingService {
     bool fatal = false,
   }) async {
     final cleanData = _cleanErrorDataMap(data);
-    
+
     if (!_isInitialized || !_isEnabled || kIsWeb) {
       // Still log locally even if Crashlytics is not available
       LoggerFactory.error(
@@ -263,7 +263,7 @@ extension ErrorReportingZone on ErrorReportingService {
         );
       },
     );
-    
+
     // Handle the case where runZonedGuarded returns null
     // This can happen when an exception is thrown in the zone
     if (result == null) {
@@ -274,12 +274,11 @@ extension ErrorReportingZone on ErrorReportingService {
         // If casting null to R fails, it means R is not nullable
         // For non-nullable types, throw an error with more context
         throw StateError(
-          'Zone body returned null in ${zoneName ?? "unknown zone"}. '
-          'This typically indicates an unhandled exception occurred in the zone.'
-        );
+            'Zone body returned null in ${zoneName ?? "unknown zone"}. '
+            'This typically indicates an unhandled exception occurred in the zone.');
       }
     }
-    
+
     return result;
   }
 
@@ -295,14 +294,13 @@ extension ErrorReportingZone on ErrorReportingService {
         reportError(
           error,
           stackTrace,
-          reason:
-              zoneName != null ? 'Async error in zone: $zoneName' : null,
+          reason: zoneName != null ? 'Async error in zone: $zoneName' : null,
           data: _cleanErrorDataMap(customData),
           fatal: false,
         );
       },
     );
-    
+
     // Handle the case where runZonedGuarded returns null
     // This can happen when an exception is thrown in the zone
     if (result == null) {
@@ -313,12 +311,11 @@ extension ErrorReportingZone on ErrorReportingService {
         // If casting null to R fails, it means R is not nullable
         // For non-nullable types, throw an error with more context
         throw StateError(
-          'Zone body returned null in ${zoneName ?? "unknown zone"}. '
-          'This typically indicates an unhandled exception occurred in the zone.'
-        );
+            'Zone body returned null in ${zoneName ?? "unknown zone"}. '
+            'This typically indicates an unhandled exception occurred in the zone.');
       }
     }
-    
+
     return result;
   }
 }

@@ -24,7 +24,8 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   DirectFavoritesNotifier({
     required this.onMovieFavorited,
   }) : super({}) {
-    LoggerFactory.info('🎬 DirectFavoritesNotifier: Constructor llamado, inicialización diferida...');
+    LoggerFactory.info(
+        '🎬 DirectFavoritesNotifier: Constructor llamado, inicialización diferida...');
     // No inicializar inmediatamente - esperar hasta que haya usuario autenticado
     _initializeWithCurrentUser();
   }
@@ -39,13 +40,15 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   void _initializeWithCurrentUser() {
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
-      LoggerFactory.info('🎬 DirectFavoritesNotifier: Usuario ya autenticado, inicializando...');
+      LoggerFactory.info(
+          '🎬 DirectFavoritesNotifier: Usuario ya autenticado, inicializando...');
       _currentUserId = currentUser.id;
       _loadFavoritesFromSupabase();
       _setupRealtimeListeners();
       _isInitialized = true;
     } else {
-      LoggerFactory.info('🎬 DirectFavoritesNotifier: Sin usuario, esperando autenticación...');
+      LoggerFactory.info(
+          '🎬 DirectFavoritesNotifier: Sin usuario, esperando autenticación...');
     }
   }
 
@@ -53,8 +56,9 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   Future<void> _loadFavoritesFromSupabase() async {
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
-      LoggerFactory.info('🔑 DirectFavorites: currentUser = ${currentUser?.id}');
-      
+      LoggerFactory.info(
+          '🔑 DirectFavorites: currentUser = ${currentUser?.id}');
+
       if (currentUser == null) {
         LoggerFactory.info('⚠️ DirectFavorites: No hay usuario logueado');
         state = {};
@@ -63,7 +67,8 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
       }
 
       _currentUserId = currentUser.id;
-      LoggerFactory.info('🔑 DirectFavorites: Usuario logueado: $_currentUserId');
+      LoggerFactory.info(
+          '🔑 DirectFavorites: Usuario logueado: $_currentUserId');
 
       LoggerFactory.debug(
           'DirectFavorites: Cargando favoritos directos desde Supabase...');
@@ -130,7 +135,8 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
       }
 
       // No rethrow para evitar errores en UI - el cambio optimista ya se revirtió
-      LoggerFactory.warning('DirectFavorites: Operación fallida pero estado revertido');
+      LoggerFactory.warning(
+          'DirectFavorites: Operación fallida pero estado revertido');
     }
   }
 
@@ -153,17 +159,17 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
 
       // Crear canal de tiempo real para la tabla user_favorites
       // Usar un canal único con timestamp para evitar conflictos
-      final channelName = 'favorites_realtime_${DateTime.now().millisecondsSinceEpoch}';
+      final channelName =
+          'favorites_realtime_${DateTime.now().millisecondsSinceEpoch}';
       LoggerFactory.info('🔊 DirectFavorites: Creando canal: $channelName');
-      
-      _realtimeChannel = Supabase.instance.client
-          .channel(channelName)
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'user_favorites',
-            callback: _handleRealtimeEvent,
-          );
+
+      _realtimeChannel =
+          Supabase.instance.client.channel(channelName).onPostgresChanges(
+                event: PostgresChangeEvent.all,
+                schema: 'public',
+                table: 'user_favorites',
+                callback: _handleRealtimeEvent,
+              );
 
       // Suscribir al canal con logging mejorado
       _realtimeChannel!.subscribe((status, [error]) {
@@ -172,7 +178,8 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
         } else {
           LoggerFactory.info('🔊 DirectFavorites: Estado del canal: $status');
           if (status == RealtimeSubscribeStatus.subscribed) {
-            LoggerFactory.info('✅ DirectFavorites: Canal suscrito exitosamente!');
+            LoggerFactory.info(
+                '✅ DirectFavorites: Canal suscrito exitosamente!');
           }
         }
       });
@@ -185,51 +192,54 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Manejar cambios de tiempo real desde Supabase
   void _handleRealtimeEvent(PostgresChangePayload payload) {
     try {
-      LoggerFactory.info(
-          '🔊 DirectFavorites: ===== CAMBIO RECIBIDO =====');
+      LoggerFactory.info('🔊 DirectFavorites: ===== CAMBIO RECIBIDO =====');
       LoggerFactory.info(
           '🔊 DirectFavorites: Tipo de evento: ${payload.eventType}');
       LoggerFactory.info('🔍 DirectFavorites: newRecord: ${payload.newRecord}');
       LoggerFactory.info('🔍 DirectFavorites: oldRecord: ${payload.oldRecord}');
 
       // Para eventos DELETE, newRecord estará vacío y oldRecord tendrá los datos
-      final data = payload.newRecord.isNotEmpty 
-          ? payload.newRecord 
-          : payload.oldRecord;
+      final data =
+          payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
 
       LoggerFactory.info('🔍 DirectFavorites: Datos a procesar: $data');
 
       final userId = data['user_id'] as String?;
       final movieId = data['movie_id'] as int?;
-      
+
       LoggerFactory.info('🔍 DirectFavorites: user_id del evento: $userId');
       LoggerFactory.info('🔍 DirectFavorites: user_id actual: $_currentUserId');
       LoggerFactory.info('🔍 DirectFavorites: movie_id del evento: $movieId');
-      
+
       if (userId != _currentUserId) {
         LoggerFactory.info(
             '🔊 DirectFavorites: Cambio de otro usuario, ignorando');
         return;
       }
-      
+
       if (movieId == null) {
-        LoggerFactory.error('❌ DirectFavorites: movie_id es null, ignorando evento');
+        LoggerFactory.error(
+            '❌ DirectFavorites: movie_id es null, ignorando evento');
         return;
       }
 
-      LoggerFactory.info('🔊 DirectFavorites: ✅ Procesando cambio del usuario actual');
+      LoggerFactory.info(
+          '🔊 DirectFavorites: ✅ Procesando cambio del usuario actual');
 
       switch (payload.eventType) {
         case PostgresChangeEvent.insert:
-          LoggerFactory.info('➕ DirectFavorites: Procesando INSERT para movie: $movieId');
+          LoggerFactory.info(
+              '➕ DirectFavorites: Procesando INSERT para movie: $movieId');
           _handleRemoteInsert(data);
           break;
         case PostgresChangeEvent.delete:
-          LoggerFactory.info('🗑️ DirectFavorites: Procesando DELETE para movie: $movieId');
+          LoggerFactory.info(
+              '🗑️ DirectFavorites: Procesando DELETE para movie: $movieId');
           _handleRemoteDelete(movieId);
           break;
         case PostgresChangeEvent.update:
-          LoggerFactory.info('🔄 DirectFavorites: Procesando UPDATE para movie: $movieId');
+          LoggerFactory.info(
+              '🔄 DirectFavorites: Procesando UPDATE para movie: $movieId');
           _handleRemoteUpdate(data);
           break;
         case PostgresChangeEvent.all:
@@ -263,14 +273,17 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Manejar eliminación remota (otro dispositivo removió favorito)
   void _handleRemoteDelete(int movieId) {
     try {
-      LoggerFactory.info('🗑️ DirectFavorites: Procesando DELETE para movie: $movieId');
-      
+      LoggerFactory.info(
+          '🗑️ DirectFavorites: Procesando DELETE para movie: $movieId');
+
       if (state.containsKey(movieId)) {
         final movie = state[movieId];
         state = Map.from(state)..remove(movieId);
-        LoggerFactory.info('✅ DirectFavorites: Favorito removido remotamente: ${movie?.title} (ID: $movieId)');
+        LoggerFactory.info(
+            '✅ DirectFavorites: Favorito removido remotamente: ${movie?.title} (ID: $movieId)');
       } else {
-        LoggerFactory.warning('⚠️ DirectFavorites: Intento de remover favorito que no existe localmente: $movieId');
+        LoggerFactory.warning(
+            '⚠️ DirectFavorites: Intento de remover favorito que no existe localmente: $movieId');
       }
     } catch (e) {
       LoggerFactory.error('❌ DirectFavorites: Error en eliminación remota: $e');
@@ -291,7 +304,8 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
         _handleRemoteInsert(data);
       }
     } catch (e) {
-      LoggerFactory.error('❌ DirectFavorites: Error en actualización remota: $e');
+      LoggerFactory.error(
+          '❌ DirectFavorites: Error en actualización remota: $e');
     }
   }
 
@@ -321,26 +335,29 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Habilitar cuando el usuario se autentica
   Future<void> enableAfterLogin() async {
     LoggerFactory.info('🔐 DirectFavorites: Habilitando después del login...');
-    
+
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) {
-      LoggerFactory.warning('🔐 DirectFavorites: No hay usuario autenticado, omitiendo inicialización');
+      LoggerFactory.warning(
+          '🔐 DirectFavorites: No hay usuario autenticado, omitiendo inicialización');
       return;
     }
-    
+
     _currentUserId = currentUser.id;
-    
+
     // Solo inicializar si no se ha hecho antes
     if (!_isInitialized) {
       await _loadFavoritesFromSupabase();
       _setupRealtimeListeners();
       _isInitialized = true;
     } else {
-      LoggerFactory.info('🔐 DirectFavorites: Ya inicializado, solo recargando datos...');
+      LoggerFactory.info(
+          '🔐 DirectFavorites: Ya inicializado, solo recargando datos...');
       await _loadFavoritesFromSupabase();
     }
-    
-    LoggerFactory.info('✅ DirectFavorites: Favoritos habilitados correctamente');
+
+    LoggerFactory.info(
+        '✅ DirectFavorites: Favoritos habilitados correctamente');
   }
 
   @override

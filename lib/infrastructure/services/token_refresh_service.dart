@@ -71,13 +71,14 @@ class TokenStatus {
 /// Servicio de refresco de tokens
 class TokenRefreshService {
   TokenRefreshService._();
-  
+
   static final TokenRefreshService _instance = TokenRefreshService._();
   static TokenRefreshService get instance => _instance;
 
   final SupabaseClient _supabase = SupabaseConfig.client;
-  final StreamController<TokenRefreshEvent> _eventController = StreamController<TokenRefreshEvent>.broadcast();
-  
+  final StreamController<TokenRefreshEvent> _eventController =
+      StreamController<TokenRefreshEvent>.broadcast();
+
   bool _isInitialized = false;
   bool _isRefreshing = false;
   Timer? _refreshTimer;
@@ -88,13 +89,13 @@ class TokenRefreshService {
   /// Inicializa el servicio
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
+
     try {
       // Escuchar cambios de autenticación
       _supabase.auth.onAuthStateChange.listen((data) {
         final event = data.event;
         final session = data.session;
-        
+
         switch (event) {
           case AuthChangeEvent.signedIn:
             if (session?.user != null) {
@@ -106,14 +107,15 @@ class TokenRefreshService {
             break;
           case AuthChangeEvent.tokenRefreshed:
             if (session?.user != null) {
-              _eventController.add(TokenRefreshedEvent(userId: session!.user.id));
+              _eventController
+                  .add(TokenRefreshedEvent(userId: session!.user.id));
             }
             break;
           default:
             break;
         }
       });
-      
+
       _isInitialized = true;
       LoggerFactory.info('✅ TokenRefreshService initialized');
     } catch (e) {
@@ -128,25 +130,27 @@ class TokenRefreshService {
       LoggerFactory.warning('⚠️ Token refresh already in progress');
       return false;
     }
-    
+
     final session = _supabase.auth.currentSession;
     if (session == null) {
       LoggerFactory.warning('⚠️ No active session to refresh');
       return false;
     }
-    
+
     _isRefreshing = true;
     _eventController.add(RefreshStartedEvent(userId: session.user.id));
-    
+
     try {
       final response = await _supabase.auth.refreshSession();
-      
+
       if (response.session != null) {
-        _eventController.add(TokenRefreshedEvent(userId: response.session!.user.id));
+        _eventController
+            .add(TokenRefreshedEvent(userId: response.session!.user.id));
         LoggerFactory.info('✅ Token refreshed successfully');
         return true;
       } else {
-        _eventController.add(const RefreshFailedEvent(error: 'No session in response'));
+        _eventController
+            .add(const RefreshFailedEvent(error: 'No session in response'));
         return false;
       }
     } catch (e) {
@@ -161,7 +165,7 @@ class TokenRefreshService {
   /// Obtiene el estado actual del token
   Future<TokenStatus> getTokenStatus() async {
     final session = _supabase.auth.currentSession;
-    
+
     if (session == null) {
       return const TokenStatus(
         hasToken: false,
@@ -172,15 +176,16 @@ class TokenRefreshService {
         error: 'No active session',
       );
     }
-    
-    final expiresAt = DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
+
+    final expiresAt =
+        DateTime.fromMillisecondsSinceEpoch(session.expiresAt! * 1000);
     final now = DateTime.now();
     final timeUntilExpiry = expiresAt.difference(now);
-    
+
     // Necesita refresco si expira en menos de 5 minutos
     final needsRefresh = timeUntilExpiry.inMinutes < 5;
     final isHealthy = timeUntilExpiry.inMinutes > 0;
-    
+
     return TokenStatus(
       hasToken: true,
       needsRefresh: needsRefresh,

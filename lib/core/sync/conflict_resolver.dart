@@ -10,8 +10,9 @@ class ConflictResolver {
   ConflictResolver({
     Map<String, ConflictStrategy>? defaultStrategies,
     ConflictStrategyConfig? advancedConfig,
-  }) : _defaultStrategies = defaultStrategies ?? _getDefaultStrategies(),
-       _advancedResolver = AdvancedConflictResolver(strategyConfig: advancedConfig);
+  })  : _defaultStrategies = defaultStrategies ?? _getDefaultStrategies(),
+        _advancedResolver =
+            AdvancedConflictResolver(strategyConfig: advancedConfig);
 
   final Map<String, ConflictStrategy> _defaultStrategies;
   final Map<String, int> _resolutionStats = {};
@@ -20,11 +21,13 @@ class ConflictResolver {
   /// Estrategias por defecto para diferentes tipos de entidades
   static Map<String, ConflictStrategy> _getDefaultStrategies() {
     return {
-      'favorite': ConflictStrategy.localWins,        // Favoritos: preferencia local
-      'watchlist': ConflictStrategy.merge,           // Watchlist: fusionar listas
-      'custom_list': ConflictStrategy.userChoice,    // Listas: decisión del usuario
-      'watched_movie': ConflictStrategy.localWins,   // Visto: info local más reciente
-      'rating': ConflictStrategy.localWins,          // Calificaciones: opinión local
+      'favorite': ConflictStrategy.localWins, // Favoritos: preferencia local
+      'watchlist': ConflictStrategy.merge, // Watchlist: fusionar listas
+      'custom_list':
+          ConflictStrategy.userChoice, // Listas: decisión del usuario
+      'watched_movie':
+          ConflictStrategy.localWins, // Visto: info local más reciente
+      'rating': ConflictStrategy.localWins, // Calificaciones: opinión local
     };
   }
 
@@ -33,11 +36,12 @@ class ConflictResolver {
     ConflictInfo<T> conflict, {
     ConflictStrategy? overrideStrategy,
   }) async {
-    final strategy = overrideStrategy ?? 
-                     _defaultStrategies[conflict.localEntity.entityType] ?? 
-                     ConflictStrategy.remoteWins;
+    final strategy = overrideStrategy ??
+        _defaultStrategies[conflict.localEntity.entityType] ??
+        ConflictStrategy.remoteWins;
 
-    LoggerFactory.info('⚖️ Resolving ${conflict.conflictType.name} conflict for ${conflict.localEntity.entityType} using ${strategy.name}');
+    LoggerFactory.info(
+        '⚖️ Resolving ${conflict.conflictType.name} conflict for ${conflict.localEntity.entityType} using ${strategy.name}');
 
     final resolvedEntity = await _applyStrategy(conflict, strategy);
     _updateStats(conflict.localEntity.entityType, strategy);
@@ -58,22 +62,24 @@ class ConflictResolver {
     switch (strategy) {
       case ConflictStrategy.localWins:
         return _resolveLocalWins(conflict);
-      
+
       case ConflictStrategy.remoteWins:
         return _resolveRemoteWins(conflict);
-      
+
       case ConflictStrategy.merge:
         return _resolveMerge(conflict);
-      
+
       case ConflictStrategy.userChoice:
         return await _resolveUserChoice(conflict);
     }
   }
 
   /// Estrategia: Local wins
-  SyncableEntity _resolveLocalWins<T extends SyncableEntity>(ConflictInfo<T> conflict) {
-    LoggerFactory.debug('🏠 Local wins resolution for ${conflict.localEntity.entityType}');
-    
+  SyncableEntity _resolveLocalWins<T extends SyncableEntity>(
+      ConflictInfo<T> conflict) {
+    LoggerFactory.debug(
+        '🏠 Local wins resolution for ${conflict.localEntity.entityType}');
+
     // Actualizar metadatos de sync para reflejar la resolución
     return conflict.localEntity.copyWith(
       lastModifiedAt: SyncUtilities.utcNow(),
@@ -83,9 +89,11 @@ class ConflictResolver {
   }
 
   /// Estrategia: Remote wins
-  SyncableEntity _resolveRemoteWins<T extends SyncableEntity>(ConflictInfo<T> conflict) {
-    LoggerFactory.debug('🌐 Remote wins resolution for ${conflict.remoteEntity.entityType}');
-    
+  SyncableEntity _resolveRemoteWins<T extends SyncableEntity>(
+      ConflictInfo<T> conflict) {
+    LoggerFactory.debug(
+        '🌐 Remote wins resolution for ${conflict.remoteEntity.entityType}');
+
     // Usar la entidad remota pero actualizar campos de tracking local
     return conflict.remoteEntity.copyWith(
       lastModifiedAt: SyncUtilities.utcNow(),
@@ -94,19 +102,23 @@ class ConflictResolver {
   }
 
   /// Estrategia: Merge
-  SyncableEntity _resolveMerge<T extends SyncableEntity>(ConflictInfo<T> conflict) {
-    LoggerFactory.debug('🔀 Merge resolution for ${conflict.localEntity.entityType}');
-    
+  SyncableEntity _resolveMerge<T extends SyncableEntity>(
+      ConflictInfo<T> conflict) {
+    LoggerFactory.debug(
+        '🔀 Merge resolution for ${conflict.localEntity.entityType}');
+
     try {
       // Usar el método mergeWith de la entidad
       final merged = conflict.localEntity.mergeWith(conflict.remoteEntity);
-      
+
       // Actualizar metadatos de sync
       return merged.copyWith(
         lastModifiedAt: SyncUtilities.utcNow(),
-        syncVersion: (conflict.localEntity.syncVersion > conflict.remoteEntity.syncVersion 
-                      ? conflict.localEntity.syncVersion 
-                      : conflict.remoteEntity.syncVersion) + 1,
+        syncVersion: (conflict.localEntity.syncVersion >
+                    conflict.remoteEntity.syncVersion
+                ? conflict.localEntity.syncVersion
+                : conflict.remoteEntity.syncVersion) +
+            1,
       );
     } catch (e) {
       LoggerFactory.warning('⚠️ Merge failed, falling back to local wins: $e');
@@ -115,12 +127,15 @@ class ConflictResolver {
   }
 
   /// Estrategia: User choice (por ahora fallback a local wins)
-  Future<SyncableEntity> _resolveUserChoice<T extends SyncableEntity>(ConflictInfo<T> conflict) async {
-    LoggerFactory.debug('👤 User choice resolution requested for ${conflict.localEntity.entityType}');
-    
+  Future<SyncableEntity> _resolveUserChoice<T extends SyncableEntity>(
+      ConflictInfo<T> conflict) async {
+    LoggerFactory.debug(
+        '👤 User choice resolution requested for ${conflict.localEntity.entityType}');
+
     // TODO: Implementar UI para decisión del usuario
     // Por ahora usar local wins como fallback
-    LoggerFactory.info('ℹ️ User choice not implemented, falling back to local wins');
+    LoggerFactory.info(
+        'ℹ️ User choice not implemented, falling back to local wins');
     return _resolveLocalWins(conflict);
   }
 
@@ -137,7 +152,7 @@ class ConflictResolver {
 
     // Determinar tipo de conflicto
     final conflictType = _determineConflictType(local, remote);
-    
+
     return ConflictInfo<T>(
       localEntity: local,
       remoteEntity: remote,
@@ -155,7 +170,8 @@ class ConflictResolver {
   }
 
   /// Determina el tipo de conflicto
-  ConflictType _determineConflictType<T extends SyncableEntity>(T local, T remote) {
+  ConflictType _determineConflictType<T extends SyncableEntity>(
+      T local, T remote) {
     // Conflicto de eliminación vs modificación
     if (local.isDeleted != remote.isDeleted) {
       return ConflictType.deleteVsModify;
@@ -164,8 +180,10 @@ class ConflictResolver {
     // Conflicto de modificación concurrente
     if (!local.isDeleted && !remote.isDeleted) {
       // Verificar si las modificaciones se solapan en tiempo
-      final timeDiff = local.lastModifiedAt.difference(remote.lastModifiedAt).abs();
-      if (timeDiff < const Duration(minutes: 5)) { // Umbral de concurrencia
+      final timeDiff =
+          local.lastModifiedAt.difference(remote.lastModifiedAt).abs();
+      if (timeDiff < const Duration(minutes: 5)) {
+        // Umbral de concurrencia
         return ConflictType.concurrentModification;
       }
     }
@@ -180,10 +198,10 @@ class ConflictResolver {
     List<T> remoteEntities,
   ) async {
     final conflicts = <ConflictInfo<T>>[];
-    
+
     // Crear mapa para búsqueda eficiente
     final remoteMap = {for (var entity in remoteEntities) entity.id: entity};
-    
+
     // Buscar conflictos en entidades que existen en ambos lados
     for (final localEntity in localEntities) {
       final remoteEntity = remoteMap[localEntity.id];
@@ -196,7 +214,8 @@ class ConflictResolver {
     }
 
     if (conflicts.isNotEmpty) {
-      LoggerFactory.info('🔍 Detected ${conflicts.length} conflicts for ${T.toString()}');
+      LoggerFactory.info(
+          '🔍 Detected ${conflicts.length} conflicts for ${T.toString()}');
     }
 
     return conflicts;
@@ -208,16 +227,18 @@ class ConflictResolver {
     ConflictStrategy? overrideStrategy,
   }) async {
     final resolutions = <ConflictResolution>[];
-    
+
     LoggerFactory.info('⚖️ Resolving ${conflicts.length} conflicts in batch');
-    
+
     for (final conflict in conflicts) {
       try {
-        final resolution = await resolveConflict(conflict, overrideStrategy: overrideStrategy);
+        final resolution =
+            await resolveConflict(conflict, overrideStrategy: overrideStrategy);
         resolutions.add(resolution);
       } catch (e) {
-        LoggerFactory.error('❌ Failed to resolve conflict for ${conflict.localEntity.id}: $e');
-        
+        LoggerFactory.error(
+            '❌ Failed to resolve conflict for ${conflict.localEntity.id}: $e');
+
         // Fallback a remote wins en caso de error
         final fallback = ConflictResolution(
           strategy: ConflictStrategy.remoteWins,
@@ -228,7 +249,7 @@ class ConflictResolver {
         resolutions.add(fallback);
       }
     }
-    
+
     LoggerFactory.info('✅ Resolved ${resolutions.length} conflicts');
     return resolutions;
   }
@@ -236,7 +257,8 @@ class ConflictResolver {
   /// Configura la estrategia por defecto para un tipo de entidad
   void setDefaultStrategy(String entityType, ConflictStrategy strategy) {
     _defaultStrategies[entityType] = strategy;
-    LoggerFactory.info('🔧 Set default conflict strategy for $entityType: ${strategy.name}');
+    LoggerFactory.info(
+        '🔧 Set default conflict strategy for $entityType: ${strategy.name}');
   }
 
   /// Obtiene estadísticas de resolución
@@ -256,12 +278,14 @@ class ConflictResolver {
   // =============================================
 
   /// Resuelve un conflicto usando estrategias avanzadas
-  Future<DetailedConflictResolution> resolveConflictAdvanced<T extends SyncableEntity>(
+  Future<DetailedConflictResolution>
+      resolveConflictAdvanced<T extends SyncableEntity>(
     ConflictInfo<T> conflict, {
     ConflictContext? context,
     ConflictResolutionStrategy? overrideStrategy,
   }) async {
-    LoggerFactory.info('🔍 Using advanced conflict resolution for ${conflict.localEntity.entityType}');
+    LoggerFactory.info(
+        '🔍 Using advanced conflict resolution for ${conflict.localEntity.entityType}');
     return await _advancedResolver.resolveConflictAdvanced(
       conflict,
       context: context,
@@ -270,15 +294,19 @@ class ConflictResolver {
   }
 
   /// Configura estrategia para un tipo de entidad
-  void configureEntityStrategy(String entityType, ConflictResolutionStrategy strategy) {
+  void configureEntityStrategy(
+      String entityType, ConflictResolutionStrategy strategy) {
     _advancedResolver.config.setEntityStrategy(entityType, strategy);
-    LoggerFactory.info('⚙️ Configured entity strategy for $entityType: ${strategy.value}');
+    LoggerFactory.info(
+        '⚙️ Configured entity strategy for $entityType: ${strategy.value}');
   }
 
   /// Configura estrategia para un campo específico
-  void configureFieldStrategy(String entityType, String fieldName, ConflictResolutionStrategy strategy) {
+  void configureFieldStrategy(String entityType, String fieldName,
+      ConflictResolutionStrategy strategy) {
     _advancedResolver.config.setFieldStrategy(entityType, fieldName, strategy);
-    LoggerFactory.info('⚙️ Configured field strategy for $entityType.$fieldName: ${strategy.value}');
+    LoggerFactory.info(
+        '⚙️ Configured field strategy for $entityType.$fieldName: ${strategy.value}');
   }
 
   /// Obtiene estadísticas combinadas
@@ -286,8 +314,12 @@ class ConflictResolver {
     return {
       'basic_resolutions': getResolutionStats(),
       'advanced_resolutions': _advancedResolver.getResolutionStats(),
-      'total_resolutions': getResolutionStats().values.fold(0, (a, b) => a + b) + 
-                          _advancedResolver.getResolutionStats().values.fold(0, (a, b) => a + b),
+      'total_resolutions':
+          getResolutionStats().values.fold(0, (a, b) => a + b) +
+              _advancedResolver
+                  .getResolutionStats()
+                  .values
+                  .fold(0, (a, b) => a + b),
     };
   }
 
@@ -305,7 +337,8 @@ class ConflictResolver {
   }
 
   /// Obtiene razón de resolución según tipo y estrategia
-  String _getResolutionReason(ConflictType conflictType, ConflictStrategy strategy) {
+  String _getResolutionReason(
+      ConflictType conflictType, ConflictStrategy strategy) {
     switch (strategy) {
       case ConflictStrategy.localWins:
         return 'Local version chosen for ${conflictType.name}';

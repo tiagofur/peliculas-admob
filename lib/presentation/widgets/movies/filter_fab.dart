@@ -92,7 +92,8 @@ class QuickFiltersBar extends ConsumerWidget {
           _QuickFilterChip(
             label: 'Mejor Calificadas',
             icon: Icons.star,
-            isSelected: ref.watch(movieFiltersNotifierProvider).minRating != null,
+            isSelected:
+                ref.watch(movieFiltersNotifierProvider).minRating != null,
             onTap: () {
               final currentFilter = ref.read(movieFiltersNotifierProvider);
               if (currentFilter.minRating != null) {
@@ -130,7 +131,8 @@ class QuickFiltersBar extends ConsumerWidget {
           _QuickFilterChip(
             label: 'Populares',
             icon: Icons.trending_up,
-            isSelected: ref.watch(movieFiltersNotifierProvider).sortBy == 'popularity.desc',
+            isSelected: ref.watch(movieFiltersNotifierProvider).sortBy ==
+                'popularity.desc',
             onTap: () {
               final currentFilter = ref.read(movieFiltersNotifierProvider);
               if (currentFilter.sortBy == 'popularity.desc') {

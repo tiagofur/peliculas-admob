@@ -370,7 +370,7 @@ class ShareService {
   ) async {
     try {
       final analyticsService = AnalyticsService();
-      
+
       String contentType;
       Map<String, dynamic> eventData = {
         'platform': platform,
@@ -421,7 +421,7 @@ class ShareService {
     try {
       // Note: This would need proper dependency injection in a real implementation
       // For now, we'll skip gamification tracking to avoid instantiation issues
-      
+
       if (content.type == ShareableContentType.movie) {
         // await gamificationService.trackMovieShared(content.metadata?['movieId']?.toString() ?? '');
       } else if (content.type == ShareableContentType.movieList) {

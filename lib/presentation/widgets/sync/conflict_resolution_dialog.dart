@@ -55,8 +55,6 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
             : ConflictStrategy.localWins;
       case ConflictType.duplicateCreation:
         return ConflictStrategy.remoteWins;
-      default:
-        return ConflictStrategy.userChoice;
     }
   }
 
@@ -227,42 +225,42 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
           ),
         ),
         const SizedBox(height: 8),
-        ...ConflictStrategy.values.map((strategy) {
-          if (!widget.allowMerge && strategy == ConflictStrategy.merge) {
-            return const SizedBox.shrink();
-          }
-
-          return ListTile(
-            title: Text(_getStrategyTitle(strategy)),
-            subtitle: Text(
-              _getStrategyDescription(strategy),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+        Column(
+          children: ConflictStrategy.values.where((strategy) {
+            return widget.allowMerge || strategy != ConflictStrategy.merge;
+          }).map((strategy) {
+            return ListTile(
+              title: Text(_getStrategyTitle(strategy)),
+              subtitle: Text(
+                _getStrategyDescription(strategy),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
               ),
-            ),
-            leading: Radio<ConflictStrategy>(
-              value: strategy,
-              groupValue: _selectedStrategy,
-              onChanged: _isResolving
+              leading: Radio<ConflictStrategy>(
+                value: strategy,
+                groupValue: _selectedStrategy,
+                onChanged: _isResolving
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _selectedStrategy = value;
+                          _errorMessage = null;
+                        });
+                      },
+              ),
+              onTap: _isResolving
                   ? null
-                  : (value) {
+                  : () {
                       setState(() {
-                        _selectedStrategy = value;
+                        _selectedStrategy = strategy;
                         _errorMessage = null;
                       });
                     },
-            ),
-            onTap: _isResolving
-                ? null
-                : () {
-                    setState(() {
-                      _selectedStrategy = strategy;
-                      _errorMessage = null;
-                    });
-                  },
-            dense: true,
-          );
-        }),
+              dense: true,
+            );
+          }).toList(),
+        ),
       ],
     );
   }
@@ -371,7 +369,7 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
           ],
           _buildConflictDetail('ID Entidad', widget.conflict.localEntity.id),
           _buildConflictDetail(
-              'Usuario ID', widget.conflict.localEntity.userId ?? 'N/A'),
+              'Usuario ID', widget.conflict.localEntity.userId),
         ],
       ),
     );
@@ -476,21 +474,6 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
       return 'Hace ${difference.inHours} horas';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-    }
-  }
-
-  /// Convierte ConflictStrategy a ConflictResolutionStrategy del core
-  strategy.ConflictResolutionStrategy _convertToResolutionStrategy(
-      ConflictStrategy conflictStrategy) {
-    switch (conflictStrategy) {
-      case ConflictStrategy.localWins:
-        return strategy.ConflictResolutionStrategy.clientWins;
-      case ConflictStrategy.remoteWins:
-        return strategy.ConflictResolutionStrategy.serverWins;
-      case ConflictStrategy.merge:
-        return strategy.ConflictResolutionStrategy.merge;
-      case ConflictStrategy.userChoice:
-        return strategy.ConflictResolutionStrategy.userChoice;
     }
   }
 

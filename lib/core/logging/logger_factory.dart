@@ -6,14 +6,14 @@ import 'noop_logger.dart';
 /// "Cannot send Null" errors in Flutter debugger
 Map<String, dynamic>? _cleanDataMap(Map<String, dynamic>? data) {
   if (data == null) return null;
-  
+
   final cleanData = <String, dynamic>{};
   for (final entry in data.entries) {
     if (entry.value != null) {
       cleanData[entry.key] = entry.value;
     }
   }
-  
+
   return cleanData.isEmpty ? null : cleanData;
 }
 
@@ -86,7 +86,8 @@ class LoggerFactory {
     LogCategory category = LogCategory.general,
     Map<String, dynamic>? data,
   }) async {
-    await logger.warning(message, category: category, data: _cleanDataMap(data));
+    await logger.warning(message,
+        category: category, data: _cleanDataMap(data));
   }
 
   static Future<void> error(

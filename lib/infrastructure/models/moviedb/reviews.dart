@@ -10,8 +10,8 @@ class Reviews {
   factory Reviews.fromJson(Map<String, dynamic> json) => Reviews(
         id: json['id'] ?? 0,
         page: json['page'] ?? 1,
-        results:
-            List<Review>.from(json['results']?.map((x) => Review.fromJson(x)) ?? []),
+        results: List<Review>.from(
+            json['results']?.map((x) => Review.fromJson(x)) ?? []),
         totalPages: json['total_pages'] ?? 0,
         totalResults: json['total_results'] ?? 0,
       );
@@ -44,15 +44,16 @@ class Review {
 
   factory Review.fromJson(Map<String, dynamic> json) => Review(
         author: json['author'] ?? '',
-        authorDetails: json['author_details'] != null 
+        authorDetails: json['author_details'] != null
             ? AuthorDetails.fromJson(json['author_details'])
-            : AuthorDetails(name: '', username: '', avatarPath: null, rating: null),
+            : AuthorDetails(
+                name: '', username: '', avatarPath: null, rating: null),
         content: json['content'] ?? '',
-        createdAt: json['created_at'] != null 
+        createdAt: json['created_at'] != null
             ? DateTime.parse(json['created_at'])
             : DateTime.now(),
         id: json['id'] ?? '',
-        updatedAt: json['updated_at'] != null 
+        updatedAt: json['updated_at'] != null
             ? DateTime.parse(json['updated_at'])
             : DateTime.now(),
         url: json['url'] ?? '',

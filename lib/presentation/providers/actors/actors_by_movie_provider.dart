@@ -4,9 +4,8 @@ import '../../../domain/entities/actor.dart';
 import 'actors_repository_provider.dart';
 
 // Provider optimizado con AutoDispose para liberación automática
-final actorsByMovieProvider =
-    StateNotifierProvider.autoDispose<ActorsByMovieNotifier, Map<String, List<Actor>>>(
-        (ref) {
+final actorsByMovieProvider = StateNotifierProvider.autoDispose<
+    ActorsByMovieNotifier, Map<String, List<Actor>>>((ref) {
   final actorsRepository = ref.watch(actorsRepositoryProvider);
 
   return ActorsByMovieNotifier(getActors: actorsRepository.getActorsByMovie);
@@ -36,7 +35,7 @@ class ActorsByMovieNotifier extends StateNotifier<Map<String, List<Actor>>> {
 
     try {
       final List<Actor> actors = await getActors(movieId);
-      
+
       // Verificar si el notifier fue disposed durante la operación asíncrona
       if (!_disposed) {
         state = {...state, movieId: actors};

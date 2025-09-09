@@ -71,9 +71,6 @@ class ReviewMasterChallenge {
     return challenge;
   }
 
-
-
-
   /// Calculate target count based on difficulty and duration
   static int _calculateTargetCount(
       ChallengeDifficulty difficulty, ChallengeDuration duration) {

@@ -1,4 +1,3 @@
-
 import '../../core/sync/sync_utilities.dart';
 import 'movie.dart';
 import 'syncable_entity.dart';
@@ -91,7 +90,8 @@ class SyncableWatchedMovie extends SyncableEntity {
   /// Factory constructor desde JSON
   factory SyncableWatchedMovie.fromJson(Map<String, dynamic> json) {
     return SyncableWatchedMovie(
-      id: json['id'] as String? ?? 'unknown_${DateTime.now().millisecondsSinceEpoch}',
+      id: json['id'] as String? ??
+          'unknown_${DateTime.now().millisecondsSinceEpoch}',
       userId: json['user_id'] as String? ?? 'unknown_user',
       movieId: json['movie_id'] as int? ?? 0,
       movieTitle: json['movie_title'] as String? ?? 'Unknown Movie',
@@ -104,10 +104,10 @@ class SyncableWatchedMovie extends SyncableEntity {
       movieVoteAverage: json['movie_vote_average']?.toDouble(),
       watchedDate: json['watched_at'] != null
           ? DateTime.parse(json['watched_at'] as String)
-          : (json['watched_date'] != null 
+          : (json['watched_date'] != null
               ? DateTime.parse(json['watched_date'] as String)
               : DateTime.now()),
-      createdAt: json['created_at'] != null 
+      createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
       lastModifiedAt: json['last_modified_at'] != null
@@ -132,22 +132,22 @@ class SyncableWatchedMovie extends SyncableEntity {
   // Implementación de getters de SyncableEntity
   @override
   final String id;
-  
+
   @override
   final String userId;
-  
+
   @override
   final DateTime createdAt;
-  
+
   @override
   final DateTime lastModifiedAt;
-  
+
   @override
   final bool isDeleted;
-  
+
   @override
   final int syncVersion;
-  
+
   @override
   final String? deviceId;
 
@@ -306,8 +306,8 @@ class SyncableWatchedMovie extends SyncableEntity {
       personalRating: newer.personalRating ?? older.personalRating,
       personalNotes: newer.personalNotes ?? older.personalNotes,
       watchedLocation: newer.watchedLocation ?? older.watchedLocation,
-      rewatchCount: newer.rewatchCount > older.rewatchCount 
-          ? newer.rewatchCount 
+      rewatchCount: newer.rewatchCount > older.rewatchCount
+          ? newer.rewatchCount
           : older.rewatchCount, // Mantener el mayor
     );
   }

@@ -35,7 +35,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   @override
   Widget build(BuildContext context) {
     final allLists = ref.watch(directCustomListsWithMoviesProvider);
-    final listsContainingMovie = ref.watch(directMovieListsProvider(widget.movie.id));
+    final listsContainingMovie =
+        ref.watch(directMovieListsProvider(widget.movie.id));
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -465,7 +466,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
     super.initState();
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
-    
+
     // Listener para habilitar/deshabilitar el botón dinámicamente
     _nameController.addListener(() {
       setState(() {
@@ -690,68 +691,84 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
-                    onPressed: _isButtonEnabled ? () async {
+                    onPressed: _isButtonEnabled
+                        ? () async {
+                            try {
+                              // Crear la lista usando Direct provider
+                              await ref
+                                  .read(directCustomListsProvider.notifier)
+                                  .createList(
+                                    name: _nameController.text.trim(),
+                                    description:
+                                        _descriptionController.text.trim(),
+                                    emoji: _selectedEmoji,
+                                    color: _selectedColor,
+                                  );
 
-                      try {
-                        // Crear la lista usando Direct provider
-                        await ref.read(directCustomListsProvider.notifier).createList(
-                              name: _nameController.text.trim(),
-                              description: _descriptionController.text.trim(),
-                              emoji: _selectedEmoji,
-                              color: _selectedColor,
-                            );
+                              // Esperar un frame para que se actualice el provider
+                              await Future.delayed(
+                                  const Duration(milliseconds: 100));
 
-                        // Esperar un frame para que se actualice el provider
-                        await Future.delayed(const Duration(milliseconds: 100));
+                              if (_addCurrentMovie) {
+                                // Obtener el ID de la lista recién creada y agregar la película
+                                final customLists = ref
+                                    .read(directCustomListsWithMoviesProvider)
+                                    .where((l) => !l.isDefault)
+                                    .toList();
+                                if (customLists.isNotEmpty) {
+                                  final newList = customLists.last;
+                                  await ref
+                                      .read(directCustomListsProvider.notifier)
+                                      .addMovieToList(
+                                          newList.id, widget.movieId);
+                                }
+                              }
 
-                        if (_addCurrentMovie) {
-                          // Obtener el ID de la lista recién creada y agregar la película
-                          final customLists = ref.read(directCustomListsWithMoviesProvider).where((l) => !l.isDefault).toList();
-                          if (customLists.isNotEmpty) {
-                            final newList = customLists.last;
-                            await ref
-                                .read(directCustomListsProvider.notifier)
-                                .addMovieToList(newList.id, widget.movieId);
+                              if (mounted) {
+                                Navigator.of(context).pop();
+
+                                // Usar el contexto del scaffold padre para mostrar el snackbar
+                                final scaffoldContext =
+                                    Navigator.of(context).context;
+                                if (scaffoldContext.mounted) {
+                                  ScaffoldMessenger.of(scaffoldContext)
+                                      .showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Lista "${_nameController.text.trim()}" creada'),
+                                      action: SnackBarAction(
+                                        label: 'Ver',
+                                        onPressed: () {
+                                          final customLists = ref
+                                              .read(
+                                                  directCustomListsWithMoviesProvider)
+                                              .where((l) => !l.isDefault)
+                                              .toList();
+                                          if (customLists.isNotEmpty) {
+                                            final newList = customLists.last;
+                                            GoRouter.of(scaffoldContext)
+                                                .push('/lists/${newList.id}');
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text('Error al crear la lista: $e'),
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.error,
+                                  ),
+                                );
+                              }
+                            }
                           }
-                        }
-
-                        if (mounted) {
-                          Navigator.of(context).pop();
-
-                          // Usar el contexto del scaffold padre para mostrar el snackbar
-                          final scaffoldContext = Navigator.of(context).context;
-                          if (scaffoldContext.mounted) {
-                            ScaffoldMessenger.of(scaffoldContext).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Lista "${_nameController.text.trim()}" creada'),
-                                action: SnackBarAction(
-                                  label: 'Ver',
-                                  onPressed: () {
-                                    final customLists = ref.read(directCustomListsWithMoviesProvider).where((l) => !l.isDefault).toList();
-                                    if (customLists.isNotEmpty) {
-                                      final newList = customLists.last;
-                                      GoRouter.of(scaffoldContext)
-                                          .push('/lists/${newList.id}');
-                                    }
-                                  },
-                                ),
-                              ),
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error al crear la lista: $e'),
-                              backgroundColor:
-                                  Theme.of(context).colorScheme.error,
-                            ),
-                          );
-                        }
-                      }
-                    } : null,
+                        : null,
                     child: const Text('Crear'),
                   ),
                 ],

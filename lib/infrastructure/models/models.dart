@@ -1,5 +1,3 @@
-
-
 export 'moviedb/credits_response.dart';
 export 'moviedb/images.dart';
 export 'moviedb/movie_details.dart';

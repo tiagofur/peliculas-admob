@@ -5,7 +5,8 @@ import 'movies_repository_provider.dart';
 
 // Provider optimizado con AutoDispose para liberación automática
 final movieInfoProvider =
-    StateNotifierProvider.autoDispose<MovieMapNotifier, Map<String, Movie>>((ref) {
+    StateNotifierProvider.autoDispose<MovieMapNotifier, Map<String, Movie>>(
+        (ref) {
   final movieRepository = ref.watch(movieRepositoryProvider);
   return MovieMapNotifier(getMovie: movieRepository.getMovieById);
 });
@@ -29,18 +30,18 @@ class MovieMapNotifier extends StateNotifier<Map<String, Movie>> {
   final GetMovieCallback getMovie;
 
   Future<void> loadMovie(String movieId) async {
-    
     // Validar que el movieId sea válido
     if (movieId == 'no-id' || movieId.isEmpty) {
       throw Exception('ID de película inválido: $movieId');
     }
-    
+
     // Verificar que el movieId sea un número válido
     final numericId = int.tryParse(movieId);
     if (numericId == null || numericId <= 0) {
-      throw Exception('ID de película debe ser un número válido mayor a 0: $movieId');
+      throw Exception(
+          'ID de película debe ser un número válido mayor a 0: $movieId');
     }
-    
+
     final movie = await getMovie(movieId);
     state = {...state, movieId: movie};
   }

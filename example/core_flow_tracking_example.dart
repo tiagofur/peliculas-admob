@@ -18,7 +18,7 @@ void main() {
 }
 
 /// Example usage patterns:
-/// 
+///
 /// 1. Automatic tracking with trackCoreFlow:
 /// ```dart
 /// final result = await ErrorMetricsService.instance.trackCoreFlow(
@@ -26,7 +26,7 @@ void main() {
 ///   () async => await performAuthentication(),
 /// );
 /// ```
-/// 
+///
 /// 2. Manual tracking:
 /// ```dart
 /// await ErrorMetricsService.instance.recordCoreFlowAttempt('movie_search');
@@ -37,12 +37,12 @@ void main() {
 ///   rethrow;
 /// }
 /// ```
-/// 
+///
 /// 3. StateNotifier with mixin:
 /// ```dart
-/// class AuthNotifier extends StateNotifier<AuthState> 
+/// class AuthNotifier extends StateNotifier<AuthState>
 ///     with CoreFlowTrackingMixin<AuthState> {
-///   
+///
 ///   Future<void> signIn() async {
 ///     await trackCoreFlow('authentication', () async {
 ///       // authentication logic

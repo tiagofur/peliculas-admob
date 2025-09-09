@@ -80,17 +80,18 @@ class PaginatedRecommendationsNotifier
     state = state.copyWith(isLoading: true, hasError: false);
 
     try {
-      final recommendationsAsync = _ref.read(personalizedRecommendationsProvider);
-      
+      final recommendationsAsync =
+          _ref.read(personalizedRecommendationsProvider);
+
       // Manejar AsyncValue correctamente
       final recommendations = recommendationsAsync.when(
         data: (data) => data,
         loading: () => <Recommendation>[],
         error: (error, stackTrace) => throw error,
       );
-      
+
       _allRecommendations = recommendations;
-      
+
       final initialMovies = _allRecommendations
           .take(_pageSize)
           .map(_recommendationToMovie)
@@ -120,7 +121,7 @@ class PaginatedRecommendationsNotifier
     try {
       final startIndex = state.currentPage * _pageSize;
       final endIndex = startIndex + _pageSize;
-      
+
       if (startIndex >= _allRecommendations.length) {
         state = state.copyWith(
           isLoading: false,
@@ -167,8 +168,7 @@ class PaginatedRecommendationsNotifier
 }
 
 /// Provider para las recomendaciones paginadas
-final paginatedRecommendationsProvider =
-    StateNotifierProvider<PaginatedRecommendationsNotifier,
-        PaginatedRecommendationsState>((ref) {
+final paginatedRecommendationsProvider = StateNotifierProvider<
+    PaginatedRecommendationsNotifier, PaginatedRecommendationsState>((ref) {
   return PaginatedRecommendationsNotifier(ref);
 });

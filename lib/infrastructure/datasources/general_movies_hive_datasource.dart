@@ -55,7 +55,8 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
     for (final category in categories) {
       try {
         final box = await _getBoxForCategory(category);
-        final movie = box.values.toList().firstWhere((movie) => movie.id == movieId);
+        final movie =
+            box.values.toList().firstWhere((movie) => movie.id == movieId);
         return movie;
       } catch (e) {
         // Continue to next category

@@ -53,11 +53,7 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
 
-      // 🐛 DEBUG: Log what we're loading initially
-      LoggerFactory.debug(
-          '🔍 [FavoriteProvider] _loadExistingFavorites got ${favoriteMoviesMap.length} favorites');
-      LoggerFactory.debug(
-          '🔍 [FavoriteProvider] Favorite IDs: ${favoriteMoviesMap.keys.toList()}');
+
 
       if (favoriteMoviesMap.isNotEmpty) {
         state = favoriteMoviesMap;
@@ -174,11 +170,7 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   void _setupAutoRefresh() {
     if (_refreshTimer != null) return; // Ya está configurado
 
-    // DESACTIVADO TEMPORALMENTE: Causaba conflictos con cambios manuales
-    // Configurar un timer que verifica cambios cada 2 segundos durante sync
-    // _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-    //   refreshFavorites();
-    // });
+
 
     LoggerFactory.info('ℹ️ Auto-refresh desactivado para evitar conflictos');
   }

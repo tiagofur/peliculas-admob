@@ -52,7 +52,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
     if (movie == null) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+          body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
     }
 
     return Scaffold(
@@ -88,9 +88,8 @@ class _MovieDetails extends StatelessWidget {
               // Información básica, sinopsis, detalles técnicos, etc.
               _MovieInfoBeforeCast(movie: movie),
 
-              // Valoración del usuario
-              // TODO: Temporarily disabled due to missing 'user_movie_ratings' table in Supabase
-              // MovieRatingAndNotes(movie: movie),
+              // User rating section
+              MovieRatingAndNotes(movie: movie),
 
               //* 1. Banner antes de 'Reparto Principal'
               const Padding(
@@ -238,7 +237,9 @@ class _CustomSliverAppBar extends ConsumerWidget {
         // Botón de favoritos con animación
         _AnimatedActionButton(
           onPressed: () {
-            ref.read(directFavoriteMoviesProvider.notifier).toggleFavorite(movie);
+            ref
+                .read(directFavoriteMoviesProvider.notifier)
+                .toggleFavorite(movie);
             ref.invalidate(directIsFavoriteProvider(movie.id));
           },
           feedbackType: FeedbackType.success,

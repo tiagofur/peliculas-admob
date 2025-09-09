@@ -6,7 +6,6 @@ import '../../domain/entities/movie.dart';
 import '../../domain/entities/recommendation.dart';
 import '../../domain/entities/watched_movie.dart';
 
-
 class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
   final dio = Dio(BaseOptions(
     baseUrl: 'https://api.themoviedb.org/3',
@@ -17,7 +16,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
   ));
 
   @override
-  Future<List<Recommendation>> getRecommendationsBasedOnFavorites(List<Movie> favoriteMovies) async {
+  Future<List<Recommendation>> getRecommendationsBasedOnFavorites(
+      List<Movie> favoriteMovies) async {
     if (favoriteMovies.isEmpty) return [];
 
     final recommendations = <Recommendation>[];
@@ -32,9 +32,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     }
 
     // Obtener géneros más populares del usuario
-    final topGenres = genreCount.entries
-        .toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
+    final topGenres = genreCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     // Buscar películas similares por género
     for (final genreEntry in topGenres.take(3)) {
@@ -49,9 +48,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
         final movies = response.data['results'] as List;
         for (final movieData in movies.take(5)) {
           final movieId = movieData['id'] as int;
-          if (!processedMovies.contains(movieId) && 
+          if (!processedMovies.contains(movieId) &&
               !favoriteMovies.any((fav) => fav.id == movieId)) {
-            
             recommendations.add(Recommendation(
               movieId: movieId,
               title: movieData['title'] ?? '',
@@ -74,7 +72,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
       try {
         final response = await dio.get('/movie/${movie.id}/similar');
         final movies = response.data['results'] as List;
-        
+
         for (final movieData in movies.take(3)) {
           final movieId = movieData['id'] as int;
           if (!processedMovies.contains(movieId)) {
@@ -100,7 +98,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
   }
 
   @override
-  Future<List<Recommendation>> getRecommendationsBasedOnWatched(List<WatchedMovie> watchedMovies) async {
+  Future<List<Recommendation>> getRecommendationsBasedOnWatched(
+      List<WatchedMovie> watchedMovies) async {
     if (watchedMovies.isEmpty) return [];
 
     final recommendations = <Recommendation>[];
@@ -110,20 +109,20 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     // Analizar patrones de películas vistas
     final genreCount = <String, int>{};
     final yearCount = <int, int>{};
-    
+
     for (final watchedMovie in watchedMovies) {
       // Obtener detalles de la película vista
       try {
         final response = await dio.get('/movie/${watchedMovie.id}');
         final movieData = response.data;
-        
+
         // Contar géneros
         final genres = movieData['genres'] as List;
         for (final genre in genres) {
           final genreId = genre['id'].toString();
           genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
         }
-        
+
         // Contar años
         final releaseDate = movieData['release_date'] as String?;
         if (releaseDate != null && releaseDate.isNotEmpty) {
@@ -138,9 +137,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     }
 
     // Recomendar basado en géneros más vistos
-    final topGenres = genreCount.entries
-        .toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
+    final topGenres = genreCount.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     for (final genreEntry in topGenres.take(2)) {
       try {
@@ -153,7 +151,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
         final movies = response.data['results'] as List;
         for (final movieData in movies.take(5)) {
           final movieId = movieData['id'] as int;
-          if (!processedMovies.contains(movieId) && !watchedIds.contains(movieId)) {
+          if (!processedMovies.contains(movieId) &&
+              !watchedIds.contains(movieId)) {
             recommendations.add(Recommendation(
               movieId: movieId,
               title: movieData['title'] ?? '',
@@ -176,9 +175,10 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
   }
 
   @override
-  Future<List<Recommendation>> getRecommendationsByGenre(List<String> genres) async {
+  Future<List<Recommendation>> getRecommendationsByGenre(
+      List<String> genres) async {
     final recommendations = <Recommendation>[];
-    
+
     for (final genre in genres) {
       try {
         final response = await dio.get('/discover/movie', queryParameters: {
@@ -292,7 +292,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
   }
 
   @override
-  Future<UserPreferences> analyzeUserPreferences(List<Movie> favoriteMovies, List<WatchedMovie> watchedMovies) async {
+  Future<UserPreferences> analyzeUserPreferences(
+      List<Movie> favoriteMovies, List<WatchedMovie> watchedMovies) async {
     final genreCount = <String, int>{};
     final genreRating = <String, double>{};
     final actors = <String>{};
@@ -334,18 +335,20 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     // Normalizar ratings por género
     final normalizedGenreRating = <String, double>{};
     for (final entry in genreRating.entries) {
-      normalizedGenreRating[entry.key] = entry.value / (genreCount[entry.key] ?? 1);
+      normalizedGenreRating[entry.key] =
+          entry.value / (genreCount[entry.key] ?? 1);
     }
 
     return UserPreferences(
       favoriteGenres: (genreCount.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value)))
+            ..sort((a, b) => b.value.compareTo(a.value)))
           .take(5)
           .map((e) => e.key)
           .toList(),
       favoriteActors: actors.take(10).toList(),
       favoriteDirectors: directors.take(5).toList(),
-      averageRatingPreference: ratingCount > 0 ? totalRating / ratingCount : 7.0,
+      averageRatingPreference:
+          ratingCount > 0 ? totalRating / ratingCount : 7.0,
       preferredLanguages: languages.take(3).toList(),
       genreCount: genreCount,
       genreRating: normalizedGenreRating,
@@ -379,7 +382,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
       RecommendationCategory(
         id: 'classic_forgotten',
         title: 'Clásicos olvidados',
-        description: 'Grandes películas del pasado que vale la pena redescubrir',
+        description:
+            'Grandes películas del pasado que vale la pena redescubrir',
         icon: 'history',
         filters: {
           'primary_release_date.lte': '1999-12-31',
@@ -418,13 +422,13 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     final voteAverage = (movieData['vote_average'] as num?)?.toDouble() ?? 5.0;
     final popularity = (movieData['popularity'] as num?)?.toDouble() ?? 1.0;
     final voteCount = (movieData['vote_count'] as num?)?.toInt() ?? 0;
-    
+
     // Fórmula de scoring personalizada
     double score = baseScore.toDouble();
     score += (voteAverage - 5.0) * 0.5; // Bonus por rating
     score += (popularity / 100) * 0.3; // Bonus por popularidad
     score += (voteCount / 1000) * 0.2; // Bonus por cantidad de votos
-    
+
     return score.clamp(0.0, 10.0);
   }
 

@@ -396,7 +396,8 @@ class MultiplataformSyncManager {
     try {
       switch (tableName) {
         case 'user_watchlist':
-          LoggerFactory.info('🔄 Watchlist providers updated via real-time sync');
+          LoggerFactory.info(
+              '🔄 Watchlist providers updated via real-time sync');
           // El sistema directo se actualiza automáticamente vía real-time listeners
           // No necesitamos invalidar providers manualmente
           break;

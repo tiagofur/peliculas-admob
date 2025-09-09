@@ -64,7 +64,7 @@ class SyncStats {
   final int conflictsDetected;
   final int conflictsResolved;
 
-  double get successRate => 
+  double get successRate =>
       totalEntities > 0 ? syncedEntities / totalEntities : 0.0;
 
   bool get hasFailures => failedEntities > 0;
@@ -90,7 +90,7 @@ class ConflictInfo<T extends SyncableEntity> {
   final Map<String, dynamic>? metadata;
 
   bool get isResolved => resolution != null;
-  
+
   String get conflictDescription {
     switch (conflictType) {
       case ConflictType.concurrentModification:
@@ -147,7 +147,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
   final String userId;
   final PersistentSyncQueue _syncQueue;
 
-  final StreamController<SyncProgressEvent> _progressController = 
+  final StreamController<SyncProgressEvent> _progressController =
       StreamController<SyncProgressEvent>.broadcast();
 
   bool _isInitialized = false;
@@ -173,7 +173,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
     try {
       await _loadLastSyncInfo();
       _isInitialized = true;
-      
+
       LoggerFactory.info('✅ EntitySyncManager initialized for $entityType');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize EntitySyncManager: $e');
@@ -235,7 +235,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
 
     try {
       LoggerFactory.info('🔄 Starting full sync for $entityType');
-      
+
       // Fase 1: Detectar cambios locales
       _emitProgress(SyncPhase.detecting, 0, 4, 'Detecting local changes');
       final localChanges = await getLocalPendingSync();
@@ -243,7 +243,8 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
 
       // Fase 2: Subir cambios locales
       if (localChanges.isNotEmpty) {
-        _emitProgress(SyncPhase.uploading, 1, 4, 'Uploading ${localChanges.length} local changes');
+        _emitProgress(SyncPhase.uploading, 1, 4,
+            'Uploading ${localChanges.length} local changes');
         final uploadResult = await uploadChanges(localChanges);
         totalSuccessful += uploadResult.itemsSuccessful;
         errors.addAll(uploadResult.errors);
@@ -252,7 +253,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       // Fase 3: Detectar y descargar cambios remotos
       _emitProgress(SyncPhase.downloading, 2, 4, 'Downloading remote changes');
       final remoteChanges = await getRemoteChanges(since: _lastSyncAt);
-      
+
       if (remoteChanges.isNotEmpty) {
         final downloadResult = await downloadChanges(remoteChanges);
         totalProcessed += remoteChanges.length;
@@ -263,7 +264,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       // Fase 4: Detectar y resolver conflictos
       _emitProgress(SyncPhase.resolving, 3, 4, 'Resolving conflicts');
       final conflicts = await detectConflicts();
-      
+
       for (final conflict in conflicts) {
         try {
           await resolveConflict(conflict);
@@ -275,7 +276,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       // Completar sincronización
       _emitProgress(SyncPhase.completed, 4, 4, 'Sync completed');
       _lastSyncAt = DateTime.now();
-      
+
       final result = errors.isEmpty
           ? SyncResult.success(
               itemsProcessed: totalProcessed,
@@ -292,14 +293,14 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
             );
 
       await _updateSyncStats(result);
-      LoggerFactory.info('✅ Full sync completed for $entityType: ${result.toString()}');
-      
-      return result;
+      LoggerFactory.info(
+          '✅ Full sync completed for $entityType: ${result.toString()}');
 
+      return result;
     } catch (e) {
       final error = 'Full sync failed for $entityType: $e';
       LoggerFactory.error(error);
-      
+
       return SyncResult.failure(
         itemsProcessed: totalProcessed,
         itemsSuccessful: totalSuccessful,
@@ -344,8 +345,9 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
     if (!_isInitialized) await _initialize();
 
     final operations = await _syncQueue.getOperationsByType(entityType);
-    final readyOperations = operations.where((op) => op.isReadyToExecute).toList();
-    
+    final readyOperations =
+        operations.where((op) => op.isReadyToExecute).toList();
+
     if (readyOperations.isEmpty) {
       return SyncResult.success(itemsProcessed: 0);
     }
@@ -354,41 +356,42 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
     var successful = 0;
     final errors = <String>[];
 
-    LoggerFactory.info('🔄 Processing ${readyOperations.length} queued operations for $entityType');
+    LoggerFactory.info(
+        '🔄 Processing ${readyOperations.length} queued operations for $entityType');
 
     for (final operation in readyOperations) {
       try {
         await _syncQueue.updateOperation(operation.markAsProcessing());
-        
+
         // Procesar según el tipo de operación
         switch (operation.type) {
           case SyncOperationType.create:
           case SyncOperationType.update:
             final entity = deserializeFromLocal(operation.data);
             final result = await uploadChanges([entity]);
-            
+
             if (result.success) {
               await _syncQueue.markCompleted(operation.id);
               successful++;
             } else {
-              await _syncQueue.markFailed(operation.id, result.errors.join(', '));
+              await _syncQueue.markFailed(
+                  operation.id, result.errors.join(', '));
               errors.addAll(result.errors);
             }
             break;
-            
+
           case SyncOperationType.delete:
             // Implementar lógica de eliminación
             await _syncQueue.markCompleted(operation.id);
             successful++;
             break;
-            
+
           case SyncOperationType.merge:
             // Implementar lógica de merge
             await _syncQueue.markCompleted(operation.id);
             successful++;
             break;
         }
-        
       } catch (e) {
         final error = 'Operation ${operation.id} failed: $e';
         await _syncQueue.markFailed(operation.id, error);
@@ -405,7 +408,8 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       duration: DateTime.now().difference(startTime),
     );
 
-    LoggerFactory.info('✅ Processed queued operations for $entityType: ${result.toString()}');
+    LoggerFactory.info(
+        '✅ Processed queued operations for $entityType: ${result.toString()}');
     return result;
   }
 
@@ -436,7 +440,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       totalItems: total,
       message: message,
     );
-    
+
     _progressController.add(event);
   }
 

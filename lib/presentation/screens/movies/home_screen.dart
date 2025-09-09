@@ -26,8 +26,7 @@ class HomeScreen extends StatelessWidget {
             right: 0,
             child: SilentSyncIndicator(),
           ),
-          // Snackbar para mensajes de sincronización
-          const SilentSyncSnackbar(),
+
         ],
       ),
       bottomNavigationBar: CustomBottomNavigation(

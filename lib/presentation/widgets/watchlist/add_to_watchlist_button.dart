@@ -63,8 +63,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                 isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
                 color: iconColor,
               ),
-        tooltip:
-            isInWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
+        tooltip: isInWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
       );
     }
 

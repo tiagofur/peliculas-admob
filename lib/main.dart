@@ -31,7 +31,7 @@ import 'infrastructure/services/app_lifecycle_manager.dart';
 import 'infrastructure/services/auth_session_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
 import 'infrastructure/services/cross_platform_init_service.dart';
-import 'infrastructure/services/realtime_sync_service.dart';
+
 import 'infrastructure/services/token_refresh_service.dart';
 import 'presentation/providers/challenge_providers.dart';
 import 'presentation/providers/error_reporting_provider.dart';
@@ -258,7 +258,7 @@ class MainApp extends ConsumerWidget {
   @override
   material.Widget build(material.BuildContext context, WidgetRef ref) {
     LoggerFactory.info('🏁 MainApp: build() method called - START');
-    
+
     // Watch locale state first to get current locale
     final localeState = ref.watch(localeNotifierProvider);
     final currentLocale = localeState.locale?.languageCode ?? 'es';
@@ -278,8 +278,8 @@ class MainApp extends ConsumerWidget {
     // INICIALIZAR SYNC LISTENER - Esto es CRÍTICO para que funcione la sincronización automática
     ref.watch(authSyncListenerProvider);
 
-    // INICIALIZAR SINCRONIZACIÓN EN TIEMPO REAL
-    ref.watch(realtimeSyncServiceProvider);
+    // SINCRONIZACIÓN EN TIEMPO REAL se maneja a través de SyncCoordinator
+    // que inicializa RealtimeSyncManager automáticamente
 
     // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
     ref.watch(syncInitializationProvider);
@@ -298,7 +298,8 @@ class MainApp extends ConsumerWidget {
         postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
 
     // INICIALIZAR DIRECT PROVIDERS PARA LISTENERS DE TIEMPO REAL
-    LoggerFactory.info('🚀 MainApp: Inicializando DirectProviders (FORZADO)...');
+    LoggerFactory.info(
+        '🚀 MainApp: Inicializando DirectProviders (FORZADO)...');
     ref.watch(directFavoriteMoviesProvider);
     ref.watch(directWatchedMoviesProvider);
     ref.watch(directWatchlistMoviesProvider);

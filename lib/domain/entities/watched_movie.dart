@@ -15,7 +15,7 @@ class WatchedMovie {
 
   @HiveField(0)
   final Movie movie;
-  
+
   @HiveField(1)
   final DateTime watchedDate;
 

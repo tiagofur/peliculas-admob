@@ -12,7 +12,7 @@ class SilentSyncIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(silentSyncProvider);
-    
+
     if (!syncState.isActive) {
       return const SizedBox.shrink();
     }
@@ -32,7 +32,7 @@ class SilentSyncIndicator extends ConsumerWidget {
 
   Color _getColorForSyncType(BuildContext context, SyncProgressType? type) {
     final theme = Theme.of(context);
-    
+
     switch (type) {
       case SyncProgressType.started:
       case SyncProgressType.fetching:
@@ -47,90 +47,7 @@ class SilentSyncIndicator extends ConsumerWidget {
   }
 }
 
-/// Snackbar sutil para mostrar mensajes de sincronización
-class SilentSyncSnackbar extends ConsumerWidget {
-  const SilentSyncSnackbar({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<SilentSyncState>(silentSyncProvider, (previous, current) {
-      // Solo mostrar mensajes importantes
-      if (current.currentType == SyncProgressType.completed && 
-          current.currentMessage != null) {
-        _showCompletionSnackbar(context, current.currentMessage!);
-      } else if (current.currentType == SyncProgressType.error && 
-                 current.currentMessage != null) {
-        _showErrorSnackbar(context, current.currentMessage!);
-      }
-    });
-    
-    return const SizedBox.shrink();
-  }
-
-  void _showCompletionSnackbar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.sync_alt, 
-              color: Colors.white, 
-              size: 16,
-            ),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Favoritos sincronizados',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green.withValues(alpha: 0.8),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(
-          bottom: 80, 
-          left: 16, 
-          right: 16,
-        ),
-      ),
-    );
-  }
-
-  void _showErrorSnackbar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.sync_problem, 
-              color: Colors.white, 
-              size: 16,
-            ),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Error en sincronización',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.red.withValues(alpha: 0.8),
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(
-          bottom: 80, 
-          left: 16, 
-          right: 16,
-        ),
-      ),
-    );
-  }
-}
 
 /// Floating Action Button con indicador de sync
 class SyncAwareFAB extends ConsumerWidget {
@@ -148,7 +65,7 @@ class SyncAwareFAB extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSyncing = ref.watch(isSyncActiveProvider);
-    
+
     return Stack(
       children: [
         FloatingActionButton(

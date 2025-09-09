@@ -99,7 +99,11 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para cuando buscas emociones fuertes',
       emoji: '🗺️',
       color: Colors.orange,
-      associatedGenres: ['12', '28', '878'], // Aventura, Acción, Ciencia Ficción
+      associatedGenres: [
+        '12',
+        '28',
+        '878'
+      ], // Aventura, Acción, Ciencia Ficción
     ),
     const MoodOption(
       id: 'thoughtful',
@@ -139,7 +143,11 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para escapar a otros mundos',
       emoji: '🧙‍♂️',
       color: Colors.teal,
-      associatedGenres: ['14', '878', '16'], // Fantasía, Ciencia Ficción, Animación
+      associatedGenres: [
+        '14',
+        '878',
+        '16'
+      ], // Fantasía, Ciencia Ficción, Animación
     ),
   ];
 });

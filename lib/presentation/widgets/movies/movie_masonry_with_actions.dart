@@ -5,13 +5,15 @@ import '../../../domain/entities/movie.dart';
 import 'movie_card_with_actions.dart';
 
 class MovieMasonryWithActions extends StatefulWidget {
-  const MovieMasonryWithActions({super.key, required this.movies, this.loadNextPage});
+  const MovieMasonryWithActions(
+      {super.key, required this.movies, this.loadNextPage});
 
   final List<Movie> movies;
   final VoidCallback? loadNextPage;
 
   @override
-  State<MovieMasonryWithActions> createState() => _MovieMasonryWithActionsState();
+  State<MovieMasonryWithActions> createState() =>
+      _MovieMasonryWithActionsState();
 }
 
 class _MovieMasonryWithActionsState extends State<MovieMasonryWithActions> {

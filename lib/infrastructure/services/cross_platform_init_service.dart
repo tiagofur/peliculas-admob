@@ -64,7 +64,7 @@ class CrossPlatformInitService {
       if (kDebugMode) {
         LoggerFactory.info('🧹 Ejecutando limpieza de cache corrupto...');
       }
-      
+
       // Clear old unified cache box
       if (await Hive.boxExists('movies_cache')) {
         final oldBox = await Hive.openBox('movies_cache');
@@ -72,15 +72,16 @@ class CrossPlatformInitService {
         await oldBox.clear();
         await oldBox.close();
         if (kDebugMode) {
-          LoggerFactory.info('🗑️ Limpiado cache unificado viejo: $oldCount películas');
+          LoggerFactory.info(
+              '🗑️ Limpiado cache unificado viejo: $oldCount películas');
         }
       }
-      
+
       // Note: No longer clearing favorites box - let favorites persist properly
-      
     } catch (e) {
       if (kDebugMode) {
-        LoggerFactory.warning('⚠️ Error en limpieza de cache (continuando): $e');
+        LoggerFactory.warning(
+            '⚠️ Error en limpieza de cache (continuando): $e');
       }
       // No rethrow - la app puede continuar sin esto
     }
@@ -95,7 +96,8 @@ class CrossPlatformInitService {
       await HiveCleanupService.clearFavoritesBox();
     } catch (e) {
       if (kDebugMode) {
-        LoggerFactory.warning('⚠️ Error en limpieza de favoritos (continuando): $e');
+        LoggerFactory.warning(
+            '⚠️ Error en limpieza de favoritos (continuando): $e');
       }
       // No rethrow - la app puede continuar sin esto
     }

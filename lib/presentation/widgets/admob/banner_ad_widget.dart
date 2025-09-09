@@ -15,7 +15,8 @@ class BannerAdWidget extends StatefulWidget {
 class _BannerAdWidgetState extends State<BannerAdWidget> {
   BannerAd? _bannerAd;
   bool _isBannerAdReady = false;
-  final MonetizationAnalyticsService _analytics = MonetizationAnalyticsService.instance;
+  final MonetizationAnalyticsService _analytics =
+      MonetizationAnalyticsService.instance;
   final DateTime _loadStartTime = DateTime.now();
 
   @override
@@ -29,7 +30,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     if (kIsWeb) {
       return;
     }
-    
+
     _bannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,
       request: const AdRequest(),
@@ -39,7 +40,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
           setState(() {
             _isBannerAdReady = true;
           });
-          
+
           // Track successful load
           final loadTime = DateTime.now().difference(_loadStartTime);
           _analytics.trackAdLoadTime(
@@ -49,7 +50,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             successful: true,
             placement: 'general',
           );
-          
+
           // Track impression
           _analytics.trackAdImpression(
             adType: 'banner',
@@ -60,7 +61,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
         onAdFailedToLoad: (ad, err) {
           _isBannerAdReady = false;
           ad.dispose();
-          
+
           // Track error
           final loadTime = DateTime.now().difference(_loadStartTime);
           _analytics.trackAdLoadTime(
@@ -70,7 +71,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
             successful: false,
             placement: 'general',
           );
-          
+
           _analytics.trackAdLoadError(
             adType: 'banner',
             adUnitId: AdHelper.bannerAdUnitId,
@@ -100,7 +101,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     if (kIsWeb) {
       return const SizedBox.shrink();
     }
-    
+
     final bannerAd = _bannerAd;
     if (_isBannerAdReady && bannerAd != null) {
       return Container(

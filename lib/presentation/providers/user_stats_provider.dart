@@ -25,7 +25,9 @@ final userStatsDataProvider = Provider.autoDispose<
 
   return (
     favoriteMovies: favoriteMovies,
-    watchedMovies: watchedMoviesState.movies.map((syncableMovie) => syncableMovie.toWatchedMovie()).toList(),
+    watchedMovies: watchedMoviesState.movies
+        .map((syncableMovie) => syncableMovie.toWatchedMovie())
+        .toList(),
     customLists: customLists,
     defaultLists: defaultLists,
   );

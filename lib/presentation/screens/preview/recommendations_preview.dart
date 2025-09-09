@@ -44,32 +44,32 @@ class RecommendationsPreviewScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Now Playing section
             _buildMovieSection('En cines', 'Lunes 20'),
-            
+
             const SizedBox(height: 16),
-            
+
             // Trending section
             _buildMovieSection('Tendencias', 'Lo más popular ahora'),
-            
+
             const SizedBox(height: 16),
-            
+
             // NEW: Recommendations section
             _buildRecommendationsSection(),
-            
+
             const SizedBox(height: 16),
-            
+
             // Upcoming section
             _buildMovieSection('Próximamente', 'En este mes'),
-            
+
             const SizedBox(height: 16),
-            
+
             // Top Rated section
             _buildMovieSection('Mejor calificadas', 'Desde siempre'),
-            
+
             const SizedBox(height: 20),
           ],
         ),
@@ -182,7 +182,7 @@ class RecommendationsPreviewScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Horizontal list of recommendations
           SizedBox(
             height: 220,
@@ -209,7 +209,8 @@ class RecommendationsPreviewScreen extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.movie, size: 30, color: Colors.blue[600]),
+                              Icon(Icons.movie,
+                                  size: 30, color: Colors.blue[600]),
                               const Text(
                                 'Rec Movie',
                                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -219,7 +220,7 @@ class RecommendationsPreviewScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      
+
                       // Movie title
                       Text(
                         'Película Recomendada ${index + 1}',
@@ -230,11 +231,12 @@ class RecommendationsPreviewScreen extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      
+
                       // Recommendation reason
                       Container(
                         margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.blue.withValues(alpha: 0.2 * 255),
                           borderRadius: BorderRadius.circular(4),
@@ -256,9 +258,9 @@ class RecommendationsPreviewScreen extends StatelessWidget {
               },
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Features info
           Container(
             padding: const EdgeInsets.all(8),

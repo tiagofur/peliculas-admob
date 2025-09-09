@@ -465,7 +465,8 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
 // Provider del repositorio
 final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
-  return CustomListsRepositoryImpl(CustomListsSharedPreferencesDatasource(), ref);
+  return CustomListsRepositoryImpl(
+      CustomListsSharedPreferencesDatasource(), ref);
 });
 
 // Provider principal unificado

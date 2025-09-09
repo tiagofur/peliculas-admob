@@ -13,7 +13,8 @@ final userProgressProvider = FutureProvider<UserProgress>((ref) async {
   return await gamificationManager.getUserProgress();
 });
 
-final recentAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+final recentAchievementsProvider =
+    FutureProvider<List<Achievement>>((ref) async {
   final gamificationManager = ref.watch(gamificationManagerProvider);
   return await gamificationManager.getRecentAchievements(limit: 3);
 });

@@ -72,7 +72,7 @@ class SimpleWatchedSync {
         'movie_poster_path': movie.posterPath,
         'movie_backdrop_path': movie.backdropPath,
         'movie_overview': movie.overview,
-        'movie_release_date': movie.releaseDate?.toIso8601String(),
+        'movie_release_date': movie.releaseDate.toIso8601String(),
         'movie_vote_average': movie.voteAverage,
         'watched_at': now,
         'is_deleted': false,
@@ -85,21 +85,18 @@ class SimpleWatchedSync {
 
       // Use INSERT instead of UPSERT to avoid trigger issues
       try {
-        await _supabase
-            .from('user_watched_movies')
-            .insert(watchedData);
+        await _supabase.from('user_watched_movies').insert(watchedData);
       } catch (e) {
         // If already exists, try DELETE + INSERT
-        if (e.toString().contains('duplicate key') || e.toString().contains('unique constraint')) {
+        if (e.toString().contains('duplicate key') ||
+            e.toString().contains('unique constraint')) {
           await _supabase
               .from('user_watched_movies')
               .delete()
               .eq('user_id', userId)
               .eq('movie_id', movie.id);
-              
-          await _supabase
-              .from('user_watched_movies')
-              .insert(watchedData);
+
+          await _supabase.from('user_watched_movies').insert(watchedData);
         } else {
           rethrow;
         }

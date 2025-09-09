@@ -82,7 +82,8 @@ class AchievementCard extends StatelessWidget {
                           Expanded(
                             child: LinearProgressIndicator(
                               value: achievement.progress,
-                              backgroundColor: colors.outline.withValues(alpha: 0.2),
+                              backgroundColor:
+                                  colors.outline.withValues(alpha: 0.2),
                               valueColor: AlwaysStoppedAnimation<Color>(
                                 colors.primary.withValues(alpha: 0.7),
                               ),
@@ -111,7 +112,8 @@ class AchievementCard extends StatelessWidget {
                             Text(
                               'Desbloqueado el ${achievement.unlockedDate != null ? _formatDate(achievement.unlockedDate!) : 'Fecha desconocida'}',
                               style: textTheme.bodySmall?.copyWith(
-                                color: colors.onPrimaryContainer.withValues(alpha: 0.8),
+                                color: colors.onPrimaryContainer
+                                    .withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),

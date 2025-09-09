@@ -13,13 +13,15 @@ import '../core/services/logger_factory.dart';
 class AdaptiveCacheIntegrationExample {
   /// Initialize the adaptive caching system (typically in main.dart)
   static Future<void> initializeAdaptiveCache() async {
-    LoggerFactory.info('AdaptiveCacheExample: 🚀 Initializing adaptive image cache system...');
+    LoggerFactory.info(
+        'AdaptiveCacheExample: 🚀 Initializing adaptive image cache system...');
 
     try {
       // Initialize the entire adaptive caching system
       await ImageCacheManager.instance.initialize();
 
-      LoggerFactory.info('AdaptiveCacheExample: ✅ Adaptive cache system initialized successfully');
+      LoggerFactory.info(
+          'AdaptiveCacheExample: ✅ Adaptive cache system initialized successfully');
 
       // Log initial configuration
       final config = AdaptiveCacheConfig.instance.configuration;
@@ -32,7 +34,8 @@ class AdaptiveCacheIntegrationExample {
       LoggerFactory.info(
           'AdaptiveCacheExample: 💿 Disk cache: ${(config.diskCacheSize / 1024 / 1024).toStringAsFixed(1)}MB');
     } catch (e) {
-      LoggerFactory.error('AdaptiveCacheExample: ❌ Failed to initialize adaptive cache: $e');
+      LoggerFactory.error(
+          'AdaptiveCacheExample: ❌ Failed to initialize adaptive cache: $e');
       // System will fall back to default configuration
     }
   }
@@ -40,11 +43,13 @@ class AdaptiveCacheIntegrationExample {
   /// Example of monitoring performance (for admin/debug screens)
   static Future<void> showPerformanceReport() async {
     final report = ImageCacheManager.instance.generatePerformanceReport();
-    LoggerFactory.info('AdaptiveCacheExample: \n📊 ADAPTIVE CACHE PERFORMANCE REPORT\n$report');
+    LoggerFactory.info(
+        'AdaptiveCacheExample: \n📊 ADAPTIVE CACHE PERFORMANCE REPORT\n$report');
 
     // Get enhanced stats for detailed analysis
     final enhancedStats = await ImageCacheManager.instance.getEnhancedStats();
-    LoggerFactory.info('AdaptiveCacheExample: \n🔍 Enhanced Stats: $enhancedStats');
+    LoggerFactory.info(
+        'AdaptiveCacheExample: \n🔍 Enhanced Stats: $enhancedStats');
 
     // Check performance assessment
     final assessment =
@@ -67,7 +72,8 @@ class AdaptiveCacheIntegrationExample {
     await ImageCacheManager.instance.refreshAdaptiveConfiguration();
 
     final networkStatus = NetworkAwareStrategy.instance.getNetworkStatus();
-    LoggerFactory.info('AdaptiveCacheExample: 📡 New network status: $networkStatus');
+    LoggerFactory.info(
+        'AdaptiveCacheExample: 📡 New network status: $networkStatus');
   }
 
   /// Example widget showing how to use cached images (no changes needed!)

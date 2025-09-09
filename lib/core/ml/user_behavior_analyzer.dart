@@ -357,16 +357,13 @@ class UserBehaviorAnalyzer {
     // Diversidad de géneros
     final allGenres = <int>{};
     for (final movie in watchedMovies) {
-      allGenres.addAll(movie.genreIds
-          .map((g) => int.tryParse(g) ?? 0)
-          .where((g) => g > 0));
+      allGenres.addAll(
+          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     analysis.genreDiversity = allGenres.length / max(1, watchedMovies.length);
 
     // Diversidad de años
-    final years = watchedMovies
-        .map((m) => m.releaseDate.year)
-        .toSet();
+    final years = watchedMovies.map((m) => m.releaseDate.year).toSet();
     analysis.yearDiversity = years.length / max(1, watchedMovies.length);
 
     // Diversidad de idiomas
@@ -566,9 +563,8 @@ class UserBehaviorAnalyzer {
           movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     for (final movie in watched) {
-      allGenres.addAll(movie.genreIds
-          .map((g) => int.tryParse(g) ?? 0)
-          .where((g) => g > 0));
+      allGenres.addAll(
+          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
 
     final totalMovies = favorites.length + watched.length;
@@ -845,9 +841,8 @@ class UserBehaviorAnalyzer {
           movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     for (final movie in watched) {
-      allGenres.addAll(movie.genreIds
-          .map((g) => int.tryParse(g) ?? 0)
-          .where((g) => g > 0));
+      allGenres.addAll(
+          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
 
     final totalMovies = favorites.length + watched.length;

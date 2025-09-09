@@ -39,10 +39,10 @@ class Dates {
     required this.minimum,
   });
   factory Dates.fromJson(Map<String, dynamic> json) => Dates(
-        maximum: json['maximum'] != null 
+        maximum: json['maximum'] != null
             ? DateTime.parse(json['maximum'])
             : DateTime.now(),
-        minimum: json['minimum'] != null 
+        minimum: json['minimum'] != null
             ? DateTime.parse(json['minimum'])
             : DateTime.now(),
       );

@@ -12,12 +12,12 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
   Future<List<Achievement>> getAllAchievements() async {
     final prefs = await SharedPreferences.getInstance();
     final achievementsJson = prefs.getStringList(_achievementsKey) ?? [];
-    
+
     if (achievementsJson.isEmpty) {
       await initializeDefaultAchievements();
       return getAllAchievements();
     }
-    
+
     return achievementsJson
         .map((json) => _achievementFromJson(jsonDecode(json)))
         .toList();
@@ -27,7 +27,7 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
   Future<void> updateAchievement(Achievement achievement) async {
     final achievements = await getAllAchievements();
     final index = achievements.indexWhere((a) => a.id == achievement.id);
-    
+
     if (index != -1) {
       achievements[index] = achievement;
       await _saveAchievements(achievements);
@@ -38,7 +38,7 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
   Future<void> unlockAchievement(String achievementId) async {
     final achievements = await getAllAchievements();
     final index = achievements.indexWhere((a) => a.id == achievementId);
-    
+
     if (index != -1 && !achievements[index].isUnlocked) {
       achievements[index] = achievements[index].copyWith(
         isUnlocked: true,
@@ -56,21 +56,23 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
   }
 
   @override
-  Future<void> incrementAchievementProgress(String achievementId, {int increment = 1}) async {
+  Future<void> incrementAchievementProgress(String achievementId,
+      {int increment = 1}) async {
     final achievements = await getAllAchievements();
     final index = achievements.indexWhere((a) => a.id == achievementId);
-    
+
     if (index != -1 && !achievements[index].isUnlocked) {
       final currentAchievement = achievements[index];
       final newValue = (currentAchievement.currentValue + increment)
           .clamp(0, currentAchievement.targetValue);
-      
+
       achievements[index] = currentAchievement.copyWith(
         currentValue: newValue,
         isUnlocked: newValue >= currentAchievement.targetValue,
-        unlockedDate: newValue >= currentAchievement.targetValue ? DateTime.now() : null,
+        unlockedDate:
+            newValue >= currentAchievement.targetValue ? DateTime.now() : null,
       );
-      
+
       await _saveAchievements(achievements);
     }
   }
@@ -79,7 +81,7 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
   Future<void> initializeDefaultAchievements() async {
     final prefs = await SharedPreferences.getInstance();
     final isInitialized = prefs.getBool(_initializedKey) ?? false;
-    
+
     if (!isInitialized) {
       final defaultAchievements = _getDefaultAchievements();
       await _saveAchievements(defaultAchievements);
@@ -92,7 +94,7 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
     final achievementsJson = achievements
         .map((achievement) => jsonEncode(_achievementToJson(achievement)))
         .toList();
-    
+
     await prefs.setStringList(_achievementsKey, achievementsJson);
   }
 
@@ -147,7 +149,7 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
         targetValue: 5,
         category: AchievementCategory.movies,
       ),
-      
+
       // Logros de favoritos
       Achievement(
         id: 'first_favorite',
@@ -181,7 +183,7 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
         targetValue: 10,
         category: AchievementCategory.favorites,
       ),
-      
+
       // Logros de exploración
       Achievement(
         id: 'genre_explorer',
@@ -281,8 +283,8 @@ class AchievementsSharedPreferencesDatasource extends AchievementsDatasource {
       targetValue: json['targetValue'],
       currentValue: json['currentValue'] ?? 0,
       isUnlocked: json['isUnlocked'] ?? false,
-      unlockedDate: json['unlockedDate'] != null 
-          ? DateTime.parse(json['unlockedDate']) 
+      unlockedDate: json['unlockedDate'] != null
+          ? DateTime.parse(json['unlockedDate'])
           : null,
       category: AchievementCategory.values[json['category'] ?? 0],
     );

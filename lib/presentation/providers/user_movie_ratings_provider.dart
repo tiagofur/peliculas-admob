@@ -5,36 +5,42 @@ import '../../domain/repositories/user_movie_ratings_repository.dart';
 import '../../infrastructure/repositories/user_movie_ratings_repository_impl.dart';
 
 // Provider del repositorio
-final userMovieRatingsRepositoryProvider = Provider<UserMovieRatingsRepository>((ref) {
+final userMovieRatingsRepositoryProvider =
+    Provider<UserMovieRatingsRepository>((ref) {
   return UserMovieRatingsRepositoryImpl();
 });
 
 // Provider para obtener la valoración de una película específica
-final movieRatingProvider = FutureProvider.family<UserMovieRating?, int>((ref, movieId) async {
+final movieRatingProvider =
+    FutureProvider.family<UserMovieRating?, int>((ref, movieId) async {
   final repository = ref.watch(userMovieRatingsRepositoryProvider);
   return repository.getUserRating(movieId);
 });
 
 // Provider para las valoraciones del usuario
-final userRatingsProvider = StateNotifierProvider<UserRatingsNotifier, UserRatingsState>((ref) {
+final userRatingsProvider =
+    StateNotifierProvider<UserRatingsNotifier, UserRatingsState>((ref) {
   final repository = ref.watch(userMovieRatingsRepositoryProvider);
   return UserRatingsNotifier(repository);
 });
 
 // Provider para estadísticas de valoraciones
-final userRatingStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final userRatingStatsProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final repository = ref.watch(userMovieRatingsRepositoryProvider);
   return repository.getRatingStats();
 });
 
 // Provider para las mejores películas valoradas
-final topRatedMoviesProvider = FutureProvider.family<List<UserMovieRating>, int>((ref, limit) async {
+final topRatedMoviesProvider =
+    FutureProvider.family<List<UserMovieRating>, int>((ref, limit) async {
   final repository = ref.watch(userMovieRatingsRepositoryProvider);
   return repository.getTopRatedMovies(limit: limit);
 });
 
 // Provider para las valoraciones más recientes
-final recentRatingsProvider = FutureProvider.family<List<UserMovieRating>, int>((ref, limit) async {
+final recentRatingsProvider =
+    FutureProvider.family<List<UserMovieRating>, int>((ref, limit) async {
   final repository = ref.watch(userMovieRatingsRepositoryProvider);
   return repository.getRecentRatings(limit: limit);
 });
@@ -126,19 +132,19 @@ class UserRatingsNotifier extends StateNotifier<UserRatingsState> {
   Future<UserMovieRating> saveRating(UserMovieRating rating) async {
     try {
       final savedRating = await _repository.saveRating(rating);
-      
+
       // Actualizar la lista local
       final updatedRatings = List<UserMovieRating>.from(state.ratings);
       final existingIndex = updatedRatings.indexWhere(
         (r) => r.movieId == savedRating.movieId,
       );
-      
+
       if (existingIndex >= 0) {
         updatedRatings[existingIndex] = savedRating;
       } else {
         updatedRatings.insert(0, savedRating);
       }
-      
+
       state = state.copyWith(ratings: updatedRatings);
       return savedRating;
     } catch (e) {
@@ -151,12 +157,11 @@ class UserRatingsNotifier extends StateNotifier<UserRatingsState> {
   Future<void> deleteRating(int movieId) async {
     try {
       await _repository.deleteRating(movieId);
-      
+
       // Actualizar la lista local
-      final updatedRatings = state.ratings
-          .where((rating) => rating.movieId != movieId)
-          .toList();
-      
+      final updatedRatings =
+          state.ratings.where((rating) => rating.movieId != movieId).toList();
+
       state = state.copyWith(ratings: updatedRatings);
     } catch (e) {
       state = state.copyWith(error: e.toString());

@@ -10,7 +10,8 @@ class DiscoveryPopularView extends ConsumerStatefulWidget {
   const DiscoveryPopularView({super.key});
 
   @override
-  ConsumerState<DiscoveryPopularView> createState() => _DiscoveryPopularViewState();
+  ConsumerState<DiscoveryPopularView> createState() =>
+      _DiscoveryPopularViewState();
 }
 
 class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
@@ -61,21 +62,21 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
   }
 
   Widget _buildForYouTab() {
-    final personalizedRecommendations = ref.watch(personalizedRecommendationsProvider);
+    final personalizedRecommendations =
+        ref.watch(personalizedRecommendationsProvider);
     final discoveryCategories = ref.watch(discoveryCategoriesProvider);
     final userStats = ref.watch(basicUserStatsProvider);
-    
+
     return personalizedRecommendations.when(
       data: (recommendations) => discoveryCategories.when(
-        data: (categories) => _buildForYouContent(
-          recommendations, 
-          categories, 
-          userStats
-        ),
-        loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        data: (categories) =>
+            _buildForYouContent(recommendations, categories, userStats),
+        loading: () =>
+            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
         error: (error, stack) => _buildErrorState(),
       ),
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (error, stack) => _buildErrorState(),
     );
   }
@@ -88,7 +89,8 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
     return CustomScrollView(
       slivers: [
         _buildUserStatsSection(userStats),
-        if (recommendations.isNotEmpty) _buildPersonalizedSection(recommendations),
+        if (recommendations.isNotEmpty)
+          _buildPersonalizedSection(recommendations),
         _buildDiscoverySection(categories),
         _buildMoodSection(),
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -194,13 +196,15 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: userStats.topGenres.map((genre) => Chip(
-                  label: Text(
-                    genre,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  backgroundColor: Colors.white.withValues(alpha: 0.8),
-                )).toList(),
+                children: userStats.topGenres
+                    .map((genre) => Chip(
+                          label: Text(
+                            genre,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ))
+                    .toList(),
               ),
             ],
           ],
@@ -209,7 +213,8 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -450,10 +455,30 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
 
   Widget _buildMoodSection() {
     final moods = [
-      {'name': 'Feliz', 'mood': 'happy', 'icon': Icons.sentiment_very_satisfied, 'color': Colors.orange},
-      {'name': 'Romántico', 'mood': 'romantic', 'icon': Icons.favorite, 'color': Colors.pink},
-      {'name': 'Emocionado', 'mood': 'excited', 'icon': Icons.flash_on, 'color': Colors.blue},
-      {'name': 'Relajado', 'mood': 'relaxed', 'icon': Icons.spa, 'color': Colors.green},
+      {
+        'name': 'Feliz',
+        'mood': 'happy',
+        'icon': Icons.sentiment_very_satisfied,
+        'color': Colors.orange
+      },
+      {
+        'name': 'Romántico',
+        'mood': 'romantic',
+        'icon': Icons.favorite,
+        'color': Colors.pink
+      },
+      {
+        'name': 'Emocionado',
+        'mood': 'excited',
+        'icon': Icons.flash_on,
+        'color': Colors.blue
+      },
+      {
+        'name': 'Relajado',
+        'mood': 'relaxed',
+        'icon': Icons.spa,
+        'color': Colors.green
+      },
     ];
 
     return SliverToBoxAdapter(
@@ -620,7 +645,8 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => ref.read(popularMoviesProvider.notifier).refresh(),
+              onPressed: () =>
+                  ref.read(popularMoviesProvider.notifier).refresh(),
               child: const Text('Reintentar'),
             ),
           ],
@@ -656,7 +682,8 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
                   ),
                 ),
                 TextButton(
-                  onPressed: () => ref.read(popularMoviesProvider.notifier).refresh(),
+                  onPressed: () =>
+                      ref.read(popularMoviesProvider.notifier).refresh(),
                   child: const Text('Reintentar'),
                 ),
               ],

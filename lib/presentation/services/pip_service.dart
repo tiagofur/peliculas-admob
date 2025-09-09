@@ -5,7 +5,8 @@ import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
 import '../../core/logging/logger_factory.dart';
 
 // Solo importar youtube_player_flutter en plataformas no web
-import 'package:youtube_player_flutter/youtube_player_flutter.dart' if (dart.library.html) '../../core/platform/web_youtube_stub.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart'
+    if (dart.library.html) '../../core/platform/web_youtube_stub.dart';
 
 class PipService {
   factory PipService() => _instance;
@@ -186,7 +187,7 @@ class _PipVideoPlayerState extends State<_PipVideoPlayer> {
                 bottomLeft: Radius.circular(8),
                 bottomRight: Radius.circular(8),
               ),
-              child: kIsWeb 
+              child: kIsWeb
                   ? const Center(
                       child: Text(
                         'PiP no disponible en web',

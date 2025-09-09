@@ -206,7 +206,7 @@ class AppTheme {
   void updateSystemUIOverlay([BuildContext? context]) {
     // SystemChrome no es compatible con web
     if (kIsWeb) return;
-    
+
     final isDark = _shouldUseDarkMode(context);
 
     SystemChrome.setSystemUIOverlayStyle(

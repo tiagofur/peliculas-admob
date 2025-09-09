@@ -11,7 +11,7 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
   WatchedSyncManager({
     required super.userId,
     SupabaseClient? supabaseClient,
-  }) : _supabase = supabaseClient ?? Supabase.instance.client,
+  })  : _supabase = supabaseClient ?? Supabase.instance.client,
         super(entityType: 'watched_movie');
 
   final SupabaseClient _supabase;
@@ -22,15 +22,17 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
   // =============================================
 
   @override
-  Future<List<SyncableWatchedMovie>> getLocalPendingSync({DateTime? since}) async {
+  Future<List<SyncableWatchedMovie>> getLocalPendingSync(
+      {DateTime? since}) async {
     try {
       // Get local watched movies that need syncing from the persistent queue
       final queuedOperations = await super.processQueuedOperations();
-      
+
       // For now, we'll get pending operations from the sync queue
       // In a complete implementation, this would also check local storage timestamps
-      LoggerFactory.info('🔍 Found ${queuedOperations.itemsProcessed} pending sync operations for watched movies');
-      
+      LoggerFactory.info(
+          '🔍 Found ${queuedOperations.itemsProcessed} pending sync operations for watched movies');
+
       // Return empty list as operations are processed through the queue system
       return [];
     } catch (e) {
@@ -51,10 +53,9 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
 
       // Add date filtering for incremental sync
       if (since != null) {
-        // TODO: Fix date filtering when Supabase API is clarified
-        // query = query.filter('last_modified_at', 'gte', since.toIso8601String());
-        LoggerFactory.info('📅 Fetching remote changes since: ${since.toIso8601String()}');
-        LoggerFactory.warning('⚠️ Date filtering temporarily disabled - will fetch all records');
+        query = query.gte('last_modified_at', since.toIso8601String());
+        LoggerFactory.info(
+            '📅 Fetching remote changes since: ${since.toIso8601String()}');
       }
 
       final response = await query;
@@ -64,9 +65,9 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
           .map((item) => deserializeFromRemote(Map<String, dynamic>.from(item)))
           .toList();
 
-      LoggerFactory.info('📥 Retrieved ${watchedMovies.length} remote watched movies');
+      LoggerFactory.info(
+          '📥 Retrieved ${watchedMovies.length} remote watched movies');
       return watchedMovies;
-
     } catch (e) {
       LoggerFactory.error('❌ Failed to fetch remote changes: $e');
       rethrow;
@@ -89,15 +90,12 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
       for (final entity in entities) {
         try {
           final data = serializeForRemote(entity);
-          
+
           // Usar upsert para crear o actualizar
-          await _supabase
-              .from(_tableName)
-              .upsert(data);
+          await _supabase.from(_tableName).upsert(data);
 
           successful++;
           LoggerFactory.debug('✅ Uploaded watched movie: ${entity.movieTitle}');
-
         } catch (e) {
           final error = 'Failed to upload watched movie ${entity.id}: $e';
           errors.add(error);
@@ -116,7 +114,6 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
 
       LoggerFactory.info('📤 Upload completed: ${result.toString()}');
       return result;
-
     } catch (e) {
       LoggerFactory.error('❌ Upload batch failed: $e');
       return SyncResult.failure(
@@ -128,7 +125,8 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
   }
 
   @override
-  Future<SyncResult> downloadChanges(List<SyncableWatchedMovie> entities) async {
+  Future<SyncResult> downloadChanges(
+      List<SyncableWatchedMovie> entities) async {
     if (entities.isEmpty) {
       return SyncResult.success(itemsProcessed: 0);
     }
@@ -138,15 +136,16 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
     final errors = <String>[];
 
     try {
-      LoggerFactory.info('📥 Processing ${entities.length} remote watched movies');
+      LoggerFactory.info(
+          '📥 Processing ${entities.length} remote watched movies');
 
       for (final entity in entities) {
         try {
           // This will be handled by the hybrid repository when it processes the download
           // For now, just count as successful - the hybrid repository handles actual storage
           successful++;
-          LoggerFactory.debug('✅ Downloaded watched movie: ${entity.movieTitle}');
-
+          LoggerFactory.debug(
+              '✅ Downloaded watched movie: ${entity.movieTitle}');
         } catch (e) {
           final error = 'Failed to save watched movie ${entity.id}: $e';
           errors.add(error);
@@ -165,7 +164,6 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
 
       LoggerFactory.info('📥 Download completed: ${result.toString()}');
       return result;
-
     } catch (e) {
       LoggerFactory.error('❌ Download batch failed: $e');
       return SyncResult.failure(
@@ -181,11 +179,10 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
     // Para películas vistas, los conflictos son menos comunes
     // Implementación simple por ahora
     final conflicts = <ConflictInfo<SyncableWatchedMovie>>[];
-    
+
     try {
       // TODO: Implementar detección de conflictos cuando tengamos storage local
       LoggerFactory.debug('🔍 No conflicts detected for watched movies');
-      
     } catch (e) {
       LoggerFactory.error('❌ Conflict detection failed: $e');
     }
@@ -194,13 +191,16 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
   }
 
   @override
-  Future<SyncableWatchedMovie> resolveConflict(ConflictInfo<SyncableWatchedMovie> conflict) async {
+  Future<SyncableWatchedMovie> resolveConflict(
+      ConflictInfo<SyncableWatchedMovie> conflict) async {
     // Estrategia simple: "last write wins"
-    final resolved = conflict.localEntity.hasPrecedenceOver(conflict.remoteEntity)
-        ? conflict.localEntity
-        : conflict.remoteEntity;
+    final resolved =
+        conflict.localEntity.hasPrecedenceOver(conflict.remoteEntity)
+            ? conflict.localEntity
+            : conflict.remoteEntity;
 
-    LoggerFactory.info('⚖️ Resolved conflict for watched movie ${resolved.movieTitle}: ${conflict.conflictType.name}');
+    LoggerFactory.info(
+        '⚖️ Resolved conflict for watched movie ${resolved.movieTitle}: ${conflict.conflictType.name}');
     return resolved;
   }
 
@@ -239,7 +239,8 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
       priority: 3, // Prioridad media para películas vistas
     );
 
-    LoggerFactory.info('➕ Added watched movie to queue: ${watchedMovie.movieTitle}');
+    LoggerFactory.info(
+        '➕ Added watched movie to queue: ${watchedMovie.movieTitle}');
   }
 
   /// Elimina una película vista y la cola para sync
@@ -249,7 +250,10 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
     await queueOperation(
       type: SyncOperationType.delete,
       entityId: watchedMovieId,
-      data: {'is_deleted': true, 'deleted_at': DateTime.now().toIso8601String()},
+      data: {
+        'is_deleted': true,
+        'deleted_at': DateTime.now().toIso8601String()
+      },
       priority: 2, // Alta prioridad para eliminaciones
     );
 
@@ -259,29 +263,32 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
   /// Sincroniza películas vistas específicamente
   Future<SyncResult> syncWatchedMovies() async {
     LoggerFactory.info('🔄 Starting watched movies sync');
-    
+
     // Primero procesar operaciones en cola
     final queueResult = await processQueuedOperations();
-    
+
     // Luego realizar sync completo
     final syncResult = await performFullSync();
-    
+
     // Combinar resultados
-    final totalProcessed = queueResult.itemsProcessed + syncResult.itemsProcessed;
-    final totalSuccessful = queueResult.itemsSuccessful + syncResult.itemsSuccessful;
+    final totalProcessed =
+        queueResult.itemsProcessed + syncResult.itemsProcessed;
+    final totalSuccessful =
+        queueResult.itemsSuccessful + syncResult.itemsSuccessful;
     final allErrors = [...queueResult.errors, ...syncResult.errors];
-    
+
     final combinedResult = SyncResult(
       success: allErrors.isEmpty,
       itemsProcessed: totalProcessed,
       itemsSuccessful: totalSuccessful,
       itemsFailed: totalProcessed - totalSuccessful,
       errors: allErrors,
-      duration: (queueResult.duration ?? Duration.zero) + 
-                (syncResult.duration ?? Duration.zero),
+      duration: (queueResult.duration ?? Duration.zero) +
+          (syncResult.duration ?? Duration.zero),
     );
 
-    LoggerFactory.info('✅ Watched movies sync completed: ${combinedResult.toString()}');
+    LoggerFactory.info(
+        '✅ Watched movies sync completed: ${combinedResult.toString()}');
     return combinedResult;
   }
 }

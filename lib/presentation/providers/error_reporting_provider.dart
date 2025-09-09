@@ -120,9 +120,10 @@ mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
     Map<String, dynamic>? additionalData,
   }) async {
     ErrorMetricsService.instance.recordCoreFlowAttempt();
-    
+
     try {
-      final result = await ErrorReportingService.instance.runAsyncWithErrorReporting(
+      final result =
+          await ErrorReportingService.instance.runAsyncWithErrorReporting(
         operation,
         zoneName: '${runtimeType.toString()}.core_flow.$flowName',
         customData: {
@@ -132,8 +133,9 @@ mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
           ...?additionalData,
         },
       );
-      
-      LoggerFactory.info('✅ Core flow successful: $flowName in ${runtimeType.toString()}');
+
+      LoggerFactory.info(
+          '✅ Core flow successful: $flowName in ${runtimeType.toString()}');
       return result;
     } catch (error) {
       ErrorMetricsService.instance.recordCoreFlowError(flowName);

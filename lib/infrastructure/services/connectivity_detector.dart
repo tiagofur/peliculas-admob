@@ -134,7 +134,8 @@ class ConnectivityDetector {
   Future<void> _performPeriodicCheck() async {
     if (_currentStatus == ConnectivityStatus.unknown ||
         (_lastCheck != null &&
-            DateTime.now().difference(_lastCheck ?? DateTime.now()) > _checkInterval)) {
+            DateTime.now().difference(_lastCheck ?? DateTime.now()) >
+                _checkInterval)) {
       await _performConnectivityCheck();
     }
   }
@@ -201,7 +202,8 @@ class ConnectivityDetector {
       } catch (httpError) {
         LoggerFactory.info('📱 Fallback HTTP también falló: $httpError');
         // Ser más estricto: si ambas pruebas fallan, no hay conexión
-        LoggerFactory.warning('⚠️ Sin conexión detectada - ambas pruebas fallaron');
+        LoggerFactory.warning(
+            '⚠️ Sin conexión detectada - ambas pruebas fallaron');
         return false;
       }
     }

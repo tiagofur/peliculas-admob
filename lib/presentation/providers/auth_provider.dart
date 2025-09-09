@@ -312,12 +312,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     // Ejecutar sincronización y migración en background sin bloquear la UI
     Future.microtask(() async {
       try {
-        LoggerFactory.info('🔄 Iniciando proceso post-autenticación...');
+
 
         final user = _ref.read(currentUserProvider);
         if (user == null) {
-          LoggerFactory.warning(
-              '❌ No hay usuario disponible para migración y sincronización');
+
           return;
         }
 
@@ -326,26 +325,23 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         final detectedData = await migrator.detectAnonymousData();
 
         if (detectedData.isNotEmpty) {
-          LoggerFactory.info('📱 Datos locales detectados: $detectedData');
+
           _ref.read(appStateProvider.notifier).setHasLocalData(true);
 
-          LoggerFactory.info('🔄 Migrando datos locales a usuario: ${user.id}');
+
           final migrationResult = await migrator.migrateAllData(user.id);
 
           if (migrationResult.success) {
-            LoggerFactory.info(
-                '✅ Migración completada: ${migrationResult.migratedData}');
+
           } else {
-            LoggerFactory.error(
-                '⚠️ Migración completada con errores: ${migrationResult.errors}');
+
           }
         } else {
-          LoggerFactory.info('ℹ️ No hay datos locales para migrar');
+
         }
 
         // 2. Ejecutar sincronización de todas las entidades en segundo plano
-        LoggerFactory.info(
-            '🔄 Iniciando sincronización en segundo plano para todas las entidades...');
+
 
         // Disparar la sincronización para cada repositorio sin esperar (no await)
         _ref.read(hybridFavoritesRepositoryProvider).forceSync();
@@ -357,11 +353,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         _ref.read(directWatchedMoviesProvider.notifier).enableAfterLogin();
         _ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
 
-        LoggerFactory.info(
-            '✅ Sincronización para todas las entidades iniciada en segundo plano.');
+
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario
-        LoggerFactory.error('❌ Error durante proceso post-autenticación: $e');
+
       }
     });
   }

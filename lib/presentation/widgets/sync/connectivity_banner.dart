@@ -119,32 +119,6 @@ class ConnectivityBanner extends ConsumerWidget {
   }
 }
 
-/// Datos para configurar el banner
-class _BannerData {
-  _BannerData({
-    required this.show,
-    required this.icon,
-    required this.iconColor,
-    required this.backgroundColor,
-    required this.textColor,
-    required this.message,
-    this.showAction = false,
-    this.actionText = '',
-    this.actionColor = Colors.transparent,
-    this.actionCallback,
-  });
-  final bool show;
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-  final Color textColor;
-  final String message;
-  final bool showAction;
-  final String actionText;
-  final Color actionColor;
-  final VoidCallback? actionCallback;
-}
-
 /// Banner compacto para mostrar en la barra de estado
 class ConnectivityStatusChip extends ConsumerWidget {
   const ConnectivityStatusChip({

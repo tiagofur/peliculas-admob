@@ -253,11 +253,14 @@ class MLRecommendationService {
 
       // Create a UserBehaviorAnalysis with the analyzed data
       final analysis = UserBehaviorAnalysis();
-      analysis.genrePreferences = viewingPatterns.genreAnalysis.topGenres.asMap().map(
-        (index, entry) => MapEntry(entry.key.toString(), entry.value.toDouble()),
-      );
-      analysis.diversityScore = viewingPatterns.diversityAnalysis.totalDiversityScore;
-      
+      analysis.genrePreferences =
+          viewingPatterns.genreAnalysis.topGenres.asMap().map(
+                (index, entry) =>
+                    MapEntry(entry.key.toString(), entry.value.toDouble()),
+              );
+      analysis.diversityScore =
+          viewingPatterns.diversityAnalysis.totalDiversityScore;
+
       return analysis;
     } catch (e) {
       _logger.error('Error analizando comportamiento: $e');
@@ -497,7 +500,6 @@ class MLRecommendationService {
 
     return moodMap[mood.toLowerCase()] ?? moodMap['happy']!;
   }
-
 
   double _calculateMoodScore(
       Movie movie, Map<String, dynamic> moodCharacteristics) {

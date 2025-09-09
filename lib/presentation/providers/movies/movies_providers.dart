@@ -77,27 +77,23 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   static const int maxRetries = 3;
 
   Future<void> loadNextPage() async {
-    LoggerFactory.debug(
-        'MoviesNotifier: loadNextPage llamado - isLoading: ${state.state == MoviesState.loading}, isLastPage: ${state.hasReachedMax}');
+
 
     if (state.state == MoviesState.loading || state.hasReachedMax) return;
 
-    LoggerFactory.debug(
-        'MoviesNotifier: Iniciando carga de página ${currentPage + 1}');
+
 
     state = state.copyWith(state: MoviesState.loading);
 
     try {
       final movies = await fetchMoreMovies(page: currentPage + 1);
 
-      LoggerFactory.debug(
-          'MoviesNotifier: Películas obtenidas: ${movies.length}');
+
 
       currentPage++;
 
       if (movies.isEmpty) {
-        LoggerFactory.debug(
-            'MoviesNotifier: No hay más películas - marcando como última página');
+
         state = state.copyWith(
           state: MoviesState.loaded,
           hasReachedMax: true,
@@ -111,13 +107,11 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
         movies: [...state.movies, ...movies],
       );
 
-      LoggerFactory.debug(
-          'MoviesNotifier: Estado actualizado - Total películas: ${state.movies.length}');
+
     } catch (e) {
-      LoggerFactory.error('MoviesNotifier: Error al cargar películas: $e');
       state = state.copyWith(
         state: MoviesState.error,
-        errorMessage: 'Error al cargar películas: ${e.toString()}',
+        errorMessage: e.toString(),
       );
     }
   }
@@ -125,7 +119,12 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   Future<void> refresh() async {
     try {
       currentPage = 0;
-      state = const MoviesStateData();
+      state = state.copyWith(
+        state: MoviesState.loading,
+        movies: [],
+        hasReachedMax: false,
+        errorMessage: null,
+      );
       await loadNextPage();
     } catch (e) {
       LoggerFactory.error('MoviesNotifier: Error al refrescar películas: $e');

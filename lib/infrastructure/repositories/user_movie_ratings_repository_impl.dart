@@ -27,7 +27,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
       return response != null ? UserMovieRating.fromJson(response) : null;
     } catch (e) {
       // Log error but don't throw to prevent UI crashes
-      LoggerFactory.error('UserMovieRatingsRepository: Error getting user rating: $e');
+      LoggerFactory.error(
+          'UserMovieRatingsRepository: Error getting user rating: $e');
       return null;
     }
   }
@@ -67,7 +68,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
           .map<UserMovieRating>((json) => UserMovieRating.fromJson(json))
           .toList();
     } catch (e) {
-      LoggerFactory.error('UserMovieRatingsRepository: Error getting user ratings: $e');
+      LoggerFactory.error(
+          'UserMovieRatingsRepository: Error getting user ratings: $e');
       return [];
     }
   }
@@ -106,7 +108,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
         return UserMovieRating.fromJson(response);
       }
     } catch (e) {
-      LoggerFactory.error('UserMovieRatingsRepository: Error saving rating: $e');
+      LoggerFactory.error(
+          'UserMovieRatingsRepository: Error saving rating: $e');
       rethrow; // Re-throw so UI can handle the error
     }
   }

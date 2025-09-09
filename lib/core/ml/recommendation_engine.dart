@@ -309,7 +309,7 @@ class RecommendationEngine {
       for (final userId in _userMovieMatrix.keys) {
         final userMatrix = _userMovieMatrix[userId];
         if (userMatrix == null) continue;
-        
+
         for (final entry in userMatrix.entries) {
           final movieId = entry.key;
           final rating = entry.value;
@@ -348,14 +348,16 @@ class RecommendationEngine {
 
     final userEmbedding = _userEmbeddings[userId];
     if (userEmbedding == null) return recommendations;
-    
+
     final scores = <int, double>{};
 
     // Calcular puntuaciones para todas las películas
     for (final movieId in _movieEmbeddings.keys) {
       final userMatrix = _userMovieMatrix[userId];
       final movieEmb = _movieEmbeddings[movieId];
-      if (userMatrix != null && !userMatrix.containsKey(movieId) && movieEmb != null) {
+      if (userMatrix != null &&
+          !userMatrix.containsKey(movieId) &&
+          movieEmb != null) {
         scores[movieId] = _dotProduct(userEmbedding, movieEmb);
       }
     }
@@ -419,7 +421,8 @@ class RecommendationEngine {
     for (final movieId in candidateMovies) {
       final movieFeatures = _movieFeatureMatrix[movieId];
       if (movieFeatures != null) {
-        scores[movieId] = _calculateContentSimilarity(userProfile, movieFeatures);
+        scores[movieId] =
+            _calculateContentSimilarity(userProfile, movieFeatures);
       }
     }
 
@@ -449,8 +452,8 @@ class RecommendationEngine {
     final trendingMovies = _movieFeatureMatrix.entries
         .where((entry) => (entry.value['popularity'] ?? 0.0) > 0.5)
         .toList()
-      ..sort(
-          (a, b) => (b.value['popularity'] ?? 0.0).compareTo(a.value['popularity'] ?? 0.0));
+      ..sort((a, b) => (b.value['popularity'] ?? 0.0)
+          .compareTo(a.value['popularity'] ?? 0.0));
 
     for (final entry in trendingMovies.take(limit)) {
       recommendations.add(Recommendation(
@@ -554,7 +557,7 @@ class RecommendationEngine {
   void _updateEmbeddings(int userId, int movieId, double error) {
     final userEmb = _userEmbeddings[userId];
     final movieEmb = _movieEmbeddings[movieId];
-    
+
     if (userEmb == null || movieEmb == null) return;
 
     for (int i = 0; i < _embeddingDimensions; i++) {
@@ -707,9 +710,8 @@ class RecommendationEngine {
           movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
     for (final movie in watched) {
-      allGenres.addAll(movie.genreIds
-          .map((g) => int.tryParse(g) ?? 0)
-          .where((g) => g > 0));
+      allGenres.addAll(
+          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
     }
 
     final totalMovies = favorites.length + watched.length;
@@ -770,7 +772,8 @@ class RecommendationEngine {
     for (final movie in favorites) {
       final movieEmbedding = _movieEmbeddings[movie.id];
       if (movieEmbedding != null) {
-        final similarity = _calculateCosineSimilarity(targetEmbedding, movieEmbedding);
+        final similarity =
+            _calculateCosineSimilarity(targetEmbedding, movieEmbedding);
         if (similarity > 0.7) {
           similar.add(movie);
         }

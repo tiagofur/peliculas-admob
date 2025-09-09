@@ -7,6 +7,7 @@ import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/sync/minimal_sync_indicator.dart';
 
 class CustomListsView extends ConsumerStatefulWidget {
   const CustomListsView({super.key});
@@ -54,47 +55,54 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
       ),
       body: Column(
         children: [
-          // Estadísticas
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: _buildStatsHeader(listStats, colors, textStyles),
-          ),
-          // Tabs
-          TabBar(
-            controller: _tabController,
-            labelColor: colors.primary,
-            unselectedLabelColor: colors.onSurface.withValues(alpha: 0.6),
-            indicatorColor: colors.primary,
-            tabs: [
-              Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.star, size: 16),
-                    const SizedBox(width: 8),
-                    Text('Predefinidas (${defaultLists.length})'),
-                  ],
-                ),
-              ),
-              Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.person, size: 16),
-                    const SizedBox(width: 8),
-                    Text('Personalizadas (${customLists.length})'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          // TabBarView
+          const MinimalSyncIndicator(),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: Column(
               children: [
-                _buildDefaultListsTab(defaultLists),
-                _buildCustomListsTab(customLists),
+                // Estadísticas
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildStatsHeader(listStats, colors, textStyles),
+                ),
+                // Tabs
+                TabBar(
+                  controller: _tabController,
+                  labelColor: colors.primary,
+                  unselectedLabelColor: colors.onSurface.withValues(alpha: 0.6),
+                  indicatorColor: colors.primary,
+                  tabs: [
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star, size: 16),
+                          const SizedBox(width: 8),
+                          Text('Predefinidas (${defaultLists.length})'),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person, size: 16),
+                          const SizedBox(width: 8),
+                          Text('Personalizadas (${customLists.length})'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                // TabBarView
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildDefaultListsTab(defaultLists),
+                      _buildCustomListsTab(customLists),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -191,7 +199,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
             ),
           );
         }
-        
+
         // Verificar si es el banner final
         if (_isFinalBanner(index, lists.length)) {
           return const Padding(
@@ -203,7 +211,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
             ),
           );
         }
-        
+
         // Calcular índice real de la lista
         final listIndex = _getRealListIndex(index, lists.length);
         final list = lists[listIndex];
@@ -269,7 +277,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
             ),
           );
         }
-        
+
         // Verificar si es el banner final
         if (_isFinalBanner(index, lists.length)) {
           return const Padding(
@@ -281,7 +289,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
             ),
           );
         }
-        
+
         // Calcular índice real de la lista
         final listIndex = _getRealListIndex(index, lists.length);
         final list = lists[listIndex];
@@ -592,26 +600,28 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
 
   /// Calcula el número total de items incluyendo anuncios
   int _calculateItemsWithAds(int listCount) {
-    if (listCount <= 2) return listCount; // No mostrar anuncios si hay pocas listas
+    if (listCount <= 2)
+      return listCount; // No mostrar anuncios si hay pocas listas
     int adsCount = 0;
     if (listCount >= 4) adsCount += 1; // Anuncio nativo cada 4 listas
     adsCount += 1; // Banner final
     return listCount + adsCount;
   }
-  
+
   /// Determina si en esta posición se debe mostrar un anuncio nativo
   bool _shouldShowAdAtIndex(int index, int listCount) {
     if (listCount <= 2) return false;
     return listCount >= 4 && index == 4; // Mostrar anuncio después de 4 listas
   }
-  
+
   /// Determina si en esta posición se debe mostrar el banner final
   bool _isFinalBanner(int index, int listCount) {
     if (listCount <= 2) return false;
-    final expectedFinalIndex = listCount + (listCount >= 4 ? 1 : 0); // +1 si hay anuncio nativo
+    final expectedFinalIndex =
+        listCount + (listCount >= 4 ? 1 : 0); // +1 si hay anuncio nativo
     return index == expectedFinalIndex;
   }
-  
+
   /// Calcula el índice real de la lista considerando los anuncios insertados
   int _getRealListIndex(int displayIndex, int listCount) {
     if (listCount <= 2) return displayIndex;

@@ -85,7 +85,8 @@ class SyncableFavorite extends SyncableEntity {
   }
 
   /// Factory constructor desde FavoriteModel
-  factory SyncableFavorite.fromFavoriteModel(dynamic favoriteModel, String userId) {
+  factory SyncableFavorite.fromFavoriteModel(
+      dynamic favoriteModel, String userId) {
     final now = SyncUtilities.utcNow();
     return SyncableFavorite(
       id: favoriteModel.id,
@@ -112,22 +113,22 @@ class SyncableFavorite extends SyncableEntity {
   // Implementación de getters de SyncableEntity
   @override
   final String id;
-  
+
   @override
   final String userId;
-  
+
   @override
   final DateTime createdAt;
-  
+
   @override
   final DateTime lastModifiedAt;
-  
+
   @override
   final bool isDeleted;
-  
+
   @override
   final int syncVersion;
-  
+
   @override
   final String? deviceId;
 

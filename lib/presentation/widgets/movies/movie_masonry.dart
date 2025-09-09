@@ -42,7 +42,7 @@ class _MovieMasonryState extends State<MovieMasonry> {
   Widget build(BuildContext context) {
     // Calcular el número total de items incluyendo anuncios
     final totalItems = _calculateTotalItems(widget.movies.length);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: MasonryGridView.count(
@@ -60,10 +60,10 @@ class _MovieMasonryState extends State<MovieMasonry> {
               borderRadius: 12,
             );
           }
-          
+
           // Calcular el índice real de la película
           final movieIndex = _getMovieIndex(index);
-          
+
           if (movieIndex == 1) {
             return Container(
               margin: const EdgeInsets.only(top: 20),
@@ -76,19 +76,21 @@ class _MovieMasonryState extends State<MovieMasonry> {
       ),
     );
   }
-  
+
   /// Calcula el número total de items incluyendo anuncios
   int _calculateTotalItems(int movieCount) {
-    if (movieCount <= 6) return movieCount; // No mostrar anuncios si hay pocas películas
+    if (movieCount <= 6)
+      return movieCount; // No mostrar anuncios si hay pocas películas
     return movieCount + (movieCount ~/ 9); // Un anuncio cada 9 películas
   }
-  
+
   /// Determina si en esta posición se debe mostrar un anuncio
   bool _shouldShowAd(int index) {
-    if (widget.movies.length <= 6) return false; // No mostrar anuncios si hay pocas películas
+    if (widget.movies.length <= 6)
+      return false; // No mostrar anuncios si hay pocas películas
     return (index + 1) % 10 == 0; // Mostrar anuncio cada 10 posiciones
   }
-  
+
   /// Calcula el índice real de la película considerando los anuncios insertados
   int _getMovieIndex(int displayIndex) {
     if (widget.movies.length <= 6) return displayIndex;

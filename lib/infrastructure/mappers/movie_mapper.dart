@@ -17,8 +17,7 @@ class MovieMapper {
       posterPath: (moviedb.posterPath != '')
           ? 'https://image.tmdb.org/t/p/w500${moviedb.posterPath}'
           : 'https://www.movienewz.com/img/films/poster-holder.jpg',
-      releaseDate:
-          moviedb.releaseDate ?? DateTime.now(),
+      releaseDate: moviedb.releaseDate ?? DateTime.now(),
       title: moviedb.title,
       video: moviedb.video,
       voteAverage: moviedb.voteAverage,
@@ -52,19 +51,19 @@ class MovieMapper {
       status: moviedb.status.isNotEmpty ? moviedb.status : null,
       tagline: moviedb.tagline.isNotEmpty ? moviedb.tagline : null,
       // Listas de producción - verificar que no estén vacías y manejar elementos null
-      productionCompanies: moviedb.productionCompanies.isNotEmpty 
+      productionCompanies: moviedb.productionCompanies.isNotEmpty
           ? moviedb.productionCompanies
               .where((e) => e.name.isNotEmpty)
               .map((e) => e.name)
               .toList()
           : null,
-      productionCountries: moviedb.productionCountries.isNotEmpty 
+      productionCountries: moviedb.productionCountries.isNotEmpty
           ? moviedb.productionCountries
               .where((e) => e.name.isNotEmpty)
               .map((e) => e.name)
               .toList()
           : null,
-      spokenLanguages: moviedb.spokenLanguages.isNotEmpty 
+      spokenLanguages: moviedb.spokenLanguages.isNotEmpty
           ? moviedb.spokenLanguages
               .where((e) => e.name.isNotEmpty)
               .map((e) => e.name)

@@ -10,7 +10,7 @@ CREATE TABLE user_movie_ratings (
     movie_id INTEGER NOT NULL,
     movie_title VARCHAR(255) NOT NULL,
     movie_poster_path TEXT,
-    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    rating DECIMAL(3,1) CHECK (rating >= 1.0 AND rating <= 10.0),
     personal_note TEXT CHECK (char_length(personal_note) <= 500),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -63,8 +63,8 @@ CREATE TRIGGER update_user_movie_ratings_updated_at BEFORE UPDATE ON user_movie_
 -- COMENTARIOS PARA DOCUMENTACIÓN
 -- =============================================
 
-COMMENT ON TABLE user_movie_ratings IS 'Almacena las valoraciones (1-5 estrellas) y notas personales de películas por usuario';
-COMMENT ON COLUMN user_movie_ratings.rating IS 'Valoración del usuario del 1 al 5 (estrellas)';
+COMMENT ON TABLE user_movie_ratings IS 'Almacena las valoraciones (1.0-10.0, UI de 5 estrellas) y notas personales de películas por usuario';
+COMMENT ON COLUMN user_movie_ratings.rating IS 'Valoración del usuario del 1.0 al 10.0 (5 estrellas UI, cada estrella = 2 puntos)';
 COMMENT ON COLUMN user_movie_ratings.personal_note IS 'Nota personal opcional del usuario sobre la película (máximo 500 caracteres)';
 COMMENT ON COLUMN user_movie_ratings.movie_title IS 'Título de la película almacenado para consultas rápidas';
 COMMENT ON COLUMN user_movie_ratings.movie_poster_path IS 'Ruta del poster de la película para mostrar en listas';

@@ -163,7 +163,8 @@ class _MovieItem extends StatelessWidget {
                       child: const Center(
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.grey),
                         ),
                       ),
                     ),

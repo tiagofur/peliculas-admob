@@ -36,7 +36,8 @@ class WatchlistHiveDatasource {
     await _watchlistBox.put(watchlistMovie.movieId, watchlistMovie);
   }
 
-  Future<void> addMovieToWatchlist(Movie movie, WatchlistPriority priority) async {
+  Future<void> addMovieToWatchlist(
+      Movie movie, WatchlistPriority priority) async {
     await initialize();
 
     final now = DateTime.now();

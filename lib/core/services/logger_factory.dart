@@ -15,7 +15,8 @@ class LoggerFactory {
   }
 
   /// Log error message
-  static void error(String message, {Object? error, StackTrace? stackTrace, String? tag}) {
+  static void error(String message,
+      {Object? error, StackTrace? stackTrace, String? tag}) {
     _logger.error(message, tag: tag, error: error, stackTrace: stackTrace);
   }
 

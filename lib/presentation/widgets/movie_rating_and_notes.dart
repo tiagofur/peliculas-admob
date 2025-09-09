@@ -26,7 +26,7 @@ class MovieRatingAndNotes extends ConsumerStatefulWidget {
 
 class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
   final TextEditingController _notesController = TextEditingController();
-  int _currentRating = 0;
+  double _currentRating = 0;
   bool _isLoading = false;
   bool _isExpanded = false;
 
@@ -48,8 +48,8 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
     if (existingRating != null && mounted) {
       setState(() {
         _currentRating = existingRating.rating;
-        _notesController.text = existingRating.personalNote ?? '';
-        _isExpanded = existingRating.personalNote?.isNotEmpty == true;
+        _notesController.text = existingRating.review ?? '';
+        _isExpanded = existingRating.review?.isNotEmpty == true;
       });
     }
   }
@@ -69,7 +69,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
         movieTitle: widget.movie.title,
         moviePosterPath: widget.movie.posterPath,
         rating: _currentRating,
-        personalNote: _notesController.text.trim().isEmpty
+        review: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
         createdAt: DateTime.now(),
@@ -276,9 +276,10 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
             Center(
               child: InteractiveStarRating(
                 initialRating: _currentRating,
+                maxRating: 10,
                 onRatingChanged: (rating) {
                   setState(() {
-                    _currentRating = rating;
+                    _currentRating = rating.toDouble();
                   });
                 },
                 enabled: !_isLoading,
@@ -408,7 +409,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (showNotes && rating.personalNote?.isNotEmpty == true) ...[
+                if (showNotes && rating.review?.isNotEmpty == true) ...[
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
@@ -418,7 +419,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      rating.personalNote ?? '',
+                      rating.review ?? '',
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),

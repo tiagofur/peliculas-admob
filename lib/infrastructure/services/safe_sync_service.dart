@@ -19,12 +19,12 @@ class SafeSyncService {
   SafeSyncService(this._syncService);
 
   final SyncService _syncService;
-  
+
   // Circuit breaker state
   SyncState _state = SyncState.idle;
   int _consecutiveFailures = 0;
   DateTime? _lastFailureTime;
-  
+
   // Configuration
   static const int _maxFailures = 3;
   static const Duration _circuitOpenDuration = Duration(minutes: 5);
@@ -43,10 +43,10 @@ class SafeSyncService {
   Future<SyncResult> attemptSync() async {
     // Check if we can attempt sync
     if (!_canAttemptSync()) {
-      final reason = _state == SyncState.syncing 
-        ? 'Ya hay una sincronización en progreso'
-        : 'Circuit breaker abierto - demasiados fallos recientes';
-      
+      final reason = _state == SyncState.syncing
+          ? 'Ya hay una sincronización en progreso'
+          : 'Circuit breaker abierto - demasiados fallos recientes';
+
       LoggerFactory.warning('🚫 Sync bloqueado: $reason');
       return _createFailureResult(reason);
     }
@@ -57,18 +57,17 @@ class SafeSyncService {
     try {
       // Execute sync with strict timeout and isolation
       final result = await _executeWithIsolation();
-      
+
       // Success - reset circuit breaker
       _resetCircuitBreaker();
       _state = SyncState.idle;
-      
+
       LoggerFactory.info('✅ Sincronización segura completada exitosamente');
       return result;
-      
     } catch (e) {
       _handleSyncFailure(e);
       _state = SyncState.failed;
-      
+
       LoggerFactory.error('❌ Sincronización falló: $e');
       return _createFailureResult('Sync falló: $e');
     }
@@ -77,7 +76,7 @@ class SafeSyncService {
   /// Execute sync in isolation with timeout
   Future<SyncResult> _executeWithIsolation() async {
     final completer = Completer<SyncResult>();
-    
+
     // Create a timeout that will kill the sync if it hangs
     final timeoutTimer = Timer(_maxSyncDuration, () {
       if (!completer.isCompleted) {
@@ -91,7 +90,7 @@ class SafeSyncService {
     try {
       // Execute sync with additional safeguards
       final syncFuture = _safeSyncExecution();
-      
+
       syncFuture.then((result) {
         if (!completer.isCompleted) {
           timeoutTimer.cancel();
@@ -105,7 +104,6 @@ class SafeSyncService {
       });
 
       return await completer.future;
-      
     } catch (e) {
       timeoutTimer.cancel();
       rethrow;
@@ -117,13 +115,14 @@ class SafeSyncService {
     try {
       // Initialize sync service if needed
       await _syncService.initialize();
-      
+
       // Execute the actual sync with timeout
-      return await _syncService.syncAllData()
-        .timeout(const Duration(seconds: 30), onTimeout: () {
-          throw TimeoutException('Sync operation timeout', const Duration(seconds: 30));
-        });
-        
+      return await _syncService
+          .syncAllData()
+          .timeout(const Duration(seconds: 30), onTimeout: () {
+        throw TimeoutException(
+            'Sync operation timeout', const Duration(seconds: 30));
+      });
     } catch (e) {
       LoggerFactory.error('💥 Error en ejecución segura de sync: $e');
       rethrow;
@@ -141,13 +140,15 @@ class SafeSyncService {
     if (_state == SyncState.circuitOpen) {
       // Check if enough time has passed to retry
       if (_lastFailureTime != null) {
-        final timeSinceLastFailure = DateTime.now().difference(_lastFailureTime!);
+        final timeSinceLastFailure =
+            DateTime.now().difference(_lastFailureTime!);
         if (timeSinceLastFailure < _circuitOpenDuration) {
           return false; // Still in circuit breaker timeout
         } else {
           // Reset to try again
           _state = SyncState.idle;
-          LoggerFactory.info('🔄 Circuit breaker reset - intentando nuevamente');
+          LoggerFactory.info(
+              '🔄 Circuit breaker reset - intentando nuevamente');
         }
       }
     }
@@ -159,21 +160,24 @@ class SafeSyncService {
   void _handleSyncFailure(dynamic error) {
     _consecutiveFailures++;
     _lastFailureTime = DateTime.now();
-    
+
     LoggerFactory.warning('⚠️ Sync failure #$_consecutiveFailures: $error');
-    
+
     // Open circuit breaker if too many failures
     if (_consecutiveFailures >= _maxFailures) {
       _state = SyncState.circuitOpen;
-      LoggerFactory.error('🔥 Circuit breaker ABIERTO - demasiados fallos consecutivos');
-      LoggerFactory.info('⏱️ Reintentará automáticamente en ${_circuitOpenDuration.inMinutes} minutos');
+      LoggerFactory.error(
+          '🔥 Circuit breaker ABIERTO - demasiados fallos consecutivos');
+      LoggerFactory.info(
+          '⏱️ Reintentará automáticamente en ${_circuitOpenDuration.inMinutes} minutos');
     }
   }
 
   /// Reset circuit breaker after successful operation
   void _resetCircuitBreaker() {
     if (_consecutiveFailures > 0) {
-      LoggerFactory.info('✅ Circuit breaker reset - fallos consecutivos: $_consecutiveFailures -> 0');
+      LoggerFactory.info(
+          '✅ Circuit breaker reset - fallos consecutivos: $_consecutiveFailures -> 0');
     }
     _consecutiveFailures = 0;
     _lastFailureTime = null;
@@ -195,9 +199,10 @@ class SafeSyncService {
       'state': _state.toString().split('.').last,
       'consecutive_failures': _consecutiveFailures,
       'last_failure_time': _lastFailureTime?.toIso8601String(),
-      'circuit_open_until': _state == SyncState.circuitOpen && _lastFailureTime != null
-        ? _lastFailureTime!.add(_circuitOpenDuration).toIso8601String()
-        : null,
+      'circuit_open_until':
+          _state == SyncState.circuitOpen && _lastFailureTime != null
+              ? _lastFailureTime!.add(_circuitOpenDuration).toIso8601String()
+              : null,
       'can_sync': _canAttemptSync(),
     };
   }

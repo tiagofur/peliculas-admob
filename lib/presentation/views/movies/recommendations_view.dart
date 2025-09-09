@@ -17,25 +17,22 @@ class RecommendationsView extends ConsumerStatefulWidget {
 
 class RecommendationsViewState extends ConsumerState<RecommendationsView>
     with AutomaticKeepAliveClientMixin {
-  
   @override
   bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
-    final personalizedRecommendations = ref.watch(personalizedRecommendationsProvider);
+
+    final personalizedRecommendations =
+        ref.watch(personalizedRecommendationsProvider);
     final discoveryCategories = ref.watch(discoveryCategoriesProvider);
     final userStats = ref.watch(basicUserStatsProvider);
-    
+
     return Scaffold(
       body: personalizedRecommendations.when(
         data: (recommendations) => _buildRecommendationsContent(
-          recommendations, 
-          discoveryCategories, 
-          userStats
-        ),
+            recommendations, discoveryCategories, userStats),
         loading: () => const FullScreenLoader(),
         error: (error, stack) => _buildErrorState(),
       ),
@@ -51,7 +48,8 @@ class RecommendationsViewState extends ConsumerState<RecommendationsView>
       slivers: [
         _buildAppBar(),
         _buildUserStatsSection(userStats),
-        if (recommendations.isNotEmpty) _buildPersonalizedSection(recommendations),
+        if (recommendations.isNotEmpty)
+          _buildPersonalizedSection(recommendations),
         _buildDiscoverySection(categoriesAsync),
         _buildMoodSection(),
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
@@ -157,13 +155,15 @@ class RecommendationsViewState extends ConsumerState<RecommendationsView>
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: userStats.topGenres.map((genre) => Chip(
-                  label: Text(
-                    genre,
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  backgroundColor: Colors.white.withValues(alpha: 0.8),
-                )).toList(),
+                children: userStats.topGenres
+                    .map((genre) => Chip(
+                          label: Text(
+                            genre,
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          backgroundColor: Colors.white.withValues(alpha: 0.8),
+                        ))
+                    .toList(),
               ),
             ],
           ],
@@ -172,7 +172,8 @@ class RecommendationsViewState extends ConsumerState<RecommendationsView>
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -318,7 +319,8 @@ class RecommendationsViewState extends ConsumerState<RecommendationsView>
     );
   }
 
-  Widget _buildDiscoverySection(AsyncValue<List<RecommendationCategory>> categoriesAsync) {
+  Widget _buildDiscoverySection(
+      AsyncValue<List<RecommendationCategory>> categoriesAsync) {
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,10 +419,30 @@ class RecommendationsViewState extends ConsumerState<RecommendationsView>
 
   Widget _buildMoodSection() {
     final moods = [
-      {'name': 'Feliz', 'mood': 'happy', 'icon': Icons.sentiment_very_satisfied, 'color': Colors.orange},
-      {'name': 'Romántico', 'mood': 'romantic', 'icon': Icons.favorite, 'color': Colors.pink},
-      {'name': 'Emocionado', 'mood': 'excited', 'icon': Icons.flash_on, 'color': Colors.blue},
-      {'name': 'Relajado', 'mood': 'relaxed', 'icon': Icons.spa, 'color': Colors.green},
+      {
+        'name': 'Feliz',
+        'mood': 'happy',
+        'icon': Icons.sentiment_very_satisfied,
+        'color': Colors.orange
+      },
+      {
+        'name': 'Romántico',
+        'mood': 'romantic',
+        'icon': Icons.favorite,
+        'color': Colors.pink
+      },
+      {
+        'name': 'Emocionado',
+        'mood': 'excited',
+        'icon': Icons.flash_on,
+        'color': Colors.blue
+      },
+      {
+        'name': 'Relajado',
+        'mood': 'relaxed',
+        'icon': Icons.spa,
+        'color': Colors.green
+      },
     ];
 
     return SliverToBoxAdapter(

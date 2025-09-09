@@ -38,7 +38,8 @@ class PopularViewState extends ConsumerState<PopularView>
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => ref.read(popularMoviesProvider.notifier).refresh(),
+              onPressed: () =>
+                  ref.read(popularMoviesProvider.notifier).refresh(),
               child: const Text('Reintentar'),
             ),
           ],
@@ -77,7 +78,8 @@ class PopularViewState extends ConsumerState<PopularView>
                     ),
                   ),
                   TextButton(
-                    onPressed: () => ref.read(popularMoviesProvider.notifier).refresh(),
+                    onPressed: () =>
+                        ref.read(popularMoviesProvider.notifier).refresh(),
                     child: const Text('Reintentar'),
                   ),
                 ],

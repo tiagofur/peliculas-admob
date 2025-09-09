@@ -434,8 +434,7 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
           decoration: BoxDecoration(
             color: colors.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
-            border:
-                Border.all(color: colors.primary.withValues(alpha: 0.3)),
+            border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
           ),
           child: _previewEntity != null
               ? _buildEntityPreview(context, _previewEntity!)
@@ -531,7 +530,7 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
       children: [
         _buildDetailRow('Película', item.movieTitle),
         _buildDetailRow('Agregado', _formatDate(item.addedAt)),
-        _buildDetailRow('Prioridad', item.priority.toString() ?? 'Normal'),
+        _buildDetailRow('Prioridad', item.priority.toString()),
         if (item.personalNotes != null && item.personalNotes!.isNotEmpty)
           _buildDetailRow('Notas', item.personalNotes!, maxLines: 2),
       ],
@@ -557,7 +556,7 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
       children: [
         _buildDetailRow('ID', entity.id),
         _buildDetailRow('Tipo', entity.entityType),
-        _buildDetailRow('Usuario', entity.userId ?? 'N/A'),
+        _buildDetailRow('Usuario', entity.userId),
       ],
     );
   }
@@ -681,8 +680,8 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
       MergeableField(
         name: 'priority',
         displayName: 'Prioridad',
-        localValue: local.priority.toString() ?? 'Normal',
-        remoteValue: remote.priority.toString() ?? 'Normal',
+        localValue: local.priority.toString(),
+        remoteValue: remote.priority.toString(),
         hasConflict: local.priority != remote.priority,
         recommendedStrategy: MergeFieldStrategy.useHigher,
       ),

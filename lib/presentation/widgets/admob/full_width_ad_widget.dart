@@ -117,7 +117,7 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
               ),
             ),
           ],
-          
+
           // Contenedor principal del anuncio
           Container(
             width: double.infinity,
@@ -152,11 +152,11 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
     if (_isAdLoaded && nativeAd != null) {
       return AdWidget(ad: nativeAd);
     }
-    
+
     if (_isAdFailed) {
       return _buildErrorState(colors, textStyles);
     }
-    
+
     return _buildLoadingState(colors, textStyles);
   }
 

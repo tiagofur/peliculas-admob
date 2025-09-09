@@ -34,7 +34,8 @@ class AdaptiveCacheConfig {
       _deviceCapabilities = await _detectDeviceCapabilities();
 
       // Configurar caché según capacidades
-      _cacheConfiguration = _calculateOptimalConfiguration(_deviceCapabilities!);
+      _cacheConfiguration =
+          _calculateOptimalConfiguration(_deviceCapabilities!);
 
       _isInitialized = true;
 

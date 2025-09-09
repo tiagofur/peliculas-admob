@@ -102,7 +102,8 @@ class NetworkAwareStrategy {
 
       case NetworkCondition.offline:
         return const DownloadStrategy(
-          concurrentDownloads: 1, // Permitir al menos 1 descarga para verificar conectividad real
+          concurrentDownloads:
+              1, // Permitir al menos 1 descarga para verificar conectividad real
           downloadTimeout: Duration(seconds: 15),
           retryAttempts: 1,
           retryDelay: Duration(seconds: 3),

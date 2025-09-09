@@ -23,13 +23,12 @@ class CustomList {
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       emoji: json['emoji'] ?? '📝',
-      movieIds: json['movieIds'] != null 
-          ? List<int>.from(json['movieIds'])
-          : <int>[],
-      createdAt: json['createdAt'] != null 
+      movieIds:
+          json['movieIds'] != null ? List<int>.from(json['movieIds']) : <int>[],
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
-      lastModifiedAt: json['lastModifiedAt'] != null 
+      lastModifiedAt: json['lastModifiedAt'] != null
           ? DateTime.parse(json['lastModifiedAt'])
           : DateTime.now(),
       userId: json['userId'],
@@ -113,7 +112,8 @@ class CustomList {
         other.name == name &&
         other.description == description &&
         other.emoji == emoji &&
-        listEquals(other.movieIds, movieIds) && // Use listEquals for List comparison
+        listEquals(
+            other.movieIds, movieIds) && // Use listEquals for List comparison
         other.createdAt == createdAt &&
         other.lastModifiedAt == lastModifiedAt &&
         other.userId == userId &&

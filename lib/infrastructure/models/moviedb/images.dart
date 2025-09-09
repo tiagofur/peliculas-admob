@@ -8,14 +8,17 @@ class Images {
 
   factory Images.fromJson(Map<String, dynamic> json) => Images(
         id: json['id'] ?? 0,
-        backdrops: json['backdrops'] != null 
-            ? List<ImageData>.from(json['backdrops'].map((x) => ImageData.fromJson(x)))
+        backdrops: json['backdrops'] != null
+            ? List<ImageData>.from(
+                json['backdrops'].map((x) => ImageData.fromJson(x)))
             : <ImageData>[],
-        logos: json['logos'] != null 
-            ? List<ImageData>.from(json['logos'].map((x) => ImageData.fromJson(x)))
+        logos: json['logos'] != null
+            ? List<ImageData>.from(
+                json['logos'].map((x) => ImageData.fromJson(x)))
             : <ImageData>[],
-        posters: json['posters'] != null 
-            ? List<ImageData>.from(json['posters'].map((x) => ImageData.fromJson(x)))
+        posters: json['posters'] != null
+            ? List<ImageData>.from(
+                json['posters'].map((x) => ImageData.fromJson(x)))
             : <ImageData>[],
       );
 

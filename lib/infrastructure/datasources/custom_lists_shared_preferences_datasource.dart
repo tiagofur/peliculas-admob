@@ -9,7 +9,7 @@ abstract class CustomListsDatasource {
   Future<void> updateCustomList(CustomList list);
   Future<void> deleteCustomList(String listId);
   Future<void> clearAllCustomLists();
-  
+
   // Métodos para listas predeterminadas
   Future<List<CustomList>> getDefaultLists();
   Future<void> saveDefaultLists(List<CustomList> lists);
@@ -23,7 +23,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
   Future<List<CustomList>> getCustomLists() async {
     final prefs = await SharedPreferences.getInstance();
     final customListsJson = prefs.getStringList(_customListsKey) ?? [];
-    
+
     return customListsJson
         .map((listJson) => _customListFromJson(jsonDecode(listJson)))
         .toList();
@@ -32,10 +32,9 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
   @override
   Future<void> saveCustomLists(List<CustomList> lists) async {
     final prefs = await SharedPreferences.getInstance();
-    final customListsJson = lists
-        .map((list) => jsonEncode(_customListToJson(list)))
-        .toList();
-    
+    final customListsJson =
+        lists.map((list) => jsonEncode(_customListToJson(list))).toList();
+
     await prefs.setStringList(_customListsKey, customListsJson);
   }
 
@@ -50,7 +49,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
   Future<void> updateCustomList(CustomList list) async {
     final currentLists = await getCustomLists();
     final index = currentLists.indexWhere((l) => l.id == list.id);
-    
+
     if (index != -1) {
       currentLists[index] = list;
       await saveCustomLists(currentLists);
@@ -74,7 +73,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
   Future<List<CustomList>> getDefaultLists() async {
     final prefs = await SharedPreferences.getInstance();
     final defaultListsJson = prefs.getStringList(_defaultListsKey) ?? [];
-    
+
     return defaultListsJson
         .map((listJson) => _customListFromJson(jsonDecode(listJson)))
         .toList();
@@ -83,10 +82,9 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
   @override
   Future<void> saveDefaultLists(List<CustomList> lists) async {
     final prefs = await SharedPreferences.getInstance();
-    final defaultListsJson = lists
-        .map((list) => jsonEncode(_customListToJson(list)))
-        .toList();
-    
+    final defaultListsJson =
+        lists.map((list) => jsonEncode(_customListToJson(list))).toList();
+
     await prefs.setStringList(_defaultListsKey, defaultListsJson);
   }
 

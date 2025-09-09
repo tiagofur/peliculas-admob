@@ -4,7 +4,8 @@ import '../../../core/sync/entity_sync_manager.dart';
 import '../../../domain/entities/syncable_entity.dart';
 import '../../../domain/entities/sync_result.dart';
 
-final entitySyncManagerProvider = Provider<EntitySyncManager<SyncableEntity>>((ref) {
+final entitySyncManagerProvider =
+    Provider<EntitySyncManager<SyncableEntity>>((ref) {
   // This is a mock implementation. Replace with your actual implementation.
   return MockEntitySyncManager();
 });
@@ -38,7 +39,8 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   }
 
   @override
-  Future<SyncableEntity> resolveConflict(ConflictInfo<SyncableEntity> conflict) {
+  Future<SyncableEntity> resolveConflict(
+      ConflictInfo<SyncableEntity> conflict) {
     throw UnimplementedError();
   }
 
