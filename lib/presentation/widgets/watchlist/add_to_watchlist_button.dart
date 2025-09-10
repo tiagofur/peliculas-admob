@@ -152,6 +152,17 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
       }
     }
   }
+
+  Color _getPriorityColor(WatchlistPriority priority) {
+    switch (priority) {
+      case WatchlistPriority.alta:
+        return Colors.red;
+      case WatchlistPriority.normal:
+        return Colors.yellow;
+      case WatchlistPriority.baja:
+        return Colors.green;
+    }
+  }
 }
 
 class _AddToWatchlistDialog extends StatefulWidget {
@@ -205,38 +216,40 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
   }
 
   Widget _buildPriorityOptions() {
-    return Column(
-      children: WatchlistPriority.values.map((priority) {
-        return ListTile(
-          leading: Radio<WatchlistPriority>(
-            value: priority,
-            groupValue: _selectedPriority,
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedPriority = value;
-                });
-              }
-            },
-          ),
-          title: Row(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: _getPriorityColor(priority),
-                  shape: BoxShape.circle,
+    return RadioGroup<WatchlistPriority>(
+      groupValue: _selectedPriority,
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedPriority = value;
+          });
+        }
+      },
+      child: Column(
+        children: WatchlistPriority.values.map((priority) {
+          return ListTile(
+            leading: Radio<WatchlistPriority>(
+              value: priority,
+            ),
+            title: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(priority),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(priority.displayName),
-            ],
-          ),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-        );
-      }).toList(),
+                const SizedBox(width: 12),
+                Text(priority.displayName),
+              ],
+            ),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -249,17 +262,5 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
       case WatchlistPriority.baja:
         return Colors.green;
     }
-  }
-}
-
-// Helper function for priority colors
-Color _getPriorityColor(WatchlistPriority priority) {
-  switch (priority) {
-    case WatchlistPriority.alta:
-      return Colors.red;
-    case WatchlistPriority.normal:
-      return Colors.yellow;
-    case WatchlistPriority.baja:
-      return Colors.green;
   }
 }

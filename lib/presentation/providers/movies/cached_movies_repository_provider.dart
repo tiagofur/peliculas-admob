@@ -35,7 +35,6 @@ final offlineCacheManagerProvider = Provider<OfflineCacheManager>((ref) {
 
   return OfflineCacheManager(
     datasource: localDatasource,
-    ref: ref,
   );
 });
 

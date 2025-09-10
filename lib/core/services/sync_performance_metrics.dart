@@ -21,13 +21,13 @@ class SyncPerformanceMetrics {
   int _realtimeEventsProcessed = 0;
   int _throttledEvents = 0;
   int _networkReconnections = 0;
-  
+
   // Métricas de batch processing
   int _totalBatches = 0;
   int _totalBatchSize = 0;
   int _maxBatchSize = 0;
   int _minBatchSize = 0;
-  
+
   // Métricas de throttling efficiency
   double _throttlingEfficiencySum = 0.0;
   int _throttlingEfficiencyCount = 0;
@@ -179,38 +179,45 @@ class SyncPerformanceMetrics {
     _getEntityMetrics(table).throttledEvents++;
     _notifyMetricsUpdate();
   }
-  
+
   /// Registra el tamaño de un batch procesado
   void recordBatchSize(String entityId, int batchSize) {
     // Actualizar métricas globales
     _totalBatches++;
     _totalBatchSize += batchSize;
     if (batchSize > _maxBatchSize) _maxBatchSize = batchSize;
-    if (_minBatchSize == 0 || batchSize < _minBatchSize) _minBatchSize = batchSize;
-    
+    if (_minBatchSize == 0 || batchSize < _minBatchSize) {
+      _minBatchSize = batchSize;
+    }
+
     // Actualizar métricas por entidad
-    final entityMetrics = _entityMetrics.putIfAbsent(entityId, () => EntityMetrics(entityId));
+    final entityMetrics =
+        _entityMetrics.putIfAbsent(entityId, () => EntityMetrics(entityId));
     entityMetrics.totalBatches++;
     entityMetrics.totalBatchSize += batchSize;
-    if (batchSize > entityMetrics.maxBatchSize) entityMetrics.maxBatchSize = batchSize;
-    if (entityMetrics.minBatchSize == 0 || batchSize < entityMetrics.minBatchSize) {
+    if (batchSize > entityMetrics.maxBatchSize) {
+      entityMetrics.maxBatchSize = batchSize;
+    }
+    if (entityMetrics.minBatchSize == 0 ||
+        batchSize < entityMetrics.minBatchSize) {
       entityMetrics.minBatchSize = batchSize;
     }
-    
+
     _notifyMetricsUpdate();
   }
-  
+
   /// Registra la eficiencia del throttling (0.0 - 1.0)
   void recordThrottlingEfficiency(String entityId, double efficiency) {
     // Actualizar métricas globales
     _throttlingEfficiencySum += efficiency;
     _throttlingEfficiencyCount++;
-    
+
     // Actualizar métricas por entidad
-    final entityMetrics = _entityMetrics.putIfAbsent(entityId, () => EntityMetrics(entityId));
+    final entityMetrics =
+        _entityMetrics.putIfAbsent(entityId, () => EntityMetrics(entityId));
     entityMetrics.throttlingEfficiencySum += efficiency;
     entityMetrics.throttlingEfficiencyCount++;
-    
+
     _notifyMetricsUpdate();
   }
 
@@ -265,11 +272,12 @@ class SyncPerformanceMetrics {
           : 0.0,
       throttledEvents: _throttledEvents,
       totalBatches: _totalBatches,
-      averageBatchSize: _totalBatches > 0 ? _totalBatchSize / _totalBatches : 0.0,
+      averageBatchSize:
+          _totalBatches > 0 ? _totalBatchSize / _totalBatches : 0.0,
       maxBatchSize: _maxBatchSize,
       minBatchSize: _minBatchSize,
-      averageThrottlingEfficiency: _throttlingEfficiencyCount > 0 
-          ? _throttlingEfficiencySum / _throttlingEfficiencyCount 
+      averageThrottlingEfficiency: _throttlingEfficiencyCount > 0
+          ? _throttlingEfficiencySum / _throttlingEfficiencyCount
           : 0.0,
       networkReconnections: _networkReconnections,
       totalOfflineTime: _getTotalOfflineTime(),
@@ -396,13 +404,13 @@ class SyncPerformanceMetrics {
     _realtimeEventsProcessed = 0;
     _throttledEvents = 0;
     _networkReconnections = 0;
-    
+
     // Reset batch metrics
     _totalBatches = 0;
     _totalBatchSize = 0;
     _maxBatchSize = 0;
     _minBatchSize = 0;
-    
+
     // Reset throttling efficiency metrics
     _throttlingEfficiencySum = 0.0;
     _throttlingEfficiencyCount = 0;
@@ -463,13 +471,15 @@ class SyncPerformanceMetrics {
 
     buffer.writeln('BATCH PROCESSING:');
     buffer.writeln('  Total batches: ${snapshot.totalBatches}');
-    buffer.writeln('  Tamaño promedio: ${snapshot.averageBatchSize.toStringAsFixed(1)}');
+    buffer.writeln(
+        '  Tamaño promedio: ${snapshot.averageBatchSize.toStringAsFixed(1)}');
     buffer.writeln('  Tamaño máximo: ${snapshot.maxBatchSize}');
     buffer.writeln('  Tamaño mínimo: ${snapshot.minBatchSize}');
     buffer.writeln();
 
     buffer.writeln('THROTTLING EFFICIENCY:');
-    buffer.writeln('  Eficiencia promedio: ${(snapshot.averageThrottlingEfficiency * 100).toStringAsFixed(1)}%');
+    buffer.writeln(
+        '  Eficiencia promedio: ${(snapshot.averageThrottlingEfficiency * 100).toStringAsFixed(1)}%');
     buffer.writeln();
 
     buffer.writeln('RED:');
@@ -509,13 +519,13 @@ class EntityMetrics {
   int realtimeEventsProcessed = 0;
   int throttledEvents = 0;
   Duration totalProcessingTime = Duration.zero;
-  
+
   // Métricas de batch processing
   int totalBatches = 0;
   int totalBatchSize = 0;
   int maxBatchSize = 0;
   int minBatchSize = 0;
-  
+
   // Métricas de throttling efficiency
   double throttlingEfficiencySum = 0.0;
   int throttlingEfficiencyCount = 0;
@@ -532,10 +542,11 @@ class EntityMetrics {
           milliseconds:
               totalProcessingTime.inMilliseconds ~/ realtimeEventsProcessed)
       : Duration.zero;
-  
-  double get averageBatchSize => totalBatches > 0 ? totalBatchSize / totalBatches : 0.0;
-  double get averageThrottlingEfficiency => throttlingEfficiencyCount > 0 
-      ? throttlingEfficiencySum / throttlingEfficiencyCount 
+
+  double get averageBatchSize =>
+      totalBatches > 0 ? totalBatchSize / totalBatches : 0.0;
+  double get averageThrottlingEfficiency => throttlingEfficiencyCount > 0
+      ? throttlingEfficiencySum / throttlingEfficiencyCount
       : 0.0;
 
   Map<String, dynamic> toJson() {

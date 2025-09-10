@@ -20,7 +20,7 @@ class RealtimeThrottleService {
   static const Duration _defaultDebounceDelay = Duration(milliseconds: 300);
   static const Duration _defaultThrottleInterval = Duration(milliseconds: 1500);
   static const int _maxEventsPerInterval = 8;
-  
+
   // Configuraciones por tipo de evento
   static const Map<String, Duration> _eventTypeDebounceDelays = {
     'insert': Duration(milliseconds: 200),
@@ -28,14 +28,14 @@ class RealtimeThrottleService {
     'delete': Duration(milliseconds: 100),
     'batch': Duration(milliseconds: 500),
   };
-  
+
   static const Map<String, int> _eventTypeMaxEvents = {
     'insert': 10,
     'update': 8,
     'delete': 5,
     'batch': 15,
   };
-  
+
   // Configuraciones adaptativas basadas en carga
   final Map<String, int> _eventFrequency = {};
   final Map<String, DateTime> _lastEventTime = {};
@@ -133,14 +133,14 @@ class RealtimeThrottleService {
   }) {
     final throttleKey = '${key}_throttle';
     final debounceKey = '${key}_debounce';
-    
+
     // Usar configuraciones adaptativas basadas en el tipo de evento
-    final adaptiveDelay = debounceDelay ?? 
-        _getAdaptiveDebounceDelay(key, eventType);
-    final adaptiveInterval = throttleInterval ?? 
-        _getAdaptiveThrottleInterval(key);
-    final adaptiveMaxEvents = maxEvents ?? 
-        _getAdaptiveMaxEvents(key, eventType);
+    final adaptiveDelay =
+        debounceDelay ?? _getAdaptiveDebounceDelay(key, eventType);
+    final adaptiveInterval =
+        throttleInterval ?? _getAdaptiveThrottleInterval(key);
+    final adaptiveMaxEvents =
+        maxEvents ?? _getAdaptiveMaxEvents(key, eventType);
 
     // Registrar frecuencia de eventos para adaptación
     _updateEventFrequency(key);
@@ -166,24 +166,25 @@ class RealtimeThrottleService {
           name: 'ThrottleService');
     }
   }
-  
+
   /// Obtiene el delay de debounce adaptativo basado en el tipo de evento
   Duration _getAdaptiveDebounceDelay(String key, String? eventType) {
     if (eventType != null && _eventTypeDebounceDelays.containsKey(eventType)) {
       return _eventTypeDebounceDelays[eventType]!;
     }
-    
+
     // Adaptación basada en frecuencia de eventos
     final frequency = _eventFrequency[key] ?? 0;
     if (frequency > 20) {
-      return const Duration(milliseconds: 500); // Más delay para alta frecuencia
+      return const Duration(
+          milliseconds: 500); // Más delay para alta frecuencia
     } else if (frequency > 10) {
       return const Duration(milliseconds: 350);
     }
-    
+
     return _defaultDebounceDelay;
   }
-  
+
   /// Obtiene el intervalo de throttle adaptativo
   Duration _getAdaptiveThrottleInterval(String key) {
     final frequency = _eventFrequency[key] ?? 0;
@@ -192,63 +193,63 @@ class RealtimeThrottleService {
     } else if (frequency > 15) {
       return const Duration(seconds: 2);
     }
-    
+
     return _defaultThrottleInterval;
   }
-  
+
   /// Obtiene el máximo de eventos adaptativo
   int _getAdaptiveMaxEvents(String key, String? eventType) {
     if (eventType != null && _eventTypeMaxEvents.containsKey(eventType)) {
       return _eventTypeMaxEvents[eventType]!;
     }
-    
+
     final frequency = _eventFrequency[key] ?? 0;
     if (frequency > 25) {
       return 12; // Permitir más eventos para alta frecuencia
     } else if (frequency < 5) {
       return 5; // Menos eventos para baja frecuencia
     }
-    
+
     return _maxEventsPerInterval;
   }
-  
+
   /// Actualiza la frecuencia de eventos para adaptación
   void _updateEventFrequency(String key) {
     final now = DateTime.now();
     final lastTime = _lastEventTime[key];
-    
+
     if (lastTime == null || now.difference(lastTime).inMinutes >= 1) {
       // Resetear contador cada minuto
       _eventFrequency[key] = 1;
     } else {
       _eventFrequency[key] = (_eventFrequency[key] ?? 0) + 1;
     }
-    
+
     _lastEventTime[key] = now;
-    
+
     // Iniciar timer adaptativo si no existe
     _adaptiveConfigTimer ??= Timer.periodic(
       const Duration(minutes: 2),
       (_) => _cleanupAdaptiveData(),
     );
   }
-  
+
   /// Limpia datos adaptativos antiguos
   void _cleanupAdaptiveData() {
     final now = DateTime.now();
     final keysToRemove = <String>[];
-    
+
     for (final entry in _lastEventTime.entries) {
       if (now.difference(entry.value).inMinutes > 5) {
         keysToRemove.add(entry.key);
       }
     }
-    
+
     for (final key in keysToRemove) {
       _eventFrequency.remove(key);
       _lastEventTime.remove(key);
     }
-    
+
     SafeDeveloperLog.log(
         'Cleaned up ${keysToRemove.length} adaptive data entries',
         name: 'ThrottleService');
@@ -301,7 +302,7 @@ class RealtimeThrottleService {
       'adaptiveConfigActive': _adaptiveConfigTimer?.isActive ?? false,
     };
   }
-  
+
   /// Obtiene configuraciones adaptativas actuales para una clave
   Map<String, dynamic> getAdaptiveConfig(String key, {String? eventType}) {
     return {

@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'sync_logger.dart';
 
 /// Niveles de severidad para las alertas de sincronización
@@ -137,6 +138,7 @@ class AlertConfig {
 /// Sistema de alertas para sincronización
 class SyncAlertSystem {
   factory SyncAlertSystem() => _instance;
+
   SyncAlertSystem._internal();
   static final SyncAlertSystem _instance = SyncAlertSystem._internal();
 

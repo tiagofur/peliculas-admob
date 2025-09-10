@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/streaming/streaming.dart';
 import '../../../core/streaming/subscription_tracker.dart' as tracker;
+import '../../../core/analytics/analytics_service.dart';
+import '../../../core/cache/cache_service.dart';
 // Removed unnecessary imports - all elements available from streaming.dart
 
 class StreamingDashboardScreen extends ConsumerStatefulWidget {
@@ -20,7 +22,10 @@ class StreamingDashboardScreenState
     extends ConsumerState<StreamingDashboardScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  final StreamingServiceManager _streamingManager = StreamingServiceManager();
+  final StreamingServiceManager _streamingManager = StreamingServiceManager(
+    analytics: AnalyticsService.instance,
+    cache: CacheService.instance,
+  );
 
   @override
   void initState() {
@@ -310,7 +315,7 @@ class _ActiveSubscriptionsList extends ConsumerWidget {
             final subscriptions = snapshot.data ?? [];
 
             if (subscriptions.isEmpty) {
-              return _EmptySubscriptionsCard();
+              return const _EmptySubscriptionsCard();
             }
 
             return Column(
@@ -340,6 +345,8 @@ class _ActiveSubscriptionsList extends ConsumerWidget {
 }
 
 class _EmptySubscriptionsCard extends StatelessWidget {
+  const _EmptySubscriptionsCard();
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;

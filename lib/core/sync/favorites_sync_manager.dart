@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../logging/logger_factory.dart';
 import '../../domain/entities/sync_result.dart';
 import '../../domain/entities/syncable_favorite.dart';
+import '../logging/logger_factory.dart';
 import 'entity_sync_manager.dart';
 import 'sync_operation.dart';
 
@@ -52,9 +52,12 @@ class FavoritesSyncManager extends EntitySyncManager<SyncableFavorite> {
 
       // Add date filtering for incremental sync
       if (since != null) {
-        query = query.gte('last_modified_at', since.toIso8601String());
+        // TODO: Fix date filtering when Supabase API is clarified
+        // query = query.gte('last_modified_at', since.toIso8601String());
         LoggerFactory.info(
             '📅 Fetching remote changes since: ${since.toIso8601String()}');
+        LoggerFactory.warning(
+            '⚠️ Date filtering temporarily disabled - will fetch all records');
       }
 
       final response = await query;

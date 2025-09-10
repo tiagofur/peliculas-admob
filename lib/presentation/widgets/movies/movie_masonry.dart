@@ -79,15 +79,17 @@ class _MovieMasonryState extends State<MovieMasonry> {
 
   /// Calcula el número total de items incluyendo anuncios
   int _calculateTotalItems(int movieCount) {
-    if (movieCount <= 6)
+    if (movieCount <= 6) {
       return movieCount; // No mostrar anuncios si hay pocas películas
+    }
     return movieCount + (movieCount ~/ 9); // Un anuncio cada 9 películas
   }
 
   /// Determina si en esta posición se debe mostrar un anuncio
   bool _shouldShowAd(int index) {
-    if (widget.movies.length <= 6)
+    if (widget.movies.length <= 6) {
       return false; // No mostrar anuncios si hay pocas películas
+    }
     return (index + 1) % 10 == 0; // Mostrar anuncio cada 10 posiciones
   }
 

@@ -15,6 +15,7 @@ import 'models/user_level.dart';
 class GamificationNotificationService {
   factory GamificationNotificationService() => _instance;
   GamificationNotificationService._internal();
+
   static final GamificationNotificationService _instance =
       GamificationNotificationService._internal();
 

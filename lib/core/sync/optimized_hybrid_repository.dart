@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:collection';
 
-import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../logging/logger_factory.dart';
@@ -55,7 +53,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   final LinkedHashMap<String, CacheEntry<List<T>>> _queryCache = LinkedHashMap();
   
   // Pool de subscripciones real-time optimizado
-  String? _channelId;
+  PooledChannel? _channel;
   
   // Serialización optimizada con pool de objetos
   final Queue<Map<String, dynamic>> _serializationPool = Queue();
@@ -166,16 +164,19 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     if (userId == 'anonymous_user') return;
 
     try {
-      final channelConfig = ChannelConfig(
-        tableName: tableName,
-        userId: userId,
-        filters: _buildOptimizedFilters(),
-        heartbeatInterval: _calculateOptimalHeartbeat(),
-      );
-
-      _channelId = await _channelPool.getOrCreateChannel(
-        config: channelConfig,
-        onEvent: _handleOptimizedRealtimePayload,
+      _channel = await _channelPool.getChannelForTable(tableName, userId);
+      
+      // Configurar el canal para escuchar eventos
+      _channel!.channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: tableName,
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'user_id',
+          value: userId,
+        ),
+        callback: _handleOptimizedRealtimePayload,
       );
 
       LoggerFactory.info('⚡️ Optimized realtime subscription setup for $tableName');
@@ -196,12 +197,15 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Calcula intervalo de heartbeat óptimo basado en la actividad
   Duration _calculateOptimalHeartbeat() {
     // Ajustar según la frecuencia de cambios esperada
-    final baseInterval = const Duration(seconds: 30);
+    const baseInterval = Duration(seconds: 30);
     
-    // Reducir intervalo si hay mucha actividad reciente
-    final recentActivity = _performanceMonitor.getRecentActivity(tableName);
-    if (recentActivity > 10) {
-      return Duration(seconds: baseInterval.inSeconds ~/ 2);
+    // Reducir intervalo si hay métricas de tabla disponibles
+    final tableMetrics = _performanceMonitor.getTableMetrics(tableName);
+    if (tableMetrics != null && tableMetrics['events_processed'] != null) {
+      final eventsProcessed = tableMetrics['events_processed'] as int;
+      if (eventsProcessed > 10) {
+        return Duration(seconds: baseInterval.inSeconds ~/ 2);
+      }
     }
     
     return baseInterval;
@@ -214,7 +218,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       
       // Cachear entidades más recientes
       final recentEntities = localData
-          .where((e) => e.updatedAt.isAfter(
+          .where((e) => e.lastModifiedAt.isAfter(
               DateTime.now().subtract(const Duration(hours: 24))))
           .take(_cacheMaxSize ~/ 2)
           .toList();
@@ -294,7 +298,8 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     
     _queryCache[queryKey] = CacheEntry(
       data: List.from(results),
-      timestamp: DateTime.now(),n      expiry: _cacheExpiry,
+      timestamp: DateTime.now(),
+      expiry: _cacheExpiry,
     );
   }
 
@@ -308,8 +313,6 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
 
   /// Limpia cache expirado
   void _cleanExpiredCache() {
-    final now = DateTime.now();
-    
     _entityCache.removeWhere((key, entry) => entry.isExpired);
     _queryCache.removeWhere((key, entry) => entry.isExpired);
   }
@@ -445,11 +448,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     
     try {
       // Registrar métricas
-      _performanceMonitor.recordRealtimeEvent(
-        tableName: tableName,
-        eventType: payload.eventType.name,
-        processingStartTime: startTime,
-      );
+      _performanceMonitor.recordTableMetrics(tableName, eventsProcessed: 1);
       
       // Validar evento
       final validationResult = _dataValidator.validateRealtimeEvent(
@@ -472,41 +471,37 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       switch (payload.eventType) {
         case PostgresChangeEvent.insert:
         case PostgresChangeEvent.update:
-          if (payload.newRecord != null) {
-            final entity = _optimizedDeserialize(payload.newRecord!);
-            
+          final entity = _optimizedDeserialize(payload.newRecord);
+          
+          _queueBatchOperation(BatchOperation(
+            type: payload.eventType == PostgresChangeEvent.insert 
+                ? BatchOperationType.create 
+                : BatchOperationType.update,
+            entity: entity,
+          ));
+          
+          _emitEvent(
+            RepositoryEventType.itemUpdated,
+            'Realtime ${payload.eventType.name}',
+            entity: entity,
+          );
+                  break;
+          
+        case PostgresChangeEvent.delete:
+          final entityId = payload.oldRecord['id']?.toString();
+          if (entityId != null) {
             _queueBatchOperation(BatchOperation(
-              type: payload.eventType == PostgresChangeEvent.insert 
-                  ? BatchOperationType.create 
-                  : BatchOperationType.update,
-              entity: entity,
+              type: BatchOperationType.delete,
+              entityId: entityId,
             ));
             
             _emitEvent(
-              RepositoryEventType.itemUpdated,
-              'Realtime ${payload.eventType.name}',
-              entity: entity,
+              RepositoryEventType.itemRemoved,
+              'Realtime delete',
+              entityId: entityId,
             );
           }
-          break;
-          
-        case PostgresChangeEvent.delete:
-          if (payload.oldRecord != null) {
-            final entityId = payload.oldRecord!['id']?.toString();
-            if (entityId != null) {
-              _queueBatchOperation(BatchOperation(
-                type: BatchOperationType.delete,
-                entityId: entityId,
-              ));
-              
-              _emitEvent(
-                RepositoryEventType.itemRemoved,
-                'Realtime delete',
-                entityId: entityId,
-              );
-            }
-          }
-          break;
+                  break;
           
         case PostgresChangeEvent.all:
           LoggerFactory.debug('Unhandled realtime event type: ${payload.eventType}');
@@ -514,21 +509,13 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       }
       
       // Registrar métricas de finalización
-      final processingTime = DateTime.now().difference(startTime);
-      _performanceMonitor.recordRealtimeEvent(
-        tableName: tableName,
-        eventType: payload.eventType.name,
-        processingStartTime: startTime,
-        processingEndTime: DateTime.now(),
-      );
+      _performanceMonitor.recordTableMetrics(tableName, batchSize: 1, processingTime: DateTime.now().difference(startTime));
       
     } catch (e) {
       LoggerFactory.error('❌ Error processing realtime event: $e');
       
-      _performanceMonitor.recordRealtimeError(
-        tableName: tableName,
-        error: e.toString(),
-      );
+      // Registrar error en métricas
+      _performanceMonitor.recordTableMetrics(tableName, eventsProcessed: 0);
     }
   }
 
@@ -775,10 +762,10 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       'local_count': localData.length,
       'is_initialized': _isInitialized,
       'cache_stats': cacheStatistics,
-      'performance_stats': _performanceMonitor.getTableMetrics(tableName)?.toMap() ?? {},
+      'performance_stats': _performanceMonitor.getTableMetrics(tableName) ?? {},
       'sync_manager_available': _syncManager != null,
       'coordinator_available': _syncCoordinator != null,
-      'channel_pool_stats': _channelPool.getStatistics(),
+      'channel_pool_stats': _channelPool.getPoolMetrics(),
     };
   }
 
@@ -797,8 +784,8 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     }
     
     // Liberar canal del pool
-    if (_channelId != null) {
-      await _channelPool.releaseChannel(_channelId!);
+    if (_channel != null) {
+      await _channelPool.releaseChannel(_channel!.tableName);
     }
     
     // Limpiar caches

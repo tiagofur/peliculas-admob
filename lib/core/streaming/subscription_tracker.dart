@@ -77,17 +77,12 @@ class SubscriptionTracker {
       await _updateUserSubscriptionsList(userId, subscription);
 
       // Track analytics
-      _analyticsService.trackEvent(
+      await _analyticsService.trackEvent(
         AnalyticsEventType.userEngagement,
         {
-          'user_id': userId,
-          'platform': platform.id,
-          'status': status.name,
-          'tier': tier.name,
-          'monthly_price': monthlyPrice,
-          'currency': currency,
-          'auto_renew': autoRenew,
           'action': 'subscription_added',
+          'platform': platform.name,
+          'subscription_id': subscription.id,
         },
       );
 
@@ -97,12 +92,12 @@ class SubscriptionTracker {
       return true;
     } catch (e) {
       _logger.error('Error adding subscription: $e');
-      _analyticsService.trackEvent(
+      await _analyticsService.trackEvent(
         AnalyticsEventType.error,
         {
-          'user_id': userId,
-          'platform': platform.id,
-          'error': e.toString(),
+          'error': 'subscription_add_failed',
+          'platform': platform.name,
+          'error_message': e.toString(),
         },
       );
       return false;
@@ -415,7 +410,7 @@ class SubscriptionTracker {
         expiration: _cacheDuration,
       );
 
-      _analyticsService.trackEvent(
+      await _analyticsService.trackEvent(
         AnalyticsEventType.userEngagement,
         {
           'user_id': userId,

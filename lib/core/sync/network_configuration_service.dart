@@ -1,50 +1,48 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 
 import '../logging/logger_factory.dart';
 
 /// Servicio de configuración de red que detecta la calidad de conexión
 /// y ajusta automáticamente los parámetros de sincronización
 class NetworkConfigurationService {
+  NetworkConfigurationService._() {
+    _initialize();
+  }
   static NetworkConfigurationService? _instance;
   static NetworkConfigurationService get instance {
     _instance ??= NetworkConfigurationService._();
     return _instance!;
   }
 
-  NetworkConfigurationService._() {
-    _initialize();
-  }
-
   // Conectividad y monitoreo
   final Connectivity _connectivity = Connectivity();
-  StreamSubscription<ConnectivityResult>? _connectivitySubscription;
-  
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   // Estado actual de la red
   NetworkQuality _currentQuality = NetworkQuality.unknown;
   ConnectivityResult _currentConnectivity = ConnectivityResult.none;
   NetworkMetrics _currentMetrics = NetworkMetrics.empty();
-  
+
   // Configuraciones adaptativas
   final Map<NetworkQuality, NetworkConfig> _configurations = {};
-  
+
   // Monitoreo de rendimiento
   final List<LatencyMeasurement> _latencyHistory = [];
   final List<BandwidthMeasurement> _bandwidthHistory = [];
   Timer? _performanceMonitorTimer;
-  
+
   // Eventos de cambio de configuración
   final StreamController<NetworkConfigurationChange> _configChangeController =
       StreamController<NetworkConfigurationChange>.broadcast();
-  
+
   // Estado del servicio
   bool _isInitialized = false;
   bool _isDisposed = false;
-  
+
   // Constantes de configuración
   static const Duration _performanceCheckInterval = Duration(seconds: 30);
   static const int _maxLatencyHistory = 20;
@@ -52,7 +50,7 @@ class NetworkConfigurationService {
   static const Duration _networkTestTimeout = Duration(seconds: 10);
 
   /// Stream de cambios de configuración de red
-  Stream<NetworkConfigurationChange> get configurationChanges => 
+  Stream<NetworkConfigurationChange> get configurationChanges =>
       _configChangeController.stream;
 
   /// Calidad actual de la red
@@ -65,7 +63,7 @@ class NetworkConfigurationService {
   NetworkMetrics get currentMetrics => _currentMetrics;
 
   /// Configuración actual basada en la calidad de red
-  NetworkConfig get currentConfiguration => 
+  NetworkConfig get currentConfiguration =>
       _configurations[_currentQuality] ?? NetworkConfig.defaultConfig();
 
   /// Indica si el servicio está inicializado
@@ -82,45 +80,50 @@ class NetworkConfigurationService {
     try {
       // Configurar configuraciones por defecto
       _setupDefaultConfigurations();
-      
+
       // Detectar conectividad inicial
-      _currentConnectivity = await _connectivity.checkConnectivity();
-      
+      final connectivityResults = await _connectivity.checkConnectivity();
+      _currentConnectivity = connectivityResults.isNotEmpty
+          ? connectivityResults.first
+          : ConnectivityResult.none;
+
       // Configurar listener de cambios de conectividad
       _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
-        _onConnectivityChanged,
+        (results) => _onConnectivityChanged(
+            results.isNotEmpty ? results.first : ConnectivityResult.none),
         onError: (error) {
           LoggerFactory.error('❌ Connectivity listener error: $error');
         },
       );
-      
+
       // Realizar evaluación inicial de calidad
       await _evaluateNetworkQuality();
-      
+
       // Iniciar monitoreo de rendimiento
       _startPerformanceMonitoring();
-      
+
       _isInitialized = true;
-      
+
       LoggerFactory.info('🌐 NetworkConfigurationService initialized');
-      LoggerFactory.info('📶 Initial network: ${_currentConnectivity.name}, quality: ${_currentQuality.name}');
-      
+      LoggerFactory.info(
+          '📶 Initial network: ${_currentConnectivity.name}, quality: ${_currentQuality.name}');
     } catch (e) {
-      LoggerFactory.error('❌ Failed to initialize NetworkConfigurationService: $e');
+      LoggerFactory.error(
+          '❌ Failed to initialize NetworkConfigurationService: $e');
       _isInitialized = true; // Continue even if initialization fails
     }
   }
 
   /// Configura las configuraciones por defecto para cada calidad de red
   void _setupDefaultConfigurations() {
-    _configurations[NetworkQuality.excellent] = NetworkConfig(
-      syncInterval: const Duration(seconds: 5),
+    _configurations[NetworkQuality.excellent] = const NetworkConfig(
+      syncInterval: Duration(seconds: 5),
       batchSize: 100,
       maxConcurrentOperations: 10,
-      timeoutDuration: const Duration(seconds: 30),
+      timeoutDuration: Duration(seconds: 30),
       retryAttempts: 3,
-      retryDelay: const Duration(seconds: 1),
-      heartbeatInterval: const Duration(seconds: 15),
+      retryDelay: Duration(seconds: 1),
+      heartbeatInterval: Duration(seconds: 15),
       enableRealtime: true,
       enableBatching: true,
       compressionEnabled: false,
@@ -129,14 +132,14 @@ class NetworkConfigurationService {
       description: 'Excellent connection - Maximum performance',
     );
 
-    _configurations[NetworkQuality.good] = NetworkConfig(
-      syncInterval: const Duration(seconds: 10),
+    _configurations[NetworkQuality.good] = const NetworkConfig(
+      syncInterval: Duration(seconds: 10),
       batchSize: 50,
       maxConcurrentOperations: 6,
-      timeoutDuration: const Duration(seconds: 45),
+      timeoutDuration: Duration(seconds: 45),
       retryAttempts: 3,
-      retryDelay: const Duration(seconds: 2),
-      heartbeatInterval: const Duration(seconds: 30),
+      retryDelay: Duration(seconds: 2),
+      heartbeatInterval: Duration(seconds: 30),
       enableRealtime: true,
       enableBatching: true,
       compressionEnabled: false,
@@ -145,14 +148,14 @@ class NetworkConfigurationService {
       description: 'Good connection - Balanced performance',
     );
 
-    _configurations[NetworkQuality.fair] = NetworkConfig(
-      syncInterval: const Duration(seconds: 30),
+    _configurations[NetworkQuality.fair] = const NetworkConfig(
+      syncInterval: Duration(seconds: 30),
       batchSize: 25,
       maxConcurrentOperations: 3,
-      timeoutDuration: const Duration(minutes: 1),
+      timeoutDuration: Duration(minutes: 1),
       retryAttempts: 4,
-      retryDelay: const Duration(seconds: 3),
-      heartbeatInterval: const Duration(minutes: 1),
+      retryDelay: Duration(seconds: 3),
+      heartbeatInterval: Duration(minutes: 1),
       enableRealtime: true,
       enableBatching: true,
       compressionEnabled: true,
@@ -161,14 +164,14 @@ class NetworkConfigurationService {
       description: 'Fair connection - Conservative approach',
     );
 
-    _configurations[NetworkQuality.poor] = NetworkConfig(
-      syncInterval: const Duration(minutes: 2),
+    _configurations[NetworkQuality.poor] = const NetworkConfig(
+      syncInterval: Duration(minutes: 2),
       batchSize: 10,
       maxConcurrentOperations: 1,
-      timeoutDuration: const Duration(minutes: 2),
+      timeoutDuration: Duration(minutes: 2),
       retryAttempts: 5,
-      retryDelay: const Duration(seconds: 5),
-      heartbeatInterval: const Duration(minutes: 2),
+      retryDelay: Duration(seconds: 5),
+      heartbeatInterval: Duration(minutes: 2),
       enableRealtime: false,
       enableBatching: true,
       compressionEnabled: true,
@@ -177,14 +180,14 @@ class NetworkConfigurationService {
       description: 'Poor connection - Minimal operations',
     );
 
-    _configurations[NetworkQuality.offline] = NetworkConfig(
-      syncInterval: const Duration(minutes: 10),
+    _configurations[NetworkQuality.offline] = const NetworkConfig(
+      syncInterval: Duration(minutes: 10),
       batchSize: 1,
       maxConcurrentOperations: 1,
-      timeoutDuration: const Duration(minutes: 5),
+      timeoutDuration: Duration(minutes: 5),
       retryAttempts: 10,
-      retryDelay: const Duration(seconds: 10),
-      heartbeatInterval: const Duration(minutes: 5),
+      retryDelay: Duration(seconds: 10),
+      heartbeatInterval: Duration(minutes: 5),
       enableRealtime: false,
       enableBatching: false,
       compressionEnabled: true,
@@ -193,14 +196,14 @@ class NetworkConfigurationService {
       description: 'Offline mode - Queue operations',
     );
 
-    _configurations[NetworkQuality.unknown] = NetworkConfig(
-      syncInterval: const Duration(seconds: 30),
+    _configurations[NetworkQuality.unknown] = const NetworkConfig(
+      syncInterval: Duration(seconds: 30),
       batchSize: 20,
       maxConcurrentOperations: 2,
-      timeoutDuration: const Duration(seconds: 60),
+      timeoutDuration: Duration(seconds: 60),
       retryAttempts: 3,
-      retryDelay: const Duration(seconds: 3),
-      heartbeatInterval: const Duration(seconds: 45),
+      retryDelay: Duration(seconds: 3),
+      heartbeatInterval: Duration(seconds: 45),
       enableRealtime: true,
       enableBatching: true,
       compressionEnabled: false,
@@ -221,7 +224,8 @@ class NetworkConfigurationService {
     final previousConnectivity = _currentConnectivity;
     _currentConnectivity = result;
 
-    LoggerFactory.info('🔄 Connectivity changed: ${previousConnectivity.name} → ${result.name}');
+    LoggerFactory.info(
+        '🔄 Connectivity changed: ${previousConnectivity.name} → ${result.name}');
 
     // Re-evaluar calidad de red
     await _evaluateNetworkQuality();
@@ -233,10 +237,11 @@ class NetworkConfigurationService {
 
     try {
       final previousQuality = _currentQuality;
-      
+
       // Determinar calidad base según tipo de conectividad
-      NetworkQuality baseQuality = _getBaseQualityFromConnectivity(_currentConnectivity);
-      
+      NetworkQuality baseQuality =
+          _getBaseQualityFromConnectivity(_currentConnectivity);
+
       // Si no hay conectividad, establecer como offline
       if (_currentConnectivity == ConnectivityResult.none) {
         _currentQuality = NetworkQuality.offline;
@@ -244,11 +249,11 @@ class NetworkConfigurationService {
         // Realizar pruebas de rendimiento para ajustar calidad
         final metrics = await _performNetworkTests();
         _currentMetrics = metrics;
-        
+
         // Ajustar calidad basada en métricas reales
         _currentQuality = _calculateQualityFromMetrics(baseQuality, metrics);
       }
-      
+
       // Emitir evento si la calidad cambió
       if (previousQuality != _currentQuality) {
         final change = NetworkConfigurationChange(
@@ -259,13 +264,14 @@ class NetworkConfigurationService {
           timestamp: DateTime.now(),
           metrics: _currentMetrics,
         );
-        
+
         _configChangeController.add(change);
-        
-        LoggerFactory.info('📶 Network quality changed: ${previousQuality.name} → ${_currentQuality.name}');
-        LoggerFactory.info('⚙️ New configuration: ${currentConfiguration.description}');
+
+        LoggerFactory.info(
+            '📶 Network quality changed: ${previousQuality.name} → ${_currentQuality.name}');
+        LoggerFactory.info(
+            '⚙️ New configuration: ${currentConfiguration.description}');
       }
-      
     } catch (e) {
       LoggerFactory.error('❌ Failed to evaluate network quality: $e');
       _currentQuality = NetworkQuality.unknown;
@@ -273,7 +279,8 @@ class NetworkConfigurationService {
   }
 
   /// Obtiene calidad base según el tipo de conectividad
-  NetworkQuality _getBaseQualityFromConnectivity(ConnectivityResult connectivity) {
+  NetworkQuality _getBaseQualityFromConnectivity(
+      ConnectivityResult connectivity) {
     switch (connectivity) {
       case ConnectivityResult.wifi:
         return NetworkQuality.good; // WiFi generalmente es bueno
@@ -301,13 +308,13 @@ class NetworkConfigurationService {
     try {
       // Medir latencia
       final latency = await _measureLatency();
-      
+
       // Estimar ancho de banda (simplificado)
       final bandwidth = await _estimateBandwidth();
-      
+
       // Medir pérdida de paquetes (simplificado)
       final packetLoss = await _estimatePacketLoss();
-      
+
       final metrics = NetworkMetrics(
         latency: latency,
         bandwidth: bandwidth,
@@ -315,13 +322,12 @@ class NetworkConfigurationService {
         timestamp: DateTime.now(),
         connectivityType: _currentConnectivity,
       );
-      
+
       // Guardar en historial
       _addLatencyMeasurement(latency);
       _addBandwidthMeasurement(bandwidth);
-      
+
       return metrics;
-      
     } catch (e) {
       LoggerFactory.warning('⚠️ Network tests failed: $e');
       return NetworkMetrics.empty();
@@ -332,15 +338,15 @@ class NetworkConfigurationService {
   Future<Duration> _measureLatency() async {
     try {
       final stopwatch = Stopwatch()..start();
-      
+
       // Usar Google DNS para prueba de latencia
-      final socket = await Socket.connect('8.8.8.8', 53, timeout: _networkTestTimeout);
-      
+      final socket =
+          await Socket.connect('8.8.8.8', 53, timeout: _networkTestTimeout);
+
       stopwatch.stop();
       await socket.close();
-      
+
       return stopwatch.elapsed;
-      
     } catch (e) {
       // Si falla, usar latencia por defecto alta
       return const Duration(milliseconds: 1000);
@@ -353,26 +359,26 @@ class NetworkConfigurationService {
       // Realizar una pequeña descarga para estimar velocidad
       final client = HttpClient();
       client.connectionTimeout = _networkTestTimeout;
-      
+
       final stopwatch = Stopwatch()..start();
-      
-      final request = await client.getUrl(Uri.parse('https://httpbin.org/bytes/1024'));
+
+      final request =
+          await client.getUrl(Uri.parse('https://httpbin.org/bytes/1024'));
       final response = await request.close();
-      
+
       int totalBytes = 0;
       await for (final chunk in response) {
         totalBytes += chunk.length;
       }
-      
+
       stopwatch.stop();
       client.close();
-      
+
       // Calcular Mbps
       final seconds = stopwatch.elapsedMilliseconds / 1000.0;
       final mbps = (totalBytes * 8) / (seconds * 1000000);
-      
+
       return mbps;
-      
     } catch (e) {
       // Si falla, asumir ancho de banda bajo
       return 1.0; // 1 Mbps por defecto
@@ -384,10 +390,10 @@ class NetworkConfigurationService {
     try {
       int successfulPings = 0;
       const int totalPings = 5;
-      
+
       for (int i = 0; i < totalPings; i++) {
         try {
-          final socket = await Socket.connect('8.8.8.8', 53, 
+          final socket = await Socket.connect('8.8.8.8', 53,
               timeout: const Duration(seconds: 2));
           await socket.close();
           successfulPings++;
@@ -395,45 +401,50 @@ class NetworkConfigurationService {
           // Ping falló
         }
       }
-      
+
       final lossRate = (totalPings - successfulPings) / totalPings;
       return lossRate * 100; // Porcentaje
-      
     } catch (e) {
       return 10.0; // 10% de pérdida por defecto
     }
   }
 
   /// Calcula la calidad basada en métricas reales
-  NetworkQuality _calculateQualityFromMetrics(NetworkQuality baseQuality, NetworkMetrics metrics) {
+  NetworkQuality _calculateQualityFromMetrics(
+      NetworkQuality baseQuality, NetworkMetrics metrics) {
     int qualityScore = baseQuality.index;
-    
+
     // Ajustar según latencia
     if (metrics.latency.inMilliseconds < 50) {
       qualityScore = math.max(0, qualityScore - 1); // Mejorar
     } else if (metrics.latency.inMilliseconds > 500) {
-      qualityScore = math.min(NetworkQuality.values.length - 2, qualityScore + 2); // Empeorar
+      qualityScore = math.min(
+          NetworkQuality.values.length - 2, qualityScore + 2); // Empeorar
     } else if (metrics.latency.inMilliseconds > 200) {
-      qualityScore = math.min(NetworkQuality.values.length - 2, qualityScore + 1); // Empeorar un poco
+      qualityScore = math.min(NetworkQuality.values.length - 2,
+          qualityScore + 1); // Empeorar un poco
     }
-    
+
     // Ajustar según ancho de banda
     if (metrics.bandwidth > 10.0) {
       qualityScore = math.max(0, qualityScore - 1); // Mejorar
     } else if (metrics.bandwidth < 1.0) {
-      qualityScore = math.min(NetworkQuality.values.length - 2, qualityScore + 1); // Empeorar
+      qualityScore = math.min(
+          NetworkQuality.values.length - 2, qualityScore + 1); // Empeorar
     }
-    
+
     // Ajustar según pérdida de paquetes
     if (metrics.packetLoss > 5.0) {
-      qualityScore = math.min(NetworkQuality.values.length - 2, qualityScore + 1); // Empeorar
+      qualityScore = math.min(
+          NetworkQuality.values.length - 2, qualityScore + 1); // Empeorar
     }
-    
+
     // Asegurar que no sea offline a menos que no haya conectividad
-    if (qualityScore >= NetworkQuality.offline.index && _currentConnectivity != ConnectivityResult.none) {
+    if (qualityScore >= NetworkQuality.offline.index &&
+        _currentConnectivity != ConnectivityResult.none) {
       qualityScore = NetworkQuality.poor.index;
     }
-    
+
     return NetworkQuality.values[qualityScore];
   }
 
@@ -457,7 +468,7 @@ class NetworkConfigurationService {
       latency: latency,
       timestamp: DateTime.now(),
     ));
-    
+
     // Mantener solo las últimas mediciones
     while (_latencyHistory.length > _maxLatencyHistory) {
       _latencyHistory.removeAt(0);
@@ -470,7 +481,7 @@ class NetworkConfigurationService {
       bandwidth: bandwidth,
       timestamp: DateTime.now(),
     ));
-    
+
     // Mantener solo las últimas mediciones
     while (_bandwidthHistory.length > _maxBandwidthHistory) {
       _bandwidthHistory.removeAt(0);
@@ -489,7 +500,7 @@ class NetworkConfigurationService {
   /// Actualiza configuración para una calidad específica
   void updateConfiguration(NetworkQuality quality, NetworkConfig config) {
     _configurations[quality] = config;
-    
+
     // Si es la calidad actual, emitir cambio
     if (quality == _currentQuality) {
       final change = NetworkConfigurationChange(
@@ -500,7 +511,7 @@ class NetworkConfigurationService {
         timestamp: DateTime.now(),
         metrics: _currentMetrics,
       );
-      
+
       _configChangeController.add(change);
     }
   }
@@ -523,13 +534,17 @@ class NetworkConfigurationService {
   /// Obtiene estadísticas de red
   Map<String, dynamic> getNetworkStatistics() {
     final avgLatency = _latencyHistory.isNotEmpty
-        ? _latencyHistory.map((m) => m.latency.inMilliseconds).reduce((a, b) => a + b) / _latencyHistory.length
+        ? _latencyHistory
+                .map((m) => m.latency.inMilliseconds)
+                .reduce((a, b) => a + b) /
+            _latencyHistory.length
         : 0.0;
-    
+
     final avgBandwidth = _bandwidthHistory.isNotEmpty
-        ? _bandwidthHistory.map((m) => m.bandwidth).reduce((a, b) => a + b) / _bandwidthHistory.length
+        ? _bandwidthHistory.map((m) => m.bandwidth).reduce((a, b) => a + b) /
+            _bandwidthHistory.length
         : 0.0;
-    
+
     return {
       'current_quality': _currentQuality.name,
       'current_connectivity': _currentConnectivity.name,
@@ -545,33 +560,37 @@ class NetworkConfigurationService {
   /// Obtiene configuración optimizada para operación específica
   NetworkConfig getOptimizedConfigForOperation(String operationType) {
     final baseConfig = currentConfiguration;
-    
+
     // Ajustar configuración según tipo de operación
     switch (operationType.toLowerCase()) {
       case 'sync':
         return baseConfig.copyWith(
           batchSize: (baseConfig.batchSize * 1.5).round(),
-          maxConcurrentOperations: math.max(1, baseConfig.maxConcurrentOperations - 1),
+          maxConcurrentOperations:
+              math.max(1, baseConfig.maxConcurrentOperations - 1),
         );
-        
+
       case 'upload':
         return baseConfig.copyWith(
-          timeoutDuration: Duration(seconds: baseConfig.timeoutDuration.inSeconds * 2),
+          timeoutDuration:
+              Duration(seconds: baseConfig.timeoutDuration.inSeconds * 2),
           retryAttempts: baseConfig.retryAttempts + 1,
         );
-        
+
       case 'download':
         return baseConfig.copyWith(
           batchSize: math.max(1, baseConfig.batchSize ~/ 2),
           compressionEnabled: true,
         );
-        
+
       case 'realtime':
         return baseConfig.copyWith(
-          heartbeatInterval: Duration(seconds: math.max(15, baseConfig.heartbeatInterval.inSeconds ~/ 2)),
+          heartbeatInterval: Duration(
+              seconds:
+                  math.max(15, baseConfig.heartbeatInterval.inSeconds ~/ 2)),
           enableRealtime: _currentQuality.index <= NetworkQuality.fair.index,
         );
-        
+
       default:
         return baseConfig;
     }
@@ -580,20 +599,20 @@ class NetworkConfigurationService {
   /// Libera recursos
   Future<void> dispose() async {
     if (_isDisposed) return;
-    
+
     _isDisposed = true;
-    
+
     // Cancelar subscripciones y timers
     await _connectivitySubscription?.cancel();
     _performanceMonitorTimer?.cancel();
-    
+
     // Cerrar streams
     await _configChangeController.close();
-    
+
     // Limpiar historiales
     _latencyHistory.clear();
     _bandwidthHistory.clear();
-    
+
     LoggerFactory.info('🔒 NetworkConfigurationService disposed');
   }
 }
@@ -630,20 +649,6 @@ class NetworkConfig {
     required this.description,
   });
 
-  final Duration syncInterval;
-  final int batchSize;
-  final int maxConcurrentOperations;
-  final Duration timeoutDuration;
-  final int retryAttempts;
-  final Duration retryDelay;
-  final Duration heartbeatInterval;
-  final bool enableRealtime;
-  final bool enableBatching;
-  final bool compressionEnabled;
-  final bool prefetchEnabled;
-  final int cacheSize;
-  final String description;
-
   /// Configuración por defecto
   factory NetworkConfig.defaultConfig() {
     return const NetworkConfig(
@@ -662,6 +667,20 @@ class NetworkConfig {
       description: 'Default configuration',
     );
   }
+
+  final Duration syncInterval;
+  final int batchSize;
+  final int maxConcurrentOperations;
+  final Duration timeoutDuration;
+  final int retryAttempts;
+  final Duration retryDelay;
+  final Duration heartbeatInterval;
+  final bool enableRealtime;
+  final bool enableBatching;
+  final bool compressionEnabled;
+  final bool prefetchEnabled;
+  final int cacheSize;
+  final String description;
 
   /// Crea una copia con valores modificados
   NetworkConfig copyWith({
@@ -682,7 +701,8 @@ class NetworkConfig {
     return NetworkConfig(
       syncInterval: syncInterval ?? this.syncInterval,
       batchSize: batchSize ?? this.batchSize,
-      maxConcurrentOperations: maxConcurrentOperations ?? this.maxConcurrentOperations,
+      maxConcurrentOperations:
+          maxConcurrentOperations ?? this.maxConcurrentOperations,
       timeoutDuration: timeoutDuration ?? this.timeoutDuration,
       retryAttempts: retryAttempts ?? this.retryAttempts,
       retryDelay: retryDelay ?? this.retryDelay,
@@ -725,12 +745,6 @@ class NetworkMetrics {
     required this.connectivityType,
   });
 
-  final Duration latency;
-  final double bandwidth; // Mbps
-  final double packetLoss; // Porcentaje
-  final DateTime timestamp;
-  final ConnectivityResult connectivityType;
-
   /// Métricas vacías
   factory NetworkMetrics.empty() {
     return NetworkMetrics(
@@ -738,9 +752,15 @@ class NetworkMetrics {
       bandwidth: 1.0,
       packetLoss: 10.0,
       timestamp: DateTime.now(),
-      connectivityType: ConnectivityResult.unknown,
+      connectivityType: ConnectivityResult.none,
     );
   }
+
+  final Duration latency;
+  final double bandwidth; // Mbps
+  final double packetLoss; // Porcentaje
+  final DateTime timestamp;
+  final ConnectivityResult connectivityType;
 
   Map<String, dynamic> toMap() {
     return {
@@ -773,7 +793,8 @@ class NetworkConfigurationChange {
 
   bool get isImprovement => newQuality.index < previousQuality.index;
   bool get isDegradation => newQuality.index > previousQuality.index;
-  bool get isSignificantChange => (newQuality.index - previousQuality.index).abs() > 1;
+  bool get isSignificantChange =>
+      (newQuality.index - previousQuality.index).abs() > 1;
 
   @override
   String toString() {

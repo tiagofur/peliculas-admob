@@ -81,8 +81,8 @@ class SyncableWatchedMovie extends SyncableEntity {
       movieVoteAverage: watchedMovie.movie.voteAverage,
       watchedDate: watchedMovie.watchedDate,
       createdAt: now,
-      lastModifiedAt: watchedMovie.lastModifiedAt ?? now,
-      isDeleted: watchedMovie.isDeleted ?? false,
+      lastModifiedAt: watchedMovie.lastModifiedAt,
+      isDeleted: watchedMovie.isDeleted,
       deviceId: deviceId,
     );
   }

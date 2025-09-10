@@ -60,7 +60,7 @@ class SyncService {
     // Fire and forget - no bloquear el hilo principal
     Future.microtask(() async {
       try {
-        final result = await syncAllData();
+        await syncAllData();
         LoggerFactory.info('✅ Sincronización inicial completada sin errores');
       } catch (e) {
 

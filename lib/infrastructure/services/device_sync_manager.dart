@@ -39,7 +39,7 @@ class DeviceSyncManager {
       await _registerDevice();
       LoggerFactory.info(
           '✅ DeviceSyncManager initialized for device: $_deviceId');
-    } catch (e, stackTrace) {
+    } catch (e) {
       LoggerFactory.error('❌ Failed to initialize DeviceSyncManager: $e');
       rethrow;
     }
@@ -155,7 +155,7 @@ class DeviceSyncManager {
       return data
           .map((item) => DeviceInfo.fromJson(Map<String, dynamic>.from(item)))
           .toList();
-    } catch (e, stackTrace) {
+    } catch (e) {
       LoggerFactory.error('❌ Failed to get user devices: $e');
       return [];
     }
@@ -247,7 +247,7 @@ class DeviceSyncManager {
       return data
           .map((item) => SyncConflict.fromJson(Map<String, dynamic>.from(item)))
           .toList();
-    } catch (e, stackTrace) {
+    } catch (e) {
       LoggerFactory.error('❌ Failed to detect multi-device conflicts: $e');
       return [];
     }
@@ -334,7 +334,7 @@ class DeviceSyncManager {
 
       LoggerFactory.info('✅ Forced sync completed: ${result.toString()}');
       return result;
-    } catch (e, stackTrace) {
+    } catch (e) {
       LoggerFactory.error('❌ Forced sync failed: $e');
       return SyncResult.failure(
         itemsProcessed: 0,

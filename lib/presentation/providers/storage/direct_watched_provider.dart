@@ -443,7 +443,7 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
             '🔍 DirectWatched: Usando is_deleted para determinar acción: $isDeleted');
         if (isDeleted) {
           _handleRemoteDelete(eventMovieId);
-        } else if (eventData != null) {
+        } else {
           _handleRemoteInsert(eventData);
         }
       }

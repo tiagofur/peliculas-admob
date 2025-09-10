@@ -6,10 +6,10 @@ import '../logging/logger_factory.dart';
 /// Monitor de rendimiento para el sistema de sincronización real-time
 /// Proporciona métricas detalladas, alertas y dashboard de estado
 class RealtimePerformanceMonitor {
+  RealtimePerformanceMonitor._internal();
+  
   static final RealtimePerformanceMonitor _instance = RealtimePerformanceMonitor._internal();
   static RealtimePerformanceMonitor get instance => _instance;
-  
-  RealtimePerformanceMonitor._internal();
 
   // Métricas de rendimiento
   final Map<String, TableMetrics> _tableMetrics = {};

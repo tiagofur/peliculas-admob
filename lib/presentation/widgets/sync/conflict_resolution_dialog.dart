@@ -225,42 +225,41 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
           ),
         ),
         const SizedBox(height: 8),
-        Column(
-          children: ConflictStrategy.values.where((strategy) {
-            return widget.allowMerge || strategy != ConflictStrategy.merge;
-          }).map((strategy) {
-            return ListTile(
-              title: Text(_getStrategyTitle(strategy)),
-              subtitle: Text(
-                _getStrategyDescription(strategy),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+        RadioGroup<ConflictStrategy>(
+          groupValue: _selectedStrategy,
+          onChanged: (value) {
+            if (!_isResolving) {
+              setState(() {
+                _selectedStrategy = value;
+                _errorMessage = null;
+              });
+            }
+          },
+          child: Column(
+            children: ConflictStrategy.values.where((strategy) {
+              return widget.allowMerge || strategy != ConflictStrategy.merge;
+            }).map((strategy) {
+              return ListTile(
+                title: Text(_getStrategyTitle(strategy)),
+                subtitle: Text(
+                  _getStrategyDescription(strategy),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
                 ),
-              ),
-              leading: Radio<ConflictStrategy>(
-                value: strategy,
-                groupValue: _selectedStrategy,
-                onChanged: _isResolving
+                onTap: _isResolving
                     ? null
-                    : (value) {
+                    : () {
                         setState(() {
-                          _selectedStrategy = value;
+                          _selectedStrategy = strategy;
                           _errorMessage = null;
                         });
                       },
-              ),
-              onTap: _isResolving
-                  ? null
-                  : () {
-                      setState(() {
-                        _selectedStrategy = strategy;
-                        _errorMessage = null;
-                      });
-                    },
-              dense: true,
-            );
-          }).toList(),
-        ),
+                dense: true,
+              );
+            }).toList(),
+          ),
+        )
       ],
     );
   }

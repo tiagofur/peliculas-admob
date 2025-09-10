@@ -77,8 +77,8 @@ class SyncableWatchlistItem extends SyncableEntity {
       priority: watchlistMovie.priority,
       addedAt: watchlistMovie.addedAt,
       createdAt: now,
-      lastModifiedAt: watchlistMovie.lastModifiedAt ?? now,
-      isDeleted: watchlistMovie.isDeleted ?? false,
+      lastModifiedAt: watchlistMovie.lastModifiedAt,
+      isDeleted: watchlistMovie.isDeleted,
       deviceId: deviceId,
     );
   }

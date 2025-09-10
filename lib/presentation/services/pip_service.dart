@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
-
-import '../../core/logging/logger_factory.dart';
-
 // Solo importar youtube_player_flutter en plataformas no web
 import 'package:youtube_player_flutter/youtube_player_flutter.dart'
     if (dart.library.html) '../../core/platform/web_youtube_stub.dart';
 
+import '../../core/logging/logger_factory.dart';
+
 class PipService {
   factory PipService() => _instance;
   PipService._internal();
+
   static final PipService _instance = PipService._internal();
 
   static PipService get instance => _instance;

@@ -10,12 +10,6 @@ import 'connectivity_manager.dart';
 
 /// Configuración para retry logic
 class RetryConfig {
-  final int maxRetries;
-  final Duration initialDelay;
-  final double backoffMultiplier;
-  final Duration maxDelay;
-  final Duration timeout;
-
   const RetryConfig({
     this.maxRetries = 3,
     this.initialDelay = const Duration(seconds: 1),
@@ -23,6 +17,12 @@ class RetryConfig {
     this.maxDelay = const Duration(seconds: 30),
     this.timeout = const Duration(seconds: 10),
   });
+
+  final int maxRetries;
+  final Duration initialDelay;
+  final double backoffMultiplier;
+  final Duration maxDelay;
+  final Duration timeout;
 }
 
 /// Gestor de sincronización en tiempo real usando Supabase Realtime
@@ -40,7 +40,7 @@ class RealtimeSyncManager {
   final SyncCoordinator syncCoordinator;
   final ConnectivityManager connectivityManager;
   final SupabaseClient _supabase;
-  
+
   // Cache de configuraciones adaptativas
   final Map<String, DateTime> _lastConfigUpdate = {};
 
@@ -56,7 +56,7 @@ class RealtimeSyncManager {
   static const Duration _throttleDelay = Duration(milliseconds: 300);
   static const int _maxBatchSize = 15;
   static const int _criticalBatchSize = 25; // Para eventos críticos
-  
+
   // Configuraciones adaptativas por tabla
   static const Map<String, int> _tableBatchSizes = {
     'user_watchlist': 20,
@@ -65,7 +65,7 @@ class RealtimeSyncManager {
     'user_lists': 10,
     'user_list_items': 30,
   };
-  
+
   static const Map<String, Duration> _tableThrottleDelays = {
     'user_watchlist': Duration(milliseconds: 250),
     'user_favorites': Duration(milliseconds: 200),
@@ -103,17 +103,15 @@ class RealtimeSyncManager {
         return await operation().timeout(config.timeout);
       } catch (e) {
         attempt++;
-        
+
         if (attempt >= config.maxRetries) {
           LoggerFactory.error(
-            '❌ ${operationName ?? "Operation"} failed after $attempt attempts: $e'
-          );
+              '❌ ${operationName ?? "Operation"} failed after $attempt attempts: $e');
           rethrow;
         }
 
         LoggerFactory.warning(
-          '⚠️ ${operationName ?? "Operation"} failed (attempt $attempt/${config.maxRetries}), retrying in ${delay.inMilliseconds}ms: $e'
-        );
+            '⚠️ ${operationName ?? "Operation"} failed (attempt $attempt/${config.maxRetries}), retrying in ${delay.inMilliseconds}ms: $e');
 
         await Future.delayed(delay);
         delay = Duration(
@@ -267,21 +265,22 @@ class RealtimeSyncManager {
     await _executeWithRetry(
       () async {
         // Crear canal con filtro por usuario
-        final channel =
-            _supabase.channel('realtime:$tableName:$userId').onPostgresChanges(
-                  event: PostgresChangeEvent.all,
-                  schema: 'public',
-                  table: tableName,
-                  filter: PostgresChangeFilter(
-                    type: PostgresChangeFilterType.eq,
-                    column: 'user_id',
-                    value: userId,
-                  ),
-                  callback: (payload) => _handleRealtimeEvent(tableName, payload),
-                );
+        final channel = _supabase
+            .channel('realtime:$tableName:$userId')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: tableName,
+              filter: PostgresChangeFilter(
+                type: PostgresChangeFilterType.eq,
+                column: 'user_id',
+                value: userId,
+              ),
+              callback: (payload) => _handleRealtimeEvent(tableName, payload),
+            );
 
         // Suscribir al canal
-        await channel.subscribe();
+        channel.subscribe();
         _channels[tableName] = channel;
 
         LoggerFactory.info('📡 Setup realtime channel for $tableName');
@@ -320,7 +319,7 @@ class RealtimeSyncManager {
     // Obtener configuraciones adaptativas para la tabla
     final adaptiveBatchSize = _getAdaptiveBatchSize(tableName);
     final adaptiveDelay = _getAdaptiveThrottleDelay(tableName);
-    
+
     // Usar throttling con Timer existente
     _throttleTimers[tableName]?.cancel();
     _throttleTimers[tableName] = Timer(adaptiveDelay, () {
@@ -333,86 +332,88 @@ class RealtimeSyncManager {
       _throttleTimers[tableName]?.cancel();
       _processBatchedEvents(tableName);
     }
-    
+
     // Registrar métricas de throttling
     _recordThrottlingMetrics(tableName, currentBatchSize, adaptiveBatchSize);
   }
-  
+
   /// Registra métricas de rendimiento del throttling
-  void _recordThrottlingMetrics(String tableName, int currentSize, int maxSize) {
+  void _recordThrottlingMetrics(
+      String tableName, int currentSize, int maxSize) {
     // Log periódico para debugging
     if (currentSize % 5 == 0) {
       LoggerFactory.debug(
           '📊 Batch status for $tableName: $currentSize/$maxSize');
     }
-    
+
     // Alertas de rendimiento
     if (currentSize > maxSize * 0.8) {
       LoggerFactory.warning(
-          '⚠️ High batch load for $tableName: $currentSize/$maxSize (${(currentSize/maxSize*100).toStringAsFixed(1)}%)');
+          '⚠️ High batch load for $tableName: $currentSize/$maxSize (${(currentSize / maxSize * 100).toStringAsFixed(1)}%)');
     }
-    
+
     // Registrar en métricas de rendimiento
     // TODO: Implementar _performanceMetrics si es necesario
     // _performanceMetrics.recordBatchSize(tableName, currentSize);
     // _performanceMetrics.recordThrottlingEfficiency(
-    //   tableName, 
+    //   tableName,
     //   currentSize / maxSize,
     // );
   }
-  
+
   /// Obtiene el tamaño de batch adaptativo para una tabla
   int _getAdaptiveBatchSize(String tableName) {
     // Usar configuración específica de tabla si existe
     if (_tableBatchSizes.containsKey(tableName)) {
       return _tableBatchSizes[tableName]!;
     }
-    
+
     // Adaptación basada en la carga actual
     final currentBatchSize = _batchedEvents[tableName]?.length ?? 0;
     if (currentBatchSize > 50) {
       return _criticalBatchSize; // Procesar en lotes más grandes bajo alta carga
     }
-    
+
     return _maxBatchSize;
   }
-  
+
   /// Obtiene el delay de throttle adaptativo para una tabla
   Duration _getAdaptiveThrottleDelay(String tableName) {
     // Actualizar configuraciones adaptativas si es necesario
     _updateAdaptiveConfig(tableName);
-    
+
     // Usar configuración específica de tabla si existe
     if (_tableThrottleDelays.containsKey(tableName)) {
       return _tableThrottleDelays[tableName]!;
     }
-    
+
     // Adaptación basada en la carga actual
     final currentBatchSize = _batchedEvents[tableName]?.length ?? 0;
     if (currentBatchSize > 30) {
-      return const Duration(milliseconds: 100); // Procesar más rápido bajo alta carga
+      return const Duration(
+          milliseconds: 100); // Procesar más rápido bajo alta carga
     } else if (currentBatchSize > 15) {
       return const Duration(milliseconds: 200);
     }
-    
+
     return _throttleDelay;
   }
-  
+
   /// Actualiza las configuraciones adaptativas para una tabla específica
   void _updateAdaptiveConfig(String tableName) {
     final now = DateTime.now();
     final lastUpdate = _lastConfigUpdate[tableName];
-    
+
     // Solo actualizar cada 30 segundos para evitar overhead
     if (lastUpdate == null || now.difference(lastUpdate).inSeconds > 30) {
       final currentLoad = _batchedEvents[tableName]?.length ?? 0;
-      
+
       // Log de configuración adaptativa
       if (currentLoad > 20) {
         LoggerFactory.debug(
             '⚡ High load detected for $tableName: $currentLoad events, adapting configuration');
       }
-      
+
       _lastConfigUpdate[tableName] = now;
     }
   }
@@ -423,7 +424,7 @@ class RealtimeSyncManager {
     if (events == null || events.isEmpty) return;
 
     final startTime = DateTime.now();
-    
+
     try {
       LoggerFactory.info(
           '⚡ Processing ${events.length} batched events for $tableName');
@@ -431,7 +432,7 @@ class RealtimeSyncManager {
       // Optimización: Deduplicar eventos por ID para evitar procesamiento redundante
       final deduplicatedEvents = _deduplicateEvents(events);
       final savedEvents = events.length - deduplicatedEvents.length;
-      
+
       if (savedEvents > 0) {
         LoggerFactory.info(
             '🔄 Deduplicated $savedEvents redundant events for $tableName');
@@ -449,15 +450,16 @@ class RealtimeSyncManager {
         RealtimeEventType.insert,
         RealtimeEventType.update,
       ];
-      
+
       for (final eventType in processingOrder) {
         if (groupedEvents.containsKey(eventType)) {
-          await _processEventGroup(tableName, eventType, groupedEvents[eventType]!);
+          await _processEventGroup(
+              tableName, eventType, groupedEvents[eventType]!);
         }
       }
 
       final processingTime = DateTime.now().difference(startTime);
-      
+
       _emitEvent(
         RealtimeSyncEventType.batchProcessed,
         'Processed ${deduplicatedEvents.length}/${events.length} events for $tableName in ${processingTime.inMilliseconds}ms',
@@ -469,13 +471,12 @@ class RealtimeSyncManager {
           'processing_time_ms': processingTime.inMilliseconds,
         },
       );
-      
+
       // Registrar métricas de rendimiento
       if (processingTime.inMilliseconds > 1000) {
         LoggerFactory.warning(
             '⚠️ Slow batch processing for $tableName: ${processingTime.inMilliseconds}ms');
       }
-      
     } catch (e) {
       LoggerFactory.error(
           '❌ Failed to process batched events for $tableName: $e');
@@ -485,19 +486,19 @@ class RealtimeSyncManager {
       _batchedEvents[tableName]?.clear();
     }
   }
-  
+
   /// Deduplica eventos basándose en ID y tipo para evitar procesamiento redundante
   List<RealtimeEvent> _deduplicateEvents(List<RealtimeEvent> events) {
     final seen = <String, RealtimeEvent>{};
-    
+
     // Procesar eventos en orden inverso para mantener los más recientes
     for (int i = events.length - 1; i >= 0; i--) {
       final event = events[i];
       final recordId = _getEventRecordId(event);
-      
+
       if (recordId != null) {
         final key = '${event.eventType}_$recordId';
-        
+
         // Solo mantener el evento más reciente para cada combinación tipo+ID
         if (!seen.containsKey(key)) {
           seen[key] = event;
@@ -507,22 +508,24 @@ class RealtimeSyncManager {
         seen['${event.hashCode}'] = event;
       }
     }
-    
+
     // Devolver eventos en orden original
     final result = <RealtimeEvent>[];
     for (final event in events) {
       final recordId = _getEventRecordId(event);
-      final key = recordId != null ? '${event.eventType}_$recordId' : '${event.hashCode}';
-      
+      final key = recordId != null
+          ? '${event.eventType}_$recordId'
+          : '${event.hashCode}';
+
       if (seen.containsKey(key) && seen[key] == event) {
         result.add(event);
         seen.remove(key); // Evitar duplicados
       }
     }
-    
+
     return result;
   }
-  
+
   /// Obtiene el ID del registro de un evento
   String? _getEventRecordId(RealtimeEvent event) {
     final record = event.newRecord ?? event.oldRecord;
@@ -748,7 +751,7 @@ class RealtimeSyncManager {
           }
           return true;
         },
-        config: RetryConfig(
+        config: const RetryConfig(
           maxRetries: 2,
           initialDelay: Duration(milliseconds: 500),
           backoffMultiplier: 1.5,
@@ -758,7 +761,8 @@ class RealtimeSyncManager {
         operationName: 'Connection health check',
       );
     } catch (e) {
-      LoggerFactory.warning('⚠️ Connection health check failed after retries: $e');
+      LoggerFactory.warning(
+          '⚠️ Connection health check failed after retries: $e');
       return false;
     }
   }
@@ -766,26 +770,28 @@ class RealtimeSyncManager {
   /// Limpia todos los canales
   Future<void> _cleanupChannels() async {
     LoggerFactory.info('🧹 Starting channel cleanup...');
-    
+
     // Desuscribir canales con timeout individual
     final channelCleanupFutures = _channels.entries.map((entry) async {
       final tableName = entry.key;
       final channel = entry.value;
-      
+
       try {
         await channel.unsubscribe().timeout(
           const Duration(seconds: 5),
           onTimeout: () {
-            LoggerFactory.warning('⚠️ Channel unsubscribe timed out for $tableName');
-            return Future.value();
+            LoggerFactory.warning(
+                '⚠️ Channel unsubscribe timed out for $tableName');
+            return 'timeout';
           },
         );
         LoggerFactory.info('✅ Channel unsubscribed: $tableName');
       } catch (e) {
-        LoggerFactory.warning('⚠️ Failed to unsubscribe channel $tableName: $e');
+        LoggerFactory.warning(
+            '⚠️ Failed to unsubscribe channel $tableName: $e');
       }
     });
-    
+
     // Esperar a que todos los canales se desuscriban (sin fallar si uno falla)
     await Future.wait(channelCleanupFutures, eagerError: false);
     _channels.clear();
@@ -795,7 +801,7 @@ class RealtimeSyncManager {
       for (final entry in _throttleTimers.entries) {
         final tableName = entry.key;
         final timer = entry.value;
-        
+
         if (timer.isActive) {
           timer.cancel();
           LoggerFactory.info('⏹️ Throttle timer cancelled for $tableName');
@@ -809,7 +815,7 @@ class RealtimeSyncManager {
 
     // Limpiar eventos batcheados
     _batchedEvents.clear();
-    
+
     LoggerFactory.info('✅ Channel cleanup completed');
   }
 
@@ -909,7 +915,7 @@ class RealtimeSyncManager {
   Future<void> dispose() async {
     try {
       LoggerFactory.info('🔒 Starting RealtimeSyncManager disposal...');
-      
+
       // Marcar como no inicializado para prevenir nuevas operaciones
       _isInitialized = false;
       _isListening = false;
@@ -927,14 +933,15 @@ class RealtimeSyncManager {
       );
 
       // Cancelar todas las suscripciones con manejo de errores
-      final subscriptionFutures = _subscriptions.values.map((subscription) async {
+      final subscriptionFutures =
+          _subscriptions.values.map((subscription) async {
         try {
           await subscription.cancel();
         } catch (e) {
           LoggerFactory.warning('⚠️ Failed to cancel subscription: $e');
         }
       });
-      
+
       await Future.wait(subscriptionFutures, eagerError: false);
       _subscriptions.clear();
 
@@ -951,7 +958,7 @@ class RealtimeSyncManager {
       _channels.clear();
       _throttleTimers.clear();
       _batchedEvents.clear();
-      
+
       if (!_eventController.isClosed) {
         _eventController.close();
       }

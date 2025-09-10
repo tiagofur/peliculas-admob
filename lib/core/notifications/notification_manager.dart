@@ -865,17 +865,7 @@ class NotificationManager {
     }
   }
 
-  String _getActorNotificationIcon() {
-    return 'actor_icon';
-  }
 
-  String _getListNotificationIcon() {
-    return 'list_icon';
-  }
-
-  String _getDefaultNotificationIcon() {
-    return 'default_icon';
-  }
 
   /// Muestra una notificación local pública (para uso externo)
   Future<void> showLocalNotification({

@@ -138,33 +138,7 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     }
   }
 
-  /// Sincroniza con Supabase en segundo plano sin bloquear UI
-  void _syncToSupabaseBackground(Movie movie, bool isAdding) async {
-    try {
-      LoggerFactory.debug(
-          '🔄 Sync to Supabase: ${isAdding ? 'adding' : 'removing'} ${movie.title}');
 
-      // Usar SimpleFavoritesSync para envío a Supabase
-      final simpleFavoritesSync = SimpleFavoritesSync.instance;
-      final currentUser = Supabase.instance.client.auth.currentUser;
-
-      if (currentUser != null) {
-        if (isAdding) {
-          await simpleFavoritesSync.addFavorite(currentUser.id, movie);
-        } else {
-          await simpleFavoritesSync.removeFavorite(currentUser.id, movie.id);
-        }
-
-        LoggerFactory.info('✅ Supabase sync completed: ${movie.title}');
-      } else {
-        LoggerFactory.info('ℹ️ No user logged in, skipping Supabase sync');
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ Error syncing to Supabase: $e');
-      // No revertir UI - el usuario ya ve el cambio local
-      // La sync se puede reintentar más tarde
-    }
-  }
 
   /// Configura el auto-refresh para detectar cambios en tiempo real
   void _setupAutoRefresh() {
@@ -187,37 +161,7 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     // });
   }
 
-  /// Sincroniza FROM Supabase en segundo plano (para cuando haces login)
-  void _syncFromSupabaseBackground() async {
-    try {
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser == null) return;
 
-      LoggerFactory.debug(
-          '📥 Iniciando sync FROM Supabase para: ${currentUser.id}');
-
-      final simpleFavoritesSync = SimpleFavoritesSync.instance;
-      final remoteFavorites =
-          await simpleFavoritesSync.performSimpleSync(currentUser.id);
-
-      // Agregar favoritos remotos al estado actual (merge, no replace)
-      final currentState = Map<int, Movie>.from(state);
-      for (final movie in remoteFavorites) {
-        if (!currentState.containsKey(movie.id)) {
-          currentState[movie.id] = movie;
-        }
-      }
-
-      // Solo actualizar estado si hay cambios
-      if (currentState.length != state.length) {
-        state = currentState;
-        LoggerFactory.info(
-            '✅ Sync FROM Supabase completado: ${remoteFavorites.length} remotos, ${state.length} total');
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ Error en sync FROM Supabase: $e');
-    }
-  }
 
   /// Deshabilita el auto-refresh
   void disableAutoRefresh() {

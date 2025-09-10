@@ -9,6 +9,7 @@ import '../../core/services/sync_performance_metrics.dart';
 class ConflictResolutionVerifier {
   factory ConflictResolutionVerifier() => _instance;
   ConflictResolutionVerifier._internal();
+
   static final ConflictResolutionVerifier _instance =
       ConflictResolutionVerifier._internal();
 

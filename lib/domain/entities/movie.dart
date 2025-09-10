@@ -130,6 +130,24 @@ class Movie {
   final Map<String, dynamic>? reviews;
   final Map<String, dynamic>? similar;
 
+  /// Getter para external IDs (para compatibilidad con deep links)
+  Map<String, String>? get externalIds {
+    // Crear un mapa de IDs externos basado en los campos disponibles
+    final Map<String, String> ids = {};
+    
+    if (imdbId != null && imdbId!.isNotEmpty) {
+      ids['imdb'] = imdbId!;
+    }
+    
+    // Aquí se pueden agregar más IDs externos según sea necesario
+    // Por ejemplo, si se tienen IDs de Netflix, Amazon, etc.
+    
+    return ids.isEmpty ? null : ids;
+  }
+
+  /// Getter para website URL (alias de homepage)
+  String? get websiteUrl => homepage;
+
   /// Crea una copia de la película con los campos especificados modificados
   Movie copyWith({
     bool? adult,

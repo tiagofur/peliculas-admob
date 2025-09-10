@@ -795,9 +795,6 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                 children: [
                   ListTile(
                     title: const Text('Todos'),
-                    leading: const Radio<ConflictType?>(
-                      value: null,
-                    ),
                     onTap: () {
                       setState(() => _selectedType = null);
                       Navigator.pop(context);
@@ -806,9 +803,6 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   ),
                   ...ConflictType.values.map((type) => ListTile(
                         title: Text(_getConflictTypeDescription(type)),
-                        leading: Radio<ConflictType?>(
-                          value: type,
-                        ),
                         onTap: () {
                           setState(() => _selectedType = type);
                           Navigator.pop(context);
@@ -817,7 +811,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                       )),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),
@@ -843,9 +837,6 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                 children: [
                   ListTile(
                     title: const Text('Todas'),
-                    leading: const Radio<ConflictStrategy?>(
-                      value: null,
-                    ),
                     onTap: () {
                       setState(() => _selectedStrategy = null);
                       Navigator.pop(context);
@@ -854,9 +845,6 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   ),
                   ...ConflictStrategy.values.map((strategy) => ListTile(
                         title: Text(_getStrategyLabel(strategy)),
-                        leading: Radio<ConflictStrategy?>(
-                          value: strategy,
-                        ),
                         onTap: () {
                           setState(() => _selectedStrategy = strategy);
                           Navigator.pop(context);
@@ -865,7 +853,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                       )),
                 ],
               ),
-            ),
+            )
           ],
         ),
       ),

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// Represents a streaming platform (Netflix, Prime Video, etc.)
 class StreamingPlatform {
   const StreamingPlatform({
@@ -65,6 +67,51 @@ class StreamingPlatform {
   @override
   String toString() {
     return 'StreamingPlatform(id: $id, name: $name, displayName: $displayName)';
+  }
+
+  /// Get the primary color for this platform
+  Color get primaryColor {
+    switch (id) {
+      case 'netflix':
+        return const Color(0xFFE50914);
+      case 'amazon_prime':
+        return const Color(0xFF00A8E1);
+      case 'disney_plus':
+        return const Color(0xFF113CCF);
+      case 'hbo_max':
+        return const Color(0xFF8B5CF6);
+      case 'hulu':
+        return const Color(0xFF1CE783);
+      case 'apple_tv':
+        return const Color(0xFF000000);
+      default:
+        return const Color(0xFF6B7280);
+    }
+  }
+
+  /// Get the website URL for this platform
+  String get websiteUrl => baseUrl;
+
+  /// URL del icono de la plataforma
+  String get iconUrl {
+    switch (id) {
+      case 'netflix':
+        return 'assets/icons/netflix.png';
+      case 'disney_plus':
+        return 'assets/icons/disney_plus.png';
+      case 'hbo_max':
+        return 'assets/icons/hbo_max.png';
+      case 'prime_video':
+        return 'assets/icons/prime_video.png';
+      case 'apple_tv':
+        return 'assets/icons/apple_tv.png';
+      case 'paramount_plus':
+        return 'assets/icons/paramount_plus.png';
+      case 'peacock':
+        return 'assets/icons/peacock.png';
+      default:
+        return 'assets/icons/default_platform.png';
+    }
   }
 
   StreamingPlatform copyWith({
@@ -227,6 +274,35 @@ class StreamingPlatform {
     subscriptionUrl: 'https://tv.apple.com',
   );
 
+  // Getter aliases for backward compatibility
+  static StreamingPlatform get primeVideo => amazonPrime;
+  static StreamingPlatform get appleTv => appleTV;
+
+  // Additional platforms (placeholders for future implementation)
+  static const StreamingPlatform paramountPlus = StreamingPlatform(
+    id: 'paramount_plus',
+    name: 'Paramount+',
+    displayName: 'Paramount+',
+    logoUrl: 'https://www.paramountplus.com/favicon.ico',
+    baseUrl: 'https://www.paramountplus.com',
+    deepLinkScheme: 'paramountplus',
+    supportedCountries: ['US', 'CA'],
+    requiresSubscription: true,
+    subscriptionUrl: 'https://www.paramountplus.com/account/signup',
+  );
+
+  static const StreamingPlatform peacock = StreamingPlatform(
+    id: 'peacock',
+    name: 'Peacock',
+    displayName: 'Peacock',
+    logoUrl: 'https://www.peacocktv.com/favicon.ico',
+    baseUrl: 'https://www.peacocktv.com',
+    deepLinkScheme: 'peacocktv',
+    supportedCountries: ['US'],
+    requiresSubscription: true,
+    subscriptionUrl: 'https://www.peacocktv.com/premium',
+  );
+
   static List<StreamingPlatform> get allPlatforms => [
         netflix,
         amazonPrime,
@@ -234,5 +310,7 @@ class StreamingPlatform {
         hboMax,
         hulu,
         appleTV,
+        paramountPlus,
+        peacock,
       ];
 }

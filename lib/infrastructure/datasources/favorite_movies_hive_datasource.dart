@@ -27,7 +27,6 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
     final box = await _getBox();
 
     final allMovies = box.values
-        .where((movie) => movie != null)
         .cast<Movie>()
         .toList();
 

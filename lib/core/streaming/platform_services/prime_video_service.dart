@@ -1,137 +1,147 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/streaming_availability.dart';
 import '../../../domain/entities/streaming_platform.dart';
+import '../streaming_api_config.dart';
+import '../real_availability_service.dart';
 import '../../analytics/analytics_service.dart';
-import '../../logging/app_logger.dart';
-import 'netflix_service.dart'; // For SubscriptionPlan
+import 'platform_services.dart'; // For StreamingPlatformServiceInterface
 
 /// Amazon Prime Video streaming service implementation
-class PrimeVideoService {
+class PrimeVideoService implements StreamingPlatformServiceInterface {
   PrimeVideoService({
     http.Client? httpClient,
-    AnalyticsService? analyticsService,
-    AppLogger? logger,
+    required AnalyticsService analytics,
+    required RealAvailabilityService availabilityService,
   })  : _httpClient = httpClient ?? http.Client(),
-        _analyticsService = analyticsService ?? AnalyticsService(),
-        _logger = logger ?? AppLogger.instance;
-  static const String _baseUrl = 'https://api.primevideo.com';
+        _analytics = analytics,
+        _availabilityService = availabilityService;
+  final String _baseUrl = StreamingApiConfig.primeVideoBaseUrl;
   static const String _deepLinkScheme = 'aiv://';
 
   final http.Client _httpClient;
-  final AnalyticsService _analyticsService;
-  final AppLogger _logger;
+  final AnalyticsService _analytics;
+  final RealAvailabilityService _availabilityService;
 
-  /// Check if a movie is available on Prime Video
+  @override
   Future<PlatformAvailability?> checkMovieAvailability({
     required String movieId,
     required String tmdbId,
     String region = 'US',
   }) async {
     try {
-      _logger.info('Checking Prime Video availability for movie: $movieId');
+      _analytics.trackEvent(AnalyticsEventType.userEngagement, {
+        'movie_id': movieId,
+        'region': region,
+        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+      });
 
-      final availability = await _simulatePrimeAvailability(
-        tmdbId: tmdbId,
+      // Try real availability service first
+      final availabilityList = await _availabilityService.checkAvailability(
+        movieId,
         region: region,
       );
 
-      _analyticsService.trackEvent(
-        AnalyticsEventType.userEngagement,
-        {
-          'movie_id': movieId,
-          'tmdb_id': tmdbId,
-          'region': region,
-          'is_available': availability?.isAvailable ?? false,
-          'platform': 'prime_video',
-          'action': 'availability_checked',
-        },
-      );
+      if (availabilityList.isNotEmpty) {
+        return availabilityList.first;
+      }
 
-      return availability;
-    } catch (e) {
-      _logger.error('Error checking Prime Video availability: $e');
-      _analyticsService.trackEvent(
-        AnalyticsEventType.error,
-        {
-          'movie_id': movieId,
-          'error': e.toString(),
-          'platform': 'prime_video',
-        },
+      // If Prime Video API is configured, try direct API call
+      if (StreamingApiConfig.hasPrimeVideoApiKey) {
+        final directAvailability = await _checkDirectPrimeAvailability(
+          tmdbId: movieId,
+          region: region,
+        );
+        
+        if (directAvailability != null) {
+          return directAvailability;
+        }
+      }
+
+      // Fallback to simulation
+      return await _simulatePrimeAvailability(
+        tmdbId: movieId,
+        region: region,
       );
+    } catch (e) {
+      // Error checking Prime Video availability: $e
       return null;
     }
   }
 
-  /// Search for content on Prime Video
+  @override
   Future<List<Movie>> searchContent({
     required String query,
     String region = 'US',
     int limit = 20,
   }) async {
     try {
-      _logger.info('Searching Prime Video content: $query');
+      _analytics.trackEvent(AnalyticsEventType.userEngagement, {
+        'query': query,
+        'region': region,
+        'limit': limit,
+        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+      });
 
-      final results = await _simulatePrimeSearch(
+      // If Prime Video API is configured, use real API
+      if (StreamingApiConfig.hasPrimeVideoApiKey) {
+        final realResults = await _searchPrimeContent(
+          query: query,
+          region: region,
+          limit: limit,
+        );
+        
+        if (realResults.isNotEmpty) {
+          return realResults;
+        }
+      }
+
+      // Fallback to simulation
+      return await _simulatePrimeSearch(
         query: query,
         region: region,
         limit: limit,
       );
-
-      _analyticsService.trackEvent(
-        AnalyticsEventType.searchQuery,
-        {
-          'query': query,
-          'region': region,
-          'results_count': results.length,
-          'platform': 'prime_video',
-        },
-      );
-
-      return results;
     } catch (e) {
-      _logger.error('Error searching Prime Video content: $e');
-      _analyticsService.trackEvent(
-        AnalyticsEventType.error,
-        {
-          'query': query,
-          'error': e.toString(),
-          'platform': 'prime_video',
-        },
-      );
+      // Error searching Prime Video content: $e
       return [];
     }
   }
 
-  /// Get trending content from Prime Video
   Future<List<Movie>> getTrendingContent({
     String region = 'US',
     int limit = 20,
   }) async {
     try {
-      _logger.info('Getting Prime Video trending content');
+      _analytics.trackEvent(AnalyticsEventType.userEngagement, {
+        'region': region,
+        'limit': limit,
+        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+      });
 
-      final trending = await _simulatePrimeTrending(
+      // If Prime Video API is configured, use real API
+      if (StreamingApiConfig.hasPrimeVideoApiKey) {
+        final realResults = await _getTrendingPrimeContent(
+          region: region,
+          limit: limit,
+        );
+        
+        if (realResults.isNotEmpty) {
+          return realResults;
+        }
+      }
+
+      // Fallback to simulation
+      return await _simulatePrimeTrending(
         region: region,
         limit: limit,
       );
-
-      _analyticsService.trackEvent(
-        AnalyticsEventType.userEngagement,
-        {
-          'platform': 'prime_video',
-          'content_type': 'trending',
-          'region': region,
-          'results_count': trending.length,
-        },
-      );
-
-      return trending;
     } catch (e) {
-      _logger.error('Error getting Prime Video trending: $e');
+      // Error getting Prime Video trending content: $e
       return [];
     }
   }
@@ -142,31 +152,29 @@ class PrimeVideoService {
     int limit = 20,
   }) async {
     try {
-      _logger.info('Getting Prime Video originals');
+      // Getting Prime Video originals
 
       final originals = await _simulatePrimeOriginals(
         region: region,
         limit: limit,
       );
 
-      _analyticsService.trackEvent(
-        AnalyticsEventType.userEngagement,
-        {
-          'platform': 'prime_video',
-          'content_type': 'originals',
-          'region': region,
-          'results_count': originals.length,
-        },
-      );
+      _analytics.trackEvent(AnalyticsEventType.userEngagement, {
+        'platform': 'prime_video',
+        'content_type': 'originals',
+        'region': region,
+        'results_count': originals.length,
+      });
 
       return originals;
     } catch (e) {
-      _logger.error('Error getting Prime Video originals: $e');
+      // Error getting Prime Video originals: $e
       return [];
     }
   }
 
   /// Launch Prime Video app with deep link
+  @override
   String generateDeepLink({
     required String movieId,
     String? tmdbId,
@@ -174,21 +182,19 @@ class PrimeVideoService {
     // Prime Video deep link format: aiv://aiv/resume?asin={asin}
     final deepLink = '${_deepLinkScheme}aiv/resume?asin=$movieId';
 
-    _analyticsService.trackEvent(
-      AnalyticsEventType.userEngagement,
-      {
-        'platform': 'prime_video',
-        'movie_id': movieId,
-        'tmdb_id': tmdbId,
-        'deep_link': deepLink,
-        'action': 'deep_link_generated',
-      },
-    );
+    _analytics.trackEvent(AnalyticsEventType.userEngagement, {
+      'platform': 'prime_video',
+      'movie_id': movieId,
+      'tmdb_id': tmdbId,
+      'deep_link': deepLink,
+      'action': 'deep_link_generated',
+    });
 
     return deepLink;
   }
 
   /// Get Prime Video subscription plans
+  @override
   Future<List<SubscriptionPlan>> getSubscriptionPlans({
     String region = 'US',
   }) async {
@@ -223,7 +229,7 @@ class PrimeVideoService {
         ),
       ];
     } catch (e) {
-      _logger.error('Error getting Prime Video subscription plans: $e');
+      // Error getting Prime Video subscription plans: $e
       return [];
     }
   }
@@ -244,12 +250,155 @@ class PrimeVideoService {
       if (hash % 4 == 2) return PrimeContentType.purchase;
       return PrimeContentType.unavailable;
     } catch (e) {
-      _logger.error('Error checking Prime Video content type: $e');
+      // Error checking Prime Video content type: $e
       return PrimeContentType.unavailable;
     }
   }
 
-  // Simulation methods
+  // Real API methods
+  /// Check availability directly with Prime Video API
+  Future<PlatformAvailability?> _checkDirectPrimeAvailability({
+    required String tmdbId,
+    required String region,
+  }) async {
+    try {
+      final url = Uri.parse('$_baseUrl/catalog/titles/$tmdbId')
+          .replace(queryParameters: {
+        'region': region,
+        'include_availability': 'true',
+      });
+
+      final response = await _httpClient
+          .get(url, headers: StreamingApiConfig.primeVideoHeaders)
+          .timeout(StreamingApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return _parsePrimeAvailability(data, tmdbId);
+      } else if (response.statusCode == 404) {
+        return null;
+      } else {
+        // Prime Video API error: ${response.statusCode}
+        return null;
+      }
+    } catch (e) {
+      // Prime Video direct API call failed: $e
+      return null;
+    }
+  }
+
+  /// Search Prime Video content using real API
+  Future<List<Movie>> _searchPrimeContent({
+    required String query,
+    required String region,
+    required int limit,
+  }) async {
+    try {
+      final url = Uri.parse('$_baseUrl/search')
+          .replace(queryParameters: {
+        'q': query,
+        'region': region,
+        'limit': limit.toString(),
+        'content_type': 'movie',
+      });
+
+      final response = await _httpClient
+          .get(url, headers: StreamingApiConfig.primeVideoHeaders)
+          .timeout(StreamingApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return _parsePrimeMovies(data['results'] as List? ?? []);
+      } else {
+        // Prime Video search API error: ${response.statusCode}
+        return [];
+      }
+    } catch (e) {
+      // Prime Video search API call failed: $e
+      return [];
+    }
+  }
+
+  /// Get trending Prime Video content using real API
+  Future<List<Movie>> _getTrendingPrimeContent({
+    required String region,
+    required int limit,
+  }) async {
+    try {
+      final url = Uri.parse('$_baseUrl/trending')
+          .replace(queryParameters: {
+        'region': region,
+        'limit': limit.toString(),
+        'content_type': 'movie',
+        'time_period': 'week',
+      });
+
+      final response = await _httpClient
+          .get(url, headers: StreamingApiConfig.primeVideoHeaders)
+          .timeout(StreamingApiConfig.requestTimeout);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        return _parsePrimeMovies(data['results'] as List? ?? []);
+      } else {
+        // Prime Video trending API error: ${response.statusCode}
+        return [];
+      }
+    } catch (e) {
+      // Prime Video trending API call failed: $e
+      return [];
+    }
+  }
+
+  /// Parse Prime Video availability response
+  PlatformAvailability _parsePrimeAvailability(Map<String, dynamic> data, String tmdbId) {
+    final availability = data['availability'] as Map<String, dynamic>? ?? {};
+    final pricing = data['pricing'] as Map<String, dynamic>? ?? {};
+    final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
+    
+    return PlatformAvailability(
+      platform: StreamingPlatform.primeVideo,
+      isAvailable: availability['is_available'] as bool? ?? false,
+      isFree: availability['is_free'] as bool? ?? false,
+      requiresSubscription: availability['requires_subscription'] as bool? ?? true,
+      canRent: availability['can_rent'] as bool? ?? true,
+      canPurchase: availability['can_purchase'] as bool? ?? true,
+      rentalPrice: (pricing['rental_price'] as num?)?.toDouble(),
+      purchasePrice: (pricing['purchase_price'] as num?)?.toDouble(),
+      currency: pricing['currency'] as String? ?? 'USD',
+      quality: metadata['video_quality'] as String? ?? '4K Ultra HD',
+      deepLink: generateDeepLink(movieId: tmdbId),
+      audioLanguages: List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
+      subtitleLanguages: List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+    );
+  }
+
+  /// Parse Prime Video movies response
+  List<Movie> _parsePrimeMovies(List data) {
+    return data.map((item) {
+      final movie = item as Map<String, dynamic>;
+      return Movie(
+        id: movie['id'] as int? ?? 0,
+        title: movie['title'] as String? ?? '',
+        overview: movie['overview'] as String? ?? '',
+        posterPath: movie['poster_path'] as String? ?? '',
+        backdropPath: movie['backdrop_path'] as String? ?? '',
+        releaseDate: movie['release_date'] != null 
+            ? DateTime.tryParse(movie['release_date'] as String) ?? DateTime.now()
+            : DateTime.now(),
+        voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
+        voteCount: movie['vote_count'] as int? ?? 0,
+        genreIds: List<String>.from(movie['genre_ids'] as List? ?? []),
+        adult: movie['adult'] as bool? ?? false,
+        originalLanguage: movie['original_language'] as String? ?? 'en',
+        originalTitle: movie['original_title'] as String? ?? '',
+        popularity: (movie['popularity'] as num?)?.toDouble() ?? 0.0,
+        video: movie['video'] as bool? ?? false,
+      );
+    }).toList();
+  }
+
+  // Simulation methods (fallback when real APIs are not available)
   Future<PlatformAvailability?> _simulatePrimeAvailability({
     required String tmdbId,
     required String region,
@@ -305,6 +454,7 @@ class PrimeVideoService {
     return [];
   }
 
+  @override
   void dispose() {
     _httpClient.close();
   }

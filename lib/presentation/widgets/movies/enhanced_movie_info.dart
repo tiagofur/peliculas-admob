@@ -939,7 +939,7 @@ class _EnhancedCast extends StatelessWidget {
                             ? Icon(
                                 Icons.person,
                                 size: 35,
-                                color: colors.onSurfaceVariant,
+                                color: colors.onSurface,
                               )
                             : null,
                       ),

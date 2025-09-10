@@ -10,17 +10,13 @@ import '../logging/logger_factory.dart';
 class OfflineCacheManager {
   OfflineCacheManager({
     required LocalStorageDatasource datasource,
-    required Ref ref,
-  })  : _datasource = datasource,
-        _ref = ref;
+  }) : _datasource = datasource;
 
   final LocalStorageDatasource _datasource;
-  final Ref _ref;
   Timer? _cleanupTimer;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   static const Duration _cleanupInterval = Duration(hours: 6);
-  static const Duration _syncInterval = Duration(minutes: 5);
 
   /// Initialize the cache manager
   Future<void> initialize() async {

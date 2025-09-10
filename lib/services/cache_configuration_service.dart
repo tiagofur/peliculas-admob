@@ -178,7 +178,9 @@ class CacheMetrics {
 /// Servicio de configuración y monitoreo del caché
 class CacheConfigurationService {
   factory CacheConfigurationService() => _instance;
+
   CacheConfigurationService._internal();
+
   static final CacheConfigurationService _instance =
       CacheConfigurationService._internal();
 

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:http/http.dart' as http;
+
 import '../../domain/entities/streaming_availability.dart';
 import '../../domain/entities/streaming_platform.dart';
 import '../../domain/entities/subscription.dart';
@@ -8,31 +10,118 @@ import '../cache/cache_service.dart';
 import '../logging/app_logger.dart';
 import 'availability_checker.dart';
 import 'deep_linking_service.dart';
+import 'platform_services/platform_services.dart';
+import 'real_availability_service.dart';
+import 'realtime_availability_service.dart';
 
 /// Main service for managing streaming platform integrations
 class StreamingServiceManager {
   StreamingServiceManager({
-    CacheService? cacheService,
-    AnalyticsService? analyticsService,
+    required this.analytics,
+    required this.cache,
     AppLogger? logger,
-    DeepLinkingService? deepLinkingService,
-    AvailabilityChecker? availabilityChecker,
-  })  : _cacheService = cacheService ?? CacheService.instance,
-        _analyticsService = analyticsService ?? AnalyticsService(),
-        _logger = logger ?? AppLogger.instance,
-        _deepLinkingService = deepLinkingService ?? DeepLinkingService(),
-        _availabilityChecker = availabilityChecker ?? AvailabilityChecker();
-  final CacheService _cacheService;
-  final AnalyticsService _analyticsService;
-  final AppLogger _logger;
+    http.Client? httpClient,
+  })  : logger = logger ?? AppLogger.instance,
+        _httpClient = httpClient ?? http.Client(),
+        _availabilityChecker = AvailabilityChecker(
+          analyticsService: analytics,
+          cacheService: cache,
+        ),
+        _deepLinkingService = DeepLinkingService(
+          analyticsService: analytics,
+        ) {
+    _initializeServices();
+  }
+  final AnalyticsService analytics;
+  final CacheService cache;
+  final AppLogger logger;
+  final http.Client _httpClient;
   final DeepLinkingService _deepLinkingService;
   final AvailabilityChecker _availabilityChecker;
+
+  // Real-time availability services
+  late final RealAvailabilityService _realAvailabilityService;
+  late final RealtimeAvailabilityService _realtimeAvailabilityService;
+
+  // Platform services
+  late final NetflixService _netflixService;
+  late final PrimeVideoService _primeVideoService;
+  late final DisneyPlusService _disneyPlusService;
+  late final HboMaxService _hboMaxService;
   final Map<String, StreamingPlatformService> _platformServices = {};
   final StreamController<StreamingEvent> _eventController =
       StreamController<StreamingEvent>.broadcast();
 
+  /// Initialize all streaming services
+  void _initializeServices() {
+    // Initialize real availability service
+    _realAvailabilityService = RealAvailabilityService(
+      httpClient: _httpClient,
+      analyticsService: analytics,
+      logger: logger,
+    );
+
+    // Initialize platform services first
+    _netflixService = NetflixService(
+      httpClient: _httpClient,
+      analytics: analytics,
+      availabilityService: _realAvailabilityService,
+    );
+
+    _primeVideoService = PrimeVideoService(
+      httpClient: _httpClient,
+      analytics: analytics,
+      availabilityService: _realAvailabilityService,
+    );
+
+    _disneyPlusService = DisneyPlusService(
+      httpClient: _httpClient,
+      analytics: analytics,
+      availabilityService: _realAvailabilityService,
+    );
+
+    _hboMaxService = HboMaxService(
+      httpClient: _httpClient,
+      analytics: analytics,
+      availabilityService: _realAvailabilityService,
+    );
+
+    // Initialize real-time availability service
+    _realtimeAvailabilityService = RealtimeAvailabilityService(
+      netflixService: _netflixService,
+      primeVideoService: _primeVideoService,
+      disneyPlusService: _disneyPlusService,
+      hboMaxService: _hboMaxService,
+      analytics: analytics,
+    );
+  }
+
   // Cache duration for availability data
   static const Duration _availabilityCacheDuration = Duration(hours: 6);
+
+  /// Get real-time availability service
+  RealtimeAvailabilityService get realtimeAvailability =>
+      _realtimeAvailabilityService;
+
+  /// Get real availability service
+  RealAvailabilityService get realAvailability => _realAvailabilityService;
+
+  /// Get platform service by platform ID
+  StreamingPlatformServiceInterface? getPlatformService(String platformId) {
+    switch (platformId) {
+      case 'netflix':
+        return _netflixService;
+      case 'amazon_prime':
+        return _primeVideoService;
+      case 'disney_plus':
+        return _disneyPlusService;
+      case 'hbo_max':
+        return _hboMaxService;
+      default:
+        return null;
+    }
+  }
+
   static const Duration _subscriptionCacheDuration = Duration(hours: 1);
 
   bool _isInitialized = false;
@@ -55,7 +144,7 @@ class StreamingServiceManager {
     Map<String, String>? apiKeys,
   }) async {
     try {
-      _logger.info('Initializing StreamingServiceManager for region: $region');
+      logger.info('Initializing StreamingServiceManager for region: $region');
 
       _currentRegion = region;
 
@@ -64,18 +153,17 @@ class StreamingServiceManager {
 
       _isInitialized = true;
 
-      _analyticsService.trackEvent(AnalyticsEventType.appLaunch, {
+      analytics.trackEvent(AnalyticsEventType.appLaunch, {
         'region': region,
         'platforms_count': _platformServices.length,
       });
 
       _eventController.add(StreamingEvent.initialized(region));
 
-      _logger.info('StreamingServiceManager initialized successfully');
+      logger.info('StreamingServiceManager initialized successfully');
     } catch (e, stackTrace) {
-      _logger.error('Failed to initialize StreamingServiceManager',
-          error: e, stackTrace: stackTrace);
-      _analyticsService.trackEvent(AnalyticsEventType.error, {
+      logger.error('Failed to initialize StreamingServiceManager: $e');
+      analytics.trackEvent(AnalyticsEventType.error, {
         'error': e.toString(),
         'region': region,
       });
@@ -98,7 +186,7 @@ class StreamingServiceManager {
         await service.initialize();
         _platformServices[platform.id] = service;
 
-        _logger.debug('Initialized service for platform: ${platform.name}');
+        logger.debug('Initialized service for platform: ${platform.name}');
       }
     }
   }
@@ -120,6 +208,76 @@ class StreamingServiceManager {
     );
   }
 
+  /// Get streaming availability for a movie
+  Future<StreamingAvailability?> getAvailability(
+    int movieId,
+    String movieTitle, {
+    String region = 'US',
+    bool forceRefresh = false,
+  }) async {
+    try {
+      // Use real-time availability service for better performance
+      return await _realtimeAvailabilityService.getAvailability(
+        movieId,
+        movieTitle,
+        region: region,
+        forceRefresh: forceRefresh,
+      );
+    } catch (e) {
+      logger.error('Failed to get availability for movie $movieId: $e');
+      // Fallback to availability checker
+      try {
+        return await _availabilityChecker.checkAvailability(
+          movieId,
+          movieTitle,
+          region: region,
+          useCache: !forceRefresh,
+        );
+      } catch (fallbackError) {
+        logger.error('Fallback availability check also failed: $fallbackError');
+        return null;
+      }
+    }
+  }
+
+  /// Stream real-time availability updates for a movie
+  Stream<StreamingAvailability?> streamAvailability(
+    int movieId,
+    String movieTitle, {
+    String region = 'US',
+  }) {
+    return _realtimeAvailabilityService.streamAvailability(
+      movieId,
+      movieTitle,
+      region: region,
+    );
+  }
+
+  /// Preload availability for multiple movies
+  Future<void> preloadAvailability(
+    List<int> movieIds,
+    List<String> movieTitles, {
+    String region = 'US',
+  }) async {
+    try {
+      await _realtimeAvailabilityService.preloadAvailability(
+        movieIds: movieIds.map((id) => id.toString()).toList(),
+        region: region,
+      );
+    } catch (e) {
+      logger.error('Failed to preload availability: $e');
+    }
+  }
+
+  /// Clear availability cache
+  Future<void> clearAvailabilityCache() async {
+    try {
+      await _realtimeAvailabilityService.clearCache();
+    } catch (e) {
+      logger.error('Failed to clear availability cache: $e');
+    }
+  }
+
   /// Get user subscriptions
   List<Subscription> getUserSubscriptions(String userId) {
     return _userSubscriptions[userId] ?? [];
@@ -138,7 +296,7 @@ class StreamingServiceManager {
       userSubs.add(subscription);
       _userSubscriptions[userId] = userSubs;
 
-      _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+      analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'user_id': userId,
         'platform': subscription.platform.id,
         'status': subscription.status.name,
@@ -147,10 +305,9 @@ class StreamingServiceManager {
 
       _eventController.add(StreamingEvent.subscriptionUpdated(subscription));
 
-      _logger.info('Updated subscription for ${subscription.platform.name}');
+      logger.info('Updated subscription for ${subscription.platform.name}');
     } catch (e, stackTrace) {
-      _logger.error('Failed to update subscription',
-          error: e, stackTrace: stackTrace);
+      logger.error('Failed to update subscription: $e');
       rethrow;
     }
   }
@@ -162,15 +319,14 @@ class StreamingServiceManager {
       userSubs.removeWhere((s) => s.platform.id == platformId);
       _userSubscriptions[userId] = userSubs;
 
-      _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+      analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'user_id': userId,
         'platform': platformId,
       });
 
-      _logger.info('Removed subscription for platform: $platformId');
+      logger.info('Removed subscription for platform: $platformId');
     } catch (e, stackTrace) {
-      _logger.error('Failed to remove subscription',
-          error: e, stackTrace: stackTrace);
+      logger.error('Failed to remove subscription: $e');
       rethrow;
     }
   }
@@ -222,7 +378,7 @@ class StreamingServiceManager {
     ContentType? contentType,
   }) async {
     try {
-      _logger.info('Searching for content: $query');
+      logger.info('Searching for content: $query');
 
       final targetServices = platformIds != null
           ? _platformServices.values
@@ -235,7 +391,7 @@ class StreamingServiceManager {
         try {
           return await service.searchContent(query, contentType);
         } catch (e) {
-          _logger.warning('Search failed on ${service.platform.name}: $e');
+          logger.warning('Search failed on ${service.platform.name}: $e');
           return <StreamingSearchResult>[];
         }
       });
@@ -246,7 +402,7 @@ class StreamingServiceManager {
         results.addAll(platformResults);
       }
 
-      _analyticsService.trackEvent(AnalyticsEventType.searchQuery, {
+      analytics.trackEvent(AnalyticsEventType.searchQuery, {
         'query': query,
         'platforms_searched': targetServices.length,
         'results_found': results.length,
@@ -254,8 +410,7 @@ class StreamingServiceManager {
 
       return results;
     } catch (e, stackTrace) {
-      _logger.error('Failed to search content',
-          error: e, stackTrace: stackTrace);
+      logger.error('Failed to search content: $e');
       return [];
     }
   }
@@ -263,12 +418,7 @@ class StreamingServiceManager {
   /// Clear availability cache
   void clearCache() {
     _availabilityCache.clear();
-    _logger.info('Streaming availability cache cleared');
-  }
-
-  /// Get platform service by ID
-  StreamingPlatformService? getPlatformService(String platformId) {
-    return _platformServices[platformId];
+    logger.info('Streaming availability cache cleared');
   }
 
   /// Get all available platforms
@@ -298,16 +448,15 @@ class StreamingServiceManager {
   /// Dispose resources
   void dispose() {
     _eventController.close();
-    _availabilityCache.clear();
-    _userSubscriptions.clear();
+    _realtimeAvailabilityService.dispose();
+    _httpClient.close();
 
     for (final service in _platformServices.values) {
       service.dispose();
     }
     _platformServices.clear();
 
-    _isInitialized = false;
-    _logger.info('StreamingServiceManager disposed');
+    logger.info('StreamingServiceManager disposed');
   }
 }
 

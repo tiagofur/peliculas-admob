@@ -37,7 +37,6 @@ class SyncableCustomList extends SyncableEntity {
     List<String> collaboratorIds = const [],
     String? deviceId,
   }) {
-    final now = SyncUtilities.utcNow();
     return SyncableCustomList(
       id: customId ?? SyncUtilities.generateUuid(),
       userId: userId,
@@ -49,8 +48,8 @@ class SyncableCustomList extends SyncableEntity {
       category: category,
       tags: tags,
       collaboratorIds: collaboratorIds,
-      createdAt: now,
-      lastModifiedAt: now,
+      createdAt: SyncUtilities.utcNow(),
+      lastModifiedAt: SyncUtilities.utcNow(),
       deviceId: deviceId,
     );
   }
@@ -61,7 +60,6 @@ class SyncableCustomList extends SyncableEntity {
     required CustomList customList,
     String? deviceId,
   }) {
-    final now = SyncUtilities.utcNow();
     return SyncableCustomList(
       id: customList.id,
       userId: userId,
@@ -70,8 +68,8 @@ class SyncableCustomList extends SyncableEntity {
       emoji: customList.emoji,
       movieIds: customList.movieIds,
       createdAt: customList.createdAt,
-      lastModifiedAt: customList.lastModifiedAt ?? now,
-      isDeleted: customList.isDeleted ?? false,
+      lastModifiedAt: customList.lastModifiedAt,
+      isDeleted: customList.isDeleted,
       deviceId: deviceId,
     );
   }

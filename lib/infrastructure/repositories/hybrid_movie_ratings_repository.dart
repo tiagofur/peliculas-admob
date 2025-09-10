@@ -146,7 +146,7 @@ class HybridMovieRatingsRepository
       );
 
       await add(movieRating);
-      LoggerFactory.info('⭐ Rated movie: ${movie.id} (${rating}/10)');
+      LoggerFactory.info('⭐ Rated movie: ${movie.id} ($rating/10)');
     } catch (e) {
       LoggerFactory.error('❌ Failed to rate movie: $e');
       rethrow;

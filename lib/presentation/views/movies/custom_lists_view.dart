@@ -600,8 +600,9 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
 
   /// Calcula el número total de items incluyendo anuncios
   int _calculateItemsWithAds(int listCount) {
-    if (listCount <= 2)
+    if (listCount <= 2) {
       return listCount; // No mostrar anuncios si hay pocas listas
+    }
     int adsCount = 0;
     if (listCount >= 4) adsCount += 1; // Anuncio nativo cada 4 listas
     adsCount += 1; // Banner final

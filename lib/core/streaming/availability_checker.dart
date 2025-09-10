@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:http/http.dart' as http;
-
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/streaming_availability.dart';
 import '../../domain/entities/streaming_platform.dart';
@@ -14,13 +12,10 @@ import '../logging/logger_factory.dart';
 class AvailabilityChecker {
   AvailabilityChecker({
     AnalyticsService? analyticsService,
-    http.Client? httpClient,
     CacheService? cacheService,
   })  : _analyticsService = analyticsService ?? AnalyticsService(),
-        _httpClient = httpClient ?? http.Client(),
         _cacheService = cacheService ?? CacheService.instance;
   final AnalyticsService _analyticsService;
-  final http.Client _httpClient;
   final CacheService _cacheService;
 
   // Use LoggerFactory static logger
@@ -28,6 +23,21 @@ class AvailabilityChecker {
 
   // Cache duration for availability data
   static const Duration _cacheDuration = Duration(hours: 6);
+
+  /// Check availability for a movie (compatibility method)
+  Future<StreamingAvailability?> checkAvailability(
+    int movieId,
+    String movieTitle, {
+    String region = 'US',
+    bool useCache = true,
+  }) async {
+    return checkMovieAvailability(
+      movieId: movieId.toString(),
+      movieTitle: movieTitle,
+      region: region,
+      useCache: useCache,
+    );
+  }
 
   /// Check availability for a single movie across all platforms
   Future<StreamingAvailability?> checkMovieAvailability({

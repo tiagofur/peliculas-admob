@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
-import '../../core/services/hive_cleanup_service.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watched_movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
@@ -55,51 +54,6 @@ class CrossPlatformInitService {
         LoggerFactory.error('❌ Error inicializando servicios: $e');
       }
       rethrow;
-    }
-  }
-
-  /// Limpiar cache corrupto (fix one-time)
-  Future<void> _cleanupCorruptedCache() async {
-    try {
-      if (kDebugMode) {
-        LoggerFactory.info('🧹 Ejecutando limpieza de cache corrupto...');
-      }
-
-      // Clear old unified cache box
-      if (await Hive.boxExists('movies_cache')) {
-        final oldBox = await Hive.openBox('movies_cache');
-        final oldCount = oldBox.length;
-        await oldBox.clear();
-        await oldBox.close();
-        if (kDebugMode) {
-          LoggerFactory.info(
-              '🗑️ Limpiado cache unificado viejo: $oldCount películas');
-        }
-      }
-
-      // Note: No longer clearing favorites box - let favorites persist properly
-    } catch (e) {
-      if (kDebugMode) {
-        LoggerFactory.warning(
-            '⚠️ Error en limpieza de cache (continuando): $e');
-      }
-      // No rethrow - la app puede continuar sin esto
-    }
-  }
-
-  /// Limpiar caja de favoritos corruptos (fix one-time)
-  Future<void> _cleanupCorruptedFavorites() async {
-    try {
-      if (kDebugMode) {
-        LoggerFactory.info('🧹 Ejecutando limpieza de favoritos corruptos...');
-      }
-      await HiveCleanupService.clearFavoritesBox();
-    } catch (e) {
-      if (kDebugMode) {
-        LoggerFactory.warning(
-            '⚠️ Error en limpieza de favoritos (continuando): $e');
-      }
-      // No rethrow - la app puede continuar sin esto
     }
   }
 

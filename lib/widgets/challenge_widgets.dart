@@ -60,7 +60,7 @@ class ChallengeCard extends StatelessWidget {
                           Text(
                             challenge.description,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                              color: colorScheme.onSurface,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -183,7 +183,7 @@ class ChallengeCard extends StatelessWidget {
             Text(
               'Progress',
               style: theme.textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurface,
               ),
             ),
             Text(
@@ -206,7 +206,7 @@ class ChallengeCard extends StatelessWidget {
         Text(
           '${(progressPercentage * 100).round()}% complete',
           style: theme.textTheme.labelSmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
+            color: colorScheme.onSurface,
           ),
         ),
       ],
@@ -281,7 +281,7 @@ class ChallengeCard extends StatelessWidget {
         timeColor = Colors.orange;
         timeIcon = Icons.schedule;
       } else {
-        timeColor = colorScheme.onSurfaceVariant;
+        timeColor = colorScheme.onSurface;
         timeIcon = Icons.schedule;
       }
     }
@@ -332,13 +332,13 @@ class ChallengeList extends StatelessWidget {
               Icon(
                 Icons.emoji_events_outlined,
                 size: 64,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               const SizedBox(height: 16),
               Text(
                 emptyMessage ?? 'No challenges available',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -468,7 +468,7 @@ class ChallengeStats extends ConsumerWidget {
             Text(
               'Engagement Score: ${((stats['engagementScore'] is double ? stats['engagementScore'] as double : double.tryParse(stats['engagementScore'].toString()) ?? 0.0) * 100).round()}%',
               style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ],
@@ -513,7 +513,7 @@ class ChallengeStats extends ConsumerWidget {
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: theme.colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,
           ),
@@ -613,7 +613,7 @@ class ChallengeNotificationItem extends StatelessWidget {
             Text(
               _formatTime(notification.createdAt),
               style: theme.textTheme.labelSmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurface,
               ),
             ),
           ],

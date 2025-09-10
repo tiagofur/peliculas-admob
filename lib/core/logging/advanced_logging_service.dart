@@ -10,14 +10,15 @@ import 'logger_factory.dart';
 
 /// Servicio de logging avanzado con métricas, alertas y dashboard
 class AdvancedLoggingService {
+  AdvancedLoggingService._() {
+    _initialize();
+  }
+
   static AdvancedLoggingService? _instance;
+
   static AdvancedLoggingService get instance {
     _instance ??= AdvancedLoggingService._();
     return _instance!;
-  }
-
-  AdvancedLoggingService._() {
-    _initialize();
   }
 
   // Configuración del servicio
@@ -823,6 +824,16 @@ class LogEntry {
     required this.metadata,
   });
 
+  factory LogEntry.fromJson(Map<String, dynamic> json) {
+    return LogEntry(
+      level: LogLevel.values.firstWhere((l) => l.name == json['level']),
+      component: json['component'],
+      message: json['message'],
+      timestamp: DateTime.parse(json['timestamp']),
+      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
+    );
+  }
+
   final LogLevel level;
   final String component;
   final String message;
@@ -837,16 +848,6 @@ class LogEntry {
       'timestamp': timestamp.toIso8601String(),
       'metadata': metadata,
     };
-  }
-
-  factory LogEntry.fromJson(Map<String, dynamic> json) {
-    return LogEntry(
-      level: LogLevel.values.firstWhere((l) => l.name == json['level']),
-      component: json['component'],
-      message: json['message'],
-      timestamp: DateTime.parse(json['timestamp']),
-      metadata: Map<String, dynamic>.from(json['metadata'] ?? {}),
-    );
   }
 }
 

@@ -29,6 +29,7 @@ class UserStats {
       updatedAt: now,
     );
   }
+
   final String id;
   final String userId;
   final int moviesWatched;

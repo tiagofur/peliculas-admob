@@ -55,9 +55,12 @@ class WatchlistSyncManager extends EntitySyncManager<SyncableWatchlistItem> {
 
       // Add date filtering for incremental sync
       if (since != null) {
-        query = query.gte('last_modified_at', since.toIso8601String());
+        // TODO: Fix date filtering when Supabase API is clarified
+        // query = query.gte('last_modified_at', since.toIso8601String());
         LoggerFactory.info(
-            '📅 Fetching remote watchlist changes since: ${since.toIso8601String()}');
+            '📅 Fetching remote changes since: ${since.toIso8601String()}');
+        LoggerFactory.warning(
+            '⚠️ Date filtering temporarily disabled - will fetch all records');
       }
 
       final response = await query;

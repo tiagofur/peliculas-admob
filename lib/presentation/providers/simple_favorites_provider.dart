@@ -31,7 +31,7 @@ class SimpleFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
       (authState) {
         String? userId;
         if (authState.session?.user != null) {
-          userId = authState.session!.user!.id;
+          userId = authState.session!.user.id;
         }
         if (userId != null && userId != _currentUserId) {
           _currentUserId = userId;

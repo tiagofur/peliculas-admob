@@ -226,7 +226,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
               color: Theme.of(context).scaffoldBackgroundColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -351,7 +351,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
             Icon(
               Icons.star_border,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -362,7 +362,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
             Text(
               'Comienza calificando algunas películas',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -390,18 +390,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
     );
   }
 
-  Widget _buildPosterPlaceholder() {
-    return Container(
-      color: Colors.grey[300],
-      child: const Center(
-        child: Icon(
-          Icons.movie_outlined,
-          color: Colors.grey,
-          size: 24,
-        ),
-      ),
-    );
-  }
+
 }
 
 class _RatingCard extends StatelessWidget {
@@ -486,7 +475,7 @@ class _RatingCard extends StatelessWidget {
                         Text(
                           dateFormat.format(rating.createdAt),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],

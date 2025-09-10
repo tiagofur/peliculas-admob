@@ -4,8 +4,12 @@
 /// including availability checking, content search, deep linking, and subscription management.
 library;
 
+import 'package:http/http.dart' as http;
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/streaming_availability.dart';
+import '../../analytics/analytics_service.dart';
+
+import '../real_availability_service.dart';
 import 'disney_plus_service.dart';
 import 'hbo_max_service.dart';
 // SubscriptionPlan is defined in netflix_service.dart
@@ -20,32 +24,77 @@ export 'prime_video_service.dart';
 /// Platform service factory for creating streaming service instances
 class StreamingPlatformServiceFactory {
   /// Create a Netflix service instance
-  static NetflixService createNetflixService() {
-    return NetflixService();
+  static NetflixService createNetflixService({
+    required AnalyticsService analytics,
+    required RealAvailabilityService availabilityService,
+  }) {
+    return NetflixService(
+      analytics: analytics,
+      availabilityService: availabilityService,
+    );
   }
 
   /// Create a Prime Video service instance
-  static PrimeVideoService createPrimeVideoService() {
-    return PrimeVideoService();
+  static PrimeVideoService createPrimeVideoService({
+    required AnalyticsService analytics,
+    required RealAvailabilityService availabilityService,
+  }) {
+    return PrimeVideoService(
+      analytics: analytics,
+      availabilityService: availabilityService,
+    );
   }
 
   /// Create a Disney+ service instance
-  static DisneyPlusService createDisneyPlusService() {
-    return DisneyPlusService();
+  static DisneyPlusService createDisneyPlusService({
+    required http.Client httpClient,
+    required AnalyticsService analytics,
+    required RealAvailabilityService availabilityService,
+  }) {
+    return DisneyPlusService(
+      httpClient: httpClient,
+      analytics: analytics,
+      availabilityService: availabilityService,
+    );
   }
 
   /// Create an HBO Max service instance
-  static HBOMaxService createHBOMaxService() {
-    return HBOMaxService();
+  static HboMaxService createHBOMaxService({
+    required AnalyticsService analytics,
+    required RealAvailabilityService availabilityService,
+  }) {
+    return HboMaxService(
+      analytics: analytics,
+      availabilityService: availabilityService,
+    );
   }
 
   /// Create all platform services
-  static Map<String, dynamic> createAllServices() {
+  static Map<String, dynamic> createAllServices({
+    required AnalyticsService analytics,
+    required RealAvailabilityService availabilityService,
+    http.Client? httpClient,
+  }) {
+    final client = httpClient ?? http.Client();
+    
     return {
-      'netflix': createNetflixService(),
-      'prime_video': createPrimeVideoService(),
-      'disney_plus': createDisneyPlusService(),
-      'hbo_max': createHBOMaxService(),
+      'netflix': createNetflixService(
+        analytics: analytics,
+        availabilityService: availabilityService,
+      ),
+      'prime_video': createPrimeVideoService(
+        analytics: analytics,
+        availabilityService: availabilityService,
+      ),
+      'disney_plus': createDisneyPlusService(
+        httpClient: client,
+        analytics: analytics,
+        availabilityService: availabilityService,
+      ),
+      'hbo_max': createHBOMaxService(
+        analytics: analytics,
+        availabilityService: availabilityService,
+      ),
     };
   }
 
