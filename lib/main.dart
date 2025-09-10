@@ -284,8 +284,15 @@ class MainApp extends ConsumerWidget {
     // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
     ref.watch(syncInitializationProvider);
 
-    // INICIALIZAR INTEGRACIÓN DE SYNC UI
-    ref.watch(integration.syncIntegrationProvider);
+    // INICIALIZAR INTEGRACIÓN DE SYNC UI - Solo si hay usuario autenticado
+    try {
+      ref.watch(integration.syncIntegrationProvider);
+    } catch (e) {
+      // Sync integration no disponible sin usuario autenticado
+      if (kDebugMode) {
+        LoggerFactory.info('Sync integration not available: $e');
+      }
+    }
 
     // INICIALIZAR CHALLENGE SYSTEM
     ref.watch(challengeInitializationProvider);

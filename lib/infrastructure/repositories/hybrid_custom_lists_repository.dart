@@ -138,7 +138,7 @@ class HybridCustomListsRepository
   // MÉTODOS ESPECÍFICOS PARA LISTAS PERSONALIZADAS
   // =============================================
 
-  /// Obtiene lista personalizada por nombre
+  /// Obtiene lista personalizada por nombre (priorizando datos de Supabase)
   Future<SyncableCustomList?> getCustomListByName(String name) async {
     try {
       final customLists = await getAll();
@@ -146,6 +146,29 @@ class HybridCustomListsRepository
       return matches.isNotEmpty ? matches.first : null;
     } catch (e) {
       LoggerFactory.error('❌ Failed to get custom list by name: $e');
+      return null;
+    }
+  }
+
+  /// Obtiene todas las listas con sincronización forzada desde Supabase
+  Future<List<SyncableCustomList>> getAllCustomListsWithForcedSync() async {
+    try {
+      final models = await getAllWithForcedSync();
+      return models.cast<SyncableCustomList>();
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get custom lists with forced sync: $e');
+      return [];
+    }
+  }
+
+  /// Obtiene lista personalizada por nombre con sincronización forzada
+  Future<SyncableCustomList?> getCustomListByNameWithForcedSync(String name) async {
+    try {
+      final customLists = await getAllCustomListsWithForcedSync();
+      final matches = customLists.where((list) => list.name == name);
+      return matches.isNotEmpty ? matches.first : null;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get custom list by name with forced sync: $e');
       return null;
     }
   }

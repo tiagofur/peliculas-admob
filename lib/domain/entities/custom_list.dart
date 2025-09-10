@@ -15,6 +15,8 @@ class CustomList {
     this.color = 'blue',
     this.isDeleted = false,
     this.syncStatus = 'synced',
+    this.defaultType,
+    this.colorHex,
   });
 
   factory CustomList.fromJson(Map<String, dynamic> json) {
@@ -27,16 +29,22 @@ class CustomList {
           json['movieIds'] != null ? List<int>.from(json['movieIds']) : <int>[],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
+          : json['created_at'] != null
+              ? DateTime.parse(json['created_at'])
+              : DateTime.now(),
       lastModifiedAt: json['lastModifiedAt'] != null
           ? DateTime.parse(json['lastModifiedAt'])
-          : DateTime.now(),
-      userId: json['userId'],
-      isDefault: json['isDefault'] ?? false,
-      isPublic: json['isPublic'] ?? false,
+          : json['updated_at'] != null
+              ? DateTime.parse(json['updated_at'])
+              : DateTime.now(),
+      userId: json['userId'] ?? json['user_id'],
+      isDefault: json['isDefault'] ?? json['is_default'] ?? false,
+      isPublic: json['isPublic'] ?? json['is_public'] ?? false,
       color: json['color'] ?? 'blue',
-      isDeleted: json['isDeleted'] ?? false,
-      syncStatus: json['syncStatus'] ?? 'synced',
+      isDeleted: json['isDeleted'] ?? json['is_deleted'] ?? false,
+      syncStatus: json['syncStatus'] ?? json['sync_status'] ?? 'synced',
+      defaultType: json['defaultType'] ?? json['default_type'],
+      colorHex: json['colorHex'] ?? json['color_hex'],
     );
   }
 
@@ -53,6 +61,8 @@ class CustomList {
   final String color;
   final bool isDeleted;
   final String syncStatus;
+  final String? defaultType;
+  final String? colorHex;
 
   CustomList copyWith({
     String? id,
@@ -68,6 +78,8 @@ class CustomList {
     String? color,
     bool? isDeleted,
     String? syncStatus,
+    String? defaultType,
+    String? colorHex,
   }) {
     return CustomList(
       id: id ?? this.id,
@@ -83,6 +95,8 @@ class CustomList {
       color: color ?? this.color,
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
+      defaultType: defaultType ?? this.defaultType,
+      colorHex: colorHex ?? this.colorHex,
     );
   }
 
@@ -101,6 +115,25 @@ class CustomList {
       'color': color,
       'isDeleted': isDeleted,
       'syncStatus': syncStatus,
+      'defaultType': defaultType,
+      'colorHex': colorHex,
+    };
+  }
+
+  /// Convierte a JSON para Supabase (usando snake_case)
+  Map<String, dynamic> toSupabaseJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'emoji': emoji,
+      'user_id': userId,
+      'is_default': isDefault,
+      'is_public': isPublic,
+      'color_hex': colorHex ?? color,
+      'default_type': defaultType,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': lastModifiedAt.toIso8601String(),
     };
   }
 
@@ -121,7 +154,9 @@ class CustomList {
         other.isPublic == isPublic &&
         other.color == color &&
         other.isDeleted == isDeleted &&
-        other.syncStatus == syncStatus;
+        other.syncStatus == syncStatus &&
+        other.defaultType == defaultType &&
+        other.colorHex == colorHex;
   }
 
   @override
@@ -139,6 +174,8 @@ class CustomList {
         color,
         isDeleted,
         syncStatus,
+        defaultType,
+        colorHex,
       );
 
   @override

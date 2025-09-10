@@ -1,13 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/config/supabase_config.dart';
 import '../../core/exceptions/auth_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../infrastructure/services/anonymous_data_migrator.dart';
+import '../../services/id_mapping_service.dart';
+import '../../services/lists_migration_service.dart';
+import '../../services/migration_rollback_service.dart';
 import './hybrid_repositories_provider.dart';
 import './storage/direct_watched_provider.dart';
 import './storage/direct_watchlist_provider.dart';
@@ -312,36 +318,40 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     // Ejecutar sincronización y migración en background sin bloquear la UI
     Future.microtask(() async {
       try {
-
-
+        final logger = LoggerFactory.getLogger('AuthNotifier');
+        
         final user = _ref.read(currentUserProvider);
         if (user == null) {
-
+          logger.warning('Usuario no disponible para sincronización');
           return;
         }
 
-        // 1. Detectar y migrar datos locales de usuario anónimo
+        logger.info('Iniciando migración y sincronización para usuario: ${user.id}');
+
+        // 1. Ejecutar migración de listas personalizadas (nueva funcionalidad)
+        await _executeMigrationPhase(user.id, logger);
+
+        // 2. Detectar y migrar datos locales de usuario anónimo (funcionalidad existente)
         final migrator = _ref.read(anonymousDataMigratorProvider);
         final detectedData = await migrator.detectAnonymousData();
 
         if (detectedData.isNotEmpty) {
-
+          logger.info('Datos anónimos detectados, iniciando migración');
           _ref.read(appStateProvider.notifier).setHasLocalData(true);
-
 
           final migrationResult = await migrator.migrateAllData(user.id);
 
           if (migrationResult.success) {
-
+            logger.info('Migración de datos anónimos completada exitosamente');
           } else {
-
+            logger.warning('Migración de datos anónimos falló: ${migrationResult.errors}');
           }
         } else {
-
+          logger.info('No se detectaron datos anónimos para migrar');
         }
 
-        // 2. Ejecutar sincronización de todas las entidades en segundo plano
-
+        // 3. Ejecutar sincronización de todas las entidades en segundo plano
+        logger.info('Iniciando sincronización de repositorios');
 
         // Disparar la sincronización para cada repositorio sin esperar (no await)
         _ref.read(hybridFavoritesRepositoryProvider).forceSync();
@@ -353,12 +363,120 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         _ref.read(directWatchedMoviesProvider.notifier).enableAfterLogin();
         _ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
 
-
+        logger.info('Sincronización post-autenticación completada');
       } catch (e) {
         // Log del error pero no afectar la experiencia del usuario
-
+        final logger = LoggerFactory.getLogger('AuthNotifier');
+        logger.severe('Error durante sincronización post-autenticación: $e');
       }
     });
+  }
+
+  /// Ejecuta la fase de migración de listas personalizadas
+  Future<void> _executeMigrationPhase(String userId, dynamic logger) async {
+    try {
+      logger.info('Iniciando migración de listas personalizadas');
+      
+      // Obtener instancias de los servicios de migración
+      final prefs = await SharedPreferences.getInstance();
+      final supabase = SupabaseConfig.client;
+      final localDataSource = CustomListsSharedPreferencesDataSource(prefs);
+      final idMappingService = IdMappingService(prefs);
+      final rollbackService = MigrationRollbackService(
+        prefs,
+        supabase,
+        localDataSource,
+        idMappingService,
+      );
+      
+      final migrationService = ListsMigrationService(
+        prefs,
+        supabase,
+        localDataSource,
+        idMappingService,
+        rollbackService,
+      );
+      
+      // Verificar si la migración ya fue ejecutada
+      final migrationCompleted = prefs.getBool('lists_migration_completed') ?? false;
+      if (migrationCompleted) {
+        logger.info('Migración de listas ya completada previamente');
+        return;
+      }
+      
+      // Crear punto de rollback antes de la migración
+      final rollbackId = await rollbackService.createRollbackPoint(
+        userId,
+        'Migración automática de listas personalizadas',
+      );
+      
+      logger.info('Punto de rollback creado: $rollbackId');
+      
+      // Ejecutar análisis de migración
+      final analysis = await migrationService.analyzeMigration(userId);
+      
+      if (analysis.needsMigration) {
+        logger.info('Migración necesaria: ${analysis.summary}');
+        
+        // Ejecutar migración completa
+        final result = await migrationService.executeMigration(userId);
+        
+        if (result.isSuccessful) {
+          logger.info('Migración de listas completada exitosamente');
+          logger.info('Resumen: ${result.summary}');
+          
+          // Marcar migración como completada
+          await prefs.setBool('lists_migration_completed', true);
+          await prefs.setString('lists_migration_date', DateTime.now().toIso8601String());
+          
+          // Limpiar punto de rollback después del éxito
+          await rollbackService.cleanupOldRollbacks();
+        } else {
+          logger.warning('Migración falló, ejecutando rollback automático');
+          logger.warning('Errores: ${result.errors}');
+          
+          // Ejecutar rollback automático
+          final rollbackResult = await rollbackService.executeRollback(rollbackId, userId);
+          
+          if (rollbackResult.isSuccessful) {
+            logger.info('Rollback ejecutado exitosamente');
+          } else {
+            logger.severe('Rollback falló: ${rollbackResult.errors}');
+          }
+        }
+      } else {
+        logger.info('No se requiere migración de listas');
+        // Limpiar punto de rollback si no se necesita migración
+        await rollbackService.cleanupOldRollbacks();
+      }
+      
+    } catch (e) {
+      logger.severe('Error crítico durante migración de listas: $e');
+      
+      // Intentar rollback automático en caso de error crítico
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final supabase = SupabaseConfig.client;
+        final localDataSource = CustomListsSharedPreferencesDataSource(prefs);
+        final idMappingService = IdMappingService(prefs);
+        final rollbackService = MigrationRollbackService(
+          prefs,
+          supabase,
+          localDataSource,
+          idMappingService,
+        );
+        
+        final autoRollbackResult = await rollbackService.executeAutoRollback(userId);
+        
+        if (autoRollbackResult.isSuccessful) {
+          logger.info('Rollback automático ejecutado tras error crítico');
+        } else {
+          logger.severe('Rollback automático falló: ${autoRollbackResult.errors}');
+        }
+      } catch (rollbackError) {
+        logger.severe('Error durante rollback automático: $rollbackError');
+      }
+    }
   }
 }
 

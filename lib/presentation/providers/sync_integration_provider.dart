@@ -3,6 +3,12 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/sync/conflict_resolution/strategies/conflict_strategy.dart';
+import '../../core/services/sync_performance_metrics.dart';
+import '../../infrastructure/services/connectivity_manager.dart';
+import '../../infrastructure/services/realtime_sync_manager.dart';
+import '../../core/sync/entity_sync_manager.dart';
+import '../../core/sync/sync_coordinator.dart';
+import 'auth_provider.dart';
 import '../widgets/sync/sync_history_viewer.dart';
 
 /// Frecuencia de sincronización
@@ -162,24 +168,24 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
         ) {
     _initialize();
   }
-  final MockRealtimeSyncManager _realtimeSyncManager;
-  final MockConnectivityManager _connectivityManager;
-  final MockSyncCoordinator _syncCoordinator;
-  final MockSyncPerformanceMetrics _performanceMetrics;
+  final RealtimeSyncManager _realtimeSyncManager;
+  final ConnectivityManager _connectivityManager;
+  final SyncCoordinator _syncCoordinator;
+  final SyncPerformanceMetrics _performanceMetrics;
 
   Future<void> _initialize() async {
     try {
       // Initialize all sync services
       await _realtimeSyncManager.initialize();
       await _connectivityManager.initialize();
-      await _syncCoordinator.initialize();
+      // SyncCoordinator initializes automatically in constructor
 
       // Set up listeners
       _setupListeners();
 
       state = state.copyWith(
         isInitialized: true,
-        isConnected: _connectivityManager.isConnected,
+        isConnected: _connectivityManager.currentStatus == ConnectionStatus.online,
       );
     } catch (e) {
       state = state.copyWith(
@@ -190,7 +196,8 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
 
   void _setupListeners() {
     // Listen to connectivity changes
-    _connectivityManager.connectionStream.listen((isConnected) {
+    _connectivityManager.connectionStatus.listen((status) {
+      final isConnected = status == ConnectionStatus.online;
       state = state.copyWith(
         isConnected: isConnected,
         globalSyncStatus: isConnected ? SyncStatus.idle : SyncStatus.offline,
@@ -201,7 +208,7 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         state = state.copyWith(
-          performanceMetrics: _performanceMetrics.metrics,
+          performanceMetrics: _performanceMetrics.getSnapshot().toJson(),
         );
       } else {
         timer.cancel();
@@ -229,9 +236,9 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     state = state.copyWith(currentSettings: newSettings);
 
     if (enabled) {
-      await _realtimeSyncManager.startAutoSync();
+      await _realtimeSyncManager.startListening();
     } else {
-      await _realtimeSyncManager.stopAutoSync();
+      await _realtimeSyncManager.stopListening();
     }
   }
 
@@ -241,10 +248,10 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     state = state.copyWith(currentSettings: newSettings);
 
     if (enabled) {
-      await _realtimeSyncManager.enableOfflineMode();
+      await _syncCoordinator.enableOfflineMode();
       state = state.copyWith(globalSyncStatus: SyncStatus.offline);
     } else {
-      await _realtimeSyncManager.disableOfflineMode();
+      await _syncCoordinator.disableOfflineMode();
       state = state.copyWith(globalSyncStatus: SyncStatus.idle);
     }
   }
@@ -253,7 +260,8 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     final newSettings =
         state.currentSettings.copyWith(syncFrequency: frequency);
     state = state.copyWith(currentSettings: newSettings);
-    await _realtimeSyncManager.updateSyncFrequency(frequency);
+    // Note: RealtimeSyncManager doesn't have updateSyncFrequency method
+    // This would need to be implemented if frequency control is needed
   }
 
   Future<void> updateConflictResolutionStrategy(
@@ -261,12 +269,29 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     final newSettings =
         state.currentSettings.copyWith(conflictResolution: strategy);
     state = state.copyWith(currentSettings: newSettings);
-    await _syncCoordinator.updateConflictResolutionStrategy(strategy);
+    // Convert to ConflictStrategy enum that SyncCoordinator expects
+    final syncStrategy = _convertToConflictStrategy(strategy);
+    _syncCoordinator.setConflictStrategy('default', syncStrategy);
+  }
+
+  ConflictStrategy _convertToConflictStrategy(ConflictResolutionStrategy strategy) {
+    switch (strategy) {
+      case ConflictResolutionStrategy.lastWriteWins:
+        return ConflictStrategy.remoteWins;
+      case ConflictResolutionStrategy.userChoice:
+        return ConflictStrategy.userChoice;
+      case ConflictResolutionStrategy.merge:
+        return ConflictStrategy.merge;
+      case ConflictResolutionStrategy.serverWins:
+        return ConflictStrategy.remoteWins;
+      default:
+        return ConflictStrategy.localWins;
+    }
   }
 
   Future<void> clearLocalData() async {
     try {
-      await _syncCoordinator.clearLocalData();
+      await _syncCoordinator.reset();
       state = state.copyWith(
         globalSyncStatus: SyncStatus.idle,
         recentHistory: [],
@@ -286,10 +311,11 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
         lastError: null,
       );
 
-      await _syncCoordinator.forceFullResync();
-
+      final result = await _syncCoordinator.performFullSync();
+      
       state = state.copyWith(
-        globalSyncStatus: SyncStatus.synced,
+        globalSyncStatus: result.success ? SyncStatus.synced : SyncStatus.error,
+        lastError: result.success ? null : (result.errors.isNotEmpty ? result.errors.first : null),
       );
     } catch (e) {
       state = state.copyWith(
@@ -370,10 +396,19 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
 // Provider definitions
 final syncIntegrationProvider =
     StateNotifierProvider<SyncIntegrationNotifier, SyncIntegrationState>((ref) {
+  // Get user ID from auth provider
+  final user = ref.watch(currentUserProvider);
+  final userId = user?.id;
+  
+  if (userId == null) {
+    // Return a disabled sync integration state when no user is authenticated
+    return DisabledSyncIntegrationNotifier();
+  }
+  
   // Get dependencies from other providers
-  final realtimeSyncManager = ref.watch(realtimeSyncManagerProvider);
+  final realtimeSyncManager = ref.watch(realtimeSyncManagerProvider(userId));
   final connectivityManager = ref.watch(connectivityManagerProvider);
-  final syncCoordinator = ref.watch(syncCoordinatorProvider);
+  final syncCoordinator = ref.watch(syncCoordinatorProvider(userId));
   final performanceMetrics = ref.watch(syncPerformanceMetricsProvider);
 
   return SyncIntegrationNotifier(
@@ -401,53 +436,98 @@ final syncPerformanceProvider = Provider<Map<String, dynamic>>((ref) {
   return ref.watch(syncIntegrationProvider).performanceMetrics;
 });
 
-// Mock providers for development (replace with actual implementations)
-final realtimeSyncManagerProvider = Provider<MockRealtimeSyncManager>((ref) {
-  return MockRealtimeSyncManager();
+// Real providers for production
+final realtimeSyncManagerProvider = Provider.family<RealtimeSyncManager, String>((ref, userId) {
+  final syncCoordinator = ref.watch(syncCoordinatorProvider(userId));
+  final connectivityManager = ref.watch(connectivityManagerProvider);
+  return RealtimeSyncManager(
+    userId: userId,
+    syncCoordinator: syncCoordinator,
+    connectivityManager: connectivityManager,
+  );
 });
 
-final connectivityManagerProvider = Provider<MockConnectivityManager>((ref) {
-  return MockConnectivityManager();
+final connectivityManagerProvider = Provider<ConnectivityManager>((ref) {
+  return ConnectivityManager();
 });
 
-final syncCoordinatorProvider = Provider<MockSyncCoordinator>((ref) {
-  return MockSyncCoordinator();
+final syncCoordinatorProvider = Provider.family<SyncCoordinator, String>((ref, userId) {
+  return SyncCoordinator(userId: userId);
 });
 
-final syncPerformanceMetricsProvider =
-    Provider<MockSyncPerformanceMetrics>((ref) {
-  return MockSyncPerformanceMetrics();
+final syncPerformanceMetricsProvider = Provider<SyncPerformanceMetrics>((ref) {
+  return SyncPerformanceMetrics.instance;
 });
 
-// Mock implementations
-class MockRealtimeSyncManager {
-  Future<void> initialize() async {}
-  Future<void> startAutoSync() async {}
-  Future<void> stopAutoSync() async {}
-  Future<void> enableOfflineMode() async {}
-  Future<void> disableOfflineMode() async {}
-  Future<void> updateSyncFrequency(SyncFrequency frequency) async {}
-}
+/// Notifier deshabilitado para cuando no hay usuario autenticado
+class DisabledSyncIntegrationNotifier extends SyncIntegrationNotifier {
+  DisabledSyncIntegrationNotifier() : super(
+    _createDisabledRealtimeSyncManager(),
+    _createDisabledConnectivityManager(),
+    _createDisabledSyncCoordinator(),
+    _createDisabledPerformanceMetrics(),
+  ) {
+    // Inicializar con estado deshabilitado
+     state = SyncIntegrationState(
+       isInitialized: false,
+       isConnected: false,
+       globalSyncStatus: SyncStatus.offline,
+       currentSettings: SyncSettings(
+         autoSyncEnabled: false,
+         offlineModeEnabled: false,
+         syncFrequency: SyncFrequency.manual,
+         conflictResolution: ConflictResolutionStrategy.userChoice,
+         backgroundSyncEnabled: false,
+         wifiOnlySync: false,
+       ),
+       recentHistory: [],
+       performanceMetrics: {},
+       lastError: 'Usuario no autenticado - Sync deshabilitado',
+     );
+  }
 
-class MockConnectivityManager {
-  Stream<bool> get connectionStream => Stream.value(true);
-  bool get isConnected => true;
-  Future<void> initialize() async {}
-}
+  static RealtimeSyncManager _createDisabledRealtimeSyncManager() {
+    // Crear un manager deshabilitado que no haga nada
+    return RealtimeSyncManager(
+      userId: 'disabled',
+      syncCoordinator: _createDisabledSyncCoordinator(),
+      connectivityManager: _createDisabledConnectivityManager(),
+    );
+  }
 
-class MockSyncCoordinator {
-  Future<void> initialize() async {}
-  Future<void> performFullSync() async {}
-  Future<void> clearLocalData() async {}
-  Future<void> forceFullResync() async {}
-  Future<void> updateConflictResolutionStrategy(
-      ConflictResolutionStrategy strategy) async {}
-}
+  static ConnectivityManager _createDisabledConnectivityManager() {
+    return ConnectivityManager();
+  }
 
-class MockSyncPerformanceMetrics {
-  Map<String, dynamic> get metrics => {
-        'syncTime': 1200,
-        'itemsProcessed': 150,
-        'errorRate': 0.02,
-      };
+  static SyncCoordinator _createDisabledSyncCoordinator() {
+    return SyncCoordinator(userId: 'disabled');
+  }
+
+  static SyncPerformanceMetrics _createDisabledPerformanceMetrics() {
+    return SyncPerformanceMetrics.instance;
+  }
+
+  @override
+  Future<void> initialize() async {
+    // No hacer nada cuando está deshabilitado
+    return;
+  }
+
+  @override
+  Future<void> startSync() async {
+    // No hacer nada cuando está deshabilitado
+    return;
+  }
+
+  @override
+  Future<void> stopSync() async {
+    // No hacer nada cuando está deshabilitado
+    return;
+  }
+
+  @override
+  Future<void> forceFullResync() async {
+    // No hacer nada cuando está deshabilitado
+    return;
+  }
 }

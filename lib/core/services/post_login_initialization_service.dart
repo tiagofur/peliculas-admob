@@ -8,6 +8,8 @@ import '../../presentation/providers/storage/direct_favorites_provider.dart';
 import '../../presentation/providers/storage/direct_watched_provider.dart';
 import '../../presentation/providers/storage/direct_watchlist_provider.dart';
 import '../../presentation/providers/storage/favorite_movies_provider.dart';
+import '../../services/custom_lists_auth_integration.dart';
+import '../../presentation/providers/custom_lists_providers.dart';
 import '../logging/logger_factory.dart';
 import '../sync/silent_favorites_sync_service.dart';
 
@@ -133,9 +135,93 @@ class PostLoginInitializationService {
       }
     });
 
+    // Inicializar sistema de listas personalizadas con integración de autenticación
+    Timer(const Duration(milliseconds: 600), () {
+      try {
+        // Inicializar la integración de autenticación para listas personalizadas
+        ref.read(customListsAuthIntegrationProvider).forceInitialization(userId, ref);
+        LoggerFactory.info(
+            '✅ CustomListsAuthIntegration inicializado para sync tiempo real');
+      } catch (e) {
+        LoggerFactory.error(
+            '❌ Error inicializando CustomListsAuthIntegration: $e');
+      }
+    });
+
+    // Inicializar CustomListsProvider para activar listeners de tiempo real
+    Timer(const Duration(milliseconds: 650), () {
+      try {
+        // Habilitar el provider después del login
+        ref.read(customListsNotifierProvider.notifier).enableAfterLogin();
+        LoggerFactory.info(
+            '✅ CustomListsProvider habilitado para sync tiempo real');
+      } catch (e) {
+        LoggerFactory.error(
+            '❌ Error habilitando CustomListsProvider: $e');
+      }
+    });
+
+    // Ejecutar migración de listas si es necesario
+    Timer(const Duration(milliseconds: 700), () {
+      _executeMigrationIfNeeded(userId, ref);
+    });
+
     // NO inicializar sync automática - será manual cuando el usuario interactúe
     LoggerFactory.info(
         'ℹ️ Sync será iniciada manualmente cuando el usuario use favoritos');
+  }
+
+  /// Ejecuta la migración de listas si es necesario
+  void _executeMigrationIfNeeded(String userId, Ref ref) async {
+    try {
+      LoggerFactory.info('🔄 Verificando necesidad de migración para usuario: $userId');
+      
+      // Obtener instancia del servicio de migración desde el provider
+      final migrationService = await ref.read(listsMigrationServiceProvider.future);
+      
+      // Verificar si la migración ya fue completada
+      if (migrationService.isMigrationCompleted()) {
+        LoggerFactory.info('✅ Migración ya completada para este dispositivo');
+        return;
+      }
+      
+      LoggerFactory.info('🚀 Iniciando proceso de migración de listas...');
+      
+      // Analizar necesidades de migración
+      final migrationPlan = await migrationService.analyzeMigrationNeeds(userId);
+      
+      if (migrationPlan.hasDataToMigrate) {
+        LoggerFactory.info('📋 Plan de migración: ${migrationPlan.totalEstimatedTime}ms estimados');
+        
+        // Migrar listas por defecto
+        if (migrationPlan.defaultListsToCreate.isNotEmpty) {
+          await migrationService.migrateDefaultLists(userId);
+          LoggerFactory.info('✅ Listas por defecto migradas');
+        }
+        
+        // Migrar listas personalizadas
+        if (migrationPlan.customListsToMigrate.isNotEmpty) {
+          await migrationService.migrateCustomLists(userId);
+          LoggerFactory.info('✅ Listas personalizadas migradas');
+        }
+        
+        // Marcar migración como completada
+        await migrationService.markMigrationCompleted();
+        LoggerFactory.info('🎉 Migración completada exitosamente');
+        
+        // Invalidar providers para que recarguen los datos migrados
+        ref.invalidate(directCustomListsProvider);
+        
+      } else {
+        LoggerFactory.info('ℹ️ No hay datos locales para migrar');
+        // Marcar como completada para evitar verificaciones futuras
+        await migrationService.markMigrationCompleted();
+      }
+      
+    } catch (e) {
+      LoggerFactory.error('❌ Error durante la migración: $e');
+      // No bloquear la inicialización por errores de migración
+    }
   }
 
   /// Limpia servicios cuando el usuario se desconecta
@@ -148,6 +234,14 @@ class PostLoginInitializationService {
 
       // Detener sincronización silenciosa
       SilentFavoritesSyncService.instance.stopSync();
+
+      // Limpiar servicios de listas personalizadas
+      try {
+        ref.read(customListsAuthIntegrationProvider);
+        LoggerFactory.info('✅ CustomListsAuthIntegration cleaned up');
+      } catch (e) {
+        LoggerFactory.error('❌ Error cleaning up CustomListsAuthIntegration: $e');
+      }
 
       LoggerFactory.info('✅ Post-login services cleaned up');
     } catch (e) {

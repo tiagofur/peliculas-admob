@@ -7,6 +7,12 @@ import 'package:uuid/uuid.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/trigger_free_custom_lists_sync.dart';
 import '../../../domain/entities/custom_list.dart';
+import '../../../domain/entities/movie.dart';
+import '../../../domain/repositories/i_custom_lists_repository.dart';
+import '../../../services/list_sync_service.dart';
+import '../../../services/sync/offline_change.dart';
+import '../hybrid_repositories_provider.dart';
+import '../sync_integration_provider.dart';
 
 /// Estado para listas con sus películas
 class CustomListsState {
@@ -51,7 +57,9 @@ class CustomListsState {
 /// y solo usa TriggerFreeCustomListsSync para operaciones de Supabase
 final directCustomListsProvider =
     StateNotifierProvider<DirectCustomListsNotifier, CustomListsState>((ref) {
+  final syncService = ref.read(listSyncServiceProvider);
   return DirectCustomListsNotifier(
+    syncService: syncService,
     onListCreated: (CustomList list) {
       // Opcional: trackear creación de lista para achievements
       // ref.read(achievementsProvider.notifier).trackListCreated();
@@ -61,15 +69,15 @@ final directCustomListsProvider =
 
 class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   DirectCustomListsNotifier({
+    required this.syncService,
     required this.onListCreated,
   }) : super(const CustomListsState()) {
-    LoggerFactory.info(
-        '🚀 [DIRECT CUSTOM LISTS] Constructor llamado, inicializando...');
     _loadListsFromSupabase();
     _setupRealtimeListeners();
-    LoggerFactory.info('✅ [DIRECT CUSTOM LISTS] Inicialización completada');
+    _initializeSync();
   }
 
+  final ListSyncService syncService;
   final Function(CustomList list) onListCreated;
   final TriggerFreeCustomListsSync _sync = TriggerFreeCustomListsSync.instance;
   RealtimeChannel? _listsChannel;
@@ -115,6 +123,23 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       LoggerFactory.error('DirectCustomLists: Error cargando: $e');
       state = const CustomListsState();
     }
+  }
+
+  /// Inicializar sincronización con ListSyncService
+  void _initializeSync() {
+    // Escuchar cambios de estado de sincronización
+    syncService.syncStatusStream.listen((status) {
+      LoggerFactory.info('DirectCustomLists - Sync status: $status');
+    });
+    
+    // Escuchar conflictos
+    syncService.conflictsStream.listen((conflicts) {
+      LoggerFactory.info('DirectCustomLists - Conflicts detected: ${conflicts.length}');
+      // Aquí podrías mostrar una notificación al usuario sobre conflictos
+    });
+    
+    // Iniciar auto-sync si está habilitado
+    syncService.startAutoSync();
   }
 
   /// Crear nueva lista
@@ -176,6 +201,14 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       LoggerFactory.error(
           '❌ [CREAR LISTA] Error en TriggerFreeCustomListsSync: $e');
 
+      // Registrar cambio offline para sincronización posterior
+      await syncService.recordOfflineChange(OfflineChange(
+        id: 'create_list_${listId}_${DateTime.now().millisecondsSinceEpoch}',
+        type: OfflineChangeType.createList,
+        data: newList.toJson(),
+        timestamp: DateTime.now(),
+      ));
+
       // Revertir cambio optimista en caso de error
       final revertedLists = Map<String, CustomList>.from(state.lists);
       final revertedItems = Map<String, List<int>>.from(state.listItems);
@@ -229,6 +262,14 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error actualizando lista: $e');
 
+      // Registrar cambio offline para sincronización posterior
+      await syncService.recordOfflineChange(OfflineChange(
+        id: 'update_list_${listId}_${DateTime.now().millisecondsSinceEpoch}',
+        type: OfflineChangeType.updateList,
+        data: updatedList.toJson(),
+        timestamp: DateTime.now(),
+      ));
+
       // Revertir cambio optimista en caso de error
       final revertedLists = Map<String, CustomList>.from(state.lists);
       revertedLists[listId] = currentList;
@@ -266,6 +307,14 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           'DirectCustomLists: Lista eliminada: ${currentList.name}');
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error eliminando lista: $e');
+
+      // Registrar cambio offline para sincronización posterior
+      await syncService.recordOfflineChange(OfflineChange(
+        id: 'delete_list_${listId}_${DateTime.now().millisecondsSinceEpoch}',
+        type: OfflineChangeType.deleteList,
+        data: {'id': listId},
+        timestamp: DateTime.now(),
+      ));
 
       // Revertir cambio optimista en caso de error
       if (removedList != null) {
@@ -309,6 +358,17 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       LoggerFactory.error(
           'DirectCustomLists: Error agregando película a lista: $e');
 
+      // Registrar cambio offline para sincronización posterior
+      await syncService.recordOfflineChange(OfflineChange(
+        id: 'add_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
+        type: OfflineChangeType.addMovie,
+        data: {
+          'listId': listId,
+          'movieId': movieId,
+        },
+        timestamp: DateTime.now(),
+      ));
+
       // Revertir cambio optimista en caso de error
       final revertedItems = Map<String, List<int>>.from(state.listItems);
       revertedItems[listId] = currentItems;
@@ -341,6 +401,17 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     } catch (e) {
       LoggerFactory.error(
           'DirectCustomLists: Error removiendo película de lista: $e');
+
+      // Registrar cambio offline para sincronización posterior
+      await syncService.recordOfflineChange(OfflineChange(
+        id: 'remove_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
+        type: OfflineChangeType.removeMovie,
+        data: {
+          'listId': listId,
+          'movieId': movieId,
+        },
+        timestamp: DateTime.now(),
+      ));
 
       // Revertir cambio optimista en caso de error
       final revertedItems = Map<String, List<int>>.from(state.listItems);

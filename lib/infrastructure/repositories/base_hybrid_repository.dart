@@ -298,16 +298,45 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     }
   }
 
-  /// Obtiene todos los elementos (solo desde local)
+  /// Obtiene todos los elementos priorizando datos de Supabase
   Future<List<dynamic>> getAll() async {
     if (!_isInitialized) await _initialize();
 
     try {
-      final entities = await getLocalData();
-      final models = entities.map(convertToModel).toList();
+      // Intentar obtener datos remotos primero si hay conexión
+      List<T> entities;
+      
+      try {
+        if (_syncManager != null && userId != 'anonymous_user') {
+          LoggerFactory.debug('🌐 Attempting to get remote data for $entityType');
+          final remoteEntities = await _syncManager!.getRemoteChanges();
+          
+          if (remoteEntities.isNotEmpty) {
+            // Actualizar datos locales con los remotos
+            for (final entity in remoteEntities) {
+              await saveToLocal(entity);
+            }
+            entities = remoteEntities;
+            LoggerFactory.debug('✅ Using ${entities.length} remote $entityType items');
+          } else {
+            // Si no hay datos remotos, usar locales
+            entities = await getLocalData();
+            LoggerFactory.debug('📱 Using ${entities.length} local $entityType items (no remote data)');
+          }
+        } else {
+          // Sin sync manager o usuario anónimo, usar solo datos locales
+          entities = await getLocalData();
+          LoggerFactory.debug('📱 Using ${entities.length} local $entityType items (no sync manager)');
+        }
+      } catch (remoteError) {
+        // Si falla la obtención remota, usar datos locales como fallback
+        LoggerFactory.warning('⚠️ Remote data fetch failed, using local fallback: $remoteError');
+        entities = await getLocalData();
+        LoggerFactory.debug('📱 Using ${entities.length} local $entityType items (remote fallback)');
+      }
 
-      LoggerFactory.debug(
-          '📋 Retrieved ${models.length} $entityType items locally');
+      final models = entities.map(convertToModel).toList();
+      LoggerFactory.debug('📋 Retrieved ${models.length} $entityType items total');
       return models;
     } catch (e) {
       LoggerFactory.error('❌ Failed to get $entityType items: $e');
@@ -323,6 +352,31 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
       return all.firstWhere((item) => item.id == id);
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Obtiene todos los elementos con sincronización forzada desde Supabase
+  Future<List<dynamic>> getAllWithForcedSync() async {
+    if (!_isInitialized) await _initialize();
+
+    try {
+      // Forzar sincronización completa primero
+      if (_syncManager != null && userId != 'anonymous_user') {
+        LoggerFactory.info('🔄 Forcing full sync before data retrieval for $entityType');
+        await _syncManager!.performFullSync();
+      }
+
+      // Obtener datos actualizados
+      final entities = await getLocalData();
+      final models = entities.map(convertToModel).toList();
+
+      LoggerFactory.debug('📋 Retrieved ${models.length} $entityType items after forced sync');
+      return models;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get $entityType items with forced sync: $e');
+      // Fallback a datos locales sin sync
+      final entities = await getLocalData();
+      return entities.map(convertToModel).toList();
     }
   }
 
