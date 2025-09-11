@@ -88,7 +88,7 @@ class SimplePollingSync {
       final response = await Supabase.instance.client
           .from('user_favorites')
           .select('*')
-          .eq('user_id', _currentUserId!)
+          .eq("user_id", _currentUserId!)
           .gte('last_modified_at', timestamp.toIso8601String())
           .order('last_modified_at', ascending: false);
 

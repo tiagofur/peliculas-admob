@@ -8,7 +8,8 @@ class CustomList {
     required this.emoji,
     required this.movieIds,
     required this.createdAt,
-    required this.lastModifiedAt,
+    DateTime? lastModifiedAt,
+    DateTime? updatedAt,
     this.userId,
     this.isDefault = false,
     this.isPublic = false,
@@ -17,7 +18,7 @@ class CustomList {
     this.syncStatus = 'synced',
     this.defaultType,
     this.colorHex,
-  });
+  }) : lastModifiedAt = lastModifiedAt ?? updatedAt ?? DateTime.now();
 
   factory CustomList.fromJson(Map<String, dynamic> json) {
     return CustomList(

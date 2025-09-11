@@ -17,7 +17,7 @@ import '../../lib/domain/entities/custom_list.dart';
   SupabaseClient,
   GoTrueClient,
   User,
-  CustomListsSharedPreferencesDataSource,
+  CustomListsSharedPreferencesDatasource,
   PostgrestQueryBuilder,
 ])
 import 'migration_integration_test.mocks.dart';
@@ -28,7 +28,7 @@ void main() {
     late MockSupabaseClient mockSupabaseClient;
     late MockGoTrueClient mockAuthClient;
     late MockUser mockUser;
-    late MockCustomListsSharedPreferencesDataSource mockLocalDataSource;
+    late MockCustomListsSharedPreferencesDatasource mockLocalDataSource;
     late MockPostgrestQueryBuilder mockQueryBuilder;
     late SharedPreferences prefs;
     late ListsMigrationService migrationService;
@@ -41,7 +41,7 @@ void main() {
       mockSupabaseClient = MockSupabaseClient();
       mockAuthClient = MockGoTrueClient();
       mockUser = MockUser();
-      mockLocalDataSource = MockCustomListsSharedPreferencesDataSource();
+      mockLocalDataSource = MockCustomListsSharedPreferencesDatasource();
       mockQueryBuilder = MockPostgrestQueryBuilder();
       
       // Configurar SharedPreferences para testing

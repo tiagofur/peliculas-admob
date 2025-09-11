@@ -151,7 +151,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       } else {
         // Crear listas por defecto localmente
         final defaultLists = defaultConfigs.map((config) => CustomList(
-          id: config.id,
+          id: config.localId,
           name: config.name,
           description: config.description,
           emoji: config.emoji,
@@ -161,11 +161,11 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
           userId: userId,
           isDefault: true,
           isPublic: false,
-          color: config.colorHex,
+          color: config.color,
           isDeleted: false,
           syncStatus: 'pending',
           defaultType: config.defaultType,
-          colorHex: config.colorHex,
+          colorHex: config.color,
         )).toList();
         
         for (final list in defaultLists) {
@@ -207,8 +207,10 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
           id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
           listId: listId,
           movieId: movieId,
+          movieTitle: '', // Se actualizará desde TMDB
           position: position ?? 0,
           addedAt: DateTime.now(),
+          updatedAt: DateTime.now(),
         );
         
         await _savePendingOperation('add_movie', {
@@ -297,7 +299,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
           await _executePendingOperation(op);
           await markOperationAsSynced(op['id']);
         } catch (e) {
-          print('Error al sincronizar operación ${op['id']}: $e');
+          // Error al sincronizar operación ${op['id']}: $e
         }
       }
       
@@ -362,7 +364,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       final updatedOps = pendingOps.where((op) => op['id'] != operationId).toList();
       await _prefs.setString(_pendingOperationsKey, json.encode(updatedOps));
     } catch (e) {
-      print('Error al marcar operación como sincronizada: $e');
+      // Error al marcar operación como sincronizada: $e
     }
   }
   
@@ -411,7 +413,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       final listsJson = json.encode(lists.map((list) => list.toJson()).toList());
       await _prefs.setString(_localListsKey, listsJson);
     } catch (e) {
-      print('Error al guardar listas localmente: $e');
+      // Error al guardar listas localmente: $e
     }
   }
   
@@ -428,7 +430,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       
       await _saveListsLocally(localLists);
     } catch (e) {
-      print('Error al actualizar lista local: $e');
+      // Error al actualizar lista local: $e
     }
   }
   
@@ -438,7 +440,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       localLists.removeWhere((list) => list.id == listId);
       await _saveListsLocally(localLists);
     } catch (e) {
-      print('Error al remover lista local: $e');
+      // Error al remover lista local: $e
     }
   }
   
@@ -455,7 +457,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       pendingOps.add(operation);
       await _prefs.setString(_pendingOperationsKey, json.encode(pendingOps));
     } catch (e) {
-      print('Error al guardar operación pendiente: $e');
+      // Error al guardar operación pendiente: $e
     }
   }
   
@@ -495,67 +497,67 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
   List<DefaultListConfig> _getDefaultListConfigs() {
     return [
       DefaultListConfig(
-        id: 'favorites',
+        localId: 'favorites',
         name: 'Favoritas',
         description: 'Mis películas favoritas',
         emoji: '❤️',
-        colorHex: '#FF6B6B',
+        color: '#FF6B6B',
         defaultType: 'favorites',
       ),
       DefaultListConfig(
-        id: 'watchlist',
+        localId: 'watchlist',
         name: 'Por Ver',
         description: 'Películas que quiero ver',
         emoji: '📺',
-        colorHex: '#4ECDC4',
+        color: '#4ECDC4',
         defaultType: 'watchlist',
       ),
       DefaultListConfig(
-        id: 'watched',
+        localId: 'watched',
         name: 'Vistas',
         description: 'Películas que ya vi',
         emoji: '✅',
-        colorHex: '#45B7D1',
+        color: '#45B7D1',
         defaultType: 'watched',
       ),
       DefaultListConfig(
-        id: 'action',
+        localId: 'action',
         name: 'Acción',
         description: 'Películas de acción',
         emoji: '💥',
-        colorHex: '#F39C12',
+        color: '#F39C12',
         defaultType: 'genre_action',
       ),
       DefaultListConfig(
-        id: 'comedy',
+        localId: 'comedy',
         name: 'Comedia',
         description: 'Películas de comedia',
         emoji: '😂',
-        colorHex: '#E74C3C',
+        color: '#E74C3C',
         defaultType: 'genre_comedy',
       ),
       DefaultListConfig(
-        id: 'drama',
+        localId: 'drama',
         name: 'Drama',
         description: 'Películas de drama',
         emoji: '🎭',
-        colorHex: '#9B59B6',
+        color: '#9B59B6',
         defaultType: 'genre_drama',
       ),
       DefaultListConfig(
-        id: 'horror',
+        localId: 'horror',
         name: 'Terror',
         description: 'Películas de terror',
         emoji: '👻',
-        colorHex: '#2C3E50',
+        color: '#2C3E50',
         defaultType: 'genre_horror',
       ),
       DefaultListConfig(
-        id: 'scifi',
+        localId: 'scifi',
         name: 'Ciencia Ficción',
         description: 'Películas de ciencia ficción',
         emoji: '🚀',
-        colorHex: '#1ABC9C',
+        color: '#1ABC9C',
         defaultType: 'genre_scifi',
       ),
     ];

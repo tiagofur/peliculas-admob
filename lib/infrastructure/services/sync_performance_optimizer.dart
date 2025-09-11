@@ -33,7 +33,7 @@ class SyncPerformanceOptimizer {
 
       // 2. Obtener favoritos remotos modificados desde última sincronización
       var remoteQuery =
-          _supabase.from('user_favorites').select().eq('user_id', userId);
+          _supabase.from('user_favorites').select().filter('user_id', 'eq', userId);
 
       if (lastSync != null) {
         remoteQuery =
@@ -91,7 +91,7 @@ class SyncPerformanceOptimizer {
 
       // Consulta optimizada con índices
       var remoteQuery =
-          _supabase.from('user_watched_movies').select().eq('user_id', userId);
+          _supabase.from('user_watched_movies').select().filter('user_id', 'eq', userId);
 
       if (lastSync != null) {
         remoteQuery =
@@ -146,7 +146,7 @@ class SyncPerformanceOptimizer {
 
       // Consulta optimizada para listas
       var listsQuery =
-          _supabase.from('user_lists').select().eq('user_id', userId);
+          _supabase.from('user_lists').select().filter('user_id', 'eq', userId);
 
       if (lastSync != null) {
         listsQuery =
@@ -244,7 +244,7 @@ class SyncPerformanceOptimizer {
       final response = await _supabase
           .from(table)
           .select()
-          .eq('user_id', userId)
+          .filter('user_id', 'eq', userId)
           .order(orderBy)
           .range(offset, offset + pageSize - 1);
 

@@ -180,14 +180,14 @@ class MigrationRollbackService {
     await _supabase
         .from('user_list_items')
         .delete()
-        .eq('list_id', listId);
+        .filter("user_id", "eq", userId);
     
     // Eliminar la lista
     await _supabase
         .from('user_lists')
         .delete()
-        .eq('id', listId)
-        .eq('user_id', userId);
+        .filter("user_id", "eq", userId)
+        .filter("user_id", "eq", userId);
   }
   
   /// Restaura una lista remota a su estado original
@@ -206,20 +206,20 @@ class MigrationRollbackService {
           'default_type': originalList['default_type'],
           'updated_at': DateTime.now().toIso8601String(),
         })
-        .eq('id', listId)
-        .eq('user_id', userId);
+        .filter("user_id", "eq", userId)
+        .filter("user_id", "eq", userId);
     
     // Restaurar elementos originales
-    await _restoreRemoteListItems(listId, originalList);
+    await _restoreRemoteListItems(listId, originalList, userId);
   }
   
   /// Restaura elementos de una lista remota
-  Future<void> _restoreRemoteListItems(String listId, Map<String, dynamic> originalList) async {
+  Future<void> _restoreRemoteListItems(String listId, Map<String, dynamic> originalList, String userId) async {
     // Eliminar elementos actuales
     await _supabase
         .from('user_list_items')
         .delete()
-        .eq('list_id', listId);
+        .filter("user_id", "eq", userId);
     
     // Restaurar elementos originales si existen
     final originalItems = originalList['items'] as List<dynamic>? ?? [];
@@ -378,7 +378,7 @@ class MigrationRollbackService {
       final response = await _supabase
           .from('user_lists')
           .select()
-          .eq('user_id', userId);
+          .filter("user_id", "eq", userId);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
@@ -392,7 +392,7 @@ class MigrationRollbackService {
       final response = await _supabase
           .from('user_list_items')
           .select('*, user_lists!inner(user_id)')
-          .eq('user_lists.user_id', userId);
+          .filter("user_id", "eq", userId);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {

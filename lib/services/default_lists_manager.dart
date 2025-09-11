@@ -36,7 +36,7 @@ class DefaultListsManager {
         await _markAsInitialized();
       }
     } catch (e) {
-      print('Error al inicializar listas por defecto: $e');
+      // Error al inicializar listas por defecto: $e
       rethrow;
     }
   }
@@ -69,7 +69,7 @@ class DefaultListsManager {
           await _repository.createList(defaultList);
         }
       } catch (e) {
-        print('Error al crear lista por defecto ${config.name}: $e');
+        // Error al crear lista por defecto ${config.name}: $e
       }
     }
   }
@@ -226,7 +226,7 @@ class DefaultListsManager {
         await _repository.updateList(resetList);
       }
     } catch (e) {
-      print('Error al restaurar lista por defecto $defaultType: $e');
+      // Error al restaurar lista por defecto $defaultType: $e
       rethrow;
     }
   }
@@ -238,7 +238,7 @@ class DefaultListsManager {
       await _updateRecentlyWatchedList();
       await _updateRecommendationsList();
     } catch (e) {
-      print('Error al actualizar listas dinámicas: $e');
+      // Error al actualizar listas dinámicas: $e
     }
   }
   
@@ -259,7 +259,7 @@ class DefaultListsManager {
         await _repository.updateList(updatedList);
       }
     } catch (e) {
-      print('Error al actualizar lista de tendencias: $e');
+      // Error al actualizar lista de tendencias: $e
     }
   }
   
@@ -279,7 +279,7 @@ class DefaultListsManager {
         await _repository.updateList(updatedList);
       }
     } catch (e) {
-      print('Error al actualizar lista de vistas recientemente: $e');
+      // Error al actualizar lista de vistas recientemente: $e
     }
   }
   
@@ -299,7 +299,7 @@ class DefaultListsManager {
         await _repository.updateList(updatedList);
       }
     } catch (e) {
-      print('Error al actualizar lista de recomendaciones: $e');
+      // Error al actualizar lista de recomendaciones: $e
     }
   }
   
@@ -364,7 +364,7 @@ class DefaultListsManager {
         await _repository.updateList(updatedList);
       }
     } catch (e) {
-      print('Error al personalizar lista por defecto $defaultType: $e');
+      // Error al personalizar lista por defecto $defaultType: $e
       rethrow;
     }
   }
@@ -397,7 +397,7 @@ class DefaultListsManager {
         lastUpdated: DateTime.now(),
       );
     } catch (e) {
-      print('Error al obtener estadísticas de listas por defecto: $e');
+      // Error al obtener estadísticas de listas por defecto: $e
       rethrow;
     }
   }

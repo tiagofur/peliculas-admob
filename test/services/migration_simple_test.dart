@@ -48,7 +48,7 @@ void main() {
         description: 'Test Description',
         emoji: '🎬',
         colorHex: '#FF5722',
-        movieIds: ['movie1', 'movie2'],
+        movieIds: [1, 2],
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isDefault: false,
@@ -64,12 +64,13 @@ void main() {
 
     test('Debe crear DefaultListConfig con datos válidos', () {
       // Arrange & Act
-      final config = DefaultListConfig(
-        type: DefaultListType.favorites,
+      const config = DefaultListConfig(
+        localId: 'favorites',
         name: 'Favoritas',
         description: 'Mis películas favoritas',
         emoji: '❤️',
-        colorHex: '#E91E63',
+        color: '#E91E63',
+        type: DefaultListType.favorites,
       );
       
       // Assert

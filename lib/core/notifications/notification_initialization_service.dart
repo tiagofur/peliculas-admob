@@ -183,7 +183,7 @@ class NotificationInitializationService {
       // Asumimos una tabla 'profiles' con una columna 'fcm_token'
       await supabase
           .from('profiles')
-          .update({'fcm_token': token}).eq('id', userId);
+          .update({'fcm_token': token}).filter('id', 'eq', userId);
 
       LoggerFactory.info('FCM token sent to server successfully.');
     } catch (e) {

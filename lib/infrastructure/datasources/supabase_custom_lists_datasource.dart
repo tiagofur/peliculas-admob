@@ -16,8 +16,8 @@ class SupabaseCustomListsDataSource {
       final response = await _supabase
           .from('user_lists')
           .select()
-          .eq('user_id', userId)
-          .eq('is_deleted', false)
+          .filter('user_id', 'eq', userId)
+          .filter('is_deleted', 'eq', false)
           .order('created_at', ascending: false);
       
       return (response as List)
@@ -116,14 +116,14 @@ class SupabaseCustomListsDataSource {
   Future<void> initializeDefaultLists(String userId, List<DefaultListConfig> configs) async {
     try {
       final defaultLists = configs.map((config) => {
-        'id': config.id,
+        'id': config.localId,
         'name': config.name,
         'description': config.description,
         'emoji': config.emoji,
         'user_id': userId,
         'is_default': true,
         'is_public': false,
-        'color_hex': config.colorHex,
+        'color_hex': config.color,
         'default_type': config.defaultType,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
@@ -164,8 +164,10 @@ class SupabaseCustomListsDataSource {
         id: '', // Supabase generará el UUID
         listId: listId,
         movieId: movieId,
+        movieTitle: '', // Se actualizará desde TMDB
         position: finalPosition,
         addedAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
       
       final response = await _supabase
@@ -207,7 +209,7 @@ class SupabaseCustomListsDataSource {
         await _supabase
             .from('user_list_items')
             .update({'position': update['position'], 'updated_at': update['updated_at']})
-            .eq('id', update['id']);
+            .eq('id', update['id'] as String);
       }
     } catch (e) {
       throw Exception('Error al reordenar elementos de la lista: $e');
@@ -237,20 +239,21 @@ class SupabaseCustomListsDataSource {
     return _supabase
         .from('user_lists')
         .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
-        .eq('is_deleted', false)
-        .order('created_at', ascending: false)
-        .map((data) => data.map((json) => CustomList.fromJson(json)).toList());
+        .map((data) => data
+            .where((json) => json['user_id'] == userId && json['is_deleted'] == false)
+            .map((json) => CustomList.fromJson(json))
+            .toList());
   }
-  
+
   /// Stream para escuchar cambios en los elementos de una lista
   Stream<List<ListItem>> watchListItems(String listId) {
     return _supabase
         .from('user_list_items')
         .stream(primaryKey: ['id'])
-        .eq('list_id', listId)
-        .order('position', ascending: true)
-        .map((data) => data.map((json) => ListItem.fromJson(json)).toList());
+        .map((data) => data
+            .where((json) => json['list_id'] == listId)
+            .map((json) => ListItem.fromJson(json))
+            .toList());
   }
   
   // ========== MÉTODOS AUXILIARES ==========

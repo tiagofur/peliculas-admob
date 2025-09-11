@@ -105,8 +105,7 @@ class SilentFavoritesSyncService {
         final response = await _supabase
             .from('user_favorites')
             .select()
-            .eq('user_id', userId)
-            .eq('is_deleted', false)
+            .eq("user_id", userId)
             .order('last_modified_at', ascending: false)
             .range(offset, offset + batchSize - 1);
 

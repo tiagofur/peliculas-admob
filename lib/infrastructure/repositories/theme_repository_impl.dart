@@ -3,7 +3,7 @@ import '../../domain/datasources/theme_datasource.dart';
 import '../../domain/repositories/theme_repository.dart';
 
 class ThemeRepositoryImpl implements ThemeRepository {
-  ThemeRepositoryImpl(this.datasource);
+  const ThemeRepositoryImpl(this.datasource);
   final ThemeDatasource datasource;
 
   @override

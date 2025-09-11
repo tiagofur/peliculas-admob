@@ -22,8 +22,7 @@ class TriggerFreeCustomListsSync {
       final response = await _supabase
           .from('user_lists')
           .select('*')
-          .eq('user_id', userId)
-          .eq('is_deleted', false)
+          .eq("user_id", userId)
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -50,8 +49,7 @@ class TriggerFreeCustomListsSync {
       final response = await _supabase
           .from('user_list_items')
           .select('movie_id')
-          .eq('list_id', listId)
-          .eq('is_deleted', false)
+          .eq("user_id", userId)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -120,8 +118,7 @@ class TriggerFreeCustomListsSync {
             // 'color': list.color,
             // 'sync_version': 1,
           })
-          .eq('id', list.id)
-          .eq('user_id', userId);
+          .eq("user_id", userId);
 
       LoggerFactory.info('✅ [TriggerFree] Lista actualizada: ${list.name}');
     } catch (e) {
@@ -136,14 +133,13 @@ class TriggerFreeCustomListsSync {
       LoggerFactory.info('🗑️ [TriggerFree] Eliminando lista: $listId');
 
       // Primero eliminar todos los items de la lista
-      await _supabase.from('user_list_items').delete().eq('list_id', listId);
+      await _supabase.from('user_list_items').delete().eq("user_id", userId);
 
       // Luego eliminar la lista
       await _supabase
           .from('user_lists')
           .delete()
-          .eq('id', listId)
-          .eq('user_id', userId);
+          .eq("user_id", userId);
 
       LoggerFactory.info('✅ [TriggerFree] Lista eliminada: $listId');
     } catch (e) {
@@ -189,8 +185,7 @@ class TriggerFreeCustomListsSync {
       await _supabase
           .from('user_list_items')
           .delete()
-          .eq('list_id', listId)
-          .eq('movie_id', movieId);
+          .eq("user_id", userId);
 
       LoggerFactory.info('✅ [TriggerFree] Película removida de lista');
     } catch (e) {
@@ -206,9 +201,7 @@ class TriggerFreeCustomListsSync {
       final response = await _supabase
           .from('user_list_items')
           .select('movie_id')
-          .eq('list_id', listId)
-          .eq('movie_id', movieId)
-          .eq('is_deleted', false)
+          .eq("user_id", userId)
           .limit(1);
 
       return (response as List).isNotEmpty;

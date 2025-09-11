@@ -187,25 +187,11 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   }
 
   /// Construye filtros PostgreSQL optimizados
-  Map<String, String> _buildOptimizedFilters() {
-    return {
-      'user_id': 'eq.$userId',
-      'is_deleted': 'eq.false', // Filtrar eliminados a nivel de DB
-    };
+  // _buildOptimizedFilters removed - not referenced;
   }
 
   /// Calcula intervalo de heartbeat óptimo basado en la actividad
-  Duration _calculateOptimalHeartbeat() {
-    // Ajustar según la frecuencia de cambios esperada
-    const baseInterval = Duration(seconds: 30);
-    
-    // Reducir intervalo si hay métricas de tabla disponibles
-    final tableMetrics = _performanceMonitor.getTableMetrics(tableName);
-    if (tableMetrics != null && tableMetrics['events_processed'] != null) {
-      final eventsProcessed = tableMetrics['events_processed'] as int;
-      if (eventsProcessed > 10) {
-        return Duration(seconds: baseInterval.inSeconds ~/ 2);
-      }
+  // _calculateOptimalHeartbeat removed - not referenced
     }
     
     return baseInterval;
@@ -218,7 +204,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       
       // Cachear entidades más recientes
       final recentEntities = localData
-          .where((e) => e.lastModifiedAt.isAfter(
+          .where((e) => e.lastModifiedAtAt.isAfter(
               DateTime.now().subtract(const Duration(hours: 24))))
           .take(_cacheMaxSize ~/ 2)
           .toList();

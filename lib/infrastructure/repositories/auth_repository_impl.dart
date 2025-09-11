@@ -258,7 +258,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _supabase
           .from('user_profiles')
           .select()
-          .eq('user_id', userId)
+          .filter('user_id', 'eq', userId)
           .maybeSingle();
 
       if (response == null) return null;
@@ -287,7 +287,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _supabase
           .from('user_profiles')
           .update(updateData)
-          .eq('user_id', userId)
+          .filter('user_id', 'eq', userId)
           .select()
           .single();
 
@@ -303,7 +303,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _supabase
           .from('user_stats')
           .select()
-          .eq('user_id', userId)
+          .filter("user_id", "eq", userId)
           .maybeSingle();
 
       if (response == null) return null;
@@ -333,7 +333,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _supabase
           .from('user_stats')
           .update(updateData)
-          .eq('user_id', userId)
+          .filter("user_id", "eq", userId)
           .select()
           .single();
 

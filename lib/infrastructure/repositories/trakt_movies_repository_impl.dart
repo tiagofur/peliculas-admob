@@ -4,7 +4,7 @@ import '../mappers/trakt_mapper.dart';
 import '../services/trakt_api_service.dart';
 
 class TraktMoviesRepositoryImpl implements MoviesRepository {
-  TraktMoviesRepositoryImpl(this._traktApiService);
+  const TraktMoviesRepositoryImpl(this._traktApiService);
   final TraktApiService _traktApiService;
 
   @override

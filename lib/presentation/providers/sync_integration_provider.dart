@@ -507,19 +507,16 @@ class DisabledSyncIntegrationNotifier extends SyncIntegrationNotifier {
     return SyncPerformanceMetrics.instance;
   }
 
-  @override
   Future<void> initialize() async {
     // No hacer nada cuando está deshabilitado
     return;
   }
 
-  @override
   Future<void> startSync() async {
     // No hacer nada cuando está deshabilitado
     return;
   }
 
-  @override
   Future<void> stopSync() async {
     // No hacer nada cuando está deshabilitado
     return;

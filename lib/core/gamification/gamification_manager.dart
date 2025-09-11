@@ -813,6 +813,9 @@ class GamificationManager extends ChangeNotifier {
       case activity.ActivityType.socialInteraction:
         // Handle social interactions
         break;
+      case activity.ActivityType.removeFromList:
+        // Handle removing from list
+        break;
     }
   }
 

@@ -147,7 +147,7 @@ class DeviceSyncManager {
       final response = await _supabase
           .from('user_devices')
           .select()
-          .eq('user_id', userId)
+          .filter("user_id", "eq", userId)
           .order('last_seen', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -172,9 +172,9 @@ class DeviceSyncManager {
       final response = await _supabase
           .from('sync_status')
           .select()
-          .eq('user_id', userId)
-          .eq('device_id', _deviceId!)
-          .eq('table_name', tableName)
+          .filter("user_id", "eq", userId)
+          .filter("device_id", "eq", deviceId)
+          .filter("table_name", "eq", tableName)
           .maybeSingle();
 
       if (response != null) {
@@ -237,9 +237,9 @@ class DeviceSyncManager {
       final response = await _supabase
           .from('sync_conflicts')
           .select()
-          .eq('user_id', userId)
-          .eq('table_name', tableName)
-          .eq('is_resolved', false)
+          .filter("user_id", "eq", userId)
+          .filter("user_id", "eq", userId)
+          .filter("user_id", "eq", userId)
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -293,7 +293,7 @@ class DeviceSyncManager {
       await _supabase.from('sync_conflicts').update({
         'is_resolved': true,
         'resolved_at': DateTime.now().toIso8601String(),
-      }).eq('id', conflictId);
+      }).filter("user_id", "eq", _supabase.auth.currentUser?.id);
 
       LoggerFactory.info('✅ Conflict marked as resolved: $conflictId');
     } catch (e) {
@@ -354,9 +354,9 @@ class DeviceSyncManager {
       final response = await _supabase
           .from('sync_status')
           .select()
-          .eq('user_id', userId)
-          .eq('device_id', deviceId)
-          .eq('table_name', tableName)
+          .filter("user_id", "eq", userId)
+          .filter("user_id", "eq", userId)
+          .filter("user_id", "eq", userId)
           .maybeSingle();
 
       if (response != null) {
@@ -381,7 +381,7 @@ class DeviceSyncManager {
       await _supabase
           .from('user_devices')
           .delete()
-          .eq('user_id', userId)
+          .filter("user_id", "eq", userId)
           .lt('last_seen', cutoffDate.toIso8601String());
 
       LoggerFactory.info('🧹 Cleaned up old devices (inactive > 30 days)');

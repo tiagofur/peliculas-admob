@@ -163,13 +163,13 @@ class DatabaseVerificationService {
         await _supabase
             .from('user_favorites')
             .select('id')
-            .eq('user_id', user.id)
+            .filter("user_id", "eq", user.id)
             .limit(1);
 
         await _supabase
             .from('user_watchlist')
             .select('id')
-            .eq('user_id', user.id)
+            .filter("user_id", "eq", user.id)
             .limit(1);
 
         result.addSuccess(
@@ -206,7 +206,7 @@ class DatabaseVerificationService {
           await _supabase
               .from(table)
               .select('id')
-              .eq('user_id', user.id)
+              .filter("user_id", "eq", user.id)
               .limit(1);
 
           result.addSuccess('Permisos $table: ✓ Lectura permitida');

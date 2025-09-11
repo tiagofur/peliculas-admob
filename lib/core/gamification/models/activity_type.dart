@@ -6,5 +6,6 @@ enum ActivityType {
   completeWatchlist,
   exploreGenre,
   bingeWatch,
-  socialInteraction
+  socialInteraction,
+  removeFromList
 }

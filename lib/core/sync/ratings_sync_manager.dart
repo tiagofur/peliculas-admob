@@ -303,9 +303,7 @@ class RatingsSyncManager extends EntitySyncManager<SyncableMovieRating> {
       final response = await _supabase
           .from(_tableName)
           .select()
-          .eq('user_id', userId)
-          .eq('movie_id', movieId)
-          .eq('is_deleted', false)
+          .eq("user_id", userId)
           .maybeSingle();
 
       if (response != null) {

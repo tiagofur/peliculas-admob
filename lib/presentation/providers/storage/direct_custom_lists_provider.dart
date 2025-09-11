@@ -7,12 +7,9 @@ import 'package:uuid/uuid.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/trigger_free_custom_lists_sync.dart';
 import '../../../domain/entities/custom_list.dart';
-import '../../../domain/entities/movie.dart';
-import '../../../domain/repositories/i_custom_lists_repository.dart';
 import '../../../services/list_sync_service.dart';
-import '../../../services/sync/offline_change.dart';
-import '../hybrid_repositories_provider.dart';
-import '../sync_integration_provider.dart';
+import '../custom_lists_providers.dart';
+// OfflineChange está definido en list_sync_service.dart
 
 /// Estado para listas con sus películas
 class CustomListsState {
@@ -57,9 +54,9 @@ class CustomListsState {
 /// y solo usa TriggerFreeCustomListsSync para operaciones de Supabase
 final directCustomListsProvider =
     StateNotifierProvider<DirectCustomListsNotifier, CustomListsState>((ref) {
-  final syncService = ref.read(listSyncServiceProvider);
+  // Note: listSyncServiceProvider is a FutureProvider, but we'll handle it in the notifier
   return DirectCustomListsNotifier(
-    syncService: syncService,
+    ref: ref,
     onListCreated: (CustomList list) {
       // Opcional: trackear creación de lista para achievements
       // ref.read(achievementsProvider.notifier).trackListCreated();
@@ -69,7 +66,7 @@ final directCustomListsProvider =
 
 class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   DirectCustomListsNotifier({
-    required this.syncService,
+    required this.ref,
     required this.onListCreated,
   }) : super(const CustomListsState()) {
     _loadListsFromSupabase();
@@ -77,8 +74,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     _initializeSync();
   }
 
-  final ListSyncService syncService;
+  final Ref ref;
   final Function(CustomList list) onListCreated;
+  ListSyncService? _syncService;
   final TriggerFreeCustomListsSync _sync = TriggerFreeCustomListsSync.instance;
   RealtimeChannel? _listsChannel;
   RealtimeChannel? _listItemsChannel;
@@ -126,20 +124,28 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   }
 
   /// Inicializar sincronización con ListSyncService
-  void _initializeSync() {
-    // Escuchar cambios de estado de sincronización
-    syncService.syncStatusStream.listen((status) {
-      LoggerFactory.info('DirectCustomLists - Sync status: $status');
-    });
-    
-    // Escuchar conflictos
-    syncService.conflictsStream.listen((conflicts) {
-      LoggerFactory.info('DirectCustomLists - Conflicts detected: ${conflicts.length}');
-      // Aquí podrías mostrar una notificación al usuario sobre conflictos
-    });
-    
-    // Iniciar auto-sync si está habilitado
-    syncService.startAutoSync();
+  void _initializeSync() async {
+    try {
+      _syncService = await ref.read(listSyncServiceProvider.future);
+
+      // Escuchar cambios de estado de sincronización
+      _syncService!.syncStatusStream.listen((status) {
+        LoggerFactory.info('DirectCustomLists - Sync status: $status');
+      });
+
+      // Escuchar conflictos
+      _syncService!.conflictsStream.listen((conflicts) {
+        LoggerFactory.info(
+            'DirectCustomLists - Conflicts detected: ${conflicts.length}');
+        // Aquí podrías mostrar una notificación al usuario sobre conflictos
+      });
+
+      // Iniciar auto-sync si está habilitado
+      _syncService!.startAutoSync();
+    } catch (e) {
+      LoggerFactory.error(
+          'DirectCustomLists: Error initializing sync service: $e');
+    }
   }
 
   /// Crear nueva lista
@@ -202,7 +208,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           '❌ [CREAR LISTA] Error en TriggerFreeCustomListsSync: $e');
 
       // Registrar cambio offline para sincronización posterior
-      await syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'create_list_${listId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.createList,
         data: newList.toJson(),
@@ -263,7 +269,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       LoggerFactory.error('DirectCustomLists: Error actualizando lista: $e');
 
       // Registrar cambio offline para sincronización posterior
-      await syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'update_list_${listId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.updateList,
         data: updatedList.toJson(),
@@ -309,7 +315,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       LoggerFactory.error('DirectCustomLists: Error eliminando lista: $e');
 
       // Registrar cambio offline para sincronización posterior
-      await syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'delete_list_${listId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.deleteList,
         data: {'id': listId},
@@ -359,7 +365,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           'DirectCustomLists: Error agregando película a lista: $e');
 
       // Registrar cambio offline para sincronización posterior
-      await syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'add_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.addMovie,
         data: {
@@ -403,7 +409,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           'DirectCustomLists: Error removiendo película de lista: $e');
 
       // Registrar cambio offline para sincronización posterior
-      await syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'remove_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.removeMovie,
         data: {

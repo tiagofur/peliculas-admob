@@ -47,8 +47,8 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
       var query = _supabase
           .from(_tableName)
           .select()
-          .eq('user_id', userId)
-          .eq('is_deleted', false)
+          .eq("user_id", userId)
+          .eq("is_deleted", false)
           .order('last_modified_at', ascending: false);
 
       // Add date filtering for incremental sync

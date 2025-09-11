@@ -79,6 +79,25 @@ class IdMappingService {
     return getMappings().containsKey(localId);
   }
   
+  /// Mapea un ID local entero a un UUID
+  Future<void> mapLocalIdToUuid(int localId, String uuid) async {
+    await saveMapping(localId.toString(), uuid);
+  }
+  
+  /// Obtiene el UUID para un ID local entero
+  Future<String?> getUuidForLocalId(int localId) async {
+    return getSupabaseId(localId.toString());
+  }
+  
+  /// Obtiene el ID local entero para un UUID
+  Future<int?> getLocalIdForUuid(String uuid) async {
+    final localIdStr = getLocalId(uuid);
+    if (localIdStr != null) {
+      return int.tryParse(localIdStr);
+    }
+    return null;
+  }
+  
   /// Obtiene el número total de mapeos
   int get mappingCount => getMappings().length;
 }

@@ -7,7 +7,6 @@ import '../../infrastructure/datasources/custom_lists_shared_preferences_datasou
 import '../../infrastructure/datasources/isar_datasource.dart';
 import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
 import '../../infrastructure/datasources/watchlist_hive_datasource.dart';
-import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
 import '../../infrastructure/repositories/hybrid_favorites_repository.dart';
 import '../../infrastructure/repositories/hybrid_watched_repository.dart';
@@ -42,12 +41,9 @@ final watchedMoviesHiveDatasourceProvider =
 
 // Provider for the unified custom lists repository interface
 final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
-  final localDatasource = ref.watch(customListsLocalDatasourceProvider);
-
-  return CustomListsRepositoryImpl(
-    localDatasource,
-    ref,
-  );
+  // Este provider necesita ser implementado correctamente
+  // Por ahora retornamos el hybrid repository
+  return ref.watch(hybridCustomListsRepositoryProvider) as CustomListsRepository;
 });
 
 // Provider para el datasource de Hive de watchlist

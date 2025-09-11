@@ -190,7 +190,7 @@ class PostLoginInitializationService {
       // Analizar necesidades de migración
       final migrationPlan = await migrationService.analyzeMigrationNeeds(userId);
       
-      if (migrationPlan.hasDataToMigrate) {
+      if (migrationPlan.hasWork) {
         LoggerFactory.info('📋 Plan de migración: ${migrationPlan.totalEstimatedTime}ms estimados');
         
         // Migrar listas por defecto
