@@ -257,7 +257,7 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Maneja inserciones de tiempo real
   void _handleInsert(Map<String, dynamic> record) {
     if (record['user_id'] != _currentUserId) return;
-    if (record['is_deleted'] == true) return;
+    if (record['is_deleted'] ?? false) return;
 
     final movieId = record['movie_id'] as int;
 
@@ -282,7 +282,7 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
     final movieId = newRecord['movie_id'] as int;
 
-    if (newRecord['is_deleted'] == true) {
+    if (newRecord['is_deleted'] ?? false) {
       LoggerFactory.info(
           '🗑️ DirectWatchlist: Actualizando como eliminado ${newRecord['movie_title']}');
       state = Map.from(state)..remove(movieId);

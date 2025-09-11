@@ -168,7 +168,7 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       try {
         await _subscriptionManager.removeSubscription(subscription.id);
         await _loadSubscriptions();

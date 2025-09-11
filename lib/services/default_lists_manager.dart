@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/entities/custom_list.dart';
 import '../domain/entities/list_item.dart';
 import '../domain/repositories/i_custom_lists_repository.dart';
-import 'list_sync_service.dart';
 
 /// Gestor de listas por defecto del sistema
 /// Se encarga de crear, mantener y sincronizar las listas predefinidas
@@ -21,7 +19,7 @@ class DefaultListsManager {
   // Versión actual de las listas por defecto
   static const int _currentDefaultListsVersion = 1;
   
-  DefaultListsManager(this._repository, this._prefs);
+  const DefaultListsManager(this._repository, this._prefs);
   
   // ========== INICIALIZACIÓN ==========
   
@@ -412,7 +410,7 @@ class DefaultListsStats {
   final int dynamicLists;
   final DateTime lastUpdated;
   
-  DefaultListsStats({
+  const DefaultListsStats({
     required this.totalLists,
     required this.totalMovies,
     required this.editableLists,

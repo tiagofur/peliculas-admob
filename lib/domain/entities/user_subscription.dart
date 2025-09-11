@@ -70,6 +70,25 @@ class UserSubscription {
     );
   }
 
+  /// Generate unique ID for subscription
+  static String _generateId() {
+    return 'sub_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecond % 1000).toString().padLeft(3, '0')}';
+  }
+
+  /// Calculate next billing date based on start date and billing cycle
+  static DateTime _calculateNextBilling(DateTime startDate, String? billingCycle) {
+    switch (billingCycle?.toLowerCase()) {
+      case 'yearly':
+      case 'annual':
+        return DateTime(startDate.year + 1, startDate.month, startDate.day);
+      case 'quarterly':
+        return DateTime(startDate.year, startDate.month + 3, startDate.day);
+      case 'monthly':
+      default:
+        return DateTime(startDate.year, startDate.month + 1, startDate.day);
+    }
+  }
+
 
 
   final String id;
@@ -194,26 +213,6 @@ class UserSubscription {
     };
   }
 
-
-
-  /// Generate a unique ID
-  static String _generateId() {
-    return 'sub_${DateTime.now().millisecondsSinceEpoch}_${(DateTime.now().microsecond % 1000).toString().padLeft(3, '0')}';
-  }
-
-  /// Calculate next billing date based on billing cycle
-  static DateTime _calculateNextBilling(DateTime startDate, String? billingCycle) {
-    switch (billingCycle?.toLowerCase()) {
-      case 'yearly':
-      case 'annual':
-        return DateTime(startDate.year + 1, startDate.month, startDate.day);
-      case 'quarterly':
-        return DateTime(startDate.year, startDate.month + 3, startDate.day);
-      case 'monthly':
-      default:
-        return DateTime(startDate.year, startDate.month + 1, startDate.day);
-    }
-  }
 
   @override
   bool operator ==(Object other) {

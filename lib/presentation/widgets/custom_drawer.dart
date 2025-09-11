@@ -114,9 +114,9 @@ class CustomDrawer extends ConsumerWidget {
               ],
             ),
             const Spacer(),
-            if (profile?.bio != null && (profile?.bio?.isNotEmpty ?? false))
+            if (profile?.bio != null && profile!.bio!.isNotEmpty)
               Text(
-                profile?.bio ?? '',
+                profile!.bio!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color:
                           colorScheme.onPrimaryContainer.withValues(alpha: 0.9),

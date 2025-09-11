@@ -6,7 +6,7 @@ import '../../domain/entities/list_item.dart';
 class SupabaseCustomListsDataSource {
   final SupabaseClient _supabase;
   
-  SupabaseCustomListsDataSource(this._supabase);
+  const SupabaseCustomListsDataSource(this._supabase);
   
   // ========== OPERACIONES DE LISTAS ==========
   

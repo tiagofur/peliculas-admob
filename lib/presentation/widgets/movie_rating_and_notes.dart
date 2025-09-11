@@ -409,7 +409,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (showNotes && rating.review?.isNotEmpty == true) ...[
+                if (showNotes && (rating.review?.isNotEmpty ?? false)) ...[
                   const SizedBox(height: 12),
                   Container(
                     width: double.infinity,

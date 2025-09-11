@@ -174,7 +174,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
   // Método para cerrar la base de datos
   Future<void> close() async {
     try {
-      if (_watchedMoviesBox?.isOpen == true) {
+      if (_watchedMoviesBox?.isOpen ?? false) {
         await _watchedMoviesBox?.close();
       }
       _isInitialized = false;

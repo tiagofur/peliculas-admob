@@ -15,9 +15,7 @@ class RealtimeChannelPool {
   // Configuración del pool
   static const int _maxPoolSize = 10;
   static const int _minPoolSize = 2;
-  static const Duration _channelTimeout = Duration(seconds: 30);
   static const Duration _heartbeatInterval = Duration(seconds: 15);
-  static const Duration _reconnectDelay = Duration(seconds: 5);
 
   // Pool de canales disponibles
   final Queue<PooledChannel> _availableChannels = Queue<PooledChannel>();
@@ -290,8 +288,7 @@ class PooledChannel {
   bool get isHealthy {
     final timeSinceActivity = DateTime.now().difference(_lastActivity);
     return _isSubscribed &&
-        timeSinceActivity < const Duration(minutes: 2) &&
-        channel.socket.isConnected;
+        timeSinceActivity < const Duration(minutes: 2);
   }
 
   Future<void> initialize() async {
@@ -343,7 +340,7 @@ class PooledChannel {
 
   void _startHeartbeat() {
     _heartbeatTimer = Timer.periodic(heartbeatInterval, (_) {
-      if (_isSubscribed && channel.socket.isConnected) {
+      if (_isSubscribed) {
         _updateActivity();
       }
     });

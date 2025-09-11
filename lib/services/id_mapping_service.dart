@@ -7,7 +7,7 @@ class IdMappingService {
   
   static const String _idMappingKey = 'id_mapping_data';
   
-  IdMappingService(this._prefs);
+  const IdMappingService(this._prefs);
   
   /// Guarda un mapeo de ID local a ID de Supabase
   Future<void> saveMapping(String localId, String supabaseId) async {

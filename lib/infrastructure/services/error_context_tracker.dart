@@ -5,9 +5,9 @@ import '../../core/logging/logger_factory.dart';
 
 /// Servicio para rastrear contexto de errores y patrones
 class ErrorContextTracker {
-  factory ErrorContextTracker() => _instance;
-  
   ErrorContextTracker._internal();
+  
+  factory ErrorContextTracker() => _instance;
   
   static final ErrorContextTracker _instance = ErrorContextTracker._internal();
   

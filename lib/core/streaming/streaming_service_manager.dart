@@ -96,8 +96,7 @@ class StreamingServiceManager {
     );
   }
 
-  // Cache duration for availability data
-  static const Duration _availabilityCacheDuration = Duration(hours: 6);
+
 
   /// Get real-time availability service
   RealtimeAvailabilityService get realtimeAvailability =>
@@ -122,7 +121,7 @@ class StreamingServiceManager {
     }
   }
 
-  static const Duration _subscriptionCacheDuration = Duration(hours: 1);
+
 
   bool _isInitialized = false;
   String _currentRegion = 'US';
@@ -161,7 +160,7 @@ class StreamingServiceManager {
       _eventController.add(StreamingEvent.initialized(region));
 
       logger.info('StreamingServiceManager initialized successfully');
-    } catch (e, stackTrace) {
+    } catch (e) {
       logger.error('Failed to initialize StreamingServiceManager: $e');
       analytics.trackEvent(AnalyticsEventType.error, {
         'error': e.toString(),
@@ -306,7 +305,7 @@ class StreamingServiceManager {
       _eventController.add(StreamingEvent.subscriptionUpdated(subscription));
 
       logger.info('Updated subscription for ${subscription.platform.name}');
-    } catch (e, stackTrace) {
+    } catch (e) {
       logger.error('Failed to update subscription: $e');
       rethrow;
     }
@@ -325,7 +324,7 @@ class StreamingServiceManager {
       });
 
       logger.info('Removed subscription for platform: $platformId');
-    } catch (e, stackTrace) {
+    } catch (e) {
       logger.error('Failed to remove subscription: $e');
       rethrow;
     }
@@ -409,7 +408,7 @@ class StreamingServiceManager {
       });
 
       return results;
-    } catch (e, stackTrace) {
+    } catch (e) {
       logger.error('Failed to search content: $e');
       return [];
     }

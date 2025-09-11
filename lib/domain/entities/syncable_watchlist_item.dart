@@ -110,14 +110,14 @@ class SyncableWatchlistItem extends SyncableEntity {
       lastModifiedAt: json['last_modified_at'] != null
           ? DateTime.parse(json['last_modified_at'] as String)
           : DateTime.now(),
-      isDeleted: json['is_deleted'] as bool? ?? false,
-      syncVersion: json['sync_version'] as int? ?? 0,
+      isDeleted: (json['is_deleted'] as bool?) ?? false,
+      syncVersion: (json['sync_version'] as int?) ?? 0,
       deviceId: json['device_id'] as String?,
       personalNotes: json['personal_notes'] as String?,
       reminderDate: json['reminder_date'] != null
           ? DateTime.parse(json['reminder_date'] as String)
           : null,
-      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? <String>[],
     );
   }
 

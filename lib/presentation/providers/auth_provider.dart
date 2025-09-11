@@ -11,11 +11,12 @@ import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 
 import '../../infrastructure/repositories/auth_repository_impl.dart';
-import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
+
 import '../../infrastructure/services/anonymous_data_migrator.dart';
 import '../../services/id_mapping_service.dart';
 import '../../services/lists_migration_service.dart';
 import '../../services/migration_rollback_service.dart';
+import './custom_lists_providers.dart' as custom_lists;
 import './hybrid_repositories_provider.dart';
 import './storage/direct_watched_provider.dart';
 import './storage/direct_watchlist_provider.dart';
@@ -382,7 +383,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       // Obtener instancias de los servicios de migración
       final prefs = await SharedPreferences.getInstance();
       final supabase = SupabaseConfig.client;
-      final localDataSource = CustomListsSharedPreferencesDatasource(prefs);
+      final localDataSource = CustomListsSharedPreferencesDatasource();
       final idMappingService = IdMappingService(prefs);
       final rollbackService = MigrationRollbackService(
         prefs,
@@ -391,9 +392,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         idMappingService,
       );
       
-      final repository = HybridCustomListsRepository(
-        userId: userId,
-      );
+      final repository = await _ref.read(custom_lists.customListsRepositoryProvider.future);
       final migrationService = ListsMigrationService(
         repository,
         prefs,
@@ -441,7 +440,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       try {
         final prefs = await SharedPreferences.getInstance();
         final supabase = SupabaseConfig.client;
-        final localDataSource = CustomListsSharedPreferencesDatasource(prefs);
+        final localDataSource = CustomListsSharedPreferencesDatasource();
         final idMappingService = IdMappingService(prefs);
         final rollbackService = MigrationRollbackService(
           prefs,

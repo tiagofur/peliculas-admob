@@ -113,8 +113,8 @@ class SyncableWatchedMovie extends SyncableEntity {
       lastModifiedAt: json['last_modified_at'] != null
           ? DateTime.parse(json['last_modified_at'] as String)
           : DateTime.now(),
-      isDeleted: json['is_deleted'] as bool? ?? false,
-      syncVersion: json['sync_version'] as int? ?? 0,
+      isDeleted: (json['is_deleted'] as bool?) ?? false,
+      syncVersion: (json['sync_version'] as int?) ?? 0,
       deviceId: json['device_id'] as String?,
       personalRating: json['personal_rating']?.toDouble(),
       personalNotes: json['personal_notes'] as String?,

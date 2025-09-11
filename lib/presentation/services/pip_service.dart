@@ -8,8 +8,9 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart'
 import '../../core/logging/logger_factory.dart';
 
 class PipService {
-  factory PipService() => _instance;
   PipService._internal();
+  
+  factory PipService() => _instance;
 
   static final PipService _instance = PipService._internal();
 

@@ -483,7 +483,7 @@ class RollbackPoint {
   final DateTime timestamp;
   final RollbackData data;
   
-  RollbackPoint({
+  const RollbackPoint({
     required this.id,
     required this.userId,
     required this.description,
@@ -520,7 +520,7 @@ class RollbackData {
   final Map<String, dynamic> migrationFlags;
   final DateTime timestamp;
   
-  RollbackData({
+  const RollbackData({
     required this.localLists,
     required this.remoteLists,
     required this.remoteItems,
@@ -607,7 +607,7 @@ class RollbackInfo {
   final DateTime timestamp;
   final int dataSize;
   
-  RollbackInfo({
+  const RollbackInfo({
     required this.id,
     required this.description,
     required this.timestamp,

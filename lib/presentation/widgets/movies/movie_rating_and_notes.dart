@@ -297,7 +297,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
       ),
     );
 
-    if (confirmed == true) {
+    if (confirmed ?? false) {
       final notifier = ref.read(movieRatingsProvider.notifier);
       final success = await notifier.removeRating(movie.id);
 

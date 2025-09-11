@@ -107,9 +107,9 @@ class ProfileAvatar extends StatelessWidget {
     }
 
     // Si hay una URL de avatar, cargarla desde la red
-    if (avatarUrl != null && (avatarUrl?.isNotEmpty ?? false)) {
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: avatarUrl ?? '',
+        imageUrl: avatarUrl!,
         width: size,
         height: size,
         fit: BoxFit.cover,

@@ -47,18 +47,18 @@ class MovieInfoSection extends StatelessWidget {
 
         // Colección si pertenece a una
         if (movie.belongsToCollection != null &&
-            (movie.belongsToCollection?.isNotEmpty ?? false))
+            movie.belongsToCollection!.isNotEmpty)
           _CollectionInfo(movie: movie),
         if (movie.belongsToCollection != null &&
-            (movie.belongsToCollection?.isNotEmpty ?? false))
+            movie.belongsToCollection!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Idiomas hablados
         if (movie.spokenLanguages != null &&
-            (movie.spokenLanguages?.isNotEmpty ?? false))
+            movie.spokenLanguages!.isNotEmpty)
           _SpokenLanguages(movie: movie),
         if (movie.spokenLanguages != null &&
-            (movie.spokenLanguages?.isNotEmpty ?? false))
+            movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Streaming Quick Action Button
@@ -87,7 +87,7 @@ class MovieInfoSection extends StatelessWidget {
         if (movie.watchProviders != null) const SizedBox(height: 16),
 
         // Homepage link if available
-        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
+        if (movie.homepage != null && movie.homepage!.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -112,9 +112,9 @@ class MovieInfoSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 InkWell(
-                  onTap: () => _launchURL(movie.homepage ?? ''),
+                  onTap: () => _launchURL(movie.homepage!),
                   child: Text(
-                    movie.homepage ?? '',
+                    movie.homepage!,
                     style: textStyles.bodyMedium?.copyWith(
                       color: colors.primary,
                       decoration: TextDecoration.underline,
@@ -124,7 +124,7 @@ class MovieInfoSection extends StatelessWidget {
               ],
             ),
           ),
-        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
+        if (movie.homepage != null && movie.homepage!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Cast principal mejorado
@@ -221,18 +221,18 @@ class EnhancedMovieInfo extends ConsumerWidget {
 
         // Colección si pertenece a una
         if (movie.belongsToCollection != null &&
-            (movie.belongsToCollection?.isNotEmpty ?? false))
+            movie.belongsToCollection!.isNotEmpty)
           _CollectionInfo(movie: movie),
         if (movie.belongsToCollection != null &&
-            (movie.belongsToCollection?.isNotEmpty ?? false))
+            movie.belongsToCollection!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Idiomas hablados
         if (movie.spokenLanguages != null &&
-            (movie.spokenLanguages?.isNotEmpty ?? false))
+            movie.spokenLanguages!.isNotEmpty)
           _SpokenLanguages(movie: movie),
         if (movie.spokenLanguages != null &&
-            (movie.spokenLanguages?.isNotEmpty ?? false))
+            movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Watch Providers - Plataformas de streaming
@@ -246,7 +246,7 @@ class EnhancedMovieInfo extends ConsumerWidget {
         if (movie.watchProviders != null) const SizedBox(height: 16),
 
         // Homepage link if available
-        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
+        if (movie.homepage != null && movie.homepage!.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -271,9 +271,9 @@ class EnhancedMovieInfo extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 InkWell(
-                  onTap: () => _launchURL(movie.homepage ?? ''),
+                  onTap: () => _launchURL(movie.homepage!),
                   child: Text(
-                    movie.homepage ?? '',
+                    movie.homepage!,
                     style: textStyles.bodyMedium?.copyWith(
                       color: colors.primary,
                       decoration: TextDecoration.underline,
@@ -283,7 +283,7 @@ class EnhancedMovieInfo extends ConsumerWidget {
               ],
             ),
           ),
-        if (movie.homepage != null && (movie.homepage?.isNotEmpty ?? false))
+        if (movie.homepage != null && movie.homepage!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Cast principal mejorado

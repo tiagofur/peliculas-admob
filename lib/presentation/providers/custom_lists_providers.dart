@@ -87,19 +87,13 @@ final userListsProvider = StreamProvider<List<CustomList>>((ref) async* {
     yield <CustomList>[];
     return;
   }
-  yield* repository.watchUserLists(userId);
+  yield* repository.watchUserLists();
 });
 
 /// Provider principal para el notifier de listas personalizadas
 final customListsNotifierProvider =
     StateNotifierProvider<CustomListsNotifier, AsyncValue<List<CustomList>>>((ref) {
-  // Necesitamos manejar el FutureProvider de manera asíncrona
-  final repositoryAsync = ref.watch(customListsRepositoryProvider);
-  return repositoryAsync.when(
-    data: (repository) => CustomListsNotifier(repository),
-    loading: () => CustomListsNotifier._loading(),
-    error: (error, stack) => CustomListsNotifier._error(error, stack),
-  );
+  return CustomListsNotifier._loading();
 });
 
 /// Provider para listas por defecto
@@ -117,7 +111,7 @@ final listByIdProvider =
     yield null;
     return;
   }
-  yield* repository.watchUserLists(userId).map((lists) {
+  yield* repository.watchUserLists().map((lists) {
     try {
       return lists.firstWhere((list) => list.id == listId);
     } catch (e) {

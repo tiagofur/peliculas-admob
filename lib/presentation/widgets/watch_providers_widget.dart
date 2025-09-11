@@ -45,7 +45,7 @@ class WatchProvidersWidget extends StatelessWidget {
             if (watchProviders?.flatrate.isNotEmpty ?? false)
               _buildProviderSection(
                 'Streaming',
-                watchProviders?.flatrate ?? [],
+                watchProviders!.flatrate,
                 Icons.play_circle_fill,
                 Colors.green,
               ),
@@ -54,7 +54,7 @@ class WatchProvidersWidget extends StatelessWidget {
             if (watchProviders?.rent.isNotEmpty ?? false)
               _buildProviderSection(
                 'Alquiler',
-                watchProviders?.rent ?? [],
+                watchProviders!.rent,
                 Icons.movie_filter,
                 Colors.orange,
               ),
@@ -63,7 +63,7 @@ class WatchProvidersWidget extends StatelessWidget {
             if (watchProviders?.buy.isNotEmpty ?? false)
               _buildProviderSection(
                 'Compra',
-                watchProviders?.buy ?? [],
+                watchProviders!.buy,
                 Icons.shopping_cart,
                 Colors.blue,
               ),

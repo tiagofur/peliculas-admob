@@ -1,5 +1,5 @@
 class Recommendation {
-  Recommendation({
+  const Recommendation({
     required this.movieId,
     required this.title,
     required this.posterPath,
@@ -34,7 +34,7 @@ enum RecommendationType {
 }
 
 class RecommendationCategory {
-  RecommendationCategory({
+  const RecommendationCategory({
     required this.id,
     required this.title,
     required this.description,

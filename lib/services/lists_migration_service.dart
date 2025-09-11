@@ -504,12 +504,12 @@ class ListsMigrationService {
   Future<void> _createMigrationBackup() async {
     try {
       final localLists = await _getLocalLists();
-      final backupData = {
-        'timestamp': DateTime.now().toIso8601String(),
-        'lists': localLists.map((list) => list.toJson()).toList(),
-      };
-
-      await _prefs.setString(_migrationBackupKey, json.encode(backupData));
+      await _prefs.setString(
+          _migrationBackupKey,
+          json.encode({
+            'timestamp': DateTime.now().toIso8601String(),
+            'lists': localLists.map((list) => list.toJson()).toList(),
+          }));
     } catch (e) {
       throw MigrationException('Error al crear backup: $e');
     }
@@ -520,8 +520,7 @@ class ListsMigrationService {
     try {
       final backupJson = _prefs.getString(_migrationBackupKey);
       if (backupJson != null) {
-        final backupData = json.decode(backupJson);
-        // Aquí se implementaría la lógica de rollback
+        // Aquí se implementaría la lógica de rollback usando json.decode(backupJson)
         // Por ahora solo limpiamos las marcas de migración
         await _prefs.remove(_migrationCompletedKey);
         await _prefs.remove(_localToSupabaseMapKey);

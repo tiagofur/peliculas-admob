@@ -186,16 +186,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     }
   }
 
-  /// Construye filtros PostgreSQL optimizados
-  // _buildOptimizedFilters removed - not referenced;
-  }
 
-  /// Calcula intervalo de heartbeat óptimo basado en la actividad
-  // _calculateOptimalHeartbeat removed - not referenced
-    }
-    
-    return baseInterval;
-  }
 
   /// Precarga cache con datos frecuentemente accedidos
   Future<void> _warmupCache() async {
@@ -204,7 +195,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       
       // Cachear entidades más recientes
       final recentEntities = localData
-          .where((e) => e.lastModifiedAtAt.isAfter(
+          .where((e) => e.lastModifiedAt.isAfter(
               DateTime.now().subtract(const Duration(hours: 24))))
           .take(_cacheMaxSize ~/ 2)
           .toList();

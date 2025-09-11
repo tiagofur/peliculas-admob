@@ -542,7 +542,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
 
   void _handleListInsert(Map<String, dynamic> record) {
     if (record['user_id'] != _currentUserId) return;
-    if (record['is_deleted'] == true) return;
+    if (record['is_deleted'] ?? false) return;
 
     final listId = record['id'] as String;
     final customList = _recordToCustomList(record);
@@ -567,7 +567,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
 
     final listId = newRecord['id'] as String;
 
-    if (newRecord['is_deleted'] == true) {
+    if (newRecord['is_deleted'] ?? false) {
       LoggerFactory.info(
           '🗑️ DirectCustomLists: Lista eliminada ${newRecord['name']}');
       final updatedLists = Map<String, CustomList>.from(state.lists);
@@ -600,7 +600,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   }
 
   void _handleItemInsert(Map<String, dynamic> record) {
-    if (record['is_deleted'] == true) return;
+    if (record['is_deleted'] ?? false) return;
 
     final listId = record['list_id'] as String;
     final movieId = record['movie_id'] as int;
@@ -628,7 +628,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     // Solo procesar si tenemos esta lista
     if (!state.lists.containsKey(listId)) return;
 
-    if (newRecord['is_deleted'] == true) {
+    if (newRecord['is_deleted'] ?? false) {
       LoggerFactory.info(
           '🗑️ DirectCustomLists: Item eliminado $movieId de lista $listId');
       final updatedItems = Map<String, List<int>>.from(state.listItems);

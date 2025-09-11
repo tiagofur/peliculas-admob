@@ -5,9 +5,8 @@ import '../../core/gamification/gamification_manager.dart';
 import '../../core/gamification/models/activity_type.dart' as activity;
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/custom_list.dart';
-import '../../domain/entities/list_item.dart';
 import '../../domain/repositories/i_custom_lists_repository.dart';
-import '../../domain/entities/custom_list.dart';
+import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../services/list_sync_service.dart';
 import 'custom_lists_providers.dart';
 import 'gamification_providers.dart';
@@ -619,19 +618,33 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 }
 
 // Provider del repositorio
-final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
-  return CustomListsRepositoryImpl(
-      CustomListsSharedPreferencesDatasource(), ref);
-});
+final customListsRepositoryProvider = Provider<ICustomListsRepository>((ref) {
+    final prefsAsync = ref.watch(sharedPreferencesProvider);
+    final supabaseDataSource = ref.watch(supabaseCustomListsDatasourceProvider);
+    final connectivity = ref.watch(connectivityProvider);
+    
+    return prefsAsync.when(
+      data: (prefs) => CustomListsRepositoryImpl(supabaseDataSource, prefs, connectivity),
+      loading: () => throw const AsyncLoading<ICustomListsRepository>(),
+      error: (error, stack) => throw AsyncError<ICustomListsRepository>(error, stack),
+    );
+  });
 
 // Provider principal unificado
 final allListsProvider =
     StateNotifierProvider<AllListsNotifier, AllListsState>((ref) {
-  final repository = ref.watch(hybridCustomListsRepositoryProvider);
-  return AllListsNotifier(
-    repository,
-    ref.read(listSyncServiceProvider),
-    ref.read(gamificationManagerProvider),
+  final repository = ref.watch(customListsRepositoryProvider);
+  final syncService = ref.watch(listSyncServiceProvider);
+  final gamificationManager = ref.watch(gamificationManagerProvider);
+  
+  return syncService.when(
+    data: (service) => AllListsNotifier(
+      repository,
+      service,
+      gamificationManager,
+    ),
+    loading: () => throw const AsyncLoading<AllListsState>(),
+    error: (error, stack) => throw AsyncError<AllListsState>(error, stack),
   );
 });
 

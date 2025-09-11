@@ -452,7 +452,7 @@ class RealtimeAvailabilityService {
 
 /// Cached availability data with expiration
 class CachedAvailability {
-  CachedAvailability({
+  const CachedAvailability({
     required this.availability,
     required this.timestamp,
   });

@@ -60,9 +60,9 @@ class WatchlistMovieCard extends StatelessWidget {
 
                     // Overview
                     if (movie.movieOverview != null &&
-                        (movie.movieOverview?.isNotEmpty ?? false)) ...[
+                        movie.movieOverview!.isNotEmpty) ...[
                       Text(
-                        movie.movieOverview ?? '',
+                        movie.movieOverview!,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.grey[600],
                         ),

@@ -171,15 +171,15 @@ class HiveDatasource extends LocalStorageDatasource {
   Future<void> close() async {
     try {
       final moviesBox = _moviesBox;
-      if (moviesBox?.isOpen == true) {
+      if (moviesBox?.isOpen ?? false) {
         await moviesBox?.close();
       }
       final cacheMetadataBox = _cacheMetadataBox;
-      if (cacheMetadataBox?.isOpen == true) {
+      if (cacheMetadataBox?.isOpen ?? false) {
         await cacheMetadataBox?.close();
       }
       final watchlistBox = _watchlistBox;
-      if (watchlistBox?.isOpen == true) {
+      if (watchlistBox?.isOpen ?? false) {
         await watchlistBox?.close();
       }
       _isInitialized = false;
@@ -198,7 +198,7 @@ class HiveDatasource extends LocalStorageDatasource {
 
   /// Initialize cache metadata box
   Future<void> _initCacheMetadata() async {
-    if (_cacheMetadataBox?.isOpen == true) return;
+    if (_cacheMetadataBox?.isOpen ?? false) return;
 
     try {
       _cacheMetadataBox = await Hive.openBox('cache_metadata');
