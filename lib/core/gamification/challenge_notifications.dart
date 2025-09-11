@@ -238,7 +238,7 @@ class ChallengeNotificationService extends ChangeNotifier {
   /// Send notification for completed challenge
   void sendChallengeCompletedNotification(Challenge challenge) {
     final badgeText = challenge.rewardBadges.isNotEmpty
-        ? ' and earned the ${challenge.rewardBadges.join(", ")} badge${challenge.rewardBadges.length > 1 ? 's' : ''}'
+        ? ' and earned the ${challenge.rewardBadges.join(', ')} badge${challenge.rewardBadges.length > 1 ? 's' : ''}'
         : '';
 
     final notification = ChallengeNotification(

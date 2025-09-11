@@ -70,11 +70,11 @@ void main() {
         description: 'Mis películas favoritas',
         emoji: '❤️',
         color: '#E91E63',
-        type: DefaultListType.favorites,
+        defaultType: 'favorites',
       );
       
       // Assert
-      expect(config.type, equals(DefaultListType.favorites));
+      expect(config.defaultType, equals('favorites'));
       expect(config.name, equals('Favoritas'));
       expect(config.emoji, equals('❤️'));
     });

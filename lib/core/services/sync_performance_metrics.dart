@@ -483,7 +483,7 @@ class SyncPerformanceMetrics {
     buffer.writeln();
 
     buffer.writeln('RED:');
-    buffer.writeln('  Estado: ${snapshot.isOnline ? "Online" : "Offline"}');
+    buffer.writeln('  Estado: ${snapshot.isOnline ? 'Online' : 'Offline'}');
     buffer.writeln('  Reconexiones: ${snapshot.networkReconnections}');
     buffer.writeln(
         '  Tiempo offline total: ${snapshot.totalOfflineTime.inMinutes} minutos');

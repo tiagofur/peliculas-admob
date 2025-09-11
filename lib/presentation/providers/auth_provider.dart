@@ -16,7 +16,7 @@ import '../../infrastructure/services/anonymous_data_migrator.dart';
 import '../../services/id_mapping_service.dart';
 import '../../services/lists_migration_service.dart';
 import '../../services/migration_rollback_service.dart';
-import './custom_lists_providers.dart' as custom_lists;
+
 import './hybrid_repositories_provider.dart';
 import './storage/direct_watched_provider.dart';
 import './storage/direct_watchlist_provider.dart';
@@ -392,9 +392,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         idMappingService,
       );
       
-      final repository = await _ref.read(custom_lists.customListsRepositoryProvider.future);
       final migrationService = ListsMigrationService(
-        repository,
         prefs,
         localDataSource,
         supabase,

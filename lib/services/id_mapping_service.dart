@@ -3,11 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// Servicio para manejar el mapeo de IDs entre local y Supabase
 class IdMappingService {
+  const IdMappingService(this._prefs);
+  
   final SharedPreferences _prefs;
   
   static const String _idMappingKey = 'id_mapping_data';
-  
-  const IdMappingService(this._prefs);
   
   /// Guarda un mapeo de ID local a ID de Supabase
   Future<void> saveMapping(String localId, String supabaseId) async {

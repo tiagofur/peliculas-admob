@@ -483,7 +483,7 @@ class NotificationPreferencesService {
     await savePreferences(updatedPreferences);
 
     _log(
-        'Tipo de notificación ${type.name} ${enabled ? "habilitado" : "deshabilitado"}');
+        'Tipo de notificación ${type.name} ${enabled ? 'habilitado' : 'deshabilitado'}');
   }
 
   /// Actualiza la frecuencia de un tipo de notificación

@@ -21,7 +21,7 @@ class DatabaseVerificationService {
       await _verifyPermissions(result);
 
       LoggerFactory.info(
-          'Verificación completada. Estado: ${result.isHealthy ? "SALUDABLE" : "PROBLEMAS DETECTADOS"}');
+          'Verificación completada. Estado: ${result.isHealthy ? 'SALUDABLE' : 'PROBLEMAS DETECTADOS'}');
     } catch (e, stackTrace) {
       LoggerFactory.error(
           'Error durante la verificación de la base de datos: $e',
@@ -259,7 +259,7 @@ class DatabaseVerificationResult {
     buffer.writeln('=== REPORTE DE VERIFICACIÓN DE BASE DE DATOS ===\n');
 
     buffer.writeln(
-        'Estado General: ${isHealthy ? "✓ SALUDABLE" : "✗ PROBLEMAS DETECTADOS"}\n');
+        'Estado General: ${isHealthy ? '✓ SALUDABLE' : '✗ PROBLEMAS DETECTADOS'}\n');
 
     if (_successes.isNotEmpty) {
       buffer.writeln('✅ ÉXITOS (${_successes.length}):');

@@ -274,7 +274,7 @@ extension ErrorReportingZone on ErrorReportingService {
         // If casting null to R fails, it means R is not nullable
         // For non-nullable types, throw an error with more context
         throw StateError(
-            'Zone body returned null in ${zoneName ?? "unknown zone"}. '
+            'Zone body returned null in ${zoneName ?? 'unknown zone'}. '
             'This typically indicates an unhandled exception occurred in the zone.');
       }
     }
@@ -311,7 +311,7 @@ extension ErrorReportingZone on ErrorReportingService {
         // If casting null to R fails, it means R is not nullable
         // For non-nullable types, throw an error with more context
         throw StateError(
-            'Zone body returned null in ${zoneName ?? "unknown zone"}. '
+            'Zone body returned null in ${zoneName ?? 'unknown zone'}. '
             'This typically indicates an unhandled exception occurred in the zone.');
       }
     }

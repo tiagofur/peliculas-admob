@@ -13,9 +13,9 @@ class WatchlistMovieCard extends StatelessWidget {
   });
 
   final WatchlistMovie movie;
-  final VoidCallback onRemove;
-  final ValueChanged<WatchlistPriority> onPriorityChanged;
-  final VoidCallback onTap;
+  final void Function() onRemove;
+  final Function(WatchlistPriority) onPriorityChanged;
+  final void Function() onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +43,7 @@ class WatchlistMovieCard extends StatelessWidget {
                     // Título
                     Text(
                       movie.movieTitle,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: theme.textTheme.titleMedium,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -240,7 +238,6 @@ class WatchlistMovieCard extends StatelessWidget {
               movie.priority.displayName,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: _getPriorityColor(movie.priority),
-                fontWeight: FontWeight.w500,
                 fontSize: 12,
               ),
             ),
@@ -309,7 +306,7 @@ class WatchlistMovieCard extends StatelessWidget {
     );
   }
 
-  Color _getPriorityColor(WatchlistPriority priority) {
+  dynamic _getPriorityColor(WatchlistPriority priority) {
     switch (priority) {
       case WatchlistPriority.alta:
         return Colors.red;

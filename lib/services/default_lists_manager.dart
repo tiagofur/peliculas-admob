@@ -8,18 +8,17 @@ import '../domain/repositories/i_custom_lists_repository.dart';
 /// Gestor de listas por defecto del sistema
 /// Se encarga de crear, mantener y sincronizar las listas predefinidas
 class DefaultListsManager {
+  const DefaultListsManager(this._repository, this._prefs);
+  
   final ICustomListsRepository _repository;
   final SharedPreferences _prefs;
   
   // Claves para SharedPreferences
   static const String _defaultListsInitializedKey = 'default_lists_initialized';
   static const String _defaultListsVersionKey = 'default_lists_version';
-  static const String _userDefaultListsKey = 'user_default_lists';
   
   // Versión actual de las listas por defecto
   static const int _currentDefaultListsVersion = 1;
-  
-  const DefaultListsManager(this._repository, this._prefs);
   
   // ========== INICIALIZACIÓN ==========
   
@@ -404,12 +403,6 @@ class DefaultListsManager {
 // ========== CLASES DE DATOS ==========
 
 class DefaultListsStats {
-  final int totalLists;
-  final int totalMovies;
-  final int editableLists;
-  final int dynamicLists;
-  final DateTime lastUpdated;
-  
   const DefaultListsStats({
     required this.totalLists,
     required this.totalMovies,
@@ -417,4 +410,10 @@ class DefaultListsStats {
     required this.dynamicLists,
     required this.lastUpdated,
   });
+  
+  final int totalLists;
+  final int totalMovies;
+  final int editableLists;
+  final int dynamicLists;
+  final DateTime lastUpdated;
 }

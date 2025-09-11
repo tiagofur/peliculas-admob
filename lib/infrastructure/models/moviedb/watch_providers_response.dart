@@ -53,7 +53,7 @@ class WatchProvidersResponse {
 
   @override
   String toString() {
-    return 'WatchProvidersResponse(id: $id, countries: ${results.keys.join(", ")})';
+    return 'WatchProvidersResponse(id: $id, countries: ${results.keys.join(', ')})';
   }
 }
 

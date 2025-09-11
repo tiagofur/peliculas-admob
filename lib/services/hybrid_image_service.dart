@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -132,14 +132,18 @@ class NetworkImageWithRetry extends ImageProvider<NetworkImageWithRetry> {
   @override
   ImageStreamCompleter loadImage(
       NetworkImageWithRetry key, ImageDecoderCallback decode) {
-    return MultiFrameImageStreamCompleter(
-      codec: _loadAsync(key, decode),
-      scale: 1.0,
+    return OneFrameImageStreamCompleter(
+      _loadImageAsync(key),
     );
   }
 
-  Future<ui.Codec> _loadAsync(
-      NetworkImageWithRetry key, ImageDecoderCallback decode) async {
+  Future<ImageInfo> _loadImageAsync(NetworkImageWithRetry key) async {
+    final bytes = await _loadAsyncBytes(key);
+    final image = await decodeImageFromList(bytes);
+    return ImageInfo(image: image);
+  }
+
+  Future<Uint8List> _loadAsyncBytes(NetworkImageWithRetry key) async {
     Exception? lastException;
 
     for (int attempt = 0; attempt <= maxRetries; attempt++) {
@@ -147,9 +151,7 @@ class NetworkImageWithRetry extends ImageProvider<NetworkImageWithRetry> {
         final response = await http.get(Uri.parse(key.url));
 
         if (response.statusCode == 200) {
-          final bytes = response.bodyBytes;
-          final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-          return await decode(buffer);
+          return response.bodyBytes;
         } else {
           throw Exception('HTTP ${response.statusCode}');
         }
@@ -233,7 +235,7 @@ class OptimizedImage extends StatelessWidget {
       child: const Center(
         child: CircularProgressIndicator(
           strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
+          valueColor: AlwaysStoppedAnimation(Colors.grey),
         ),
       ),
     );

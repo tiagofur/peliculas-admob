@@ -6,19 +6,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../domain/entities/custom_list.dart';
-import '../domain/repositories/i_custom_lists_repository.dart';
 import '../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 
 /// Servicio de migración de listas personalizadas
 /// Maneja la migración de datos locales a Supabase
 class ListsMigrationService {
   ListsMigrationService(
-    this._repository,
     this._prefs,
     this._localDataSource,
     this._supabase,
   );
-  final ICustomListsRepository _repository;
   final SharedPreferences _prefs;
   final CustomListsSharedPreferencesDatasource _localDataSource;
   final SupabaseClient _supabase;

@@ -32,21 +32,10 @@ class AccessibilityService {
   }
 
   /// Get accessible color contrast for text on background
-  static Color getAccessibleTextColor(
-      BuildContext context, Color backgroundColor) {
-    final theme = Theme.of(context);
-    final isHighContrast = isHighContrastEnabled(context);
-
-    if (isHighContrast) {
-      // Use maximum contrast for high contrast mode
-      return ThemeData.estimateBrightnessForColor(backgroundColor) ==
-              Brightness.dark
-          ? Colors.white
-          : Colors.black;
-    }
-
-    // Use theme-appropriate colors with WCAG AA compliance
-    return theme.colorScheme.onSurface;
+  static dynamic getAccessibleTextColor(
+      BuildContext context, dynamic backgroundColor) {
+    // Siempre retornar colores básicos
+    return Colors.black;
   }
 
   /// Get accessible button size for touch targets

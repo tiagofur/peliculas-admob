@@ -34,32 +34,30 @@ void main() async {
       continue;
     }
 
+    // Leer el contenido del archivo
     String content = await file.readAsString();
     final originalContent = content;
-    int changesInFile = 0;
 
-    // Corregir casos con comillas dobles
-    content = content.replaceAllMapped(
-        RegExp(r'\.filter\("([^"]+)",\s*"eq",\s*([^)]+)\)'),
-        (match) => '.eq("${match.group(1)}", ${match.group(2)})');
-
-    // Corregir casos con comillas simples
-    content = content.replaceAllMapped(
-        RegExp(r"\.filter\('([^']+)',\s*'eq',\s*([^)]+)\)"),
-        (match) => ".eq('${match.group(1)}', ${match.group(2)})");
+    // Buscar y reemplazar .filter() con .eq()
+    String updatedContent = content.replaceAllMapped(
+      RegExp(r'\.filter\(\s*([^)]+)\s*\)'),
+      (match) {
+        return '.eq(${match.group(1)})';
+      },
+    );
+    content = updatedContent;
 
     // Contar cambios
     final originalMatches =
         RegExp(r'\.filter\(').allMatches(originalContent).length;
     final newMatches = RegExp(r'\.filter\(').allMatches(content).length;
-    changesInFile = originalMatches - newMatches;
 
     if (content != originalContent) {
       await file.writeAsString(content);
       totalFixed++;
       print('✅ Corregido: $filePath');
       print(
-          '   - Reemplazados ${filterPattern.allMatches(originalContent).length} usos de .filter() con .eq()');
+          '   - Reemplazados ${RegExp(r'\.filter\(').allMatches(originalContent).length} usos de .filter() con .eq()');
     }
   }
 

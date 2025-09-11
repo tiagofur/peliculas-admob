@@ -227,7 +227,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
       children: [
         // Filtro por tipo de conflicto
         FilterChip(
-          label: Text('Tipo: ${_selectedType?.name ?? "Todos"}'),
+          label: Text('Tipo: ${_selectedType?.name ?? 'Todos'}'),
           selected: _selectedType != null,
           onSelected: (selected) {
             _showTypeFilterDialog(context);
@@ -235,7 +235,7 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
         ),
         // Filtro por estrategia
         FilterChip(
-          label: Text('Estrategia: ${_selectedStrategy?.name ?? "Todas"}'),
+          label: Text('Estrategia: ${_selectedStrategy?.name ?? 'Todas'}'),
           selected: _selectedStrategy != null,
           onSelected: (selected) {
             _showStrategyFilterDialog(context);

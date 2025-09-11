@@ -185,30 +185,18 @@ class DefaultListConfig {
     required this.emoji,
     required this.description,
     required this.color,
-    this.defaultType,
-    this.type,
-  });
-  const DefaultListConfig._internal({
-    required this.localId,
-    required this.name,
-    required this.emoji,
-    required this.description,
-    required this.color,
-    this.defaultType,
-    this.type,
+    required this.defaultType,
   });
 
   /// Constructor alternativo para tests
   const DefaultListConfig.withType({
-    required DefaultListType type,
     required this.name,
     required this.emoji,
     required this.description,
     required String colorHex,
+    this.defaultType = '',
   })  : localId = '',
-        color = colorHex,
-        defaultType = null,
-        type = type;
+        color = colorHex;
 
   /// ID local usado en SharedPreferences
   final String localId;
@@ -225,11 +213,8 @@ class DefaultListConfig {
   /// Color de la lista
   final String color;
 
-  /// Tipo de lista por defecto (para identificación en Supabase)
-  final String? defaultType;
-
-  /// Tipo de lista por defecto (enum)
-  final DefaultListType? type;
+  /// Tipo por defecto de la lista
+  final String defaultType;
 
   Map<String, dynamic> toJson() {
     return {

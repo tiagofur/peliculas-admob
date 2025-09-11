@@ -106,12 +106,12 @@ class RealtimeSyncManager {
 
         if (attempt >= config.maxRetries) {
           LoggerFactory.error(
-              '❌ ${operationName ?? "Operation"} failed after $attempt attempts: $e');
+              '❌ ${operationName ?? 'Operation'} failed after $attempt attempts: $e');
           rethrow;
         }
 
         LoggerFactory.warning(
-            '⚠️ ${operationName ?? "Operation"} failed (attempt $attempt/${config.maxRetries}), retrying in ${delay.inMilliseconds}ms: $e');
+            '⚠️ ${operationName ?? 'Operation'} failed (attempt $attempt/${config.maxRetries}), retrying in ${delay.inMilliseconds}ms: $e');
 
         await Future.delayed(delay);
         delay = Duration(

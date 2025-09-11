@@ -63,14 +63,12 @@ final customListsSharedPreferencesDatasourceProvider =
 /// Provider para el servicio de migración de listas
 final listsMigrationServiceProvider =
     FutureProvider<ListsMigrationService>((ref) async {
-  final repository = await ref.watch(customListsRepositoryProvider.future);
   final prefs = await ref.watch(sharedPreferencesProvider.future);
   final localDatasource =
       await ref.watch(customListsSharedPreferencesDatasourceProvider.future);
   final supabaseClient = SupabaseConfig.client;
 
   return ListsMigrationService(
-    repository,
     prefs,
     localDatasource,
     supabaseClient,
@@ -160,7 +158,7 @@ final syncConfigProvider = FutureProvider<SyncConfig>((ref) async {
 /// Provider para acciones de listas
 final listActionsProvider = FutureProvider<ListActions>((ref) async {
   final repository = await ref.watch(customListsRepositoryProvider.future);
-  return ListActions(repository, ref);
+  return ListActions(repository);
 });
 
 /// Provider para acciones de sincronización
@@ -192,9 +190,8 @@ final listFormProvider =
 // ========== CLASES DE ACCIONES ==========
 
 class ListActions {
-  ListActions(this._repository, this._ref);
+  ListActions(this._repository);
   final ICustomListsRepository _repository;
-  final Ref _ref;
 
   /// Crea una nueva lista
   Future<CustomList> createList({
@@ -291,10 +288,6 @@ class CustomListsNotifier extends StateNotifier<AsyncValue<List<CustomList>>> {
 
   // Constructor para estado de carga
   CustomListsNotifier._loading() : _repository = null, super(const AsyncValue.loading());
-
-  // Constructor para estado de error
-  CustomListsNotifier._error(Object error, StackTrace stackTrace) 
-      : _repository = null, super(AsyncValue.error(error, stackTrace));
 
   final ICustomListsRepository? _repository;
   StreamSubscription? _realtimeSubscription;

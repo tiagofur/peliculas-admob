@@ -171,7 +171,7 @@ class SyncMetricsService {
     if (kDebugMode) {
       LoggerFactory.info(
           'SyncMetrics: ${metrics.repository} ${metrics.operation} '
-          '${metrics.success ? "SUCCESS" : "FAILED"} '
+          '${metrics.success ? 'SUCCESS' : 'FAILED'} '
           '(${metrics.duration.inMilliseconds}ms)');
     }
   }
@@ -326,7 +326,7 @@ class SyncMetricsService {
       _createAlert(
         type: 'sync_failure',
         message: 'Fallo en sincronización de ${metrics.repository}: '
-            '${metrics.errorType ?? "Error desconocido"}',
+            '${metrics.errorType ?? 'Error desconocido'}',
         severity: 'high',
         metadata: {
           'repository': metrics.repository,

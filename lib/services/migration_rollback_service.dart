@@ -10,22 +10,21 @@ import 'id_mapping_service.dart';
 /// Servicio de rollback para revertir migraciones fallidas
 /// Restaura el estado anterior y limpia datos parciales
 class MigrationRollbackService {
-  final SharedPreferences _prefs;
-  final SupabaseClient _supabase;
-  final CustomListsSharedPreferencesDatasource _localDataSource;
-  final IdMappingService _idMappingService;
-  
-  // Claves para SharedPreferences
-  static const String _rollbackDataKey = 'migration_rollback_data';
-  static const String _rollbackPointsKey = 'migration_rollback_points';
-  static const String _rollbackHistoryKey = 'migration_rollback_history';
-  
   MigrationRollbackService(
     this._prefs,
     this._supabase,
     this._localDataSource,
     this._idMappingService,
   );
+  
+  final SharedPreferences _prefs;
+  final SupabaseClient _supabase;
+  final CustomListsSharedPreferencesDatasource _localDataSource;
+  final IdMappingService _idMappingService;
+  
+  // Claves para SharedPreferences
+  static const String _rollbackPointsKey = 'migration_rollback_points';
+  static const String _rollbackHistoryKey = 'migration_rollback_history';
   
   // ========== CREACIÓN DE PUNTOS DE ROLLBACK ==========
   
@@ -180,14 +179,14 @@ class MigrationRollbackService {
     await _supabase
         .from('user_list_items')
         .delete()
-        .filter("user_id", "eq", userId);
+        .filter('user_id', 'eq', userId);
     
     // Eliminar la lista
     await _supabase
         .from('user_lists')
         .delete()
-        .filter("user_id", "eq", userId)
-        .filter("user_id", "eq", userId);
+        .filter('user_id', 'eq', userId)
+        .filter('user_id', 'eq', userId);
   }
   
   /// Restaura una lista remota a su estado original
@@ -206,8 +205,8 @@ class MigrationRollbackService {
           'default_type': originalList['default_type'],
           'updated_at': DateTime.now().toIso8601String(),
         })
-        .filter("user_id", "eq", userId)
-        .filter("user_id", "eq", userId);
+        .filter('user_id', 'eq', userId)
+        .filter('user_id', 'eq', userId);
     
     // Restaurar elementos originales
     await _restoreRemoteListItems(listId, originalList, userId);
@@ -219,7 +218,7 @@ class MigrationRollbackService {
     await _supabase
         .from('user_list_items')
         .delete()
-        .filter("user_id", "eq", userId);
+        .filter('user_id', 'eq', userId);
     
     // Restaurar elementos originales si existen
     final originalItems = originalList['items'] as List<dynamic>? ?? [];
@@ -378,7 +377,7 @@ class MigrationRollbackService {
       final response = await _supabase
           .from('user_lists')
           .select()
-          .filter("user_id", "eq", userId);
+          .filter('user_id', 'eq', userId);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
@@ -392,7 +391,7 @@ class MigrationRollbackService {
       final response = await _supabase
           .from('user_list_items')
           .select('*, user_lists!inner(user_id)')
-          .filter("user_id", "eq", userId);
+          .filter('user_id', 'eq', userId);
       
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
@@ -477,12 +476,6 @@ class MigrationRollbackService {
 // ========== CLASES DE DATOS ==========
 
 class RollbackPoint {
-  final String id;
-  final String userId;
-  final String description;
-  final DateTime timestamp;
-  final RollbackData data;
-  
   const RollbackPoint({
     required this.id,
     required this.userId,
@@ -490,6 +483,12 @@ class RollbackPoint {
     required this.timestamp,
     required this.data,
   });
+  
+  final String id;
+  final String userId;
+  final String description;
+  final DateTime timestamp;
+  final RollbackData data;
   
   Map<String, dynamic> toJson() {
     return {
@@ -513,13 +512,6 @@ class RollbackPoint {
 }
 
 class RollbackData {
-  final List<Map<String, dynamic>> localLists;
-  final List<Map<String, dynamic>> remoteLists;
-  final List<Map<String, dynamic>> remoteItems;
-  final Map<String, dynamic> idMappings;
-  final Map<String, dynamic> migrationFlags;
-  final DateTime timestamp;
-  
   const RollbackData({
     required this.localLists,
     required this.remoteLists,
@@ -528,6 +520,13 @@ class RollbackData {
     required this.migrationFlags,
     required this.timestamp,
   });
+  
+  final List<Map<String, dynamic>> localLists;
+  final List<Map<String, dynamic>> remoteLists;
+  final List<Map<String, dynamic>> remoteItems;
+  final Map<String, dynamic> idMappings;
+  final Map<String, dynamic> migrationFlags;
+  final DateTime timestamp;
   
   Map<String, dynamic> toJson() {
     return {
@@ -553,13 +552,13 @@ class RollbackData {
 }
 
 class RollbackResult {
+  RollbackResult({required this.rollbackId});
+  
   final String rollbackId;
   final List<String> _actions = [];
   final List<String> _errors = [];
   bool _isSuccessful = false;
   String? _message;
-  
-  RollbackResult({required this.rollbackId});
   
   void addAction(String action) => _actions.add(action);
   void addError(String error) => _errors.add(error);
@@ -577,7 +576,7 @@ class RollbackResult {
   String get summary {
     final buffer = StringBuffer();
     buffer.writeln('Rollback $rollbackId:');
-    buffer.writeln('Estado: ${isSuccessful ? "Exitoso" : "Con errores"}');
+    buffer.writeln('Estado: ${isSuccessful ? 'Exitoso' : 'Con errores'}');
     
     if (_message != null) {
       buffer.writeln('Mensaje: $_message');
@@ -602,22 +601,23 @@ class RollbackResult {
 }
 
 class RollbackInfo {
-  final String id;
-  final String description;
-  final DateTime timestamp;
-  final int dataSize;
-  
   const RollbackInfo({
     required this.id,
     required this.description,
     required this.timestamp,
     required this.dataSize,
   });
+  
+  final String id;
+  final String description;
+  final DateTime timestamp;
+  final int dataSize;
 }
 
 class RollbackException implements Exception {
-  final String message;
   RollbackException(this.message);
+  
+  final String message;
   
   @override
   String toString() => 'RollbackException: $message';

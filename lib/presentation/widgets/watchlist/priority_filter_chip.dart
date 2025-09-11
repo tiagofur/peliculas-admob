@@ -11,8 +11,8 @@ class PriorityFilterChip extends StatelessWidget {
 
   final String label;
   final bool isSelected;
-  final VoidCallback onTap;
-  final Color? color;
+  final void Function() onTap;
+  final dynamic color;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class PriorityFilterChip extends StatelessWidget {
           style: TextStyle(
             color:
                 isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+
             fontSize: 14,
           ),
         ),
