@@ -31,7 +31,7 @@ dependencies:
   flutter_local_notifications: ^19.4.0
   fl_chart: ^1.0.0
   animations: ^2.0.11
-  share_plus: ^11.1.0
+  share_plus: ^12.0.0
   flutter_in_app_pip: ^1.7.4
   url_launcher: ^6.3.2
   uuid: ^4.4.0
