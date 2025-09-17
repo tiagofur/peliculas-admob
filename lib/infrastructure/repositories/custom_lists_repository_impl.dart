@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../domain/entities/custom_list.dart';
 import '../../domain/entities/list_item.dart';
@@ -11,39 +14,66 @@ import '../datasources/supabase_custom_lists_datasource.dart';
 /// Implementación del repositorio de listas personalizadas
 /// Maneja sincronización real-time, operaciones offline y resolución de conflictos
 class CustomListsRepositoryImpl implements ICustomListsRepository {
-  final SupabaseCustomListsDataSource _supabaseDataSource;
-  final SharedPreferences _prefs;
-  final Connectivity _connectivity;
-  
-  // Claves para SharedPreferences
-  static const String _localListsKey = 'local_custom_lists';
-  static const String _pendingOperationsKey = 'pending_operations';
-  static const String _lastSyncKey = 'last_sync_timestamp';
-  
   CustomListsRepositoryImpl(
     this._supabaseDataSource,
     this._prefs,
     this._connectivity,
   );
-  
+  final SupabaseCustomListsDataSource _supabaseDataSource;
+  final SharedPreferences _prefs;
+  final Connectivity _connectivity;
+
+  // Claves para SharedPreferences
+  static const String _localListsKey = 'local_custom_lists';
+  static const String _pendingOperationsKey = 'pending_operations';
+  static const String _lastSyncKey = 'last_sync_timestamp';
+
   // ========== OPERACIONES DE LISTAS ==========
-  
+
   @override
   Future<List<CustomList>> getUserLists() async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para obtener listas');
+        throw Exception('Usuario no autenticado. Por favor, inicia sesión.');
+      }
+
+      // Validar que el userId del usuario sea válido
+      if (currentUser.id.isEmpty) {
+        print('❌ CustomListsRepository: ID de usuario vacío o inválido');
+        throw Exception(
+            'ID de usuario inválido. Por favor, reinicia la aplicación.');
+      }
+
       if (await hasInternetConnection()) {
-        final lists = await _supabaseDataSource.getUserLists(_getCurrentUserId());
+        print('🌐 CustomListsRepository: Obteniendo listas desde Supabase');
+        final lists = await _supabaseDataSource.getUserLists(currentUser.id);
         await _saveListsLocally(lists);
+        print(
+            '📥 CustomListsRepository: ${lists.length} listas obtenidas desde Supabase');
         return lists;
       } else {
-        return await getLocalLists();
+        print(
+            '📱 CustomListsRepository: Sin conexión, obteniendo listas locales');
+        final localLists = await getLocalLists();
+        print(
+            '📱 CustomListsRepository: ${localLists.length} listas locales encontradas');
+        return localLists;
       }
     } catch (e) {
+      print(
+          '❌ CustomListsRepository: Error obteniendo listas, usando locales: $e');
       // En caso de error, intentar obtener datos locales
-      return await getLocalLists();
+      final localLists = await getLocalLists();
+      print(
+          '📱 CustomListsRepository: ${localLists.length} listas locales de respaldo');
+      return localLists;
     }
   }
-  
+
   @override
   Future<CustomList?> getListById(String listId) async {
     try {
@@ -60,29 +90,76 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       throw Exception('Error al obtener lista: $e');
     }
   }
-  
+
   @override
   Future<CustomList> createList(CustomList list) async {
     try {
-      if (await hasInternetConnection()) {
-        final createdList = await _supabaseDataSource.createList(list);
-        await _updateLocalList(createdList);
-        return createdList;
-      } else {
-        // Guardar operación pendiente
-        await _savePendingOperation('create', list.toJson());
-        final offlineList = list.copyWith(
-          syncStatus: 'pending',
-          id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
-        );
-        await _updateLocalList(offlineList);
-        return offlineList;
+      // Validar que el usuario esté autenticado con validaciones más robustas
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado - currentUser es null');
+        throw Exception('Usuario no autenticado. Por favor, inicia sesión.');
       }
+
+      // Validar que el userId del usuario sea válido con múltiples verificaciones
+      final userId = currentUser.id;
+      if (userId.isEmpty || userId.trim().isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario inválido - userId: "$userId"');
+        print(
+            '❌ CustomListsRepository: Verificando estado de autenticación...');
+
+        // Intentar refrescar la sesión si el userId es inválido
+        try {
+          final session = Supabase.instance.client.auth.currentSession;
+          if (session == null) {
+            print('❌ CustomListsRepository: No hay sesión activa');
+            throw Exception(
+                'Sesión expirada. Por favor, inicia sesión nuevamente.');
+          }
+
+          final refreshedUser = session.user;
+          if (refreshedUser.id.isEmpty) {
+            print('❌ CustomListsRepository: Usuario de sesión inválido');
+            throw Exception(
+                'Sesión inválida. Por favor, inicia sesión nuevamente.');
+          }
+
+          print(
+              '✅ CustomListsRepository: Sesión refrescada, userId válido: ${refreshedUser.id}');
+          // Usar el userId de la sesión refrescada
+        } catch (refreshError) {
+          print(
+              '❌ CustomListsRepository: Error refrescando sesión: $refreshError');
+          throw Exception(
+              'Error de autenticación. Por favor, inicia sesión nuevamente.');
+        }
+
+        throw Exception(
+            'ID de usuario inválido. Por favor, reinicia la aplicación.');
+      }
+
+      print(
+          '🟡 CustomListsRepository: Creando lista "${list.name}" para usuario $userId');
+      print('🔐 CustomListsRepository: Email del usuario: $currentUser.email');
+
+      // Asegurar que la lista tenga el userId correcto
+      final listWithUserId = list.copyWith(userId: userId);
+
+      print(
+          '🌐 CustomListsRepository: Conexión disponible, guardando en Supabase');
+      final createdList = await _supabaseDataSource.createList(listWithUserId);
+      await _updateLocalList(createdList);
+      print(
+          '✅ CustomListsRepository: Lista creada exitosamente en Supabase y guardada localmente');
+      return createdList;
     } catch (e) {
+      print('❌ CustomListsRepository: Error al crear lista: $e');
       throw Exception('Error al crear lista: $e');
     }
   }
-  
+
   @override
   Future<CustomList> updateList(CustomList list) async {
     try {
@@ -101,7 +178,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       throw Exception('Error al actualizar lista: $e');
     }
   }
-  
+
   @override
   Future<void> deleteList(String listId) async {
     try {
@@ -126,52 +203,73 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       throw Exception('Error al eliminar lista: $e');
     }
   }
-  
+
   @override
   Future<List<CustomList>> getDefaultLists() async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para obtener listas por defecto');
+        return [];
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para listas por defecto');
+        return [];
+      }
+
       if (await hasInternetConnection()) {
-        return await _supabaseDataSource.getDefaultLists(_getCurrentUserId());
+        return await _supabaseDataSource.getDefaultLists(userId);
       } else {
         final localLists = await getLocalLists();
         return localLists.where((list) => list.isDefault).toList();
       }
     } catch (e) {
-      throw Exception('Error al obtener listas por defecto: $e');
+      print('❌ CustomListsRepository: Error al obtener listas por defecto: $e');
+      return [];
     }
   }
-  
+
   @override
   Future<void> initializeDefaultLists(String userId) async {
     try {
       final defaultConfigs = _getDefaultListConfigs();
-      
+
       if (await hasInternetConnection()) {
-        await _supabaseDataSource.initializeDefaultLists(userId, defaultConfigs);
+        await _supabaseDataSource.initializeDefaultLists(
+            userId, defaultConfigs);
       } else {
-        // Crear listas por defecto localmente
-        final defaultLists = defaultConfigs.map((config) => CustomList(
-          id: config.localId,
-          name: config.name,
-          description: config.description,
-          emoji: config.emoji,
-          movieIds: [],
-          createdAt: DateTime.now(),
-          lastModifiedAt: DateTime.now(),
-          userId: userId,
-          isDefault: true,
-          isPublic: false,
-          color: config.color,
-          isDeleted: false,
-          syncStatus: 'pending',
-          defaultType: config.defaultType,
-          colorHex: config.color,
-        )).toList();
-        
+        // Crear listas por defecto localmente con IDs válidos
+        const uuid = Uuid();
+        final defaultLists = defaultConfigs
+            .map((config) => CustomList(
+                  id: uuid.v4(), // Generar UUID válido en lugar de usar localId
+                  name: config.name,
+                  description: config.description,
+                  emoji: config.emoji,
+                  movieIds: [],
+                  createdAt: DateTime.now(),
+                  lastModifiedAt: DateTime.now(),
+                  userId: userId,
+                  isDefault: true,
+                  isPublic: false,
+                  color: config.color,
+                  isDeleted: false,
+                  syncStatus: 'pending',
+                  defaultType: config.defaultType,
+                  colorHex: config.color,
+                ))
+            .toList();
+
         for (final list in defaultLists) {
           await _updateLocalList(list);
         }
-        
+
         // Guardar operación pendiente
         await _savePendingOperation('init_defaults', {'userId': userId});
       }
@@ -179,12 +277,28 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       throw Exception('Error al inicializar listas por defecto: $e');
     }
   }
-  
+
   // ========== OPERACIONES DE ELEMENTOS ==========
-  
+
   @override
   Future<List<ListItem>> getListItems(String listId) async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para obtener elementos de lista');
+        return [];
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para obtener elementos de lista');
+        return [];
+      }
+
       if (await hasInternetConnection()) {
         return await _supabaseDataSource.getListItems(listId);
       } else {
@@ -192,15 +306,35 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         return [];
       }
     } catch (e) {
-      throw Exception('Error al obtener elementos de la lista: $e');
+      print(
+          '❌ CustomListsRepository: Error al obtener elementos de la lista: $e');
+      return [];
     }
   }
-  
+
   @override
-  Future<ListItem> addMovieToList(String listId, int movieId, {int? position}) async {
+  Future<ListItem> addMovieToList(String listId, int movieId,
+      {int? position}) async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para añadir película');
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para añadir película');
+        throw Exception('ID de usuario inválido');
+      }
+
       if (await hasInternetConnection()) {
-        return await _supabaseDataSource.addMovieToList(listId, movieId, position: position);
+        return await _supabaseDataSource.addMovieToList(listId, movieId,
+            position: position);
       } else {
         // Crear elemento temporal
         final tempItem = ListItem(
@@ -212,23 +346,40 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
           addedAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        
+
         await _savePendingOperation('add_movie', {
           'listId': listId,
           'movieId': movieId,
           'position': position,
         });
-        
+
         return tempItem;
       }
     } catch (e) {
+      print('❌ CustomListsRepository: Error al añadir película a lista: $e');
       throw Exception('Error al agregar película a la lista: $e');
     }
   }
-  
+
   @override
   Future<void> removeMovieFromList(String listId, int movieId) async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para remover película');
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para remover película');
+        throw Exception('ID de usuario inválido');
+      }
+
       if (await hasInternetConnection()) {
         await _supabaseDataSource.removeMovieFromList(listId, movieId);
       } else {
@@ -238,13 +389,30 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         });
       }
     } catch (e) {
+      print('❌ CustomListsRepository: Error al remover película de lista: $e');
       throw Exception('Error al remover película de la lista: $e');
     }
   }
-  
+
   @override
   Future<void> reorderListItems(String listId, List<ListItem> items) async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para reordenar elementos');
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para reordenar elementos');
+        throw Exception('ID de usuario inválido');
+      }
+
       if (await hasInternetConnection()) {
         await _supabaseDataSource.reorderListItems(listId, items);
       } else {
@@ -254,13 +422,30 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         });
       }
     } catch (e) {
+      print('❌ CustomListsRepository: Error al reordenar elementos: $e');
       throw Exception('Error al reordenar elementos: $e');
     }
   }
-  
+
   @override
   Future<bool> isMovieInList(String listId, int movieId) async {
     try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para verificar película en lista');
+        return false;
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para verificar película en lista');
+        return false;
+      }
+
       if (await hasInternetConnection()) {
         return await _supabaseDataSource.isMovieInList(listId, movieId);
       } else {
@@ -268,50 +453,74 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         return false;
       }
     } catch (e) {
+      print(
+          '❌ CustomListsRepository: Error al verificar película en lista: $e');
       return false;
     }
   }
-  
+
   // ========== SINCRONIZACIÓN ==========
-  
+
   @override
   Stream<List<CustomList>> watchUserLists() {
-    return _supabaseDataSource.watchUserLists(_getCurrentUserId());
+    try {
+      // Validar que el usuario esté autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        print(
+            '❌ CustomListsRepository: Usuario no autenticado para observar listas');
+        return Stream.value([]);
+      }
+
+      // Validar que el userId del usuario sea válido
+      final userId = currentUser.id;
+      if (userId.isEmpty) {
+        print(
+            '❌ CustomListsRepository: ID de usuario vacío o inválido para observar listas');
+        return Stream.value([]);
+      }
+
+      return _supabaseDataSource.watchUserLists(userId);
+    } catch (e) {
+      print('❌ CustomListsRepository: Error al observar listas: $e');
+      return Stream.value([]);
+    }
   }
-  
+
   @override
   Stream<List<ListItem>> watchListItems(String listId) {
     return _supabaseDataSource.watchListItems(listId);
   }
-  
+
   @override
   Future<void> syncLists() async {
     try {
       if (!await hasInternetConnection()) {
         throw Exception('Sin conexión a internet');
       }
-      
+
       // Sincronizar operaciones pendientes
       final pendingOps = await getPendingOperations();
-      
+
       for (final op in pendingOps) {
         try {
           await _executePendingOperation(op);
           await markOperationAsSynced(op['id']);
         } catch (e) {
-          // Error al sincronizar operación ${op['id']}: $e
+          // Error al sincronizar operación $op['id']: $e
         }
       }
-      
+
       // Actualizar timestamp de última sincronización
       await _prefs.setString(_lastSyncKey, DateTime.now().toIso8601String());
     } catch (e) {
       throw Exception('Error durante la sincronización: $e');
     }
   }
-  
+
   @override
-  Future<CustomList> resolveConflict(CustomList localList, CustomList remoteList) async {
+  Future<CustomList> resolveConflict(
+      CustomList localList, CustomList remoteList) async {
     // Estrategia simple: el más reciente gana
     if (localList.lastModifiedAt.isAfter(remoteList.lastModifiedAt)) {
       return await updateList(localList);
@@ -320,15 +529,15 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       return remoteList;
     }
   }
-  
+
   // ========== OPERACIONES OFFLINE ==========
-  
+
   @override
   Future<List<CustomList>> getLocalLists() async {
     try {
       final listsJson = _prefs.getString(_localListsKey);
       if (listsJson == null) return [];
-      
+
       final List<dynamic> listData = json.decode(listsJson);
       return listData
           .map((json) => CustomList.fromJson(json))
@@ -338,53 +547,54 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       return [];
     }
   }
-  
+
   @override
   Future<void> saveListLocally(CustomList list) async {
     await _updateLocalList(list);
   }
-  
+
   @override
   Future<List<Map<String, dynamic>>> getPendingOperations() async {
     try {
       final opsJson = _prefs.getString(_pendingOperationsKey);
       if (opsJson == null) return [];
-      
+
       final List<dynamic> opsData = json.decode(opsJson);
       return opsData.cast<Map<String, dynamic>>();
     } catch (e) {
       return [];
     }
   }
-  
+
   @override
   Future<void> markOperationAsSynced(String operationId) async {
     try {
       final pendingOps = await getPendingOperations();
-      final updatedOps = pendingOps.where((op) => op['id'] != operationId).toList();
+      final updatedOps =
+          pendingOps.where((op) => op['id'] != operationId).toList();
       await _prefs.setString(_pendingOperationsKey, json.encode(updatedOps));
     } catch (e) {
       // Error al marcar operación como sincronizada: $e
     }
   }
-  
+
   // ========== UTILIDADES ==========
-  
+
   @override
   Future<bool> hasInternetConnection() async {
     try {
-      final connectivityResult = await _connectivity.checkConnectivity();
-      return connectivityResult != ConnectivityResult.none;
+      final connectivityResults = await _connectivity.checkConnectivity();
+      return !connectivityResults.contains(ConnectivityResult.none);
     } catch (e) {
       return false;
     }
   }
-  
+
   @override
   Future<String> getSyncStatus() async {
     final lastSync = _prefs.getString(_lastSyncKey);
     final pendingOps = await getPendingOperations();
-    
+
     if (pendingOps.isNotEmpty) {
       return 'pending';
     } else if (lastSync != null) {
@@ -393,47 +603,49 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       return 'never_synced';
     }
   }
-  
+
   @override
   Future<void> clearLocalCache() async {
     await _prefs.remove(_localListsKey);
     await _prefs.remove(_pendingOperationsKey);
     await _prefs.remove(_lastSyncKey);
   }
-  
+
   // ========== MÉTODOS PRIVADOS ==========
-  
-  String _getCurrentUserId() {
-    // TODO: Obtener del sistema de autenticación
-    return 'current_user_id';
-  }
-  
+
   Future<void> _saveListsLocally(List<CustomList> lists) async {
     try {
-      final listsJson = json.encode(lists.map((list) => list.toJson()).toList());
+      final listsJson =
+          json.encode(lists.map((list) => list.toJson()).toList());
       await _prefs.setString(_localListsKey, listsJson);
+      print(
+          '💾 CustomListsRepository: ${lists.length} listas guardadas localmente');
     } catch (e) {
-      // Error al guardar listas localmente: $e
+      print('❌ Error al guardar listas localmente: $e');
     }
   }
-  
+
   Future<void> _updateLocalList(CustomList list) async {
     try {
       final localLists = await getLocalLists();
       final existingIndex = localLists.indexWhere((l) => l.id == list.id);
-      
+
       if (existingIndex != -1) {
         localLists[existingIndex] = list;
+        print(
+            '🔄 CustomListsRepository: Lista actualizada localmente: ${list.name}');
       } else {
         localLists.add(list);
+        print(
+            '➕ CustomListsRepository: Lista agregada localmente: ${list.name}');
       }
-      
+
       await _saveListsLocally(localLists);
     } catch (e) {
-      // Error al actualizar lista local: $e
+      print('❌ Error al actualizar lista local: $e');
     }
   }
-  
+
   Future<void> _removeLocalList(String listId) async {
     try {
       final localLists = await getLocalLists();
@@ -443,8 +655,9 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Error al remover lista local: $e
     }
   }
-  
-  Future<void> _savePendingOperation(String type, Map<String, dynamic> data) async {
+
+  Future<void> _savePendingOperation(
+      String type, Map<String, dynamic> data) async {
     try {
       final pendingOps = await getPendingOperations();
       final operation = {
@@ -453,18 +666,18 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         'data': data,
         'timestamp': DateTime.now().toIso8601String(),
       };
-      
+
       pendingOps.add(operation);
       await _prefs.setString(_pendingOperationsKey, json.encode(pendingOps));
     } catch (e) {
       // Error al guardar operación pendiente: $e
     }
   }
-  
+
   Future<void> _executePendingOperation(Map<String, dynamic> operation) async {
     final type = operation['type'];
     final data = operation['data'];
-    
+
     switch (type) {
       case 'create':
         await _supabaseDataSource.createList(CustomList.fromJson(data));
@@ -493,10 +706,10 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         break;
     }
   }
-  
+
   List<DefaultListConfig> _getDefaultListConfigs() {
     return [
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'favorites',
         name: 'Favoritas',
         description: 'Mis películas favoritas',
@@ -504,7 +717,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#FF6B6B',
         defaultType: 'favorites',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'watchlist',
         name: 'Por Ver',
         description: 'Películas que quiero ver',
@@ -512,7 +725,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#4ECDC4',
         defaultType: 'watchlist',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'watched',
         name: 'Vistas',
         description: 'Películas que ya vi',
@@ -520,7 +733,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#45B7D1',
         defaultType: 'watched',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'action',
         name: 'Acción',
         description: 'Películas de acción',
@@ -528,7 +741,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#F39C12',
         defaultType: 'genre_action',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'comedy',
         name: 'Comedia',
         description: 'Películas de comedia',
@@ -536,7 +749,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#E74C3C',
         defaultType: 'genre_comedy',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'drama',
         name: 'Drama',
         description: 'Películas de drama',
@@ -544,7 +757,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#9B59B6',
         defaultType: 'genre_drama',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'horror',
         name: 'Terror',
         description: 'Películas de terror',
@@ -552,7 +765,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         color: '#2C3E50',
         defaultType: 'genre_horror',
       ),
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'scifi',
         name: 'Ciencia Ficción',
         description: 'Películas de ciencia ficción',

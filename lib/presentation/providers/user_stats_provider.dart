@@ -8,8 +8,7 @@ import 'storage/direct_favorites_provider.dart';
 import 'user_movie_ratings_provider.dart';
 import 'watched_movies_provider.dart';
 
-// Provider combinado para datos de estadísticas (optimización de performance)
-// Usa .autoDispose para liberar recursos cuando no se usa
+// Provider combinado para datos de estadísticas (observa cambios en tiempo real)
 final userStatsDataProvider = Provider.autoDispose<
     ({
       List<Movie> favoriteMovies,
@@ -17,17 +16,32 @@ final userStatsDataProvider = Provider.autoDispose<
       List<CustomList> customLists,
       List<CustomList> defaultLists,
     })>((ref) {
+  // FIXED: Observar directamente los providers actualizados en tiempo real
   final favoriteMoviesMap = ref.watch(directFavoriteMoviesProvider);
   final favoriteMovies = favoriteMoviesMap.values.toList();
+
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
-  final customLists = ref.watch(customListsProvider);
-  final defaultLists = ref.watch(defaultListsProvider);
+
+  // FIXED: Obtener listas personalizadas correctamente
+  final customListsAsync = ref.watch(customListsProvider);
+  final customLists = customListsAsync;
+
+  // FIXED: Obtener listas por defecto correctamente
+  final defaultListsAsync = ref.watch(defaultListsProvider);
+  final defaultLists = defaultListsAsync;
+
+  // FIXED: Asegurar que las películas vistas se cuentan correctamente
+  final watchedMoviesList = watchedMoviesState.movies
+      .map((syncableMovie) => syncableMovie.toWatchedMovie())
+      .toList();
+
+  // Log para debug
+  print(
+      '📊 UserStats - Favoritos: ${favoriteMovies.length}, Vistas: ${watchedMoviesList.length}, Listas personalizadas: ${customLists.length}, Listas por defecto: ${defaultLists.length}');
 
   return (
     favoriteMovies: favoriteMovies,
-    watchedMovies: watchedMoviesState.movies
-        .map((syncableMovie) => syncableMovie.toWatchedMovie())
-        .toList(),
+    watchedMovies: watchedMoviesList,
     customLists: customLists,
     defaultLists: defaultLists,
   );

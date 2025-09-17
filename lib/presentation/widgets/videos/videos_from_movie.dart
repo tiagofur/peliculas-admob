@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+// Solo importar youtube_player_flutter en plataformas no web
+import 'package:youtube_player_flutter/youtube_player_flutter.dart'
+    if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/video.dart';
@@ -9,12 +12,7 @@ import '../../providers/movies/movies_repository_provider.dart';
 import '../../services/pip_service.dart';
 import '../shared/cinema_mode.dart';
 
-// Solo importar youtube_player_flutter en plataformas no web
-import 'package:youtube_player_flutter/youtube_player_flutter.dart'
-    if (dart.library.html) '../../../core/platform/web_youtube_stub.dart';
-
-final FutureProviderFamily<List<Video>, int> videosFromMovieProvider =
-    FutureProvider.family((ref, int movieId) {
+final videosFromMovieProvider = FutureProvider.family<List<Video>, int>((ref, int movieId) {
   final movieRepository = ref.watch(movieRepositoryProvider);
   return movieRepository.getYoutubeVideosById(movieId);
 });

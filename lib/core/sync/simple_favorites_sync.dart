@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
+import '../logging/logger_factory.dart';
 
 /// Servicio de sincronización SIMPLE para favoritos
 /// Solo para debugging y encontrar el problema de congelamiento
@@ -42,7 +42,7 @@ class SimpleFavoritesSync {
       final response = await _supabase
           .from('user_favorites')
           .select('*')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .order('last_modified_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -92,10 +92,7 @@ class SimpleFavoritesSync {
         // Si ya existe, intentar con DELETE + INSERT
         if (e.toString().contains('duplicate key') ||
             e.toString().contains('unique constraint')) {
-          await _supabase
-              .from('user_favorites')
-              .delete()
-              .eq("user_id", userId);
+          await _supabase.from('user_favorites').delete().eq('user_id', userId);
 
           await _supabase.from('user_favorites').insert(favoriteData);
         } else {
@@ -116,10 +113,7 @@ class SimpleFavoritesSync {
       LoggerFactory.info('🗑️ Removiendo favorito con movieId: $movieId');
 
       // USAR DELETE DIRECTO para evitar problemas de trigger
-      await _supabase
-          .from('user_favorites')
-          .delete()
-          .eq("user_id", userId);
+      await _supabase.from('user_favorites').delete().eq('user_id', userId);
 
       LoggerFactory.info('✅ Favorito removido exitosamente: $movieId');
     } catch (e) {
@@ -134,7 +128,7 @@ class SimpleFavoritesSync {
       final response = await _supabase
           .from('user_favorites')
           .select('id')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .limit(1);
 
       final List<dynamic> data = response as List<dynamic>;

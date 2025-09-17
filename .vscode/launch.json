@@ -1,0 +1,72 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter Debug (Windows)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "windows",
+      "args": ["--flavor", "development"]
+    },
+    {
+      "name": "Flutter Debug (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "chrome",
+      "args": ["--flavor", "development"]
+    },
+    {
+      "name": "Flutter Debug (Edge)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "edge",
+      "args": ["--flavor", "development"]
+    },
+    {
+      "name": "Flutter Debug (Android Emulator)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "emulator",
+      "args": ["--flavor", "development"]
+    },
+    {
+      "name": "Flutter Profile (Windows)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "profile",
+      "deviceId": "windows"
+    },
+    {
+      "name": "Flutter Profile (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "profile",
+      "deviceId": "chrome"
+    },
+    {
+      "name": "Flutter Release (Windows)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "release",
+      "deviceId": "windows"
+    },
+    {
+      "name": "Flutter Test Debug",
+      "request": "launch",
+      "type": "dart",
+      "program": "test/",
+      "flutterMode": "debug"
+    }
+  ]
+}

@@ -32,9 +32,12 @@ class FavoriteModel {
   }
 
   /// Crea un FavoriteModel desde un Movie
-  factory FavoriteModel.fromMovie(Movie movie, String userId) {
+  /// ✅ FIX: Permite especificar addedAt para sincronización correcta
+  factory FavoriteModel.fromMovie(Movie movie, String userId,
+      {DateTime? addedAt}) {
+    final timestamp = addedAt ?? DateTime.now();
     return FavoriteModel(
-      id: '${userId}_${movie.id}_${DateTime.now().millisecondsSinceEpoch}',
+      id: '${userId}_${movie.id}_${timestamp.millisecondsSinceEpoch}',
       userId: userId,
       movieId: movie.id,
       movieTitle: movie.title,
@@ -42,7 +45,7 @@ class FavoriteModel {
       rating: movie.voteAverage,
       overview: movie.overview,
       releaseDate: movie.releaseDate,
-      addedAt: DateTime.now(),
+      addedAt: timestamp,
     );
   }
 

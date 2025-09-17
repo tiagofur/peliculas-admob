@@ -24,6 +24,9 @@ class NotificationInitializationService {
 
   bool get isInitialized => _isInitialized;
   NotificationManager? get notificationManager => _notificationManager;
+  
+  /// Getter para acceder al cliente de Supabase
+  SupabaseClient get _supabase => Supabase.instance.client;
 
   /// Establece la clave de navegación global para permitir navegación desde notificaciones
   void setNavigatorKey(GlobalKey<NavigatorState> navigatorKey) {
@@ -181,9 +184,9 @@ class NotificationInitializationService {
       }
 
       // Asumimos una tabla 'profiles' con una columna 'fcm_token'
-      await supabase
+      await _supabase
           .from('profiles')
-          .update({'fcm_token': token}).filter('id', 'eq', userId);
+          .update({'fcm_token': token}).eq('id', userId);
 
       LoggerFactory.info('FCM token sent to server successfully.');
     } catch (e) {

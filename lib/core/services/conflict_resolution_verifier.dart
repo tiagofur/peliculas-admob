@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import '../../core/services/sync_performance_metrics.dart';
+import '../logging/safe_developer_log.dart';
 
 /// Sistema avanzado de verificación de resolución de conflictos
 /// Implementa validación explícita de last-write-wins usando updated_at
@@ -24,7 +24,7 @@ class ConflictResolutionVerifier {
     _strategies['user_watchlist'] = ConflictResolutionStrategy.lastWriteWins;
     _strategies['user_movie_ratings'] =
         ConflictResolutionStrategy.lastWriteWins;
-    developer.log('ConflictResolutionVerifier initialized',
+    SafeDeveloperLog.log('ConflictResolutionVerifier initialized',
         name: 'ConflictVerifier');
   }
 
@@ -42,7 +42,7 @@ class ConflictResolutionVerifier {
     final conflictId = 'sim_${DateTime.now().millisecondsSinceEpoch}';
     final startTime = DateTime.now();
 
-    developer.log(
+    SafeDeveloperLog.log(
         'Iniciando simulación de conflicto: $conflictId para $entityType:$entityId con $numberOfDevices dispositivos',
         name: 'ConflictVerifier');
 
@@ -101,7 +101,7 @@ class ConflictResolutionVerifier {
 
       _addConflictLog(conflictLog);
 
-      developer.log(
+      SafeDeveloperLog.log(
           'Conflicto $conflictId resuelto en ${resolutionTime.inMilliseconds}ms. Ganador: ${winner.deviceId}',
           name: 'ConflictVerifier');
 
@@ -114,8 +114,8 @@ class ConflictResolutionVerifier {
         conflictLog: conflictLog,
       );
     } catch (e) {
-      developer.log('Error en simulación de conflicto $conflictId: $e',
-          name: 'ConflictVerifier');
+      SafeDeveloperLog.log('Error en simulación de conflicto $conflictId: $e',
+          name: 'ConflictVerifier', error: e);
 
       SyncPerformanceMetrics.instance
           .recordConflictResolved(metricsConflictId, false, entityId);
@@ -133,7 +133,7 @@ class ConflictResolutionVerifier {
 
   /// Ejecuta una suite completa de tests de conflictos
   Future<ConflictTestSuiteResult> runConflictTestSuite() async {
-    developer.log('Iniciando suite de tests de conflictos',
+    SafeDeveloperLog.log('Iniciando suite de tests de conflictos',
         name: 'ConflictVerifier');
 
     final startTime = DateTime.now();
@@ -182,7 +182,7 @@ class ConflictResolutionVerifier {
     final totalTime = DateTime.now().difference(startTime);
     final successfulTests = results.where((r) => r.success).length;
 
-    developer.log(
+    SafeDeveloperLog.log(
         'Suite de tests completada: $successfulTests/${results.length} exitosos en ${totalTime.inMilliseconds}ms',
         name: 'ConflictVerifier');
 
@@ -199,7 +199,7 @@ class ConflictResolutionVerifier {
   /// Valida que un objeto tiene el timestamp updated_at correcto
   bool validateUpdatedAtTimestamp(Map<String, dynamic> data) {
     if (!data.containsKey('updated_at')) {
-      developer.log('Objeto sin campo updated_at: $data',
+      SafeDeveloperLog.log('Objeto sin campo updated_at: $data',
           name: 'ConflictVerifier');
       return false;
     }
@@ -211,7 +211,7 @@ class ConflictResolutionVerifier {
       // El timestamp no puede ser del futuro ni muy antiguo (más de 1 hora)
       if (updatedAt.isAfter(now.add(const Duration(minutes: 5))) ||
           updatedAt.isBefore(now.subtract(const Duration(hours: 1)))) {
-        developer.log(
+        SafeDeveloperLog.log(
             'Timestamp updated_at inválido: $updatedAt (actual: $now)',
             name: 'ConflictVerifier');
         return false;
@@ -219,7 +219,7 @@ class ConflictResolutionVerifier {
 
       return true;
     } catch (e) {
-      developer.log('Error parseando updated_at: $e', name: 'ConflictVerifier');
+      SafeDeveloperLog.log('Error parseando updated_at: $e', name: 'ConflictVerifier', error: e);
       return false;
     }
   }
@@ -294,7 +294,7 @@ class ConflictResolutionVerifier {
     // Verificar que el ganador tiene el timestamp más reciente
     for (final write in writes) {
       if (write != winner && write.timestamp.isAfter(winner.timestamp)) {
-        developer.log(
+        SafeDeveloperLog.log(
             'Resolución incorrecta: ${write.deviceId} tiene timestamp más reciente que el ganador ${winner.deviceId}',
             name: 'ConflictVerifier');
         return false;

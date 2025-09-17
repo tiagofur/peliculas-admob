@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/services/post_login_initialization_service.dart';
@@ -37,18 +37,18 @@ class PostLoginInitializationState {
 /// Notifier para el servicio de inicialización post-login
 class PostLoginInitializationNotifier
     extends StateNotifier<PostLoginInitializationState> {
-  PostLoginInitializationNotifier(this._ref)
+  PostLoginInitializationNotifier(/* this._ref */)
       : super(const PostLoginInitializationState()) {
     _initializeService();
   }
 
-  final Ref _ref;
+  // final Ref _ref; // TODO: Fix legacy compatibility
   final PostLoginInitializationService _service =
       PostLoginInitializationService.instance;
 
   void _initializeService() {
     try {
-      _service.initialize(_ref);
+      // _service.initialize(_ref); // TODO: Fix legacy compatibility
 
       state = state.copyWith(
         isInitialized: true,
@@ -65,7 +65,7 @@ class PostLoginInitializationNotifier
   /// Fuerza la inicialización para un usuario específico
   void forceInitialization(String userId) {
     try {
-      _service.forceInitialization(userId, _ref);
+      // _service.forceInitialization(userId, _ref); // TODO: Fix legacy compatibility
 
       state = state.copyWith(
         currentUserId: userId,
@@ -92,12 +92,13 @@ class PostLoginInitializationNotifier
 }
 
 /// Provider para el servicio de inicialización post-login
-final postLoginInitializationProvider = StateNotifierProvider<
-    PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
-  return PostLoginInitializationNotifier(ref);
-});
+// TODO: Fix legacy compatibility for StateNotifierProvider and Provider
+// final postLoginInitializationProvider = StateNotifierProvider<
+//     PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
+//   return PostLoginInitializationNotifier(ref);
+// });
 
 /// Provider para verificar si el servicio está inicializado
-final isPostLoginInitializedProvider = Provider<bool>((ref) {
-  return ref.watch(postLoginInitializationProvider).isInitialized;
-});
+// final isPostLoginInitializedProvider = Provider<bool>((ref) {
+//   return ref.watch(postLoginInitializationProvider).isInitialized;
+// });

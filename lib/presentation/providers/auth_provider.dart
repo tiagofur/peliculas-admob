@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/config/supabase_config.dart';
@@ -9,14 +12,11 @@ import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
-
 import '../../infrastructure/repositories/auth_repository_impl.dart';
-
 import '../../infrastructure/services/anonymous_data_migrator.dart';
 import '../../services/id_mapping_service.dart';
 import '../../services/lists_migration_service.dart';
 import '../../services/migration_rollback_service.dart';
-
 import './hybrid_repositories_provider.dart';
 import './storage/direct_watched_provider.dart';
 import './storage/direct_watchlist_provider.dart';
@@ -84,56 +84,21 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 // Provider del estado de la aplicación (guest o authenticated)
 final appStateProvider =
     StateNotifierProvider<AppStateNotifier, AppState>((ref) {
+  // ✅ FIX: Pasar ref solo al constructor, no almacenarlo
   return AppStateNotifier(ref);
 });
 
 // Notifier para manejar el estado de la aplicación
 class AppStateNotifier extends StateNotifier<AppState> {
-  AppStateNotifier(this._ref) : super(const AppState(mode: AppMode.guest)) {
-    // Inicializar con el estado actual de autenticación
-    _initializeWithCurrentAuthState();
-
-    // Escuchar cambios en el estado de autenticación
-    _ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
-      next.when(
-        data: (user) {
-          if (user != null) {
-            // Usuario autenticado
-            state = state.copyWith(
-              mode: AppMode.authenticated,
-              user: user,
-            );
-          } else {
-            // Usuario no autenticado, modo guest
-            state = state.copyWith(
-              mode: AppMode.guest,
-              user: null,
-            );
-            // Detectar datos locales cuando no hay usuario autenticado
-            _detectLocalDataOnStartup();
-          }
-        },
-        loading: () {},
-        error: (_, __) {
-          // En caso de error, mantener modo guest
-          state = state.copyWith(
-            mode: AppMode.guest,
-            user: null,
-          );
-          // También detectar datos locales en caso de error
-          _detectLocalDataOnStartup();
-        },
-      );
-    });
-
-    // Detectar datos locales en el startup inicial
-    _detectLocalDataOnStartup();
+  AppStateNotifier(Ref ref) : super(const AppState(mode: AppMode.guest)) {
+    // ✅ Usar ref localmente sin almacenarlo (evita memory leak)
+    _initializeWithRef(ref);
   }
-  final Ref _ref;
 
-  // Método para inicializar con el estado actual de autenticación
-  void _initializeWithCurrentAuthState() {
-    final currentAuthState = _ref.read(authStateProvider);
+  // ✅ FIX: Método que configura listeners sin almacenar ref
+  void _initializeWithRef(Ref ref) {
+    // Inicializar con el estado actual de autenticación
+    final currentAuthState = ref.read(authStateProvider);
     currentAuthState.when(
       data: (user) {
         if (user != null) {
@@ -152,6 +117,42 @@ class AppStateNotifier extends StateNotifier<AppState> {
         // Mantener estado guest en caso de error
       },
     );
+
+    // ✅ Escuchar cambios sin almacenar ref
+    ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
+      next.when(
+        data: (user) {
+          if (user != null) {
+            // Usuario autenticado
+            state = state.copyWith(
+              mode: AppMode.authenticated,
+              user: user,
+            );
+          } else {
+            // Usuario no autenticado, modo guest
+            state = state.copyWith(
+              mode: AppMode.guest,
+              user: null,
+            );
+            // Detectar datos locales cuando no hay usuario autenticado
+            _detectLocalDataOnStartup(ref);
+          }
+        },
+        loading: () {},
+        error: (_, __) {
+          // En caso de error, mantener modo guest
+          state = state.copyWith(
+            mode: AppMode.guest,
+            user: null,
+          );
+          // También detectar datos locales en caso de error
+          _detectLocalDataOnStartup(ref);
+        },
+      );
+    });
+
+    // Detectar datos locales en el startup inicial
+    _detectLocalDataOnStartup(ref);
   }
 
   // Método para cambiar a modo guest manualmente
@@ -167,12 +168,12 @@ class AppStateNotifier extends StateNotifier<AppState> {
     state = state.copyWith(hasLocalData: hasData);
   }
 
-  // Método para detectar datos locales en el startup
-  void _detectLocalDataOnStartup() {
+  // ✅ FIX: Método que detecta datos locales usando ref como parámetro
+  void _detectLocalDataOnStartup(Ref ref) {
     // Ejecutar en background para no bloquear la UI
     Future.microtask(() async {
       try {
-        final migrator = _ref.read(anonymousDataMigratorProvider);
+        final migrator = ref.read(anonymousDataMigratorProvider);
         final detectedData = await migrator.detectAnonymousData();
 
         final hasLocalData = detectedData.isNotEmpty;
@@ -190,6 +191,13 @@ class AppStateNotifier extends StateNotifier<AppState> {
         LoggerFactory.error('❌ Error detectando datos locales en startup: $e');
       }
     });
+  }
+
+  // ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    LoggerFactory.info('✅ AppStateNotifier disposed');
+    super.dispose();
   }
 }
 
@@ -216,6 +224,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   AuthNotifier(this._authRepository, this._ref)
       : super(const AsyncValue.data(null));
   final AuthRepository _authRepository;
+
+  // TODO: MEMORY LEAK FIX - Eliminar almacenamiento de _ref y usar callbacks
   final Ref _ref;
 
   Future<void> signIn({
@@ -322,14 +332,15 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     Future.microtask(() async {
       try {
         final logger = LoggerFactory.getLogger('AuthNotifier');
-        
+
         final user = _ref.read(currentUserProvider);
         if (user == null) {
           logger.warning('Usuario no disponible para sincronización');
           return;
         }
 
-        logger.info('Iniciando migración y sincronización para usuario: ${user.id}');
+        logger.info(
+            'Iniciando migración y sincronización para usuario: ${user.id}');
 
         // 1. Ejecutar migración de listas personalizadas (nueva funcionalidad)
         await _executeMigrationPhase(user.id, logger);
@@ -347,7 +358,8 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           if (migrationResult.success) {
             logger.info('Migración de datos anónimos completada exitosamente');
           } else {
-            logger.warning('Migración de datos anónimos falló: ${migrationResult.errors}');
+            logger.warning(
+                'Migración de datos anónimos falló: ${migrationResult.errors}');
           }
         } else {
           logger.info('No se detectaron datos anónimos para migrar');
@@ -379,7 +391,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> _executeMigrationPhase(String userId, dynamic logger) async {
     try {
       logger.info('Iniciando migración de listas personalizadas');
-      
+
       // Obtener instancias de los servicios de migración
       final prefs = await SharedPreferences.getInstance();
       final supabase = SupabaseConfig.client;
@@ -391,49 +403,50 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         localDataSource,
         idMappingService,
       );
-      
+
       final migrationService = ListsMigrationService(
         prefs,
         localDataSource,
         supabase,
       );
-      
+
       // Verificar si la migración ya fue ejecutada
-      final migrationCompleted = prefs.getBool('lists_migration_completed') ?? false;
+      final migrationCompleted =
+          prefs.getBool('lists_migration_completed') ?? false;
       if (migrationCompleted) {
         logger.info('Migración de listas ya completada previamente');
         return;
       }
-      
+
       // Crear punto de rollback antes de la migración
       final rollbackId = await rollbackService.createRollbackPoint(
         userId,
         'Migración automática de listas personalizadas',
       );
-      
+
       logger.info('Punto de rollback creado: $rollbackId');
-      
+
       // Ejecutar análisis de migración
       final analysis = await migrationService.analyzeMigrationNeeds(userId);
-      
+
       if (analysis.hasWork) {
         logger.info('Migración necesaria');
-        
+
         // Ejecutar migración completa
         await migrationService.migrateDefaultLists(userId);
-        
+
         logger.info('Migración de listas completada');
-        
+
         // Marcar migración como completada
         await migrationService.markMigrationCompleted();
-        await prefs.setString('lists_migration_date', DateTime.now().toIso8601String());
+        await prefs.setString(
+            'lists_migration_date', DateTime.now().toIso8601String());
       } else {
         logger.info('No se requiere migración de listas');
       }
-      
     } catch (e) {
       logger.error('Error crítico durante migración de listas: $e');
-      
+
       // Intentar rollback automático en caso de error crítico
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -446,7 +459,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
           localDataSource,
           idMappingService,
         );
-        
+
         await rollbackService.executeAutoRollback(userId);
         logger.info('Rollback automático ejecutado tras error crítico');
       } catch (rollbackError) {
@@ -586,6 +599,13 @@ class UserStatsNotifier extends StateNotifier<AsyncValue<UserStats?>> {
             : 0,
       );
     }
+  }
+
+  // ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    LoggerFactory.info('✅ UserStatsNotifier disposed');
+    super.dispose();
   }
 }
 

@@ -7,12 +7,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/logging/safe_developer_log.dart';
+import '../../core/utils/server_timestamp_utils.dart';
 import '../../domain/entities/sync_result.dart';
 import '../../domain/entities/user.dart' as app_user;
 import '../../domain/repositories/syncable_repository.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../presentation/providers/hybrid_repositories_provider.dart';
-import 'connectivity_detector.dart';
+import '../services/connectivity_detector.dart';
 import 'error_context_tracker.dart';
 // Imports de repositorios específicos removidos - se usan a través de providers
 
@@ -39,8 +40,6 @@ class SyncService {
 
   /// Sincronización automática después del login
   Future<void> onUserAuthenticated() async {
-
-
     final user = getCurrentUser();
     if (user != null) {
       LoggerFactory.info(
@@ -63,7 +62,6 @@ class SyncService {
         await syncAllData();
         LoggerFactory.info('✅ Sincronización inicial completada sin errores');
       } catch (e) {
-
         _scheduleRetry('onUserAuthenticated');
       }
     });
@@ -93,8 +91,6 @@ class SyncService {
     final startTime = DateTime.now();
     final results = <String, bool>{};
     final errors = <String>[];
-
-
 
     // Sincronizar todos los repositorios en paralelo para mejor rendimiento
     final syncTasks = _repositories.map((repo) async {
@@ -136,7 +132,6 @@ class SyncService {
             message: 'Todos los repositorios sincronizados exitosamente',
           );
 
-
     return result;
   }
 
@@ -159,7 +154,7 @@ class SyncService {
     );
 
     try {
-        await favoritesRepo.syncWithSupabase();
+      await favoritesRepo.syncWithSupabase();
 
       return SyncResult.success(
         itemsProcessed: 1,
@@ -196,7 +191,7 @@ class SyncService {
     );
 
     try {
-        await watchedRepo.syncWithSupabase();
+      await watchedRepo.syncWithSupabase();
 
       return SyncResult.success(
         itemsProcessed: 1,
@@ -234,7 +229,7 @@ class SyncService {
     );
 
     try {
-        await customListsRepo.syncWithSupabase();
+      await customListsRepo.syncWithSupabase();
 
       return SyncResult.success(
         itemsProcessed: 1,
@@ -453,7 +448,8 @@ class SyncService {
       'current_state': _syncTimer?.isActive ?? false ? 'active' : 'inactive',
       'is_syncing': _syncTimer?.isActive ?? false,
       'is_authenticated': _isAuthenticated(),
-      'last_sync': DateTime.now().toIso8601String(),
+      'last_sync':
+          ServerTimestampUtils.getCachedServerTimestamp().toIso8601String(),
       'periodic_sync_active': _syncTimer?.isActive ?? false,
       'retry_count': _retryAttempts.values.fold(0, (sum, count) => sum + count),
       'repositories_count': _repositories.length,
@@ -535,7 +531,7 @@ class SyncService {
   /// Registra errores de sincronización con información detallada y estructurada
   void _logSyncError(String repository, dynamic error,
       {String? operation, String? correlationId}) {
-    final timestamp = DateTime.now();
+    final timestamp = ServerTimestampUtils.getCachedServerTimestamp();
     final retryCount = _retryAttempts[repository] ?? 0;
     final errorType = _categorizeError(error);
     final severity = _getErrorSeverity(errorType);
@@ -712,52 +708,54 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 });
 
 // Provider para el estado de sincronización
-final syncStateProvider =
-    StateNotifierProvider<SyncStateNotifier, AsyncValue<SyncResult?>>((ref) {
-  return SyncStateNotifier(ref);
-});
+// TODO: Fix legacy compatibility for StateNotifierProvider
+// final syncStateProvider =
+//     StateNotifierProvider<SyncStateNotifier, AsyncValue<SyncResult?>>((ref) {
+//   return SyncStateNotifier(ref);
+// });
 
 // Notifier para manejar el estado de sincronización
-class SyncStateNotifier extends StateNotifier<AsyncValue<SyncResult?>> {
-  SyncStateNotifier(this._ref) : super(const AsyncValue.data(null));
-  final Ref _ref;
+// TODO: Fix legacy compatibility for StateNotifier
+// class SyncStateNotifier extends StateNotifier<AsyncValue<SyncResult?>> {
+//   SyncStateNotifier(this._ref) : super(const AsyncValue.data(null));
+//   final Ref _ref;
 
-  /// Ejecutar sincronización completa
-  Future<void> syncAll() async {
-    state = const AsyncValue.loading();
+//   /// Ejecutar sincronización completa
+//   Future<void> syncAll() async {
+//     state = const AsyncValue.loading();
 
-    try {
-      final syncService = _ref.read(syncServiceProvider);
-      final result = await syncService.syncAllData();
+//     try {
+//       final syncService = _ref.read(syncServiceProvider);
+//       final result = await syncService.syncAllData();
 
-      state = AsyncValue.data(result);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
-    }
-  }
+//       state = AsyncValue.data(result);
+//     } catch (e, stackTrace) {
+//       state = AsyncValue.error(e, stackTrace);
+//     }
+//   }
 
-  /// Ejecutar sincronización forzada
-  Future<void> forceSyncAll() async {
-    state = const AsyncValue.loading();
+//   /// Ejecutar sincronización forzada
+//   Future<void> forceSyncAll() async {
+//     state = const AsyncValue.loading();
 
-    try {
-      final syncService = _ref.read(syncServiceProvider);
-      final result = await syncService.forceSyncAllData();
+//     try {
+//       final syncService = _ref.read(syncServiceProvider);
+//       final result = await syncService.forceSyncAllData();
 
-      state = AsyncValue.data(result);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
-    }
-  }
+//       state = AsyncValue.data(result);
+//     } catch (e, stackTrace) {
+//       state = AsyncValue.error(e, stackTrace);
+//     }
+//   }
 
-  /// Obtener estado de sincronización
-  Map<String, dynamic> getSyncStatus() {
-    final syncService = _ref.read(syncServiceProvider);
-    return syncService.getSyncStatus();
-  }
+//   /// Obtener estado de sincronización
+//   Map<String, dynamic> getSyncStatus() {
+//     final syncService = _ref.read(syncServiceProvider);
+//     return syncService.getSyncStatus();
+//   }
 
-  /// Limpiar estado de sincronización
-  void clearState() {
-    state = const AsyncValue.data(null);
-  }
-}
+//   /// Limpiar estado de sincronización
+//   void clearState() {
+//     state = const AsyncValue.data(null);
+//   }
+// }

@@ -63,7 +63,8 @@ class TriggerFreeFavoritesSync {
       await _supabase
           .from('user_favorites')
           .delete()
-          .eq("user_id", userId);
+          .eq('user_id', userId)
+          .eq('movie_id', movieId);
 
       LoggerFactory.info('✅ [TriggerFree] Favorito removido: $movieId');
     } catch (e) {
@@ -113,7 +114,7 @@ class TriggerFreeFavoritesSync {
       final response = await _supabase
           .from('user_favorites')
           .select('*')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -137,7 +138,8 @@ class TriggerFreeFavoritesSync {
       final response = await _supabase
           .from('user_favorites')
           .select('id')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
+          .eq('movie_id', movieId)
           .limit(1);
 
       final List<dynamic> data = response as List<dynamic>;

@@ -20,30 +20,28 @@ import 'config/deep_links/deep_link_handler.dart';
 import 'config/router/app_router.dart';
 import 'config/theme/app_theme.dart' as app_theme;
 import 'config/theme/custom_scroll_behavior.dart';
+import 'core/cache/image_cache_manager.dart';
 import 'core/config/supabase_config.dart';
 import 'core/error_reporting/error_reporting_service.dart';
 import 'core/logging/logger_factory.dart';
 import 'core/monetization/monetization_initializer.dart';
+import 'core/navigation/enhanced_notification_service.dart';
+import 'core/navigation/navigation_error_boundary.dart';
 import 'core/notifications/local_notification_service.dart';
 import 'core/notifications/notification_initialization_service.dart';
+import 'core/state/app_state_manager.dart';
+import 'core/state/app_state_restoration.dart';
+import 'core/utils/server_timestamp_utils.dart';
 import 'generated/app_localizations.dart';
 import 'infrastructure/services/app_lifecycle_manager.dart';
 import 'infrastructure/services/auth_session_manager.dart';
 import 'infrastructure/services/connectivity_detector.dart';
 import 'infrastructure/services/cross_platform_init_service.dart';
-
 import 'infrastructure/services/token_refresh_service.dart';
-import 'presentation/providers/challenge_providers.dart';
+import 'presentation/providers/auto_default_lists_provider.dart';
 import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/locale/locale_provider.dart';
-import 'presentation/providers/multiplatform_sync_provider.dart';
-import 'presentation/providers/post_login_initialization_provider.dart';
-import 'presentation/providers/storage/direct_favorites_provider.dart';
-import 'presentation/providers/storage/direct_watched_provider.dart';
-import 'presentation/providers/storage/direct_custom_lists_provider.dart';
-import 'presentation/providers/storage/direct_watchlist_provider.dart';
-import 'presentation/providers/sync_init_provider.dart';
-import 'presentation/providers/sync_integration_provider.dart' as integration;
+import 'presentation/providers/storage/direct_providers_helpers.dart';
 import 'presentation/providers/theme/theme_provider.dart';
 import 'services/cache_configuration_service.dart';
 import 'services/hybrid_image_service.dart';
@@ -125,6 +123,18 @@ Future<void> main() async {
           }
         }
 
+        // INICIALIZAR GESTOR DE ESTADO DE APLICACIÓN
+        try {
+          await AppStateManager.instance.initialize();
+          if (kDebugMode) {
+            LoggerFactory.info('✅ AppStateManager inicializado');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            LoggerFactory.error('❌ Error inicializando AppStateManager: $e');
+          }
+        }
+
         // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
         try {
           // Inicializar detector de conectividad
@@ -153,8 +163,14 @@ Future<void> main() async {
           maxConcurrentPreloads: 3,
         );
 
-        // INICIALIZAR SERVICIO DE CONFIGURACIÓN DE CACHÉ
+        // INICIALIZAR SERVICIOS DE CACHÉ
         await CacheConfigurationService().initialize();
+
+        // Inicializar Image Cache Manager con configuración adaptativa
+        await ImageCacheManager.instance.initialize();
+
+        // Inicializar cache de server timestamp para sync
+        await ServerTimestampUtils.updateServerTimestampCache();
 
         // Note: Offline cache manager will be initialized when first accessed through providers
         if (kDebugMode) {
@@ -162,12 +178,14 @@ Future<void> main() async {
               '✅ Cache services configured - offline cache will initialize on demand');
         }
 
-        // INICIALIZAR SISTEMA DE NOTIFICACIONES
+        // INICIALIZAR SISTEMA DE NOTIFICACIONES MEJORADO
         if (!kIsWeb) {
           try {
-            await NotificationInitializationService.instance.initialize();
+            // Inicializar servicio mejorado de notificaciones
+            await EnhancedNotificationService.instance
+                .initialize(globalNavigatorKey);
 
-            // Configurar navigator key para navegación desde notificaciones
+            // Mantener compatibilidad con servicios existentes
             NotificationInitializationService.instance
                 .setNavigatorKey(globalNavigatorKey);
             LocalNotificationService.instance
@@ -175,12 +193,12 @@ Future<void> main() async {
 
             if (kDebugMode) {
               LoggerFactory.info(
-                  '✅ Sistema de notificaciones inicializado con navegación');
+                  '✅ Sistema de notificaciones mejorado inicializado con navegación segura');
             }
           } catch (e) {
             if (kDebugMode) {
               LoggerFactory.error(
-                  '❌ Error inicializando sistema de notificaciones: $e');
+                  '❌ Error inicializando sistema de notificaciones mejorado: $e');
             }
           }
         }
@@ -275,43 +293,35 @@ class MainApp extends ConsumerWidget {
       }
     });
 
-    // INICIALIZAR SYNC LISTENER - Esto es CRÍTICO para que funcione la sincronización automática
-    ref.watch(authSyncListenerProvider);
+    // LAZY LOADING DE SERVICES ESENCIALES PARA EVITAR BLOQUEOS EN STARTUP
+    LoggerFactory.info(
+        '🔄 MainApp: Configurando services esenciales (LAZY)...');
 
-    // SINCRONIZACIÓN EN TIEMPO REAL se maneja a través de SyncCoordinator
-    // que inicializa RealtimeSyncManager automáticamente
-
-    // INICIALIZAR SISTEMA DE SINCRONIZACIÓN MULTIPLATAFORMA
-    ref.watch(syncInitializationProvider);
-
-    // INICIALIZAR INTEGRACIÓN DE SYNC UI - Solo si hay usuario autenticado
     try {
-      ref.watch(integration.syncIntegrationProvider);
+      // Solo inicializar services esenciales que no bloqueen el startup
+      ref.watch(errorReportingUserContextProvider);
+
+      // Observar estado de autenticación para inicialización automática de direct providers
+      ref.watch(authStateDirectProvidersProvider);
+
+      // INICIALIZAR SISTEMA AUTOMÁTICO DE LISTAS PREDETERMINADAS
+      ref.watch(authDefaultListsListenerProvider);
     } catch (e) {
-      // Sync integration no disponible sin usuario autenticado
       if (kDebugMode) {
-        LoggerFactory.info('Sync integration not available: $e');
+        LoggerFactory.info('Some services not available on startup: $e');
       }
     }
-
-    // INICIALIZAR CHALLENGE SYSTEM
-    ref.watch(challengeInitializationProvider);
-
-    // INICIALIZAR ERROR REPORTING USER CONTEXT
-    ref.watch(errorReportingUserContextProvider);
+    LoggerFactory.info('✅ MainApp: Essential services configured (LAZY)');
 
     // REACTIVAR: INICIALIZACIÓN POST-LOGIN (con modificaciones anti-bloqueo)
-    ref.watch(
-        postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
+    // TODO: Fix legacy compatibility - postLoginInitializationProvider is commented out
+    // ref.watch(
+    //     postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
 
-    // INICIALIZAR DIRECT PROVIDERS PARA LISTENERS DE TIEMPO REAL
+    // Los DirectProviders se inicializarán automáticamente cuando sean necesarios
+    // para evitar bloqueos en el startup - inicialización ya manejada arriba
     LoggerFactory.info(
-        '🚀 MainApp: Inicializando DirectProviders (FORZADO)...');
-    ref.watch(directFavoriteMoviesProvider);
-    ref.watch(directWatchedMoviesProvider);
-    ref.watch(directWatchlistMoviesProvider);
-    ref.watch(directCustomListsProvider);
-    LoggerFactory.info('✅ MainApp: DirectProviders inicializados (FORZADO)');
+        '✅ MainApp: DirectProviders configurados para lazy loading');
 
     // INICIALIZACIÓN LAZY DE PROVIDERS - Solo cuando se necesiten
     // Los providers se inicializarán automáticamente cuando se usen por primera vez
@@ -358,59 +368,67 @@ class MainApp extends ConsumerWidget {
 
     // Usar MaterialApp regular para web para evitar problemas de compatibilidad
     if (kIsWeb) {
-      return material.ScrollConfiguration(
-        behavior: CustomScrollBehavior(),
-        child: material.MaterialApp.router(
-          routerConfig: router,
-          debugShowCheckedModeBanner: false,
-          theme: appTheme.getTheme(context),
-          darkTheme: app_theme.AppTheme(
-            selectedColor: appTheme.selectedColor,
-            themeMode: app_theme.ThemeMode.dark,
-          ).getTheme(context),
-          themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
-          locale: localeState.locale,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          builder: (context, child) {
-            // Actualizar la UI del sistema cuando cambie el tema
-            appTheme.updateSystemUIOverlay(context);
-            return child ?? const material.SizedBox.shrink();
-          },
+      return AppStateRestoration(
+        child: NavigationErrorBoundary(
+          child: material.ScrollConfiguration(
+            behavior: CustomScrollBehavior(),
+            child: material.MaterialApp.router(
+              routerConfig: router,
+              debugShowCheckedModeBanner: false,
+              theme: appTheme.getTheme(context),
+              darkTheme: app_theme.AppTheme(
+                selectedColor: appTheme.selectedColor,
+                themeMode: app_theme.ThemeMode.dark,
+              ).getTheme(context),
+              themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
+              locale: localeState.locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              builder: (context, child) {
+                // Actualizar la UI del sistema cuando cambie el tema
+                appTheme.updateSystemUIOverlay(context);
+                return child ?? const material.SizedBox.shrink();
+              },
+            ),
+          ),
         ),
       );
     }
 
     // Usar PiPMaterialApp solo en plataformas nativas (no web)
-    return material.ScrollConfiguration(
-      behavior: CustomScrollBehavior(),
-      child: PiPMaterialApp.router(
-        routerConfig: router,
-        debugShowCheckedModeBanner: false,
-        theme: appTheme.getTheme(context),
-        darkTheme: app_theme.AppTheme(
-          selectedColor: appTheme.selectedColor,
-          themeMode: app_theme.ThemeMode.dark,
-        ).getTheme(context),
-        themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
-        locale: localeState.locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) {
-          // Actualizar la UI del sistema cuando cambie el tema
-          appTheme.updateSystemUIOverlay(context);
-          return child ?? const material.SizedBox.shrink();
-        },
-        pipParams: const PiPParams(
-          pipWindowHeight: 200,
-          pipWindowWidth: 300,
-          bottomSpace: 80,
-          leftSpace: 16,
-          rightSpace: 16,
-          topSpace: 80,
-          movable: true,
-          resizable: false,
-          initialCorner: PIPViewCorner.bottomRight,
+    return AppStateRestoration(
+      child: NavigationErrorBoundary(
+        child: material.ScrollConfiguration(
+          behavior: CustomScrollBehavior(),
+          child: PiPMaterialApp.router(
+            routerConfig: router,
+            debugShowCheckedModeBanner: false,
+            theme: appTheme.getTheme(context),
+            darkTheme: app_theme.AppTheme(
+              selectedColor: appTheme.selectedColor,
+              themeMode: app_theme.ThemeMode.dark,
+            ).getTheme(context),
+            themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
+            locale: localeState.locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) {
+              // Actualizar la UI del sistema cuando cambie el tema
+              appTheme.updateSystemUIOverlay(context);
+              return child ?? const material.SizedBox.shrink();
+            },
+            pipParams: const PiPParams(
+              pipWindowHeight: 200,
+              pipWindowWidth: 300,
+              bottomSpace: 80,
+              leftSpace: 16,
+              rightSpace: 16,
+              topSpace: 80,
+              movable: true,
+              resizable: false,
+              initialCorner: PIPViewCorner.bottomRight,
+            ),
+          ),
         ),
       ),
     );

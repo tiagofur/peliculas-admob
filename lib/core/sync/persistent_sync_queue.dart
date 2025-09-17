@@ -20,6 +20,7 @@ class PersistentSyncQueue {
   final List<SyncOperation> _operations = [];
   bool _initialized = false;
   SharedPreferences? _prefs;
+  Timer? _cleanupTimer;
 
   /// Inicializa la cola cargando operaciones persistentes
   Future<void> _init() async {
@@ -321,8 +322,11 @@ class PersistentSyncQueue {
 
   /// Programa limpieza automática
   void _scheduleCleanup() {
+    // Cancelar timer previo si existe
+    _cleanupTimer?.cancel();
+
     // Limpieza cada 24 horas
-    Timer(const Duration(hours: 24), () {
+    _cleanupTimer = Timer(const Duration(hours: 24), () {
       cleanup();
     });
   }
@@ -353,5 +357,12 @@ class PersistentSyncQueue {
   Future<bool> get hasReadyOperations async {
     await _ensureInitialized();
     return _operations.any((op) => op.isReadyToExecute);
+  }
+
+  /// Libera recursos y cancela timers
+  void dispose() {
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+    LoggerFactory.info('🧹 PersistentSyncQueue disposed');
   }
 }

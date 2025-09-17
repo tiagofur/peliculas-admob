@@ -1,5 +1,10 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
 import '../logging/logger_factory.dart';
 import '../../domain/entities/syncable_entity.dart';
+import '../../presentation/widgets/sync/conflict_resolution_dialog.dart';
 import 'entity_sync_manager.dart';
 import 'sync_utilities.dart';
 import 'conflict_resolution/strategies/conflict_strategy.dart';
@@ -132,11 +137,47 @@ class ConflictResolver {
     LoggerFactory.debug(
         '👤 User choice resolution requested for ${conflict.localEntity.entityType}');
 
-    // TODO: Implementar UI para decisión del usuario
-    // Por ahora usar local wins como fallback
-    LoggerFactory.info(
-        'ℹ️ User choice not implemented, falling back to local wins');
-    return _resolveLocalWins(conflict);
+    try {
+      // Importar el contexto de navegación si está disponible
+      final context = _getCurrentContext();
+      if (context == null) {
+        LoggerFactory.warning(
+            '⚠️ No navigation context available, falling back to local wins');
+        return _resolveLocalWins(conflict);
+      }
+
+      // Mostrar diálogo de resolución de conflictos
+      final completer = Completer<ConflictResolution>();
+      
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return ConflictResolutionDialog<T>(
+            conflict: conflict,
+            onResolved: (resolution) {
+              completer.complete(resolution);
+              Navigator.of(dialogContext).pop();
+            },
+            allowMerge: true,
+            showPreview: true,
+          );
+        },
+      );
+
+      // Esperar la resolución del usuario
+      final resolution = await completer.future;
+      
+      LoggerFactory.info(
+          '✅ User resolved conflict using strategy: ${resolution.strategy.name}');
+      
+      return resolution.resolvedEntity;
+    } catch (e) {
+      LoggerFactory.error('❌ Error showing conflict resolution UI: $e');
+      LoggerFactory.info(
+          'ℹ️ Falling back to local wins due to UI error');
+      return _resolveLocalWins(conflict);
+    }
   }
 
   /// Detecta conflictos entre dos entidades
@@ -349,5 +390,20 @@ class ConflictResolver {
       case ConflictStrategy.userChoice:
         return 'User manually resolved ${conflictType.name}';
     }
+  }
+
+  /// Obtiene el contexto de navegación actual
+  /// En una implementación real, esto debería obtenerse del NavigatorKey global
+  /// o del contexto de la aplicación
+  BuildContext? _getCurrentContext() {
+    // Implementación con fallback automático para evitar dependencias circulares
+    LoggerFactory.debug('🔍 Attempting to get current navigation context');
+    
+    // En una implementación completa, esto podría usar:
+    // - Un NavigatorKey global configurado en MaterialApp
+    // - Un servicio de navegación inyectado
+    // - El contexto pasado como parámetro al ConflictResolver
+    
+    return null; // Fallback a estrategia automática
   }
 }

@@ -359,7 +359,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
   @override
   Future<List<RecommendationCategory>> getDiscoveryCategories() async {
     return [
-      RecommendationCategory(
+      const RecommendationCategory(
         id: 'romantic_night',
         title: 'Para ver en pareja',
         description: 'Películas perfectas para una noche romántica',
@@ -368,7 +368,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
         genres: ['10749'], // Romance
         filters: {'vote_average.gte': 7.0},
       ),
-      RecommendationCategory(
+      const RecommendationCategory(
         id: 'hidden_gems',
         title: 'Joyas ocultas',
         description: 'Películas increíbles que pocos conocen',
@@ -379,7 +379,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
           'sort_by': 'vote_average.desc'
         },
       ),
-      RecommendationCategory(
+      const RecommendationCategory(
         id: 'classic_forgotten',
         title: 'Clásicos olvidados',
         description:
@@ -391,7 +391,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
           'sort_by': 'vote_average.desc'
         },
       ),
-      RecommendationCategory(
+      const RecommendationCategory(
         id: 'weekend_fun',
         title: 'Para el fin de semana',
         description: 'Entretenimiento ligero y divertido',
@@ -399,7 +399,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
         genres: ['35', '28'], // Comedy, Action
         filters: {'vote_average.gte': 6.5},
       ),
-      RecommendationCategory(
+      const RecommendationCategory(
         id: 'mind_bending',
         title: 'Para pensar',
         description: 'Películas que te harán reflexionar',
@@ -407,7 +407,7 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
         genres: ['878', '53'], // Sci-Fi, Thriller
         filters: {'vote_average.gte': 7.0},
       ),
-      RecommendationCategory(
+      const RecommendationCategory(
         id: 'feel_good',
         title: 'Para sentirse bien',
         description: 'Películas que alegran el día',

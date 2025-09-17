@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'logger_factory.dart';
+import 'safe_developer_log.dart';
 
 /// Servicio de logging avanzado con métricas, alertas y dashboard
 class AdvancedLoggingService {
@@ -104,7 +105,7 @@ class AdvancedLoggingService {
       await logInfo('AdvancedLoggingService', 'Service initialized successfully');
       
     } catch (e) {
-      debugPrint('❌ Failed to initialize AdvancedLoggingService: $e');
+      SafeDeveloperLog.log('❌ Failed to initialize AdvancedLoggingService: $e', error: e);
       _isInitialized = true; // Continue even if initialization fails
     }
   }
@@ -121,7 +122,7 @@ class AdvancedLoggingService {
       }
       
     } catch (e) {
-      debugPrint('⚠️ Failed to setup log directory: $e');
+      SafeDeveloperLog.log('⚠️ Failed to setup log directory: $e', error: e);
     }
   }
 
@@ -219,10 +220,10 @@ class AdvancedLoggingService {
           }
         }
         
-        debugPrint('📄 Loaded ${_logEntries.length} existing log entries');
+        SafeDeveloperLog.log('📄 Loaded ${_logEntries.length} existing log entries');
       }
     } catch (e) {
-      debugPrint('⚠️ Failed to load existing logs: $e');
+      SafeDeveloperLog.log('⚠️ Failed to load existing logs: $e', error: e);
     }
   }
 
@@ -798,7 +799,7 @@ class AdvancedLoggingService {
     _activeAlerts.clear();
     _aggregatedMetrics.clear();
     
-    debugPrint('🔒 AdvancedLoggingService disposed');
+    SafeDeveloperLog.log('🔒 AdvancedLoggingService disposed');
   }
 }
 

@@ -34,9 +34,10 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
 
   @override
   Widget build(BuildContext context) {
-    final allLists = ref.watch(directCustomListsWithMoviesProvider);
-    final listsContainingMovie =
-        ref.watch(directMovieListsProvider(widget.movie.id));
+    // TODO: Temporary fix - access notifier directly until providers are restored
+    final notifier = ref.read(directCustomListsProvider.notifier);
+    final allLists = notifier.allListsWithMovies;
+    final listsContainingMovie = notifier.getListsContainingMovie(widget.movie.id);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -318,10 +319,39 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       ref
           .read(directCustomListsProvider.notifier)
           .removeMovieFromList(list.id, widget.movie.id);
+      
+      // Mostrar confirmación de eliminación
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Película eliminada de "${list.name}"'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.orange,
+        ),
+      );
     } else {
       ref
           .read(directCustomListsProvider.notifier)
           .addMovieToList(list.id, widget.movie.id);
+      
+      // Mostrar confirmación de adición
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Película añadida a "${list.name}"'),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'Ver',
+            textColor: Colors.white,
+            onPressed: () {
+              // Navegar a la lista
+              Navigator.of(context).pushNamed(
+                '/list-detail',
+                arguments: list.id,
+              );
+            },
+          ),
+        ),
+      );
     }
   }
 
@@ -711,8 +741,8 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                               if (_addCurrentMovie) {
                                 // Obtener el ID de la lista recién creada y agregar la película
-                                final customLists = ref
-                                    .read(directCustomListsWithMoviesProvider)
+                                final notifier = ref.read(directCustomListsProvider.notifier);
+                                final customLists = notifier.allListsWithMovies
                                     .where((l) => !l.isDefault)
                                     .toList();
                                 if (customLists.isNotEmpty) {
@@ -739,9 +769,8 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                                       action: SnackBarAction(
                                         label: 'Ver',
                                         onPressed: () {
-                                          final customLists = ref
-                                              .read(
-                                                  directCustomListsWithMoviesProvider)
+                                          final notifier = ref.read(directCustomListsProvider.notifier);
+                                          final customLists = notifier.allListsWithMovies
                                               .where((l) => !l.isDefault)
                                               .toList();
                                           if (customLists.isNotEmpty) {

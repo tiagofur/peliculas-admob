@@ -1,6 +1,6 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/foundation.dart';
+
+import 'safe_developer_log.dart';
 
 /// Application logger for consistent logging across the app
 class AppLogger {
@@ -80,7 +80,7 @@ class AppLogger {
     final logMessage = '$timestamp [$level] $tagPrefix$message';
 
     if (kDebugMode) {
-      developer.log(
+      SafeDeveloperLog.log(
         logMessage,
         name: tag ?? 'AppLogger',
         error: error,
@@ -88,7 +88,7 @@ class AppLogger {
       );
     } else {
       // In release mode, you might want to send logs to a crash reporting service
-      developer.log(
+      SafeDeveloperLog.log(
         logMessage,
         name: tag ?? 'AppLogger',
         error: error,

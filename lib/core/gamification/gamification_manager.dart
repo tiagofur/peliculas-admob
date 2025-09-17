@@ -432,11 +432,76 @@ class GamificationManager extends ChangeNotifier {
     }
   }
 
-  // Métodos de seguimiento de actividades
+  // FIXED: Método mejorado de seguimiento de actividades basado en estadísticas reales
+  Future<void> updateUserStats({
+    required int totalWatched,
+    required int totalFavorites,
+    required int totalRatings,
+    required int totalLists,
+    required int totalShared,
+  }) async {
+    try {
+      // Calcular puntos basados en estadísticas actuales
+      final oldPoints = _userProgress.totalPoints;
+      final newPoints = (totalFavorites * 5) +
+          (totalWatched * 3) +
+          (totalRatings * 10) +
+          (totalLists * 25) +
+          (totalShared * 3);
+
+      final oldLevel = _calculateLevel(oldPoints);
+      final newLevel = _calculateLevel(newPoints);
+
+      // Actualizar progreso con estadísticas reales
+      _userProgress = _userProgress.copyWith(
+        totalPoints: newPoints,
+        currentLevel: newLevel.index + 1,
+        moviesFavorited: totalFavorites,
+        moviesWatched: totalWatched,
+        reviewsWritten: totalRatings,
+        contentShared: totalShared,
+        lastActivityDate: DateTime.now(),
+      );
+
+      // Detectar level up
+      if (newLevel.index > oldLevel.index) {
+        _levelUpController.add(newLevel);
+        LoggerFactory.info('🏆 Level up! New level: ${newLevel.name}');
+      }
+
+      // Verificar y desbloquear logros basados en estadísticas actuales
+      await _checkAndUnlockAchievements();
+
+      // Guardar progreso
+      await _saveUserProgress();
+
+      LoggerFactory.info(
+          '🏆 Stats actualizadas: $totalWatched vistas, $totalFavorites favoritos, $totalRatings calificaciones');
+      notifyListeners();
+    } catch (e) {
+      LoggerFactory.error('Error actualizando stats de gamificación: $e');
+    }
+  }
+
+  Future<void> _checkAndUnlockAchievements() async {
+    final stats = {
+      'favorites_added': _userProgress.moviesFavorited,
+      'movies_watched': _userProgress.moviesWatched,
+      'reviews_written': _userProgress.reviewsWritten,
+      'movies_shared': _userProgress.contentShared,
+      'daily_movies': await _getDailyMovieCount(),
+      'streak_days': _userProgress.streakDays,
+      'watchlists_completed': _userProgress.watchlistsCompleted,
+    };
+
+    await _checkAchievements(stats);
+  }
+
+  // Mantener método original para compatibilidad
   Future<void> trackMovieAddedToFavorites(String movieId, String genre) async {
     await _updateProgress(
-      moviesWatched: _userProgress.moviesWatched + 1,
-      favoritesAdded: _userProgress.favoritesAdded + 1,
+      moviesWatched: _userProgress.moviesWatched,
+      favoritesAdded: _userProgress.moviesFavorited + 1,
       points: 5,
     );
 
@@ -448,7 +513,7 @@ class GamificationManager extends ChangeNotifier {
 
     // Verificar logros relacionados
     await _checkAchievements({
-      'favorites_added': _userProgress.favoritesAdded,
+      'favorites_added': _userProgress.moviesFavorited,
       'genre_$genre': updatedGenreStats[genre] ?? 0,
       'daily_movies': await _getDailyMovieCount(),
       'streak_days': _userProgress.streakDays,
@@ -568,6 +633,7 @@ class GamificationManager extends ChangeNotifier {
         case 'movie_collector':
         case 'movie_enthusiast':
         case 'movie_master':
+          // FIXED: Usar favoritos reales del usuario
           currentProgress = stats['favorites_added'] ?? 0;
           break;
         case 'action_fan':
@@ -581,11 +647,13 @@ class GamificationManager extends ChangeNotifier {
           break;
         case 'first_share':
         case 'social_star':
+          // FIXED: Usar películas compartidas reales
           currentProgress = stats['movies_shared'] ?? 0;
           break;
         case 'first_review':
         case 'prolific_critic':
         case 'master_critic':
+          // FIXED: Usar reseñas/calificaciones reales
           currentProgress = stats['reviews_written'] ?? 0;
           break;
         case 'weekend_warrior':

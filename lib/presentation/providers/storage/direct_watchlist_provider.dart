@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -54,6 +54,13 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Cargar watchlist directamente desde Supabase
   Future<void> _loadWatchlistFromSupabase() async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando carga inicial');
+      return;
+    }
+
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
@@ -89,6 +96,13 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Toggle watchlist usando solo operaciones directas
   Future<void> toggleWatchlist(Movie movie,
       {WatchlistPriority priority = WatchlistPriority.normal}) async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando toggle');
+      return;
+    }
+
     final isInWatchlist = state[movie.id] != null;
     final currentUser = Supabase.instance.client.auth.currentUser;
 
@@ -142,6 +156,13 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Cambia la prioridad de una película en la watchlist
   Future<void> changePriority(
       int movieId, WatchlistPriority newPriority) async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando changePriority');
+      return;
+    }
+
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) return;
 
@@ -227,6 +248,13 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Maneja eventos de tiempo real
   void _handleRealtimeEvent(PostgresChangePayload payload) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando evento real-time');
+      return;
+    }
+
     try {
       LoggerFactory.info(
           '🔴 DirectWatchlist: Evento en tiempo real: ${payload.eventType}');
@@ -234,6 +262,51 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
       final newRecord = payload.newRecord;
       final oldRecord = payload.oldRecord;
+      final data = newRecord.isNotEmpty
+          ? newRecord
+          : (oldRecord.isNotEmpty ? oldRecord : <String, dynamic>{});
+
+      final userId = data['user_id'] as String?;
+      final movieId = data['movie_id'] as int?;
+      final supabaseRecordId = data['id']?.toString();
+
+      LoggerFactory.info('🔍 DirectWatchlist: user_id del evento: $userId');
+      LoggerFactory.info('🔍 DirectWatchlist: user_id actual: $_currentUserId');
+      LoggerFactory.info('🔍 DirectWatchlist: movie_id del evento: $movieId');
+      LoggerFactory.info(
+          '🔍 DirectWatchlist: supabase_id del evento: $supabaseRecordId');
+
+      // Si no tenemos user_id pero tenemos supabase record_id, intentar manejar DELETE
+      if (userId == null &&
+          payload.eventType == PostgresChangeEvent.delete &&
+          supabaseRecordId != null) {
+        LoggerFactory.info(
+            '🔍 DirectWatchlist: DELETE sin user_id, intentando por record_id');
+        _handleDeleteBySupabaseId(supabaseRecordId);
+        return;
+      }
+
+      if (userId != _currentUserId) {
+        LoggerFactory.info(
+            '🔊 DirectWatchlist: Cambio de otro usuario, ignorando');
+        return;
+      }
+
+      // Si no tenemos movie_id pero es un DELETE, intentar buscar por supabase record_id
+      if (movieId == null &&
+          payload.eventType == PostgresChangeEvent.delete &&
+          supabaseRecordId != null) {
+        LoggerFactory.info(
+            '🔍 DirectWatchlist: DELETE sin movie_id, buscando por record_id');
+        _handleDeleteBySupabaseId(supabaseRecordId);
+        return;
+      }
+
+      if (movieId == null) {
+        LoggerFactory.error(
+            '❌ DirectWatchlist: movie_id es null, ignorando evento');
+        return;
+      }
 
       switch (payload.eventType) {
         case PostgresChangeEvent.insert:
@@ -243,6 +316,14 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
           _handleUpdate(newRecord, oldRecord);
           break;
         case PostgresChangeEvent.delete:
+          LoggerFactory.info(
+              '🗑️ DirectWatchlist: ===== PROCESANDO DELETE =====');
+          LoggerFactory.info(
+              '🗑️ DirectWatchlist: Movie ID a eliminar: $movieId');
+          LoggerFactory.info(
+              '🗑️ DirectWatchlist: Estado actual antes del DELETE: ${state.keys.toList()}');
+
+          // Procesar DELETE inmediatamente sin delay
           _handleDelete(oldRecord);
           break;
         case PostgresChangeEvent.all:
@@ -251,11 +332,56 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
       }
     } catch (e) {
       LoggerFactory.error('❌ DirectWatchlist: Error manejando evento: $e');
+      LoggerFactory.error(
+          '❌ DirectWatchlist: Stack trace: ${StackTrace.current}');
+    }
+  }
+
+  /// Maneja eliminaciones por Supabase record ID cuando no tenemos movie_id
+  void _handleDeleteBySupabaseId(String supabaseRecordId) {
+    try {
+      LoggerFactory.info(
+          '🔍 DirectWatchlist: Buscando película por supabase_id: $supabaseRecordId');
+
+      // Buscar en el estado actual por el ID de Supabase
+      WatchlistMovie? movieToDelete;
+      int? movieIdToDelete;
+
+      for (final entry in state.entries) {
+        if (entry.value.id == supabaseRecordId) {
+          movieToDelete = entry.value;
+          movieIdToDelete = entry.key;
+          break;
+        }
+      }
+
+      if (movieToDelete != null && movieIdToDelete != null) {
+        LoggerFactory.info(
+            '✅ DirectWatchlist: Encontrada película por supabase_id: ${movieToDelete.movieTitle} (movie_id: $movieIdToDelete)');
+
+        state = Map.from(state)..remove(movieIdToDelete);
+
+        LoggerFactory.info(
+            '🎉 DirectWatchlist: PELÍCULA REMOVIDA por supabase_id: ${movieToDelete.movieTitle}');
+      } else {
+        LoggerFactory.warning(
+            '⚠️ DirectWatchlist: No se encontró película con supabase_id: $supabaseRecordId');
+      }
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ DirectWatchlist: Error eliminando por supabase_id: $e');
     }
   }
 
   /// Maneja inserciones de tiempo real
   void _handleInsert(Map<String, dynamic> record) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando inserción');
+      return;
+    }
+
     if (record['user_id'] != _currentUserId) return;
     if (record['is_deleted'] ?? false) return;
 
@@ -278,6 +404,13 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Maneja actualizaciones de tiempo real
   void _handleUpdate(
       Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando actualización');
+      return;
+    }
+
     if (newRecord['user_id'] != _currentUserId) return;
 
     final movieId = newRecord['movie_id'] as int;
@@ -296,13 +429,54 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Maneja eliminaciones de tiempo real
   void _handleDelete(Map<String, dynamic> record) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando eliminación');
+      return;
+    }
+
     if (record['user_id'] != _currentUserId) return;
 
     final movieId = record['movie_id'] as int;
-    LoggerFactory.info(
-        '🗑️ DirectWatchlist: Eliminando ${record['movie_title']}');
 
-    state = Map.from(state)..remove(movieId);
+    try {
+      LoggerFactory.info(
+          '🗑️ DirectWatchlist: ===== _handleDelete INICIADO =====');
+      LoggerFactory.info('🗑️ DirectWatchlist: Movie ID a procesar: $movieId');
+      LoggerFactory.info(
+          '🗑️ DirectWatchlist: Estado actual keys: ${state.keys.toList()}');
+      LoggerFactory.info(
+          '🗑️ DirectWatchlist: Estado actual contiene $movieId? ${state.containsKey(movieId)}');
+
+      if (state.containsKey(movieId)) {
+        final movie = state[movieId];
+        final oldState = Map<int, WatchlistMovie>.from(state);
+
+        LoggerFactory.info(
+            '🗑️ DirectWatchlist: Movie a eliminar: ${movie?.movieTitle} (ID: $movieId)');
+        LoggerFactory.info(
+            '🗑️ DirectWatchlist: Estado antes de eliminar: ${oldState.keys.length} películas');
+
+        state = Map.from(state)..remove(movieId);
+
+        LoggerFactory.info(
+            '🗑️ DirectWatchlist: Estado después de eliminar: ${state.keys.length} películas');
+        LoggerFactory.info(
+            '✅ DirectWatchlist: 🎉 PELÍCULA REMOVIDA REMOTAMENTE: ${movie?.movieTitle} (ID: $movieId)');
+        LoggerFactory.info(
+            '🗑️ DirectWatchlist: Nuevas keys del estado: ${state.keys.toList()}');
+      } else {
+        LoggerFactory.warning(
+            '⚠️ DirectWatchlist: Intento de remover película que no existe localmente: $movieId');
+        LoggerFactory.info(
+            '🗑️ DirectWatchlist: Películas actuales en estado: ${state.keys.toList()}');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ DirectWatchlist: Error en eliminación remota: $e');
+      LoggerFactory.error(
+          '❌ DirectWatchlist: Stack trace: ${StackTrace.current}');
+    }
   }
 
   /// Convierte un record de Supabase a WatchlistMovie
@@ -340,6 +514,13 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Habilita el provider después del login
   void enableAfterLogin() {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatchlist: Provider disposed, ignorando enableAfterLogin');
+      return;
+    }
+
     LoggerFactory.info('🔐 DirectWatchlist: Habilitando después del login...');
 
     final currentUser = Supabase.instance.client.auth.currentUser;

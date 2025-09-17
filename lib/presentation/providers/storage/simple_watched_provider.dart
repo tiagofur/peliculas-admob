@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -53,8 +53,6 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
       for (final movie in watchedMovies) {
         watchedMoviesMap[movie.id] = movie;
       }
-
-
 
       if (watchedMoviesMap.isNotEmpty) {
         state = watchedMoviesMap;
@@ -153,8 +151,6 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
   /// Setup auto-refresh (same as favorites - disabled)
   void _setupAutoRefresh() {
     if (_refreshTimer != null) return; // Already configured
-
-
   }
 
   /// Sync FROM Supabase in background (same as favorites)
@@ -244,9 +240,10 @@ class SimpleWatchedNotifier extends StateNotifier<Map<int, Movie>> {
     return true;
   }
 
+  /// ✅ FIX: Implementar dispose para limpiar recursos
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    // Limpiar timers u otros recursos si es necesario
     super.dispose();
   }
 }

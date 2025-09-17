@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../config/theme/app_theme.dart' as app_theme;
 import '../providers/auth_provider.dart';
 import '../providers/theme/theme_provider.dart';
+import '../views/debug/lists_debug_view.dart';
 import 'profile_avatar.dart';
 
 class CustomDrawer extends ConsumerWidget {
@@ -397,6 +398,22 @@ class CustomDrawer extends ConsumerWidget {
         onTap: () {
           Navigator.of(context).pop();
           context.push('/about');
+        },
+      ),
+
+      // Debug menu - only show in development
+      const Divider(height: 1),
+      ListTile(
+        leading: const Icon(Icons.bug_report, color: Colors.orange),
+        title: const Text('Debug: Reparar Listas'),
+        subtitle: const Text('Herramientas de diagnóstico y reparación'),
+        onTap: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ListsDebugView(),
+            ),
+          );
         },
       ),
     ];

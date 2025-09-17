@@ -22,7 +22,7 @@ class TriggerFreeCustomListsSync {
       final response = await _supabase
           .from('user_lists')
           .select('*')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .order('created_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -46,10 +46,12 @@ class TriggerFreeCustomListsSync {
     try {
       LoggerFactory.info('📥 [TriggerFree] Obteniendo items de lista: $listId');
 
+      // 🔧 FIXED: Agregar filtro por list_id que faltaba
       final response = await _supabase
           .from('user_list_items')
           .select('movie_id')
-          .eq("user_id", userId)
+          .eq('list_id', listId)
+          .eq('is_deleted', false)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -106,19 +108,21 @@ class TriggerFreeCustomListsSync {
     try {
       LoggerFactory.info('🔄 [TriggerFree] Actualizando lista: ${list.name}');
 
-      // final now = DateTime.now().toUtc().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
 
+      // 🔧 FIXED: Agregar filtro por list.id específico
       await _supabase
           .from('user_lists')
           .update({
             'name': list.name,
             'description': list.description,
-            // Campos opcionales - solo usar los que existen
-            // 'emoji': list.emoji,
-            // 'color': list.color,
-            // 'sync_version': 1,
+            'emoji': list.emoji,
+            'color_hex': _colorNameToHex(list.color),
+            'last_modified_at': now,
+            'sync_version': 1,
           })
-          .eq("user_id", userId);
+          .eq('id', list.id)
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ [TriggerFree] Lista actualizada: ${list.name}');
     } catch (e) {
@@ -132,14 +136,19 @@ class TriggerFreeCustomListsSync {
     try {
       LoggerFactory.info('🗑️ [TriggerFree] Eliminando lista: $listId');
 
-      // Primero eliminar todos los items de la lista
-      await _supabase.from('user_list_items').delete().eq("user_id", userId);
+      // 🔧 FIXED: Eliminar solo los items de ESTA lista específica
+      await _supabase
+          .from('user_list_items')
+          .delete()
+          .eq('list_id', listId)
+          .eq('user_id', userId);
 
-      // Luego eliminar la lista
+      // 🔧 FIXED: Eliminar solo ESTA lista específica
       await _supabase
           .from('user_lists')
           .delete()
-          .eq("user_id", userId);
+          .eq('id', listId)
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ [TriggerFree] Lista eliminada: $listId');
     } catch (e) {
@@ -149,28 +158,74 @@ class TriggerFreeCustomListsSync {
   }
 
   /// Añadir película a lista
-  Future<void> addMovieToList(String userId, String listId, int movieId) async {
+  Future<void> addMovieToList(String userId, String listId, int movieId,
+      {String? movieTitle}) async {
     try {
       LoggerFactory.info(
-          '➕ [TriggerFree] Agregando película $movieId a lista $listId');
+          '🔥 [TriggerFree] INICIO - Agregando película $movieId a lista $listId para user $userId');
 
-      // final now = DateTime.now().toUtc().toIso8601String();
+      final now = DateTime.now().toUtc().toIso8601String();
 
-      // Necesitamos obtener información de la película para movie_title
-      // Por ahora usaremos un título por defecto, pero idealmente debería obtenerse
-      await _supabase.from('user_list_items').insert({
+      final insertData = {
         'list_id': listId,
+        'user_id': userId,
         'movie_id': movieId,
-        'movie_title':
-            'Movie $movieId', // Título temporal - debería venir de TMDB
+        'movie_title': movieTitle ?? 'Movie $movieId',
+        'added_at': now,
+        'last_modified_at': now,
         'is_deleted': false,
         'sync_version': 1,
-      });
+      };
 
-      LoggerFactory.info('✅ [TriggerFree] Película agregada a lista');
-    } catch (e) {
+      LoggerFactory.info('📊 [TriggerFree] Datos a insertar: $insertData');
+
+      // Verificar si ya existe antes de insertar
+      LoggerFactory.info(
+          '🔍 [TriggerFree] Verificando si película ya existe...');
+      final existing = await _supabase
+          .from('user_list_items')
+          .select('id')
+          .eq('list_id', listId)
+          .eq('user_id', userId)
+          .eq('movie_id', movieId)
+          .eq('is_deleted', false);
+
+      LoggerFactory.info(
+          '📊 [TriggerFree] Consulta de existencia completada. Registros encontrados: ${existing.length}');
+      if (existing.isNotEmpty) {
+        LoggerFactory.info(
+            '⚠️ [TriggerFree] Película ya existe en la lista - omitiendo inserción');
+        LoggerFactory.info('📋 [TriggerFree] Registros existentes: $existing');
+        return;
+      }
+      LoggerFactory.info(
+          '✅ [TriggerFree] Película no existe previamente - procediendo con inserción');
+
+      LoggerFactory.info(
+          '🚀 [TriggerFree] Ejecutando inserción en user_list_items...');
+      final result =
+          await _supabase.from('user_list_items').insert(insertData).select();
+
+      LoggerFactory.info(
+          '✅ [TriggerFree] Inserción exitosa - resultado: $result');
+      LoggerFactory.info(
+          '🎉 [TriggerFree] Película $movieId agregada exitosamente a lista $listId');
+    } catch (e, stackTrace) {
       LoggerFactory.error(
-          '❌ [TriggerFree] Error agregando película a lista: $e');
+          '❌ [TriggerFree] ERROR CRÍTICO agregando película a lista: $e');
+      LoggerFactory.error('📍 [TriggerFree] StackTrace completo: $stackTrace');
+
+      // Log adicional de debugging para errores de Supabase
+      if (e.toString().contains('duplicate key') ||
+          e.toString().contains('unique constraint')) {
+        LoggerFactory.info(
+            'ℹ️ [TriggerFree] Error de clave duplicada - película ya podría existir');
+      } else if (e.toString().contains('foreign key') ||
+          e.toString().contains('not found')) {
+        LoggerFactory.error(
+            '🔑 [TriggerFree] Error de clave foránea - lista $listId podría no existir');
+      }
+
       rethrow;
     }
   }
@@ -182,10 +237,13 @@ class TriggerFreeCustomListsSync {
       LoggerFactory.info(
           '🗑️ [TriggerFree] Removiendo película $movieId de lista $listId');
 
+      // 🔧 FIXED: Filtrar por list_id Y movie_id específicos
       await _supabase
           .from('user_list_items')
           .delete()
-          .eq("user_id", userId);
+          .eq('list_id', listId)
+          .eq('movie_id', movieId)
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ [TriggerFree] Película removida de lista');
     } catch (e) {
@@ -198,10 +256,14 @@ class TriggerFreeCustomListsSync {
   /// Verifica si una película está en una lista específica
   Future<bool> isMovieInList(String userId, String listId, int movieId) async {
     try {
+      // 🔧 FIXED: Filtrar por list_id Y movie_id específicos
       final response = await _supabase
           .from('user_list_items')
           .select('movie_id')
-          .eq("user_id", userId)
+          .eq('list_id', listId)
+          .eq('movie_id', movieId)
+          .eq('user_id', userId)
+          .eq('is_deleted', false)
           .limit(1);
 
       return (response as List).isNotEmpty;

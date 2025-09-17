@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/sync_result.dart';
 import '../../domain/entities/syncable_watchlist_item.dart';
 import '../../domain/entities/watchlist_movie.dart';
+import '../../infrastructure/datasources/watchlist_hive_datasource.dart';
 import '../logging/logger_factory.dart';
 import 'entity_sync_manager.dart';
 import 'sync_operation.dart';
@@ -14,6 +17,7 @@ class WatchlistSyncManager extends EntitySyncManager<SyncableWatchlistItem> {
     SupabaseClient? supabaseClient,
   })  : _supabase = supabaseClient ?? Supabase.instance.client,
         super(entityType: 'watchlist');
+  final WatchlistHiveDatasource _localDatasource = WatchlistHiveDatasource();
 
   final SupabaseClient _supabase;
   static const String _tableName = 'user_watchlist';
@@ -46,23 +50,25 @@ class WatchlistSyncManager extends EntitySyncManager<SyncableWatchlistItem> {
   Future<List<SyncableWatchlistItem>> getRemoteChanges(
       {DateTime? since}) async {
     try {
-      var query = _supabase
-          .from(_tableName)
-          .select()
-          .eq("user_id", userId)
-          .order('last_modified_at', ascending: false);
+      final response = since != null
+          ? await _supabase
+              .from(_tableName)
+              .select()
+              .eq('user_id', userId)
+              .filter('last_modified_at', 'gte', since.toIso8601String())
+              .order('last_modified_at', ascending: false)
+          : await _supabase
+              .from(_tableName)
+              .select()
+              .eq('user_id', userId)
+              .order('last_modified_at', ascending: false);
 
-      // Add date filtering for incremental sync
       if (since != null) {
-        // TODO: Fix date filtering when Supabase API is clarified
-        // query = query.gte('last_modified_at', since.toIso8601String());
         LoggerFactory.info(
             '📅 Fetching remote changes since: ${since.toIso8601String()}');
-        LoggerFactory.warning(
-            '⚠️ Date filtering temporarily disabled - will fetch all records');
+      } else {
+        LoggerFactory.info('📅 Fetching all remote changes (no date filter)');
       }
-
-      final response = await query;
       final List<dynamic> data = response as List<dynamic>;
 
       final watchlistItems = data
@@ -182,17 +188,48 @@ class WatchlistSyncManager extends EntitySyncManager<SyncableWatchlistItem> {
 
   @override
   Future<List<ConflictInfo<SyncableWatchlistItem>>> detectConflicts() async {
-    // Para watchlist, los conflictos más comunes son cambios de prioridad
-    final conflicts = <ConflictInfo<SyncableWatchlistItem>>[];
-
     try {
-      // TODO: Implementar detección de conflictos cuando tengamos storage local
-      LoggerFactory.debug('🔍 No conflicts detected for watchlist');
+      final conflicts = <ConflictInfo<SyncableWatchlistItem>>[];
+
+      // Obtener elementos locales de la watchlist
+      final localMovies = await _localDatasource.loadWatchlistMovies();
+
+      // Obtener cambios remotos para comparar
+      final remoteItems = await getRemoteChanges();
+
+      for (final remoteItem in remoteItems) {
+        // Buscar si existe localmente
+        final localMovie = localMovies.cast<dynamic>().firstWhere(
+              (movie) => movie?.movie?.id == remoteItem.movieId,
+              orElse: () => null,
+            );
+
+        // Detectar conflicto si ambos existen pero tienen diferentes timestamps
+        final localTimestamp = localMovie?.addedDate ?? DateTime.now();
+        final remoteTimestamp = remoteItem.lastModifiedAt;
+
+        // Si las fechas difieren significativamente (más de 1 segundo), hay conflicto
+        if (localMovie != null &&
+            (localTimestamp.difference(remoteTimestamp).abs().inSeconds > 1)) {
+          conflicts.add(ConflictInfo<SyncableWatchlistItem>(
+            localEntity: SyncableWatchlistItem.fromWatchlistMovie(
+              userId: userId,
+              watchlistMovie: localMovie,
+            ),
+            remoteEntity: remoteItem,
+            conflictType: ConflictType.concurrentModification,
+            detectedAt: DateTime.now(),
+          ));
+        }
+      }
+
+      LoggerFactory.debug(
+          '🔍 Detected ${conflicts.length} watchlist conflicts');
+      return conflicts;
     } catch (e) {
       LoggerFactory.error('❌ Watchlist conflict detection failed: $e');
+      return [];
     }
-
-    return conflicts;
   }
 
   @override
@@ -267,10 +304,7 @@ class WatchlistSyncManager extends EntitySyncManager<SyncableWatchlistItem> {
     await queueOperation(
       type: SyncOperationType.delete,
       entityId: itemId,
-      data: {
-        'is_deleted': true,
-        'deleted_at': DateTime.now().toIso8601String()
-      },
+      data: {}, // No necesitamos datos adicionales para hard delete
       priority: 2, // Alta prioridad para eliminaciones
     );
 
@@ -310,21 +344,110 @@ class WatchlistSyncManager extends EntitySyncManager<SyncableWatchlistItem> {
   }
 
   /// Cambia la prioridad de un item específico
-  Future<void> changePriority(
-      String itemId, WatchlistPriority newPriority) async {
-    // TODO: Obtener el item actual del storage local
-    // Por ahora simulamos la operación
-    await queueOperation(
-      type: SyncOperationType.update,
-      entityId: itemId,
-      data: {
-        'priority': newPriority.toString().split('.').last,
-        'last_modified_at': DateTime.now().toIso8601String(),
-      },
-      priority: 5, // Prioridad media para cambios de prioridad
-    );
+  Future<void> changePriority(int movieId, int newPriority) async {
+    try {
+      // Obtener el elemento actual del almacenamiento local
+      final localMovies = await _localDatasource.loadWatchlistMovies();
+      final currentMovie = localMovies.firstWhere(
+        (movie) => movie.movieId == movieId,
+        orElse: () => throw Exception('Movie $movieId not found in watchlist'),
+      );
 
-    LoggerFactory.info(
-        '🔄 Changed watchlist item priority: $itemId -> ${newPriority.name}');
+      // Actualizar la prioridad localmente (convertir int a WatchlistPriority)
+      final priorityEnum = _convertIntToPriority(newPriority);
+      await _localDatasource.updateWatchlistPriority(movieId, priorityEnum);
+
+      // Crear el item sincronizable con los datos actuales
+      final now = DateTime.now();
+      final currentItem = SyncableWatchlistItem(
+        id: 'watchlist_${movieId}_$userId',
+        movieId: movieId,
+        movieTitle: currentMovie.movieTitle,
+        userId: userId,
+        priority: priorityEnum,
+        addedAt: currentMovie.addedAt,
+        createdAt: now,
+        lastModifiedAt: now,
+      );
+
+      await queueOperation(
+        type: SyncOperationType.update,
+        entityId: currentItem.id,
+        data: serializeForLocal(currentItem),
+        priority: 5, // Prioridad media para cambios de prioridad
+      );
+
+      LoggerFactory.info(
+          '🔄 Changed watchlist item priority: $movieId -> $newPriority');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to change watchlist priority: $e');
+      rethrow;
+    }
+  }
+
+  // =============================================
+  // MÉTODOS ABSTRACTOS REQUERIDOS
+  // =============================================
+
+  @override
+  Future<void> deleteEntity(String entityId) async {
+    try {
+      await _supabase.from(_tableName).delete().eq('id', entityId);
+
+      LoggerFactory.info('🗑️ Deleted watchlist entity: $entityId');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to delete watchlist entity $entityId: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getRemoteEntity(String entityId) async {
+    try {
+      final response = await _supabase
+          .from(_tableName)
+          .select()
+          .eq('id', entityId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ Failed to get remote watchlist entity $entityId: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<SyncableWatchlistItem> mergeEntities(SyncableWatchlistItem localEntity,
+      SyncableWatchlistItem remoteEntity) async {
+    // Estrategia simple: usar la entidad con timestamp más reciente
+    final localTimestamp = localEntity.lastModifiedAt;
+    final remoteTimestamp = remoteEntity.lastModifiedAt;
+
+    if (localTimestamp.isAfter(remoteTimestamp)) {
+      LoggerFactory.info(
+          '🔀 Merged watchlist: keeping local version for ${localEntity.movieTitle}');
+      return localEntity;
+    } else {
+      LoggerFactory.info(
+          '🔀 Merged watchlist: keeping remote version for ${remoteEntity.movieTitle}');
+      return remoteEntity;
+    }
+  }
+
+  /// Convierte un int a WatchlistPriority
+  WatchlistPriority _convertIntToPriority(int priority) {
+    switch (priority) {
+      case 0:
+      case 1:
+        return WatchlistPriority.alta;
+      case 2:
+        return WatchlistPriority.normal;
+      case 3:
+      default:
+        return WatchlistPriority.baja;
+    }
   }
 }

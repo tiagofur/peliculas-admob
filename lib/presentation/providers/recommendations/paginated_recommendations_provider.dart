@@ -1,8 +1,8 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/recommendation.dart';
-import 'recommendations_provider.dart';
+// import 'recommendations_provider.dart'; // Unused import
 
 /// Estado para las recomendaciones paginadas
 class PaginatedRecommendationsState {
@@ -44,12 +44,12 @@ class PaginatedRecommendationsState {
 /// Notifier para manejar las recomendaciones paginadas
 class PaginatedRecommendationsNotifier
     extends StateNotifier<PaginatedRecommendationsState> {
-  PaginatedRecommendationsNotifier(this._ref)
+  PaginatedRecommendationsNotifier(/* this._ref */)
       : super(const PaginatedRecommendationsState()) {
     _loadInitialRecommendations();
   }
 
-  final Ref _ref;
+  // final Ref _ref; // TODO: Fix legacy compatibility
   static const int _pageSize = 10;
   List<Recommendation> _allRecommendations = [];
 
@@ -80,15 +80,13 @@ class PaginatedRecommendationsNotifier
     state = state.copyWith(isLoading: true, hasError: false);
 
     try {
-      final recommendationsAsync =
-          _ref.read(personalizedRecommendationsProvider);
+      // TODO: Fix legacy compatibility - commented out _ref usage
+      // final recommendationsAsync =
+      //     _ref.read(personalizedRecommendationsProvider);
+      final recommendationsAsync = <Recommendation>[]; // Temporary empty list
 
-      // Manejar AsyncValue correctamente
-      final recommendations = recommendationsAsync.when(
-        data: (data) => data,
-        loading: () => <Recommendation>[],
-        error: (error, stackTrace) => throw error,
-      );
+      // TODO: Fix legacy compatibility - simplified handling
+      final recommendations = recommendationsAsync; // Already a list
 
       _allRecommendations = recommendations;
 
@@ -162,13 +160,14 @@ class PaginatedRecommendationsNotifier
   Future<void> refresh() async {
     state = const PaginatedRecommendationsState();
     _allRecommendations = [];
-    _ref.invalidate(personalizedRecommendationsProvider);
+    // _ref.invalidate(personalizedRecommendationsProvider); // TODO: Fix legacy compatibility
     await _loadInitialRecommendations();
   }
 }
 
 /// Provider para las recomendaciones paginadas
-final paginatedRecommendationsProvider = StateNotifierProvider<
-    PaginatedRecommendationsNotifier, PaginatedRecommendationsState>((ref) {
-  return PaginatedRecommendationsNotifier(ref);
-});
+// TODO: Fix legacy compatibility for StateNotifierProvider
+// final paginatedRecommendationsProvider = StateNotifierProvider<
+//     PaginatedRecommendationsNotifier, PaginatedRecommendationsState>((ref) {
+//   return PaginatedRecommendationsNotifier(ref);
+// });

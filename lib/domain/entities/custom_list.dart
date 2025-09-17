@@ -123,8 +123,7 @@ class CustomList {
 
   /// Convierte a JSON para Supabase (usando snake_case)
   Map<String, dynamic> toSupabaseJson() {
-    return {
-      'id': id,
+    final json = {
       'name': name,
       'description': description,
       'emoji': emoji,
@@ -134,8 +133,23 @@ class CustomList {
       'color_hex': colorHex ?? color,
       'default_type': defaultType,
       'created_at': createdAt.toIso8601String(),
-      'updated_at': lastModifiedAt.toIso8601String(),
     };
+
+    // Solo incluir el ID si es un UUID válido (para evitar errores de Supabase)
+    if (_isValidUuid(id)) {
+      json['id'] = id;
+    }
+
+    return json;
+  }
+
+  /// Verifica si una cadena es un UUID válido
+  bool _isValidUuid(String value) {
+    final uuidRegex = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+    return uuidRegex.hasMatch(value);
   }
 
   @override

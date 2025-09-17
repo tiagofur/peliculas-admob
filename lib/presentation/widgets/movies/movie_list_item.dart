@@ -94,7 +94,7 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
 
   void _removeFromList() {
     ref
-        .read(allListsProvider.notifier)
+        .read(allListsNotifierProvider.notifier)
         .removeMovieFromList(widget.listId, widget.movie.id);
 
     // Notificar al widget padre para que actualice la UI

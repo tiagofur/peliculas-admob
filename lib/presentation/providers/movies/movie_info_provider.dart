@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../domain/entities/movie.dart';
 import 'movies_repository_provider.dart';
@@ -46,9 +46,6 @@ class MovieMapNotifier extends StateNotifier<Map<String, Movie>> {
     state = {...state, movieId: movie};
   }
 
-  @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
-  }
+  // Note: StateNotifier doesn't have a dispose method to override
+  // Resources are automatically cleaned up when the provider is disposed
 }

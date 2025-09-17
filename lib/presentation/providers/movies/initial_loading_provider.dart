@@ -3,48 +3,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/logger_factory.dart';
 import 'movies_providers.dart';
 
+// TEMPORAL: Variable global para el timestamp inicial
+DateTime? _appStartTime;
+
 final initialLoadingProvider = Provider<bool>((ref) {
   final nowPlayingState = ref.watch(nowPlayingMoviesProvider);
   final popularState = ref.watch(popularMoviesProvider);
-  final topRatedState = ref.watch(topRatedMoviesProvider);
   final upcomingState = ref.watch(upcomingMoviesProvider);
 
-  LoggerFactory.debug('InitialLoadingProvider: Checking states:');
-  LoggerFactory.debug(
-      'InitialLoadingProvider: nowPlaying: ${nowPlayingState.movies.length} movies, state: ${nowPlayingState.state}');
-  LoggerFactory.debug(
-      'InitialLoadingProvider: popular: ${popularState.movies.length} movies, state: ${popularState.state}');
-  LoggerFactory.debug(
-      'InitialLoadingProvider: topRated: ${topRatedState.movies.length} movies, state: ${topRatedState.state}');
-  LoggerFactory.debug(
-      'InitialLoadingProvider: upcoming: ${upcomingState.movies.length} movies, state: ${upcomingState.state}');
+  // Inicializar timestamp si no existe
+  _appStartTime ??= DateTime.now();
 
-  // Si algún provider está cargando o en estado inicial
-  final isAnyLoadingOrInitial = nowPlayingState.state == MoviesState.loading ||
-      popularState.state == MoviesState.loading ||
-      topRatedState.state == MoviesState.loading ||
-      upcomingState.state == MoviesState.loading ||
-      nowPlayingState.state == MoviesState.initial ||
-      popularState.state == MoviesState.initial ||
-      topRatedState.state == MoviesState.initial ||
-      upcomingState.state == MoviesState.initial;
+  LoggerFactory.debug('InitialLoadingProvider CON TIMEOUT:');
+  LoggerFactory.debug(
+      '  - nowPlaying: ${nowPlayingState.movies.length} movies, estado: ${nowPlayingState.state}');
+  LoggerFactory.debug(
+      '  - popular: ${popularState.movies.length} movies, estado: ${popularState.state}');
+  LoggerFactory.debug(
+      '  - upcoming: ${upcomingState.movies.length} movies, estado: ${upcomingState.state}');
 
-  // Si todas las listas están vacías
-  final allEmpty = nowPlayingState.movies.isEmpty &&
-      popularState.movies.isEmpty &&
-      topRatedState.movies.isEmpty &&
-      upcomingState.movies.isEmpty;
+  // Timeout de 5 segundos - después de eso, mostrar la app independientemente del estado
+  final timeoutReached =
+      DateTime.now().difference(_appStartTime!).inSeconds > 5;
 
-  // Solo mostrar loading si están en estado inicial/loading O si están vacías pero no en error
-  final hasErrors = nowPlayingState.state == MoviesState.error ||
-      popularState.state == MoviesState.error ||
-      topRatedState.state == MoviesState.error ||
+  // Si al menos uno tiene películas cargadas, no mostrar loading
+  final hasAnyMovies = nowPlayingState.movies.isNotEmpty ||
+      popularState.movies.isNotEmpty ||
+      upcomingState.movies.isNotEmpty;
+
+  // Si todos están en estado de error, no mostrar loading
+  final allError = nowPlayingState.state == MoviesState.error &&
+      popularState.state == MoviesState.error &&
       upcomingState.state == MoviesState.error;
 
-  final result = (isAnyLoadingOrInitial || allEmpty) && !hasErrors;
+  // Lógica: mostrar loading SOLO si no hay películas Y no se ha alcanzado el timeout Y no todos están en error
+  final result = !hasAnyMovies && !timeoutReached && !allError;
 
   LoggerFactory.debug(
-      'InitialLoadingProvider: isAnyLoadingOrInitial: $isAnyLoadingOrInitial, allEmpty: $allEmpty, hasErrors: $hasErrors, result: $result');
+      'InitialLoadingProvider RESULTADO: $result (hasAnyMovies: $hasAnyMovies, timeoutReached: $timeoutReached, allError: $allError)');
 
   return result;
 });

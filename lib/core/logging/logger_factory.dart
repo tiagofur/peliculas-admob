@@ -129,7 +129,7 @@ class LoggerFactory {
     bool fatal = false,
   }) async {
     final message =
-        'Critical error${context != null ? ' in $context' : ''}: $error';
+        'Critical error${context != null ? ' in $context' : ''}: ${error ?? 'null'}';
     final cleanData = _cleanDataMap(data);
 
     // Log locally

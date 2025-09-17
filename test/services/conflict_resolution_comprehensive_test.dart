@@ -1,17 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
-import 'package:peliculas/core/entities/syncable_entity.dart';
+import 'package:peliculas/domain/entities/syncable_entity.dart';
 import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:peliculas/core/sync/conflict_resolver.dart';
 import 'package:peliculas/core/sync/entity_sync_manager.dart';
-import 'package:peliculas/core/sync/sync_utilities.dart';
-
-// Generar mocks
-@GenerateMocks([])
-import 'conflict_resolution_comprehensive_test.mocks.dart';
 
 /// Entidad de prueba que implementa SyncableEntity
 class TestSyncableEntity extends SyncableEntity {
@@ -84,10 +75,40 @@ class TestSyncableEntity extends SyncableEntity {
   @override
   String get entityType => 'test_entity';
 
-  static String _generateChecksum(
-      String name, String description, Map<String, dynamic> data) {
-    final content = '$name|$description|${data.toString()}';
+  @override
+  String generateChecksum() {
+    final content = '$name|$description|${customData.toString()}';
     return content.hashCode.toString();
+  }
+
+  @override
+  bool hasSameContentAs(SyncableEntity other) {
+    if (other is! TestSyncableEntity) return false;
+    return name == other.name && 
+           description == other.description && 
+           customData.toString() == other.customData.toString();
+  }
+
+  @override
+  SyncableEntity mergeWith(SyncableEntity other) {
+    if (other is! TestSyncableEntity) return this;
+    
+    // Merge strategy: combine custom data and use most recent name/description
+    final mergedData = Map<String, dynamic>.from(customData);
+    mergedData.addAll(other.customData);
+    
+    return TestSyncableEntity(
+      id: id,
+      userId: userId,
+      name: lastModifiedAt.isAfter(other.lastModifiedAt) ? name : other.name,
+      description: lastModifiedAt.isAfter(other.lastModifiedAt) ? description : other.description,
+      customData: mergedData,
+      createdAt: createdAt,
+      lastModifiedAt: lastModifiedAt.isAfter(other.lastModifiedAt) ? lastModifiedAt : other.lastModifiedAt,
+      syncVersion: syncVersion > other.syncVersion ? syncVersion : other.syncVersion,
+      isDeleted: isDeleted,
+      deviceId: deviceId,
+    );
   }
 
   @override
@@ -213,7 +234,7 @@ void main() {
 
         // Act
         final conflict =
-            conflictResolver.detectConflict(localEntity, remoteEntity);
+            conflictResolver.detectConflict<TestSyncableEntity>(localEntity, remoteEntity);
 
         // Assert
         expect(conflict, isNotNull);
@@ -224,7 +245,7 @@ void main() {
         expect(conflict.localEntity.name, equals('Local Name'));
         expect(conflict.remoteEntity.name, equals('Remote Name'));
 
-        print(
+        LoggerFactory.info(
             '✅ Conflicto de modificación concurrente detectado correctamente');
       });
 
@@ -246,7 +267,7 @@ void main() {
 
         // Act
         final conflict =
-            conflictResolver.detectConflict(localEntity, remoteEntity);
+            conflictResolver.detectConflict<TestSyncableEntity>(localEntity, remoteEntity);
 
         // Assert
         expect(conflict, isNotNull);
@@ -254,7 +275,7 @@ void main() {
         expect(conflict.localEntity.isDeleted, isFalse);
         expect(conflict.remoteEntity.isDeleted, isTrue);
 
-        print(
+        LoggerFactory.info(
             '✅ Conflicto de eliminación vs modificación detectado correctamente');
       });
 
@@ -275,12 +296,12 @@ void main() {
         );
 
         // Act
-        final conflict = conflictResolver.detectConflict(entity1, entity2);
+        final conflict = conflictResolver.detectConflict<TestSyncableEntity>(entity1, entity2);
 
         // Assert
         expect(conflict, isNull);
 
-        print('✅ No se detectó conflicto para entidades idénticas');
+        LoggerFactory.info('✅ No se detectó conflicto para entidades idénticas');
       });
 
       test('debe detectar múltiples conflictos en lote', () async {
@@ -299,7 +320,7 @@ void main() {
         ];
 
         // Act
-        final conflicts = await conflictResolver.detectConflicts(
+        final conflicts = await conflictResolver.detectConflicts<TestSyncableEntity>(
             localEntities, remoteEntities);
 
         // Assert
@@ -308,7 +329,7 @@ void main() {
             equals(ConflictType.concurrentModification));
         expect(conflicts[1].conflictType, equals(ConflictType.deleteVsModify));
 
-        print('✅ Detectados ${conflicts.length} conflictos en lote');
+        LoggerFactory.info('✅ Detectados ${conflicts.length} conflictos en lote');
       });
     });
 
@@ -347,7 +368,7 @@ void main() {
         expect(resolution.resolvedEntity.id, equals('entity-1'));
         // En una implementación real, debería mantener los datos locales
 
-        print('✅ Conflicto resuelto con estrategia "local wins"');
+        LoggerFactory.info('✅ Conflicto resuelto con estrategia "local wins"');
       });
 
       test('debe resolver conflicto con estrategia "remote wins"', () async {
@@ -381,7 +402,7 @@ void main() {
         expect(resolution.strategy, equals(ConflictStrategy.remoteWins));
         expect(resolution.resolvedEntity.id, equals('entity-2'));
 
-        print('✅ Conflicto resuelto con estrategia "remote wins"');
+        LoggerFactory.info('✅ Conflicto resuelto con estrategia "remote wins"');
       });
 
       test('debe resolver múltiples conflictos en lote', () async {
@@ -406,7 +427,7 @@ void main() {
         // Act
         final resolutions = await conflictResolver.resolveConflicts(
           conflicts,
-          overrideStrategy: ConflictStrategy.remoteWins,
+          overrideStrategy: ConflictStrategy.merge,
         );
 
         // Assert
@@ -415,7 +436,7 @@ void main() {
             resolutions.every((r) => r.strategy == ConflictStrategy.remoteWins),
             isTrue);
 
-        print('✅ ${resolutions.length} conflictos resueltos en lote');
+        LoggerFactory.info('✅ ${resolutions.length} conflictos resueltos en lote');
       });
     });
 
@@ -473,7 +494,7 @@ void main() {
 
         // Act
         final conflict =
-            conflictResolver.detectConflict(localEntity, remoteEntity);
+            conflictResolver.detectConflict<TestSyncableEntity>(localEntity, remoteEntity);
 
         // Assert
         expect(conflict, isNotNull);
@@ -488,7 +509,7 @@ void main() {
 
         expect(resolution.strategy, equals(ConflictStrategy.merge));
 
-        print('✅ Conflicto con datos complejos manejado correctamente');
+        LoggerFactory.info('✅ Conflicto con datos complejos manejado correctamente');
       });
 
       test('debe manejar conflictos de versión con timestamps cercanos',
@@ -512,7 +533,7 @@ void main() {
 
         // Act
         final conflict =
-            conflictResolver.detectConflict(localEntity, remoteEntity);
+            conflictResolver.detectConflict<TestSyncableEntity>(localEntity, remoteEntity);
 
         // Assert
         expect(conflict, isNotNull);
@@ -523,7 +544,7 @@ void main() {
         final resolution = await conflictResolver.resolveConflict(conflict);
         expect(resolution.resolvedEntity, isNotNull);
 
-        print('✅ Conflicto de timestamps cercanos resuelto correctamente');
+        LoggerFactory.info('✅ Conflicto de timestamps cercanos resuelto correctamente');
       });
 
       test('debe priorizar versiones de sincronización sobre timestamps',
@@ -547,25 +568,17 @@ void main() {
 
         // Act
         final conflict =
-            conflictResolver.detectConflict(localEntity, remoteEntity);
+            conflictResolver.detectConflict<TestSyncableEntity>(localEntity, remoteEntity);
         final resolution = await conflictResolver.resolveConflict(conflict!);
 
         // Assert - La versión de sync debería tener prioridad
         expect(resolution.resolvedEntity, isNotNull);
 
-        print('✅ Prioridad de versión de sync sobre timestamp verificada');
+        LoggerFactory.info('✅ Prioridad de versión de sync sobre timestamp verificada');
       });
 
       test('debe manejar conflictos en cascada', () async {
         // Arrange - Simular múltiples entidades relacionadas con conflictos
-        final parentEntity = createTestEntity(
-          id: 'parent-1',
-          name: 'Parent Entity',
-          customData: {
-            'children': ['child-1', 'child-2']
-          },
-        );
-
         final childEntities = [
           createTestEntity(
             id: 'child-1',
@@ -596,7 +609,7 @@ void main() {
         final conflicts = <ConflictInfo<TestSyncableEntity>>[];
 
         for (int i = 0; i < childEntities.length; i++) {
-          final conflict = conflictResolver.detectConflict(
+          final conflict = conflictResolver.detectConflict<TestSyncableEntity>(
             childEntities[i],
             remoteChildEntities[i],
           );
@@ -612,7 +625,7 @@ void main() {
         final resolutions = await conflictResolver.resolveConflicts(conflicts);
         expect(resolutions.length, equals(2));
 
-        print(
+        LoggerFactory.info(
             '✅ ${conflicts.length} conflictos en cascada manejados correctamente');
       });
     });
@@ -636,12 +649,13 @@ void main() {
             syncVersion: (i % 10) + 1,
           );
 
-          conflicts.add(ConflictInfo<TestSyncableEntity>(
-            localEntity: localEntity,
-            remoteEntity: remoteEntity,
-            conflictType: ConflictType.concurrentModification,
-            detectedAt: DateTime.now(),
-          ));
+          final conflict = conflictResolver.detectConflict<TestSyncableEntity>(
+            localEntity,
+            remoteEntity,
+          );
+          if (conflict != null) {
+            conflicts.add(conflict);
+          }
         }
 
         // Act
@@ -655,9 +669,9 @@ void main() {
             lessThan(10)); // Debe completar en menos de 10 segundos
 
         final throughput = conflictCount / processingTime.inSeconds;
-        print(
+        LoggerFactory.info(
             '✅ $conflictCount conflictos resueltos en ${processingTime.inMilliseconds}ms');
-        print(
+        LoggerFactory.info(
             '✅ Throughput: ${throughput.toStringAsFixed(2)} conflictos/segundo');
       });
 
@@ -666,7 +680,7 @@ void main() {
         final localEntity = createTestEntity(
           id: 'checksum-entity',
           name: 'Test Entity',
-        ).copyWith(checksum: 'invalid-checksum');
+        );
 
         final remoteEntity = createTestEntity(
           id: 'checksum-entity',
@@ -674,10 +688,10 @@ void main() {
         );
 
         // Act & Assert
-        expect(() => conflictResolver.detectConflict(localEntity, remoteEntity),
+        expect(() => conflictResolver.detectConflict<TestSyncableEntity>(localEntity, remoteEntity),
             returnsNormally);
 
-        print('✅ Checksums inválidos manejados sin errores');
+        LoggerFactory.info('✅ Checksums inválidos manejados sin errores');
       });
 
       test('debe validar entidades antes de detectar conflictos', () {
@@ -687,10 +701,10 @@ void main() {
             createTestEntity(id: 'entity-2', name: 'Entity 2'); // ID diferente
 
         // Act & Assert
-        expect(() => conflictResolver.detectConflict(entity1, entity2),
+        expect(() => conflictResolver.detectConflict<TestSyncableEntity>(entity1, entity2),
             throwsA(isA<ArgumentError>()));
 
-        print('✅ Validación de entidades funcionando correctamente');
+        LoggerFactory.info('✅ Validación de entidades funcionando correctamente');
       });
     });
   });

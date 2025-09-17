@@ -406,15 +406,121 @@ class _StreamingDashboardPageState extends State<StreamingDashboardPage>
 
 
 
-  void _searchContent(String query) {
+  void _searchContent(String query) async {
     if (query.trim().isEmpty) return;
 
     _analytics.trackEvent(AnalyticsEventType.searchQuery, {'query': query});
 
-    // TODO: Implement content search functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Searching for "$query"...'),
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Searching for "$query"...'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      // Get user's subscribed platform IDs
+      final subscribedPlatformIds = _subscriptions
+          .where((sub) => sub.isActive)
+          .map((sub) => sub.platformId)
+          .toList();
+
+      // Search content across subscribed platforms
+      final searchResults = await _streamingManager.searchContent(
+        query: query,
+        platformIds: subscribedPlatformIds.isNotEmpty ? subscribedPlatformIds : null,
+      );
+
+      if (mounted) {
+        if (searchResults.isNotEmpty) {
+          // Show results dialog or navigate to results page
+          _showSearchResults(query, searchResults);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No results found for "$query"'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Search failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showSearchResults(String query, List<StreamingSearchResult> results) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Search Results for "$query"'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: ListView.builder(
+            itemCount: results.length,
+            itemBuilder: (context, index) {
+              final result = results[index];
+              return ListTile(
+                leading: result.imageUrl != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.network(
+                          result.imageUrl!,
+                          width: 40,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.movie),
+                        ),
+                      )
+                    : const Icon(Icons.movie),
+                title: Text(result.title),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(result.platform.name),
+                    if (result.year != null) Text('${result.year}'),
+                    if (result.availability.isAvailable)
+                      Text(
+                        result.availability.isFree
+                            ? 'Free'
+                            : result.availability.requiresSubscription
+                                ? 'Included'
+                                : 'Rent/Buy',
+                        style: TextStyle(
+                          color: result.availability.isFree
+                              ? Colors.green
+                              : Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _streamingManager.launchPlatformApp(
+                    result.platform,
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

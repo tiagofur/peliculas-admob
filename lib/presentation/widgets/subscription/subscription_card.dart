@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../domain/entities/user_subscription.dart';
+
 import '../../../core/streaming/streaming.dart';
+import '../../../domain/entities/user_subscription.dart';
+import 'edit_subscription_dialog.dart';
 
 /// Card widget to display individual subscription information
 class SubscriptionCard extends StatelessWidget {
@@ -28,7 +30,9 @@ class SubscriptionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: EdgeInsets.all(compact ? 12 : 16),
-          child: compact ? _buildCompactLayout(context) : _buildFullLayout(context),
+          child: compact
+              ? _buildCompactLayout(context)
+              : _buildFullLayout(context),
         ),
       ),
     );
@@ -51,9 +55,10 @@ class SubscriptionCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           subscription.platformName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       ),
                       _buildStatusBadge(context),
@@ -65,8 +70,8 @@ class SubscriptionCard extends StatelessWidget {
                       Text(
                         subscription.type.displayName,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                              color: Colors.grey[600],
+                            ),
                       ),
                       const SizedBox(width: 8),
                       Container(
@@ -81,8 +86,8 @@ class SubscriptionCard extends StatelessWidget {
                       Text(
                         subscription.formattedBillingCycle,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                              color: Colors.grey[600],
+                            ),
                       ),
                     ],
                   ),
@@ -164,8 +169,8 @@ class SubscriptionCard extends StatelessWidget {
                     child: Text(
                       subscription.platformName,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ),
                   _buildStatusBadge(context, compact: true),
@@ -177,16 +182,16 @@ class SubscriptionCard extends StatelessWidget {
                   Text(
                     subscription.formattedMonthlyCost,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     subscription.type.displayName,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                          color: Colors.grey[600],
+                        ),
                   ),
                 ],
               ),
@@ -205,7 +210,7 @@ class SubscriptionCard extends StatelessWidget {
 
   Widget _buildPlatformIcon({double size = 40}) {
     final platform = StreamingUtils.getPlatformById(subscription.platformId);
-    
+
     return Container(
       width: size,
       height: size,
@@ -255,7 +260,7 @@ class SubscriptionCard extends StatelessWidget {
     final isActive = subscription.isCurrentlyActive;
     final color = isActive ? Colors.green : Colors.grey;
     final text = isActive ? 'Active' : 'Inactive';
-    
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 6 : 8,
@@ -293,8 +298,8 @@ class SubscriptionCard extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
           ],
         ),
@@ -302,9 +307,9 @@ class SubscriptionCard extends StatelessWidget {
         Text(
           value,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w500,
-            color: color,
-          ),
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
         ),
       ],
     );
@@ -312,7 +317,7 @@ class SubscriptionCard extends StatelessWidget {
 
   Widget _buildExpiringWarning(BuildContext context) {
     final daysLeft = subscription.daysUntilNextBilling ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -347,10 +352,10 @@ class SubscriptionCard extends StatelessWidget {
   String _getNextBillingText() {
     final nextBilling = subscription.nextBillingDate;
     if (nextBilling == null) return 'Unknown';
-    
+
     final now = DateTime.now();
     final difference = nextBilling.difference(now).inDays;
-    
+
     if (difference < 0) {
       return 'Overdue';
     } else if (difference == 0) {
@@ -376,10 +381,14 @@ class SubscriptionCard extends StatelessWidget {
   }
 
   void _editSubscription(BuildContext context) {
-    // TODO: Implement edit subscription dialog
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Edit subscription feature coming soon'),
+    showDialog(
+      context: context,
+      builder: (context) => EditSubscriptionDialog(
+        subscription: subscription,
+        onSave: (updatedSubscription) {
+          onUpdate?.call(updatedSubscription);
+          Navigator.of(context).pop();
+        },
       ),
     );
   }
@@ -395,14 +404,19 @@ class SubscriptionCard extends StatelessWidget {
           children: [
             _buildDetailRow('Type', subscription.type.displayName),
             _buildDetailRow('Monthly Cost', subscription.formattedMonthlyCost),
-            _buildDetailRow('Billing Cycle', subscription.formattedBillingCycle),
+            _buildDetailRow(
+                'Billing Cycle', subscription.formattedBillingCycle),
             _buildDetailRow('Start Date', _formatDate(subscription.startDate)),
             if (subscription.nextBillingDate != null)
-              _buildDetailRow('Next Billing', _formatDate(subscription.nextBillingDate!)),
-            _buildDetailRow('Status', subscription.isCurrentlyActive ? 'Active' : 'Inactive'),
-            _buildDetailRow('Auto Renew', subscription.autoRenew ? 'Yes' : 'No'),
+              _buildDetailRow(
+                  'Next Billing', _formatDate(subscription.nextBillingDate!)),
+            _buildDetailRow('Status',
+                subscription.isCurrentlyActive ? 'Active' : 'Inactive'),
+            _buildDetailRow(
+                'Auto Renew', subscription.autoRenew ? 'Yes' : 'No'),
             if (subscription.subscriptionDurationDays > 0)
-              _buildDetailRow('Duration', '${subscription.subscriptionDurationDays} days'),
+              _buildDetailRow(
+                  'Duration', '${subscription.subscriptionDurationDays} days'),
           ],
         ),
         actions: [

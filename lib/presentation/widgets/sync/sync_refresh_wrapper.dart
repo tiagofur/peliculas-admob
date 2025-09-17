@@ -100,8 +100,8 @@ class SyncFloatingActionButton extends ConsumerWidget {
     }
 
     Color? backgroundColor;
-    IconData icon;
-    String tooltip;
+    IconData icon = Icons.sync; // Valor por defecto
+    String tooltip = 'Sincronizar'; // Valor por defecto
     VoidCallback? onPressed;
 
     switch (syncState.status) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -37,6 +38,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Cargar películas vistas directamente desde Supabase
   Future<void> _loadWatchedFromSupabase() async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando carga inicial');
+      return;
+    }
+
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
@@ -70,6 +78,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Toggle watched usando solo operaciones directas
   Future<void> toggleWatched(Movie movie) async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando toggle');
+      return;
+    }
+
     final isWatched = state[movie.id] != null;
     final currentUser = Supabase.instance.client.auth.currentUser;
 
@@ -120,11 +135,25 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Refresh manual de vistas
   Future<void> refresh() async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando refresh');
+      return;
+    }
+
     await _loadWatchedFromSupabase();
   }
 
   /// Método de compatibilidad para widgets que usan loadNextPage
   Future<List<Movie>> loadNextPage() async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando loadNextPage');
+      return [];
+    }
+
     await _loadWatchedFromSupabase();
     return state.values.toList();
   }
@@ -167,6 +196,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar cambios de tiempo real desde Supabase
   void _handleRealtimeChange(PostgresChangePayload payload) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando evento real-time');
+      return;
+    }
+
     try {
       LoggerFactory.info('🔊 DirectWatched: ===== CAMBIO RECIBIDO =====');
       LoggerFactory.info(
@@ -262,6 +298,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar inserción remota (otro dispositivo agregó vista)
   void _handleRemoteInsert(Map<String, dynamic> data) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando inserción remota');
+      return;
+    }
+
     try {
       final movieId = data['movie_id'] as int;
       final isDeleted = data['is_deleted'] as bool? ?? false;
@@ -283,6 +326,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar eliminación remota (otro dispositivo removió vista)
   void _handleRemoteDelete(int movieId) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando eliminación remota');
+      return;
+    }
+
     try {
       LoggerFactory.info(
           '🗑️ DirectWatched: ===== _handleRemoteDelete INICIADO =====');
@@ -324,6 +374,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar eliminación usando el ID de Supabase cuando no tenemos movie_id
   void _handleDeleteBySupabaseId(String supabaseRecordId) async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando eliminación por Supabase ID');
+      return;
+    }
+
     try {
       LoggerFactory.info(
           '🗑️ DirectWatched: ===== _handleDeleteBySupabaseId INICIADO =====');
@@ -381,6 +438,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar actualización remota
   void _handleRemoteUpdate(Map<String, dynamic> data) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando actualización remota');
+      return;
+    }
+
     try {
       final movieId = data['movie_id'] as int;
       final isDeleted = data['is_deleted'] as bool? ?? false;
@@ -400,6 +464,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
   /// Manejar evento genérico de tiempo real (PostgresChangeEvent.all)
   void _handleGenericRealtimeEvent(
       PostgresChangePayload payload, Map<String, dynamic>? data, int? movieId) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando evento genérico');
+      return;
+    }
+
     try {
       LoggerFactory.info(
           '🔄 DirectWatched: Procesando evento genérico: ${payload.eventType}');
@@ -478,6 +549,13 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Habilitar cuando el usuario se autentica
   Future<void> enableAfterLogin() async {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectWatched: Provider disposed, ignorando enableAfterLogin');
+      return;
+    }
+
     LoggerFactory.info(
         'DirectWatched: Usuario autenticado, cargando vistas...');
 

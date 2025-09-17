@@ -49,7 +49,6 @@ void main() {
       when(mockUser.id).thenReturn('test-user-id');
 
       migrationService = ListsMigrationService(
-        mockRepository,
         mockPrefs,
         mockLocalDataSource,
         mockSupabaseClient,

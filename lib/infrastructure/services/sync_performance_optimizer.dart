@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/server_timestamp_utils.dart';
 import '../../domain/entities/custom_list.dart';
 import '../../domain/entities/movie.dart';
 
@@ -33,7 +34,7 @@ class SyncPerformanceOptimizer {
 
       // 2. Obtener favoritos remotos modificados desde última sincronización
       var remoteQuery =
-          _supabase.from('user_favorites').select().filter('user_id', 'eq', userId);
+          _supabase.from('user_favorites').select().eq('user_id', userId);
 
       if (lastSync != null) {
         remoteQuery =
@@ -63,7 +64,8 @@ class SyncPerformanceOptimizer {
       }
 
       // 4. Actualizar timestamp de última sincronización
-      _lastSyncTimes['favorites_$userId'] = DateTime.now();
+      _lastSyncTimes['favorites_$userId'] =
+          await ServerTimestampUtils.getSyncTimestamp();
 
       results.totalTime = stopwatch.elapsed;
       results.isSuccess = true;
@@ -91,7 +93,7 @@ class SyncPerformanceOptimizer {
 
       // Consulta optimizada con índices
       var remoteQuery =
-          _supabase.from('user_watched_movies').select().filter('user_id', 'eq', userId);
+          _supabase.from('user_watched_movies').select().eq('user_id', userId);
 
       if (lastSync != null) {
         remoteQuery =
@@ -119,7 +121,8 @@ class SyncPerformanceOptimizer {
         }
       }
 
-      _lastSyncTimes['watched_$userId'] = DateTime.now();
+      _lastSyncTimes['watched_$userId'] =
+          await ServerTimestampUtils.getSyncTimestamp();
       results.totalTime = stopwatch.elapsed;
       results.isSuccess = true;
     } catch (e) {
@@ -146,7 +149,7 @@ class SyncPerformanceOptimizer {
 
       // Consulta optimizada para listas
       var listsQuery =
-          _supabase.from('user_lists').select().filter('user_id', 'eq', userId);
+          _supabase.from('user_lists').select().eq('user_id', userId);
 
       if (lastSync != null) {
         listsQuery =
@@ -177,7 +180,8 @@ class SyncPerformanceOptimizer {
         }
       }
 
-      _lastSyncTimes['lists_$userId'] = DateTime.now();
+      _lastSyncTimes['lists_$userId'] =
+          await ServerTimestampUtils.getSyncTimestamp();
       results.totalTime = stopwatch.elapsed;
       results.isSuccess = true;
     } catch (e) {
@@ -197,14 +201,18 @@ class SyncPerformanceOptimizer {
   }) async {
     if (movies.isEmpty) return;
 
+    // Obtener timestamp del servidor una vez para todo el batch
+    final serverTimestamp = await ServerTimestampUtils.getSyncTimestamp();
+    final timestampString = serverTimestamp.toIso8601String();
+
     final data = movies
         .map((movie) => {
               'user_id': userId,
               'movie_id': movie.id,
               'movie_title': movie.title,
               'movie_poster_path': movie.posterPath,
-              'created_at': DateTime.now().toIso8601String(),
-              'last_modified_at': DateTime.now().toIso8601String(),
+              'created_at': timestampString,
+              'last_modified_at': timestampString,
             })
         .toList();
 
@@ -244,7 +252,7 @@ class SyncPerformanceOptimizer {
       final response = await _supabase
           .from(table)
           .select()
-          .filter('user_id', 'eq', userId)
+          .eq('user_id', userId)
           .order(orderBy)
           .range(offset, offset + pageSize - 1);
 
@@ -323,15 +331,19 @@ class SyncPerformanceOptimizer {
     final result = SyncBatchResult();
 
     try {
+      // Obtener timestamp del servidor para el batch
+      final serverTimestamp = await ServerTimestampUtils.getSyncTimestamp();
+      final timestampString = serverTimestamp.toIso8601String();
+
       final data = batch
           .map((movie) => {
                 'user_id': userId,
                 'movie_id': movie.id,
                 'movie_title': movie.title,
                 'movie_poster_path': movie.posterPath,
-                'watched_at': DateTime.now().toIso8601String(),
-                'created_at': DateTime.now().toIso8601String(),
-                'last_modified_at': DateTime.now().toIso8601String(),
+                'watched_at': timestampString,
+                'created_at': timestampString,
+                'last_modified_at': timestampString,
               })
           .toList();
 

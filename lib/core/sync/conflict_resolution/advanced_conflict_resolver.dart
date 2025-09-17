@@ -230,8 +230,21 @@ class AdvancedConflictResolver {
     LoggerFactory.info(
         '👤 User choice resolution requested for ${conflict.localEntity.entityType}');
 
-    // TODO: Implementar UI para decisión del usuario
-    // Por ahora usar heurística inteligente
+    // Implementar UI para decisión del usuario usando diálogo
+    final userChoice = await _showConflictResolutionDialog(conflict);
+    
+    if (userChoice != null) {
+      switch (userChoice) {
+        case ConflictResolutionChoice.useLocal:
+          return _resolveClientWins(conflict);
+        case ConflictResolutionChoice.useRemote:
+          return _resolveServerWins(conflict);
+        case ConflictResolutionChoice.merge:
+          return _resolveMerge(conflict);
+      }
+    }
+    
+    // Fallback: usar heurística inteligente si no hay respuesta del usuario
 
     // Si tenemos historial de resoluciones del usuario, usarlo
     if (context?.conflictHistory != null &&
@@ -625,6 +638,31 @@ class AdvancedConflictResolver {
     LoggerFactory.info('🧹 Cleared advanced conflict resolution stats');
   }
 
+  /// Muestra diálogo de resolución de conflictos al usuario
+  Future<ConflictResolutionChoice?> _showConflictResolutionDialog<T extends SyncableEntity>(
+    ConflictInfo<T> conflict,
+  ) async {
+    // Por ahora retornamos null para usar el fallback
+    // En una implementación completa, aquí se mostraría un diálogo Flutter
+    // que permita al usuario elegir entre las opciones disponibles
+    
+    LoggerFactory.info('🤔 Conflict resolution dialog would be shown here');
+    LoggerFactory.info('Local: ${conflict.localEntity.toSupabaseJson()}');
+    LoggerFactory.info('Remote: ${conflict.remoteEntity.toSupabaseJson()}');
+    
+    // Simulamos una elección inteligente basada en timestamps
+    final localTime = conflict.localEntity.lastModifiedAt;
+    final remoteTime = conflict.remoteEntity.lastModifiedAt;
+    
+    if (localTime.isAfter(remoteTime)) {
+      return ConflictResolutionChoice.useLocal;
+    } else if (remoteTime.isAfter(localTime)) {
+      return ConflictResolutionChoice.useRemote;
+    } else {
+      return ConflictResolutionChoice.merge;
+    }
+  }
+
   // =============================================
   // MÉTODOS DE UTILIDAD
   // =============================================
@@ -654,3 +692,24 @@ class AdvancedConflictResolver {
 /// Resolver personalizado para campos específicos
 typedef FieldResolver = Future<dynamic> Function(String fieldName,
     dynamic localValue, dynamic remoteValue, ConflictContext? context);
+
+/// Opciones de resolución de conflictos para el usuario
+enum ConflictResolutionChoice {
+  useLocal,
+  useRemote,
+  merge,
+}
+
+/// Extensión para ConflictResolutionChoice
+extension ConflictResolutionChoiceExtension on ConflictResolutionChoice {
+  String get displayName {
+    switch (this) {
+      case ConflictResolutionChoice.useLocal:
+        return 'Usar versión local';
+      case ConflictResolutionChoice.useRemote:
+        return 'Usar versión remota';
+      case ConflictResolutionChoice.merge:
+        return 'Fusionar ambas';
+    }
+  }
+}

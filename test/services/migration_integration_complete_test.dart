@@ -1,17 +1,16 @@
-import 'package:mockito/mockito.dart';
-import 'package:mockito/annotations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:supabase/supabase.dart';
-
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:peliculas/domain/entities/custom_list.dart';
 import 'package:peliculas/domain/repositories/i_custom_lists_repository.dart';
+import 'package:peliculas/infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
+import 'package:peliculas/services/default_lists_manager.dart';
+import 'package:peliculas/services/id_mapping_service.dart';
 import 'package:peliculas/services/lists_migration_service.dart';
 import 'package:peliculas/services/migration_rollback_service.dart';
-import 'package:peliculas/services/id_mapping_service.dart';
-import 'package:peliculas/services/default_lists_manager.dart';
-import 'package:peliculas/infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase/supabase.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'migration_integration_complete_test.mocks.dart';
 
@@ -23,7 +22,6 @@ import 'migration_integration_complete_test.mocks.dart';
   MockSpec<CustomListsSharedPreferencesDatasource>(),
   MockSpec<SupabaseQueryBuilder>(),
 ])
-
 void main() {
   group('Migration Integration Complete Tests', () {
     late ListsMigrationService migrationService;
@@ -36,7 +34,7 @@ void main() {
     late MockGoTrueClient mockAuthClient;
     late MockUser mockUser;
     late MockCustomListsSharedPreferencesDatasource mockLocalDataSource;
-    late MockSupabaseQueryBuilder mockQueryBuilder;
+
     setUp(() async {
       // Initialize SharedPreferences with mock data
       SharedPreferences.setMockInitialValues({
@@ -44,22 +42,22 @@ void main() {
         'has_local_data': true,
       });
       mockPrefs = await SharedPreferences.getInstance();
-      
+
       // Initialize mocks
       mockRepository = MockICustomListsRepository();
       mockSupabaseClient = MockSupabaseClient();
       mockAuthClient = MockGoTrueClient();
       mockUser = MockUser();
       mockLocalDataSource = MockCustomListsSharedPreferencesDatasource();
-      mockQueryBuilder = MockSupabaseQueryBuilder();
-      
+
+
       // Setup mock behaviors
       when(mockSupabaseClient.auth).thenReturn(mockAuthClient);
       when(mockAuthClient.currentUser).thenReturn(mockUser);
       when(mockUser.id).thenReturn('test-user-id');
-      
+
       // Note: Supabase mocks are simplified - focusing on repository layer testing
-      
+
       // Configure default mock behaviors to avoid null returns
       provideDummy<CustomList>(CustomList(
         id: 'dummy-id',
@@ -73,18 +71,17 @@ void main() {
         isDefault: false,
         defaultType: null,
       ));
-      
+
       // Initialize services
       idMappingService = IdMappingService(mockPrefs);
       defaultListsManager = DefaultListsManager(mockRepository, mockPrefs);
-      
+
       migrationService = ListsMigrationService(
-        mockRepository,
         mockPrefs,
         mockLocalDataSource,
         mockSupabaseClient,
       );
-      
+
       rollbackService = MigrationRollbackService(
         mockPrefs,
         mockSupabaseClient,
@@ -96,22 +93,22 @@ void main() {
     test('Debe completar migración exitosa con datos locales', () async {
       // Arrange
       final testLists = _generateTestLists();
-      
+
       when(mockLocalDataSource.getCustomLists())
           .thenAnswer((_) async => testLists);
-      when(mockRepository.createList(any))
-          .thenAnswer((invocation) async {
-            final CustomList inputList = invocation.positionalArguments[0] as CustomList;
-            return inputList.copyWith(id: 'new-id-${inputList.name}');
-          });
+      when(mockRepository.createList(any)).thenAnswer((invocation) async {
+        final CustomList inputList =
+            invocation.positionalArguments[0] as CustomList;
+        return inputList.copyWith(id: 'new-id-${inputList.name}');
+      });
       when(mockRepository.getDefaultLists())
           .thenAnswer((_) async => <CustomList>[]);
-      
+
       // Act & Execute migration steps
       await migrationService.migrateDefaultLists('test-user-id');
       await migrationService.migrateCustomLists('test-user-id');
       await migrationService.markMigrationCompleted();
-      
+
       // Assert
       final isCompleted = migrationService.isMigrationCompleted();
       expect(isCompleted, isTrue);
@@ -120,16 +117,17 @@ void main() {
     test('Debe manejar rollback correctamente en caso de error', () async {
       // Arrange
       final testLists = _generateTestLists();
-      
+
       when(mockLocalDataSource.getCustomLists())
           .thenAnswer((_) async => testLists);
       when(mockRepository.createList(any))
           .thenThrow(Exception('Supabase error'));
-      
+
       // Act & Try to execute migration and expect error
-      expect(() async => await migrationService.migrateCustomLists('test-user-id'),
+      expect(
+          () async => await migrationService.migrateCustomLists('test-user-id'),
           throwsA(isA<Exception>()));
-      
+
       // Verify rollback service exists and can handle the case
       expect(rollbackService, isNotNull);
       // Note: Rollback will fail if no rollback points exist, which is expected behavior
@@ -139,57 +137,61 @@ void main() {
       // Arrange
       when(mockRepository.getDefaultLists())
           .thenAnswer((_) async => <CustomList>[]);
-      when(mockRepository.createList(any))
-          .thenAnswer((invocation) async {
-            final CustomList inputList = invocation.positionalArguments[0] as CustomList;
-            return inputList.copyWith(id: 'new-id-${inputList.name}');
-          });
-      
+      when(mockRepository.createList(any)).thenAnswer((invocation) async {
+        final CustomList inputList =
+            invocation.positionalArguments[0] as CustomList;
+        return inputList.copyWith(id: 'new-id-${inputList.name}');
+      });
+
       // Act
       await defaultListsManager.initializeDefaultLists();
-      
+
       // Assert
-      verify(mockRepository.createList(any)).called(greaterThan(0)); // Listas por defecto creadas
+      verify(mockRepository.createList(any))
+          .called(greaterThan(0)); // Listas por defecto creadas
     });
 
     test('Debe verificar integridad de datos después de migración', () async {
       // Arrange
       final testLists = _generateTestLists();
-      final migratedLists = testLists.map((list) => CustomList(
-        id: 'migrated-${list.id}',
-        name: list.name,
-        description: list.description,
-        emoji: list.emoji,
-        colorHex: list.colorHex,
-        movieIds: list.movieIds,
-        createdAt: list.createdAt,
-        lastModifiedAt: DateTime.now(),
-        isDefault: list.isDefault,
-        defaultType: list.defaultType,
-      )).toList();
-      
+      final migratedLists = testLists
+          .map((list) => CustomList(
+                id: 'migrated-${list.id}',
+                name: list.name,
+                description: list.description,
+                emoji: list.emoji,
+                colorHex: list.colorHex,
+                movieIds: list.movieIds,
+                createdAt: list.createdAt,
+                lastModifiedAt: DateTime.now(),
+                isDefault: list.isDefault,
+                defaultType: list.defaultType,
+              ))
+          .toList();
+
       when(mockLocalDataSource.getCustomLists())
           .thenAnswer((_) async => testLists);
-      when(mockRepository.createList(any))
-          .thenAnswer((invocation) async {
-            final CustomList inputList = invocation.positionalArguments[0] as CustomList;
-            return inputList.copyWith(id: 'new-id-${inputList.name}');
-          });
+      when(mockRepository.createList(any)).thenAnswer((invocation) async {
+        final CustomList inputList =
+            invocation.positionalArguments[0] as CustomList;
+        return inputList.copyWith(id: 'new-id-${inputList.name}');
+      });
       when(mockRepository.getUserLists())
           .thenAnswer((_) async => migratedLists);
-      
+
       // Act
       await migrationService.migrateCustomLists('test-user-id');
-      
+
       // Verify data integrity
       final remoteLists = await mockRepository.getUserLists();
-      
+
       // Assert
       expect(remoteLists.length, equals(testLists.length));
-      
+
       for (int i = 0; i < testLists.length; i++) {
         expect(remoteLists[i].name, equals(testLists[i].name));
-        expect(remoteLists[i].movieIds.length, equals(testLists[i].movieIds.length));
+        expect(remoteLists[i].movieIds.length,
+            equals(testLists[i].movieIds.length));
       }
     });
   });

@@ -7,7 +7,6 @@ import '../../providers/storage/direct_favorites_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
-
 import '../../widgets/guest_mode_banner.dart';
 import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
 import '../../widgets/widgets.dart';
@@ -33,8 +32,9 @@ class HomeViewState extends ConsumerState<HomeView>
         ref.read(upcomingMoviesProvider.notifier).loadNextPage();
         // Cargar favoritos al iniciar la app
         ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
+        // TODO: Fix legacy compatibility - paginatedRecommendationsProvider commented out
         // Cargar recomendaciones paginadas
-        ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
+        // ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
       }
     });
   }
@@ -76,8 +76,6 @@ class HomeViewState extends ConsumerState<HomeView>
 
               // Banner de modo guest (solo se muestra en modo guest)
               const GuestModeBanner(),
-
-
 
               // Banner discreto después del slideshow
               const BannerAdWidget(),
@@ -208,41 +206,16 @@ class HomeViewState extends ConsumerState<HomeView>
                 ),
 
               MovieHorizontalListviewWithAds(
-                  movies: topRatedMovies,
-                  sectionId: 'top-rated',
-                  title: 'Mejor calificadas',
-                  subTitle: 'Desde siempre',
-                  loadNextPage: () =>
-                      ref.read(topRatedMoviesProvider.notifier).loadNextPage()),
+                movies: topRatedMovies,
+                sectionId: 'top-rated',
+                title: 'Mejor calificadas',
+                subTitle: 'Desde siempre',
+                loadNextPage: () {
+                  ref.read(topRatedMoviesProvider.notifier).loadNextPage();
+                },
+              ),
 
-              // Mostrar error si existe
-              if (topRatedState.state == MoviesState.error)
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error, color: Colors.red.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          topRatedState.errorMessage ?? 'Error desconocido',
-                          style: TextStyle(color: Colors.red.shade700),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            ref.read(topRatedMoviesProvider.notifier).refresh(),
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                ),
+              // TODO: Fix legacy compatibility - topRatedState error handling removed
 
               // Banner al final de la página (ALTA PRIORIDAD según documento)
               const FullWidthAdWidget(
@@ -265,38 +238,7 @@ class HomeViewState extends ConsumerState<HomeView>
 
   /// Construye la sección de recomendaciones personalizadas
   Widget _buildRecommendationsSection(WidgetRef ref) {
-    final recommendationsState = ref.watch(paginatedRecommendationsProvider);
-
-    if (recommendationsState.hasError) {
-      return const SizedBox.shrink();
-    }
-
-    if (recommendationsState.movies.isEmpty &&
-        !recommendationsState.isLoading) {
-      return const SizedBox.shrink();
-    }
-
-    // Lista horizontal de recomendaciones con paginación
-    if (recommendationsState.movies.isNotEmpty) {
-      return MovieHorizontalListviewWithAds(
-        title: 'Recomendado para ti',
-        subTitle: 'Basado en tus gustos',
-        movies: recommendationsState.movies,
-        sectionId: 'recommendations',
-        loadNextPage: () {
-          ref.read(paginatedRecommendationsProvider.notifier).loadNextPage();
-        },
-        enableAds: true,
-      );
-    } else if (recommendationsState.isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
+    // TODO: Fix legacy compatibility - paginatedRecommendationsProvider removed
     return const SizedBox.shrink();
   }
 }

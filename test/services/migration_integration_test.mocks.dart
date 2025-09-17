@@ -3,14 +3,14 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i5;
+import 'dart:async' as _i6;
 
 import 'package:mockito/mockito.dart' as _i1;
 import 'package:mockito/src/dummies.dart' as _i7;
 import 'package:peliculas/domain/entities/custom_list.dart' as _i2;
 import 'package:peliculas/domain/entities/list_item.dart' as _i3;
 import 'package:peliculas/domain/repositories/i_custom_lists_repository.dart'
-    as _i6;
+    as _i5;
 import 'package:peliculas/infrastructure/datasources/custom_lists_shared_preferences_datasource.dart'
     as _i8;
 import 'package:supabase/supabase.dart' as _i4;
@@ -146,233 +146,127 @@ class _FakeRealtimeChannel_10 extends _i1.SmartFake
         );
 }
 
-class _FakeGoTrueAdminApi_11 extends _i1.SmartFake
-    implements _i4.GoTrueAdminApi {
-  _FakeGoTrueAdminApi_11(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeGoTrueMFAApi_12 extends _i1.SmartFake implements _i4.GoTrueMFAApi {
-  _FakeGoTrueMFAApi_12(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeAuthResponse_13 extends _i1.SmartFake implements _i4.AuthResponse {
-  _FakeAuthResponse_13(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeOAuthResponse_14 extends _i1.SmartFake implements _i4.OAuthResponse {
-  _FakeOAuthResponse_14(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeAuthSessionUrlResponse_15 extends _i1.SmartFake
-    implements _i4.AuthSessionUrlResponse {
-  _FakeAuthSessionUrlResponse_15(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeResendResponse_16 extends _i1.SmartFake
-    implements _i4.ResendResponse {
-  _FakeResendResponse_16(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeUserResponse_17 extends _i1.SmartFake implements _i4.UserResponse {
-  _FakeUserResponse_17(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeObject_18 extends _i1.SmartFake implements Object {
-  _FakeObject_18(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakePostgrestQueryBuilder_19<T1> extends _i1.SmartFake
-    implements _i4.PostgrestQueryBuilder<T1> {
-  _FakePostgrestQueryBuilder_19(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakePostgrestBuilder_20<T1, S, R> extends _i1.SmartFake
-    implements _i4.PostgrestBuilder<T1, S, R> {
-  _FakePostgrestBuilder_20(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeUri_21 extends _i1.SmartFake implements Uri {
-  _FakeUri_21(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
-class _FakeFuture_22<T1> extends _i1.SmartFake implements _i5.Future<T1> {
-  _FakeFuture_22(
-    Object parent,
-    Invocation parentInvocation,
-  ) : super(
-          parent,
-          parentInvocation,
-        );
-}
-
 /// A class which mocks [ICustomListsRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockICustomListsRepository extends _i1.Mock
-    implements _i6.ICustomListsRepository {
-  MockICustomListsRepository() {
-    _i1.throwOnMissingStub(this);
-  }
-
+    implements _i5.ICustomListsRepository {
   @override
-  _i5.Future<List<_i2.CustomList>> getUserLists() => (super.noSuchMethod(
+  _i6.Future<List<_i2.CustomList>> getUserLists() => (super.noSuchMethod(
         Invocation.method(
           #getUserLists,
           [],
         ),
-        returnValue: _i5.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
-      ) as _i5.Future<List<_i2.CustomList>>);
+        returnValue: _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+      ) as _i6.Future<List<_i2.CustomList>>);
 
   @override
-  _i5.Future<_i2.CustomList?> getListById(String? listId) =>
+  _i6.Future<_i2.CustomList?> getListById(String? listId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getListById,
           [listId],
         ),
-        returnValue: _i5.Future<_i2.CustomList?>.value(),
-      ) as _i5.Future<_i2.CustomList?>);
+        returnValue: _i6.Future<_i2.CustomList?>.value(),
+        returnValueForMissingStub: _i6.Future<_i2.CustomList?>.value(),
+      ) as _i6.Future<_i2.CustomList?>);
 
   @override
-  _i5.Future<_i2.CustomList> createList(_i2.CustomList? list) =>
+  _i6.Future<_i2.CustomList> createList(_i2.CustomList? list) =>
       (super.noSuchMethod(
         Invocation.method(
           #createList,
           [list],
         ),
-        returnValue: _i5.Future<_i2.CustomList>.value(_FakeCustomList_0(
+        returnValue: _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
           this,
           Invocation.method(
             #createList,
             [list],
           ),
         )),
-      ) as _i5.Future<_i2.CustomList>);
+        returnValueForMissingStub:
+            _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
+          this,
+          Invocation.method(
+            #createList,
+            [list],
+          ),
+        )),
+      ) as _i6.Future<_i2.CustomList>);
 
   @override
-  _i5.Future<_i2.CustomList> updateList(_i2.CustomList? list) =>
+  _i6.Future<_i2.CustomList> updateList(_i2.CustomList? list) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateList,
           [list],
         ),
-        returnValue: _i5.Future<_i2.CustomList>.value(_FakeCustomList_0(
+        returnValue: _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
           this,
           Invocation.method(
             #updateList,
             [list],
           ),
         )),
-      ) as _i5.Future<_i2.CustomList>);
+        returnValueForMissingStub:
+            _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
+          this,
+          Invocation.method(
+            #updateList,
+            [list],
+          ),
+        )),
+      ) as _i6.Future<_i2.CustomList>);
 
   @override
-  _i5.Future<void> deleteList(String? listId) => (super.noSuchMethod(
+  _i6.Future<void> deleteList(String? listId) => (super.noSuchMethod(
         Invocation.method(
           #deleteList,
           [listId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<List<_i2.CustomList>> getDefaultLists() => (super.noSuchMethod(
+  _i6.Future<List<_i2.CustomList>> getDefaultLists() => (super.noSuchMethod(
         Invocation.method(
           #getDefaultLists,
           [],
         ),
-        returnValue: _i5.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
-      ) as _i5.Future<List<_i2.CustomList>>);
+        returnValue: _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+      ) as _i6.Future<List<_i2.CustomList>>);
 
   @override
-  _i5.Future<void> initializeDefaultLists(String? userId) =>
+  _i6.Future<void> initializeDefaultLists(String? userId) =>
       (super.noSuchMethod(
         Invocation.method(
           #initializeDefaultLists,
           [userId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<List<_i3.ListItem>> getListItems(String? listId) =>
+  _i6.Future<List<_i3.ListItem>> getListItems(String? listId) =>
       (super.noSuchMethod(
         Invocation.method(
           #getListItems,
           [listId],
         ),
-        returnValue: _i5.Future<List<_i3.ListItem>>.value(<_i3.ListItem>[]),
-      ) as _i5.Future<List<_i3.ListItem>>);
+        returnValue: _i6.Future<List<_i3.ListItem>>.value(<_i3.ListItem>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i3.ListItem>>.value(<_i3.ListItem>[]),
+      ) as _i6.Future<List<_i3.ListItem>>);
 
   @override
-  _i5.Future<_i3.ListItem> addMovieToList(
+  _i6.Future<_i3.ListItem> addMovieToList(
     String? listId,
     int? movieId, {
     int? position,
@@ -386,7 +280,7 @@ class MockICustomListsRepository extends _i1.Mock
           ],
           {#position: position},
         ),
-        returnValue: _i5.Future<_i3.ListItem>.value(_FakeListItem_1(
+        returnValue: _i6.Future<_i3.ListItem>.value(_FakeListItem_1(
           this,
           Invocation.method(
             #addMovieToList,
@@ -397,10 +291,22 @@ class MockICustomListsRepository extends _i1.Mock
             {#position: position},
           ),
         )),
-      ) as _i5.Future<_i3.ListItem>);
+        returnValueForMissingStub:
+            _i6.Future<_i3.ListItem>.value(_FakeListItem_1(
+          this,
+          Invocation.method(
+            #addMovieToList,
+            [
+              listId,
+              movieId,
+            ],
+            {#position: position},
+          ),
+        )),
+      ) as _i6.Future<_i3.ListItem>);
 
   @override
-  _i5.Future<void> removeMovieFromList(
+  _i6.Future<void> removeMovieFromList(
     String? listId,
     int? movieId,
   ) =>
@@ -412,12 +318,12 @@ class MockICustomListsRepository extends _i1.Mock
             movieId,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> reorderListItems(
+  _i6.Future<void> reorderListItems(
     String? listId,
     List<_i3.ListItem>? items,
   ) =>
@@ -429,12 +335,12 @@ class MockICustomListsRepository extends _i1.Mock
             items,
           ],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<bool> isMovieInList(
+  _i6.Future<bool> isMovieInList(
     String? listId,
     int? movieId,
   ) =>
@@ -446,40 +352,43 @@ class MockICustomListsRepository extends _i1.Mock
             movieId,
           ],
         ),
-        returnValue: _i5.Future<bool>.value(false),
-      ) as _i5.Future<bool>);
+        returnValue: _i6.Future<bool>.value(false),
+        returnValueForMissingStub: _i6.Future<bool>.value(false),
+      ) as _i6.Future<bool>);
 
   @override
-  _i5.Stream<List<_i2.CustomList>> watchUserLists() => (super.noSuchMethod(
+  _i6.Stream<List<_i2.CustomList>> watchUserLists() => (super.noSuchMethod(
         Invocation.method(
           #watchUserLists,
           [],
         ),
-        returnValue: _i5.Stream<List<_i2.CustomList>>.empty(),
-      ) as _i5.Stream<List<_i2.CustomList>>);
+        returnValue: _i6.Stream<List<_i2.CustomList>>.empty(),
+        returnValueForMissingStub: _i6.Stream<List<_i2.CustomList>>.empty(),
+      ) as _i6.Stream<List<_i2.CustomList>>);
 
   @override
-  _i5.Stream<List<_i3.ListItem>> watchListItems(String? listId) =>
+  _i6.Stream<List<_i3.ListItem>> watchListItems(String? listId) =>
       (super.noSuchMethod(
         Invocation.method(
           #watchListItems,
           [listId],
         ),
-        returnValue: _i5.Stream<List<_i3.ListItem>>.empty(),
-      ) as _i5.Stream<List<_i3.ListItem>>);
+        returnValue: _i6.Stream<List<_i3.ListItem>>.empty(),
+        returnValueForMissingStub: _i6.Stream<List<_i3.ListItem>>.empty(),
+      ) as _i6.Stream<List<_i3.ListItem>>);
 
   @override
-  _i5.Future<void> syncLists() => (super.noSuchMethod(
+  _i6.Future<void> syncLists() => (super.noSuchMethod(
         Invocation.method(
           #syncLists,
           [],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<_i2.CustomList> resolveConflict(
+  _i6.Future<_i2.CustomList> resolveConflict(
     _i2.CustomList? localList,
     _i2.CustomList? remoteList,
   ) =>
@@ -491,7 +400,7 @@ class MockICustomListsRepository extends _i1.Mock
             remoteList,
           ],
         ),
-        returnValue: _i5.Future<_i2.CustomList>.value(_FakeCustomList_0(
+        returnValue: _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
           this,
           Invocation.method(
             #resolveConflict,
@@ -501,96 +410,120 @@ class MockICustomListsRepository extends _i1.Mock
             ],
           ),
         )),
-      ) as _i5.Future<_i2.CustomList>);
+        returnValueForMissingStub:
+            _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
+          this,
+          Invocation.method(
+            #resolveConflict,
+            [
+              localList,
+              remoteList,
+            ],
+          ),
+        )),
+      ) as _i6.Future<_i2.CustomList>);
 
   @override
-  _i5.Future<List<_i2.CustomList>> getLocalLists() => (super.noSuchMethod(
+  _i6.Future<List<_i2.CustomList>> getLocalLists() => (super.noSuchMethod(
         Invocation.method(
           #getLocalLists,
           [],
         ),
-        returnValue: _i5.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
-      ) as _i5.Future<List<_i2.CustomList>>);
+        returnValue: _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+      ) as _i6.Future<List<_i2.CustomList>>);
 
   @override
-  _i5.Future<void> saveListLocally(_i2.CustomList? list) => (super.noSuchMethod(
+  _i6.Future<void> saveListLocally(_i2.CustomList? list) => (super.noSuchMethod(
         Invocation.method(
           #saveListLocally,
           [list],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<List<Map<String, dynamic>>> getPendingOperations() =>
+  _i6.Future<List<Map<String, dynamic>>> getPendingOperations() =>
       (super.noSuchMethod(
         Invocation.method(
           #getPendingOperations,
           [],
         ),
-        returnValue: _i5.Future<List<Map<String, dynamic>>>.value(
+        returnValue: _i6.Future<List<Map<String, dynamic>>>.value(
             <Map<String, dynamic>>[]),
-      ) as _i5.Future<List<Map<String, dynamic>>>);
+        returnValueForMissingStub: _i6.Future<List<Map<String, dynamic>>>.value(
+            <Map<String, dynamic>>[]),
+      ) as _i6.Future<List<Map<String, dynamic>>>);
 
   @override
-  _i5.Future<void> markOperationAsSynced(String? operationId) =>
+  _i6.Future<void> markOperationAsSynced(String? operationId) =>
       (super.noSuchMethod(
         Invocation.method(
           #markOperationAsSynced,
           [operationId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<bool> hasInternetConnection() => (super.noSuchMethod(
+  _i6.Future<bool> hasInternetConnection() => (super.noSuchMethod(
         Invocation.method(
           #hasInternetConnection,
           [],
         ),
-        returnValue: _i5.Future<bool>.value(false),
-      ) as _i5.Future<bool>);
+        returnValue: _i6.Future<bool>.value(false),
+        returnValueForMissingStub: _i6.Future<bool>.value(false),
+      ) as _i6.Future<bool>);
 
   @override
-  _i5.Future<String> getSyncStatus() => (super.noSuchMethod(
+  _i6.Future<String> getSyncStatus() => (super.noSuchMethod(
         Invocation.method(
           #getSyncStatus,
           [],
         ),
-        returnValue: _i5.Future<String>.value(_i7.dummyValue<String>(
+        returnValue: _i6.Future<String>.value(_i7.dummyValue<String>(
           this,
           Invocation.method(
             #getSyncStatus,
             [],
           ),
         )),
-      ) as _i5.Future<String>);
+        returnValueForMissingStub:
+            _i6.Future<String>.value(_i7.dummyValue<String>(
+          this,
+          Invocation.method(
+            #getSyncStatus,
+            [],
+          ),
+        )),
+      ) as _i6.Future<String>);
 
   @override
-  _i5.Future<void> clearLocalCache() => (super.noSuchMethod(
+  _i6.Future<void> clearLocalCache() => (super.noSuchMethod(
         Invocation.method(
           #clearLocalCache,
           [],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }
 
 /// A class which mocks [SupabaseClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
-  MockSupabaseClient() {
-    _i1.throwOnMissingStub(this);
-  }
-
   @override
   _i4.FunctionsClient get functions => (super.noSuchMethod(
         Invocation.getter(#functions),
         returnValue: _FakeFunctionsClient_2(
+          this,
+          Invocation.getter(#functions),
+        ),
+        returnValueForMissingStub: _FakeFunctionsClient_2(
           this,
           Invocation.getter(#functions),
         ),
@@ -612,6 +545,10 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
           this,
           Invocation.getter(#storage),
         ),
+        returnValueForMissingStub: _FakeSupabaseStorageClient_3(
+          this,
+          Invocation.getter(#storage),
+        ),
       ) as _i4.SupabaseStorageClient);
 
   @override
@@ -627,6 +564,10 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
   _i4.RealtimeClient get realtime => (super.noSuchMethod(
         Invocation.getter(#realtime),
         returnValue: _FakeRealtimeClient_4(
+          this,
+          Invocation.getter(#realtime),
+        ),
+        returnValueForMissingStub: _FakeRealtimeClient_4(
           this,
           Invocation.getter(#realtime),
         ),
@@ -648,6 +589,10 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
           this,
           Invocation.getter(#rest),
         ),
+        returnValueForMissingStub: _FakePostgrestClient_5(
+          this,
+          Invocation.getter(#rest),
+        ),
       ) as _i4.PostgrestClient);
 
   @override
@@ -663,6 +608,7 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
   Map<String, String> get headers => (super.noSuchMethod(
         Invocation.getter(#headers),
         returnValue: <String, String>{},
+        returnValueForMissingStub: <String, String>{},
       ) as Map<String, String>);
 
   @override
@@ -681,6 +627,10 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
           this,
           Invocation.getter(#auth),
         ),
+        returnValueForMissingStub: _FakeGoTrueClient_6(
+          this,
+          Invocation.getter(#auth),
+        ),
       ) as _i4.GoTrueClient);
 
   @override
@@ -696,6 +646,13 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
             [table],
           ),
         ),
+        returnValueForMissingStub: _FakeSupabaseQueryBuilder_7(
+          this,
+          Invocation.method(
+            #from,
+            [table],
+          ),
+        ),
       ) as _i4.SupabaseQueryBuilder);
 
   @override
@@ -705,6 +662,13 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
           [schema],
         ),
         returnValue: _FakeSupabaseQuerySchema_8(
+          this,
+          Invocation.method(
+            #schema,
+            [schema],
+          ),
+        ),
+        returnValueForMissingStub: _FakeSupabaseQuerySchema_8(
           this,
           Invocation.method(
             #schema,
@@ -739,6 +703,17 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
             },
           ),
         ),
+        returnValueForMissingStub: _FakePostgrestFilterBuilder_9<T>(
+          this,
+          Invocation.method(
+            #rpc,
+            [fn],
+            {
+              #params: params,
+              #get: get,
+            },
+          ),
+        ),
       ) as _i4.PostgrestFilterBuilder<T>);
 
   @override
@@ -760,6 +735,14 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
             {#opts: opts},
           ),
         ),
+        returnValueForMissingStub: _FakeRealtimeChannel_10(
+          this,
+          Invocation.method(
+            #channel,
+            [name],
+            {#opts: opts},
+          ),
+        ),
       ) as _i4.RealtimeChannel);
 
   @override
@@ -769,771 +752,52 @@ class MockSupabaseClient extends _i1.Mock implements _i4.SupabaseClient {
           [],
         ),
         returnValue: <_i4.RealtimeChannel>[],
+        returnValueForMissingStub: <_i4.RealtimeChannel>[],
       ) as List<_i4.RealtimeChannel>);
 
   @override
-  _i5.Future<String> removeChannel(_i4.RealtimeChannel? channel) =>
+  _i6.Future<String> removeChannel(_i4.RealtimeChannel? channel) =>
       (super.noSuchMethod(
         Invocation.method(
           #removeChannel,
           [channel],
         ),
-        returnValue: _i5.Future<String>.value(_i7.dummyValue<String>(
+        returnValue: _i6.Future<String>.value(_i7.dummyValue<String>(
           this,
           Invocation.method(
             #removeChannel,
             [channel],
           ),
         )),
-      ) as _i5.Future<String>);
+        returnValueForMissingStub:
+            _i6.Future<String>.value(_i7.dummyValue<String>(
+          this,
+          Invocation.method(
+            #removeChannel,
+            [channel],
+          ),
+        )),
+      ) as _i6.Future<String>);
 
   @override
-  _i5.Future<List<String>> removeAllChannels() => (super.noSuchMethod(
+  _i6.Future<List<String>> removeAllChannels() => (super.noSuchMethod(
         Invocation.method(
           #removeAllChannels,
           [],
         ),
-        returnValue: _i5.Future<List<String>>.value(<String>[]),
-      ) as _i5.Future<List<String>>);
+        returnValue: _i6.Future<List<String>>.value(<String>[]),
+        returnValueForMissingStub: _i6.Future<List<String>>.value(<String>[]),
+      ) as _i6.Future<List<String>>);
 
   @override
-  _i5.Future<void> dispose() => (super.noSuchMethod(
+  _i6.Future<void> dispose() => (super.noSuchMethod(
         Invocation.method(
           #dispose,
           [],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-}
-
-/// A class which mocks [GoTrueClient].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockGoTrueClient extends _i1.Mock implements _i4.GoTrueClient {
-  MockGoTrueClient() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  _i4.GoTrueAdminApi get admin => (super.noSuchMethod(
-        Invocation.getter(#admin),
-        returnValue: _FakeGoTrueAdminApi_11(
-          this,
-          Invocation.getter(#admin),
-        ),
-      ) as _i4.GoTrueAdminApi);
-
-  @override
-  set admin(_i4.GoTrueAdminApi? _admin) => super.noSuchMethod(
-        Invocation.setter(
-          #admin,
-          _admin,
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  _i4.GoTrueMFAApi get mfa => (super.noSuchMethod(
-        Invocation.getter(#mfa),
-        returnValue: _FakeGoTrueMFAApi_12(
-          this,
-          Invocation.getter(#mfa),
-        ),
-      ) as _i4.GoTrueMFAApi);
-
-  @override
-  set mfa(_i4.GoTrueMFAApi? _mfa) => super.noSuchMethod(
-        Invocation.setter(
-          #mfa,
-          _mfa,
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  _i5.Stream<_i4.AuthState> get onAuthStateChange => (super.noSuchMethod(
-        Invocation.getter(#onAuthStateChange),
-        returnValue: _i5.Stream<_i4.AuthState>.empty(),
-      ) as _i5.Stream<_i4.AuthState>);
-
-  @override
-  _i5.Stream<_i4.AuthState> get onAuthStateChangeSync => (super.noSuchMethod(
-        Invocation.getter(#onAuthStateChangeSync),
-        returnValue: _i5.Stream<_i4.AuthState>.empty(),
-      ) as _i5.Stream<_i4.AuthState>);
-
-  @override
-  Map<String, String> get headers => (super.noSuchMethod(
-        Invocation.getter(#headers),
-        returnValue: <String, String>{},
-      ) as Map<String, String>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> signInAnonymously({
-    Map<String, dynamic>? data,
-    String? captchaToken,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #signInAnonymously,
-          [],
-          {
-            #data: data,
-            #captchaToken: captchaToken,
-          },
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #signInAnonymously,
-            [],
-            {
-              #data: data,
-              #captchaToken: captchaToken,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> signUp({
-    String? email,
-    String? phone,
-    required String? password,
-    String? emailRedirectTo,
-    Map<String, dynamic>? data,
-    String? captchaToken,
-    _i4.OtpChannel? channel = _i4.OtpChannel.sms,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #signUp,
-          [],
-          {
-            #email: email,
-            #phone: phone,
-            #password: password,
-            #emailRedirectTo: emailRedirectTo,
-            #data: data,
-            #captchaToken: captchaToken,
-            #channel: channel,
-          },
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #signUp,
-            [],
-            {
-              #email: email,
-              #phone: phone,
-              #password: password,
-              #emailRedirectTo: emailRedirectTo,
-              #data: data,
-              #captchaToken: captchaToken,
-              #channel: channel,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> signInWithPassword({
-    String? email,
-    String? phone,
-    required String? password,
-    String? captchaToken,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #signInWithPassword,
-          [],
-          {
-            #email: email,
-            #phone: phone,
-            #password: password,
-            #captchaToken: captchaToken,
-          },
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #signInWithPassword,
-            [],
-            {
-              #email: email,
-              #phone: phone,
-              #password: password,
-              #captchaToken: captchaToken,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<_i4.OAuthResponse> getOAuthSignInUrl({
-    required _i4.OAuthProvider? provider,
-    String? redirectTo,
-    String? scopes,
-    Map<String, String>? queryParams,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getOAuthSignInUrl,
-          [],
-          {
-            #provider: provider,
-            #redirectTo: redirectTo,
-            #scopes: scopes,
-            #queryParams: queryParams,
-          },
-        ),
-        returnValue: _i5.Future<_i4.OAuthResponse>.value(_FakeOAuthResponse_14(
-          this,
-          Invocation.method(
-            #getOAuthSignInUrl,
-            [],
-            {
-              #provider: provider,
-              #redirectTo: redirectTo,
-              #scopes: scopes,
-              #queryParams: queryParams,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.OAuthResponse>);
-
-  @override
-  _i5.Future<_i4.AuthSessionUrlResponse> exchangeCodeForSession(
-          String? authCode) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #exchangeCodeForSession,
-          [authCode],
-        ),
-        returnValue: _i5.Future<_i4.AuthSessionUrlResponse>.value(
-            _FakeAuthSessionUrlResponse_15(
-          this,
-          Invocation.method(
-            #exchangeCodeForSession,
-            [authCode],
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthSessionUrlResponse>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> signInWithIdToken({
-    required _i4.OAuthProvider? provider,
-    required String? idToken,
-    String? accessToken,
-    String? nonce,
-    String? captchaToken,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #signInWithIdToken,
-          [],
-          {
-            #provider: provider,
-            #idToken: idToken,
-            #accessToken: accessToken,
-            #nonce: nonce,
-            #captchaToken: captchaToken,
-          },
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #signInWithIdToken,
-            [],
-            {
-              #provider: provider,
-              #idToken: idToken,
-              #accessToken: accessToken,
-              #nonce: nonce,
-              #captchaToken: captchaToken,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<void> signInWithOtp({
-    String? email,
-    String? phone,
-    String? emailRedirectTo,
-    bool? shouldCreateUser,
-    Map<String, dynamic>? data,
-    String? captchaToken,
-    _i4.OtpChannel? channel = _i4.OtpChannel.sms,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #signInWithOtp,
-          [],
-          {
-            #email: email,
-            #phone: phone,
-            #emailRedirectTo: emailRedirectTo,
-            #shouldCreateUser: shouldCreateUser,
-            #data: data,
-            #captchaToken: captchaToken,
-            #channel: channel,
-          },
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> verifyOTP({
-    String? email,
-    String? phone,
-    String? token,
-    required _i4.OtpType? type,
-    String? redirectTo,
-    String? captchaToken,
-    String? tokenHash,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #verifyOTP,
-          [],
-          {
-            #email: email,
-            #phone: phone,
-            #token: token,
-            #type: type,
-            #redirectTo: redirectTo,
-            #captchaToken: captchaToken,
-            #tokenHash: tokenHash,
-          },
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #verifyOTP,
-            [],
-            {
-              #email: email,
-              #phone: phone,
-              #token: token,
-              #type: type,
-              #redirectTo: redirectTo,
-              #captchaToken: captchaToken,
-              #tokenHash: tokenHash,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<String> getSSOSignInUrl({
-    String? providerId,
-    String? domain,
-    String? redirectTo,
-    String? captchaToken,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getSSOSignInUrl,
-          [],
-          {
-            #providerId: providerId,
-            #domain: domain,
-            #redirectTo: redirectTo,
-            #captchaToken: captchaToken,
-          },
-        ),
-        returnValue: _i5.Future<String>.value(_i7.dummyValue<String>(
-          this,
-          Invocation.method(
-            #getSSOSignInUrl,
-            [],
-            {
-              #providerId: providerId,
-              #domain: domain,
-              #redirectTo: redirectTo,
-              #captchaToken: captchaToken,
-            },
-          ),
-        )),
-      ) as _i5.Future<String>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> refreshSession([String? refreshToken]) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #refreshSession,
-          [refreshToken],
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #refreshSession,
-            [refreshToken],
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<void> reauthenticate() => (super.noSuchMethod(
-        Invocation.method(
-          #reauthenticate,
-          [],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<_i4.ResendResponse> resend({
-    String? email,
-    String? phone,
-    required _i4.OtpType? type,
-    String? emailRedirectTo,
-    String? captchaToken,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #resend,
-          [],
-          {
-            #email: email,
-            #phone: phone,
-            #type: type,
-            #emailRedirectTo: emailRedirectTo,
-            #captchaToken: captchaToken,
-          },
-        ),
-        returnValue:
-            _i5.Future<_i4.ResendResponse>.value(_FakeResendResponse_16(
-          this,
-          Invocation.method(
-            #resend,
-            [],
-            {
-              #email: email,
-              #phone: phone,
-              #type: type,
-              #emailRedirectTo: emailRedirectTo,
-              #captchaToken: captchaToken,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.ResendResponse>);
-
-  @override
-  _i5.Future<_i4.UserResponse> getUser([String? jwt]) => (super.noSuchMethod(
-        Invocation.method(
-          #getUser,
-          [jwt],
-        ),
-        returnValue: _i5.Future<_i4.UserResponse>.value(_FakeUserResponse_17(
-          this,
-          Invocation.method(
-            #getUser,
-            [jwt],
-          ),
-        )),
-      ) as _i5.Future<_i4.UserResponse>);
-
-  @override
-  _i5.Future<_i4.UserResponse> updateUser(
-    _i4.UserAttributes? attributes, {
-    String? emailRedirectTo,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #updateUser,
-          [attributes],
-          {#emailRedirectTo: emailRedirectTo},
-        ),
-        returnValue: _i5.Future<_i4.UserResponse>.value(_FakeUserResponse_17(
-          this,
-          Invocation.method(
-            #updateUser,
-            [attributes],
-            {#emailRedirectTo: emailRedirectTo},
-          ),
-        )),
-      ) as _i5.Future<_i4.UserResponse>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> setSession(String? refreshToken) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #setSession,
-          [refreshToken],
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #setSession,
-            [refreshToken],
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  _i5.Future<_i4.AuthSessionUrlResponse> getSessionFromUrl(
-    Uri? originUrl, {
-    bool? storeSession = true,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getSessionFromUrl,
-          [originUrl],
-          {#storeSession: storeSession},
-        ),
-        returnValue: _i5.Future<_i4.AuthSessionUrlResponse>.value(
-            _FakeAuthSessionUrlResponse_15(
-          this,
-          Invocation.method(
-            #getSessionFromUrl,
-            [originUrl],
-            {#storeSession: storeSession},
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthSessionUrlResponse>);
-
-  @override
-  _i5.Future<void> signOut(
-          {_i4.SignOutScope? scope = _i4.SignOutScope.local}) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #signOut,
-          [],
-          {#scope: scope},
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> resetPasswordForEmail(
-    String? email, {
-    String? redirectTo,
-    String? captchaToken,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #resetPasswordForEmail,
-          [email],
-          {
-            #redirectTo: redirectTo,
-            #captchaToken: captchaToken,
-          },
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<List<_i4.UserIdentity>> getUserIdentities() => (super.noSuchMethod(
-        Invocation.method(
-          #getUserIdentities,
-          [],
-        ),
-        returnValue:
-            _i5.Future<List<_i4.UserIdentity>>.value(<_i4.UserIdentity>[]),
-      ) as _i5.Future<List<_i4.UserIdentity>>);
-
-  @override
-  _i5.Future<_i4.OAuthResponse> getLinkIdentityUrl(
-    _i4.OAuthProvider? provider, {
-    String? redirectTo,
-    String? scopes,
-    Map<String, String>? queryParams,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #getLinkIdentityUrl,
-          [provider],
-          {
-            #redirectTo: redirectTo,
-            #scopes: scopes,
-            #queryParams: queryParams,
-          },
-        ),
-        returnValue: _i5.Future<_i4.OAuthResponse>.value(_FakeOAuthResponse_14(
-          this,
-          Invocation.method(
-            #getLinkIdentityUrl,
-            [provider],
-            {
-              #redirectTo: redirectTo,
-              #scopes: scopes,
-              #queryParams: queryParams,
-            },
-          ),
-        )),
-      ) as _i5.Future<_i4.OAuthResponse>);
-
-  @override
-  _i5.Future<void> unlinkIdentity(_i4.UserIdentity? identity) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #unlinkIdentity,
-          [identity],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<void> setInitialSession(String? jsonStr) => (super.noSuchMethod(
-        Invocation.method(
-          #setInitialSession,
-          [jsonStr],
-        ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-
-  @override
-  _i5.Future<_i4.AuthResponse> recoverSession(String? jsonStr) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #recoverSession,
-          [jsonStr],
-        ),
-        returnValue: _i5.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
-          this,
-          Invocation.method(
-            #recoverSession,
-            [jsonStr],
-          ),
-        )),
-      ) as _i5.Future<_i4.AuthResponse>);
-
-  @override
-  void startAutoRefresh() => super.noSuchMethod(
-        Invocation.method(
-          #startAutoRefresh,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void stopAutoRefresh() => super.noSuchMethod(
-        Invocation.method(
-          #stopAutoRefresh,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void notifyAllSubscribers(
-    _i4.AuthChangeEvent? event, {
-    _i4.Session? session,
-    bool? broadcast = true,
-  }) =>
-      super.noSuchMethod(
-        Invocation.method(
-          #notifyAllSubscribers,
-          [event],
-          {
-            #session: session,
-            #broadcast: broadcast,
-          },
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  Object notifyException(
-    Object? exception, [
-    StackTrace? stackTrace,
-  ]) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #notifyException,
-          [
-            exception,
-            stackTrace,
-          ],
-        ),
-        returnValue: _FakeObject_18(
-          this,
-          Invocation.method(
-            #notifyException,
-            [
-              exception,
-              stackTrace,
-            ],
-          ),
-        ),
-      ) as Object);
-}
-
-/// A class which mocks [User].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockUser extends _i1.Mock implements _i4.User {
-  MockUser() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  String get id => (super.noSuchMethod(
-        Invocation.getter(#id),
-        returnValue: _i7.dummyValue<String>(
-          this,
-          Invocation.getter(#id),
-        ),
-      ) as String);
-
-  @override
-  Map<String, dynamic> get appMetadata => (super.noSuchMethod(
-        Invocation.getter(#appMetadata),
-        returnValue: <String, dynamic>{},
-      ) as Map<String, dynamic>);
-
-  @override
-  String get aud => (super.noSuchMethod(
-        Invocation.getter(#aud),
-        returnValue: _i7.dummyValue<String>(
-          this,
-          Invocation.getter(#aud),
-        ),
-      ) as String);
-
-  @override
-  String get createdAt => (super.noSuchMethod(
-        Invocation.getter(#createdAt),
-        returnValue: _i7.dummyValue<String>(
-          this,
-          Invocation.getter(#createdAt),
-        ),
-      ) as String);
-
-  @override
-  bool get isAnonymous => (super.noSuchMethod(
-        Invocation.getter(#isAnonymous),
-        returnValue: false,
-      ) as bool);
-
-  @override
-  Map<String, dynamic> toJson() => (super.noSuchMethod(
-        Invocation.method(
-          #toJson,
-          [],
-        ),
-        returnValue: <String, dynamic>{},
-      ) as Map<String, dynamic>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }
 
 /// A class which mocks [CustomListsSharedPreferencesDatasource].
@@ -1541,441 +805,88 @@ class MockUser extends _i1.Mock implements _i4.User {
 /// See the documentation for Mockito's code generation for more information.
 class MockCustomListsSharedPreferencesDatasource extends _i1.Mock
     implements _i8.CustomListsSharedPreferencesDatasource {
-  MockCustomListsSharedPreferencesDatasource() {
-    _i1.throwOnMissingStub(this);
-  }
-
   @override
-  _i5.Future<List<_i2.CustomList>> getCustomLists() => (super.noSuchMethod(
+  _i6.Future<List<_i2.CustomList>> getCustomLists() => (super.noSuchMethod(
         Invocation.method(
           #getCustomLists,
           [],
         ),
-        returnValue: _i5.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
-      ) as _i5.Future<List<_i2.CustomList>>);
+        returnValue: _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+      ) as _i6.Future<List<_i2.CustomList>>);
 
   @override
-  _i5.Future<void> saveCustomLists(List<_i2.CustomList>? lists) =>
+  _i6.Future<void> saveCustomLists(List<_i2.CustomList>? lists) =>
       (super.noSuchMethod(
         Invocation.method(
           #saveCustomLists,
           [lists],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> addCustomList(_i2.CustomList? list) => (super.noSuchMethod(
+  _i6.Future<void> addCustomList(_i2.CustomList? list) => (super.noSuchMethod(
         Invocation.method(
           #addCustomList,
           [list],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> updateCustomList(_i2.CustomList? list) =>
+  _i6.Future<void> updateCustomList(_i2.CustomList? list) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateCustomList,
           [list],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> deleteCustomList(String? listId) => (super.noSuchMethod(
+  _i6.Future<void> deleteCustomList(String? listId) => (super.noSuchMethod(
         Invocation.method(
           #deleteCustomList,
           [listId],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<void> clearAllCustomLists() => (super.noSuchMethod(
+  _i6.Future<void> clearAllCustomLists() => (super.noSuchMethod(
         Invocation.method(
           #clearAllCustomLists,
           [],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 
   @override
-  _i5.Future<List<_i2.CustomList>> getDefaultLists() => (super.noSuchMethod(
+  _i6.Future<List<_i2.CustomList>> getDefaultLists() => (super.noSuchMethod(
         Invocation.method(
           #getDefaultLists,
           [],
         ),
-        returnValue: _i5.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
-      ) as _i5.Future<List<_i2.CustomList>>);
+        returnValue: _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+        returnValueForMissingStub:
+            _i6.Future<List<_i2.CustomList>>.value(<_i2.CustomList>[]),
+      ) as _i6.Future<List<_i2.CustomList>>);
 
   @override
-  _i5.Future<void> saveDefaultLists(List<_i2.CustomList>? lists) =>
+  _i6.Future<void> saveDefaultLists(List<_i2.CustomList>? lists) =>
       (super.noSuchMethod(
         Invocation.method(
           #saveDefaultLists,
           [lists],
         ),
-        returnValue: _i5.Future<void>.value(),
-        returnValueForMissingStub: _i5.Future<void>.value(),
-      ) as _i5.Future<void>);
-}
-
-/// A class which mocks [PostgrestQueryBuilder].
-///
-/// See the documentation for Mockito's code generation for more information.
-class MockPostgrestQueryBuilder<T> extends _i1.Mock
-    implements _i4.PostgrestQueryBuilder<T> {
-  MockPostgrestQueryBuilder() {
-    _i1.throwOnMissingStub(this);
-  }
-
-  @override
-  _i4.PostgrestFilterBuilder<List<Map<String, dynamic>>> select(
-          [String? columns = r'*']) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #select,
-          [columns],
-        ),
-        returnValue: _FakePostgrestFilterBuilder_9<List<Map<String, dynamic>>>(
-          this,
-          Invocation.method(
-            #select,
-            [columns],
-          ),
-        ),
-      ) as _i4.PostgrestFilterBuilder<List<Map<String, dynamic>>>);
-
-  @override
-  _i4.PostgrestFilterBuilder<T> insert(
-    Object? values, {
-    bool? defaultToNull = true,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #insert,
-          [values],
-          {#defaultToNull: defaultToNull},
-        ),
-        returnValue: _FakePostgrestFilterBuilder_9<T>(
-          this,
-          Invocation.method(
-            #insert,
-            [values],
-            {#defaultToNull: defaultToNull},
-          ),
-        ),
-      ) as _i4.PostgrestFilterBuilder<T>);
-
-  @override
-  _i4.PostgrestFilterBuilder<T> upsert(
-    Object? values, {
-    String? onConflict,
-    bool? ignoreDuplicates = false,
-    bool? defaultToNull = true,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #upsert,
-          [values],
-          {
-            #onConflict: onConflict,
-            #ignoreDuplicates: ignoreDuplicates,
-            #defaultToNull: defaultToNull,
-          },
-        ),
-        returnValue: _FakePostgrestFilterBuilder_9<T>(
-          this,
-          Invocation.method(
-            #upsert,
-            [values],
-            {
-              #onConflict: onConflict,
-              #ignoreDuplicates: ignoreDuplicates,
-              #defaultToNull: defaultToNull,
-            },
-          ),
-        ),
-      ) as _i4.PostgrestFilterBuilder<T>);
-
-  @override
-  _i4.PostgrestFilterBuilder<T> update(Map<dynamic, dynamic>? values) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #update,
-          [values],
-        ),
-        returnValue: _FakePostgrestFilterBuilder_9<T>(
-          this,
-          Invocation.method(
-            #update,
-            [values],
-          ),
-        ),
-      ) as _i4.PostgrestFilterBuilder<T>);
-
-  @override
-  _i4.PostgrestFilterBuilder<T> delete() => (super.noSuchMethod(
-        Invocation.method(
-          #delete,
-          [],
-        ),
-        returnValue: _FakePostgrestFilterBuilder_9<T>(
-          this,
-          Invocation.method(
-            #delete,
-            [],
-          ),
-        ),
-      ) as _i4.PostgrestFilterBuilder<T>);
-
-  @override
-  _i4.PostgrestFilterBuilder<int> count(
-          [_i4.CountOption? option = _i4.CountOption.exact]) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #count,
-          [option],
-        ),
-        returnValue: _FakePostgrestFilterBuilder_9<int>(
-          this,
-          Invocation.method(
-            #count,
-            [option],
-          ),
-        ),
-      ) as _i4.PostgrestFilterBuilder<int>);
-
-  @override
-  _i4.PostgrestQueryBuilder<T> setHeader(
-    String? key,
-    String? value,
-  ) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #setHeader,
-          [
-            key,
-            value,
-          ],
-        ),
-        returnValue: _FakePostgrestQueryBuilder_19<T>(
-          this,
-          Invocation.method(
-            #setHeader,
-            [
-              key,
-              value,
-            ],
-          ),
-        ),
-      ) as _i4.PostgrestQueryBuilder<T>);
-
-  @override
-  _i4.PostgrestBuilder<U, U, T> withConverter<U>(
-          _i4.PostgrestConverter<U, T>? converter) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #withConverter,
-          [converter],
-        ),
-        returnValue: _FakePostgrestBuilder_20<U, U, T>(
-          this,
-          Invocation.method(
-            #withConverter,
-            [converter],
-          ),
-        ),
-      ) as _i4.PostgrestBuilder<U, U, T>);
-
-  @override
-  Uri appendSearchParams(
-    String? key,
-    String? value, [
-    Uri? url,
-  ]) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #appendSearchParams,
-          [
-            key,
-            value,
-            url,
-          ],
-        ),
-        returnValue: _FakeUri_21(
-          this,
-          Invocation.method(
-            #appendSearchParams,
-            [
-              key,
-              value,
-              url,
-            ],
-          ),
-        ),
-      ) as Uri);
-
-  @override
-  Uri overrideSearchParams(
-    String? key,
-    String? value,
-  ) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #overrideSearchParams,
-          [
-            key,
-            value,
-          ],
-        ),
-        returnValue: _FakeUri_21(
-          this,
-          Invocation.method(
-            #overrideSearchParams,
-            [
-              key,
-              value,
-            ],
-          ),
-        ),
-      ) as Uri);
-
-  @override
-  _i5.Stream<T> asStream() => (super.noSuchMethod(
-        Invocation.method(
-          #asStream,
-          [],
-        ),
-        returnValue: _i5.Stream<T>.empty(),
-      ) as _i5.Stream<T>);
-
-  @override
-  _i5.Future<T> catchError(
-    Function? onError, {
-    bool Function(Object)? test,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #catchError,
-          [onError],
-          {#test: test},
-        ),
-        returnValue: _i7.ifNotNull(
-              _i7.dummyValueOrNull<T>(
-                this,
-                Invocation.method(
-                  #catchError,
-                  [onError],
-                  {#test: test},
-                ),
-              ),
-              (T v) => _i5.Future<T>.value(v),
-            ) ??
-            _FakeFuture_22<T>(
-              this,
-              Invocation.method(
-                #catchError,
-                [onError],
-                {#test: test},
-              ),
-            ),
-      ) as _i5.Future<T>);
-
-  @override
-  _i5.Future<U> then<U>(
-    _i5.FutureOr<U> Function(T)? onValue, {
-    Function? onError,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #then,
-          [onValue],
-          {#onError: onError},
-        ),
-        returnValue: _i7.ifNotNull(
-              _i7.dummyValueOrNull<U>(
-                this,
-                Invocation.method(
-                  #then,
-                  [onValue],
-                  {#onError: onError},
-                ),
-              ),
-              (U v) => _i5.Future<U>.value(v),
-            ) ??
-            _FakeFuture_22<U>(
-              this,
-              Invocation.method(
-                #then,
-                [onValue],
-                {#onError: onError},
-              ),
-            ),
-      ) as _i5.Future<U>);
-
-  @override
-  _i5.Future<T> timeout(
-    Duration? timeLimit, {
-    _i5.FutureOr<T> Function()? onTimeout,
-  }) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #timeout,
-          [timeLimit],
-          {#onTimeout: onTimeout},
-        ),
-        returnValue: _i7.ifNotNull(
-              _i7.dummyValueOrNull<T>(
-                this,
-                Invocation.method(
-                  #timeout,
-                  [timeLimit],
-                  {#onTimeout: onTimeout},
-                ),
-              ),
-              (T v) => _i5.Future<T>.value(v),
-            ) ??
-            _FakeFuture_22<T>(
-              this,
-              Invocation.method(
-                #timeout,
-                [timeLimit],
-                {#onTimeout: onTimeout},
-              ),
-            ),
-      ) as _i5.Future<T>);
-
-  @override
-  _i5.Future<T> whenComplete(_i5.FutureOr<void> Function()? action) =>
-      (super.noSuchMethod(
-        Invocation.method(
-          #whenComplete,
-          [action],
-        ),
-        returnValue: _i7.ifNotNull(
-              _i7.dummyValueOrNull<T>(
-                this,
-                Invocation.method(
-                  #whenComplete,
-                  [action],
-                ),
-              ),
-              (T v) => _i5.Future<T>.value(v),
-            ) ??
-            _FakeFuture_22<T>(
-              this,
-              Invocation.method(
-                #whenComplete,
-                [action],
-              ),
-            ),
-      ) as _i5.Future<T>);
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }

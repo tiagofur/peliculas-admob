@@ -15,7 +15,9 @@ class RealtimeChannelPool {
   // Configuración del pool
   static const int _maxPoolSize = 10;
   static const int _minPoolSize = 2;
+  static const Duration _channelTimeout = Duration(seconds: 30);
   static const Duration _heartbeatInterval = Duration(seconds: 15);
+  static const Duration _reconnectDelay = Duration(seconds: 5);
 
   // Pool de canales disponibles
   final Queue<PooledChannel> _availableChannels = Queue<PooledChannel>();
@@ -288,7 +290,7 @@ class PooledChannel {
   bool get isHealthy {
     final timeSinceActivity = DateTime.now().difference(_lastActivity);
     return _isSubscribed &&
-        timeSinceActivity < const Duration(minutes: 2);
+        timeSinceActivity < RealtimeChannelPool._channelTimeout;
   }
 
   Future<void> initialize() async {
@@ -327,14 +329,28 @@ class PooledChannel {
   }
 
   Future<void> _subscribe() async {
-    try {
-      channel.subscribe();
-      _isSubscribed = true;
-      _updateActivity();
-      LoggerFactory.debug('✅ Canal suscrito para $tableName');
-    } catch (e) {
-      LoggerFactory.error('❌ Error suscribiendo canal para $tableName: $e');
-      _isSubscribed = false;
+    int retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        channel.subscribe();
+        _isSubscribed = true;
+        _updateActivity();
+        LoggerFactory.debug('✅ Canal suscrito para $tableName');
+        return;
+      } catch (e) {
+        retryCount++;
+        LoggerFactory.error('❌ Error suscribiendo canal para $tableName (intento $retryCount): $e');
+        
+        if (retryCount < maxRetries) {
+          LoggerFactory.info('🔄 Reintentando suscripción en ${RealtimeChannelPool._reconnectDelay.inSeconds}s...');
+          await Future.delayed(RealtimeChannelPool._reconnectDelay);
+        } else {
+          _isSubscribed = false;
+          LoggerFactory.error('💥 Falló suscripción después de $maxRetries intentos para $tableName');
+        }
+      }
     }
   }
 

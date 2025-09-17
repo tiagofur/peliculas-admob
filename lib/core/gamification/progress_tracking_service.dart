@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,6 +7,7 @@ import 'gamification_manager.dart';
 import 'models/activity_type.dart' as activity;
 import 'models/user_level.dart';
 import 'models/user_progress.dart';
+import '../logging/safe_developer_log.dart';
 
 class ProgressTrackingService {
   ProgressTrackingService(this._gamificationManager);
@@ -33,9 +33,9 @@ class ProgressTrackingService {
       final currentLevel = await _gamificationManager.getCurrentLevel();
       _lastLevel = currentLevel;
 
-      developer.log('✅ Progress tracking initialized');
+      SafeDeveloperLog.log('✅ Progress tracking initialized');
     } catch (e) {
-      developer.log('❌ Error initializing progress tracking: $e');
+      SafeDeveloperLog.log('❌ Error initializing progress tracking: $e', error: e);
     }
   }
 
@@ -71,7 +71,7 @@ class ProgressTrackingService {
       _lastProgress = newProgress;
       _lastLevel = newLevel;
     } catch (e) {
-      developer.log('❌ Error tracking activity: $e');
+      SafeDeveloperLog.log('❌ Error tracking activity: $e', error: e);
     }
   }
 

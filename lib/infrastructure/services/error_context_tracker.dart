@@ -5,12 +5,11 @@ import '../../core/logging/logger_factory.dart';
 
 /// Servicio para rastrear contexto de errores y patrones
 class ErrorContextTracker {
-  ErrorContextTracker._internal();
-  
   factory ErrorContextTracker() => _instance;
-  
+  ErrorContextTracker._internal();
+
   static final ErrorContextTracker _instance = ErrorContextTracker._internal();
-  
+
   static ErrorContextTracker get instance => _instance;
 
   final Map<String, List<ErrorOccurrence>> _errorPatterns = {};
@@ -277,7 +276,7 @@ class ErrorOccurrence {
     required this.deviceInfo,
     required this.additionalContext,
   });
-  
+
   final String correlationId;
   final String errorType;
   final String errorMessage;

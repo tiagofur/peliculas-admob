@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/syncable_favorite.dart';
 import '../../infrastructure/datasources/favorite_movies_hive_datasource.dart';
+import '../logging/logger_factory.dart';
 
 /// Servicio de sincronización silenciosa de favoritos que:
 /// - Se ejecuta en segundo plano sin bloquear la UI
@@ -105,7 +105,7 @@ class SilentFavoritesSyncService {
         final response = await _supabase
             .from('user_favorites')
             .select()
-            .eq("user_id", userId)
+            .eq('user_id', userId)
             .order('last_modified_at', ascending: false)
             .range(offset, offset + batchSize - 1);
 

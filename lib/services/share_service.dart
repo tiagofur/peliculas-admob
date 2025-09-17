@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../config/deep_links/deep_link_handler.dart';
 import '../core/analytics/analytics_service.dart';
+import '../core/gamification/gamification_integration_service.dart';
 import '../domain/entities/movie.dart';
 import '../infrastructure/models/moviedb/movie_moviedb.dart';
 import '../models/shareable_content.dart';
@@ -15,6 +16,13 @@ class ShareService {
   static const String _appName = 'Películas';
   static const String _appDescription =
       'Descubre, organiza y comparte tus películas favoritas';
+  
+  static GamificationIntegrationService? _gamificationService;
+  
+  /// Initialize the service with required dependencies
+  static void initialize(GamificationIntegrationService gamificationService) {
+    _gamificationService = gamificationService;
+  }
 
   /// Shares a movie with its details
   static Future<void> shareMovie({
@@ -419,15 +427,23 @@ class ShareService {
   static Future<void> _trackGamificationShare(
       ShareableContent content, String platform) async {
     try {
-      // Note: This would need proper dependency injection in a real implementation
-      // For now, we'll skip gamification tracking to avoid instantiation issues
+      if (_gamificationService == null) return;
 
       if (content.type == ShareableContentType.movie) {
-        // await gamificationService.trackMovieShared(content.metadata?['movieId']?.toString() ?? '');
+        final movieId = content.metadata?['movieId']?.toString() ?? '';
+        if (movieId.isNotEmpty) {
+          await _gamificationService!.trackMovieShared(movieId);
+        }
       } else if (content.type == ShareableContentType.movieList) {
-        // await gamificationService.trackListShared(content.metadata?['listId']?.toString() ?? '');
+        final listId = content.metadata?['listId']?.toString() ?? '';
+        if (listId.isNotEmpty) {
+          await _gamificationService!.trackListShared(listId);
+        }
       } else if (content.type == ShareableContentType.recommendation) {
-        // await gamificationService.trackRecommendationShared(content.metadata?['recommendationId']?.toString() ?? '');
+        final recommendationId = content.metadata?['recommendationId']?.toString() ?? '';
+        if (recommendationId.isNotEmpty) {
+          await _gamificationService!.trackRecommendationShared(recommendationId);
+        }
       }
     } catch (e) {
       // Silently handle gamification errors

@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
@@ -39,6 +39,7 @@ class MoviesStateData {
   }
 }
 
+// TODO: Fix legacy compatibility for StateNotifierProvider
 final nowPlayingMoviesProvider =
     StateNotifierProvider<MoviesNotifier, MoviesStateData>((ref) {
   final fetchMoreMovies = ref.watch(movieRepositoryProvider).getNowPlaying;
@@ -77,23 +78,32 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
   static const int maxRetries = 3;
 
   Future<void> loadNextPage() async {
+    LoggerFactory.debug(
+        'MoviesNotifier: loadNextPage() llamado - Estado actual: ${state.state}, página: $currentPage');
 
+    if (state.state == MoviesState.loading || state.hasReachedMax) {
+      LoggerFactory.debug(
+          'MoviesNotifier: Saltando loadNextPage - loading: ${state.state == MoviesState.loading}, hasReachedMax: ${state.hasReachedMax}');
+      return;
+    }
 
-    if (state.state == MoviesState.loading || state.hasReachedMax) return;
-
-
+    LoggerFactory.debug('MoviesNotifier: Cambiando estado a loading');
 
     state = state.copyWith(state: MoviesState.loading);
 
     try {
+      LoggerFactory.debug(
+          'MoviesNotifier: Llamando fetchMoreMovies con página: ${currentPage + 1}');
       final movies = await fetchMoreMovies(page: currentPage + 1);
 
-
+      LoggerFactory.debug(
+          'MoviesNotifier: Recibidas ${movies.length} películas de la API');
 
       currentPage++;
 
       if (movies.isEmpty) {
-
+        LoggerFactory.debug(
+            'MoviesNotifier: No hay más películas - estableciendo hasReachedMax');
         state = state.copyWith(
           state: MoviesState.loaded,
           hasReachedMax: true,
@@ -107,8 +117,10 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
         movies: [...state.movies, ...movies],
       );
 
-
+      LoggerFactory.debug(
+          'MoviesNotifier: Estado actualizado - Total películas: ${state.movies.length}, Estado: ${state.state}');
     } catch (e) {
+      LoggerFactory.error('MoviesNotifier: Error al cargar películas: $e');
       state = state.copyWith(
         state: MoviesState.error,
         errorMessage: e.toString(),

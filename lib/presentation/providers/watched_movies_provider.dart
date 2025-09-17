@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/entities.dart';
@@ -73,11 +74,14 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
     if (state.isLoading || state.isLastPage) return;
     if (!mounted) return;
 
+    print('🎬 WatchedMoviesNotifier: Cargando página ${state.currentPage}');
     state = state.copyWith(isLoading: true);
 
     try {
       // Use hybrid repository to get watched movies with pagination
       final allWatchedMovies = await repository.getWatchedMoviesSorted();
+      print(
+          '🎬 WatchedMoviesNotifier: ${allWatchedMovies.length} películas vistas encontradas');
 
       // Simulate pagination by slicing the sorted list
       final startIndex = state.currentPage * _limit;
@@ -107,6 +111,10 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
       }
 
       if (mounted) {
+        print(
+            '🎬 WatchedMoviesNotifier: Agregando ${pageMovies.length} películas a la página');
+        print(
+            '🎬 WatchedMoviesNotifier: Total después de agregar: ${state.movies.length + pageMovies.length}');
         state = state.copyWith(
           isLoading: false,
           movies: [...state.movies, ...pageMovies],

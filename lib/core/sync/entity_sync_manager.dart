@@ -220,6 +220,15 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
   /// Deserializa entidad desde servidor
   T deserializeFromRemote(Map<String, dynamic> data);
 
+  /// Elimina una entidad por ID
+  Future<void> deleteEntity(String entityId);
+
+  /// Obtiene una entidad remota por ID
+  Future<Map<String, dynamic>?> getRemoteEntity(String entityId);
+
+  /// Fusiona dos entidades (local y remota)
+  Future<T> mergeEntities(T localEntity, T remoteEntity);
+
   // =============================================
   // OPERACIONES PÚBLICAS
   // =============================================
@@ -314,7 +323,72 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
   Future<SyncResult> performIncrementalSync() async {
     if (!_isInitialized) await _initialize();
 
-    return performFullSync(); // Por ahora usa full sync, optimizar después
+    final startTime = DateTime.now();
+    var totalProcessed = 0;
+    var totalSuccessful = 0;
+    final errors = <String>[];
+
+    try {
+      LoggerFactory.info('🔄 Starting incremental sync for $entityType');
+
+      // Solo sincronizar cambios desde la última sincronización
+      final lastSync = _lastSyncAt ?? DateTime.now().subtract(const Duration(hours: 24));
+      
+      // Fase 1: Subir cambios locales pendientes
+      _emitProgress(SyncPhase.uploading, 0, 2, 'Uploading pending changes');
+      final localChanges = await getLocalPendingSync();
+      
+      if (localChanges.isNotEmpty) {
+        final uploadResult = await uploadChanges(localChanges);
+        totalProcessed += localChanges.length;
+        totalSuccessful += uploadResult.itemsSuccessful;
+        errors.addAll(uploadResult.errors);
+      }
+
+      // Fase 2: Descargar solo cambios remotos recientes
+      _emitProgress(SyncPhase.downloading, 1, 2, 'Downloading recent changes');
+      final recentChanges = await getRemoteChanges(since: lastSync);
+      
+      if (recentChanges.isNotEmpty) {
+        final downloadResult = await downloadChanges(recentChanges);
+        totalProcessed += recentChanges.length;
+        totalSuccessful += downloadResult.itemsSuccessful;
+        errors.addAll(downloadResult.errors);
+      }
+
+      _emitProgress(SyncPhase.completed, 2, 2, 'Incremental sync completed');
+      _lastSyncAt = DateTime.now();
+
+      final result = errors.isEmpty
+          ? SyncResult.success(
+              itemsProcessed: totalProcessed,
+              itemsSuccessful: totalSuccessful,
+              duration: DateTime.now().difference(startTime),
+              message: 'Incremental sync completed successfully',
+            )
+          : SyncResult.failure(
+              itemsProcessed: totalProcessed,
+              itemsSuccessful: totalSuccessful,
+              errors: errors,
+              duration: DateTime.now().difference(startTime),
+              message: 'Incremental sync completed with errors',
+            );
+
+      await _updateSyncStats(result);
+      LoggerFactory.info('✅ Incremental sync completed for $entityType: ${result.toString()}');
+
+      return result;
+    } catch (e) {
+      final error = 'Incremental sync failed for $entityType: $e';
+      LoggerFactory.error(error);
+
+      return SyncResult.failure(
+        itemsProcessed: totalProcessed,
+        itemsSuccessful: totalSuccessful,
+        errors: [error],
+        duration: DateTime.now().difference(startTime),
+      );
+    }
   }
 
   /// Cola una operación para sincronización posterior
@@ -381,15 +455,52 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
             break;
 
           case SyncOperationType.delete:
-            // Implementar lógica de eliminación
-            await _syncQueue.markCompleted(operation.id);
-            successful++;
+            try {
+              // Eliminar entidad localmente y remotamente
+              await deleteEntity(operation.entityId);
+              await _syncQueue.markCompleted(operation.id);
+              successful++;
+              LoggerFactory.info('🗑️ Deleted entity ${operation.entityId}');
+            } catch (e) {
+              await _syncQueue.markFailed(operation.id, 'Delete failed: $e');
+              errors.add('Delete operation failed for ${operation.entityId}: $e');
+            }
             break;
 
           case SyncOperationType.merge:
-            // Implementar lógica de merge
-            await _syncQueue.markCompleted(operation.id);
-            successful++;
+            try {
+              // Fusionar datos locales y remotos
+              final localEntity = deserializeFromLocal(operation.data);
+              final remoteData = await getRemoteEntity(operation.entityId);
+              
+              if (remoteData != null) {
+                final remoteEntity = deserializeFromRemote(remoteData);
+                final mergedEntity = await mergeEntities(localEntity, remoteEntity);
+                final result = await uploadChanges([mergedEntity]);
+                
+                if (result.success) {
+                  await _syncQueue.markCompleted(operation.id);
+                  successful++;
+                  LoggerFactory.info('🔀 Merged entity ${operation.entityId}');
+                } else {
+                  await _syncQueue.markFailed(operation.id, result.errors.join(', '));
+                  errors.addAll(result.errors);
+                }
+              } else {
+                // Si no hay datos remotos, subir los locales
+                final result = await uploadChanges([localEntity]);
+                if (result.success) {
+                  await _syncQueue.markCompleted(operation.id);
+                  successful++;
+                } else {
+                  await _syncQueue.markFailed(operation.id, result.errors.join(', '));
+                  errors.addAll(result.errors);
+                }
+              }
+            } catch (e) {
+              await _syncQueue.markFailed(operation.id, 'Merge failed: $e');
+              errors.add('Merge operation failed for ${operation.entityId}: $e');
+            }
             break;
         }
       } catch (e) {

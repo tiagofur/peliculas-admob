@@ -645,15 +645,15 @@ class MockListSyncService extends _i1.Mock implements _i4.ListSyncService {
       ) as _i7.Future<void>);
 
   @override
-  _i7.Future<_i4.SyncResult> forcSync() => (super.noSuchMethod(
+  _i7.Future<_i4.SyncResult> forceSync() => (super.noSuchMethod(
         Invocation.method(
-          #forcSync,
+          #forceSync,
           [],
         ),
         returnValue: _i7.Future<_i4.SyncResult>.value(_FakeSyncResult_2(
           this,
           Invocation.method(
-            #forcSync,
+            #forceSync,
             [],
           ),
         )),
@@ -661,7 +661,7 @@ class MockListSyncService extends _i1.Mock implements _i4.ListSyncService {
             _i7.Future<_i4.SyncResult>.value(_FakeSyncResult_2(
           this,
           Invocation.method(
-            #forcSync,
+            #forceSync,
             [],
           ),
         )),

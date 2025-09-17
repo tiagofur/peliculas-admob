@@ -1,15 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../core/gamification/gamification_manager.dart';
-import '../../core/gamification/models/activity_type.dart' as activity;
+import '../../core/gamification/gamification_integration_service.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/custom_list.dart';
 import '../../domain/repositories/i_custom_lists_repository.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../services/list_sync_service.dart';
 import 'custom_lists_providers.dart';
-import 'gamification_providers.dart';
 
 // Estado que contiene tanto listas predefinidas como personalizadas
 class AllListsState {
@@ -38,7 +37,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   // Logger usando LoggerFactory directamente
 
   AllListsNotifier(
-      this._repository, this._syncService, this._gamificationManager)
+      this._repository, this._syncService, this._gamificationService)
       : super(AllListsState(
           defaultLists: [],
           customLists: [],
@@ -46,40 +45,63 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     _loadLists();
     _initializeSync();
   }
-  final ICustomListsRepository _repository;
-  final ListSyncService _syncService;
-  final GamificationManager _gamificationManager;
+
+  // Constructor para crear notifier con estado inicial (sin dependencias)
+  AllListsNotifier.withInitialState()
+      : _repository = null,
+        _syncService = null,
+        _gamificationService = null,
+        super(getInitialState());
+
+  ICustomListsRepository? _repository;
+  ListSyncService? _syncService;
+  final GamificationIntegrationService? _gamificationService;
+
+  /// Configura el repositorio después de la inicialización
+  void _setRepository(ICustomListsRepository repository) {
+    _repository = repository;
+  }
+
+  /// Configura el servicio de sincronización después de la inicialización
+  void _setSyncService(ListSyncService syncService) {
+    _syncService = syncService;
+    _initializeSync();
+  }
 
   /// Inicializa la sincronización y escucha los streams del servicio
   void _initializeSync() {
+    if (_syncService == null) return;
+
     // Escuchar cambios de estado de sincronización
-    _syncService.syncStatusStream.listen((status) {
+    _syncService!.syncStatusStream.listen((status) {
       LoggerFactory.info('Sync status changed: $status');
     });
 
     // Escuchar conflictos
-    _syncService.conflictsStream.listen((conflicts) {
+    _syncService!.conflictsStream.listen((conflicts) {
       LoggerFactory.warning('Conflicts detected: ${conflicts.length}');
     });
 
     // Iniciar sincronización automática
-    _syncService.startAutoSync();
+    _syncService!.startAutoSync();
   }
 
   @override
   void dispose() {
     // Limpiar recursos si es necesario
-    _syncService.dispose();
+    _syncService?.dispose();
     super.dispose();
   }
 
   void _loadLists() async {
+    if (_repository == null) return;
+
     try {
       // Cargar listas predefinidas
-      final defaultLists = _getInitialState().defaultLists;
+      final defaultLists = getInitialState().defaultLists;
 
       // Cargar listas personalizadas usando el servicio de sincronización
-      final customLists = await _repository.getUserLists();
+      final customLists = await _repository!.getUserLists();
 
       state = AllListsState(
         defaultLists: defaultLists,
@@ -93,14 +115,28 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
   // Guardar listas usando métodos individuales del repositorio
   Future<void> _saveLists() async {
     try {
-      // Las listas se guardan individualmente usando createList/updateList
-      LoggerFactory.info('Lists saved individually through repository methods');
+      if (_repository == null) {
+        LoggerFactory.warning('Repository is null, cannot save lists');
+        return;
+      }
+
+      // Guardar cada lista personalizada
+      for (final list in state.customLists) {
+        if (!list.isDefault) {
+          try {
+            await _repository!.createList(list);
+            LoggerFactory.info('Lista "${list.name}" guardada exitosamente');
+          } catch (e) {
+            LoggerFactory.error('Error guardando lista "${list.name}": $e');
+          }
+        }
+      }
     } catch (e) {
       LoggerFactory.error('CustomListsProvider: Error saving lists: $e');
     }
   }
 
-  static AllListsState _getInitialState() {
+  static AllListsState getInitialState() {
     final now = DateTime.now();
 
     final defaultLists = [
@@ -206,6 +242,11 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     String? description,
     List<int>? movieIds,
   }) async {
+    if (_repository == null) {
+      LoggerFactory.warning('Cannot create list: repository not available');
+      return;
+    }
+
     try {
       // Actualización optimista del estado
       final newList = CustomList(
@@ -223,7 +264,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       );
 
       // Guardar en el repositorio
-      final savedList = await _repository.createList(newList);
+      final savedList = await _repository!.createList(newList);
 
       // Actualizar con el ID real del servidor
       final updatedLists = state.customLists
@@ -233,7 +274,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       state = state.copyWith(customLists: updatedLists);
 
       // Registrar cambio offline para sincronización
-      await _syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'create_${savedList.id}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.createList,
         data: savedList.toJson(),
@@ -241,7 +282,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       ));
 
       // Registrar evento de gamificación
-      // TODO: Implementar gamificación
+      await _gamificationService?.trackListCreated(newList.id, newList.name);
 
       LoggerFactory.info('✅ Lista personalizada creada: $name');
     } catch (e) {
@@ -279,10 +320,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       state = state.copyWith(customLists: updatedLists);
 
       // Guardar en el repositorio
-      await _repository.updateList(updatedList);
+      await _repository?.updateList(updatedList);
 
       // Registrar cambio offline para sincronización
-      await _syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'update_${listId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.updateList,
         data: updatedList.toJson(),
@@ -290,7 +331,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       ));
 
       // Registrar evento de gamificación
-      // TODO: Implementar gamificación
+      // Note: No specific tracking for list updates in gamification
 
       LoggerFactory.info(
           '✅ Lista personalizada actualizada: ${updatedList.name}');
@@ -302,32 +343,52 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     }
   }
 
-  void createList({
+  Future<void> createList({
     required String name,
     required String description,
     required String emoji,
     String color = 'blue',
-  }) {
-    final now = DateTime.now();
-    const uuid = Uuid();
-    final newId = uuid.v4();
+  }) async {
+    if (_repository == null) {
+      LoggerFactory.error('Repository is null, cannot create list');
+      return;
+    }
 
-    final newList = CustomList(
-      id: newId,
-      name: name,
-      description: description,
-      emoji: emoji,
-      movieIds: [],
-      createdAt: now,
-      lastModifiedAt: now,
-      isDefault: false,
-      color: color,
-    );
+    try {
+      final now = DateTime.now();
+      const uuid = Uuid();
+      final newId = uuid.v4();
 
-    state = state.copyWith(
-      customLists: [...state.customLists, newList],
-    );
-    _saveLists();
+      final newList = CustomList(
+        id: newId,
+        name: name,
+        description: description,
+        emoji: emoji,
+        movieIds: [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: false,
+        color: color,
+      );
+
+      // Actualizar estado optimísticamente
+      state = state.copyWith(
+        customLists: [...state.customLists, newList],
+      );
+
+      // Guardar en el repositorio
+      await _repository!.createList(newList);
+
+      // Recargar todas las listas desde el repositorio para asegurar consistencia
+      _loadLists();
+
+      LoggerFactory.info('Lista "$name" creada exitosamente');
+    } catch (e) {
+      LoggerFactory.error('Error creando lista: $e');
+      // Revertir cambio optimista si hay error
+      _loadLists();
+      rethrow;
+    }
   }
 
   // Actualizar una lista existente
@@ -383,10 +444,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       state = state.copyWith(customLists: updatedLists);
 
       // Eliminar del repositorio
-      await _repository.deleteList(listId);
+      await _repository?.deleteList(listId);
 
       // Registrar cambio offline para sincronización
-      await _syncService.recordOfflineChange(OfflineChange(
+      await _syncService?.recordOfflineChange(OfflineChange(
         id: 'delete_${listId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.deleteList,
         data: {'id': listId},
@@ -394,7 +455,9 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       ));
 
       // Registrar evento de gamificación
-      // TODO: Implementar gamificación
+      final listToDelete =
+          state.customLists.firstWhere((list) => list.id == listId);
+      await _gamificationService?.trackListDeleted(listId, listToDelete.name);
 
       LoggerFactory.info('✅ Lista personalizada eliminada: $listId');
     } catch (e) {
@@ -437,10 +500,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
       // Intentar agregar usando el repositorio
       try {
-        await _repository.addMovieToList(listId, movieId, position: position);
+        await _repository?.addMovieToList(listId, movieId, position: position);
       } catch (e) {
         // Si falla, registrar como cambio offline
-        await _syncService.recordOfflineChange(OfflineChange(
+        await _syncService?.recordOfflineChange(OfflineChange(
           id: 'add_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
           type: OfflineChangeType.addMovie,
           data: {
@@ -453,8 +516,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       }
 
       // Registrar evento de gamificación
-      await _gamificationManager
-          .trackActivity(activity.ActivityType.addToFavorites);
+      await _gamificationService?.trackMovieAddedToList(movieId, listId);
     } catch (e) {
       throw Exception('Error adding movie to list: $e');
     }
@@ -491,10 +553,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
       // Intentar remover usando el repositorio
       try {
-        await _repository.removeMovieFromList(listId, movieId);
+        await _repository?.removeMovieFromList(listId, movieId);
       } catch (e) {
         // Si falla, registrar como cambio offline
-        await _syncService.recordOfflineChange(OfflineChange(
+        await _syncService?.recordOfflineChange(OfflineChange(
           id: 'remove_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
           type: OfflineChangeType.removeMovie,
           data: {
@@ -506,8 +568,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       }
 
       // Registrar evento de gamificación
-      await _gamificationManager
-          .trackActivity(activity.ActivityType.removeFromList);
+      // Note: No specific tracking for movie removal in current gamification system
     } catch (e) {
       throw Exception('Error removing movie from list: $e');
     }
@@ -618,52 +679,106 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 }
 
 // Provider del repositorio
-final customListsRepositoryProvider = Provider<ICustomListsRepository>((ref) {
-    final prefsAsync = ref.watch(sharedPreferencesProvider);
-    final supabaseDataSource = ref.watch(supabaseCustomListsDatasourceProvider);
-    final connectivity = ref.watch(connectivityProvider);
-    
-    return prefsAsync.when(
-      data: (prefs) => CustomListsRepositoryImpl(supabaseDataSource, prefs, connectivity),
-      loading: () => throw const AsyncLoading<ICustomListsRepository>(),
-      error: (error, stack) => throw AsyncError<ICustomListsRepository>(error, stack),
+final customListsRepositoryProvider =
+    FutureProvider<ICustomListsRepository>((ref) async {
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+  final supabaseDataSource = ref.watch(supabaseCustomListsDatasourceProvider);
+  final connectivity = ref.watch(connectivityProvider);
+
+  return CustomListsRepositoryImpl(supabaseDataSource, prefs, connectivity);
+});
+
+// Provider principal que maneja el estado asyncrónicamente
+final allListsProvider = FutureProvider<AllListsState>((ref) async {
+  try {
+    final repository = await ref.watch(customListsRepositoryProvider.future);
+    final allUserLists = await repository.getUserLists();
+
+    // Separar listas por defecto y personalizadas desde los datos reales del usuario
+    final defaultLists = allUserLists.where((list) => list.isDefault).toList();
+    final customLists = allUserLists.where((list) => !list.isDefault).toList();
+
+    LoggerFactory.info(
+        'AllListsProvider: ${allUserLists.length} listas totales del usuario');
+    LoggerFactory.info(
+        'AllListsProvider: ${defaultLists.length} listas por defecto, ${customLists.length} listas personalizadas');
+
+    // Calcular total de películas para debug
+    final totalMovies =
+        allUserLists.fold(0, (sum, list) => sum + list.movieIds.length);
+    LoggerFactory.info(
+        'AllListsProvider: Total de películas en todas las listas: $totalMovies');
+
+    return AllListsState(
+      defaultLists: defaultLists,
+      customLists: customLists,
     );
+  } catch (e) {
+    LoggerFactory.error('Error loading lists: $e');
+    return AllListsNotifier.getInitialState();
+  }
+});
+
+// Provider simplificado para las operaciones de mutación
+final allListsNotifierProvider =
+    StateNotifierProvider<AllListsNotifier, AllListsState>((ref) {
+  // Crear notifier con estado inicial y configurar dependencias asíncronamente
+  final notifier = AllListsNotifier.withInitialState();
+
+  // Configurar dependencias asíncronamente
+  ref.read(customListsRepositoryProvider.future).then((repo) {
+    notifier._setRepository(repo);
+    notifier._loadLists();
+  }).catchError((e) {
+    LoggerFactory.error('Error setting up repository: $e');
   });
 
-// Provider principal unificado
-final allListsProvider =
-    StateNotifierProvider<AllListsNotifier, AllListsState>((ref) {
-  final repository = ref.watch(customListsRepositoryProvider);
-  final syncService = ref.watch(listSyncServiceProvider);
-  final gamificationManager = ref.watch(gamificationManagerProvider);
-  
-  return syncService.when(
-    data: (service) => AllListsNotifier(
-      repository,
-      service,
-      gamificationManager,
-    ),
-    loading: () => throw const AsyncLoading<AllListsState>(),
-    error: (error, stack) => throw AsyncError<AllListsState>(error, stack),
-  );
+  ref.read(listSyncServiceProvider.future).then((sync) {
+    notifier._setSyncService(sync);
+  }).catchError((e) {
+    LoggerFactory.error('Error setting up sync service: $e');
+  });
+
+  return notifier;
 });
 
 // Provider para obtener todas las listas
 final listsProvider = Provider<List<CustomList>>((ref) {
-  final state = ref.watch(allListsProvider);
-  return state.allLists;
+  final stateAsync = ref.watch(allListsProvider);
+  return stateAsync.when(
+    data: (data) => data.allLists,
+    loading: () => <CustomList>[],
+    error: (error, stack) {
+      LoggerFactory.error('Error in listsProvider: $error');
+      return <CustomList>[];
+    },
+  );
 });
 
 // Provider para obtener solo listas personalizadas
 final customListsProvider = Provider<List<CustomList>>((ref) {
-  final state = ref.watch(allListsProvider);
-  return state.customLists;
+  final stateAsync = ref.watch(allListsProvider);
+  return stateAsync.when(
+    data: (data) => data.customLists,
+    loading: () => <CustomList>[],
+    error: (error, stack) {
+      LoggerFactory.error('Error in customListsProvider: $error');
+      return <CustomList>[];
+    },
+  );
 });
 
 // Provider para obtener solo listas predefinidas
 final defaultListsProvider = Provider<List<CustomList>>((ref) {
   final state = ref.watch(allListsProvider);
-  return state.defaultLists;
+  return state.when(
+    data: (data) => data.defaultLists,
+    loading: () => <CustomList>[],
+    error: (error, stack) {
+      LoggerFactory.error('Error in defaultListsProvider: $error');
+      return <CustomList>[];
+    },
+  );
 });
 
 // Provider para obtener una lista específica por ID

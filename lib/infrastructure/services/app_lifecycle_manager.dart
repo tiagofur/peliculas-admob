@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../core/cache/image_cache_manager.dart';
 import '../../core/logging/logger_factory.dart';
 
 /// Estados del ciclo de vida de la aplicación
@@ -175,6 +176,11 @@ class AppLifecycleManager with WidgetsBindingObserver {
               DateTime.now().difference(_lastPausedTime ?? DateTime.now());
           LoggerFactory.info(
               '⏱️ App estuvo en segundo plano por: ${backgroundDuration.inMinutes} minutos');
+
+          // MEMORY LEAK FIX: Limpiar cache si estuvo mucho tiempo en segundo plano
+          if (backgroundDuration > _backgroundThreshold) {
+            _cleanupCacheAfterLongBackground();
+          }
         }
         break;
       case AppLifecycleStatus.paused:
@@ -259,7 +265,45 @@ class AppLifecycleManager with WidgetsBindingObserver {
     _callbacks.clear();
     _statusController.close();
 
+    // MEMORY LEAK FIX: Limpiar Image Cache Manager
+    _cleanupImageCache();
+
     LoggerFactory.info('✅ AppLifecycleManager limpiado');
+  }
+
+  /// Limpia el cache de imágenes para prevenir memory leaks
+  void _cleanupImageCache() {
+    try {
+      // La limpieza se hace de forma asíncrona para no bloquear el dispose
+      Future(() async {
+        try {
+          await ImageCacheManager.instance.dispose();
+          LoggerFactory.info('✅ ImageCacheManager limpiado correctamente');
+        } catch (e) {
+          LoggerFactory.warning('⚠️ No se pudo limpiar ImageCacheManager: $e');
+        }
+      });
+    } catch (e) {
+      LoggerFactory.warning(
+          '⚠️ Error configurando limpieza de imagen cache: $e');
+    }
+  }
+
+  /// Limpia el cache después de mucho tiempo en segundo plano
+  void _cleanupCacheAfterLongBackground() {
+    LoggerFactory.info(
+        '🧹 App estuvo mucho tiempo en segundo plano - limpiando cache...');
+
+    Future(() async {
+      try {
+        // Limpiar cache expirado (no todo el cache, solo lo expirado)
+        await ImageCacheManager.instance.cleanExpiredCache();
+        LoggerFactory.info(
+            '✅ Cache expirado limpiado después de segundo plano prolongado');
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Error limpiando cache expirado: $e');
+      }
+    });
   }
 }
 

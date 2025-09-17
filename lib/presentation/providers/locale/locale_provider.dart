@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Provider for managing the locale state
@@ -84,4 +84,11 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
         Locale('es'), // Spanish
         Locale('en'), // English
       ];
+
+  /// ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
+  }
 }

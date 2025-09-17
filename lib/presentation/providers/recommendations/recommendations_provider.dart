@@ -302,13 +302,24 @@ final recommendationsUserStatsProvider =
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
+  // Debug logs para diagnosticar el problema
+  print('📊 RecommendationsUserStatsProvider:');
+  print('   📋 Favoritas: ${favoriteMovies.length}');
+  print('   👀 Vistas: ${watchedMoviesState.movies.length}');
+  print('   📂 Estado de carga: ${watchedMoviesState.isLoading}');
+  print('   📄 Página actual: ${watchedMoviesState.currentPage}');
+  print('   🔚 Última página: ${watchedMoviesState.isLastPage}');
+
   final favoriteMoviesList = favoriteMovies.values.toList();
-  return {
+  final stats = {
     'totalFavorites': favoriteMovies.length,
     'totalWatched': watchedMoviesState.movies.length,
     'favoriteGenres': _getMostCommonGenres(favoriteMoviesList),
     'averageRating': _getAverageRating(favoriteMoviesList),
   };
+
+  print('📊 Estadísticas finales: $stats');
+  return stats;
 });
 
 // Provider para estadísticas básicas del usuario (para recomendaciones)

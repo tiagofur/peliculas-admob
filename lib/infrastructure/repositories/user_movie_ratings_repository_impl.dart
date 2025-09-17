@@ -20,8 +20,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
       final response = await _supabase
           .from(_tableName)
           .select()
-          .filter("user_id", "eq", user.id)
-          .filter("movie_id", "eq", movieId)
+          .filter('user_id', 'eq', user.id)
+          .filter('movie_id', 'eq', movieId)
           .maybeSingle();
 
       return response != null ? UserMovieRating.fromJson(response) : null;
@@ -45,7 +45,7 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
 
     try {
       PostgrestTransformBuilder<PostgrestList> query =
-          _supabase.from(_tableName).select().filter("user_id", "eq", user.id);
+          _supabase.from(_tableName).select().filter('user_id', 'eq', user.id);
 
       // Aplicar ordenamiento
       if (orderBy != null) {
@@ -88,8 +88,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
         final response = await _supabase
             .from(_tableName)
             .update(rating.toSupabaseUpdate())
-            .filter("user_id", "eq", user.id)
-            .filter("movie_id", "eq", rating.movieId)
+            .filter('user_id', 'eq', user.id)
+            .filter('movie_id', 'eq', rating.movieId)
             .select()
             .single();
 
@@ -122,8 +122,8 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     await _supabase
         .from(_tableName)
         .delete()
-        .filter("user_id", "eq", user.id)
-        .filter("movie_id", "eq", movieId);
+        .filter('user_id', 'eq', user.id)
+        .filter('movie_id', 'eq', movieId);
   }
 
   @override
@@ -191,7 +191,7 @@ class UserMovieRatingsRepositoryImpl implements UserMovieRatingsRepository {
     final response = await _supabase
         .from(_tableName)
         .select()
-        .filter("user_id", "eq", user.id)
+        .filter('user_id', 'eq', user.id)
         .ilike('movie_title', '%$query%')
         .order('created_at', ascending: false);
 

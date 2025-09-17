@@ -1,7 +1,12 @@
+import 'dart:async';
+
+import 'package:hive/hive.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../domain/entities/entities.dart';
 import '../../domain/entities/sync_result.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
+import '../../infrastructure/datasources/watched_movies_hive_datasource.dart';
 import '../logging/logger_factory.dart';
 import 'entity_sync_manager.dart';
 import 'sync_operation.dart';
@@ -13,9 +18,14 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
     SupabaseClient? supabaseClient,
   })  : _supabase = supabaseClient ?? Supabase.instance.client,
         super(entityType: 'watched_movie');
+  final WatchedMoviesHiveDatasource _localDatasource =
+      WatchedMoviesHiveDatasource();
 
   final SupabaseClient _supabase;
   static const String _tableName = 'user_watched_movies';
+  
+  /// Getter para acceder al almacenamiento local de Hive
+  Box get _localStorage => Hive.box('watched_movies');
 
   // =============================================
   // IMPLEMENTACIONES REQUERIDAS
@@ -44,24 +54,25 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
   @override
   Future<List<SyncableWatchedMovie>> getRemoteChanges({DateTime? since}) async {
     try {
-      var query = _supabase
-          .from(_tableName)
-          .select()
-          .eq("user_id", userId)
-          .eq("is_deleted", false)
-          .order('last_modified_at', ascending: false);
+      final response = since != null
+          ? await _supabase
+              .from(_tableName)
+              .select()
+              .eq('user_id', userId)
+              .filter('last_modified_at', 'gte', since.toIso8601String())
+              .order('last_modified_at', ascending: false)
+          : await _supabase
+              .from(_tableName)
+              .select()
+              .eq('user_id', userId)
+              .order('last_modified_at', ascending: false);
 
-      // Add date filtering for incremental sync
       if (since != null) {
-        // TODO: Fix date filtering when Supabase API is clarified
-        // query = query.gte('last_modified_at', since.toIso8601String());
         LoggerFactory.info(
             '📅 Fetching remote changes since: ${since.toIso8601String()}');
-        LoggerFactory.warning(
-            '⚠️ Date filtering temporarily disabled - will fetch all records');
+      } else {
+        LoggerFactory.info('📅 Fetching all remote changes (no date filter)');
       }
-
-      final response = await query;
       final List<dynamic> data = response as List<dynamic>;
 
       final watchedMovies = data
@@ -179,18 +190,47 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
 
   @override
   Future<List<ConflictInfo<SyncableWatchedMovie>>> detectConflicts() async {
-    // Para películas vistas, los conflictos son menos comunes
-    // Implementación simple por ahora
-    final conflicts = <ConflictInfo<SyncableWatchedMovie>>[];
-
     try {
-      // TODO: Implementar detección de conflictos cuando tengamos storage local
-      LoggerFactory.debug('🔍 No conflicts detected for watched movies');
-    } catch (e) {
-      LoggerFactory.error('❌ Conflict detection failed: $e');
-    }
+      final conflicts = <ConflictInfo<SyncableWatchedMovie>>[];
 
-    return conflicts;
+      // Obtener películas vistas localmente
+      final localWatchedMovies = await _localDatasource.loadWatchedMovies();
+
+      // Obtener cambios remotos para comparar
+      final remoteWatchedMovies = await getRemoteChanges();
+
+      for (final remoteMovie in remoteWatchedMovies) {
+        // Buscar si existe localmente
+        final localMovie = localWatchedMovies.cast<WatchedMovie?>().firstWhere(
+          (movie) => movie?.movie.id == remoteMovie.movieId,
+          orElse: () => null,
+        );
+
+        // Detectar conflicto si ambos existen pero tienen diferentes timestamps
+        final localTimestamp = localMovie?.watchedDate ?? DateTime.now();
+        final remoteTimestamp = remoteMovie.lastModifiedAt;
+
+        // Si las fechas difieren significativamente (más de 1 segundo), hay conflicto
+        if (localMovie != null && (localTimestamp.difference(remoteTimestamp).abs().inSeconds > 1)) {
+          conflicts.add(ConflictInfo<SyncableWatchedMovie>(
+            localEntity: SyncableWatchedMovie.fromWatchedMovie(
+              userId: userId,
+              watchedMovie: localMovie,
+            ),
+            remoteEntity: remoteMovie,
+            conflictType: ConflictType.concurrentModification,
+            detectedAt: DateTime.now(),
+          ));
+        }
+      }
+
+      LoggerFactory.debug(
+          '🔍 Detected ${conflicts.length} watched movie conflicts');
+      return conflicts;
+    } catch (e) {
+      LoggerFactory.error('❌ Watched movie conflict detection failed: $e');
+      return [];
+    }
   }
 
   @override
@@ -233,34 +273,80 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
 
   /// Agrega una película vista y la cola para sync
   Future<void> addWatchedMovie(SyncableWatchedMovie watchedMovie) async {
-    // TODO: Guardar localmente cuando tengamos storage
+    try {
+      // Guardar localmente primero
+      final localData = serializeForLocal(watchedMovie);
+      await _localStorage.put('watched_${watchedMovie.id}', localData);
+      LoggerFactory.info('💾 Saved watched movie locally: ${watchedMovie.movieTitle}');
+      
+      await queueOperation(
+        type: SyncOperationType.create,
+        entityId: watchedMovie.id,
+        data: localData,
+        priority: 3, // Prioridad media para películas vistas
+      );
 
-    await queueOperation(
-      type: SyncOperationType.create,
-      entityId: watchedMovie.id,
-      data: serializeForLocal(watchedMovie),
-      priority: 3, // Prioridad media para películas vistas
-    );
+      LoggerFactory.info(
+          '➕ Added watched movie to queue: ${watchedMovie.movieTitle}');
+    } catch (e) {
+      LoggerFactory.error('❌ Error adding watched movie ${watchedMovie.movieTitle}: $e');
+      rethrow;
+    }
+  }
 
-    LoggerFactory.info(
-        '➕ Added watched movie to queue: ${watchedMovie.movieTitle}');
+  Future<void> markAsWatched(Movie movie) async {
+    try {
+      // Verificar si ya está marcada como vista
+      final isAlreadyWatched = await _localDatasource.isMovieWatched(movie.id);
+      if (isAlreadyWatched) {
+        LoggerFactory.debug('📝 Movie ${movie.id} already marked as watched');
+        return;
+      }
+
+      // Marcar como vista localmente
+      await _localDatasource.markAsWatched(movie);
+
+      // Crear el item sincronizable
+      final watchedMovie = SyncableWatchedMovie.fromMovie(
+        userId: userId,
+        movie: movie,
+        customId: 'watched_${movie.id}_$userId',
+        watchedDate: DateTime.now(),
+      );
+
+      await queueOperation(
+        type: SyncOperationType.create,
+        entityId: watchedMovie.id,
+        data: watchedMovie.toSupabaseJson(),
+        priority: 3,
+      );
+
+      LoggerFactory.debug('📝 Movie marked as watched: ${movie.id}');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to mark movie as watched: $e');
+      rethrow;
+    }
   }
 
   /// Elimina una película vista y la cola para sync
   Future<void> removeWatchedMovie(String watchedMovieId) async {
-    // TODO: Marcar como eliminado localmente cuando tengamos storage
+    try {
+      // Remover del almacenamiento local
+      await _localStorage.delete('watched_$watchedMovieId');
+      LoggerFactory.info('🗑️ Removed watched movie from local storage: $watchedMovieId');
+      
+      await queueOperation(
+        type: SyncOperationType.delete,
+        entityId: watchedMovieId,
+        data: {}, // No necesitamos datos adicionales para hard delete
+        priority: 2, // Alta prioridad para eliminaciones
+      );
 
-    await queueOperation(
-      type: SyncOperationType.delete,
-      entityId: watchedMovieId,
-      data: {
-        'is_deleted': true,
-        'deleted_at': DateTime.now().toIso8601String()
-      },
-      priority: 2, // Alta prioridad para eliminaciones
-    );
-
-    LoggerFactory.info('🗑️ Removed watched movie from queue: $watchedMovieId');
+      LoggerFactory.info('🗑️ Removed watched movie from queue: $watchedMovieId');
+    } catch (e) {
+      LoggerFactory.error('❌ Error removing watched movie $watchedMovieId: $e');
+      rethrow;
+    }
   }
 
   /// Sincroniza películas vistas específicamente
@@ -286,12 +372,56 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
       itemsSuccessful: totalSuccessful,
       itemsFailed: totalProcessed - totalSuccessful,
       errors: allErrors,
-      duration: (queueResult.duration ?? Duration.zero) +
-          (syncResult.duration ?? Duration.zero),
+      duration: (queueResult.duration ?? Duration.zero) + (syncResult.duration ?? Duration.zero),
     );
 
     LoggerFactory.info(
         '✅ Watched movies sync completed: ${combinedResult.toString()}');
     return combinedResult;
+  }
+
+  @override
+  Future<void> deleteEntity(String entityId) async {
+    try {
+      // Eliminar de Supabase
+      await _supabase
+          .from('watched_movies')
+          .delete()
+          .eq('id', entityId);
+      
+      LoggerFactory.info('🗑️ Deleted watched movie entity: $entityId');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to delete watched movie entity $entityId: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getRemoteEntity(String entityId) async {
+    try {
+      final response = await _supabase
+          .from('watched_movies')
+          .select()
+          .eq('id', entityId)
+          .maybeSingle();
+      
+      LoggerFactory.debug('📥 Retrieved remote watched movie entity: $entityId');
+      return response;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to get remote watched movie entity $entityId: $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<SyncableWatchedMovie> mergeEntities(SyncableWatchedMovie localEntity, SyncableWatchedMovie remoteEntity) async {
+    // Estrategia: usar la entidad con timestamp más reciente
+    final localTimestamp = localEntity.lastModifiedAt;
+    final remoteTimestamp = remoteEntity.lastModifiedAt;
+    
+    final merged = localTimestamp.isAfter(remoteTimestamp) ? localEntity : remoteEntity;
+    
+    LoggerFactory.info('🔀 Merged watched movie entities for ${merged.movieTitle}');
+    return merged;
   }
 }

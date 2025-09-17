@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user_movie_rating.dart';
 import '../../domain/repositories/user_movie_ratings_repository.dart';
 import '../../infrastructure/repositories/user_movie_ratings_repository_impl.dart';
@@ -196,5 +198,12 @@ class UserRatingsNotifier extends StateNotifier<UserRatingsState> {
   /// Limpia el estado de error
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  /// ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    LoggerFactory.info('✅ UserRatingsNotifier disposed');
+    super.dispose();
   }
 }

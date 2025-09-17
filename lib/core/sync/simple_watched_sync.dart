@@ -43,7 +43,7 @@ class SimpleWatchedSync {
       final response = await _supabase
           .from('user_watched_movies')
           .select('*')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .order('last_modified_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -92,7 +92,7 @@ class SimpleWatchedSync {
           await _supabase
               .from('user_watched_movies')
               .delete()
-              .eq("user_id", userId);
+              .eq('user_id', userId);
 
           await _supabase.from('user_watched_movies').insert(watchedData);
         } else {
@@ -117,7 +117,7 @@ class SimpleWatchedSync {
       await _supabase
           .from('user_watched_movies')
           .delete()
-          .eq("user_id", userId);
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ Película vista removida exitosamente: $movieId');
     } catch (e) {
@@ -132,7 +132,7 @@ class SimpleWatchedSync {
       final response = await _supabase
           .from('user_watched_movies')
           .select('id')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .limit(1);
 
       final List<dynamic> data = response as List<dynamic>;

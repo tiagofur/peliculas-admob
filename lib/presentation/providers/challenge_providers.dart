@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/gamification/challenge_notifications.dart';
 import '../../core/gamification/challenge_system.dart';

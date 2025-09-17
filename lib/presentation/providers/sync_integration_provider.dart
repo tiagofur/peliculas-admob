@@ -1,15 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
-import '../../core/sync/conflict_resolution/strategies/conflict_strategy.dart';
 import '../../core/services/sync_performance_metrics.dart';
-import '../../infrastructure/services/connectivity_manager.dart';
-import '../../infrastructure/services/realtime_sync_manager.dart';
+import '../../core/sync/conflict_resolution/strategies/conflict_strategy.dart';
 import '../../core/sync/entity_sync_manager.dart';
 import '../../core/sync/sync_coordinator.dart';
-import 'auth_provider.dart';
+import '../../infrastructure/services/connectivity_manager.dart';
+import '../../infrastructure/services/realtime_sync_manager.dart';
 import '../widgets/sync/sync_history_viewer.dart';
+import 'auth_provider.dart';
 
 /// Frecuencia de sincronización
 enum SyncFrequency {
@@ -185,7 +186,8 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
 
       state = state.copyWith(
         isInitialized: true,
-        isConnected: _connectivityManager.currentStatus == ConnectionStatus.online,
+        isConnected:
+            _connectivityManager.currentStatus == ConnectionStatus.online,
       );
     } catch (e) {
       state = state.copyWith(
@@ -274,7 +276,8 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     _syncCoordinator.setConflictStrategy('default', syncStrategy);
   }
 
-  ConflictStrategy _convertToConflictStrategy(ConflictResolutionStrategy strategy) {
+  ConflictStrategy _convertToConflictStrategy(
+      ConflictResolutionStrategy strategy) {
     switch (strategy) {
       case ConflictResolutionStrategy.lastWriteWins:
         return ConflictStrategy.remoteWins;
@@ -312,10 +315,12 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
       );
 
       final result = await _syncCoordinator.performFullSync();
-      
+
       state = state.copyWith(
         globalSyncStatus: result.success ? SyncStatus.synced : SyncStatus.error,
-        lastError: result.success ? null : (result.errors.isNotEmpty ? result.errors.first : null),
+        lastError: result.success
+            ? null
+            : (result.errors.isNotEmpty ? result.errors.first : null),
       );
     } catch (e) {
       state = state.copyWith(
@@ -391,6 +396,20 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
   bool get isSyncing => state.globalSyncStatus == SyncStatus.syncing;
   bool get hasConflicts => state.globalSyncStatus == SyncStatus.conflicts;
   List<SyncHistoryEntry> get syncHistory => state.recentHistory;
+
+  /// ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    // Limpiar recursos de sync managers
+    try {
+      _realtimeSyncManager.dispose();
+      _connectivityManager.dispose();
+      _syncCoordinator.dispose();
+    } catch (e) {
+      // Ignorar errores en dispose
+    }
+    super.dispose();
+  }
 }
 
 // Provider definitions
@@ -399,12 +418,12 @@ final syncIntegrationProvider =
   // Get user ID from auth provider
   final user = ref.watch(currentUserProvider);
   final userId = user?.id;
-  
+
   if (userId == null) {
     // Return a disabled sync integration state when no user is authenticated
     return DisabledSyncIntegrationNotifier();
   }
-  
+
   // Get dependencies from other providers
   final realtimeSyncManager = ref.watch(realtimeSyncManagerProvider(userId));
   final connectivityManager = ref.watch(connectivityManagerProvider);
@@ -437,7 +456,8 @@ final syncPerformanceProvider = Provider<Map<String, dynamic>>((ref) {
 });
 
 // Real providers for production
-final realtimeSyncManagerProvider = Provider.family<RealtimeSyncManager, String>((ref, userId) {
+final realtimeSyncManagerProvider =
+    Provider.family<RealtimeSyncManager, String>((ref, userId) {
   final syncCoordinator = ref.watch(syncCoordinatorProvider(userId));
   final connectivityManager = ref.watch(connectivityManagerProvider);
   return RealtimeSyncManager(
@@ -451,7 +471,8 @@ final connectivityManagerProvider = Provider<ConnectivityManager>((ref) {
   return ConnectivityManager();
 });
 
-final syncCoordinatorProvider = Provider.family<SyncCoordinator, String>((ref, userId) {
+final syncCoordinatorProvider =
+    Provider.family<SyncCoordinator, String>((ref, userId) {
   return SyncCoordinator(userId: userId);
 });
 
@@ -461,29 +482,30 @@ final syncPerformanceMetricsProvider = Provider<SyncPerformanceMetrics>((ref) {
 
 /// Notifier deshabilitado para cuando no hay usuario autenticado
 class DisabledSyncIntegrationNotifier extends SyncIntegrationNotifier {
-  DisabledSyncIntegrationNotifier() : super(
-    _createDisabledRealtimeSyncManager(),
-    _createDisabledConnectivityManager(),
-    _createDisabledSyncCoordinator(),
-    _createDisabledPerformanceMetrics(),
-  ) {
+  DisabledSyncIntegrationNotifier()
+      : super(
+          _createDisabledRealtimeSyncManager(),
+          _createDisabledConnectivityManager(),
+          _createDisabledSyncCoordinator(),
+          _createDisabledPerformanceMetrics(),
+        ) {
     // Inicializar con estado deshabilitado
-     state = SyncIntegrationState(
-       isInitialized: false,
-       isConnected: false,
-       globalSyncStatus: SyncStatus.offline,
-       currentSettings: SyncSettings(
-         autoSyncEnabled: false,
-         offlineModeEnabled: false,
-         syncFrequency: SyncFrequency.manual,
-         conflictResolution: ConflictResolutionStrategy.userChoice,
-         backgroundSyncEnabled: false,
-         wifiOnlySync: false,
-       ),
-       recentHistory: [],
-       performanceMetrics: {},
-       lastError: 'Usuario no autenticado - Sync deshabilitado',
-     );
+    state = const SyncIntegrationState(
+      isInitialized: false,
+      isConnected: false,
+      globalSyncStatus: SyncStatus.offline,
+      currentSettings: SyncSettings(
+        autoSyncEnabled: false,
+        offlineModeEnabled: false,
+        syncFrequency: SyncFrequency.manual,
+        conflictResolution: ConflictResolutionStrategy.userChoice,
+        backgroundSyncEnabled: false,
+        wifiOnlySync: false,
+      ),
+      recentHistory: [],
+      performanceMetrics: {},
+      lastError: 'Usuario no autenticado - Sync deshabilitado',
+    );
   }
 
   static RealtimeSyncManager _createDisabledRealtimeSyncManager() {

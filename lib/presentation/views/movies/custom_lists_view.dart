@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
@@ -556,7 +557,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(allListsProvider.notifier).clearList(list.id);
+              ref.read(allListsNotifierProvider.notifier).clearList(list.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Lista "${list.name}" vaciada')),
@@ -584,7 +585,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(allListsProvider.notifier).deleteList(list.id);
+              ref.read(allListsNotifierProvider.notifier).deleteList(list.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Lista "${list.name}" eliminada')),
@@ -792,19 +793,48 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
         ElevatedButton(
           onPressed: _nameController.text.trim().isEmpty
               ? null
-              : () {
-                  ref.read(allListsProvider.notifier).createList(
-                        name: _nameController.text.trim(),
-                        description: _descriptionController.text.trim(),
-                        emoji: _selectedEmoji,
-                        color: _selectedColor,
-                      );
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'Lista "${_nameController.text.trim()}" creada')),
-                  );
+              : () async {
+                  try {
+                    // Usar el provider correcto para la creación de listas
+                    final repository =
+                        await ref.read(customListsRepositoryProvider.future);
+
+                    final now = DateTime.now();
+                    const uuid = Uuid();
+                    final newId = uuid.v4();
+
+                    final newList = CustomList(
+                      id: newId,
+                      name: _nameController.text.trim(),
+                      description: _descriptionController.text.trim(),
+                      emoji: _selectedEmoji,
+                      movieIds: [],
+                      createdAt: now,
+                      lastModifiedAt: now,
+                      isDefault: false,
+                      color: _selectedColor,
+                    );
+
+                    // Crear la lista usando el repositorio directamente
+                    await repository.createList(newList);
+
+                    // Invalidar el provider para que se recargue
+                    ref.invalidate(allListsProvider);
+
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text(
+                              'Lista "${_nameController.text.trim()}" creada')),
+                    );
+                  } catch (e) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Error al crear la lista: $e'),
+                          backgroundColor: Theme.of(context).colorScheme.error),
+                    );
+                  }
                 },
           child: const Text('Crear'),
         ),
@@ -1008,7 +1038,7 @@ class _EditListDialogState extends ConsumerState<_EditListDialog> {
           onPressed: _nameController.text.trim().isEmpty
               ? null
               : () {
-                  ref.read(allListsProvider.notifier).updateList(
+                  ref.read(allListsNotifierProvider.notifier).updateList(
                         widget.list.id,
                         name: _nameController.text.trim(),
                         description: _descriptionController.text.trim(),
@@ -1106,7 +1136,7 @@ class _DuplicateListDialogState extends ConsumerState<_DuplicateListDialog> {
           onPressed: _nameController.text.trim().isEmpty
               ? null
               : () {
-                  ref.read(allListsProvider.notifier).duplicateList(
+                  ref.read(allListsNotifierProvider.notifier).duplicateList(
                         widget.list.id,
                         _nameController.text.trim(),
                       );

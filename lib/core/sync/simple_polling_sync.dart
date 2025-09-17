@@ -88,8 +88,8 @@ class SimplePollingSync {
       final response = await Supabase.instance.client
           .from('user_favorites')
           .select('*')
-          .eq("user_id", _currentUserId!)
-          .gte('last_modified_at', timestamp.toIso8601String())
+          .eq('user_id', _currentUserId!)
+          .filter('last_modified_at', 'gte', timestamp.toIso8601String())
           .order('last_modified_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;

@@ -188,6 +188,85 @@ class GamificationIntegrationService {
     }
   }
 
+  /// Track when user adds a movie to a list
+  Future<void> trackMovieAddedToList(int movieId, String listId) async {
+    try {
+      await _gamificationManager.trackActivity(
+        ActivityType.addToFavorites,
+        metadata: {
+          'movie_id': movieId,
+          'list_id': listId,
+        },
+      );
+
+      await _analyticsService.trackEvent(
+        AnalyticsEventType.gamificationActivity,
+        {
+          'activity_type': 'movie_added_to_list',
+          'movie_id': movieId,
+          'list_id': listId,
+        },
+      );
+
+      _logger.info('Tracked movie added to list: $movieId -> $listId');
+    } catch (e) {
+      _logger.error('Failed to track movie added to list: $e');
+    }
+  }
+
+  /// Track when user creates a new list
+  Future<void> trackListCreated(String listId, String listName) async {
+    try {
+      await _gamificationManager.trackActivity(
+        ActivityType.completeWatchlist,
+        metadata: {
+          'list_id': listId,
+          'list_name': listName,
+        },
+      );
+
+      await _analyticsService.trackEvent(
+        AnalyticsEventType.gamificationActivity,
+        {
+          'activity_type': 'list_created',
+          'list_id': listId,
+          'list_name': listName,
+        },
+      );
+
+      _logger.info('Tracked list created: $listName');
+    } catch (e) {
+      _logger.error('Failed to track list created: $e');
+    }
+  }
+
+  /// Track when user deletes a list
+  Future<void> trackListDeleted(String listId, String listName) async {
+    try {
+      await _gamificationManager.trackActivity(
+        ActivityType.shareContent, // Using existing activity type
+        metadata: {
+          'content_type': 'list_deletion',
+          'list_id': listId,
+          'list_name': listName,
+        },
+      );
+
+      await _analyticsService.trackEvent(
+        AnalyticsEventType.gamificationActivity,
+        {
+          'activity_type': 'list_deleted',
+          'list_id': listId,
+          'list_name': listName,
+        },
+      );
+
+      _logger.info('Tracked list deleted: $listName');
+    } catch (e) {
+      _logger.error('Failed to track list deleted: $e');
+    }
+  }
+
   /// Track when user shares a movie
   Future<void> trackMovieShared(String movieId) async {
     try {

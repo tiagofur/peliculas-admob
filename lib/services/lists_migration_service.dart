@@ -206,10 +206,8 @@ class ListsMigrationService {
   /// Obtiene listas remotas de Supabase
   Future<List<CustomList>> _getRemoteLists(String userId) async {
     try {
-      final response = await _supabase
-          .from('user_lists')
-          .select()
-          .filter('user_id', 'eq', userId);
+      final response =
+          await _supabase.from('user_lists').select().eq('user_id', userId);
 
       return (response as List)
           .map((json) => CustomList.fromJson(json as Map<String, dynamic>))
@@ -335,9 +333,9 @@ class ListsMigrationService {
       final response = await _supabase
           .from('user_lists')
           .select()
-          .filter('user_id', 'eq', userId)
-          .filter('user_id', 'eq', userId)
-          .filter('user_id', 'eq', userId)
+          .eq('user_id', userId)
+          .eq('name', name)
+          .eq('is_default', true)
           .maybeSingle();
 
       return response != null ? CustomList.fromJson(response) : null;
@@ -455,8 +453,7 @@ class ListsMigrationService {
       final response = await _supabase
           .from('user_lists')
           .select('id')
-          .filter('user_id', 'eq', userId)
-          .filter('user_id', 'eq', userId)
+          .eq('user_id', userId)
           .maybeSingle();
 
       return response != null;

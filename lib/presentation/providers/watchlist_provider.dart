@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
@@ -231,6 +232,13 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
   /// Refresh completo de la watchlist
   Future<void> refresh() async {
     await loadWatchlist(refresh: true);
+  }
+
+  /// ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    LoggerFactory.info('✅ WatchlistNotifier disposed');
+    super.dispose();
   }
 }
 

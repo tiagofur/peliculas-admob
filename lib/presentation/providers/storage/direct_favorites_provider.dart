@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -191,6 +192,13 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar cambios de tiempo real desde Supabase
   void _handleRealtimeEvent(PostgresChangePayload payload) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectFavorites: Provider disposed, ignorando evento real-time');
+      return;
+    }
+
     try {
       LoggerFactory.info('🔊 DirectFavorites: ===== CAMBIO RECIBIDO =====');
       LoggerFactory.info(
@@ -206,14 +214,37 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
 
       final userId = data['user_id'] as String?;
       final movieId = data['movie_id'] as int?;
+      final supabaseRecordId = data['id']?.toString();
 
       LoggerFactory.info('🔍 DirectFavorites: user_id del evento: $userId');
       LoggerFactory.info('🔍 DirectFavorites: user_id actual: $_currentUserId');
       LoggerFactory.info('🔍 DirectFavorites: movie_id del evento: $movieId');
+      LoggerFactory.info(
+          '🔍 DirectFavorites: supabase_id del evento: $supabaseRecordId');
+
+      // Si no tenemos user_id pero tenemos supabase record_id, intentar manejar DELETE
+      if (userId == null &&
+          payload.eventType == PostgresChangeEvent.delete &&
+          supabaseRecordId != null) {
+        LoggerFactory.info(
+            '🔍 DirectFavorites: DELETE sin user_id, intentando por record_id');
+        _handleDeleteBySupabaseId(supabaseRecordId);
+        return;
+      }
 
       if (userId != _currentUserId) {
         LoggerFactory.info(
             '🔊 DirectFavorites: Cambio de otro usuario, ignorando');
+        return;
+      }
+
+      // Si no tenemos movie_id pero es un DELETE, intentar buscar por supabase record_id
+      if (movieId == null &&
+          payload.eventType == PostgresChangeEvent.delete &&
+          supabaseRecordId != null) {
+        LoggerFactory.info(
+            '🔍 DirectFavorites: DELETE sin movie_id, buscando por record_id');
+        _handleDeleteBySupabaseId(supabaseRecordId);
         return;
       }
 
@@ -234,7 +265,13 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
           break;
         case PostgresChangeEvent.delete:
           LoggerFactory.info(
-              '🗑️ DirectFavorites: Procesando DELETE para movie: $movieId');
+              '🗑️ DirectFavorites: ===== PROCESANDO DELETE =====');
+          LoggerFactory.info(
+              '🗑️ DirectFavorites: Movie ID a eliminar: $movieId');
+          LoggerFactory.info(
+              '🗑️ DirectFavorites: Estado actual antes del DELETE: ${state.keys.toList()}');
+
+          // Procesar DELETE inmediatamente sin delay
           _handleRemoteDelete(movieId);
           break;
         case PostgresChangeEvent.update:
@@ -244,16 +281,25 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
           break;
         case PostgresChangeEvent.all:
           LoggerFactory.info('🔄 DirectFavorites: Procesando evento genérico');
-          // Manejar caso genérico
+          _handleGenericRealtimeEvent(payload, data, movieId);
           break;
       }
     } catch (e) {
       LoggerFactory.error('❌ DirectFavorites: Error procesando cambio: $e');
+      LoggerFactory.error(
+          '❌ DirectFavorites: Stack trace: ${StackTrace.current}');
     }
   }
 
   /// Manejar inserción remota (otro dispositivo agregó favorito)
   void _handleRemoteInsert(Map<String, dynamic> data) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectFavorites: Provider disposed, ignorando inserción remota');
+      return;
+    }
+
     try {
       final movieId = data['movie_id'] as int;
       final isDeleted = data['is_deleted'] as bool? ?? false;
@@ -272,21 +318,49 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
 
   /// Manejar eliminación remota (otro dispositivo removió favorito)
   void _handleRemoteDelete(int movieId) {
+    // Verificar si el provider aún está activo
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 DirectFavorites: Provider disposed, ignorando eliminación remota');
+      return;
+    }
+
     try {
       LoggerFactory.info(
-          '🗑️ DirectFavorites: Procesando DELETE para movie: $movieId');
+          '🗑️ DirectFavorites: ===== _handleRemoteDelete INICIADO =====');
+      LoggerFactory.info('🗑️ DirectFavorites: Movie ID a procesar: $movieId');
+      LoggerFactory.info(
+          '🗑️ DirectFavorites: Estado actual keys: ${state.keys.toList()}');
+      LoggerFactory.info(
+          '🗑️ DirectFavorites: Estado actual contiene $movieId? ${state.containsKey(movieId)}');
 
       if (state.containsKey(movieId)) {
         final movie = state[movieId];
-        state = Map.from(state)..remove(movieId);
+        final oldState = Map<int, Movie>.from(state);
+
         LoggerFactory.info(
-            '✅ DirectFavorites: Favorito removido remotamente: ${movie?.title} (ID: $movieId)');
+            '🗑️ DirectFavorites: Movie a eliminar: ${movie?.title} (ID: $movieId)');
+        LoggerFactory.info(
+            '🗑️ DirectFavorites: Estado antes de eliminar: ${oldState.keys.length} favoritos');
+
+        state = Map.from(state)..remove(movieId);
+
+        LoggerFactory.info(
+            '🗑️ DirectFavorites: Estado después de eliminar: ${state.keys.length} favoritos');
+        LoggerFactory.info(
+            '✅ DirectFavorites: 🎉 FAVORITO REMOVIDO REMOTAMENTE: ${movie?.title} (ID: $movieId)');
+        LoggerFactory.info(
+            '🗑️ DirectFavorites: Nuevas keys del estado: ${state.keys.toList()}');
       } else {
         LoggerFactory.warning(
             '⚠️ DirectFavorites: Intento de remover favorito que no existe localmente: $movieId');
+        LoggerFactory.info(
+            '🗑️ DirectFavorites: Favoritos actuales en estado: ${state.keys.toList()}');
       }
     } catch (e) {
       LoggerFactory.error('❌ DirectFavorites: Error en eliminación remota: $e');
+      LoggerFactory.error(
+          '❌ DirectFavorites: Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -358,6 +432,86 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
 
     LoggerFactory.info(
         '✅ DirectFavorites: Favoritos habilitados correctamente');
+  }
+
+  /// Manejar eliminación usando el ID de Supabase cuando no tenemos movie_id
+  void _handleDeleteBySupabaseId(String supabaseRecordId) async {
+    try {
+      LoggerFactory.info(
+          '🗑️ DirectFavorites: ===== _handleDeleteBySupabaseId INICIADO =====');
+      LoggerFactory.info(
+          '🗑️ DirectFavorites: Supabase record ID: $supabaseRecordId');
+      LoggerFactory.info(
+          '🗑️ DirectFavorites: Estado actual keys: ${state.keys.toList()}');
+
+      // Opción: Forzar un refresh completo desde Supabase
+      LoggerFactory.info(
+          '🔄 DirectFavorites: Forzando refresh completo para detectar cambios');
+      final currentUser = Supabase.instance.client.auth.currentUser;
+
+      if (currentUser != null) {
+        final remoteFavorites = await _sync.getUserFavorites(currentUser.id);
+        final remoteFavoritesMap = <int, Movie>{};
+        for (final movie in remoteFavorites) {
+          remoteFavoritesMap[movie.id] = movie;
+        }
+
+        // Comparar con el estado actual para detectar qué se eliminó
+        final currentMovieIds = state.keys.toSet();
+        final remoteMovieIds = remoteFavoritesMap.keys.toSet();
+        final deletedMovieIds = currentMovieIds.difference(remoteMovieIds);
+
+        if (deletedMovieIds.isNotEmpty) {
+          LoggerFactory.info(
+              '🗑️ DirectFavorites: Detected deleted movies: $deletedMovieIds');
+
+          // Eliminar las películas que ya no están en el remoto
+          final newState = Map<int, Movie>.from(state);
+          for (final deletedId in deletedMovieIds) {
+            final deletedMovie = newState.remove(deletedId);
+            LoggerFactory.info(
+                '✅ DirectFavorites: Removed movie: ${deletedMovie?.title} (ID: $deletedId)');
+          }
+
+          state = newState;
+          LoggerFactory.info(
+              '🗑️ DirectFavorites: State updated after comparison');
+        } else {
+          LoggerFactory.info(
+              '🔍 DirectFavorites: No differences found in comparison');
+        }
+      } else {
+        LoggerFactory.warning(
+            '⚠️ DirectFavorites: No current user for refresh');
+      }
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ DirectFavorites: Error en eliminación por Supabase ID: $e');
+      LoggerFactory.error(
+          '❌ DirectFavorites: Stack trace: ${StackTrace.current}');
+    }
+  }
+
+  /// Manejar evento genérico de tiempo real (PostgresChangeEvent.all)
+  void _handleGenericRealtimeEvent(
+      PostgresChangePayload payload, Map<String, dynamic> data, int? movieId) {
+    try {
+      LoggerFactory.info('🔄 DirectFavorites: Manejando evento genérico');
+
+      // Determinar el tipo de operación basado en los datos
+      final isDeleted = data['is_deleted'] as bool? ?? false;
+
+      if (isDeleted && movieId != null) {
+        LoggerFactory.info('🗑️ DirectFavorites: Evento genérico -> DELETE');
+        _handleRemoteDelete(movieId);
+      } else if (!isDeleted && movieId != null) {
+        LoggerFactory.info(
+            '➕ DirectFavorites: Evento genérico -> INSERT/UPDATE');
+        _handleRemoteInsert(data);
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ DirectFavorites: Error en evento genérico: $e');
+    }
   }
 
   @override

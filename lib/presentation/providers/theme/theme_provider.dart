@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../config/theme/app_theme.dart';
 import '../../../domain/repositories/theme_repository.dart';

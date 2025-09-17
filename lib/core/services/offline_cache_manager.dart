@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../logging/logger_factory.dart';
@@ -154,8 +153,4 @@ class CacheStats {
   }
 }
 
-/// Provider for OfflineCacheManager
-final offlineCacheManagerProvider = Provider<OfflineCacheManager>((ref) {
-  // This will need to be initialized with proper datasource
-  throw UnimplementedError('OfflineCacheManager provider needs datasource');
-});
+// Provider moved to cached_movies_repository_provider.dart to avoid circular dependencies

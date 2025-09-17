@@ -31,6 +31,8 @@ class ComprehensiveSyncService {
   bool _isInitialized = false;
   bool _isSyncing = false;
   Timer? _periodicSyncTimer;
+  DateTime? _lastFullSync;
+  DateTime? _lastIncrementalSync;
 
   // Stream controllers for sync events
   final StreamController<SyncProgressEvent> _syncProgressController =
@@ -154,6 +156,11 @@ class ComprehensiveSyncService {
         syncType: SyncType.full,
       );
 
+      // Actualizar timestamp de última sincronización completa
+      if (result.success) {
+        _lastFullSync = DateTime.now();
+      }
+
       _syncResultController.add(result);
 
       if (result.success) {
@@ -219,6 +226,11 @@ class ComprehensiveSyncService {
         duration: DateTime.now().difference(startTime),
         syncType: SyncType.incremental,
       );
+
+      // Actualizar timestamp de última sincronización incremental
+      if (result.success) {
+        _lastIncrementalSync = DateTime.now();
+      }
 
       _syncResultController.add(result);
 
@@ -308,8 +320,8 @@ class ComprehensiveSyncService {
     return ComprehensiveSyncStats(
       favorites: favoritesStats,
       watchlist: watchlistStats,
-      lastFullSync: DateTime.now(), // TODO: Implementar tracking real
-      lastIncrementalSync: DateTime.now(), // TODO: Implementar tracking real
+      lastFullSync: _lastFullSync ?? DateTime.fromMillisecondsSinceEpoch(0),
+      lastIncrementalSync: _lastIncrementalSync ?? DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 

@@ -608,6 +608,31 @@ class ImageCacheManager {
       _logger.error('Error limpiando caché expirado: $e');
     }
   }
+
+  /// Libera recursos y limpia la memoria
+  Future<void> dispose() async {
+    try {
+      _logger.info('🧹 Disposing ImageCacheManager...');
+
+      // Limpiar caché en memoria
+      _memoryCache.clear();
+      _lruOrder.clear();
+      _memoryCacheSize = 0;
+
+      // Limpiar conjuntos de URLs fallidas
+      _failedUrls.clear();
+
+      // Cancelar descargas activas (se cancelarán automáticamente al limpiar referencias)
+      _activeDownloads.clear();
+
+      // Limpiar métricas de rendimiento
+      ImageCachePerformanceMetrics.instance.dispose();
+
+      _logger.info('✅ ImageCacheManager disposed successfully');
+    } catch (e) {
+      _logger.error('❌ Error disposing ImageCacheManager: $e');
+    }
+  }
 }
 
 /// Entrada del caché en memoria

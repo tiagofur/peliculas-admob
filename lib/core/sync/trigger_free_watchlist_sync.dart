@@ -23,7 +23,7 @@ class TriggerFreeWatchlistSync {
       final response = await _supabase
           .from('user_watchlist')
           .select('*')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -93,7 +93,8 @@ class TriggerFreeWatchlistSync {
       await _supabase
           .from('user_watchlist')
           .delete()
-          .eq("user_id", userId);
+          .eq('user_id', userId)
+          .eq('movie_id', movieId);
 
       LoggerFactory.info(
           '✅ [TriggerFree] Película removida de watchlist: $movieId');
@@ -117,7 +118,8 @@ class TriggerFreeWatchlistSync {
             'last_modified_at': DateTime.now().toUtc().toIso8601String(),
             'sync_version': 1,
           })
-          .eq("user_id", userId);
+          .eq('user_id', userId)
+          .eq('movie_id', movieId);
 
       LoggerFactory.info('✅ [TriggerFree] Prioridad cambiada: $movieId');
     } catch (e) {
@@ -185,7 +187,8 @@ class TriggerFreeWatchlistSync {
       final response = await _supabase
           .from('user_watchlist')
           .select('movie_id')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
+          .eq('movie_id', movieId)
           .limit(1);
 
       return (response as List).isNotEmpty;

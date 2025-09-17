@@ -1,18 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:peliculas/infrastructure/services/anonymous_data_migrator.dart';
-
-class MockRef extends Mock implements Ref {}
 
 void main() {
   group('AnonymousDataMigrator Tests', () {
-    late MockRef mockRef;
+    late ProviderContainer container;
     late AnonymousDataMigrator migrator;
 
     setUp(() {
-      mockRef = MockRef();
-      migrator = AnonymousDataMigrator(ref: mockRef);
+      container = ProviderContainer();
+      migrator = container.read(anonymousDataMigratorProvider);
+    });
+
+    tearDown(() {
+      container.dispose();
     });
 
     test('detectAnonymousData retorna mapa vacío si no hay datos', () async {

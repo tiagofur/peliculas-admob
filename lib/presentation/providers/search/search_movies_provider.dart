@@ -1,14 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../movies/movies_repository_provider.dart';
 
+// Provider para el query de búsqueda
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
+// Provider para los resultados de búsqueda
 final searchedMoviesProvider = FutureProvider<List<Movie>>((ref) async {
   final query = ref.watch(searchQueryProvider);
 
-  if (query.isEmpty || query.trim().length < 3) {
+  // FIXED: Eliminar validación incorrecta de 3 caracteres mínimo
+  if (query.isEmpty || query.trim().isEmpty) {
     return [];
   }
 
@@ -16,27 +20,5 @@ final searchedMoviesProvider = FutureProvider<List<Movie>>((ref) async {
   return await movieRepository.searchMovies(query);
 });
 
+// Legacy support - mantener callback para compatibilidad
 typedef SearchMoviesCallback = Future<List<Movie>> Function(String query);
-
-class SearchedMoviesNotifier extends StateNotifier<List<Movie>> {
-  SearchedMoviesNotifier({
-    required this.searchMovies,
-    required this.updateQuery,
-  }) : super([]);
-  final SearchMoviesCallback searchMovies;
-  final void Function(String) updateQuery;
-
-  Future<List<Movie>> searchMoviesByQuery(String query) async {
-    final List<Movie> movies = await searchMovies(query);
-    state = movies;
-    updateQuery(query);
-
-    return movies;
-  }
-
-  @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
-  }
-}

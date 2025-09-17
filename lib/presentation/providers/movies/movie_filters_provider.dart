@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+
 import '../../../domain/entities/entities.dart';
 
 // Provider para el filtro actual
@@ -228,6 +230,13 @@ class MovieFiltersNotifier extends StateNotifier<MovieFilter> {
       minYear: minYear ?? state.minYear,
       sortBy: sortBy ?? state.sortBy,
     );
+  }
+
+  /// ✅ FIX: Implementar dispose para limpiar recursos
+  @override
+  void dispose() {
+    // Limpiar recursos si es necesario
+    super.dispose();
   }
 }
 

@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peliculas/core/sync/conflict_resolver.dart';
-import 'package:peliculas/core/sync/sync_coordinator.dart';
-import 'package:peliculas/core/sync/sync_operation.dart';
-import 'package:peliculas/domain/entities/sync_result.dart';
+
+
+import 'package:peliculas/core/sync/entity_sync_manager.dart' as sync_manager;
 import 'package:peliculas/domain/entities/syncable_entity.dart';
 import 'package:peliculas/infrastructure/services/connectivity_manager.dart';
-import 'package:peliculas/infrastructure/services/realtime_sync_manager.dart';
+
 
 // Mocks simples
 class MockConflictResolver extends Mock implements ConflictResolver {}
@@ -96,6 +96,18 @@ class TestSyncableEntity extends SyncableEntity {
         'device_id': deviceId,
       };
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'user_id': userId,
+        'name': name,
+        'value': value,
+        'created_at': createdAt.toIso8601String(),
+        'last_modified_at': lastModifiedAt.toIso8601String(),
+        'sync_version': syncVersion,
+        'is_deleted': isDeleted,
+        'device_id': deviceId,
+      };
+
   @override
   SyncableEntity copyWith({
     DateTime? lastModifiedAt,
@@ -136,10 +148,9 @@ class TestSyncableEntity extends SyncableEntity {
 
 void main() {
   group('RealtimeSync - Resolución de Conflictos', () {
-    late SyncCoordinator syncCoordinator;
+
     late MockConflictResolver mockConflictResolver;
     late MockConnectivityManager mockConnectivityManager;
-    late RealtimeSyncManager realtimeSyncManager;
 
     const testUserId = 'test-user-123';
     const testEntityId = 'entity-456';
@@ -154,13 +165,7 @@ void main() {
       when(mockConnectivityManager.currentStatus)
           .thenReturn(ConnectionStatus.online);
 
-      syncCoordinator = SyncCoordinator(userId: testUserId);
 
-      realtimeSyncManager = RealtimeSyncManager(
-        userId: testUserId,
-        syncCoordinator: syncCoordinator,
-        connectivityManager: mockConnectivityManager,
-      );
     });
 
     test('debe detectar conflicto de versión', () async {
@@ -170,8 +175,9 @@ void main() {
         userId: testUserId,
         name: 'Local Version',
         value: 100,
-        lastModified: DateTime.now().subtract(const Duration(minutes: 5)),
-        version: 1,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        syncVersion: 1,
       );
 
       final remoteEntity = TestSyncableEntity(
@@ -179,32 +185,45 @@ void main() {
         userId: testUserId,
         name: 'Remote Version',
         value: 200,
-        lastModified: DateTime.now().subtract(const Duration(minutes: 3)),
-        version: 2,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: DateTime.now().subtract(const Duration(minutes: 3)),
+        syncVersion: 2,
       );
 
       // Configurar mock para detectar conflicto
-      when(mockConflictResolver.detectConflict(any, any)).thenReturn(true);
+      final conflictInfo = sync_manager.ConflictInfo<SyncableEntity>(
+          localEntity: localEntity,
+          remoteEntity: remoteEntity,
+          conflictType: sync_manager.ConflictType.concurrentModification,
+          detectedAt: DateTime.now(),
+        );
+      when(mockConflictResolver.detectConflict<SyncableEntity>(
+          localEntity, remoteEntity))
+          .thenReturn(conflictInfo);
 
       when(mockConflictResolver.resolveConflict(
-        localEntity: any,
-        remoteEntity: any,
-        strategy: any,
-      )).thenAnswer((_) async => ConflictResolution(
+        conflictInfo,
+        overrideStrategy: anyNamed('overrideStrategy'),
+      )).thenAnswer((_) async => sync_manager.ConflictResolution(
             resolvedEntity: remoteEntity, // Usar versión remota
-            strategy: ConflictResolutionStrategy.remoteWins,
-            conflictType: ConflictType.versionMismatch,
+            strategy: sync_manager.ConflictStrategy.remoteWins,
+            resolvedAt: DateTime.now(),
+            reason: 'Test resolution',
           ));
 
       // Act
-      final hasConflict = mockConflictResolver.detectConflict(
-        localEntity.toJson(),
-        remoteEntity.toJson(),
+      final detectedConflict = mockConflictResolver.detectConflict<TestSyncableEntity>(
+        localEntity,
+        remoteEntity,
       );
 
       // Assert
-      expect(hasConflict, isTrue);
-      verify(mockConflictResolver.detectConflict(any, any)).called(1);
+      expect(detectedConflict, isNotNull);
+      expect(detectedConflict!.conflictType, sync_manager.ConflictType.concurrentModification);
+      expect(detectedConflict.localEntity.name, 'Local Version');
+      expect(detectedConflict.remoteEntity.name, 'Remote Version');
+      verify(mockConflictResolver.detectConflict<TestSyncableEntity>(
+          localEntity, remoteEntity)).called(1);
     });
 
     test('debe resolver conflicto usando estrategia remoteWins', () async {
@@ -214,8 +233,9 @@ void main() {
         userId: testUserId,
         name: 'Local Version',
         value: 100,
-        lastModified: DateTime.now().subtract(const Duration(minutes: 5)),
-        version: 1,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        syncVersion: 1,
       );
 
       final remoteEntity = TestSyncableEntity(
@@ -223,31 +243,38 @@ void main() {
         userId: testUserId,
         name: 'Remote Version',
         value: 200,
-        lastModified: DateTime.now().subtract(const Duration(minutes: 3)),
-        version: 2,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: DateTime.now().subtract(const Duration(minutes: 3)),
+        syncVersion: 2,
       );
 
-      when(mockConflictResolver.resolveConflict(
-        localEntity: any,
-        remoteEntity: any,
-        strategy: ConflictResolutionStrategy.remoteWins,
-      )).thenAnswer((_) async => ConflictResolution(
-            resolvedEntity: remoteEntity,
-            strategy: ConflictResolutionStrategy.remoteWins,
-            conflictType: ConflictType.versionMismatch,
-          ));
+      final conflictInfo = sync_manager.ConflictInfo<SyncableEntity>(
+          localEntity: localEntity,
+          remoteEntity: remoteEntity,
+          conflictType: sync_manager.ConflictType.concurrentModification,
+          detectedAt: DateTime.now(),
+        );
+
+      when(mockConflictResolver.resolveConflict<SyncableEntity>(
+          conflictInfo,
+          overrideStrategy: sync_manager.ConflictStrategy.remoteWins,
+        )).thenAnswer((_) async => sync_manager.ConflictResolution(
+             strategy: sync_manager.ConflictStrategy.remoteWins,
+             resolvedAt: DateTime.now(),
+             resolvedEntity: remoteEntity,
+             reason: 'Override strategy applied',
+           ));
 
       // Act
-      final resolution = await mockConflictResolver.resolveConflict(
-        localEntity: localEntity.toJson(),
-        remoteEntity: remoteEntity.toJson(),
-        strategy: ConflictResolutionStrategy.remoteWins,
-      );
+      final resolution = await mockConflictResolver.resolveConflict<SyncableEntity>(
+          conflictInfo,
+          overrideStrategy: sync_manager.ConflictStrategy.remoteWins,
+        );
 
       // Assert
-      expect(resolution.strategy, ConflictResolutionStrategy.remoteWins);
-      expect(resolution.resolvedEntity['name'], 'Remote Version');
-      expect(resolution.resolvedEntity['value'], 200);
+        expect(resolution.strategy, sync_manager.ConflictStrategy.remoteWins);
+      expect((resolution.resolvedEntity as TestSyncableEntity).name, 'Remote Version');
+      expect((resolution.resolvedEntity as TestSyncableEntity).value, 200);
     });
 
     test('debe resolver conflicto usando estrategia localWins', () async {
@@ -257,8 +284,9 @@ void main() {
         userId: testUserId,
         name: 'Local Version',
         value: 100,
-        lastModified: DateTime.now().subtract(const Duration(minutes: 2)),
-        version: 2,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: DateTime.now().subtract(const Duration(minutes: 2)),
+        syncVersion: 2,
       );
 
       final remoteEntity = TestSyncableEntity(
@@ -266,34 +294,40 @@ void main() {
         userId: testUserId,
         name: 'Remote Version',
         value: 200,
-        lastModified: DateTime.now().subtract(const Duration(minutes: 5)),
-        version: 1,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        syncVersion: 1,
       );
 
-      when(mockConflictResolver.resolveConflict(
-        localEntity: any,
-        remoteEntity: any,
-        strategy: ConflictResolutionStrategy.localWins,
-      )).thenAnswer((_) async => ConflictResolution(
-            resolvedEntity: localEntity,
-            strategy: ConflictResolutionStrategy.localWins,
-            conflictType: ConflictType.versionMismatch,
-          ));
+      final conflictInfo = sync_manager.ConflictInfo<SyncableEntity>(
+          localEntity: localEntity,
+          remoteEntity: remoteEntity,
+          conflictType: sync_manager.ConflictType.concurrentModification,
+          detectedAt: DateTime.now(),
+        );
+
+      when(mockConflictResolver.resolveConflict<SyncableEntity>(
+          conflictInfo,
+          overrideStrategy: sync_manager.ConflictStrategy.localWins,
+        )).thenAnswer((_) async => sync_manager.ConflictResolution(
+          strategy: sync_manager.ConflictStrategy.localWins,
+          resolvedAt: DateTime.now(),
+          resolvedEntity: localEntity,
+        ));
 
       // Act
-      final resolution = await mockConflictResolver.resolveConflict(
-        localEntity: localEntity.toJson(),
-        remoteEntity: remoteEntity.toJson(),
-        strategy: ConflictResolutionStrategy.localWins,
-      );
+      final resolution = await mockConflictResolver.resolveConflict<SyncableEntity>(
+          conflictInfo,
+          overrideStrategy: sync_manager.ConflictStrategy.localWins,
+        );
 
       // Assert
-      expect(resolution.strategy, ConflictResolutionStrategy.localWins);
-      expect(resolution.resolvedEntity['name'], 'Local Version');
-      expect(resolution.resolvedEntity['value'], 100);
+      expect(resolution.strategy, sync_manager.ConflictStrategy.localWins);
+      expect((resolution.resolvedEntity as TestSyncableEntity).name, 'Local Version');
+      expect((resolution.resolvedEntity as TestSyncableEntity).value, 100);
     });
 
-    test('debe resolver conflicto usando estrategia lastModifiedWins',
+    test('debe resolver conflicto usando estrategia remoteWins',
         () async {
       // Arrange
       final now = DateTime.now();
@@ -302,8 +336,9 @@ void main() {
         userId: testUserId,
         name: 'Local Version',
         value: 100,
-        lastModified: now.subtract(const Duration(minutes: 5)), // Más antiguo
-        version: 1,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: now.subtract(const Duration(minutes: 5)), // Más antiguo
+        syncVersion: 1,
       );
 
       final remoteEntity = TestSyncableEntity(
@@ -311,83 +346,86 @@ void main() {
         userId: testUserId,
         name: 'Remote Version',
         value: 200,
-        lastModified: now.subtract(const Duration(minutes: 2)), // Más reciente
-        version: 1,
+        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+        lastModifiedAt: now.subtract(const Duration(minutes: 2)), // Más reciente
+        syncVersion: 1,
+      );
+
+      final conflictInfo = sync_manager.ConflictInfo<SyncableEntity>(
+        localEntity: localEntity,
+        remoteEntity: remoteEntity,
+        conflictType: sync_manager.ConflictType.concurrentModification,
+        detectedAt: DateTime.now(),
       );
 
       when(mockConflictResolver.resolveConflict(
-        localEntity: any,
-        remoteEntity: any,
-        strategy: ConflictResolutionStrategy.lastModifiedWins,
-      )).thenAnswer((_) async => ConflictResolution(
-            resolvedEntity: remoteEntity, // Más reciente gana
-            strategy: ConflictResolutionStrategy.lastModifiedWins,
-            conflictType: ConflictType.timestampMismatch,
+        conflictInfo,
+        overrideStrategy: sync_manager.ConflictStrategy.remoteWins,
+      )).thenAnswer((_) async => sync_manager.ConflictResolution(
+            strategy: sync_manager.ConflictStrategy.remoteWins,
+            resolvedAt: DateTime.now(),
+            resolvedEntity: remoteEntity, // Remoto es más reciente
           ));
 
       // Act
-      final resolution = await mockConflictResolver.resolveConflict(
-        localEntity: localEntity.toJson(),
-        remoteEntity: remoteEntity.toJson(),
-        strategy: ConflictResolutionStrategy.lastModifiedWins,
+      final resolution = await mockConflictResolver.resolveConflict<SyncableEntity>(
+        conflictInfo,
+        overrideStrategy: sync_manager.ConflictStrategy.remoteWins,
       );
 
       // Assert
-      expect(resolution.strategy, ConflictResolutionStrategy.lastModifiedWins);
-      expect(resolution.resolvedEntity['name'], 'Remote Version');
-      expect(resolution.conflictType, ConflictType.timestampMismatch);
+      expect(resolution.strategy, sync_manager.ConflictStrategy.remoteWins);
+      expect((resolution.resolvedEntity as TestSyncableEntity).name, 'Remote Version');
+      expect(resolution.resolvedEntity.id, 'entity-456');
     });
 
     test('debe manejar múltiples conflictos concurrentes', () async {
       // Arrange
-      final conflicts = <Map<String, dynamic>>[];
+      final conflicts = List.generate(5, (index) {
+          return sync_manager.ConflictInfo<SyncableEntity>(
+            localEntity: TestSyncableEntity(
+              id: 'local-$index',
+              userId: testUserId,
+              name: 'Local $index',
+              value: index * 10,
+              createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+              lastModifiedAt: DateTime.now().subtract(Duration(minutes: index)),
+              syncVersion: 1,
+            ),
+            remoteEntity: TestSyncableEntity(
+              id: 'remote-$index',
+              userId: testUserId,
+              name: 'Remote $index',
+              value: index * 20,
+              createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+              lastModifiedAt: DateTime.now(),
+              syncVersion: 2,
+            ),
+            conflictType: sync_manager.ConflictType.concurrentModification,
+            detectedAt: DateTime.now(),
+          );
+        });
 
-      for (int i = 0; i < 5; i++) {
-        final localEntity = TestSyncableEntity(
-          id: 'entity-$i',
-          userId: testUserId,
-          name: 'Local $i',
-          value: i * 10,
-          lastModified: DateTime.now().subtract(Duration(minutes: i + 1)),
-          version: 1,
-        );
-
-        final remoteEntity = TestSyncableEntity(
-          id: 'entity-$i',
-          userId: testUserId,
-          name: 'Remote $i',
-          value: i * 20,
-          lastModified: DateTime.now().subtract(Duration(minutes: i)),
-          version: 2,
-        );
-
-        conflicts.add({
-          'local': localEntity.toJson(),
-          'remote': remoteEntity.toJson(),
+      // Configurar mock para resolver todos los conflictos
+      for (final conflict in conflicts) {
+        when(mockConflictResolver.resolveConflict(
+          conflict,
+          overrideStrategy: anyNamed('overrideStrategy'),
+        )).thenAnswer((invocation) async {
+          final conflictInfo = invocation.positionalArguments[0] as sync_manager.ConflictInfo<SyncableEntity>;
+          return sync_manager.ConflictResolution(
+            strategy: sync_manager.ConflictStrategy.remoteWins,
+            resolvedAt: DateTime.now(),
+            resolvedEntity: conflictInfo.remoteEntity,
+          );
         });
       }
 
-      // Configurar mock para resolver todos los conflictos
-      when(mockConflictResolver.resolveConflict(
-        localEntity: any,
-        remoteEntity: any,
-        strategy: any,
-      )).thenAnswer((invocation) async {
-        final remote =
-            invocation.namedArguments[#remoteEntity] as Map<String, dynamic>;
-        return ConflictResolution(
-          resolvedEntity: remote,
-          strategy: ConflictResolutionStrategy.remoteWins,
-          conflictType: ConflictType.versionMismatch,
-        );
-      });
-
       // Act - Resolver todos los conflictos concurrentemente
       final resolutionFutures =
-          conflicts.map((conflict) => mockConflictResolver.resolveConflict(
-                localEntity: conflict['local'],
-                remoteEntity: conflict['remote'],
-                strategy: ConflictResolutionStrategy.remoteWins,
+          conflicts.map((conflict) => mockConflictResolver.resolveConflict<SyncableEntity>(
+                conflict,
+                overrideStrategy: sync_manager.ConflictStrategy.remoteWins,
               ));
 
       final resolutions = await Future.wait(resolutionFutures);
@@ -395,38 +433,35 @@ void main() {
       // Assert
       expect(resolutions.length, 5);
       for (int i = 0; i < resolutions.length; i++) {
-        expect(resolutions[i].strategy, ConflictResolutionStrategy.remoteWins);
-        expect(resolutions[i].resolvedEntity['name'], 'Remote $i');
+        expect(resolutions[i].strategy, sync_manager.ConflictStrategy.remoteWins);
+        expect((resolutions[i].resolvedEntity as TestSyncableEntity).name, 'Remote $i');
       }
 
-      verify(mockConflictResolver.resolveConflict(
-        localEntity: anyNamed('localEntity'),
-        remoteEntity: anyNamed('remoteEntity'),
-        strategy: anyNamed('strategy'),
-      )).called(5);
+      // Verificar que se llamó para cada conflicto
+      for (final conflict in conflicts) {
+        verify(mockConflictResolver.resolveConflict(
+          conflict,
+          overrideStrategy: anyNamed('overrideStrategy'),
+        )).called(1);
+      }
     });
 
     test('debe registrar estadísticas de resolución de conflictos', () async {
       // Arrange
-      when(mockConflictResolver.getResolutionStats()).thenReturn({
-        'total_conflicts': 10,
-        'resolved_conflicts': 8,
-        'failed_resolutions': 2,
-        'strategies_used': {
-          'remoteWins': 5,
-          'localWins': 2,
-          'lastModifiedWins': 1,
-        },
+      when(mockConflictResolver.getResolutionStats()).thenReturn(<String, int>{
+        'favorite_localWins': 5,
+        'watchlist_remoteWins': 2,
+        'custom_list_userChoice': 1,
       });
 
       // Act
       final stats = mockConflictResolver.getResolutionStats();
 
       // Assert
-      expect(stats['total_conflicts'], 10);
-      expect(stats['resolved_conflicts'], 8);
-      expect(stats['failed_resolutions'], 2);
-      expect(stats['strategies_used']['remoteWins'], 5);
+      expect(stats['favorite_localWins'], 5);
+      expect(stats['watchlist_remoteWins'], 2);
+      expect(stats['custom_list_userChoice'], 1);
+      expect(stats.length, 3);
     });
   });
 }

@@ -23,7 +23,7 @@ class TriggerFreeWatchedSync {
       final response = await _supabase
           .from('user_watched_movies')
           .select('*')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .order('watched_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -92,7 +92,7 @@ class TriggerFreeWatchedSync {
       await _supabase
           .from('user_watched_movies')
           .delete()
-          .eq("user_id", userId);
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ [TriggerFree] Película vista removida: $movieId');
     } catch (e) {
@@ -141,7 +141,7 @@ class TriggerFreeWatchedSync {
       final response = await _supabase
           .from('user_watched_movies')
           .select('id')
-          .eq("user_id", userId)
+          .eq('user_id', userId)
           .maybeSingle();
 
       return response != null;

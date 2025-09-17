@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/entities/custom_list.dart';
 import '../domain/entities/list_item.dart';
@@ -9,60 +11,68 @@ import '../domain/repositories/i_custom_lists_repository.dart';
 /// Se encarga de crear, mantener y sincronizar las listas predefinidas
 class DefaultListsManager {
   const DefaultListsManager(this._repository, this._prefs);
-  
+
   final ICustomListsRepository _repository;
   final SharedPreferences _prefs;
-  
+
   // Claves para SharedPreferences
   static const String _defaultListsInitializedKey = 'default_lists_initialized';
   static const String _defaultListsVersionKey = 'default_lists_version';
-  
+
   // Versión actual de las listas por defecto
   static const int _currentDefaultListsVersion = 1;
-  
+
   // ========== INICIALIZACIÓN ==========
-  
+
   /// Inicializa las listas por defecto si es necesario
   Future<void> initializeDefaultLists({bool force = false}) async {
     try {
-      final isInitialized = _prefs.getBool(_defaultListsInitializedKey) ?? false;
+      final isInitialized =
+          _prefs.getBool(_defaultListsInitializedKey) ?? false;
       final currentVersion = _prefs.getInt(_defaultListsVersionKey) ?? 0;
-      
-      if (force || !isInitialized || currentVersion < _currentDefaultListsVersion) {
-        await _createDefaultLists();
-        await _markAsInitialized();
+
+      if (force ||
+          !isInitialized ||
+          currentVersion < _currentDefaultListsVersion) {
+        // Obtener el usuario actual para crear listas con el userId correcto
+        final currentUser = Supabase.instance.client.auth.currentUser;
+        if (currentUser != null) {
+          await _createDefaultLists(currentUser.id);
+          await _markAsInitialized();
+        }
       }
     } catch (e) {
       // Error al inicializar listas por defecto: $e
       rethrow;
     }
   }
-  
+
   /// Verifica si las listas por defecto están inicializadas
   bool areDefaultListsInitialized() {
     return _prefs.getBool(_defaultListsInitializedKey) ?? false;
   }
-  
+
   /// Obtiene la versión actual de las listas por defecto
   int getCurrentDefaultListsVersion() {
     return _prefs.getInt(_defaultListsVersionKey) ?? 0;
   }
-  
+
   // ========== CREACIÓN DE LISTAS POR DEFECTO ==========
-  
+
   /// Crea todas las listas por defecto del sistema
-  Future<void> _createDefaultLists() async {
+  Future<void> _createDefaultLists(String userId) async {
     final defaultListsConfig = _getDefaultListsConfiguration();
-    
+
     for (final config in defaultListsConfig) {
       try {
-        // Verificar si la lista ya existe
+        // Verificar si la lista ya existe para este usuario específico
         final existingLists = await _repository.getDefaultLists();
-        final exists = existingLists.any((list) => 
-            list.defaultType == config.defaultType);
-        
+        final exists = existingLists.any((list) =>
+            list.defaultType == config.defaultType &&
+            list.userId == userId);
+
         if (!exists) {
-          final defaultList = _createDefaultListFromConfig(config);
+          final defaultList = _createDefaultListFromConfig(config, userId);
           await _repository.createList(defaultList);
         }
       } catch (e) {
@@ -70,9 +80,9 @@ class DefaultListsManager {
       }
     }
   }
-  
+
   /// Crea una lista por defecto a partir de su configuración
-  CustomList _createDefaultListFromConfig(DefaultListConfig config) {
+  CustomList _createDefaultListFromConfig(DefaultListConfig config, String userId) {
     return CustomList(
       id: '', // Se generará en el servidor
       name: config.name,
@@ -82,20 +92,20 @@ class DefaultListsManager {
       movieIds: [],
       isDefault: true,
       defaultType: config.defaultType,
-      userId: '', // Se asignará según el usuario autenticado
+      userId: userId,
       createdAt: DateTime.now(),
       lastModifiedAt: DateTime.now(),
       syncStatus: 'synced',
     );
   }
-  
+
   // ========== CONFIGURACIÓN DE LISTAS POR DEFECTO ==========
-  
+
   /// Obtiene la configuración de todas las listas por defecto
   List<DefaultListConfig> _getDefaultListsConfiguration() {
     return [
       // Lista de Favoritos
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'favorites',
         name: 'Mis Favoritas',
         description: 'Películas que más me han gustado',
@@ -103,9 +113,9 @@ class DefaultListsManager {
         color: '#EF4444',
         defaultType: 'favorites',
       ),
-      
+
       // Lista de Pendientes por Ver
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'watchlist',
         name: 'Por Ver',
         description: 'Películas que quiero ver próximamente',
@@ -113,9 +123,9 @@ class DefaultListsManager {
         color: '#3B82F6',
         defaultType: 'watchlist',
       ),
-      
+
       // Lista de Vistas Recientemente
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'recently_watched',
         name: 'Vistas Recientemente',
         description: 'Películas que he visto últimamente',
@@ -123,9 +133,9 @@ class DefaultListsManager {
         color: '#10B981',
         defaultType: 'recently_watched',
       ),
-      
+
       // Lista de Recomendaciones
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'recommendations',
         name: 'Recomendadas',
         description: 'Películas recomendadas para ti',
@@ -133,9 +143,9 @@ class DefaultListsManager {
         color: '#8B5CF6',
         defaultType: 'recommendations',
       ),
-      
+
       // Lista de Clásicos
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'classics',
         name: 'Clásicos Imperdibles',
         description: 'Las mejores películas de todos los tiempos',
@@ -143,9 +153,9 @@ class DefaultListsManager {
         color: '#F59E0B',
         defaultType: 'classics',
       ),
-      
+
       // Lista de Trending
-      DefaultListConfig(
+      const DefaultListConfig(
         localId: 'trending',
         name: 'Tendencias',
         description: 'Lo más popular del momento',
@@ -155,7 +165,7 @@ class DefaultListsManager {
       ),
     ];
   }
-  
+
   /// Obtiene IDs de películas recomendadas
   List<int> _getRecommendedMovieIds() {
     // IDs de películas populares y bien valoradas
@@ -172,14 +182,14 @@ class DefaultListsManager {
       278, // The Shawshank Redemption
     ];
   }
-  
+
   // ========== MÉTODOS PÚBLICOS ==========
-  
+
   /// Obtiene todas las listas por defecto del usuario
   Future<List<CustomList>> getUserDefaultLists() async {
     return await _repository.getDefaultLists();
   }
-  
+
   /// Obtiene una lista por defecto específica por tipo
   Future<CustomList?> getDefaultListByType(String defaultType) async {
     final defaultLists = await getUserDefaultLists();
@@ -191,7 +201,7 @@ class DefaultListsManager {
       return null;
     }
   }
-  
+
   /// Verifica si una lista por defecto existe
   Future<bool> defaultListExists(String defaultType) async {
     try {
@@ -201,13 +211,13 @@ class DefaultListsManager {
       return false;
     }
   }
-  
+
   /// Restaura una lista por defecto a su configuración original
   Future<void> resetDefaultList(String defaultType) async {
     try {
       final config = _getDefaultListsConfiguration()
           .firstWhere((c) => c.defaultType == defaultType);
-      
+
       final existingList = await getDefaultListByType(defaultType);
       if (existingList != null) {
         // Actualizar la lista existente
@@ -219,7 +229,7 @@ class DefaultListsManager {
           movieIds: [],
           lastModifiedAt: DateTime.now(),
         );
-        
+
         await _repository.updateList(resetList);
       }
     } catch (e) {
@@ -227,7 +237,7 @@ class DefaultListsManager {
       rethrow;
     }
   }
-  
+
   /// Actualiza las listas dinámicas (trending, recently watched, etc.)
   Future<void> updateDynamicLists() async {
     try {
@@ -238,7 +248,7 @@ class DefaultListsManager {
       // Error al actualizar listas dinámicas: $e
     }
   }
-  
+
   /// Actualiza la lista de tendencias
   Future<void> _updateTrendingList() async {
     try {
@@ -247,39 +257,40 @@ class DefaultListsManager {
         // Aquí se integraría con la API de TMDB para obtener trending
         // Por ahora, usamos una lista estática
         final trendingMovieIds = await _fetchTrendingMovieIds();
-        
+
         final updatedList = trendingList.copyWith(
           movieIds: trendingMovieIds,
           lastModifiedAt: DateTime.now(),
         );
-        
+
         await _repository.updateList(updatedList);
       }
     } catch (e) {
       // Error al actualizar lista de tendencias: $e
     }
   }
-  
+
   /// Actualiza la lista de vistas recientemente
   Future<void> _updateRecentlyWatchedList() async {
     try {
-      final recentlyWatchedList = await getDefaultListByType('recently_watched');
+      final recentlyWatchedList =
+          await getDefaultListByType('recently_watched');
       if (recentlyWatchedList != null) {
         // Obtener películas vistas recientemente del historial del usuario
         final recentMovieIds = await _getRecentlyWatchedMovieIds();
-        
+
         final updatedList = recentlyWatchedList.copyWith(
           movieIds: recentMovieIds,
           lastModifiedAt: DateTime.now(),
         );
-        
+
         await _repository.updateList(updatedList);
       }
     } catch (e) {
       // Error al actualizar lista de vistas recientemente: $e
     }
   }
-  
+
   /// Actualiza la lista de recomendaciones
   Future<void> _updateRecommendationsList() async {
     try {
@@ -287,21 +298,21 @@ class DefaultListsManager {
       if (recommendationsList != null) {
         // Generar recomendaciones basadas en el historial del usuario
         final recommendedMovieIds = await _generateRecommendations();
-        
+
         final updatedList = recommendationsList.copyWith(
           movieIds: recommendedMovieIds,
           lastModifiedAt: DateTime.now(),
         );
-        
+
         await _repository.updateList(updatedList);
       }
     } catch (e) {
       // Error al actualizar lista de recomendaciones: $e
     }
   }
-  
+
   // ========== MÉTODOS AUXILIARES ==========
-  
+
   /// Obtiene IDs de películas trending (simulado)
   Future<List<int>> _fetchTrendingMovieIds() async {
     // En una implementación real, esto consultaría la API de TMDB
@@ -318,27 +329,27 @@ class DefaultListsManager {
       423108, // The Conjuring: The Devil Made Me Do It
     ];
   }
-  
+
   /// Obtiene IDs de películas vistas recientemente
   Future<List<int>> _getRecentlyWatchedMovieIds() async {
     // En una implementación real, esto consultaría el historial del usuario
     // Por ahora retornamos una lista vacía
     return [];
   }
-  
+
   /// Genera recomendaciones basadas en el historial del usuario
   Future<List<int>> _generateRecommendations() async {
     // En una implementación real, esto usaría algoritmos de recomendación
     // Por ahora retornamos las películas recomendadas por defecto
     return _getRecommendedMovieIds();
   }
-  
+
   /// Marca las listas por defecto como inicializadas
   Future<void> _markAsInitialized() async {
     await _prefs.setBool(_defaultListsInitializedKey, true);
     await _prefs.setInt(_defaultListsVersionKey, _currentDefaultListsVersion);
   }
-  
+
   /// Permite al usuario personalizar las listas por defecto
   Future<void> customizeDefaultList({
     required String defaultType,
@@ -357,7 +368,7 @@ class DefaultListsManager {
           colorHex: colorHex ?? list.colorHex,
           lastModifiedAt: DateTime.now(),
         );
-        
+
         await _repository.updateList(updatedList);
       }
     } catch (e) {
@@ -365,27 +376,29 @@ class DefaultListsManager {
       rethrow;
     }
   }
-  
+
   /// Obtiene estadísticas de las listas por defecto
   Future<DefaultListsStats> getDefaultListsStats() async {
     try {
       final defaultLists = await getUserDefaultLists();
-      
+
       int totalLists = defaultLists.length;
-      int totalMovies = defaultLists.fold(0, (sum, list) => sum + list.movieIds.length);
+      int totalMovies =
+          defaultLists.fold(0, (sum, list) => sum + list.movieIds.length);
       int editableLists = 0;
       int dynamicLists = 0;
-      
+
       final config = _getDefaultListsConfiguration();
       for (final listConfig in config) {
         // Todas las listas por defecto son editables por el usuario
         editableLists++;
         // Las listas dinámicas son aquellas que se actualizan automáticamente
-        if (['trending', 'recommendations', 'recently_watched'].contains(listConfig.defaultType)) {
+        if (['trending', 'recommendations', 'recently_watched']
+            .contains(listConfig.defaultType)) {
           dynamicLists++;
         }
       }
-      
+
       return DefaultListsStats(
         totalLists: totalLists,
         totalMovies: totalMovies,
@@ -410,7 +423,7 @@ class DefaultListsStats {
     required this.dynamicLists,
     required this.lastUpdated,
   });
-  
+
   final int totalLists;
   final int totalMovies;
   final int editableLists;

@@ -161,8 +161,11 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
   }
 
   void _applyFilters() {
-    // Por ahora, solo refrescamos la lista
-    // En una implementación completa, se pasarían los filtros al provider
+    // Aplicar filtros localmente y refrescar la UI
+    setState(() {
+      // Los filtros se aplican en _applyLocalFilters que se llama en build
+    });
+    // También refrescar los datos del provider si es necesario
     ref.read(userRatingsProvider.notifier).loadRatings(refresh: true);
   }
 

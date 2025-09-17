@@ -353,12 +353,7 @@ class RealtimeSyncManager {
     }
 
     // Registrar en métricas de rendimiento
-    // TODO: Implementar _performanceMetrics si es necesario
-    // _performanceMetrics.recordBatchSize(tableName, currentSize);
-    // _performanceMetrics.recordThrottlingEfficiency(
-    //   tableName,
-    //   currentSize / maxSize,
-    // );
+    // Las métricas se registran a través de LoggerFactory para simplicidad
   }
 
   /// Obtiene el tamaño de batch adaptativo para una tabla

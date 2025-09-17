@@ -1,9 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/domain/entities/custom_list.dart';
+import 'package:peliculas/domain/entities/list_item.dart';
+import 'package:peliculas/services/id_mapping_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../lib/services/id_mapping_service.dart';
-import '../../lib/domain/entities/custom_list.dart';
-import '../../lib/domain/entities/list_item.dart';
 
 void main() {
   group('Migration Basic Tests', () {
@@ -23,11 +22,11 @@ void main() {
       // Arrange
       const localId = 1;
       const uuid = 'test-uuid-123';
-      
+
       // Act
       await idMappingService.mapLocalIdToUuid(localId, uuid);
       final mappedUuid = await idMappingService.getUuidForLocalId(localId);
-      
+
       // Assert
       expect(mappedUuid, equals(uuid));
     });
@@ -35,7 +34,7 @@ void main() {
     test('Debe retornar null para ID no mapeado', () async {
       // Act
       final mappedUuid = await idMappingService.getUuidForLocalId(999);
-      
+
       // Assert
       expect(mappedUuid, isNull);
     });
@@ -54,7 +53,7 @@ void main() {
         isDefault: false,
         defaultType: null,
       );
-      
+
       // Assert
       expect(customList.id, equals('test-id'));
       expect(customList.name, equals('Test List'));
@@ -72,7 +71,7 @@ void main() {
         color: '#E91E63',
         defaultType: 'favorites',
       );
-      
+
       // Assert
       expect(config.defaultType, equals('favorites'));
       expect(config.name, equals('Favoritas'));

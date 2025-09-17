@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/error_reporting/error_metrics_service.dart';
 import '../../core/error_reporting/error_reporting_service.dart';
