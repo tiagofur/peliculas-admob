@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import '../../../lib/core/navigation/navigation_error_boundary.dart';
+import 'package:peliculas/core/navigation/navigation_error_boundary.dart';
 
 void main() {
   group('NavigationErrorBoundary', () {
     group('Widget Creation', () {
-      testWidgets('should render child widget when no error', (WidgetTester tester) async {
+      testWidgets('should render child widget when no error',
+          (WidgetTester tester) async {
         // Arrange
         const testChild = Text('Test Child');
 
@@ -24,7 +24,8 @@ void main() {
         expect(find.byType(NavigationErrorBoundary), findsOneWidget);
       });
 
-      testWidgets('should render with custom fallback widget', (WidgetTester tester) async {
+      testWidgets('should render with custom fallback widget',
+          (WidgetTester tester) async {
         // Arrange
         const testChild = Text('Test Child');
         const customFallback = Text('Custom Fallback');
@@ -44,7 +45,8 @@ void main() {
         expect(find.text('Custom Fallback'), findsNothing);
       });
 
-      testWidgets('should call onError callback when provided', (WidgetTester tester) async {
+      testWidgets('should call onError callback when provided',
+          (WidgetTester tester) async {
         // Arrange
         bool errorCallbackCalled = false;
 
@@ -69,9 +71,10 @@ void main() {
     });
 
     group('Error Widget Structure', () {
-      testWidgets('should have proper structure in error widget', (WidgetTester tester) async {
+      testWidgets('should have proper structure in error widget',
+          (WidgetTester tester) async {
         // This test verifies the structure of the default error widget by simulating its creation
-        
+
         // Arrange
         await tester.pumpWidget(
           MaterialApp(
@@ -134,7 +137,8 @@ void main() {
         );
 
         // Assert - verify all error widget elements are present
-        expect(find.text('Error de Navegación'), findsNWidgets(2)); // Title in AppBar and body
+        expect(find.text('Error de Navegación'),
+            findsNWidgets(2)); // Title in AppBar and body
         expect(find.byIcon(Icons.error_outline), findsOneWidget);
         expect(find.text('Reintentar'), findsOneWidget);
         expect(find.text('Ir al Inicio'), findsOneWidget);
@@ -241,8 +245,10 @@ void main() {
         // Arrange & Act & Assert
         expect(SafeNavigation.sanitizeRoute('  '), equals('/'));
         expect(SafeNavigation.sanitizeRoute('///'), equals('/'));
-        expect(SafeNavigation.sanitizeRoute('/path///to///resource/'), equals('/path/to/resource'));
-        expect(SafeNavigation.sanitizeRoute('path/without/leading/slash'), equals('/path/without/leading/slash'));
+        expect(SafeNavigation.sanitizeRoute('/path///to///resource/'),
+            equals('/path/to/resource'));
+        expect(SafeNavigation.sanitizeRoute('path/without/leading/slash'),
+            equals('/path/without/leading/slash'));
       });
     });
 
@@ -250,7 +256,7 @@ void main() {
       test('should provide safe navigation methods', () {
         // Test that the static methods exist and can be called without context
         // This verifies the API is available even if we can't test full navigation
-        
+
         expect(SafeNavigation.isValidRoute, isA<Function>());
         expect(SafeNavigation.sanitizeRoute, isA<Function>());
         expect(SafeNavigation.safeGo, isA<Function>());
@@ -282,7 +288,7 @@ void main() {
         const testRoute = '  //multiple///slashes//path//  ';
         final sanitized1 = SafeNavigation.sanitizeRoute(testRoute);
         final sanitized2 = SafeNavigation.sanitizeRoute(sanitized1);
-        
+
         expect(sanitized1, equals(sanitized2));
         expect(sanitized1, equals('/multiple/slashes/path'));
       });

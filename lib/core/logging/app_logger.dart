@@ -129,6 +129,70 @@ class AppLogger {
     info('Lifecycle: $event${details != null ? ' - $details' : ''}',
         tag: 'Lifecycle');
   }
+
+  // ========== MÉTODOS ESTÁTICOS PARA FACILITAR EL USO ==========
+  
+  /// Static debug method for easy access
+  static void d(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+    instance.debug(message, tag: tag, error: error, stackTrace: stackTrace);
+  }
+
+  /// Static info method for easy access  
+  static void i(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+    instance.info(message, tag: tag, error: error, stackTrace: stackTrace);
+  }
+
+  /// Static warning method for easy access
+  static void w(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+    instance.warning(message, tag: tag, error: error, stackTrace: stackTrace);
+  }
+
+  /// Static error method for easy access
+  static void e(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+    instance.error(message, tag: tag, error: error, stackTrace: stackTrace);
+  }
+
+  // ========== MÉTODOS ESPECIALIZADOS PARA DIFERENTES COMPONENTES ==========
+
+  /// Log para repositorios
+  static void repo(String component, String message, [Object? data]) {
+    d('🗃️ [$component] $message', tag: 'Repository', error: data);
+  }
+
+  /// Log para providers
+  static void provider(String component, String message, [Object? data]) {
+    d('⚡ [$component] $message', tag: 'Provider', error: data);
+  }
+
+  /// Log para servicios
+  static void service(String component, String message, [Object? data]) {
+    d('🔧 [$component] $message', tag: 'Service', error: data);
+  }
+
+  /// Log para sincronización
+  static void sync(String component, String message, [Object? data]) {
+    d('🔄 [$component] $message', tag: 'Sync', error: data);
+  }
+
+  /// Log para operaciones de red
+  static void network(String message, [Object? data]) {
+    d('🌐 $message', tag: 'Network', error: data);
+  }
+
+  /// Log para autenticación
+  static void auth(String message, [Object? data]) {
+    d('🔐 $message', tag: 'Auth', error: data);
+  }
+
+  /// Log para caché
+  static void cache(String message, [Object? data]) {
+    d('💾 $message', tag: 'Cache', error: data);
+  }
+
+  /// Log para UI
+  static void ui(String component, String message, [Object? data]) {
+    d('🎨 [$component] $message', tag: 'UI', error: data);
+  }
 }
 
 /// Log levels enumeration

@@ -32,9 +32,8 @@ class HomeViewState extends ConsumerState<HomeView>
         ref.read(upcomingMoviesProvider.notifier).loadNextPage();
         // Cargar favoritos al iniciar la app
         ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
-        // TODO: Fix legacy compatibility - paginatedRecommendationsProvider commented out
         // Cargar recomendaciones paginadas
-        // ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
+        ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
       }
     });
   }
@@ -215,7 +214,8 @@ class HomeViewState extends ConsumerState<HomeView>
                 },
               ),
 
-              // TODO: Fix legacy compatibility - topRatedState error handling removed
+              // Sección de recomendaciones personalizadas
+              _buildRecommendationsSection(ref),
 
               // Banner al final de la página (ALTA PRIORIDAD según documento)
               const FullWidthAdWidget(
@@ -238,7 +238,21 @@ class HomeViewState extends ConsumerState<HomeView>
 
   /// Construye la sección de recomendaciones personalizadas
   Widget _buildRecommendationsSection(WidgetRef ref) {
-    // TODO: Fix legacy compatibility - paginatedRecommendationsProvider removed
-    return const SizedBox.shrink();
+    final recommendationsState = ref.watch(paginatedRecommendationsProvider);
+    final recommendations = recommendationsState.movies;
+
+    if (recommendations.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return MovieHorizontalListviewWithAds(
+      movies: recommendations,
+      sectionId: 'recommendations',
+      title: 'Recomendaciones para ti',
+      subTitle: 'Basadas en tus gustos',
+      loadNextPage: () {
+        ref.read(paginatedRecommendationsProvider.notifier).loadNextPage();
+      },
+    );
   }
 }

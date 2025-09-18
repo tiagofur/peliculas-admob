@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/recommendation.dart';
-// import 'recommendations_provider.dart'; // Unused import
+import 'recommendations_provider.dart';
 
 /// Estado para las recomendaciones paginadas
 class PaginatedRecommendationsState {
@@ -44,12 +44,12 @@ class PaginatedRecommendationsState {
 /// Notifier para manejar las recomendaciones paginadas
 class PaginatedRecommendationsNotifier
     extends StateNotifier<PaginatedRecommendationsState> {
-  PaginatedRecommendationsNotifier(/* this._ref */)
+  PaginatedRecommendationsNotifier(this._ref)
       : super(const PaginatedRecommendationsState()) {
     _loadInitialRecommendations();
   }
 
-  // final Ref _ref; // TODO: Fix legacy compatibility
+  final dynamic _ref;
   static const int _pageSize = 10;
   List<Recommendation> _allRecommendations = [];
 
@@ -80,13 +80,9 @@ class PaginatedRecommendationsNotifier
     state = state.copyWith(isLoading: true, hasError: false);
 
     try {
-      // TODO: Fix legacy compatibility - commented out _ref usage
-      // final recommendationsAsync =
-      //     _ref.read(personalizedRecommendationsProvider);
-      final recommendationsAsync = <Recommendation>[]; // Temporary empty list
-
-      // TODO: Fix legacy compatibility - simplified handling
-      final recommendations = recommendationsAsync; // Already a list
+      final recommendationsAsync =
+          await _ref.read(personalizedRecommendationsProvider.future);
+      final recommendations = recommendationsAsync;
 
       _allRecommendations = recommendations;
 
@@ -160,14 +156,13 @@ class PaginatedRecommendationsNotifier
   Future<void> refresh() async {
     state = const PaginatedRecommendationsState();
     _allRecommendations = [];
-    // _ref.invalidate(personalizedRecommendationsProvider); // TODO: Fix legacy compatibility
+    _ref.invalidate(personalizedRecommendationsProvider);
     await _loadInitialRecommendations();
   }
 }
 
 /// Provider para las recomendaciones paginadas
-// TODO: Fix legacy compatibility for StateNotifierProvider
-// final paginatedRecommendationsProvider = StateNotifierProvider<
-//     PaginatedRecommendationsNotifier, PaginatedRecommendationsState>((ref) {
-//   return PaginatedRecommendationsNotifier(ref);
-// });
+final paginatedRecommendationsProvider = StateNotifierProvider<
+    PaginatedRecommendationsNotifier, PaginatedRecommendationsState>((ref) {
+  return PaginatedRecommendationsNotifier(ref);
+});

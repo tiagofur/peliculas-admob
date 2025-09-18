@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../../../lib/presentation/widgets/performance/lazy_optimized_image.dart';
+import 'package:peliculas/presentation/widgets/performance/lazy_optimized_image.dart';
 
 void main() {
   group('LazyOptimizedImage', () {
     const testImageUrl = 'https://example.com/test-image.jpg';
-    
+
     group('Basic Functionality', () {
       testWidgets('should render without errors', (WidgetTester tester) async {
         await tester.pumpWidget(
@@ -24,9 +24,10 @@ void main() {
         expect(find.byType(LazyOptimizedImage), findsOneWidget);
       });
 
-      testWidgets('should handle custom placeholder', (WidgetTester tester) async {
+      testWidgets('should handle custom placeholder',
+          (WidgetTester tester) async {
         const customPlaceholder = Text('Loading...');
-        
+
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
@@ -64,7 +65,9 @@ void main() {
     });
 
     group('Lazy Loading Behavior', () {
-      testWidgets('should render VisibilityDetector when loadOnlyWhenVisible is true', (WidgetTester tester) async {
+      testWidgets(
+          'should render VisibilityDetector when loadOnlyWhenVisible is true',
+          (WidgetTester tester) async {
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
@@ -81,7 +84,9 @@ void main() {
         expect(find.byType(VisibilityDetector), findsOneWidget);
       });
 
-      testWidgets('should not render VisibilityDetector when loadOnlyWhenVisible is false', (WidgetTester tester) async {
+      testWidgets(
+          'should not render VisibilityDetector when loadOnlyWhenVisible is false',
+          (WidgetTester tester) async {
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
@@ -100,9 +105,10 @@ void main() {
     });
 
     group('Error Handling', () {
-      testWidgets('should show custom error widget', (WidgetTester tester) async {
+      testWidgets('should show custom error widget',
+          (WidgetTester tester) async {
         const customErrorWidget = Text('Image failed to load');
-        
+
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
@@ -125,7 +131,7 @@ void main() {
     group('Widget Properties', () {
       testWidgets('should apply border radius', (WidgetTester tester) async {
         const borderRadius = BorderRadius.all(Radius.circular(10));
-        
+
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
@@ -179,7 +185,7 @@ void main() {
         );
 
         expect(find.byType(LazyOptimizedImage), findsOneWidget);
-        
+
         // Test that the widget can handle animation
         await tester.pump(const Duration(milliseconds: 100));
         expect(find.byType(LazyOptimizedImage), findsOneWidget);
@@ -187,7 +193,8 @@ void main() {
     });
 
     group('Memory Optimization', () {
-      testWidgets('should handle memory optimization flag', (WidgetTester tester) async {
+      testWidgets('should handle memory optimization flag',
+          (WidgetTester tester) async {
         await tester.pumpWidget(
           const MaterialApp(
             home: Scaffold(
@@ -212,7 +219,7 @@ void main() {
   group('VisibilityDetector', () {
     testWidgets('should render child widget', (WidgetTester tester) async {
       const childWidget = Text('Test Child');
-      
+
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -249,7 +256,8 @@ void main() {
   });
 
   group('PreloadOptimizedImage', () {
-    testWidgets('should render LazyOptimizedImage internally', (WidgetTester tester) async {
+    testWidgets('should render LazyOptimizedImage internally',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(
@@ -266,9 +274,10 @@ void main() {
       expect(find.byType(LazyOptimizedImage), findsOneWidget);
     });
 
-    testWidgets('should apply properties to internal LazyOptimizedImage', (WidgetTester tester) async {
+    testWidgets('should apply properties to internal LazyOptimizedImage',
+        (WidgetTester tester) async {
       const borderRadius = BorderRadius.all(Radius.circular(15));
-      
+
       await tester.pumpWidget(
         const MaterialApp(
           home: Scaffold(

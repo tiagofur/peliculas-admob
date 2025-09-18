@@ -39,7 +39,6 @@ class MoviesStateData {
   }
 }
 
-// TODO: Fix legacy compatibility for StateNotifierProvider
 final nowPlayingMoviesProvider =
     StateNotifierProvider<MoviesNotifier, MoviesStateData>((ref) {
   final fetchMoreMovies = ref.watch(movieRepositoryProvider).getNowPlaying;

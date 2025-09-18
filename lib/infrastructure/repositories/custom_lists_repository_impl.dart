@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../core/logging/app_logger.dart';
 import '../../domain/entities/custom_list.dart';
 import '../../domain/entities/list_item.dart';
 import '../../domain/repositories/i_custom_lists_repository.dart';
@@ -36,40 +37,41 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para obtener listas');
+        AppLogger.repo(
+            'CustomLists', 'Usuario no autenticado para obtener listas');
         throw Exception('Usuario no autenticado. Por favor, inicia sesión.');
       }
 
       // Validar que el userId del usuario sea válido
       if (currentUser.id.isEmpty) {
-        print('❌ CustomListsRepository: ID de usuario vacío o inválido');
+        AppLogger.repo('CustomLists', 'ID de usuario vacío o inválido');
         throw Exception(
             'ID de usuario inválido. Por favor, reinicia la aplicación.');
       }
 
       if (await hasInternetConnection()) {
-        print('🌐 CustomListsRepository: Obteniendo listas desde Supabase');
+        AppLogger.repo('CustomLists',
+            'Obteniendo listas desde Supabase para usuario: ${currentUser.id}');
         final lists = await _supabaseDataSource.getUserLists(currentUser.id);
         await _saveListsLocally(lists);
-        print(
-            '📥 CustomListsRepository: ${lists.length} listas obtenidas desde Supabase');
+        AppLogger.repo('CustomLists',
+            '📥 ${lists.length} listas obtenidas desde Supabase');
         return lists;
       } else {
-        print(
-            '📱 CustomListsRepository: Sin conexión, obteniendo listas locales');
+        AppLogger.repo(
+            'CustomLists', '📱 Sin conexión, obteniendo listas locales');
         final localLists = await getLocalLists();
-        print(
-            '📱 CustomListsRepository: ${localLists.length} listas locales encontradas');
+        AppLogger.repo('CustomLists',
+            '📱 ${localLists.length} listas locales encontradas');
         return localLists;
       }
     } catch (e) {
-      print(
-          '❌ CustomListsRepository: Error obteniendo listas, usando locales: $e');
+      AppLogger.repo(
+          'CustomLists', '❌ Error obteniendo listas, usando locales: $e');
       // En caso de error, intentar obtener datos locales
       final localLists = await getLocalLists();
-      print(
-          '📱 CustomListsRepository: ${localLists.length} listas locales de respaldo');
+      AppLogger.repo(
+          'CustomLists', '📱 ${localLists.length} listas locales de respaldo');
       return localLists;
     }
   }
@@ -97,41 +99,41 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado con validaciones más robustas
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado - currentUser es null');
+        AppLogger.repo(
+            'CustomLists', '❌ Usuario no autenticado - currentUser es null');
         throw Exception('Usuario no autenticado. Por favor, inicia sesión.');
       }
 
       // Validar que el userId del usuario sea válido con múltiples verificaciones
       final userId = currentUser.id;
       if (userId.isEmpty || userId.trim().isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario inválido - userId: "$userId"');
-        print(
-            '❌ CustomListsRepository: Verificando estado de autenticación...');
+        AppLogger.repo(
+            'CustomLists', '❌ ID de usuario inválido - userId: "$userId"');
+        AppLogger.repo(
+            'CustomLists', '❌ Verificando estado de autenticación...');
 
         // Intentar refrescar la sesión si el userId es inválido
         try {
           final session = Supabase.instance.client.auth.currentSession;
           if (session == null) {
-            print('❌ CustomListsRepository: No hay sesión activa');
+            AppLogger.repo('CustomLists', '❌ No hay sesión activa');
             throw Exception(
                 'Sesión expirada. Por favor, inicia sesión nuevamente.');
           }
 
           final refreshedUser = session.user;
           if (refreshedUser.id.isEmpty) {
-            print('❌ CustomListsRepository: Usuario de sesión inválido');
+            AppLogger.repo('CustomLists', '❌ Usuario de sesión inválido');
             throw Exception(
                 'Sesión inválida. Por favor, inicia sesión nuevamente.');
           }
 
-          print(
-              '✅ CustomListsRepository: Sesión refrescada, userId válido: ${refreshedUser.id}');
+          AppLogger.repo('CustomLists',
+              '✅ Sesión refrescada, userId válido: ${refreshedUser.id}');
           // Usar el userId de la sesión refrescada
         } catch (refreshError) {
-          print(
-              '❌ CustomListsRepository: Error refrescando sesión: $refreshError');
+          AppLogger.repo(
+              'CustomLists', '❌ Error refrescando sesión: $refreshError');
           throw Exception(
               'Error de autenticación. Por favor, inicia sesión nuevamente.');
         }
@@ -140,22 +142,22 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
             'ID de usuario inválido. Por favor, reinicia la aplicación.');
       }
 
-      print(
-          '🟡 CustomListsRepository: Creando lista "${list.name}" para usuario $userId');
-      print('🔐 CustomListsRepository: Email del usuario: $currentUser.email');
+      AppLogger.repo('CustomLists',
+          '🟡 Creando lista "${list.name}" para usuario $userId');
+      AppLogger.repo('CustomLists', '🔐 Email del usuario: $currentUser.email');
 
       // Asegurar que la lista tenga el userId correcto
       final listWithUserId = list.copyWith(userId: userId);
 
-      print(
-          '🌐 CustomListsRepository: Conexión disponible, guardando en Supabase');
+      AppLogger.repo(
+          'CustomLists', '🌐 Conexión disponible, guardando en Supabase');
       final createdList = await _supabaseDataSource.createList(listWithUserId);
       await _updateLocalList(createdList);
-      print(
-          '✅ CustomListsRepository: Lista creada exitosamente en Supabase y guardada localmente');
+      AppLogger.repo('CustomLists',
+          '✅ Lista creada exitosamente en Supabase y guardada localmente');
       return createdList;
     } catch (e) {
-      print('❌ CustomListsRepository: Error al crear lista: $e');
+      AppLogger.repo('CustomLists', '❌ Error al crear lista: $e');
       throw Exception('Error al crear lista: $e');
     }
   }
@@ -210,16 +212,16 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para obtener listas por defecto');
+        AppLogger.repo('CustomLists',
+            '❌ Usuario no autenticado para obtener listas por defecto');
         return [];
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para listas por defecto');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para listas por defecto');
         return [];
       }
 
@@ -230,7 +232,8 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         return localLists.where((list) => list.isDefault).toList();
       }
     } catch (e) {
-      print('❌ CustomListsRepository: Error al obtener listas por defecto: $e');
+      AppLogger.repo(
+          'CustomLists', '❌ Error al obtener listas por defecto: $e');
       return [];
     }
   }
@@ -286,16 +289,16 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para obtener elementos de lista');
+        AppLogger.repo('CustomLists',
+            '❌ Usuario no autenticado para obtener elementos de lista');
         return [];
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para obtener elementos de lista');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para obtener elementos de lista');
         return [];
       }
 
@@ -306,8 +309,8 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         return [];
       }
     } catch (e) {
-      print(
-          '❌ CustomListsRepository: Error al obtener elementos de la lista: $e');
+      AppLogger.repo(
+          'CustomLists', '❌ Error al obtener elementos de la lista: $e');
       return [];
     }
   }
@@ -319,16 +322,16 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para añadir película');
+        AppLogger.repo(
+            'CustomLists', '❌ Usuario no autenticado para añadir película');
         throw Exception('Usuario no autenticado');
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para añadir película');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para añadir película');
         throw Exception('ID de usuario inválido');
       }
 
@@ -356,7 +359,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         return tempItem;
       }
     } catch (e) {
-      print('❌ CustomListsRepository: Error al añadir película a lista: $e');
+      AppLogger.repo('CustomLists', '❌ Error al añadir película a lista: $e');
       throw Exception('Error al agregar película a la lista: $e');
     }
   }
@@ -367,16 +370,16 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para remover película');
+        AppLogger.repo(
+            'CustomLists', '❌ Usuario no autenticado para remover película');
         throw Exception('Usuario no autenticado');
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para remover película');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para remover película');
         throw Exception('ID de usuario inválido');
       }
 
@@ -389,7 +392,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         });
       }
     } catch (e) {
-      print('❌ CustomListsRepository: Error al remover película de lista: $e');
+      AppLogger.repo('CustomLists', '❌ Error al remover película de lista: $e');
       throw Exception('Error al remover película de la lista: $e');
     }
   }
@@ -400,16 +403,16 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para reordenar elementos');
+        AppLogger.repo(
+            'CustomLists', '❌ Usuario no autenticado para reordenar elementos');
         throw Exception('Usuario no autenticado');
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para reordenar elementos');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para reordenar elementos');
         throw Exception('ID de usuario inválido');
       }
 
@@ -422,7 +425,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         });
       }
     } catch (e) {
-      print('❌ CustomListsRepository: Error al reordenar elementos: $e');
+      AppLogger.repo('CustomLists', '❌ Error al reordenar elementos: $e');
       throw Exception('Error al reordenar elementos: $e');
     }
   }
@@ -433,16 +436,16 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para verificar película en lista');
+        AppLogger.repo('CustomLists',
+            '❌ Usuario no autenticado para verificar película en lista');
         return false;
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para verificar película en lista');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para verificar película en lista');
         return false;
       }
 
@@ -453,8 +456,8 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         return false;
       }
     } catch (e) {
-      print(
-          '❌ CustomListsRepository: Error al verificar película en lista: $e');
+      AppLogger.repo(
+          'CustomLists', '❌ Error al verificar película en lista: $e');
       return false;
     }
   }
@@ -467,22 +470,22 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       // Validar que el usuario esté autenticado
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        print(
-            '❌ CustomListsRepository: Usuario no autenticado para observar listas');
+        AppLogger.repo(
+            'CustomLists', '❌ Usuario no autenticado para observar listas');
         return Stream.value([]);
       }
 
       // Validar que el userId del usuario sea válido
       final userId = currentUser.id;
       if (userId.isEmpty) {
-        print(
-            '❌ CustomListsRepository: ID de usuario vacío o inválido para observar listas');
+        AppLogger.repo('CustomLists',
+            '❌ ID de usuario vacío o inválido para observar listas');
         return Stream.value([]);
       }
 
       return _supabaseDataSource.watchUserLists(userId);
     } catch (e) {
-      print('❌ CustomListsRepository: Error al observar listas: $e');
+      AppLogger.repo('CustomLists', '❌ Error al observar listas: $e');
       return Stream.value([]);
     }
   }
@@ -618,10 +621,10 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       final listsJson =
           json.encode(lists.map((list) => list.toJson()).toList());
       await _prefs.setString(_localListsKey, listsJson);
-      print(
-          '💾 CustomListsRepository: ${lists.length} listas guardadas localmente');
+      AppLogger.repo(
+          'CustomLists', '💾 ${lists.length} listas guardadas localmente');
     } catch (e) {
-      print('❌ Error al guardar listas localmente: $e');
+      AppLogger.repo('CustomLists', '❌ Error al guardar listas localmente: $e');
     }
   }
 
@@ -632,17 +635,17 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
 
       if (existingIndex != -1) {
         localLists[existingIndex] = list;
-        print(
-            '🔄 CustomListsRepository: Lista actualizada localmente: ${list.name}');
+        AppLogger.repo(
+            'CustomLists', '🔄 Lista actualizada localmente: ${list.name}');
       } else {
         localLists.add(list);
-        print(
-            '➕ CustomListsRepository: Lista agregada localmente: ${list.name}');
+        AppLogger.repo(
+            'CustomLists', '➕ Lista agregada localmente: ${list.name}');
       }
 
       await _saveListsLocally(localLists);
     } catch (e) {
-      print('❌ Error al actualizar lista local: $e');
+      AppLogger.repo('CustomLists', '❌ Error al actualizar lista local: $e');
     }
   }
 

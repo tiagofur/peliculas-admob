@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../delegates/search_movie_delegate.dart';
+import '../../providers/search/search_movies_provider.dart';
+import '../../providers/theme/theme_provider.dart';
+import '../../providers/movies/movies_repository_provider.dart';
 
-class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
+class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
   const CustomAppbar({super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight + 20);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
     final titleStyle = Theme.of(context).textTheme.titleMedium;
-    // TODO: Fix legacy compatibility - theme provider commented out
-    // final isDarkMode = ref.watch(themeNotifierProvider).isDarkMode;
+    // LEGACY COMPATIBILITY FIXED - theme provider restored
+    final themeState = ref.watch(themeNotifierProvider);
+    final isDarkMode = themeState.isDarkMode;
 
     return SafeArea(
         bottom: false,
@@ -29,29 +34,30 @@ class CustomAppbar extends StatelessWidget implements PreferredSizeWidget {
                 const SizedBox(width: 5),
                 Text('Peliculas', style: titleStyle),
                 const Spacer(),
-                // TODO: Theme toggle disabled until provider is fixed
-                // IconButton(
-                //   onPressed: null,
-                //   icon: Icon(isDarkMode
-                //       ? Icons.light_mode_outlined
-                //       : Icons.dark_mode_outlined),
-                //   tooltip: isDarkMode
-                //       ? 'Cambiar a modo claro'
-                //       : 'Cambiar a modo oscuro',
-                // ),
+                // THEME TOGGLE RESTORED - provider fixed
                 IconButton(
                   onPressed: () {
-                    // TODO: Fix legacy compatibility - providers commented out
-                    // final searchQuery = ref.read(searchQueryProvider);
-                    // final movieRepository = ref.read(movieRepositoryProvider);
-                    const searchQuery = '';
+                    ref.read(themeNotifierProvider.notifier).toggleDarkMode();
+                  },
+                  icon: Icon(isDarkMode
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined),
+                  tooltip: isDarkMode
+                      ? 'Cambiar a modo claro'
+                      : 'Cambiar a modo oscuro',
+                ),
+                IconButton(
+                  onPressed: () {
+                    // SEARCH FUNCTIONALITY RESTORED - providers fixed
+                    final searchQuery = ref.read(searchQueryProvider);
+                    final movieRepository = ref.read(movieRepositoryProvider);
 
                     showSearch<Movie?>(
                             query: searchQuery,
                             context: context,
                             delegate: SearchMovieDelegate(
                                 initialMovies: const [],
-                                searchMovies: (query) async => <Movie>[]))
+                                searchMovies: (query) => movieRepository.searchMovies(query)))
                         .then((movie) {
                       if (movie == null) return;
                       if (context.mounted) {

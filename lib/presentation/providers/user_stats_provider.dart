@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/entities.dart';
 import 'custom_lists_provider.dart';
 import 'storage/direct_favorites_provider.dart';
@@ -36,7 +37,7 @@ final userStatsDataProvider = Provider.autoDispose<
       .toList();
 
   // Log para debug
-  print(
+  LoggerFactory.info(
       '📊 UserStats - Favoritos: ${favoriteMovies.length}, Vistas: ${watchedMoviesList.length}, Listas personalizadas: ${customLists.length}, Listas por defecto: ${defaultLists.length}');
 
   return (

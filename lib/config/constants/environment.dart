@@ -5,48 +5,98 @@ import '../../core/logging/logger_factory.dart';
 import '../api_keys.dart';
 
 class Environment {
-  static String theMovieDbKey = 'No hay api key';
-  static String traktClientId = 'No hay client id';
-  static String traktClientSecret = 'No hay client secret';
-
+  // Eliminar propiedades estáticas con valores por defecto peligrosos
+  
+  // En su lugar, usar la nueva clase ApiKeys que maneja todo de forma segura
+  static String get theMovieDbKey => ApiKeys.tmdbApiKey;
+  static String get traktClientId => ApiKeys.traktClientId;
+  static String get traktClientSecret => ApiKeys.traktClientSecret;
+  
+  // Método mejorado de carga que usa la nueva estructura
   static Future<void> load() async {
-    if (kIsWeb) {
-      // En web, usar las constantes importadas
-      theMovieDbKey = theMovieDbApiKey;
-      traktClientId = traktClientIdConst;
-      traktClientSecret = traktClientSecretConst;
-      return;
-    }
-    // Para plataformas móviles y desktop, intentar cargar desde .env
     try {
+      // Cargar .env para todas las plataformas (no solo móviles)
       await dotenv.load(fileName: '.env');
-      theMovieDbKey = dotenv.env['THE_MOVIEDB_KEY'] ?? theMovieDbKey;
-      traktClientId = dotenv.env['TRAKT_CLIENT_ID'] ?? traktClientId;
-      traktClientSecret =
-          dotenv.env['TRAKT_CLIENT_SECRET'] ?? traktClientSecret;
-    } catch (e) {
-      // Fallback: deja el valor por defecto
+      
       if (kDebugMode) {
-        LoggerFactory.error('Error loading .env file: $e');
+        LoggerFactory.info('Environment loaded from .env file');
+      }
+      
+      // Validar que todas las claves estén configuradas
+      ApiKeys.validateConfiguration();
+      
+    } catch (e) {
+      if (kDebugMode) {
+        LoggerFactory.warning('Could not load .env file: $e');
+        LoggerFactory.info('Will try to use dart-define values');
+      }
+      
+      // Intentar validar usando dart-define
+      try {
+        ApiKeys.validateConfiguration();
+        if (kDebugMode) {
+          LoggerFactory.info('Using dart-define configuration');
+        }
+      } catch (configError) {
+        LoggerFactory.error('Configuration error: $configError');
+        
+        if (kDebugMode) {
+          LoggerFactory.error('''
+❌ API Keys not configured properly!
+
+Please set your API keys using ONE of these methods:
+
+1. Create a .env file in the root directory:
+   TMDB_API_KEY=your_tmdb_key_here
+   TRAKT_API_KEY=your_trakt_key_here
+   TRAKT_CLIENT_ID=your_trakt_client_id_here
+   TRAKT_CLIENT_SECRET=your_trakt_secret_here
+
+2. Use dart-define when running:
+   flutter run --dart-define=TMDB_API_KEY=your_key_here
+
+3. Set environment variables in your IDE run configuration.
+
+Copy .env.example to .env and fill in your real keys.
+''');
+        }
+        
+        rethrow;
       }
     }
   }
 
-// Helper para importar la constante solo en web
-// ignore: avoid_web_libraries_in_flutter
-  Future<Map<String, String>> importApiKeys() async {
-    // Importa el archivo de claves
-    // En web, puedes usar un import directo
-    // Aquí se simula el import, pero en tu código real puedes hacer:
-    // import 'package:peliculas-admob/config/api_keys.dart' as api_keys;
-    // return {'theMovieDbApiKey': api_keys.theMovieDbApiKey};
-    // Para este ejemplo, simplemente retorna la constante
-    return {
-      'theMovieDbApiKey': 'c0ebc54da33cf71326f548860eb6b5fb',
-      'traktClientId':
-          '55a6473c0980bc594588b6c6c2fa28f2a084047f52a7530b0c6a7d3b56d7d131',
-      'traktClientSecret':
-          'b0aeb9f2273bea0d58ae75d71f63804f254dcb5f03e66e767d50ce8a3fcd680a',
-    };
+  // Método helper para validar configuración en tests
+  static bool isConfigured() {
+    try {
+      ApiKeys.validateConfiguration();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  // Método para obtener información de configuración (sin exponer claves)
+  static Map<String, dynamic> getConfigurationStatus() {
+    try {
+      final tmdbConfigured = ApiKeys.tmdbApiKey.isNotEmpty;
+      final traktConfigured = ApiKeys.traktApiKey.isNotEmpty;
+      final traktIdConfigured = ApiKeys.traktClientId.isNotEmpty;
+      final traktSecretConfigured = ApiKeys.traktClientSecret.isNotEmpty;
+      
+      return {
+        'tmdb_configured': tmdbConfigured,
+        'trakt_configured': traktConfigured,
+        'trakt_id_configured': traktIdConfigured,
+        'trakt_secret_configured': traktSecretConfigured,
+        'all_configured': tmdbConfigured && traktConfigured && traktIdConfigured && traktSecretConfigured,
+      };
+    } catch (e) {
+      return {
+        'error': true,
+        'message': e.toString(),
+        'all_configured': false,
+      };
+    }
   }
 }

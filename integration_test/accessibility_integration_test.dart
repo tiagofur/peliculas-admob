@@ -186,14 +186,14 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 5));
 
       // Get initial size
-      final initialSize = tester.binding.window.physicalSize;
+      final initialSize = tester.view.physicalSize;
 
       try {
         // Test portrait orientation (default)
         expect(find.byType(MaterialApp), findsOneWidget);
 
         // Simulate landscape orientation by changing window size
-        tester.binding.window.physicalSizeTestValue = Size(
+        tester.view.physicalSize = Size(
           initialSize.height,
           initialSize.width,
         );
@@ -213,13 +213,13 @@ void main() {
         }
 
         // Restore original orientation
-        tester.binding.window.physicalSizeTestValue = initialSize;
+        tester.view.physicalSize = initialSize;
         await tester.pumpAndSettle(const Duration(seconds: 2));
 
         expect(find.byType(MaterialApp), findsOneWidget);
       } finally {
         // Ensure we restore the original size
-        tester.binding.window.clearPhysicalSizeTestValue();
+        tester.view.resetPhysicalSize();
       }
     });
 

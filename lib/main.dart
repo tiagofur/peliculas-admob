@@ -41,6 +41,7 @@ import 'infrastructure/services/token_refresh_service.dart';
 import 'presentation/providers/auto_default_lists_provider.dart';
 import 'presentation/providers/error_reporting_provider.dart';
 import 'presentation/providers/locale/locale_provider.dart';
+import 'presentation/providers/post_login_initialization_provider.dart';
 import 'presentation/providers/storage/direct_providers_helpers.dart';
 import 'presentation/providers/theme/theme_provider.dart';
 import 'services/cache_configuration_service.dart';
@@ -314,9 +315,8 @@ class MainApp extends ConsumerWidget {
     LoggerFactory.info('✅ MainApp: Essential services configured (LAZY)');
 
     // REACTIVAR: INICIALIZACIÓN POST-LOGIN (con modificaciones anti-bloqueo)
-    // TODO: Fix legacy compatibility - postLoginInitializationProvider is commented out
-    // ref.watch(
-    //     postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
+    // FIXED: Legacy compatibility restored
+    ref.watch(postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
 
     // Los DirectProviders se inicializarán automáticamente cuando sean necesarios
     // para evitar bloqueos en el startup - inicialización ya manejada arriba

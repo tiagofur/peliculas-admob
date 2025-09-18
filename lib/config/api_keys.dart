@@ -1,23 +1,134 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 // Archivo de configuración de claves API
-// Las claves se cargan desde el archivo .env
+// TODAS las claves se cargan desde variables de entorno o dart-define
+// NO HAY CLAVES HARDCODEADAS por seguridad
 
-const String theMovieDbApiKey = 'c0ebc54da33cf71326f548860eb6b5fb';
+class ApiKeys {
+  // TMDB API Key - solo desde variables de entorno
+  static String get tmdbApiKey {
+    // Prioridad: dart-define > .env > error
+    const dartDefineKey = String.fromEnvironment('TMDB_API_KEY');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
 
-// Claves de Trakt.tv (constantes para web, desde .env para móvil)
-const String traktApiKeyConst =
-    '8969e2e8dd5d7ca6b3e9a7b5b476c7b7e4f3b1b0ad1d5d2f9e5e4e3c7e9e5b4a';
-const String traktClientIdConst =
-    '55a6473c0980bc594588b6c6c2fa28f2a084047f52a7530b0c6a7d3b56d7d131';
-const String traktClientSecretConst =
-    'b0aeb9f2273bea0d58ae75d71f63804f254dcb5f03e66e767d50ce8a3fcd680a';
+    final envKey = dotenv.env['TMDB_API_KEY'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
 
-// Claves de Trakt.tv desde .env
-String get traktApiKey => dotenv.env['TRAKT_API_KEY'] ?? traktApiKeyConst;
-String get traktClientId => dotenv.env['TRAKT_CLIENT_ID'] ?? traktClientIdConst;
-String get traktClientSecret =>
-    dotenv.env['TRAKT_CLIENT_SECRET'] ?? traktClientSecretConst;
+    throw const ConfigurationException(
+        'TMDB_API_KEY not configured. Set via dart-define or .env file');
+  }
+
+  // Trakt.tv API Keys - solo desde variables de entorno
+  static String get traktApiKey {
+    const dartDefineKey = String.fromEnvironment('TRAKT_API_KEY');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
+
+    final envKey = dotenv.env['TRAKT_API_KEY'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
+
+    throw const ConfigurationException(
+        'TRAKT_API_KEY not configured. Set via dart-define or .env file');
+  }
+
+  static String get traktClientId {
+    const dartDefineKey = String.fromEnvironment('TRAKT_CLIENT_ID');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
+
+    final envKey = dotenv.env['TRAKT_CLIENT_ID'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
+
+    throw const ConfigurationException(
+        'TRAKT_CLIENT_ID not configured. Set via dart-define or .env file');
+  }
+
+  static String get traktClientSecret {
+    const dartDefineKey = String.fromEnvironment('TRAKT_CLIENT_SECRET');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
+
+    final envKey = dotenv.env['TRAKT_CLIENT_SECRET'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
+
+    throw const ConfigurationException(
+        'TRAKT_CLIENT_SECRET not configured. Set via dart-define or .env file');
+  }
+
+  // Supabase Keys (si están configuradas)
+  static String get supabaseUrl {
+    const dartDefineKey = String.fromEnvironment('SUPABASE_URL');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
+
+    final envKey = dotenv.env['SUPABASE_URL'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
+
+    throw const ConfigurationException(
+        'SUPABASE_URL not configured. Set via dart-define or .env file');
+  }
+
+  static String get supabaseAnonKey {
+    const dartDefineKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
+
+    final envKey = dotenv.env['SUPABASE_ANON_KEY'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
+
+    throw const ConfigurationException(
+        'SUPABASE_ANON_KEY not configured. Set via dart-define or .env file');
+  }
+
+  // Validación de todas las claves en startup
+  static void validateConfiguration() {
+    if (kDebugMode) {
+      print('🔑 Validating API configuration...');
+    }
+
+    try {
+      final tmdb = tmdbApiKey;
+      final trakt = traktApiKey;
+      final traktId = traktClientId;
+      final traktSecret = traktClientSecret;
+
+      if (kDebugMode) {
+        print('✅ TMDB API Key: ${tmdb.substring(0, 8)}...');
+        print('✅ Trakt API Key: ${trakt.substring(0, 8)}...');
+        print('✅ Trakt Client ID: ${traktId.substring(0, 8)}...');
+        print('✅ Trakt Secret: ${traktSecret.substring(0, 8)}...');
+      }
+
+      // Opcional: validar Supabase si está presente
+      try {
+        final supaUrl = supabaseUrl;
+        final supaKey = supabaseAnonKey;
+        if (kDebugMode) {
+          print('✅ Supabase URL: ${supaUrl.substring(0, 20)}...');
+          print('✅ Supabase Key: ${supaKey.substring(0, 8)}...');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('⚠️  Supabase not configured (optional)');
+        }
+      }
+
+      if (kDebugMode) {
+        print('✅ All required API keys configured successfully');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ API configuration error: $e');
+      }
+      rethrow;
+    }
+  }
+}
+
+// Excepción personalizada para errores de configuración
+class ConfigurationException implements Exception {
+  const ConfigurationException(this.message);
+  final String message;
+
+  @override
+  String toString() => 'ConfigurationException: $message';
+}
 
 // URLs base
 class ApiUrls {

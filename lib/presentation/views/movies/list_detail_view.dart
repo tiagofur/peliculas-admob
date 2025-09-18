@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../services/share_service.dart';
 import '../../providers/custom_lists_provider.dart';
+import '../../providers/movies/movie_info_provider.dart';
 import '../../providers/search/search_movies_provider.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 
@@ -23,9 +25,12 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
     final customList = ref.watch(listByIdProvider(widget.listId));
 
     // Debug: Mostrar qué ID estamos buscando
-    print('🔍 ListDetailView: Buscando lista con ID: ${widget.listId}');
-    print('🔍 ListDetailView: Lista encontrada: ${customList?.name ?? 'null'}');
-    print('🔍 ListDetailView: Tipo de customList: ${customList.runtimeType}');
+    LoggerFactory.info(
+        'ListDetailView: Buscando lista con ID: ${widget.listId}');
+    LoggerFactory.info(
+        'ListDetailView: Lista encontrada: ${customList?.name ?? 'null'}');
+    LoggerFactory.info(
+        'ListDetailView: Tipo de customList: ${customList.runtimeType}');
 
     // Por ahora, asumiendo que siempre hay una lista válida para debuggear
     return _buildListContent(customList, context);
@@ -75,24 +80,22 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
       );
     }
 
-    // TODO: Fix legacy compatibility - providers commented out
-    // final moviesMap = ref.watch(movieInfoProvider);
+    final moviesMap = ref.watch(movieInfoProvider);
 
     // Pre-fetch movies that are not in the map
-    // for (final movieId in customList.movieIds) {
-    //   if (moviesMap[movieId.toString()] == null) {
-    //     WidgetsBinding.instance.addPostFrameCallback((_) {
-    //       ref.read(movieInfoProvider.notifier).loadMovie(movieId.toString());
-    //     });
-    //   }
-    // }
+    for (final movieId in customList.movieIds) {
+      if (moviesMap[movieId.toString()] == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(movieInfoProvider.notifier).loadMovie(movieId.toString());
+        });
+      }
+    }
 
-    // final movies = customList.movieIds
-    //     .map((id) => moviesMap[id.toString()])
-    //     .where((movie) => movie != null)
-    //     .cast<Movie>()
-    //     .toList();
-    final List<Movie> movies = [];
+    final movies = customList.movieIds
+        .map((id) => moviesMap[id.toString()])
+        .where((movie) => movie != null)
+        .cast<Movie>()
+        .toList();
 
     return Scaffold(
       body: CustomScrollView(
@@ -146,7 +149,7 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
             children: [
               Positioned.fill(
                 child: Container(
-                  color: listColor, // 0.3 * 255 ≈ 77
+                  color: listColor.withValues(alpha: 77), // 0.3 * 255 ≈ 77
                 ),
               ),
               Positioned(

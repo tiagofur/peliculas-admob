@@ -5,7 +5,12 @@
       "Bash(flutter pub:*)",
       "Bash(find:*)",
       "Bash(awk:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(flutter build:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:fyzujpifkzftweynrudh.supabase.co)",
+      "Bash(dart run:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

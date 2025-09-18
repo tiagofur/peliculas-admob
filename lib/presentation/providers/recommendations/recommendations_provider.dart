@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/app_logger.dart';
 import '../../../core/ml/ml_recommendation_service.dart';
 import '../../../core/ml/recommendation_engine.dart';
 import '../../../core/ml/user_behavior_analyzer.dart';
@@ -303,12 +304,18 @@ final recommendationsUserStatsProvider =
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
   // Debug logs para diagnosticar el problema
-  print('📊 RecommendationsUserStatsProvider:');
-  print('   📋 Favoritas: ${favoriteMovies.length}');
-  print('   👀 Vistas: ${watchedMoviesState.movies.length}');
-  print('   📂 Estado de carga: ${watchedMoviesState.isLoading}');
-  print('   📄 Página actual: ${watchedMoviesState.currentPage}');
-  print('   🔚 Última página: ${watchedMoviesState.isLastPage}');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '📊 RecommendationsUserStatsProvider:');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '   📋 Favoritas: ${favoriteMovies.length}');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '   👀 Vistas: ${watchedMoviesState.movies.length}');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '   📂 Estado de carga: ${watchedMoviesState.isLoading}');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '   📄 Página actual: ${watchedMoviesState.currentPage}');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '   🔚 Última página: ${watchedMoviesState.isLastPage}');
 
   final favoriteMoviesList = favoriteMovies.values.toList();
   final stats = {
@@ -318,7 +325,8 @@ final recommendationsUserStatsProvider =
     'averageRating': _getAverageRating(favoriteMoviesList),
   };
 
-  print('📊 Estadísticas finales: $stats');
+  AppLogger.provider(
+      'RecommendationsUserStatsProvider', '📊 Estadísticas finales: $stats');
   return stats;
 });
 
@@ -332,7 +340,8 @@ final basicUserStatsProvider = Provider<BasicUserStats>((ref) {
   return BasicUserStats(
     totalFavorites: favoriteMovies.length,
     totalWatched: watchedMoviesState.movies.length,
-    totalMovies: favoriteMovies.length + watchedMoviesState.movies.length,
+    totalMovies:
+        (favoriteMovies.length + watchedMoviesState.movies.length).toInt(),
     averageRating: _calculateAverageRating(favoriteMoviesList),
     topGenres: _getTopGenres(favoriteMoviesList, 3)
         .map((id) => _getGenreName(id))

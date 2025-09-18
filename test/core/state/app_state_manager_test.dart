@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/core/state/app_state_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../lib/core/state/app_state_manager.dart';
 
 void main() {
   group('AppStateManager', () {
@@ -88,7 +88,8 @@ void main() {
         appStateManager.updateSessionData('doubleKey', 3.14);
 
         // Assert
-        expect(appStateManager.getSessionValue('stringKey'), equals('stringValue'));
+        expect(appStateManager.getSessionValue('stringKey'),
+            equals('stringValue'));
         expect(appStateManager.getSessionValue('intKey'), equals(42));
         expect(appStateManager.getSessionValue('boolKey'), equals(true));
         expect(appStateManager.getSessionValue('doubleKey'), equals(3.14));
@@ -158,7 +159,8 @@ void main() {
       test('should handle crash recovery data', () async {
         // Arrange
         final mockData = {
-          'crash_data': '{"current_route":"/home","timestamp":"${DateTime.now().millisecondsSinceEpoch}"}',
+          'crash_data':
+              '{"current_route":"/home","timestamp":"${DateTime.now().millisecondsSinceEpoch}"}',
         };
         SharedPreferences.setMockInitialValues(mockData);
 
@@ -168,7 +170,8 @@ void main() {
 
       test('should mark crash recovery as complete', () {
         // Act & Assert - should not throw
-        expect(() => appStateManager.markCrashRecoveryComplete(), returnsNormally);
+        expect(
+            () => appStateManager.markCrashRecoveryComplete(), returnsNormally);
       });
     });
 
@@ -185,7 +188,7 @@ void main() {
         // Act & Assert - should not throw
         expect(() async => await appStateManager.initialize(), returnsNormally);
         await appStateManager.initialize();
-        
+
         expect(appStateManager.isInitialized, isTrue);
       });
     });

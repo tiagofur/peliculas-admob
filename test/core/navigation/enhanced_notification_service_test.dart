@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-
-import '../../../lib/core/navigation/enhanced_notification_service.dart';
+import 'package:peliculas/core/navigation/enhanced_notification_service.dart';
 
 void main() {
   group('EnhancedNotificationService', () {
@@ -58,7 +57,7 @@ void main() {
       test('should handle deep links without throwing exceptions', () {
         // Test that the service can receive deep links even without full initialization
         // This tests the error handling and graceful degradation
-        
+
         // Arrange
         const validUrls = [
           '/movie/123',
@@ -121,7 +120,7 @@ void main() {
       test('should report correct initial state in stats', () {
         // Act
         final stats = service.getStats();
-        
+
         // Assert - initial state
         expect(stats['is_initialized'], isFalse);
         expect(stats['has_navigator_key'], isFalse);
@@ -133,7 +132,7 @@ void main() {
         // Act
         final stats1 = service.getStats();
         final stats2 = service.getStats();
-        
+
         // Assert structure consistency
         expect(stats1.keys, equals(stats2.keys));
         for (final key in stats1.keys) {
@@ -181,7 +180,7 @@ void main() {
     group('Error Handling', () {
       test('should handle navigation errors gracefully', () {
         // Test that the service doesn't crash when dealing with edge cases
-        
+
         // Arrange - various problematic inputs
         const problematicInputs = [
           '',
@@ -215,7 +214,7 @@ void main() {
 
       test('should handle concurrent operations safely', () {
         // Test that multiple simultaneous operations don't cause issues
-        
+
         // Act & Assert - should handle concurrent calls without throwing
         expect(() {
           service.handleDeepLink('/movie/1');
@@ -260,14 +259,14 @@ void main() {
       test('should track navigation attempts', () {
         // This test verifies that the service tracks navigation attempts
         // even when they can't be executed immediately
-        
+
         // Arrange - make several deep link attempts
         service.handleDeepLink('/movie/123');
         service.handleDeepLink('/my-library');
-        
+
         // Act
         final stats = service.getStats();
-        
+
         // Assert - the service should track these attempts
         expect(stats, isA<Map<String, dynamic>>());
         expect(stats['pending_navigations'], isA<int>());
@@ -277,12 +276,12 @@ void main() {
     group('Route Integration', () {
       test('should work with different route patterns', () {
         // Test that the service properly handles various route patterns
-        
+
         const testRoutes = [
-          '/',                    // Root
-          '/movie/123',          // Dynamic route with ID
-          '/my-library',         // Static route
-          '/search',             // Another static route
+          '/', // Root
+          '/movie/123', // Dynamic route with ID
+          '/my-library', // Static route
+          '/search', // Another static route
           '/my-library/lists/favorites', // Nested dynamic route
         ];
 
@@ -294,7 +293,7 @@ void main() {
 
       test('should sanitize routes consistently', () {
         // Test route sanitization behavior
-        
+
         final testCases = {
           '//movie//123//': '/movie/123',
           '  /my-library  ': '/my-library',
@@ -313,7 +312,7 @@ void main() {
     group('Service API Consistency', () {
       test('should provide stable API methods', () {
         // Verify that all expected public methods exist and are callable
-        
+
         expect(service.isInitialized, isA<bool>());
         expect(() => service.handleDeepLink('/test'), returnsNormally);
         expect(() => service.getStats(), returnsNormally);
@@ -322,12 +321,12 @@ void main() {
 
       test('should return consistent data types', () {
         // Verify that methods return expected types consistently
-        
+
         expect(service.isInitialized, isA<bool>());
-        
+
         final stats = service.getStats();
         expect(stats, isA<Map<String, dynamic>>());
-        
+
         // Verify specific stat types
         expect(stats['is_initialized'], isA<bool>());
         expect(stats['has_navigator_key'], isA<bool>());

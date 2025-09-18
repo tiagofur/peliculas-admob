@@ -12,7 +12,7 @@ class TraktApiService {
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         'trakt-api-version': _apiVersion,
-        'trakt-api-key': traktApiKey,
+        'trakt-api-key': ApiKeys.traktApiKey,
       };
 
   Map<String, String> get _headersWithAuth => {
@@ -270,7 +270,7 @@ class TraktApiService {
   String getAuthorizationUrl({required String redirectUri}) {
     final params = {
       'response_type': 'code',
-      'client_id': traktClientId,
+      'client_id': ApiKeys.traktClientId,
       'redirect_uri': redirectUri,
     };
 
@@ -289,8 +289,8 @@ class TraktApiService {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'code': code,
-          'client_id': traktClientId,
-          'client_secret': traktClientSecret,
+          'client_id': ApiKeys.traktClientId,
+          'client_secret': ApiKeys.traktClientSecret,
           'redirect_uri': redirectUri,
           'grant_type': 'authorization_code',
         }),

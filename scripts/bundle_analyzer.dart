@@ -1,5 +1,5 @@
 #!/usr/bin/env dart
-
+// ignore: dangling_library_doc_comments
 /// Script para análisis y optimización del bundle size de la aplicación Flutter
 ///
 /// Uso:
@@ -8,6 +8,8 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+
+import 'package:peliculas/core/logging/logger_factory.dart';
 
 class BundleAnalyzer {
   BundleAnalyzer({
@@ -22,7 +24,7 @@ class BundleAnalyzer {
   final Map<String, dynamic> analysisResults = {};
 
   Future<void> run() async {
-    print('🔍 Iniciando análisis de bundle size...\n');
+    await LoggerFactory.info('🔍 Iniciando análisis de bundle size...');
 
     if (!analyzeOnly) {
       await _buildWebRelease();
@@ -34,11 +36,11 @@ class BundleAnalyzer {
     await _generateRecommendations();
     await _outputResults();
 
-    print('\n✅ Análisis completado!');
+    await LoggerFactory.info('✅ Análisis completado!');
   }
 
   Future<void> _buildWebRelease() async {
-    print('📦 Construyendo release web...');
+    await LoggerFactory.info('📦 Construyendo release web...');
 
     final result = await Process.run(
       'flutter',
@@ -47,19 +49,20 @@ class BundleAnalyzer {
     );
 
     if (result.exitCode != 0) {
-      print('❌ Error en build: ${result.stderr}');
+      await LoggerFactory.info('❌ Error en build: ${result.stderr}');
       exit(1);
     }
 
-    print('✅ Build completado\n');
+    await LoggerFactory.info('✅ Build completado');
   }
 
   Future<void> _analyzeBundleSize() async {
-    print('📊 Analizando tamaños de archivos...');
+    await LoggerFactory.info('📊 Analizando tamaños de archivos...');
 
     final buildDir = Directory(_buildDir);
     if (!buildDir.existsSync()) {
-      print('❌ Directorio de build no encontrado: $_buildDir');
+      await LoggerFactory.info(
+          '❌ Directorio de build no encontrado: $_buildDir');
       return;
     }
 
@@ -95,28 +98,28 @@ class BundleAnalyzer {
     return files;
   }
 
-  void _printBundleAnalysis(Map<String, int> files, int totalSize) {
-    print('📦 Bundle Size Analysis:');
-    print('Total: ${_formatBytes(totalSize)}\n');
+  Future<void> _printBundleAnalysis(
+      Map<String, int> files, int totalSize) async {
+    await LoggerFactory.info('📦 Bundle Size Analysis:');
+    await LoggerFactory.info('Total: ${_formatBytes(totalSize)}');
 
     // Top 10 archivos más grandes
     final sortedFiles = files.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    print('🔝 Top 10 archivos más grandes:');
+    await LoggerFactory.info('🔝 Top 10 archivos más grandes:');
     for (int i = 0; i < min(10, sortedFiles.length); i++) {
       final entry = sortedFiles[i];
       final fileName = entry.key.split(Platform.pathSeparator).last;
       final size = _formatBytes(entry.value);
       final percentage = ((entry.value / totalSize) * 100).toStringAsFixed(1);
 
-      print('   $fileName: $size ($percentage%)');
+      await LoggerFactory.info('   $fileName: $size ($percentage%)');
     }
-    print('');
   }
 
   Future<void> _analyzeUnusedImports() async {
-    print('🔍 Analizando imports no utilizados...');
+    await LoggerFactory.info('🔍 Analizando imports no utilizados...');
 
     final result = await Process.run(
       'flutter',
@@ -141,21 +144,21 @@ class BundleAnalyzer {
     };
 
     if (unusedImports.isNotEmpty) {
-      print('⚠️  Encontrados ${unusedImports.length} imports no utilizados');
+      await LoggerFactory.info(
+          '⚠️  Encontrados ${unusedImports.length} imports no utilizados');
       for (final import in unusedImports.take(5)) {
-        print('   $import');
+        await LoggerFactory.info('   $import');
       }
       if (unusedImports.length > 5) {
-        print('   ... y ${unusedImports.length - 5} más');
+        await LoggerFactory.info('   ... y ${unusedImports.length - 5} más');
       }
     } else {
-      print('✅ No se encontraron imports no utilizados');
+      await LoggerFactory.info('✅ No se encontraron imports no utilizados');
     }
-    print('');
   }
 
   Future<void> _analyzeAssetUsage() async {
-    print('🖼️  Analizando uso de assets...');
+    await LoggerFactory.info('🖼️  Analizando uso de assets...');
 
     final assetsDir = Directory('assets');
     final assetFiles = <String>[];
@@ -208,23 +211,22 @@ class BundleAnalyzer {
       'unused': unusedAssets,
     };
 
-    print(
+    await LoggerFactory.info(
         '📊 Assets: ${assetFiles.length} total, ${usedAssets.length} usados, ${unusedAssets.length} sin usar');
 
     if (unusedAssets.isNotEmpty) {
-      print('⚠️  Assets potencialmente no utilizados:');
+      await LoggerFactory.info('⚠️  Assets potencialmente no utilizados:');
       for (final asset in unusedAssets.take(5)) {
-        print('   $asset');
+        await LoggerFactory.info('   $asset');
       }
       if (unusedAssets.length > 5) {
-        print('   ... y ${unusedAssets.length - 5} más');
+        await LoggerFactory.info('   ... y ${unusedAssets.length - 5} más');
       }
     }
-    print('');
   }
 
   Future<void> _generateRecommendations() async {
-    print('💡 Generando recomendaciones...');
+    await LoggerFactory.info('💡 Generando recomendaciones...');
 
     final recommendations = <String>[];
     final bundleData = analysisResults['bundle_size'];
@@ -269,14 +271,13 @@ class BundleAnalyzer {
     analysisResults['recommendations'] = recommendations;
 
     if (recommendations.isNotEmpty) {
-      print('📝 Recomendaciones:');
+      await LoggerFactory.info('📝 Recomendaciones:');
       for (int i = 0; i < recommendations.length; i++) {
-        print('   ${i + 1}. ${recommendations[i]}');
+        await LoggerFactory.info('   ${i + 1}. ${recommendations[i]}');
       }
     } else {
-      print('✅ No se encontraron optimizaciones evidentes');
+      await LoggerFactory.info('✅ No se encontraron optimizaciones evidentes');
     }
-    print('');
   }
 
   Future<void> _outputResults() async {
@@ -284,7 +285,7 @@ class BundleAnalyzer {
       final file = File(_outputFile);
       await file.writeAsString(
           const JsonEncoder.withIndent('  ').convert(analysisResults));
-      print('📄 Resultados guardados en: $_outputFile');
+      await LoggerFactory.info('📄 Resultados guardados en: $_outputFile');
     }
 
     // Generar resumen de comandos de optimización
@@ -292,38 +293,34 @@ class BundleAnalyzer {
   }
 
   void _generateOptimizationCommands() {
-    print('🛠️  Comandos de optimización sugeridos:');
-    print('');
+    LoggerFactory.info('🛠️  Comandos de optimización sugeridos:');
 
     // Comando para eliminar imports no usados
     final unusedImports = analysisResults['unused_imports'];
     if (unusedImports != null && unusedImports['count'] > 0) {
-      print('# Corregir imports no utilizados:');
-      print('dart fix --apply');
-      print('');
+      LoggerFactory.info('# Corregir imports no utilizados:');
+      LoggerFactory.info('dart fix --apply');
     }
 
     // Comando para análisis de dependencias
-    print('# Revisar dependencias no utilizadas:');
-    print('flutter pub deps');
-    print('flutter pub outdated');
-    print('');
+    LoggerFactory.info('# Revisar dependencias no utilizadas:');
+    LoggerFactory.info('flutter pub deps');
+    LoggerFactory.info('flutter pub outdated');
 
     // Comando para optimizar assets
     final assets = analysisResults['assets'];
     if (assets != null && (assets['unused'] as List).isNotEmpty) {
-      print('# Eliminar assets no utilizados:');
+      LoggerFactory.info('# Eliminar assets no utilizados:');
       for (final asset in (assets['unused'] as List).take(3)) {
-        print('rm "$asset"');
+        LoggerFactory.info('rm "$asset"');
       }
-      print('');
     }
 
     // Comandos de build optimizado
-    print('# Build optimizado:');
-    print('flutter build web --release --dart2js-optimization=O4');
-    print('flutter build web --release --split-debug-info=debug_symbols/');
-    print('');
+    LoggerFactory.info('# Build optimizado:');
+    LoggerFactory.info('flutter build web --release --dart2js-optimization=O4');
+    LoggerFactory.info(
+        'flutter build web --release --split-debug-info=debug_symbols/');
   }
 
   String _formatBytes(int bytes) {

@@ -17,16 +17,17 @@ final isMovieWatchedProvider =
 
 // Provider para la lista de películas vistas
 final watchedMoviesProvider =
-    StateNotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>((ref) {
-  final repository = ref.watch(hybridWatchedRepositoryProvider);
-  return WatchedMoviesNotifier(
-    repository: repository,
-    onMovieWatched: (Movie movie) async {
-      // Manejar el callback aquí, dentro del provider
-      await ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
-    },
-  );
-});
+    StateNotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>(
+  (ref) {
+    final repository = ref.watch(hybridWatchedRepositoryProvider);
+    return WatchedMoviesNotifier(
+      repository: repository,
+      onMovieWatched: (Movie movie) async {
+        await ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
+      },
+    );
+  },
+);
 
 // Estado para las películas vistas
 class WatchedMoviesState {
@@ -72,28 +73,26 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
 
   Future<void> loadNextPage() async {
     if (state.isLoading || state.isLastPage) return;
-    if (!mounted) return;
 
-    print('🎬 WatchedMoviesNotifier: Cargando página ${state.currentPage}');
+    LoggerFactory.info(
+        'WatchedMoviesNotifier: Cargando página ${state.currentPage}');
     state = state.copyWith(isLoading: true);
 
     try {
       // Use hybrid repository to get watched movies with pagination
       final allWatchedMovies = await repository.getWatchedMoviesSorted();
-      print(
-          '🎬 WatchedMoviesNotifier: ${allWatchedMovies.length} películas vistas encontradas');
+      LoggerFactory.info(
+          'WatchedMoviesNotifier: ${allWatchedMovies.length} películas vistas encontradas');
 
       // Simulate pagination by slicing the sorted list
       final startIndex = state.currentPage * _limit;
       final endIndex = startIndex + _limit;
 
       if (startIndex >= allWatchedMovies.length) {
-        if (mounted) {
-          state = state.copyWith(
-            isLoading: false,
-            isLastPage: true,
-          );
-        }
+        state = state.copyWith(
+          isLoading: false,
+          isLastPage: true,
+        );
         return;
       }
 
@@ -101,37 +100,31 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
           allWatchedMovies.skip(startIndex).take(_limit).toList();
 
       if (pageMovies.isEmpty) {
-        if (mounted) {
-          state = state.copyWith(
-            isLoading: false,
-            isLastPage: true,
-          );
-        }
-        return;
-      }
-
-      if (mounted) {
-        print(
-            '🎬 WatchedMoviesNotifier: Agregando ${pageMovies.length} películas a la página');
-        print(
-            '🎬 WatchedMoviesNotifier: Total después de agregar: ${state.movies.length + pageMovies.length}');
-        state = state.copyWith(
-          isLoading: false,
-          movies: [...state.movies, ...pageMovies],
-          currentPage: state.currentPage + 1,
-          isLastPage:
-              pageMovies.length < _limit || endIndex >= allWatchedMovies.length,
-        );
-      }
-    } catch (e) {
-      LoggerFactory.error(
-          'WatchedMoviesProvider: Error loading watched movies: $e');
-      if (mounted) {
         state = state.copyWith(
           isLoading: false,
           isLastPage: true,
         );
+        return;
       }
+
+      LoggerFactory.info(
+          'WatchedMoviesNotifier: Agregando ${pageMovies.length} películas a la página');
+      LoggerFactory.info(
+          'WatchedMoviesNotifier: Total después de agregar: ${state.movies.length + pageMovies.length}');
+      state = state.copyWith(
+        isLoading: false,
+        movies: [...state.movies, ...pageMovies],
+        currentPage: state.currentPage + 1,
+        isLastPage:
+            pageMovies.length < _limit || endIndex >= allWatchedMovies.length,
+      );
+    } catch (e) {
+      LoggerFactory.error(
+          'WatchedMoviesProvider: Error loading watched movies: $e');
+      state = state.copyWith(
+        isLoading: false,
+        isLastPage: true,
+      );
     }
   }
 
@@ -180,7 +173,6 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   }
 
   Future<void> _reloadMovies() async {
-    if (!mounted) return;
     state = const WatchedMoviesState();
     await loadNextPage();
   }
@@ -189,9 +181,5 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
     await _reloadMovies();
   }
 
-  @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
-  }
+  // Si necesitas limpiar recursos, hazlo aquí. No llames a super.dispose().
 }

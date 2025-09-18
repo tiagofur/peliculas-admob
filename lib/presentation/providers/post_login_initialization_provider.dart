@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
@@ -92,13 +93,13 @@ class PostLoginInitializationNotifier
 }
 
 /// Provider para el servicio de inicialización post-login
-// TODO: Fix legacy compatibility for StateNotifierProvider and Provider
-// final postLoginInitializationProvider = StateNotifierProvider<
-//     PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
-//   return PostLoginInitializationNotifier(ref);
-// });
+// LEGACY COMPATIBILITY FIXED
+final postLoginInitializationProvider = StateNotifierProvider<
+    PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
+  return PostLoginInitializationNotifier();
+});
 
 /// Provider para verificar si el servicio está inicializado
-// final isPostLoginInitializedProvider = Provider<bool>((ref) {
-//   return ref.watch(postLoginInitializationProvider).isInitialized;
-// });
+final isPostLoginInitializedProvider = Provider<bool>((ref) {
+  return ref.watch(postLoginInitializationProvider).isInitialized;
+});
