@@ -1,0 +1,134 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../domain/entities/custom_list.dart';
+import '../../domain/entities/list_item.dart';
+import '../../infrastructure/datasources/supabase_custom_lists_datasource.dart';
+
+final listsProvider =
+    StateNotifierProvider<ListsNotifier, List<CustomList>>((ref) {
+  final supabase = Supabase.instance.client;
+  final dataSource = SupabaseCustomListsDataSource(supabase);
+  return ListsNotifier(dataSource);
+});
+
+class ListsNotifier extends StateNotifier<List<CustomList>> {
+  ListsNotifier(this._dataSource) : super([]) {
+    _init();
+  }
+
+  final SupabaseCustomListsDataSource _dataSource;
+  StreamSubscription<List<CustomList>>? _listsSubscription;
+  final Map<String, StreamSubscription<List<ListItem>>>
+      _listItemsSubscriptions = {};
+
+  void _init() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final lists = await _dataSource.getUserLists(user.id);
+      state = lists;
+      _subscribeToLists(user.id);
+    }
+  }
+
+  void _subscribeToLists(String userId) {
+    _listsSubscription?.cancel();
+    _listsSubscription = _dataSource.watchUserLists(userId).listen((lists) {
+      state = lists;
+      for (final list in lists) {
+        _subscribeToListItems(list.id);
+      }
+    });
+  }
+
+  void _subscribeToListItems(String listId) {
+    _listItemsSubscriptions[listId]?.cancel();
+    _listItemsSubscriptions[listId] =
+        _dataSource.watchListItems(listId).listen((items) {
+      final listIndex = state.indexWhere((list) => list.id == listId);
+      if (listIndex != -1) {
+        final updatedList = state[listIndex]
+            .copyWith(movieIds: items.map((item) => item.movieId).toList());
+        final newState = List<CustomList>.from(state);
+        newState[listIndex] = updatedList;
+        state = newState;
+      }
+    });
+  }
+
+  Future<void> createList(String name,
+      {String? description, String? emoji, String? colorHex}) async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final newList = CustomList(
+        id: '', // Server will generate
+        name: name,
+        description: description,
+        emoji: emoji,
+        colorHex: colorHex,
+        movieIds: [],
+        isDefault: false,
+        userId: user.id,
+        createdAt: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
+        syncStatus: 'synced',
+      );
+      await _dataSource.createList(newList);
+    }
+  }
+
+  Future<void> updateList(CustomList list) async {
+    await _dataSource.updateList(list);
+  }
+
+  Future<void> deleteList(String listId) async {
+    await _dataSource.deleteList(listId);
+  }
+
+  Future<void> addMovieToList(String listId, int movieId) async {
+    await _dataSource.addMovieToList(listId, movieId);
+  }
+
+  Future<void> removeMovieFromList(String listId, int movieId) async {
+    await _dataSource.removeMovieFromList(listId, movieId);
+  }
+
+  Future<void> duplicateList(String listId) async {
+    final listToDuplicate = state.firstWhere((list) => list.id == listId);
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final newList = CustomList(
+        id: '', // Server will generate
+        name: '${listToDuplicate.name} (Copia)',
+        description: listToDuplicate.description,
+        emoji: listToDuplicate.emoji,
+        colorHex: listToDuplicate.colorHex,
+        movieIds: listToDuplicate.movieIds,
+        isDefault: false,
+        userId: user.id,
+        createdAt: DateTime.now(),
+        lastModifiedAt: DateTime.now(),
+        syncStatus: 'synced',
+      );
+      await _dataSource.createList(newList);
+    }
+  }
+
+  Future<void> clearList(String listId) async {
+    final listToClear = state.firstWhere((list) => list.id == listId);
+    for (final movieId in listToClear.movieIds) {
+      await _dataSource.removeMovieFromList(listId, movieId);
+    }
+  }
+
+  @override
+  void dispose() {
+    _listsSubscription?.cancel();
+    for (var sub in _listItemsSubscriptions.values) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
+}

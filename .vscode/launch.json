@@ -7,8 +7,7 @@
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "windows",
-      "args": ["--flavor", "development"]
+      "deviceId": "windows"
     },
     {
       "name": "Flutter Debug (Chrome)",
@@ -16,8 +15,7 @@
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "chrome",
-      "args": ["--flavor", "development"]
+      "deviceId": "chrome"
     },
     {
       "name": "Flutter Debug (Edge)",
@@ -25,8 +23,7 @@
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "edge",
-      "args": ["--flavor", "development"]
+      "deviceId": "edge"
     },
     {
       "name": "Flutter Debug (Android Emulator)",
@@ -34,8 +31,7 @@
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "emulator",
-      "args": ["--flavor", "development"]
+      "deviceId": "emulator-5554"
     },
     {
       "name": "Flutter Profile (Windows)",

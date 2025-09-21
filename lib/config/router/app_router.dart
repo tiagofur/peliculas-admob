@@ -17,6 +17,7 @@ import '../../presentation/screens/watchlist_screen.dart';
 import '../../presentation/views/list_share_web_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
+import '../../presentation/views/lists/lists_view.dart';
 import '../../presentation/views/views.dart';
 import '../../presentation/widgets/shared/page_transitions.dart';
 
@@ -92,7 +93,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: '/my-library/lists',
                         name: 'lists',
-                        builder: (context, state) => const CustomListsView(),
+                        builder: (context, state) => const ListsView(),
                         routes: [
                           GoRoute(
                             path: ':listId',

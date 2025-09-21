@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/entities.dart';
-import '../../providers/storage/direct_custom_lists_provider.dart';
+import '../../providers/custom_lists_provider.dart';
 
 class MovieListsWidget extends ConsumerStatefulWidget {
   const MovieListsWidget({super.key, required this.movie});
@@ -34,10 +34,10 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Temporary fix - access notifier directly until providers are restored
-    final notifier = ref.read(directCustomListsProvider.notifier);
-    final allLists = notifier.allListsWithMovies;
-    final listsContainingMovie = notifier.getListsContainingMovie(widget.movie.id);
+    final allLists = ref.watch(listsProvider);
+    final listsContainingMovie = allLists
+        .where((list) => list.movieIds.contains(widget.movie.id))
+        .toList();
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -317,9 +317,9 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   void _toggleMovieInList(CustomList list, bool isInList) {
     if (isInList) {
       ref
-          .read(directCustomListsProvider.notifier)
+          .read(allListsNotifierProvider.notifier)
           .removeMovieFromList(list.id, widget.movie.id);
-      
+
       // Mostrar confirmación de eliminación
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -330,9 +330,9 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       );
     } else {
       ref
-          .read(directCustomListsProvider.notifier)
+          .read(allListsNotifierProvider.notifier)
           .addMovieToList(list.id, widget.movie.id);
-      
+
       // Mostrar confirmación de adición
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -344,10 +344,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
             textColor: Colors.white,
             onPressed: () {
               // Navegar a la lista
-              Navigator.of(context).pushNamed(
-                '/list-detail',
-                arguments: list.id,
-              );
+              context.go('/my-library/lists/${list.id}');
             },
           ),
         ),
@@ -724,9 +721,9 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                     onPressed: _isButtonEnabled
                         ? () async {
                             try {
-                              // Crear la lista usando Direct provider
+                              // Crear la lista usando el nuevo provider
                               await ref
-                                  .read(directCustomListsProvider.notifier)
+                                  .read(allListsNotifierProvider.notifier)
                                   .createList(
                                     name: _nameController.text.trim(),
                                     description:
@@ -741,17 +738,10 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                               if (_addCurrentMovie) {
                                 // Obtener el ID de la lista recién creada y agregar la película
-                                final notifier = ref.read(directCustomListsProvider.notifier);
-                                final customLists = notifier.allListsWithMovies
-                                    .where((l) => !l.isDefault)
-                                    .toList();
-                                if (customLists.isNotEmpty) {
-                                  final newList = customLists.last;
-                                  await ref
-                                      .read(directCustomListsProvider.notifier)
-                                      .addMovieToList(
-                                          newList.id, widget.movieId);
-                                }
+                                final newList = ref.read(listsProvider).last;
+                                await ref
+                                    .read(allListsNotifierProvider.notifier)
+                                    .addMovieToList(newList.id, widget.movieId);
                               }
 
                               if (mounted) {
@@ -769,15 +759,10 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                                       action: SnackBarAction(
                                         label: 'Ver',
                                         onPressed: () {
-                                          final notifier = ref.read(directCustomListsProvider.notifier);
-                                          final customLists = notifier.allListsWithMovies
-                                              .where((l) => !l.isDefault)
-                                              .toList();
-                                          if (customLists.isNotEmpty) {
-                                            final newList = customLists.last;
-                                            GoRouter.of(scaffoldContext)
-                                                .push('/lists/${newList.id}');
-                                          }
+                                          final newList =
+                                              ref.read(listsProvider).last;
+                                          GoRouter.of(scaffoldContext).push(
+                                              '/my-library/lists/${newList.id}');
                                         },
                                       ),
                                     ),

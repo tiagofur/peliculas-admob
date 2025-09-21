@@ -375,7 +375,6 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         _ref.read(hybridCustomListsRepositoryProvider).forceSync();
 
         // Habilitar los providers directos
-        _ref.read(directWatchedMoviesProvider.notifier).enableAfterLogin();
         _ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
 
         logger.info('Sincronización post-autenticación completada');

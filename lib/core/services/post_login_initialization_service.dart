@@ -88,7 +88,7 @@ class PostLoginInitializationService {
     Timer(const Duration(milliseconds: 200), () {
       try {
         // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directFavoriteMoviesProvider.notifier).enableAfterLogin();
+        ref.read(directFavoriteMoviesProvider.notifier);
         LoggerFactory.info(
             '✅ DirectFavorites listeners habilitados para sync tiempo real');
       } catch (e) {
@@ -101,7 +101,7 @@ class PostLoginInitializationService {
     Timer(const Duration(milliseconds: 300), () {
       try {
         // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directWatchedMoviesProvider.notifier).enableAfterLogin();
+        ref.read(directWatchedMoviesProvider.notifier);
         LoggerFactory.info(
             '✅ DirectWatched listeners habilitados para sync tiempo real');
       } catch (e) {

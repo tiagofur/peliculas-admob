@@ -22,13 +22,20 @@ class ListDetailView extends ConsumerStatefulWidget {
 class _ListDetailViewState extends ConsumerState<ListDetailView> {
   @override
   Widget build(BuildContext context) {
-    final customList = ref.watch(listByIdProvider(widget.listId));
+    final lists = ref.watch(listsProvider);
+    final customListIndex =
+        lists.indexWhere((list) => list.id == widget.listId);
+    if (customListIndex == -1) {
+      return const Scaffold(
+        body: Center(child: Text('Lista no encontrada')),
+      );
+    }
+    final customList = lists[customListIndex];
 
     // Debug: Mostrar qué ID estamos buscando
     LoggerFactory.info(
         'ListDetailView: Buscando lista con ID: ${widget.listId}');
-    LoggerFactory.info(
-        'ListDetailView: Lista encontrada: ${customList?.name ?? 'null'}');
+    LoggerFactory.info('ListDetailView: Lista encontrada: ${customList.name}');
     LoggerFactory.info(
         'ListDetailView: Tipo de customList: ${customList.runtimeType}');
 
@@ -344,23 +351,17 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
   }
 
   void _duplicateList(CustomList customList) {
-    // TODO: Fix legacy compatibility - providers commented out
-    // ref
-    //     .read(allListsProvider.notifier)
-    //     .duplicateList(customList.id, '${customList.name} (Copia)');
+    ref
+        .read(allListsNotifierProvider.notifier)
+        .duplicateList(customList.id, '${customList.name} (Copia)');
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Lista "${customList.name}" duplicada'),
         action: SnackBarAction(
           label: 'Ver',
           onPressed: () {
-            // Obtener la lista duplicada (será la última creada)
-            // TODO: Fix legacy compatibility - providers commented out
-            // final allLists = ref.read(customListsProvider);
-            // if (allLists.isNotEmpty) {
-            //   final duplicatedList = allLists.last;
-            //   context.push('/lists/${duplicatedList.id}');
-            // }
+            final duplicatedList = ref.read(listsProvider).last;
+            context.push('/my-library/lists/${duplicatedList.id}');
           },
         ),
       ),
@@ -404,8 +405,9 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
           ),
           FilledButton(
             onPressed: () {
-              // TODO: Fix legacy compatibility - providers commented out
-              // ref.read(allListsProvider.notifier).clearList(customList.id);
+              ref
+                  .read(allListsNotifierProvider.notifier)
+                  .clearList(customList.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Lista "${customList.name}" vaciada')),
@@ -435,8 +437,9 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             onPressed: () {
-              // TODO: Fix legacy compatibility - providers commented out
-              // ref.read(allListsProvider.notifier).deleteList(customList.id);
+              ref
+                  .read(allListsNotifierProvider.notifier)
+                  .deleteList(customList.id);
               Navigator.of(context).pop();
               context.pop(); // Volver a la vista anterior
               ScaffoldMessenger.of(context).showSnackBar(
@@ -496,16 +499,16 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
   }
 }
 
-class _EditListDialog extends StatefulWidget {
+class _EditListDialog extends ConsumerStatefulWidget {
   const _EditListDialog({required this.customList});
 
   final CustomList customList;
 
   @override
-  State<_EditListDialog> createState() => _EditListDialogState();
+  ConsumerState<_EditListDialog> createState() => _EditListDialogState();
 }
 
-class _EditListDialogState extends State<_EditListDialog> {
+class _EditListDialogState extends ConsumerState<_EditListDialog> {
   late TextEditingController _nameController;
   late TextEditingController _descriptionController;
   late String _selectedEmoji;
@@ -705,14 +708,13 @@ class _EditListDialogState extends State<_EditListDialog> {
           onPressed: _nameController.text.trim().isEmpty
               ? null
               : () {
-                  // TODO: Fix legacy compatibility - providers commented out
-                  // ref.read(allListsProvider.notifier).updateList(
-                  //       widget.customList.id,
-                  //       name: _nameController.text.trim(),
-                  //       description: _descriptionController.text.trim(),
-                  //       emoji: _selectedEmoji,
-                  //       color: _selectedColor,
-                  //     );
+                  ref.read(allListsNotifierProvider.notifier).updateList(
+                        widget.customList.id,
+                        name: _nameController.text.trim(),
+                        description: _descriptionController.text.trim(),
+                        emoji: _selectedEmoji,
+                        color: _selectedColor,
+                      );
                   Navigator.of(context).pop();
                 },
           child: const Text('Guardar'),

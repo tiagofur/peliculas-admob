@@ -53,9 +53,8 @@ class DirectProvidersInitialization {
   /// Inicializa el provider de favoritos
   Future<void> _initializeFavoritesProvider() async {
     try {
-      final favoritesNotifier = ref.read(directFavoriteMoviesProvider.notifier);
-      await favoritesNotifier.enableAfterLogin();
-      LoggerFactory.debug('✅ Favorites provider inicializado');
+      // La inicialización ahora es automática en el constructor del provider
+      LoggerFactory.debug('✅ Favorites provider inicializado automáticamente');
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando favorites provider: $e');
       rethrow;
@@ -65,9 +64,8 @@ class DirectProvidersInitialization {
   /// Inicializa el provider de watched
   Future<void> _initializeWatchedProvider() async {
     try {
-      final watchedNotifier = ref.read(directWatchedMoviesProvider.notifier);
-      await watchedNotifier.enableAfterLogin();
-      LoggerFactory.debug('✅ Watched provider inicializado');
+      // La inicialización ahora es automática en el constructor del provider
+      LoggerFactory.debug('✅ Watched provider inicializado automáticamente');
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando watched provider: $e');
       rethrow;

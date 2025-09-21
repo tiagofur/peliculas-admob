@@ -715,10 +715,10 @@ packages:
     dependency: "direct main"
     description:
       name: go_router
-      sha256: eb059dfe59f08546e9787f895bd01652076f996bcbf485a8609ef990419ad227
+      sha256: b1488741c9ce37b72e026377c69a59c47378493156fc38efb5a54f6def3f92a3
       url: "https://pub.dev"
     source: hosted
-    version: "16.2.1"
+    version: "16.2.2"
   golden_toolkit:
     dependency: "direct dev"
     description:
@@ -1749,10 +1749,10 @@ packages:
     dependency: transitive
     description:
       name: webview_flutter_wkwebview
-      sha256: fb46db8216131a3e55bcf44040ca808423539bc6732e7ed34fb6d8044e3d512f
+      sha256: fea63576b3b7e02b2df8b78ba92b48ed66caec2bb041e9a0b1cbd586d5d80bfd
       url: "https://pub.dev"
     source: hosted
-    version: "3.23.0"
+    version: "3.23.1"
   win32:
     dependency: transitive
     description:

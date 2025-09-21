@@ -163,6 +163,26 @@ class DefaultListsManager {
         color: '#EF4444',
         defaultType: 'trending',
       ),
+
+      // Lista de Maraton
+      const DefaultListConfig(
+        localId: 'marathon',
+        name: 'Para un Maratón',
+        description: 'Películas para ver una tras otra',
+        emoji: '🍿',
+        color: '#F97316',
+        defaultType: 'marathon',
+      ),
+
+      // Lista de Placeres Culpables
+      const DefaultListConfig(
+        localId: 'guilty_pleasures',
+        name: 'Placeres Culpables',
+        description: 'Películas que amas en secreto',
+        emoji: '🤫',
+        color: '#EC4899',
+        defaultType: 'guilty_pleasures',
+      ),
     ];
   }
 

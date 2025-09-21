@@ -115,6 +115,7 @@ class TriggerFreeFavoritesSync {
           .from('user_favorites')
           .select('*')
           .eq('user_id', userId)
+          .eq('is_deleted', false)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
