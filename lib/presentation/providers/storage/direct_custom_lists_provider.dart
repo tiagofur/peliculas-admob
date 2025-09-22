@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -176,9 +177,28 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     // required this.ref, // Commented out for legacy compatibility
     required this.onListCreated,
   }) : super(const CustomListsState()) {
-    _loadListsFromSupabase();
-    _setupRealtimeListeners();
-    _initializeSync();
+    _init();
+  }
+
+  /// Inicializa el provider: caché local primero, luego sincronización
+  Future<void> _init() async {
+    try {
+      // 1. Cargar desde caché local primero (instantáneo)
+      await _loadFromLocal();
+
+      // 2. Luego sincronizar con Supabase en background
+      await _loadListsFromSupabase();
+
+      // 3. Configurar listeners real-time
+      _setupRealtimeListeners();
+
+      // 4. Inicializar servicio de sync offline
+      _initializeSync();
+
+      LoggerFactory.info('✅ DirectCustomListsProvider inicializado completamente');
+    } catch (e) {
+      LoggerFactory.error('❌ Error inicializando DirectCustomListsProvider: $e');
+    }
   }
 
   // final Ref ref; // Commented out for legacy compatibility
@@ -188,6 +208,8 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   RealtimeChannel? _listsChannel;
   RealtimeChannel? _listItemsChannel;
   String? _currentUserId;
+  Timer? _reconnectionTimer;
+  bool _isRealtimeConnected = false;
 
   /// Cargar listas directamente desde Supabase
   Future<void> _loadListsFromSupabase() async {
@@ -238,6 +260,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
           'DirectCustomLists: IDs personalizadas: ${listsMap.keys.toList()}');
       LoggerFactory.debug(
           'DirectCustomLists: IDs predeterminadas: $defaultListsIds');
+
+      // Persistir los datos recién cargados
+      await _persistToLocal();
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error cargando: $e');
       state = const CustomListsState();
@@ -541,6 +566,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     state = currentState.copyWith(listItems: updatedItems);
     LoggerFactory.info('✅ [DEBUG] Estado local actualizado optimísticamente');
 
+    // Persistir inmediatamente en caché local
+    await _persistToLocal();
+
     try {
       // Usar TriggerFreeCustomListsSync directamente
       LoggerFactory.info('📡 [DEBUG] Llamando a TriggerFreeCustomListsSync...');
@@ -607,6 +635,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     updatedItems[listId] = currentItems.where((id) => id != movieId).toList();
 
     state = currentState.copyWith(listItems: updatedItems);
+
+    // Persistir inmediatamente en caché local
+    await _persistToLocal();
 
     try {
       await _sync.removeMovieFromList(currentUser.id, listId, movieId);
@@ -870,45 +901,93 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   /// Configurar listeners de tiempo real
   void _setupRealtimeListeners() {
     try {
+      if (_currentUserId == null) {
+        LoggerFactory.warning('⚠️ No hay usuario autenticado, saltando setup real-time');
+        return;
+      }
+
       LoggerFactory.info(
-          '📡 [REAL-TIME CUSTOM LISTS] Configurando listeners de tiempo real...');
+          '📡 [REAL-TIME] Configurando listeners para usuario: $_currentUserId');
+
+      // Limpiar listeners existentes primero
+      _cleanupRealtimeListeners();
 
       // Listener para cambios en listas
       _listsChannel = Supabase.instance.client
-          .channel(
-              'custom_lists_realtime_${DateTime.now().millisecondsSinceEpoch}')
+          .channel('custom_lists_$_currentUserId')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_lists',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUserId!,
+            ),
             callback: _handleListsRealtimeEvent,
-            filter: _currentUserId != null
-                ? PostgresChangeFilter(
-                    type: PostgresChangeFilterType.eq,
-                    column: 'user_id',
-                    value: _currentUserId)
-                : null,
           )
-          .subscribe();
+          .subscribe((status, error) {
+            LoggerFactory.info('📡 Lista Channel status: $status');
+            if (error != null) {
+              LoggerFactory.error('📡 Lista Channel error: $error');
+            }
+            _isRealtimeConnected = status == RealtimeSubscribeStatus.subscribed;
+            if (!_isRealtimeConnected) {
+              _startReconnectionTimer();
+            }
+          });
 
       // Listener para cambios en items de listas
       _listItemsChannel = Supabase.instance.client
-          .channel(
-              'list_items_realtime_${DateTime.now().millisecondsSinceEpoch}')
+          .channel('list_items_$_currentUserId')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_list_items',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUserId!,
+            ),
             callback: _handleListItemsRealtimeEvent,
           )
-          .subscribe();
+          .subscribe((status, error) {
+            LoggerFactory.info('📡 Items Channel status: $status');
+            if (error != null) {
+              LoggerFactory.error('📡 Items Channel error: $error');
+            }
+            _isRealtimeConnected = status == RealtimeSubscribeStatus.subscribed;
+            if (!_isRealtimeConnected) {
+              _startReconnectionTimer();
+            }
+          });
 
-      LoggerFactory.info(
-          '✅ DirectCustomLists: Listeners de tiempo real configurados');
+      LoggerFactory.info('✅ Real-time listeners configurados');
     } catch (e) {
-      LoggerFactory.error(
-          '❌ DirectCustomLists: Error configurando listeners: $e');
+      LoggerFactory.error('❌ Error configurando real-time listeners: $e');
+      _startReconnectionTimer();
     }
+  }
+
+  void _cleanupRealtimeListeners() {
+    _listsChannel?.unsubscribe();
+    _listItemsChannel?.unsubscribe();
+    _listsChannel = null;
+    _listItemsChannel = null;
+    _reconnectionTimer?.cancel();
+    _isRealtimeConnected = false;
+  }
+
+  void _startReconnectionTimer() {
+    _reconnectionTimer?.cancel();
+    _reconnectionTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!_isRealtimeConnected && _currentUserId != null) {
+        LoggerFactory.info('🔄 Intentando reconectar real-time...');
+        _setupRealtimeListeners();
+      } else if (_isRealtimeConnected) {
+        timer.cancel();
+      }
+    });
   }
 
   /// Maneja eventos de tiempo real para listas
@@ -1135,6 +1214,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
 
         state =
             currentState.copyWith(lists: updatedLists, listItems: updatedItems);
+
+        // Persistir cambios inmediatamente
+        _persistToLocal();
       }
     } catch (e, stackTrace) {
       LoggerFactory.error(
@@ -1159,6 +1241,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       updatedItems.remove(listId);
       state =
           currentState.copyWith(lists: updatedLists, listItems: updatedItems);
+
+      // Persistir cambios inmediatamente
+      _persistToLocal();
     } else {
       final customList = _recordToCustomList(newRecord);
       LoggerFactory.info(
@@ -1167,6 +1252,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       final updatedLists = Map<String, CustomList>.from(currentState2.lists);
       updatedLists[listId] = customList;
       state = currentState2.copyWith(lists: updatedLists);
+
+      // Persistir cambios inmediatamente
+      _persistToLocal();
     }
   }
 
@@ -1601,11 +1689,92 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     }
   }
 
+  /// Persiste el estado actual en almacenamiento local
+  Future<void> _persistToLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Guardar listas personalizadas
+      final listsJson = state.lists.values.map((list) => list.toJson()).toList();
+      await prefs.setString('custom_lists_cache', jsonEncode(listsJson));
+
+      // Guardar items de listas
+      final itemsJson = <String, dynamic>{};
+      state.listItems.forEach((listId, movieIds) {
+        itemsJson[listId] = movieIds;
+      });
+      await prefs.setString('custom_list_items_cache', jsonEncode(itemsJson));
+
+      // Guardar timestamp de última sincronización
+      await prefs.setString('custom_lists_last_sync', DateTime.now().toIso8601String());
+
+      LoggerFactory.debug('✅ Estado de Custom Lists persistido localmente');
+    } catch (e) {
+      LoggerFactory.error('❌ Error persistiendo estado local: $e');
+    }
+  }
+
+  /// Carga el estado desde almacenamiento local
+  Future<void> _loadFromLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Cargar listas
+      final listsString = prefs.getString('custom_lists_cache');
+      if (listsString != null) {
+        final listsJson = jsonDecode(listsString) as List;
+        final lists = <String, CustomList>{};
+        for (final json in listsJson) {
+          final list = CustomList.fromJson(json as Map<String, dynamic>);
+          lists[list.id] = list;
+        }
+
+        // Cargar items
+        final itemsString = prefs.getString('custom_list_items_cache');
+        final items = <String, List<int>>{};
+        if (itemsString != null) {
+          final itemsJson = jsonDecode(itemsString) as Map<String, dynamic>;
+          itemsJson.forEach((listId, movieIds) {
+            items[listId] = List<int>.from(movieIds as List);
+          });
+        }
+
+        // Actualizar estado solo si hay datos
+        if (lists.isNotEmpty || items.isNotEmpty) {
+          state = CustomListsState(
+            lists: lists,
+            listItems: items,
+          );
+
+          final lastSync = prefs.getString('custom_lists_last_sync');
+          LoggerFactory.info('✅ Estado de Custom Lists cargado desde caché local');
+          if (lastSync != null) {
+            LoggerFactory.debug('📅 Última sincronización: $lastSync');
+          }
+        }
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error cargando estado local: $e');
+    }
+  }
+
+  /// Limpia el caché local
+  Future<void> _clearLocalCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('custom_lists_cache');
+      await prefs.remove('custom_list_items_cache');
+      await prefs.remove('custom_lists_last_sync');
+      LoggerFactory.info('🧹 Caché local de Custom Lists limpiado');
+    } catch (e) {
+      LoggerFactory.error('❌ Error limpiando caché local: $e');
+    }
+  }
+
   @override
   void dispose() {
     LoggerFactory.info('🗑️ DirectCustomLists: Cerrando listeners...');
-    _listsChannel?.unsubscribe();
-    _listItemsChannel?.unsubscribe();
+    _cleanupRealtimeListeners();
     super.dispose();
   }
 }

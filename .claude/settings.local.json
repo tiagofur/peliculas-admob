@@ -17,7 +17,11 @@
       "Bash(flutter logs:*)",
       "Bash(flutter run:*)",
       "Bash(flutter clean:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx supabase db reset:*)",
+      "Bash(npx supabase login:*)",
+      "Bash(npx supabase:*)"
     ],
     "deny": [],
     "ask": []
