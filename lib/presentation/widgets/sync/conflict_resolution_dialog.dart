@@ -225,40 +225,33 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
           ),
         ),
         const SizedBox(height: 8),
-        RadioGroup<ConflictStrategy>(
-          groupValue: _selectedStrategy,
-          onChanged: (value) {
-            if (!_isResolving) {
-              setState(() {
-                _selectedStrategy = value;
-                _errorMessage = null;
-              });
-            }
-          },
-          child: Column(
-            children: ConflictStrategy.values.where((strategy) {
-              return widget.allowMerge || strategy != ConflictStrategy.merge;
-            }).map((strategy) {
-              return ListTile(
-                title: Text(_getStrategyTitle(strategy)),
-                subtitle: Text(
-                  _getStrategyDescription(strategy),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-                onTap: _isResolving
-                    ? null
-                    : () {
+        Column(
+          children: ConflictStrategy.values.where((strategy) {
+            return widget.allowMerge || strategy != ConflictStrategy.merge;
+          }).map((strategy) {
+            return RadioListTile<ConflictStrategy>(
+              value: strategy,
+              groupValue: _selectedStrategy,
+              onChanged: _isResolving
+                  ? null
+                  : (value) {
+                      if (value != null) {
                         setState(() {
-                          _selectedStrategy = strategy;
+                          _selectedStrategy = value;
                           _errorMessage = null;
                         });
-                      },
-                dense: true,
-              );
-            }).toList(),
-          ),
+                      }
+                    },
+              title: Text(_getStrategyTitle(strategy)),
+              subtitle: Text(
+                _getStrategyDescription(strategy),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+              dense: true,
+            );
+          }).toList(),
         )
       ],
     );

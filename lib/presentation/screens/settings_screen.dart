@@ -15,7 +15,15 @@ class SettingsScreen extends ConsumerWidget {
     final themeState = ref.watch(themeNotifierProvider);
     final colorList = ref.watch(colorListProvider);
     final localeState = ref.watch(localeNotifierProvider);
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
+
+    if (l10n == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -64,7 +72,7 @@ class SettingsScreen extends ConsumerWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
-                              .withValues(alpha: 0.8),
+                              .withAlpha(204), // 0.8 alpha
                         ),
                   ),
                 ],
@@ -191,7 +199,7 @@ class SettingsScreen extends ConsumerWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .onSurface
-                              .withValues(alpha: 0.8),
+                              .withAlpha(204), // 0.8 alpha
                         ),
                   ),
                 ],
@@ -205,35 +213,45 @@ class SettingsScreen extends ConsumerWidget {
 
   Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref,
       ThemeState themeState, AppLocalizations l10n) {
-    return RadioGroup<app_theme.ThemeMode>(
-      groupValue: themeState.themeMode,
-      onChanged: (value) {
-        if (value != null) {
-          ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-        }
-      },
-      child: Column(
-        children: [
-          RadioListTile<app_theme.ThemeMode>(
-            value: app_theme.ThemeMode.system,
-            title: Text(l10n.system),
-            subtitle: Text(l10n.systemThemeSubtitle),
-            secondary: const Icon(Icons.brightness_auto),
-          ),
-          RadioListTile<app_theme.ThemeMode>(
-            value: app_theme.ThemeMode.light,
-            title: Text(l10n.light),
-            subtitle: Text(l10n.lightThemeSubtitle),
-            secondary: const Icon(Icons.light_mode),
-          ),
-          RadioListTile<app_theme.ThemeMode>(
-            value: app_theme.ThemeMode.dark,
-            title: Text(l10n.dark),
-            subtitle: Text(l10n.darkThemeSubtitle),
-            secondary: const Icon(Icons.dark_mode),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        RadioListTile<app_theme.ThemeMode>(
+          value: app_theme.ThemeMode.system,
+          groupValue: themeState.themeMode,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+            }
+          },
+          title: Text(l10n.system),
+          subtitle: Text(l10n.systemThemeSubtitle),
+          secondary: const Icon(Icons.brightness_auto),
+        ),
+        RadioListTile<app_theme.ThemeMode>(
+          value: app_theme.ThemeMode.light,
+          groupValue: themeState.themeMode,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+            }
+          },
+          title: Text(l10n.light),
+          subtitle: Text(l10n.lightThemeSubtitle),
+          secondary: const Icon(Icons.light_mode),
+        ),
+        RadioListTile<app_theme.ThemeMode>(
+          value: app_theme.ThemeMode.dark,
+          groupValue: themeState.themeMode,
+          onChanged: (value) {
+            if (value != null) {
+              ref.read(themeNotifierProvider.notifier).setThemeMode(value);
+            }
+          },
+          title: Text(l10n.dark),
+          subtitle: Text(l10n.darkThemeSubtitle),
+          secondary: const Icon(Icons.dark_mode),
+        ),
+      ],
     );
   }
 
@@ -243,32 +261,42 @@ class SettingsScreen extends ConsumerWidget {
     final currentLocale = localeState.locale ??
         Locale(Localizations.localeOf(context).languageCode);
 
-    return RadioGroup<String>(
-      groupValue: currentLocale.languageCode,
-      onChanged: (value) {
-        if (value != null) {
-          localeNotifier.setLocale(Locale(value));
-        }
-      },
-      child: Column(
-        children: [
-          RadioListTile<String>(
-            value: 'es',
-            title: Text(l10n.spanish),
-            secondary: const Icon(Icons.language),
-          ),
-          RadioListTile<String>(
-            value: 'en',
-            title: Text(l10n.english),
-            secondary: const Icon(Icons.language),
-          ),
-          RadioListTile<String>(
-            value: 'pt',
-            title: Text(l10n.portuguese),
-            secondary: const Icon(Icons.language),
-          ),
-        ],
-      ),
+    return Column(
+      children: [
+        RadioListTile<String>(
+          value: 'es',
+          groupValue: currentLocale.languageCode,
+          onChanged: (value) {
+            if (value != null) {
+              localeNotifier.setLocale(Locale(value));
+            }
+          },
+          title: Text(l10n.spanish),
+          secondary: const Icon(Icons.language),
+        ),
+        RadioListTile<String>(
+          value: 'en',
+          groupValue: currentLocale.languageCode,
+          onChanged: (value) {
+            if (value != null) {
+              localeNotifier.setLocale(Locale(value));
+            }
+          },
+          title: Text(l10n.english),
+          secondary: const Icon(Icons.language),
+        ),
+        RadioListTile<String>(
+          value: 'pt',
+          groupValue: currentLocale.languageCode,
+          onChanged: (value) {
+            if (value != null) {
+              localeNotifier.setLocale(Locale(value));
+            }
+          },
+          title: Text(l10n.portuguese),
+          secondary: const Icon(Icons.language),
+        ),
+      ],
     );
   }
 
@@ -306,13 +334,13 @@ class SettingsScreen extends ConsumerWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .outline
-                              .withValues(alpha: 0.3),
+                              .withAlpha(77), // 0.3 alpha
                           width: 1,
                         ),
                   boxShadow: [
                     if (isSelected)
                       BoxShadow(
-                        color: color.withValues(alpha: 0.4),
+                        color: color.withAlpha(102), // 0.4 alpha
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),

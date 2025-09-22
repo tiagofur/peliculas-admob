@@ -7,11 +7,10 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/analytics/analytics_service.dart';
+import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
-import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/movie_ratings_provider.dart';
 import '../../providers/user_movie_ratings_provider.dart' as ratings;
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/ratings/star_rating_widget.dart';
@@ -120,7 +119,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     Text(
                       error.toString(),
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -154,14 +154,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 32),
 
           // Estadísticas
-          if (stats != null) ...[
-            _buildStatsSection(theme, stats),
-            const SizedBox(height: 32),
-          ],
+          // if (stats != null) ...[
+          //   _buildStatsSection(theme, stats),
+          //   const SizedBox(height: 32),
+          // ],
 
           // Valoraciones recientes
-          _buildRatingsSection(theme),
-          const SizedBox(height: 32),
+          // _buildRatingsSection(theme),
+          // const SizedBox(height: 32),
 
           // Formulario de edición o información
           if (_isEditing)
@@ -237,54 +237,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ],
-    );
-  }
-
-  Widget _buildStatsSection(ThemeData theme, UserStats stats) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Estadísticas',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    theme,
-                    'Películas Vistas',
-                    stats.moviesWatched.toString(),
-                    Icons.movie,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    theme,
-                    'Favoritas',
-                    stats.favoritesCount.toString(),
-                    Icons.favorite,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    theme,
-                    'Listas',
-                    stats.listsCount.toString(),
-                    Icons.list,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -472,142 +424,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildRatingsSection(ThemeData theme) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final appState = ref.watch(appStateProvider);
-
-        // Don't show ratings section for guest users
-        if (!appState.isAuthenticated) {
-          return const SizedBox.shrink();
-        }
-
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star,
-                      color: Colors.amber,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Mis Valoraciones',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Rating statistics and recent ratings section
-                Consumer(
-                  builder: (context, ref, child) {
-                    final recentRatingsAsync = ref.watch(recentRatingsProvider);
-                    final ratingStats = ref.watch(userRatingStatsProvider);
-
-                    return Column(
-                      children: [
-                        // User rating statistics
-                        if (ratingStats != null &&
-                            ratingStats['totalRatings'] > 0)
-                          _buildRatingStats(theme, ratingStats),
-                        const SizedBox(height: 16),
-                        // Recent ratings
-                        recentRatingsAsync.when(
-                          data: (recentRatings) => recentRatings.isNotEmpty
-                              ? _buildRecentRatings(theme, recentRatings)
-                              : const SizedBox.shrink(),
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                          error: (error, stack) => const SizedBox.shrink(),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                //                     'Aún no has valorado ninguna película',
-                //                     style: theme.textTheme.bodyMedium?.copyWith(
-                //                       color: theme.colorScheme.onSurface
-                //                           .withValues(alpha: 0.6),
-                //                     ),
-                //                     textAlign: TextAlign.center,
-                //                   ),
-                //                 ],
-                //               );
-                //             }
-
-                //             return Column(
-                //               children: [
-                //                 Text(
-                //                   'Valoraciones Recientes',
-                //                   style: theme.textTheme.bodyLarge?.copyWith(
-                //                     fontWeight: FontWeight.w600,
-                //                   ),
-                //                 ),
-                //                 const SizedBox(height: 12),
-                //                 ...ratings.take(3).map((rating) => Padding(
-                //                       padding: const EdgeInsets.only(bottom: 8),
-                //                       child: _buildRatingItem(theme, rating),
-                //                     )),
-                //                 if (ratings.length > 3)
-                //                   TextButton(
-                //                     onPressed: () => showAllRatings(context),
-                //                     child: const Text(
-                //                         'Ver todas mis valoraciones'),
-                //                   ),
-                //               ],
-                //             );
-                //           },
-                //           loading: () => const CircularProgressIndicator(),
-                //           error: (error, stack) => Text(
-                //             'Error al cargar valoraciones',
-                //             style: theme.textTheme.bodySmall?.copyWith(
-                //               color: Colors.red,
-                //             ),
-                //           ),
-                //         ),
-                //       ],
-                //     );
-                //   },
-                // ),
-
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.star_border,
-                        size: 48,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Función de valoraciones temporalmente deshabilitada',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 

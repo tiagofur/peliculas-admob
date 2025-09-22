@@ -784,33 +784,29 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioGroup<ConflictType?>(
-              groupValue: _selectedType,
-              onChanged: (value) {
-                setState(() => _selectedType = value);
-                Navigator.pop(context);
-                _applyFilters();
-              },
-              child: Column(
-                children: [
-                  ListTile(
-                    title: const Text('Todos'),
-                    onTap: () {
-                      setState(() => _selectedType = null);
-                      Navigator.pop(context);
-                      _applyFilters();
-                    },
-                  ),
-                  ...ConflictType.values.map((type) => ListTile(
-                        title: Text(_getConflictTypeDescription(type)),
-                        onTap: () {
-                          setState(() => _selectedType = type);
-                          Navigator.pop(context);
-                          _applyFilters();
-                        },
-                      )),
-                ],
-              ),
+            Column(
+              children: [
+                RadioListTile<ConflictType?>(
+                  value: null,
+                  groupValue: _selectedType,
+                  onChanged: (value) {
+                    setState(() => _selectedType = value);
+                    Navigator.pop(context);
+                    _applyFilters();
+                  },
+                  title: const Text('Todos'),
+                ),
+                ...ConflictType.values.map((type) => RadioListTile<ConflictType?>(
+                      value: type,
+                      groupValue: _selectedType,
+                      onChanged: (value) {
+                        setState(() => _selectedType = value);
+                        Navigator.pop(context);
+                        _applyFilters();
+                      },
+                      title: Text(_getConflictTypeDescription(type)),
+                    )),
+              ],
             )
           ],
         ),
@@ -826,33 +822,29 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RadioGroup<ConflictStrategy?>(
-              groupValue: _selectedStrategy,
-              onChanged: (value) {
-                setState(() => _selectedStrategy = value);
-                Navigator.pop(context);
-                _applyFilters();
-              },
-              child: Column(
-                children: [
-                  ListTile(
-                    title: const Text('Todas'),
-                    onTap: () {
-                      setState(() => _selectedStrategy = null);
-                      Navigator.pop(context);
-                      _applyFilters();
-                    },
-                  ),
-                  ...ConflictStrategy.values.map((strategy) => ListTile(
-                        title: Text(_getStrategyLabel(strategy)),
-                        onTap: () {
-                          setState(() => _selectedStrategy = strategy);
-                          Navigator.pop(context);
-                          _applyFilters();
-                        },
-                      )),
-                ],
-              ),
+            Column(
+              children: [
+                RadioListTile<ConflictStrategy?>(
+                  value: null,
+                  groupValue: _selectedStrategy,
+                  onChanged: (value) {
+                    setState(() => _selectedStrategy = value);
+                    Navigator.pop(context);
+                    _applyFilters();
+                  },
+                  title: const Text('Todas'),
+                ),
+                ...ConflictStrategy.values.map((strategy) => RadioListTile<ConflictStrategy?>(
+                      value: strategy,
+                      groupValue: _selectedStrategy,
+                      onChanged: (value) {
+                        setState(() => _selectedStrategy = value);
+                        Navigator.pop(context);
+                        _applyFilters();
+                      },
+                      title: Text(_getStrategyLabel(strategy)),
+                    )),
+              ],
             )
           ],
         ),

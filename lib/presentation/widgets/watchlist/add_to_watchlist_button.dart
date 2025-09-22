@@ -216,40 +216,43 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
   }
 
   Widget _buildPriorityOptions() {
-    return RadioGroup<WatchlistPriority>(
-      groupValue: _selectedPriority,
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _selectedPriority = value;
-          });
-        }
-      },
-      child: Column(
-        children: WatchlistPriority.values.map((priority) {
-          return ListTile(
-            leading: Radio<WatchlistPriority>(
-              value: priority,
-            ),
-            title: Row(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: _getPriorityColor(priority),
-                    shape: BoxShape.circle,
-                  ),
+    return Column(
+      children: WatchlistPriority.values.map((priority) {
+        return ListTile(
+          leading: Radio<WatchlistPriority>(
+            value: priority,
+            groupValue: _selectedPriority,
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedPriority = value;
+                });
+              }
+            },
+          ),
+          title: Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: _getPriorityColor(priority),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 12),
-                Text(priority.displayName),
-              ],
-            ),
-            contentPadding: EdgeInsets.zero,
-            dense: true,
-          );
-        }).toList(),
-      ),
+              ),
+              const SizedBox(width: 12),
+              Text(priority.displayName),
+            ],
+          ),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          onTap: () {
+            setState(() {
+              _selectedPriority = priority;
+            });
+          },
+        );
+      }).toList(),
     );
   }
 
