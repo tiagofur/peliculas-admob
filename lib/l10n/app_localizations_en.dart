@@ -397,4 +397,252 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get loadingMovie => 'Loading movie...';
+
+  @override
+  String get challengeCompleted => 'Challenge Completed!';
+
+  @override
+  String get familyFriendly => 'Family-Friendly';
+
+  @override
+  String get familyFriendlyDescription =>
+      'Movies suitable for the whole family';
+
+  @override
+  String get dateNight => 'Date Night';
+
+  @override
+  String get dateNightDescription => 'Romantic movies and date films';
+
+  @override
+  String get classics => 'Classics';
+
+  @override
+  String get classicsDescription => 'Unmissable cinema classics';
+
+  @override
+  String get suggested => 'Suggested';
+
+  @override
+  String get suggestedDescription => 'Personalized recommendations';
+
+  @override
+  String get withFriends => 'With Friends';
+
+  @override
+  String get withFriendsDescription => 'Movies for groups and gatherings';
+
+  @override
+  String get rainyNights => 'Rainy Nights';
+
+  @override
+  String get rainyNightsDescription => 'Cozy movies for rainy days';
+
+  @override
+  String get shortMovies => 'Short Movies';
+
+  @override
+  String get shortMoviesDescription => 'Movies under 100 minutes';
+
+  @override
+  String get toWatch => 'To Watch';
+
+  @override
+  String get toWatchDescription => 'Movies I want to watch soon';
+
+  @override
+  String get chillingMovies => 'Chilling Movies';
+
+  @override
+  String get chillingMoviesDescription => 'Perfect movies for relaxing';
+
+  @override
+  String get romanticMovies => 'Romantic Movies';
+
+  @override
+  String get romanticMoviesDescription =>
+      'Romantic movies to watch as a couple';
+
+  @override
+  String get funMovies => 'Fun Movies';
+
+  @override
+  String get funMoviesDescription => 'Fun movies to watch in groups';
+
+  @override
+  String get pendingClassics => 'Pending Classics';
+
+  @override
+  String get pendingClassicsDescription => 'Classic movies I need to watch';
+
+  @override
+  String get actionAdventure => 'Action & Adventure';
+
+  @override
+  String get actionAdventureDescription => 'Action and adventure movies';
+
+  @override
+  String get rainyDayMovies => 'Rainy Day Movies';
+
+  @override
+  String get rainyDayMoviesDescription => 'Perfect movies for rainy days';
+
+  @override
+  String get basedOnFavorites => 'Favorites';
+
+  @override
+  String get trending => 'Trending';
+
+  @override
+  String get forYou => 'For You';
+
+  @override
+  String get mood => 'Mood';
+
+  @override
+  String get similar => 'Similar';
+
+  @override
+  String get basedOnWatched => 'Based on Watched';
+
+  @override
+  String get basedOnGenre => 'Based on Genre';
+
+  @override
+  String get realtimeSyncDashboard => 'Realtime Sync Dashboard';
+
+  @override
+  String get systemStatus => 'System Status';
+
+  @override
+  String get performanceScore => 'Performance Score';
+
+  @override
+  String get connectionStatus => 'Connection Status';
+
+  @override
+  String get online => 'Online';
+
+  @override
+  String get offline => 'Offline';
+
+  @override
+  String get syncLatency => 'Sync Latency';
+
+  @override
+  String get latencyTarget => 'Target: < 1.5 seconds (Issue #69 requirement)';
+
+  @override
+  String get avgSync => 'Avg Sync';
+
+  @override
+  String get avgRealtime => 'Avg Realtime';
+
+  @override
+  String get realtimeEvents => 'Realtime Events';
+
+  @override
+  String get eventsReceived => 'Events Received';
+
+  @override
+  String get availableOn => 'Available on:';
+
+  @override
+  String get highPriority => 'High Priority';
+
+  @override
+  String get normalPriority => 'Normal Priority';
+
+  @override
+  String get lowPriority => 'Low Priority';
+
+  @override
+  String get couldNotLoadSimilarMovies => 'Could not load similar movies';
+
+  @override
+  String get openYouTube => 'Open YouTube';
+
+  @override
+  String get youTube => 'YouTube';
+
+  @override
+  String get removeFromWatchlist => 'Remove from watchlist';
+
+  @override
+  String get addToWatchlist => 'Add to watchlist';
+
+  @override
+  String get inWatchlist => 'In Watchlist';
+
+  @override
+  String get addToWatchlistTitle => 'Add to Watchlist';
+
+  @override
+  String get selectPriority => 'Select priority:';
+
+  @override
+  String get add => 'Add';
+
+  @override
+  String get calculatingEngagement => 'Calculating engagement...';
+
+  @override
+  String get analyzingBehavior => 'Analyzing behavior...';
+
+  @override
+  String get generatingInsights => 'Generating insights...';
+
+  @override
+  String get uploading => 'Uploading...';
+
+  @override
+  String get downloading => 'Downloading...';
+
+  @override
+  String get synchronizing => 'Synchronizing...';
+
+  @override
+  String get synchronize => 'Synchronize';
+
+  @override
+  String get notificationsAndReminders => 'Notifications and Reminders';
+
+  @override
+  String get enable => 'Enable';
+
+  @override
+  String get reminderPermissions => 'Reminder Permissions';
+
+  @override
+  String get changeLanguage => 'Change Language';
+
+  @override
+  String get languageChangeConfirmation =>
+      'The app will restart to apply the new language. Do you want to continue?';
+
+  @override
+  String get confirm => 'Confirm';
+
+  @override
+  String get languageChanged => 'Language changed. Restarting app...';
+
+  @override
+  String get appRestartRequired => 'App Restart Required';
+
+  @override
+  String get restartAppMessage =>
+      'Please restart the app to apply the language change.';
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get activeSubscriptions => 'Active';
+
+  @override
+  String get noWatchlistMoviesYet =>
+      'You haven\'t added any movies to your watchlist yet';
 }

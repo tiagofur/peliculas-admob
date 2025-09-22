@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/watchlist_movie.dart';
+import '../../../l10n/app_localizations.dart';
 
 class WatchlistMovieCard extends StatelessWidget {
   const WatchlistMovieCard({
@@ -264,7 +265,8 @@ class WatchlistMovieCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text('Alta Prioridad'),
+              Text(AppLocalizations.of(context)?.highPriority ??
+                  'High Priority'),
             ],
           ),
         ),
@@ -281,7 +283,8 @@ class WatchlistMovieCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text('Prioridad Normal'),
+              Text(AppLocalizations.of(context)?.normalPriority ??
+                  'Normal Priority'),
             ],
           ),
         ),
@@ -298,7 +301,7 @@ class WatchlistMovieCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text('Baja Prioridad'),
+              Text(AppLocalizations.of(context)?.lowPriority ?? 'Low Priority'),
             ],
           ),
         ),

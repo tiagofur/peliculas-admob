@@ -488,5 +488,329 @@
         "type": "int"
       }
     }
+  },
+  "loadingMovie": "Loading movie...",
+  "@loadingMovie": {
+    "description": "Loading movie text"
+  },
+  "challengeCompleted": "Challenge Completed!",
+  "@challengeCompleted": {
+    "description": "Challenge completion celebration text"
+  },
+  "familyFriendly": "Family-Friendly",
+  "@familyFriendly": {
+    "description": "Family-friendly list name"
+  },
+  "familyFriendlyDescription": "Movies suitable for the whole family",
+  "@familyFriendlyDescription": {
+    "description": "Family-friendly list description"
+  },
+  "dateNight": "Date Night",
+  "@dateNight": {
+    "description": "Date night list name"
+  },
+  "dateNightDescription": "Romantic movies and date films",
+  "@dateNightDescription": {
+    "description": "Date night list description"
+  },
+  "classics": "Classics",
+  "@classics": {
+    "description": "Classics list name"
+  },
+  "classicsDescription": "Unmissable cinema classics",
+  "@classicsDescription": {
+    "description": "Classics list description"
+  },
+  "suggested": "Suggested",
+  "@suggested": {
+    "description": "Suggested list name"
+  },
+  "suggestedDescription": "Personalized recommendations",
+  "@suggestedDescription": {
+    "description": "Suggested list description"
+  },
+  "withFriends": "With Friends",
+  "@withFriends": {
+    "description": "With friends list name"
+  },
+  "withFriendsDescription": "Movies for groups and gatherings",
+  "@withFriendsDescription": {
+    "description": "With friends list description"
+  },
+  "rainyNights": "Rainy Nights",
+  "@rainyNights": {
+    "description": "Rainy nights list name"
+  },
+  "rainyNightsDescription": "Cozy movies for rainy days",
+  "@rainyNightsDescription": {
+    "description": "Rainy nights list description"
+  },
+  "shortMovies": "Short Movies",
+  "@shortMovies": {
+    "description": "Short movies list name"
+  },
+  "shortMoviesDescription": "Movies under 100 minutes",
+  "@shortMoviesDescription": {
+    "description": "Short movies list description"
+  },
+  "toWatch": "To Watch",
+  "@toWatch": {
+    "description": "To watch list name"
+  },
+  "toWatchDescription": "Movies I want to watch soon",
+  "@toWatchDescription": {
+    "description": "To watch list description"
+  },
+  "chillingMovies": "Chilling Movies",
+  "@chillingMovies": {
+    "description": "Chilling movies list name"
+  },
+  "chillingMoviesDescription": "Perfect movies for relaxing",
+  "@chillingMoviesDescription": {
+    "description": "Chilling movies list description"
+  },
+  "romanticMovies": "Romantic Movies",
+  "@romanticMovies": {
+    "description": "Romantic movies list name"
+  },
+  "romanticMoviesDescription": "Romantic movies to watch as a couple",
+  "@romanticMoviesDescription": {
+    "description": "Romantic movies list description"
+  },
+  "funMovies": "Fun Movies",
+  "@funMovies": {
+    "description": "Fun movies list name"
+  },
+  "funMoviesDescription": "Fun movies to watch in groups",
+  "@funMoviesDescription": {
+    "description": "Fun movies list description"
+  },
+  "pendingClassics": "Pending Classics",
+  "@pendingClassics": {
+    "description": "Pending classics list name"
+  },
+  "pendingClassicsDescription": "Classic movies I need to watch",
+  "@pendingClassicsDescription": {
+    "description": "Pending classics list description"
+  },
+  "actionAdventure": "Action & Adventure",
+  "@actionAdventure": {
+    "description": "Action and adventure list name"
+  },
+  "actionAdventureDescription": "Action and adventure movies",
+  "@actionAdventureDescription": {
+    "description": "Action and adventure list description"
+  },
+  "rainyDayMovies": "Rainy Day Movies",
+  "@rainyDayMovies": {
+    "description": "Rainy day movies list name"
+  },
+  "rainyDayMoviesDescription": "Perfect movies for rainy days",
+  "@rainyDayMoviesDescription": {
+    "description": "Rainy day movies list description"
+  },
+  "basedOnFavorites": "Favorites",
+  "@basedOnFavorites": {
+    "description": "Based on favorites recommendation type"
+  },
+  "trending": "Trending",
+  "@trending": {
+    "description": "Trending recommendation type"
+  },
+  "forYou": "For You",
+  "@forYou": {
+    "description": "For you recommendation type"
+  },
+  "mood": "Mood",
+  "@mood": {
+    "description": "Mood recommendation type"
+  },
+  "similar": "Similar",
+  "@similar": {
+    "description": "Similar recommendation type"
+  },
+  "basedOnWatched": "Based on Watched",
+  "@basedOnWatched": {
+    "description": "Based on watched recommendation type"
+  },
+  "basedOnGenre": "Based on Genre",
+  "@basedOnGenre": {
+    "description": "Based on genre recommendation type"
+  },
+  "realtimeSyncDashboard": "Realtime Sync Dashboard",
+  "@realtimeSyncDashboard": {
+    "description": "Realtime synchronization dashboard title"
+  },
+  "systemStatus": "System Status",
+  "@systemStatus": {
+    "description": "Synchronization system status"
+  },
+  "performanceScore": "Performance Score",
+  "@performanceScore": {
+    "description": "System performance score"
+  },
+  "connectionStatus": "Connection Status",
+  "@connectionStatus": {
+    "description": "Connection status"
+  },
+  "online": "Online",
+  "@online": {
+    "description": "Online status"
+  },
+  "offline": "Offline",
+  "@offline": {
+    "description": "Offline status"
+  },
+  "syncLatency": "Sync Latency",
+  "@syncLatency": {
+    "description": "Synchronization latency"
+  },
+  "latencyTarget": "Target: < 1.5 seconds (Issue #69 requirement)",
+  "@latencyTarget": {
+    "description": "Latency target for synchronization"
+  },
+  "avgSync": "Avg Sync",
+  "@avgSync": {
+    "description": "Average synchronization"
+  },
+  "avgRealtime": "Avg Realtime",
+  "@avgRealtime": {
+    "description": "Average realtime"
+  },
+  "realtimeEvents": "Realtime Events",
+  "@realtimeEvents": {
+    "description": "Realtime events"
+  },
+  "eventsReceived": "Events Received",
+  "@eventsReceived": {
+    "description": "Events received"
+  },
+  "availableOn": "Available on:",
+  "@availableOn": {
+    "description": "Streaming availability"
+  },
+  "highPriority": "High Priority",
+  "@highPriority": {
+    "description": "High priority"
+  },
+  "normalPriority": "Normal Priority",
+  "@normalPriority": {
+    "description": "Normal priority"
+  },
+  "lowPriority": "Low Priority",
+  "@lowPriority": {
+    "description": "Low priority"
+  },
+  "couldNotLoadSimilarMovies": "Could not load similar movies",
+  "@couldNotLoadSimilarMovies": {
+    "description": "Error loading similar movies"
+  },
+  "openYouTube": "Open YouTube",
+  "@openYouTube": {
+    "description": "Open in YouTube"
+  },
+  "youTube": "YouTube",
+  "@youTube": {
+    "description": "YouTube"
+  },
+  "removeFromWatchlist": "Remove from watchlist",
+  "@removeFromWatchlist": {
+    "description": "Remove from watchlist"
+  },
+  "addToWatchlist": "Add to watchlist",
+  "@addToWatchlist": {
+    "description": "Add to watchlist"
+  },
+  "inWatchlist": "In Watchlist",
+  "@inWatchlist": {
+    "description": "In watchlist"
+  },
+  "addToWatchlistTitle": "Add to Watchlist",
+  "@addToWatchlistTitle": {
+    "description": "Add to watchlist dialog title"
+  },
+  "selectPriority": "Select priority:",
+  "@selectPriority": {
+    "description": "Select priority"
+  },
+  "add": "Add",
+  "@add": {
+    "description": "Add button"
+  },
+  "calculatingEngagement": "Calculating engagement...",
+  "@calculatingEngagement": {
+    "description": "Calculating user engagement"
+  },
+  "analyzingBehavior": "Analyzing behavior...",
+  "@analyzingBehavior": {
+    "description": "Analyzing user behavior"
+  },
+  "generatingInsights": "Generating insights...",
+  "@generatingInsights": {
+    "description": "Generating user insights"
+  },
+  "uploading": "Uploading...",
+  "@uploading": {
+    "description": "Uploading status"
+  },
+  "downloading": "Downloading...",
+  "@downloading": {
+    "description": "Downloading status"
+  },
+  "synchronizing": "Synchronizing...",
+  "@synchronizing": {
+    "description": "Synchronizing status"
+  },
+  "synchronize": "Synchronize",
+  "@synchronize": {
+    "description": "Synchronize action"
+  },
+  "notificationsAndReminders": "Notifications and Reminders",
+  "@notificationsAndReminders": {
+    "description": "Notifications and reminders"
+  },
+  "enable": "Enable",
+  "@enable": {
+    "description": "Enable button"
+  },
+  "reminderPermissions": "Reminder Permissions",
+  "@reminderPermissions": {
+    "description": "Reminder permissions"
+  },
+  "changeLanguage": "Change Language",
+  "@changeLanguage": {
+    "description": "Change language"
+  },
+  "languageChangeConfirmation": "The app will restart to apply the new language. Do you want to continue?",
+  "@languageChangeConfirmation": {
+    "description": "Language change confirmation"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Confirm button"
+  },
+  "languageChanged": "Language changed. Restarting app...",
+  "@languageChanged": {
+    "description": "Language changed"
+  },
+  "appRestartRequired": "App Restart Required",
+  "@appRestartRequired": {
+    "description": "App restart required"
+  },
+  "restartAppMessage": "Please restart the app to apply the language change.",
+  "@restartAppMessage": {
+    "description": "Restart app message"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "OK button"
+  },
+  "activeSubscriptions": "Active",
+  "@activeSubscriptions": {
+    "description": "Active subscriptions"
+  },
+  "noWatchlistMoviesYet": "You haven't added any movies to your watchlist yet",
+  "@noWatchlistMoviesYet": {
+    "description": "No movies in watchlist yet"
   }
 }

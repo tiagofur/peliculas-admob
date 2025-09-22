@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../generated/app_localizations.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/storage/direct_watched_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';

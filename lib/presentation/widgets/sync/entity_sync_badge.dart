@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/syncable_entity.dart';
+import '../../../l10n/app_localizations.dart';
 
 /// Widget badge que muestra el estado de sincronización de un elemento individual
 class EntitySyncBadge extends ConsumerWidget {
@@ -133,9 +134,9 @@ class EntitySyncBadge extends ConsumerWidget {
       case SyncItemStatus.error:
         return 'Error de sincronización';
       case SyncItemStatus.uploading:
-        return 'Subiendo...';
+        return AppLocalizations.of(context)?.uploading ?? 'Uploading...';
       case SyncItemStatus.downloading:
-        return 'Descargando...';
+        return AppLocalizations.of(context)?.downloading ?? 'Downloading...';
       case SyncItemStatus.processing:
         return 'Procesando cambios';
     }

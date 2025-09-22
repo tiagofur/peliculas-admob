@@ -27,7 +27,7 @@
   "languageDescription": "Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.",
   "home": "Inicio",
   "favorites": "Favoritos",
-  "watchlist": "Lista de seguimiento",
+  "watchlist": "Por Ver",
   "profile": "Perfil",
   "noFavorites": "¡Ohhh no!",
   "noFavoritesMessage": "No tienes películas favoritas",
@@ -284,5 +284,329 @@
         "type": "int"
       }
     }
+  },
+  "loadingMovie": "Cargando película...",
+  "@loadingMovie": {
+    "description": "Texto de carga de película"
+  },
+  "challengeCompleted": "¡Desafío Completado!",
+  "@challengeCompleted": {
+    "description": "Texto de celebración de desafío completado"
+  },
+  "familyFriendly": "En Familia",
+  "@familyFriendly": {
+    "description": "Nombre de lista para familias"
+  },
+  "familyFriendlyDescription": "Películas aptas para toda la familia",
+  "@familyFriendlyDescription": {
+    "description": "Descripción de lista para familias"
+  },
+  "dateNight": "En Pareja",
+  "@dateNight": {
+    "description": "Nombre de lista para citas"
+  },
+  "dateNightDescription": "Películas románticas y de citas",
+  "@dateNightDescription": {
+    "description": "Descripción de lista para citas"
+  },
+  "classics": "Clásicos",
+  "@classics": {
+    "description": "Nombre de lista de clásicos"
+  },
+  "classicsDescription": "Clásicos imperdibles del cine",
+  "@classicsDescription": {
+    "description": "Descripción de lista de clásicos"
+  },
+  "suggested": "Sugeridas",
+  "@suggested": {
+    "description": "Nombre de lista sugeridas"
+  },
+  "suggestedDescription": "Recomendaciones personalizadas",
+  "@suggestedDescription": {
+    "description": "Descripción de lista sugeridas"
+  },
+  "withFriends": "Con Amigos",
+  "@withFriends": {
+    "description": "Nombre de lista con amigos"
+  },
+  "withFriendsDescription": "Películas para grupos y reuniones",
+  "@withFriendsDescription": {
+    "description": "Descripción de lista con amigos"
+  },
+  "rainyNights": "Noches de Lluvia",
+  "@rainyNights": {
+    "description": "Nombre de lista noches de lluvia"
+  },
+  "rainyNightsDescription": "Películas cómodas para días lluviosos",
+  "@rainyNightsDescription": {
+    "description": "Descripción de lista noches de lluvia"
+  },
+  "shortMovies": "Películas Cortas",
+  "@shortMovies": {
+    "description": "Nombre de lista películas cortas"
+  },
+  "shortMoviesDescription": "Películas de menos de 100 minutos",
+  "@shortMoviesDescription": {
+    "description": "Descripción de lista películas cortas"
+  },
+  "toWatch": "Por Ver",
+  "@toWatch": {
+    "description": "Nombre de lista por ver"
+  },
+  "toWatchDescription": "Películas que quiero ver próximamente",
+  "@toWatchDescription": {
+    "description": "Descripción de lista por ver"
+  },
+  "chillingMovies": "Para Relajarse",
+  "@chillingMovies": {
+    "description": "Nombre de lista para relajarse"
+  },
+  "chillingMoviesDescription": "Películas perfectas para relajarse",
+  "@chillingMoviesDescription": {
+    "description": "Descripción de lista para relajarse"
+  },
+  "romanticMovies": "Románticas",
+  "@romanticMovies": {
+    "description": "Nombre de lista románticas"
+  },
+  "romanticMoviesDescription": "Películas románticas para ver en pareja",
+  "@romanticMoviesDescription": {
+    "description": "Descripción de lista románticas"
+  },
+  "funMovies": "Divertidas",
+  "@funMovies": {
+    "description": "Nombre de lista divertidas"
+  },
+  "funMoviesDescription": "Películas divertidas para ver en grupo",
+  "@funMoviesDescription": {
+    "description": "Descripción de lista divertidas"
+  },
+  "pendingClassics": "Clásicos Pendientes",
+  "@pendingClassics": {
+    "description": "Nombre de lista clásicos pendientes"
+  },
+  "pendingClassicsDescription": "Películas clásicas que debo ver",
+  "@pendingClassicsDescription": {
+    "description": "Descripción de lista clásicos pendientes"
+  },
+  "actionAdventure": "Acción y Aventura",
+  "@actionAdventure": {
+    "description": "Nombre de lista acción y aventura"
+  },
+  "actionAdventureDescription": "Películas de acción y aventura",
+  "@actionAdventureDescription": {
+    "description": "Descripción de lista acción y aventura"
+  },
+  "rainyDayMovies": "Para Días Lluviosos",
+  "@rainyDayMovies": {
+    "description": "Nombre de lista días lluviosos"
+  },
+  "rainyDayMoviesDescription": "Películas perfectas para días lluviosos",
+  "@rainyDayMoviesDescription": {
+    "description": "Descripción de lista días lluviosos"
+  },
+  "basedOnFavorites": "Favoritos",
+  "@basedOnFavorites": {
+    "description": "Tipo de recomendación basado en favoritos"
+  },
+  "trending": "Tendencia",
+  "@trending": {
+    "description": "Tipo de recomendación tendencia"
+  },
+  "forYou": "Para Ti",
+  "@forYou": {
+    "description": "Tipo de recomendación para ti"
+  },
+  "mood": "Estado",
+  "@mood": {
+    "description": "Tipo de recomendación estado de ánimo"
+  },
+  "similar": "Similar",
+  "@similar": {
+    "description": "Tipo de recomendación similar"
+  },
+  "basedOnWatched": "Basado en Vistos",
+  "@basedOnWatched": {
+    "description": "Tipo de recomendación basado en vistos"
+  },
+  "basedOnGenre": "Basado en Género",
+  "@basedOnGenre": {
+    "description": "Tipo de recomendación basado en género"
+  },
+  "realtimeSyncDashboard": "Dashboard de Sincronización Realtime",
+  "@realtimeSyncDashboard": {
+    "description": "Título del dashboard de sincronización en tiempo real"
+  },
+  "systemStatus": "Estado del Sistema",
+  "@systemStatus": {
+    "description": "Estado del sistema de sincronización"
+  },
+  "performanceScore": "Score de Rendimiento",
+  "@performanceScore": {
+    "description": "Puntuación de rendimiento del sistema"
+  },
+  "connectionStatus": "Estado de Conexión",
+  "@connectionStatus": {
+    "description": "Estado de la conexión"
+  },
+  "online": "Online",
+  "@online": {
+    "description": "Estado en línea"
+  },
+  "offline": "Offline",
+  "@offline": {
+    "description": "Estado sin conexión"
+  },
+  "syncLatency": "Latencia de Sincronización",
+  "@syncLatency": {
+    "description": "Latencia de sincronización"
+  },
+  "latencyTarget": "Objetivo: < 1.5 segundos (Requerimiento del Issue #69)",
+  "@latencyTarget": {
+    "description": "Objetivo de latencia para sincronización"
+  },
+  "avgSync": "Sync Promedio",
+  "@avgSync": {
+    "description": "Sincronización promedio"
+  },
+  "avgRealtime": "Realtime Promedio",
+  "@avgRealtime": {
+    "description": "Tiempo real promedio"
+  },
+  "realtimeEvents": "Eventos en Tiempo Real",
+  "@realtimeEvents": {
+    "description": "Eventos en tiempo real"
+  },
+  "eventsReceived": "Eventos Recibidos",
+  "@eventsReceived": {
+    "description": "Eventos recibidos"
+  },
+  "availableOn": "Disponible en:",
+  "@availableOn": {
+    "description": "Disponibilidad de streaming"
+  },
+  "highPriority": "Alta Prioridad",
+  "@highPriority": {
+    "description": "Prioridad alta"
+  },
+  "normalPriority": "Prioridad Normal",
+  "@normalPriority": {
+    "description": "Prioridad normal"
+  },
+  "lowPriority": "Baja Prioridad",
+  "@lowPriority": {
+    "description": "Prioridad baja"
+  },
+  "couldNotLoadSimilarMovies": "No se pudo cargar películas similares",
+  "@couldNotLoadSimilarMovies": {
+    "description": "Error al cargar películas similares"
+  },
+  "openYouTube": "Abrir YouTube",
+  "@openYouTube": {
+    "description": "Abrir en YouTube"
+  },
+  "youTube": "YouTube",
+  "@youTube": {
+    "description": "YouTube"
+  },
+  "removeFromWatchlist": "Remover de watchlist",
+  "@removeFromWatchlist": {
+    "description": "Remover de lista de seguimiento"
+  },
+  "addToWatchlist": "Agregar a watchlist",
+  "@addToWatchlist": {
+    "description": "Agregar a lista de seguimiento"
+  },
+  "inWatchlist": "En Watchlist",
+  "@inWatchlist": {
+    "description": "En lista de seguimiento"
+  },
+  "addToWatchlistTitle": "Agregar a Watchlist",
+  "@addToWatchlistTitle": {
+    "description": "Título del diálogo agregar a watchlist"
+  },
+  "selectPriority": "Selecciona la prioridad:",
+  "@selectPriority": {
+    "description": "Seleccionar prioridad"
+  },
+  "add": "Agregar",
+  "@add": {
+    "description": "Botón agregar"
+  },
+  "calculatingEngagement": "Calculando engagement...",
+  "@calculatingEngagement": {
+    "description": "Calculando engagement del usuario"
+  },
+  "analyzingBehavior": "Analizando comportamiento...",
+  "@analyzingBehavior": {
+    "description": "Analizando comportamiento del usuario"
+  },
+  "generatingInsights": "Generando insights...",
+  "@generatingInsights": {
+    "description": "Generando insights del usuario"
+  },
+  "uploading": "Subiendo...",
+  "@uploading": {
+    "description": "Estado subiendo"
+  },
+  "downloading": "Descargando...",
+  "@downloading": {
+    "description": "Estado descargando"
+  },
+  "synchronizing": "Sincronizando...",
+  "@synchronizing": {
+    "description": "Estado sincronizando"
+  },
+  "synchronize": "Sincronizar",
+  "@synchronize": {
+    "description": "Acción sincronizar"
+  },
+  "notificationsAndReminders": "Notificaciones y Recordatorios",
+  "@notificationsAndReminders": {
+    "description": "Notificaciones y recordatorios"
+  },
+  "enable": "Habilitar",
+  "@enable": {
+    "description": "Botón habilitar"
+  },
+  "reminderPermissions": "Permisos de Recordatorios",
+  "@reminderPermissions": {
+    "description": "Permisos de recordatorios"
+  },
+  "changeLanguage": "Cambiar Idioma",
+  "@changeLanguage": {
+    "description": "Cambiar idioma"
+  },
+  "languageChangeConfirmation": "La aplicación se reiniciará para aplicar el nuevo idioma. ¿Deseas continuar?",
+  "@languageChangeConfirmation": {
+    "description": "Confirmación de cambio de idioma"
+  },
+  "confirm": "Confirmar",
+  "@confirm": {
+    "description": "Botón confirmar"
+  },
+  "languageChanged": "Idioma cambiado. Reiniciando aplicación...",
+  "@languageChanged": {
+    "description": "Idioma cambiado"
+  },
+  "appRestartRequired": "Reinicio Requerido",
+  "@appRestartRequired": {
+    "description": "Reinicio de aplicación requerido"
+  },
+  "restartAppMessage": "Por favor reinicia la aplicación para aplicar el cambio de idioma.",
+  "@restartAppMessage": {
+    "description": "Mensaje de reinicio de aplicación"
+  },
+  "ok": "Aceptar",
+  "@ok": {
+    "description": "Botón aceptar"
+  },
+  "activeSubscriptions": "Activas",
+  "@activeSubscriptions": {
+    "description": "Suscripciones activas"
+  },
+  "noWatchlistMoviesYet": "Aún no has agregado películas a tu watchlist",
+  "@noWatchlistMoviesYet": {
+    "description": "No hay películas en watchlist aún"
   }
 }

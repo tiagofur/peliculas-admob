@@ -17,6 +17,7 @@ class WatchlistScreen extends ConsumerWidget {
     // Safe fallback text when localizations are not available
     final emptyWatchlistText = l10n?.emptyWatchlist ?? 'Empty Watchlist!';
     final emptyWatchlistMessageText = l10n?.emptyWatchlistMessage ??
+        l10n?.noWatchlistMoviesYet ??
         'You haven\'t added any movies to your watchlist yet';
     final startExploringText = l10n?.startExploring ?? 'Start Exploring';
 

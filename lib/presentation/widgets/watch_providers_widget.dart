@@ -5,6 +5,7 @@ import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/watch_provider.dart';
 import '../../domain/entities/watch_providers.dart';
 import '../../domain/services/affiliate_service.dart';
+import '../../l10n/app_localizations.dart';
 
 class WatchProvidersWidget extends StatelessWidget {
   const WatchProvidersWidget({
@@ -32,9 +33,9 @@ class WatchProvidersWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Disponible en:',
-              style: TextStyle(
+            Text(
+              AppLocalizations.of(context)?.availableOn ?? 'Available on:',
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

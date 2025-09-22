@@ -46,40 +46,49 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
     final defaultLists = allLists.where((list) => list.isDefault).toList();
     final customLists = allLists.where((list) => !list.isDefault).toList();
 
-    // Calcular altura fija basada en las listas predeterminadas (máximo 8 listas en 4 filas)
-    final defaultListsCount = defaultLists.length;
-    final rowsNeeded = (defaultListsCount / 2).ceil().clamp(1, 4);
-    final fixedHeight = (rowsNeeded * 80.0) +
-        ((rowsNeeded - 1) * 8.0); // altura de card + spacing
+    // Altura responsiva más pequeña para móvil
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+    final itemHeight = isMobile ? 60.0 : 80.0;
+    final spacing = isMobile ? 6.0 : 8.0;
+    final rowsNeeded = (defaultLists.length / 2).ceil().clamp(1, isMobile ? 3 : 4);
+    final fixedHeight = (rowsNeeded * itemHeight) + ((rowsNeeded - 1) * spacing);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.list_alt, color: colors.primary),
-              const SizedBox(width: 8),
-              Text(
-                'Mis Listas',
-                style: textStyles.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Icon(Icons.list_alt, color: colors.primary, size: isMobile ? 20 : 24),
+              SizedBox(width: isMobile ? 6 : 8),
+              Expanded(
+                child: Text(
+                  'Mis Listas',
+                  style: textStyles.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: isMobile ? 16 : null,
+                  ),
                 ),
               ),
-              const Spacer(),
               TextButton.icon(
                 onPressed: () => _showCreateListDialog(context),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Nueva lista'),
+                icon: Icon(Icons.add, size: isMobile ? 14 : 16),
+                label: Text(
+                  isMobile ? 'Nueva' : 'Nueva lista',
+                  style: TextStyle(fontSize: isMobile ? 12 : 14),
+                ),
                 style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 6 : 8,
+                    vertical: isMobile ? 2 : 4
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8), // Reducido de 12 a 8
+          SizedBox(height: isMobile ? 6 : 8),
           if (allLists.isEmpty)
             _buildEmptyState(colors, textStyles)
           else
@@ -90,14 +99,21 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                   labelColor: colors.primary,
                   unselectedLabelColor: colors.onSurface.withValues(alpha: 0.6),
                   indicatorColor: colors.primary,
+                  labelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
+                  unselectedLabelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
                   tabs: [
                     Tab(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_outline, size: 16),
-                          const SizedBox(width: 4),
-                          Text('Predeterminadas (${defaultLists.length})'),
+                          Icon(Icons.star_outline, size: isMobile ? 14 : 16),
+                          SizedBox(width: isMobile ? 2 : 4),
+                          Flexible(
+                            child: Text(
+                              isMobile ? 'Predeter. (${defaultLists.length})' : 'Predeterminadas (${defaultLists.length})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -105,15 +121,20 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.folder_outlined, size: 16),
-                          const SizedBox(width: 4),
-                          Text('Personalizadas (${customLists.length})'),
+                          Icon(Icons.folder_outlined, size: isMobile ? 14 : 16),
+                          SizedBox(width: isMobile ? 2 : 4),
+                          Flexible(
+                            child: Text(
+                              isMobile ? 'Personal. (${customLists.length})' : 'Personalizadas (${customLists.length})',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: isMobile ? 6 : 8),
                 SizedBox(
                   height: fixedHeight,
                   child: TabBarView(
@@ -121,16 +142,15 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                     children: [
                       // Pestaña de listas predeterminadas
                       _buildListsGrid(defaultLists, listsContainingMovie,
-                          colors, textStyles, false // sin scroll
-                          ),
+                          colors, textStyles, false, isMobile),
                       // Pestaña de listas personalizadas
                       _buildListsGrid(
                           customLists,
                           listsContainingMovie,
                           colors,
                           textStyles,
-                          customLists.length > 8 // con scroll si hay más de 8
-                          ),
+                          customLists.length > (isMobile ? 6 : 8),
+                          isMobile),
                     ],
                   ),
                 ),
@@ -142,32 +162,39 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   }
 
   Widget _buildEmptyState(ColorScheme colors, TextTheme textStyles) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isMobile ? 16 : 24),
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
         border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.playlist_add,
-            size: 48,
+            size: isMobile ? 36 : 48,
             color: colors.onSurface.withValues(alpha: 0.4),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: isMobile ? 6 : 8),
           Text(
             'No tienes listas aún',
             style: textStyles.titleSmall?.copyWith(
               color: colors.onSurface.withValues(alpha: 0.6),
+              fontSize: isMobile ? 14 : null,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: isMobile ? 3 : 4),
           Text(
-            'Crea tu primera lista para organizar tus películas',
+            isMobile
+                ? 'Crea tu primera lista'
+                : 'Crea tu primera lista para organizar tus películas',
             style: textStyles.bodySmall?.copyWith(
               color: colors.onSurface.withValues(alpha: 0.5),
+              fontSize: isMobile ? 12 : null,
             ),
             textAlign: TextAlign.center,
           ),
@@ -181,7 +208,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       List<CustomList> listsContainingMovie,
       ColorScheme colors,
       TextTheme textStyles,
-      bool enableScroll) {
+      bool enableScroll,
+      bool isMobile) {
     if (lists.isEmpty) {
       return Center(
         child: Column(
@@ -210,17 +238,17 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       physics: enableScroll
           ? const AlwaysScrollableScrollPhysics()
           : const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 2.5,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+        childAspectRatio: isMobile ? 3.0 : 2.5, // Más ancho en móvil
+        crossAxisSpacing: isMobile ? 6 : 8,
+        mainAxisSpacing: isMobile ? 6 : 8,
       ),
       itemCount: lists.length,
       itemBuilder: (context, index) {
         final list = lists[index];
         final isInList = listsContainingMovie.any((l) => l.id == list.id);
-        return _buildListCard(list, isInList, colors, textStyles);
+        return _buildListCard(list, isInList, colors, textStyles, isMobile);
       },
     );
 
@@ -228,17 +256,17 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   }
 
   Widget _buildListCard(CustomList list, bool isInList, ColorScheme colors,
-      TextTheme textStyles) {
+      TextTheme textStyles, bool isMobile) {
     final listColor = _getColorFromString(list.color);
 
     return GestureDetector(
       onTap: () => _toggleMovieInList(list, isInList),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(isMobile ? 8 : 12),
         decoration: BoxDecoration(
           color: isInList ? listColor.withValues(alpha: 0.15) : colors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
           border: Border.all(
             color: isInList ? listColor : colors.outline.withValues(alpha: 0.2),
             width: isInList ? 2 : 1,
@@ -246,20 +274,22 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
               children: [
                 Text(
                   list.emoji,
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: isMobile ? 14 : 16),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: isMobile ? 6 : 8),
                 Expanded(
                   child: Text(
                     list.name,
                     style: textStyles.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isInList ? listColor : colors.onSurface,
+                      fontSize: isMobile ? 12 : 14,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -273,36 +303,40 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                     color: isInList
                         ? listColor
                         : colors.onSurface.withValues(alpha: 0.6),
-                    size: 20,
+                    size: isMobile ? 16 : 20,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: isMobile ? 2 : 4),
             Row(
               children: [
-                Text(
-                  '${list.movieIds.length} películas',
-                  style: textStyles.bodySmall?.copyWith(
-                    color: isInList
-                        ? listColor.withValues(alpha: 0.8)
-                        : colors.onSurface.withValues(alpha: 0.6),
+                Expanded(
+                  child: Text(
+                    '${list.movieIds.length} películas',
+                    style: textStyles.bodySmall?.copyWith(
+                      color: isInList
+                          ? listColor.withValues(alpha: 0.8)
+                          : colors.onSurface.withValues(alpha: 0.6),
+                      fontSize: isMobile ? 10 : 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (list.isDefault) ...[
-                  const SizedBox(width: 8),
+                if (list.isDefault && !isMobile) ...[
+                  const SizedBox(width: 4),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Por defecto',
+                      'Def',
                       style: textStyles.labelSmall?.copyWith(
                         color: colors.onPrimaryContainer,
-                        fontSize: 10,
+                        fontSize: 8,
                       ),
                     ),
                   ),

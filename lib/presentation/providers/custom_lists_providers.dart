@@ -470,6 +470,9 @@ class CustomListsNotifier extends StateNotifier<AsyncValue<List<CustomList>>> {
     }
   }
 
+  /// Alias para eliminar lista (para compatibilidad)
+  Future<void> removeList(String listId) => deleteList(listId);
+
   /// Habilita el provider después del login
   void enableAfterLogin() {
     LoggerFactory.info('🔐 CustomLists: Habilitando después del login...');

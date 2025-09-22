@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import 'adsense_web_widget.dart';
 
 class NativeAdWidget extends StatefulWidget {
   const NativeAdWidget({
@@ -59,8 +60,13 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
   @override
   Widget build(BuildContext context) {
     if (kIsWeb) {
-      // AdMob no es compatible con web
-      return const SizedBox.shrink();
+      // En web, usar AdSense
+      return AdSenseNativeWidget(
+        height: widget.height,
+        showLabel: widget.showLabel,
+        margin: widget.margin,
+        borderRadius: widget.borderRadius,
+      );
     }
 
     final nativeAd = _nativeAd;

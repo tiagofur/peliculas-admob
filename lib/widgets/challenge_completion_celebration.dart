@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/gamification/challenge_system.dart';
+import '../l10n/app_localizations.dart';
 
 class ChallengeCompletionCelebration extends StatelessWidget {
   const ChallengeCompletionCelebration({
@@ -24,95 +25,95 @@ class ChallengeCompletionCelebration extends StatelessWidget {
         children: [
           Center(
             child: Container(
-                  margin: const EdgeInsets.all(32),
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Trophy icon
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: const BoxDecoration(
-                          color: Colors.amber,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events,
-                          size: 50,
-                          color: Colors.orange,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Challenge completed text
-                      const Text(
-                        '¡Desafío Completado!',
-                        style: TextStyle(
-                          fontSize: 24,
-                          color: Colors.green,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Challenge name
-                      Text(
-                        challenge.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.black87,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Points earned
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green[100],
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          '+$pointsEarned puntos',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Dismiss button
-                      ElevatedButton(
-                        onPressed: onDismiss,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                        ),
-                        child: const Text('¡Genial!'),
-                      ),
-                    ],
-                  ),
-                ),
+              margin: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
               ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Trophy icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      color: Colors.amber,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.emoji_events,
+                      size: 50,
+                      color: Colors.orange,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Challenge completed text
+                  Text(
+                    AppLocalizations.of(context)!.challengeCompleted,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      color: Colors.green,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Challenge name
+                  Text(
+                    challenge.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Colors.black87,
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Points earned
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '+$pointsEarned puntos',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Dismiss button
+                  ElevatedButton(
+                    onPressed: onDismiss,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                    ),
+                    child: const Text('¡Genial!'),
+                  ),
+                ],
+              ),
+            ),
+          ),
 
           // Close button
           Positioned(

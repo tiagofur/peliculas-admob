@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import 'adsense_web_widget.dart';
 
 /// Widget de anuncio que ocupa el espacio de una tarjeta en grids verticales
 /// Se integra perfectamente en MasonryGridView manteniendo el flujo visual
@@ -34,14 +35,8 @@ class _GridAdWidgetState extends State<GridAdWidget> {
   }
 
   void _loadAd() {
-    // No cargar anuncios en web
+    // En web se usa AdSense, no AdMob
     if (kIsWeb) {
-      if (mounted) {
-        setState(() {
-          _isAdFailed = true;
-          _isAdLoaded = false;
-        });
-      }
       return;
     }
 
@@ -81,6 +76,17 @@ class _GridAdWidgetState extends State<GridAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // En web, usar AdSense con dimensiones adaptadas a grid
+    if (kIsWeb) {
+      return AdSenseWebWidget(
+        adSlot: AdHelper.adSenseNativeSlot,
+        height: 200, // Altura fija para grids
+        isResponsive: false,
+        showLabel: widget.showLabel,
+        borderRadius: widget.borderRadius,
+      );
+    }
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

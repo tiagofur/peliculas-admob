@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import 'adsense_web_widget.dart';
 
 /// Widget de anuncio que ocupa toda la línea horizontal en listas verticales
 /// Se inserta cada X películas (múltiplo de 3) para mantener el flujo visual
@@ -36,14 +37,8 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
   }
 
   void _loadAd() {
-    // No cargar anuncios en web
+    // En web se usa AdSense, no AdMob
     if (kIsWeb) {
-      if (mounted) {
-        setState(() {
-          _isAdFailed = true;
-          _isAdLoaded = false;
-        });
-      }
       return;
     }
 
@@ -83,6 +78,16 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // En web, usar AdSense
+    if (kIsWeb) {
+      return AdSenseFullWidthWidget(
+        height: widget.height,
+        margin: widget.margin,
+        showLabel: widget.showLabel,
+        borderRadius: widget.borderRadius,
+      );
+    }
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

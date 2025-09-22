@@ -255,4 +255,19 @@ class HybridCustomListsRepository
       rethrow;
     }
   }
+
+  /// Elimina TODAS las listas (para debugging)
+  Future<void> clearAllLists() async {
+    try {
+      if (_prefs == null) await initializeLocal();
+
+      // Limpiar todas las listas locales
+      await _prefs!.setStringList(_storageKey, []);
+
+      LoggerFactory.info('🗑️ Cleared all custom lists from local storage');
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to clear all lists: $e');
+      rethrow;
+    }
+  }
 }

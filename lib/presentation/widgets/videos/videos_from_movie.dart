@@ -8,11 +8,13 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart'
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/video.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/movies/movies_repository_provider.dart';
 import '../../services/pip_service.dart';
 import '../shared/cinema_mode.dart';
 
-final videosFromMovieProvider = FutureProvider.family<List<Video>, int>((ref, int movieId) {
+final videosFromMovieProvider =
+    FutureProvider.family<List<Video>, int>((ref, int movieId) {
   final movieRepository = ref.watch(movieRepositoryProvider);
   return movieRepository.getYoutubeVideosById(movieId);
 });
@@ -28,8 +30,9 @@ class VideosFromMovie extends ConsumerWidget {
 
     return moviesFromVideo.when(
       data: (videos) => _VideosList(videos: videos),
-      error: (_, __) =>
-          const Center(child: Text('No se pudo cargar películas similares')),
+      error: (_, __) => Center(
+          child: Text(AppLocalizations.of(context)?.couldNotLoadSimilarMovies ??
+              'Could not load similar movies')),
       loading: () =>
           const Center(child: CircularProgressIndicator(strokeWidth: 2)),
     );
@@ -320,7 +323,8 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
             ElevatedButton.icon(
               onPressed: () => _openYouTubeVideo(),
               icon: const Icon(Icons.open_in_new),
-              label: const Text('Abrir YouTube'),
+              label: Text(
+                  AppLocalizations.of(context)?.openYouTube ?? 'Open YouTube'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
@@ -375,7 +379,7 @@ class _WebYouTubePlayer extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: _openYouTubeVideo,
                 icon: const Icon(Icons.open_in_new, size: 16),
-                label: const Text('YouTube'),
+                label: Text(AppLocalizations.of(context)?.youTube ?? 'YouTube'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,

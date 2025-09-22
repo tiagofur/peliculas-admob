@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../presentation/providers/custom_lists_providers.dart';
+import '../../../presentation/providers/hybrid_repositories_provider.dart';
 import '../../../services/lists_fix_service.dart';
 
 /// Widget temporal para probar y debugear las listas
@@ -244,21 +245,36 @@ class _ListsDebugViewState extends ConsumerState<ListsDebugView> {
 
             const SizedBox(height: 20),
 
-            // Botón para recargar todo
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  ref.invalidate(userListsProvider);
-                  ref.invalidate(customListsNotifierProvider);
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Recargar Listas'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+            // Botones de acción
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      ref.invalidate(userListsProvider);
+                      ref.invalidate(customListsNotifierProvider);
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Recargar Listas'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _deleteAllLists(),
+                    icon: const Icon(Icons.delete_forever),
+                    label: const Text('Eliminar Todas'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -314,5 +330,68 @@ class _ListsDebugViewState extends ConsumerState<ListsDebugView> {
         duration: Duration(seconds: isError ? 5 : 3),
       ),
     );
+  }
+
+  Future<void> _deleteAllLists() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ Eliminar TODAS las listas'),
+        content: const Text(
+          '¿Estás seguro de que quieres eliminar TODAS las listas y sus películas?\n\n'
+          'Esta acción no se puede deshacer y eliminará:\n'
+          '• Todas las listas personalizadas\n'
+          '• Todas las listas predeterminadas\n'
+          '• Todas las películas dentro de las listas',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar Todo'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      setState(() {
+        _isProcessing = true;
+      });
+
+      _showMessage('🗑️ Eliminando todas las listas...', isError: false);
+
+      // Eliminar todas las listas usando el notifier
+      final notifier = ref.read(customListsNotifierProvider.notifier);
+
+      // Obtener todas las listas actuales
+      final currentLists = await ref.read(userListsProvider.future);
+
+      // Eliminar cada lista
+      for (final list in currentLists) {
+        await notifier.removeList(list.id);
+      }
+
+      // Limpiar la cache local también
+      await ref.read(hybridCustomListsRepositoryProvider).clearAllLists();
+
+      // Recargar los providers
+      ref.invalidate(userListsProvider);
+      ref.invalidate(customListsNotifierProvider);
+
+      _showMessage('✅ Todas las listas han sido eliminadas', isError: false);
+    } catch (e) {
+      _showMessage('❌ Error al eliminar las listas: $e');
+    } finally {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
   }
 }

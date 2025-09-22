@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/watchlist_movie.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../providers/storage/direct_watchlist_provider.dart';
 
 class AddToWatchlistButton extends ConsumerStatefulWidget {
@@ -63,7 +64,11 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                 isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
                 color: iconColor,
               ),
-        tooltip: isInWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
+        tooltip: isInWatchlist
+            ? (AppLocalizations.of(context)?.removeFromWatchlist ??
+                'Remove from watchlist')
+            : (AppLocalizations.of(context)?.addToWatchlist ??
+                'Add to watchlist'),
       );
     }
 
@@ -81,7 +86,10 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
               size: 20,
             ),
       label: widget.showLabel
-          ? Text(isInWatchlist ? 'En Watchlist' : 'Agregar a Watchlist')
+          ? Text(isInWatchlist
+              ? (AppLocalizations.of(context)?.inWatchlist ?? 'In Watchlist')
+              : (AppLocalizations.of(context)?.addToWatchlist ??
+                  'Add to Watchlist'))
           : const SizedBox.shrink(),
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
@@ -182,7 +190,8 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: const Text('Agregar a Watchlist'),
+      title: Text(AppLocalizations.of(context)?.addToWatchlistTitle ??
+          'Add to Watchlist'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +204,7 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Selecciona la prioridad:',
+            AppLocalizations.of(context)?.selectPriority ?? 'Select priority:',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -205,11 +214,11 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(_selectedPriority),
-          child: const Text('Agregar'),
+          child: Text(AppLocalizations.of(context)?.add ?? 'Add'),
         ),
       ],
     );

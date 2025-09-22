@@ -1,5 +1,7 @@
-<!DOCTYPE html><html><head>
-  <!--
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
 
@@ -12,251 +14,335 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+    <base href="$FLUTTER_BASE_HREF" />
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos.">
-  <meta name="keywords" content="películas, cine, recomendaciones, listas, entretenimiento, TMDB">
-  <meta name="author" content="Películas App">
-  
-  <!-- Dynamic meta tags will be updated by the movie share functionality -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" id="og-url" content="https://peliculas.creapolis.dev/">
-  <meta property="og:title" id="og-title" content="Películas - Descubre tu próxima película favorita">
-  <meta property="og:description" id="og-description" content="Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos.">
-  <meta property="og:image" id="og-image" content="https://peliculas.creapolis.dev/icons/Icon-512.png">
-  <meta property="og:site_name" content="Películas">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" id="twitter-url" content="https://peliculas.creapolis.dev/">
-  <meta property="twitter:title" id="twitter-title" content="Películas - Descubre tu próxima película favorita">
-  <meta property="twitter:description" id="twitter-description" content="Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos.">
-  <meta property="twitter:image" id="twitter-image" content="https://peliculas.creapolis.dev/icons/Icon-512.png">
-  
-  <!-- WhatsApp -->
-  <meta property="og:image:width" content="512">
-  <meta property="og:image:height" content="512">
-  <meta property="og:image:type" content="image/png">
+    <meta charset="UTF-8" />
+    <meta content="IE=Edge" http-equiv="X-UA-Compatible" />
+    <meta
+      name="description"
+      content="Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos."
+    />
+    <meta
+      name="keywords"
+      content="películas, cine, recomendaciones, listas, entretenimiento, TMDB"
+    />
+    <meta name="author" content="Películas App" />
 
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Películas">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+    <!-- Dynamic meta tags will be updated by the movie share functionality -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      id="og-url"
+      content="https://peliculas.creapolis.dev/"
+    />
+    <meta
+      property="og:title"
+      id="og-title"
+      content="Películas - Descubre tu próxima película favorita"
+    />
+    <meta
+      property="og:description"
+      id="og-description"
+      content="Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos."
+    />
+    <meta
+      property="og:image"
+      id="og-image"
+      content="https://peliculas.creapolis.dev/icons/Icon-512.png"
+    />
+    <meta property="og:site_name" content="Películas" />
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta
+      property="twitter:url"
+      id="twitter-url"
+      content="https://peliculas.creapolis.dev/"
+    />
+    <meta
+      property="twitter:title"
+      id="twitter-title"
+      content="Películas - Descubre tu próxima película favorita"
+    />
+    <meta
+      property="twitter:description"
+      id="twitter-description"
+      content="Descubre, organiza y comparte tus películas favoritas. La mejor app para cinéfilos."
+    />
+    <meta
+      property="twitter:image"
+      id="twitter-image"
+      content="https://peliculas.creapolis.dev/icons/Icon-512.png"
+    />
 
-  <title id="page-title">Películas - Descubre tu próxima película favorita</title>
-  <link rel="manifest" href="manifest.json">
-  
-  <!-- Deep Links and App Detection Script -->
-  <script>
-    window.addEventListener('DOMContentLoaded', function() {
-      // Get current URL path
-      const path = window.location.pathname;
-      const fullUrl = window.location.href;
-      
-      console.log('Current path:', path);
-      console.log('Full URL:', fullUrl);
-      
-      // Check if this is a share URL
-      if (path.includes('/share')) {
-        console.log('Share URL detected, attempting to open app...');
-        
-        // Extract the content path (movie, list, recommendation)
-        let deepLinkPath = path.replace('/share', '');
-        
-        // Create deep link URL
-        const deepLink = 'peliculas://' + deepLinkPath.substring(1); // Remove leading slash
-        
-        console.log('Generated deep link:', deepLink);
-        
-        // Create a temporary link element
-        const tempLink = document.createElement('a');
-        tempLink.href = deepLink;
-        tempLink.style.display = 'none';
-        document.body.appendChild(tempLink);
-        
-        // Try to open the app
-        try {
-          tempLink.click();
-          console.log('Deep link clicked');
-        } catch (e) {
-          console.log('Error clicking deep link:', e);
-        } finally {
-          document.body.removeChild(tempLink);
-        }
-        
-        // Fallback: redirect to main app route after a delay
-        setTimeout(function() {
-          // If we're still on the share page, redirect to the main app route
-          if (window.location.pathname === path) {
-            console.log('Redirecting to main app route:', deepLinkPath);
-            window.location.href = deepLinkPath || '/';
+    <!-- WhatsApp -->
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:type" content="image/png" />
+
+    <!-- iOS meta tags & icons -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Películas" />
+    <link rel="apple-touch-icon" href="icons/Icon-192.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <title id="page-title">
+      Películas - Descubre tu próxima película favorita
+    </title>
+    <link rel="manifest" href="manifest.json" />
+
+    <!-- Google AdSense -->
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4576016092724628"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Deep Links and App Detection Script -->
+    <script>
+      window.addEventListener("DOMContentLoaded", function () {
+        // Get current URL path
+        const path = window.location.pathname;
+        const fullUrl = window.location.href;
+
+        console.log("Current path:", path);
+        console.log("Full URL:", fullUrl);
+
+        // Check if this is a share URL
+        if (path.includes("/share")) {
+          console.log("Share URL detected, attempting to open app...");
+
+          // Extract the content path (movie, list, recommendation)
+          let deepLinkPath = path.replace("/share", "");
+
+          // Create deep link URL
+          const deepLink = "peliculas://" + deepLinkPath.substring(1); // Remove leading slash
+
+          console.log("Generated deep link:", deepLink);
+
+          // Create a temporary link element
+          const tempLink = document.createElement("a");
+          tempLink.href = deepLink;
+          tempLink.style.display = "none";
+          document.body.appendChild(tempLink);
+
+          // Try to open the app
+          try {
+            tempLink.click();
+            console.log("Deep link clicked");
+          } catch (e) {
+            console.log("Error clicking deep link:", e);
+          } finally {
+            document.body.removeChild(tempLink);
           }
-        }, 2000);
-      }
-      
-      // Update meta tags for movie sharing if this is a movie page
-      if (path.startsWith('/movie/') && !path.includes('/share')) {
-        const movieId = path.split('/')[2];
-        if (movieId) {
-          updateMovieMetaTags(movieId);
+
+          // Fallback: redirect to main app route after a delay
+          setTimeout(function () {
+            // If we're still on the share page, redirect to the main app route
+            if (window.location.pathname === path) {
+              console.log("Redirecting to main app route:", deepLinkPath);
+              window.location.href = deepLinkPath || "/";
+            }
+          }, 2000);
         }
-      }
-    });
-    
-    // Function to update meta tags for better movie sharing
-    function updateMovieMetaTags(movieId) {
-      // This will be called by the Flutter app to update meta tags
-      // The actual implementation will be handled by the Flutter web app
-      console.log('Movie page detected for ID:', movieId);
-    }
-    
-    // Function to update meta tags dynamically (can be called from Flutter)
-    window.updatePageMetaTags = function(title, description, imageUrl, url) {
-      // Update title
-      if (title) {
-        document.title = title;
-        document.getElementById('page-title').textContent = title;
-        document.getElementById('og-title').setAttribute('content', title);
-        document.getElementById('twitter-title').setAttribute('content', title);
-      }
-      
-      // Update description
-      if (description) {
-        document.querySelector('meta[name="description"]').setAttribute('content', description);
-        document.getElementById('og-description').setAttribute('content', description);
-        document.getElementById('twitter-description').setAttribute('content', description);
-      }
-      
-      // Update image
-      if (imageUrl) {
-        document.getElementById('og-image').setAttribute('content', imageUrl);
-        document.getElementById('twitter-image').setAttribute('content', imageUrl);
-      }
-      
-      // Update URL
-      if (url) {
-        document.getElementById('og-url').setAttribute('content', url);
-        document.getElementById('twitter-url').setAttribute('content', url);
-      }
-    };
-    
-    // Function to detect if app is installed (best effort)
-    window.checkAppInstallation = function() {
-      return new Promise((resolve) => {
-        const deepLink = 'peliculas://check';
-        const tempLink = document.createElement('a');
-        tempLink.href = deepLink;
-        tempLink.style.display = 'none';
-        document.body.appendChild(tempLink);
-        
-        const startTime = Date.now();
-        
-        // Create a blur event listener to detect app opening
-        const onBlur = function() {
-          const elapsed = Date.now() - startTime;
-          if (elapsed > 1000) {
-            resolve(true); // App likely opened
+
+        // Update meta tags for movie sharing if this is a movie page
+        if (path.startsWith("/movie/") && !path.includes("/share")) {
+          const movieId = path.split("/")[2];
+          if (movieId) {
+            updateMovieMetaTags(movieId);
           }
-        };
-        
-        window.addEventListener('blur', onBlur);
-        
-        try {
-          tempLink.click();
-        } catch (e) {
-          console.log('Error testing app installation:', e);
         }
-        
-        // Clean up after 3 seconds
-        setTimeout(() => {
-          window.removeEventListener('blur', onBlur);
-          document.body.removeChild(tempLink);
-          resolve(false); // App likely not installed
-        }, 3000);
       });
-    };
-  </script>
-  
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-  <style id="splash-screen-style">
-    html {
-      height: 100%
-    }
 
-    body {
-      margin: 0;
-      min-height: 100%;
-      background-color: #EEBEB8;
-          background-size: 100% 100%;
-    }
+      // Function to update meta tags for better movie sharing
+      function updateMovieMetaTags(movieId) {
+        // This will be called by the Flutter app to update meta tags
+        // The actual implementation will be handled by the Flutter web app
+        console.log("Movie page detected for ID:", movieId);
+      }
 
-    .center {
-      margin: 0;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      -ms-transform: translate(-50%, -50%);
-      transform: translate(-50%, -50%);
-    }
+      // Function to update meta tags dynamically (can be called from Flutter)
+      window.updatePageMetaTags = function (title, description, imageUrl, url) {
+        // Update title
+        if (title) {
+          document.title = title;
+          document.getElementById("page-title").textContent = title;
+          document.getElementById("og-title").setAttribute("content", title);
+          document
+            .getElementById("twitter-title")
+            .setAttribute("content", title);
+        }
 
-    .contain {
-      display:block;
-      width:100%; height:100%;
-      object-fit: contain;
-    }
+        // Update description
+        if (description) {
+          document
+            .querySelector('meta[name="description"]')
+            .setAttribute("content", description);
+          document
+            .getElementById("og-description")
+            .setAttribute("content", description);
+          document
+            .getElementById("twitter-description")
+            .setAttribute("content", description);
+        }
 
-    .stretch {
-      display:block;
-      width:100%; height:100%;
-    }
+        // Update image
+        if (imageUrl) {
+          document.getElementById("og-image").setAttribute("content", imageUrl);
+          document
+            .getElementById("twitter-image")
+            .setAttribute("content", imageUrl);
+        }
 
-    .cover {
-      display:block;
-      width:100%; height:100%;
-      object-fit: cover;
-    }
+        // Update URL
+        if (url) {
+          document.getElementById("og-url").setAttribute("content", url);
+          document.getElementById("twitter-url").setAttribute("content", url);
+        }
+      };
 
-    .bottom {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      -ms-transform: translate(-50%, 0);
-      transform: translate(-50%, 0);
-    }
+      // Function to detect if app is installed (best effort)
+      window.checkAppInstallation = function () {
+        return new Promise((resolve) => {
+          const deepLink = "peliculas://check";
+          const tempLink = document.createElement("a");
+          tempLink.href = deepLink;
+          tempLink.style.display = "none";
+          document.body.appendChild(tempLink);
 
-    .bottomLeft {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-    }
+          const startTime = Date.now();
 
-    .bottomRight {
-      position: absolute;
-      bottom: 0;
-      right: 0;
-    }
-  </style>
-  <script id="splash-screen-script">
-    function removeSplashFromWeb() {
-      document.getElementById("splash")?.remove();
-      document.getElementById("splash-branding")?.remove();
-      document.body.style.background = "transparent";
-    }
-  </script>
-</head>
-<body>
-  <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
-  </picture>
-  <script src="flutter_bootstrap.js" async=""></script>
+          // Create a blur event listener to detect app opening
+          const onBlur = function () {
+            const elapsed = Date.now() - startTime;
+            if (elapsed > 1000) {
+              resolve(true); // App likely opened
+            }
+          };
 
-</body></html>
+          window.addEventListener("blur", onBlur);
+
+          try {
+            tempLink.click();
+          } catch (e) {
+            console.log("Error testing app installation:", e);
+          }
+
+          // Clean up after 3 seconds
+          setTimeout(() => {
+            window.removeEventListener("blur", onBlur);
+            document.body.removeChild(tempLink);
+            resolve(false); // App likely not installed
+          }, 3000);
+        });
+      };
+    </script>
+
+    <meta
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      name="viewport"
+    />
+    <style id="splash-screen-style">
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100%;
+        background-color: #eebeb8;
+        background-size: 100% 100%;
+      }
+
+      .center {
+        margin: 0;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        -ms-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+      }
+
+      .contain {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .stretch {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .cover {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .bottom {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        -ms-transform: translate(-50%, 0);
+        transform: translate(-50%, 0);
+      }
+
+      .bottomLeft {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+      }
+
+      .bottomRight {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+      }
+    </style>
+    <script id="splash-screen-script">
+      function removeSplashFromWeb() {
+        document.getElementById("splash")?.remove();
+        document.getElementById("splash-branding")?.remove();
+        document.body.style.background = "transparent";
+      }
+    </script>
+  </head>
+  <body>
+    <picture id="splash">
+      <source
+        srcset="
+          splash/img/light-1x.png 1x,
+          splash/img/light-2x.png 2x,
+          splash/img/light-3x.png 3x,
+          splash/img/light-4x.png 4x
+        "
+        media="(prefers-color-scheme: light)"
+      />
+      <source
+        srcset="
+          splash/img/dark-1x.png 1x,
+          splash/img/dark-2x.png 2x,
+          splash/img/dark-3x.png 3x,
+          splash/img/dark-4x.png 4x
+        "
+        media="(prefers-color-scheme: dark)"
+      />
+      <img
+        class="center"
+        aria-hidden="true"
+        src="splash/img/light-1x.png"
+        alt=""
+      />
+    </picture>
+    <script src="flutter_bootstrap.js" async=""></script>
+  </body>
+</html>

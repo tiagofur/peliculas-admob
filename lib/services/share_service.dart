@@ -13,12 +13,12 @@ import '../models/shareable_content.dart';
 /// Service for handling sharing functionality across the app
 class ShareService {
   static const String _baseUrl = 'https://peliculas.creapolis.dev';
-  static const String _appName = 'Películas';
+  static const String _appName = 'Movies';
   static const String _appDescription =
-      'Descubre, organiza y comparte tus películas favoritas';
-  
+      'Discover, organize and share your favorite movies';
+
   static GamificationIntegrationService? _gamificationService;
-  
+
   /// Initialize the service with required dependencies
   static void initialize(GamificationIntegrationService gamificationService) {
     _gamificationService = gamificationService;
@@ -440,9 +440,11 @@ class ShareService {
           await _gamificationService!.trackListShared(listId);
         }
       } else if (content.type == ShareableContentType.recommendation) {
-        final recommendationId = content.metadata?['recommendationId']?.toString() ?? '';
+        final recommendationId =
+            content.metadata?['recommendationId']?.toString() ?? '';
         if (recommendationId.isNotEmpty) {
-          await _gamificationService!.trackRecommendationShared(recommendationId);
+          await _gamificationService!
+              .trackRecommendationShared(recommendationId);
         }
       }
     } catch (e) {

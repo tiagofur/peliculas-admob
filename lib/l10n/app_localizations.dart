@@ -771,6 +771,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count,plural, =1{1 minute left}other{{count} minutes left}}'**
   String minutesLeft(int count);
+
+  /// Loading movie text
+  ///
+  /// In en, this message translates to:
+  /// **'Loading movie...'**
+  String get loadingMovie;
+
+  /// Challenge completion celebration text
+  ///
+  /// In en, this message translates to:
+  /// **'Challenge Completed!'**
+  String get challengeCompleted;
+
+  /// Family-friendly list name
+  ///
+  /// In en, this message translates to:
+  /// **'Family-Friendly'**
+  String get familyFriendly;
+
+  /// Family-friendly list description
+  ///
+  /// In en, this message translates to:
+  /// **'Movies suitable for the whole family'**
+  String get familyFriendlyDescription;
+
+  /// Date night list name
+  ///
+  /// In en, this message translates to:
+  /// **'Date Night'**
+  String get dateNight;
+
+  /// Date night list description
+  ///
+  /// In en, this message translates to:
+  /// **'Romantic movies and date films'**
+  String get dateNightDescription;
+
+  /// Classics list name
+  ///
+  /// In en, this message translates to:
+  /// **'Classics'**
+  String get classics;
+
+  /// Classics list description
+  ///
+  /// In en, this message translates to:
+  /// **'Unmissable cinema classics'**
+  String get classicsDescription;
+
+  /// Suggested list name
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested'**
+  String get suggested;
+
+  /// Suggested list description
+  ///
+  /// In en, this message translates to:
+  /// **'Personalized recommendations'**
+  String get suggestedDescription;
+
+  /// With friends list name
+  ///
+  /// In en, this message translates to:
+  /// **'With Friends'**
+  String get withFriends;
+
+  /// With friends list description
+  ///
+  /// In en, this message translates to:
+  /// **'Movies for groups and gatherings'**
+  String get withFriendsDescription;
+
+  /// Rainy nights list name
+  ///
+  /// In en, this message translates to:
+  /// **'Rainy Nights'**
+  String get rainyNights;
+
+  /// Rainy nights list description
+  ///
+  /// In en, this message translates to:
+  /// **'Cozy movies for rainy days'**
+  String get rainyNightsDescription;
+
+  /// Short movies list name
+  ///
+  /// In en, this message translates to:
+  /// **'Short Movies'**
+  String get shortMovies;
+
+  /// Short movies list description
+  ///
+  /// In en, this message translates to:
+  /// **'Movies under 100 minutes'**
+  String get shortMoviesDescription;
+
+  /// To watch list name
+  ///
+  /// In en, this message translates to:
+  /// **'To Watch'**
+  String get toWatch;
+
+  /// To watch list description
+  ///
+  /// In en, this message translates to:
+  /// **'Movies I want to watch soon'**
+  String get toWatchDescription;
+
+  /// Chilling movies list name
+  ///
+  /// In en, this message translates to:
+  /// **'Chilling Movies'**
+  String get chillingMovies;
+
+  /// Chilling movies list description
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect movies for relaxing'**
+  String get chillingMoviesDescription;
+
+  /// Romantic movies list name
+  ///
+  /// In en, this message translates to:
+  /// **'Romantic Movies'**
+  String get romanticMovies;
+
+  /// Romantic movies list description
+  ///
+  /// In en, this message translates to:
+  /// **'Romantic movies to watch as a couple'**
+  String get romanticMoviesDescription;
+
+  /// Fun movies list name
+  ///
+  /// In en, this message translates to:
+  /// **'Fun Movies'**
+  String get funMovies;
+
+  /// Fun movies list description
+  ///
+  /// In en, this message translates to:
+  /// **'Fun movies to watch in groups'**
+  String get funMoviesDescription;
+
+  /// Pending classics list name
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Classics'**
+  String get pendingClassics;
+
+  /// Pending classics list description
+  ///
+  /// In en, this message translates to:
+  /// **'Classic movies I need to watch'**
+  String get pendingClassicsDescription;
+
+  /// Action and adventure list name
+  ///
+  /// In en, this message translates to:
+  /// **'Action & Adventure'**
+  String get actionAdventure;
+
+  /// Action and adventure list description
+  ///
+  /// In en, this message translates to:
+  /// **'Action and adventure movies'**
+  String get actionAdventureDescription;
+
+  /// Rainy day movies list name
+  ///
+  /// In en, this message translates to:
+  /// **'Rainy Day Movies'**
+  String get rainyDayMovies;
+
+  /// Rainy day movies list description
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect movies for rainy days'**
+  String get rainyDayMoviesDescription;
+
+  /// Based on favorites recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get basedOnFavorites;
+
+  /// Trending recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'Trending'**
+  String get trending;
+
+  /// For you recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'For You'**
+  String get forYou;
+
+  /// Mood recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'Mood'**
+  String get mood;
+
+  /// Similar recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'Similar'**
+  String get similar;
+
+  /// Based on watched recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'Based on Watched'**
+  String get basedOnWatched;
+
+  /// Based on genre recommendation type
+  ///
+  /// In en, this message translates to:
+  /// **'Based on Genre'**
+  String get basedOnGenre;
+
+  /// Realtime synchronization dashboard title
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime Sync Dashboard'**
+  String get realtimeSyncDashboard;
+
+  /// Synchronization system status
+  ///
+  /// In en, this message translates to:
+  /// **'System Status'**
+  String get systemStatus;
+
+  /// System performance score
+  ///
+  /// In en, this message translates to:
+  /// **'Performance Score'**
+  String get performanceScore;
+
+  /// Connection status
+  ///
+  /// In en, this message translates to:
+  /// **'Connection Status'**
+  String get connectionStatus;
+
+  /// Online status
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get online;
+
+  /// Offline status
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offline;
+
+  /// Synchronization latency
+  ///
+  /// In en, this message translates to:
+  /// **'Sync Latency'**
+  String get syncLatency;
+
+  /// Latency target for synchronization
+  ///
+  /// In en, this message translates to:
+  /// **'Target: < 1.5 seconds (Issue #69 requirement)'**
+  String get latencyTarget;
+
+  /// Average synchronization
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Sync'**
+  String get avgSync;
+
+  /// Average realtime
+  ///
+  /// In en, this message translates to:
+  /// **'Avg Realtime'**
+  String get avgRealtime;
+
+  /// Realtime events
+  ///
+  /// In en, this message translates to:
+  /// **'Realtime Events'**
+  String get realtimeEvents;
+
+  /// Events received
+  ///
+  /// In en, this message translates to:
+  /// **'Events Received'**
+  String get eventsReceived;
+
+  /// Streaming availability
+  ///
+  /// In en, this message translates to:
+  /// **'Available on:'**
+  String get availableOn;
+
+  /// High priority
+  ///
+  /// In en, this message translates to:
+  /// **'High Priority'**
+  String get highPriority;
+
+  /// Normal priority
+  ///
+  /// In en, this message translates to:
+  /// **'Normal Priority'**
+  String get normalPriority;
+
+  /// Low priority
+  ///
+  /// In en, this message translates to:
+  /// **'Low Priority'**
+  String get lowPriority;
+
+  /// Error loading similar movies
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load similar movies'**
+  String get couldNotLoadSimilarMovies;
+
+  /// Open in YouTube
+  ///
+  /// In en, this message translates to:
+  /// **'Open YouTube'**
+  String get openYouTube;
+
+  /// YouTube
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube'**
+  String get youTube;
+
+  /// Remove from watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from watchlist'**
+  String get removeFromWatchlist;
+
+  /// Add to watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'Add to watchlist'**
+  String get addToWatchlist;
+
+  /// In watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'In Watchlist'**
+  String get inWatchlist;
+
+  /// Add to watchlist dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Watchlist'**
+  String get addToWatchlistTitle;
+
+  /// Select priority
+  ///
+  /// In en, this message translates to:
+  /// **'Select priority:'**
+  String get selectPriority;
+
+  /// Add button
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get add;
+
+  /// Calculating user engagement
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating engagement...'**
+  String get calculatingEngagement;
+
+  /// Analyzing user behavior
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing behavior...'**
+  String get analyzingBehavior;
+
+  /// Generating user insights
+  ///
+  /// In en, this message translates to:
+  /// **'Generating insights...'**
+  String get generatingInsights;
+
+  /// Uploading status
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading...'**
+  String get uploading;
+
+  /// Downloading status
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading...'**
+  String get downloading;
+
+  /// Synchronizing status
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronizing...'**
+  String get synchronizing;
+
+  /// Synchronize action
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronize'**
+  String get synchronize;
+
+  /// Notifications and reminders
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications and Reminders'**
+  String get notificationsAndReminders;
+
+  /// Enable button
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get enable;
+
+  /// Reminder permissions
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder Permissions'**
+  String get reminderPermissions;
+
+  /// Change language
+  ///
+  /// In en, this message translates to:
+  /// **'Change Language'**
+  String get changeLanguage;
+
+  /// Language change confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'The app will restart to apply the new language. Do you want to continue?'**
+  String get languageChangeConfirmation;
+
+  /// Confirm button
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirm;
+
+  /// Language changed
+  ///
+  /// In en, this message translates to:
+  /// **'Language changed. Restarting app...'**
+  String get languageChanged;
+
+  /// App restart required
+  ///
+  /// In en, this message translates to:
+  /// **'App Restart Required'**
+  String get appRestartRequired;
+
+  /// Restart app message
+  ///
+  /// In en, this message translates to:
+  /// **'Please restart the app to apply the language change.'**
+  String get restartAppMessage;
+
+  /// OK button
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// Active subscriptions
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get activeSubscriptions;
+
+  /// No movies in watchlist yet
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t added any movies to your watchlist yet'**
+  String get noWatchlistMoviesYet;
 }
 
 class _AppLocalizationsDelegate

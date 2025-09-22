@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/sync_status_provider.dart' as status;
+import '../../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/sync_status_provider.dart' as status;
 
 /// Widget que proporciona funcionalidad de pull-to-refresh para sincronización
 class SyncRefreshWrapper extends ConsumerWidget {
@@ -78,7 +79,10 @@ class ManualSyncButton extends ConsumerWidget {
             )
           : const Icon(Icons.sync),
       label: showText
-          ? Text(isLoading ? 'Sincronizando...' : 'Sincronizar')
+          ? Text(isLoading
+              ? (AppLocalizations.of(context)?.synchronizing ??
+                  'Synchronizing...')
+              : (AppLocalizations.of(context)?.synchronize ?? 'Synchronize'))
           : const SizedBox.shrink(),
     );
   }
@@ -108,7 +112,8 @@ class SyncFloatingActionButton extends ConsumerWidget {
       case status.SyncStatus.syncing:
         backgroundColor = Theme.of(context).colorScheme.primary;
         icon = Icons.sync;
-        tooltip = 'Sincronizando...';
+        tooltip =
+            AppLocalizations.of(context)?.synchronizing ?? 'Synchronizing...';
         onPressed = null; // Deshabilitado durante sync
         break;
       case status.SyncStatus.success:

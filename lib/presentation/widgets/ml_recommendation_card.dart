@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/ml/ml_recommendation_service.dart';
 import '../../core/ml/recommendation_feedback_service.dart';
 import '../../domain/entities/recommendation.dart';
+import '../../l10n/app_localizations.dart';
 import '../providers/recommendations/recommendations_provider.dart';
 
 class MLRecommendationCard extends ConsumerStatefulWidget {
@@ -116,7 +117,8 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              _getTypeLabel(widget.recommendation.type),
+                              _getTypeLabel(
+                                  widget.recommendation.type, context),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -374,24 +376,25 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
     }
   }
 
-  String _getTypeLabel(RecommendationType type) {
+  String _getTypeLabel(RecommendationType type, BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     switch (type) {
       case RecommendationType.basedOnFavorites:
-        return 'Favoritos';
+        return localizations.basedOnFavorites;
       case RecommendationType.trending:
-        return 'Tendencia';
+        return localizations.trending;
       case RecommendationType.forYou:
-        return 'Para Ti';
+        return localizations.forYou;
       case RecommendationType.mood:
-        return 'Estado';
+        return localizations.mood;
       case RecommendationType.similar:
-        return 'Similar';
+        return localizations.similar;
       case RecommendationType.basedOnWatched:
-        return 'Basado en Vistos';
+        return localizations.basedOnWatched;
       case RecommendationType.basedOnGenre:
-        return 'Por Género';
+        return localizations.basedOnGenre;
       default:
-        return 'Recomendado';
+        return 'Recommended'; // fallback in English
     }
   }
 
