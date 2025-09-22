@@ -403,6 +403,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // Ruta de permisos de notificaciones
+      GoRoute(
+        path: '/settings/notifications-permissions',
+        name: NotificationsPermissionsScreen.name,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const NotificationsPermissionsScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(
+                  context, animation, secondaryAnimation, child);
+            },
+          );
+        },
+      ),
+
       // Ruta de política de privacidad
       GoRoute(
         path: '/privacy-policy',
