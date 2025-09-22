@@ -1,13 +1,45 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../core/gamification/gamification_manager.dart';
 import '../../core/logging/logger_factory.dart';
+import 'movie_ratings_provider.dart' as ratings;
 import 'user_stats_provider.dart';
+
+/// Provider para obtener el número total de ratings del usuario
+final totalUserRatingsProvider = FutureProvider<int>((ref) async {
+  final ratingsStats = ref.watch(ratings.userRatingStatsProvider);
+  return ratingsStats?['totalRatings'] ?? 0;
+});
+
+/// Provider para obtener el número total de contenido compartido
+final totalSharedContentProvider = FutureProvider<int>((ref) async {
+  try {
+    final analyticsService = AnalyticsService.instance;
+    final events = analyticsService.getEvents();
+
+    // Contar eventos de compartir (movieShare, listShare, etc.)
+    final shareEvents = events
+        .where((event) =>
+            event.type == AnalyticsEventType.movieShare ||
+            event.properties['activity_type'] == 'movie_shared' ||
+            event.properties['activity_type'] == 'list_shared' ||
+            event.properties['activity_type'] == 'recommendation_shared')
+        .length;
+
+    return shareEvents;
+  } catch (e) {
+    LoggerFactory.error('❌ Error obteniendo total de contenido compartido: $e');
+    return 0;
+  }
+});
 
 /// Provider que integra las estadísticas del usuario con el sistema de gamificación
 final gamificationStatsIntegrationProvider = FutureProvider<void>((ref) async {
   // Observar cambios en las estadísticas básicas del usuario
   final basicStats = ref.watch(basicUserStatsProvider);
+  final totalRatings = await ref.watch(totalUserRatingsProvider.future);
+  final totalShared = await ref.watch(totalSharedContentProvider.future);
   final gamificationManager = GamificationManager.instance;
 
   try {
@@ -15,11 +47,9 @@ final gamificationStatsIntegrationProvider = FutureProvider<void>((ref) async {
     await gamificationManager.updateUserStats(
       totalWatched: basicStats.totalWatched,
       totalFavorites: basicStats.totalFavorites,
-      totalRatings:
-          0, // TODO: Obtener del provider de ratings cuando esté disponible
+      totalRatings: totalRatings,
       totalLists: basicStats.totalLists,
-      totalShared:
-          0, // TODO: Obtener del provider de contenido compartido cuando esté disponible
+      totalShared: totalShared,
     );
 
     LoggerFactory.info(

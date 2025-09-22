@@ -1,12 +1,16 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/trigger_free_custom_lists_sync.dart';
 import '../../../domain/entities/custom_list.dart';
+import '../../../infrastructure/datasources/supabase_custom_lists_datasource.dart';
+import '../../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../../services/list_sync_service.dart';
 // import '../custom_lists_providers.dart'; // Unused import
 // OfflineChange está definido en list_sync_service.dart
@@ -243,29 +247,47 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   /// Inicializar sincronización con ListSyncService
   void _initializeSync() async {
     try {
-      // TODO: Initialize ListSyncService directly without ref for legacy compatibility
-      // _syncService = await ref.read(listSyncServiceProvider.future);
+      LoggerFactory.info(
+          'DirectCustomLists: Initializing ListSyncService directly...');
+
+      // Crear dependencias directamente sin usar ref (legacy compatibility)
+      final supabaseDataSource =
+          SupabaseCustomListsDataSource(Supabase.instance.client);
+      final prefs = await SharedPreferences.getInstance();
+      final connectivity = Connectivity();
+
+      // Crear repository con las dependencias
+      final repository =
+          CustomListsRepositoryImpl(supabaseDataSource, prefs, connectivity);
+
+      // Crear sync service
+      _syncService = ListSyncService(repository, prefs, connectivity);
 
       LoggerFactory.info(
-          'DirectCustomLists: Sync service initialization skipped for legacy compatibility');
+          'DirectCustomLists: ListSyncService created successfully');
 
-      // // Escuchar cambios de estado de sincronización
-      // _syncService!.syncStatusStream.listen((status) {
-      //   LoggerFactory.info('DirectCustomLists - Sync status: $status');
-      // });
+      // Escuchar cambios de estado de sincronización
+      _syncService!.syncStatusStream.listen((status) {
+        LoggerFactory.info('DirectCustomLists - Sync status: $status');
+      });
 
-      // // Escuchar conflictos
-      // _syncService!.conflictsStream.listen((conflicts) {
-      //   LoggerFactory.info(
-      //       'DirectCustomLists - Conflicts detected: ${conflicts.length}');
-      //   // Aquí podrías mostrar una notificación al usuario sobre conflictos
-      // });
+      // Escuchar conflictos
+      _syncService!.conflictsStream.listen((conflicts) {
+        LoggerFactory.info(
+            'DirectCustomLists - Conflicts detected: ${conflicts.length}');
+        // Aquí podrías mostrar una notificación al usuario sobre conflictos
+      });
 
-      // // Iniciar auto-sync si está habilitado
-      // _syncService!.startAutoSync();
+      // Iniciar auto-sync si está habilitado
+      await _syncService!.startAutoSync();
+
+      LoggerFactory.info(
+          'DirectCustomLists: Sync service initialized successfully without ref');
     } catch (e) {
       LoggerFactory.error(
           'DirectCustomLists: Error initializing sync service: $e');
+      // No hacer rethrow para que no afecte la funcionalidad básica
+      // El provider puede funcionar sin sync service
     }
   }
 

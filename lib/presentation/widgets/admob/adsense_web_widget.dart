@@ -1,9 +1,8 @@
-import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:web/web.dart' as web;
 
 import '../../../config/helpers/ad_helper.dart';
 import '../../../core/logging/base_logger.dart';
@@ -58,21 +57,25 @@ class _AdSenseWebWidgetState extends State<AdSenseWebWidget> {
 
     try {
       // Create the HTML element for the ad
-      final adElement = html.DivElement()
-        ..id = _adId
-        ..style.width = widget.isResponsive ? '100%' : '${widget.width}px'
-        ..style.height = widget.isResponsive ? 'auto' : '${widget.height}px'
-        ..style.display = 'block'
-        ..style.textAlign = 'center';
+      final adElement = web.document.createElement('div') as web.HTMLDivElement;
+      adElement.id = _adId;
+      adElement.style.width =
+          widget.isResponsive ? '100%' : '${widget.width}px';
+      adElement.style.height =
+          widget.isResponsive ? 'auto' : '${widget.height}px';
+      adElement.style.display = 'block';
+      adElement.style.textAlign = 'center';
 
       // Create the ins element for AdSense
-      final insElement = html.Element.tag('ins')
-        ..className = 'adsbygoogle'
-        ..style.display = widget.isResponsive ? 'block' : 'inline-block'
-        ..style.width = widget.isResponsive ? '100%' : '${widget.width}px'
-        ..style.height = widget.isResponsive ? 'auto' : '${widget.height}px'
-        ..setAttribute('data-ad-client', AdHelper.adSenseClientId)
-        ..setAttribute('data-ad-slot', widget.adSlot);
+      final insElement = web.document.createElement('ins') as web.HTMLElement;
+      insElement.className = 'adsbygoogle';
+      insElement.style.display = widget.isResponsive ? 'block' : 'inline-block';
+      insElement.style.width =
+          widget.isResponsive ? '100%' : '${widget.width}px';
+      insElement.style.height =
+          widget.isResponsive ? 'auto' : '${widget.height}px';
+      insElement.setAttribute('data-ad-client', AdHelper.adSenseClientId);
+      insElement.setAttribute('data-ad-slot', widget.adSlot);
 
       if (widget.isResponsive) {
         insElement.setAttribute('data-ad-format', 'auto');
@@ -81,7 +84,7 @@ class _AdSenseWebWidgetState extends State<AdSenseWebWidget> {
         insElement.setAttribute('data-ad-format', widget.adFormat);
       }
 
-      adElement.append(insElement);
+      adElement.appendChild(insElement);
 
       // Register the element with Flutter's platform view registry
       ui_web.platformViewRegistry.registerViewFactory(
@@ -118,27 +121,38 @@ class _AdSenseWebWidgetState extends State<AdSenseWebWidget> {
     if (!kIsWeb) return;
 
     try {
-      // Check if adsbygoogle is available
-      if (js.context.hasProperty('adsbygoogle')) {
-        js.context.callMethod('eval', [
-          '''
+      // Check if adsbygoogle is available and push ad
+      try {
+        // Create a script element to execute the AdSense push
+        final script =
+            web.document.createElement('script') as web.HTMLScriptElement;
+        script.text = '''
           try {
-            (adsbygoogle = window.adsbygoogle || []).push({});
-            console.log('AdSense ad pushed for slot: ${widget.adSlot}');
+            if (typeof window.adsbygoogle !== 'undefined') {
+              (adsbygoogle = window.adsbygoogle || []).push({});
+              console.log('AdSense ad pushed for slot: ${widget.adSlot}');
+            } else {
+              console.warn('AdSense script not loaded for slot: ${widget.adSlot}');
+            }
           } catch (e) {
             console.error('Error pushing AdSense ad:', e);
           }
-          '''
-        ]);
-        _logger.debug('AdSense ad pushed successfully');
-      } else {
-        _logger.warning('AdSense script not loaded');
+        ''';
+
+        // Append and remove the script to execute it
+        web.document.head!.appendChild(script);
+        web.document.head!.removeChild(script);
+
+        _logger.debug('AdSense ad push script executed');
+      } catch (e) {
+        _logger.warning('AdSense not available: $e');
         if (mounted) {
           setState(() {
             _isAdFailed = true;
           });
         }
       }
+      _logger.debug('AdSense ad pushed successfully');
     } catch (e) {
       _logger.error('Error pushing AdSense ad: $e');
       if (mounted) {

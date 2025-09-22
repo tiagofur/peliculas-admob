@@ -1,17 +1,40 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../presentation/providers/storage/direct_custom_lists_provider.dart';
-import '../../presentation/providers/storage/direct_favorites_provider.dart';
-import '../../presentation/providers/storage/direct_watched_provider.dart';
-import '../../presentation/providers/storage/direct_watchlist_provider.dart';
-import '../../presentation/providers/storage/favorite_movies_provider.dart';
-import '../../services/custom_lists_auth_integration.dart';
-import '../../presentation/providers/custom_lists_providers.dart';
 import '../logging/logger_factory.dart';
-import '../sync/silent_favorites_sync_service.dart';
+
+/// Callbacks para la inicialización post-login sin dependencias de Ref
+class PostLoginInitializationCallbacks {
+  const PostLoginInitializationCallbacks({
+    required this.enableFavoritesAutoRefresh,
+    required this.initializeFavoritesProvider,
+    required this.initializeWatchedProvider,
+    required this.initializeWatchlistProvider,
+    required this.enableCustomListsAfterLogin,
+    required this.initializeCustomListsAuth,
+    required this.enableCustomListsNotifier,
+    required this.getMigrationService,
+    required this.invalidateCustomLists,
+    required this.disableFavoritesAutoRefresh,
+    required this.stopSilentSync,
+    required this.cleanupCustomListsAuth,
+  });
+
+  final VoidCallback enableFavoritesAutoRefresh;
+  final VoidCallback initializeFavoritesProvider;
+  final VoidCallback initializeWatchedProvider;
+  final VoidCallback initializeWatchlistProvider;
+  final VoidCallback enableCustomListsAfterLogin;
+  final Function(String userId) initializeCustomListsAuth;
+  final VoidCallback enableCustomListsNotifier;
+  final Future<dynamic> Function() getMigrationService;
+  final VoidCallback invalidateCustomLists;
+  final VoidCallback disableFavoritesAutoRefresh;
+  final VoidCallback stopSilentSync;
+  final VoidCallback cleanupCustomListsAuth;
+}
 
 /// Servicio que maneja la inicialización de servicios después del login
 /// para evitar bloqueos durante la autenticación
@@ -25,29 +48,33 @@ class PostLoginInitializationService {
   StreamSubscription<AuthState>? _authSubscription;
   bool _isInitialized = false;
   String? _currentUserId;
+  PostLoginInitializationCallbacks? _callbacks;
 
-  /// Inicializa el servicio
-  void initialize(Ref ref) {
+  /// Inicializa el servicio con callbacks específicos (sin Ref)
+  void initialize(PostLoginInitializationCallbacks callbacks) {
     if (_isInitialized) return;
 
     LoggerFactory.info('🚀 Initializing PostLoginInitializationService');
+    _callbacks = callbacks;
 
     // Escuchar cambios de autenticación
     _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
-      (data) => _handleAuthStateChange(data, ref),
+      (data) => _handleAuthStateChange(data),
     );
 
     // Si ya hay un usuario autenticado, inicializar inmediatamente
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
-      _initializePostLoginServices(currentUser.id, ref);
+      _initializePostLoginServices(currentUser.id);
     }
 
     _isInitialized = true;
   }
 
   /// Maneja cambios en el estado de autenticación
-  void _handleAuthStateChange(AuthState authState, Ref ref) {
+  void _handleAuthStateChange(AuthState authState) {
+    if (_callbacks == null) return;
+
     String? userId;
     try {
       if (authState.session?.user != null) {
@@ -60,24 +87,27 @@ class PostLoginInitializationService {
 
     if (userId != null && userId != _currentUserId) {
       LoggerFactory.info('🔐 User logged in: $userId');
-      _initializePostLoginServices(userId, ref);
+      _initializePostLoginServices(userId);
       _currentUserId = userId;
     } else if (userId == null && _currentUserId != null) {
       LoggerFactory.info('🔐 User logged out');
-      _cleanupServices(ref);
+      _cleanupServices();
       _currentUserId = null;
     }
   }
 
   /// Inicializa servicios después del login - MODO NO BLOQUEANTE
-  void _initializePostLoginServices(String userId, Ref ref) {
+  void _initializePostLoginServices(String userId) {
+    final callbacks = _callbacks;
+    if (callbacks == null) return;
+
     LoggerFactory.info(
         '🚀 Starting NON-BLOCKING post-login initialization for user: $userId');
 
     // SOLO habilitar servicios, NO hacer sync automática para evitar bloqueos
     Timer(const Duration(milliseconds: 100), () {
       try {
-        ref.read(favoriteMoviesProvider.notifier).enableAutoRefresh();
+        callbacks.enableFavoritesAutoRefresh();
         LoggerFactory.info('✅ Auto-refresh habilitado (no bloqueante)');
       } catch (e) {
         LoggerFactory.error('❌ Error habilitando auto-refresh: $e');
@@ -87,8 +117,7 @@ class PostLoginInitializationService {
     // Inicializar DirectFavoritesProvider para activar listeners de tiempo real
     Timer(const Duration(milliseconds: 200), () {
       try {
-        // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directFavoriteMoviesProvider.notifier);
+        callbacks.initializeFavoritesProvider();
         LoggerFactory.info(
             '✅ DirectFavorites listeners habilitados para sync tiempo real');
       } catch (e) {
@@ -100,8 +129,7 @@ class PostLoginInitializationService {
     // Inicializar DirectWatchedProvider para activar listeners de tiempo real
     Timer(const Duration(milliseconds: 300), () {
       try {
-        // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directWatchedMoviesProvider.notifier);
+        callbacks.initializeWatchedProvider();
         LoggerFactory.info(
             '✅ DirectWatched listeners habilitados para sync tiempo real');
       } catch (e) {
@@ -112,8 +140,7 @@ class PostLoginInitializationService {
     // Inicializar DirectWatchlistProvider para activar listeners de tiempo real
     Timer(const Duration(milliseconds: 400), () {
       try {
-        // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directWatchlistMoviesProvider.notifier);
+        callbacks.initializeWatchlistProvider();
         LoggerFactory.info(
             '✅ DirectWatchlist listeners habilitados para sync tiempo real');
       } catch (e) {
@@ -125,8 +152,7 @@ class PostLoginInitializationService {
     // Inicializar DirectCustomListsProvider para activar listeners de tiempo real
     Timer(const Duration(milliseconds: 500), () {
       try {
-        // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directCustomListsProvider.notifier).enableAfterLogin();
+        callbacks.enableCustomListsAfterLogin();
         LoggerFactory.info(
             '✅ DirectCustomLists listeners habilitados para sync tiempo real');
       } catch (e) {
@@ -138,8 +164,7 @@ class PostLoginInitializationService {
     // Inicializar sistema de listas personalizadas con integración de autenticación
     Timer(const Duration(milliseconds: 600), () {
       try {
-        // Inicializar la integración de autenticación para listas personalizadas
-        ref.read(customListsAuthIntegrationProvider).forceInitialization(userId, ref);
+        callbacks.initializeCustomListsAuth(userId);
         LoggerFactory.info(
             '✅ CustomListsAuthIntegration inicializado para sync tiempo real');
       } catch (e) {
@@ -151,19 +176,17 @@ class PostLoginInitializationService {
     // Inicializar CustomListsProvider para activar listeners de tiempo real
     Timer(const Duration(milliseconds: 650), () {
       try {
-        // Habilitar el provider después del login
-        ref.read(customListsNotifierProvider.notifier).enableAfterLogin();
+        callbacks.enableCustomListsNotifier();
         LoggerFactory.info(
             '✅ CustomListsProvider habilitado para sync tiempo real');
       } catch (e) {
-        LoggerFactory.error(
-            '❌ Error habilitando CustomListsProvider: $e');
+        LoggerFactory.error('❌ Error habilitando CustomListsProvider: $e');
       }
     });
 
     // Ejecutar migración de listas si es necesario
     Timer(const Duration(milliseconds: 700), () {
-      _executeMigrationIfNeeded(userId, ref);
+      _executeMigrationIfNeeded(userId);
     });
 
     // NO inicializar sync automática - será manual cuando el usuario interactúe
@@ -172,52 +195,56 @@ class PostLoginInitializationService {
   }
 
   /// Ejecuta la migración de listas si es necesario
-  void _executeMigrationIfNeeded(String userId, Ref ref) async {
+  void _executeMigrationIfNeeded(String userId) async {
+    final callbacks = _callbacks;
+    if (callbacks == null) return;
+
     try {
-      LoggerFactory.info('🔄 Verificando necesidad de migración para usuario: $userId');
-      
-      // Obtener instancia del servicio de migración desde el provider
-      final migrationService = await ref.read(listsMigrationServiceProvider.future);
-      
+      LoggerFactory.info(
+          '🔄 Verificando necesidad de migración para usuario: $userId');
+
+      // Obtener instancia del servicio de migración usando callback
+      final migrationService = await callbacks.getMigrationService();
+
       // Verificar si la migración ya fue completada
       if (migrationService.isMigrationCompleted()) {
         LoggerFactory.info('✅ Migración ya completada para este dispositivo');
         return;
       }
-      
+
       LoggerFactory.info('🚀 Iniciando proceso de migración de listas...');
-      
+
       // Analizar necesidades de migración
-      final migrationPlan = await migrationService.analyzeMigrationNeeds(userId);
-      
+      final migrationPlan =
+          await migrationService.analyzeMigrationNeeds(userId);
+
       if (migrationPlan.hasWork) {
-        LoggerFactory.info('📋 Plan de migración: ${migrationPlan.totalEstimatedTime}ms estimados');
-        
+        LoggerFactory.info(
+            '📋 Plan de migración: ${migrationPlan.totalEstimatedTime}ms estimados');
+
         // Migrar listas por defecto
         if (migrationPlan.defaultListsToCreate.isNotEmpty) {
           await migrationService.migrateDefaultLists(userId);
           LoggerFactory.info('✅ Listas por defecto migradas');
         }
-        
+
         // Migrar listas personalizadas
         if (migrationPlan.customListsToMigrate.isNotEmpty) {
           await migrationService.migrateCustomLists(userId);
           LoggerFactory.info('✅ Listas personalizadas migradas');
         }
-        
+
         // Marcar migración como completada
         await migrationService.markMigrationCompleted();
         LoggerFactory.info('🎉 Migración completada exitosamente');
-        
+
         // Invalidar providers para que recarguen los datos migrados
-        ref.invalidate(directCustomListsProvider);
-        
+        callbacks.invalidateCustomLists();
       } else {
         LoggerFactory.info('ℹ️ No hay datos locales para migrar');
         // Marcar como completada para evitar verificaciones futuras
         await migrationService.markMigrationCompleted();
       }
-      
     } catch (e) {
       LoggerFactory.error('❌ Error durante la migración: $e');
       // No bloquear la inicialización por errores de migración
@@ -225,22 +252,26 @@ class PostLoginInitializationService {
   }
 
   /// Limpia servicios cuando el usuario se desconecta
-  void _cleanupServices(Ref ref) {
+  void _cleanupServices() {
+    final callbacks = _callbacks;
+    if (callbacks == null) return;
+
     LoggerFactory.info('🧹 Cleaning up post-login services');
 
     try {
       // Deshabilitar auto-refresh
-      ref.read(favoriteMoviesProvider.notifier).disableAutoRefresh();
+      callbacks.disableFavoritesAutoRefresh();
 
       // Detener sincronización silenciosa
-      SilentFavoritesSyncService.instance.stopSync();
+      callbacks.stopSilentSync();
 
       // Limpiar servicios de listas personalizadas
       try {
-        ref.read(customListsAuthIntegrationProvider);
+        callbacks.cleanupCustomListsAuth();
         LoggerFactory.info('✅ CustomListsAuthIntegration cleaned up');
       } catch (e) {
-        LoggerFactory.error('❌ Error cleaning up CustomListsAuthIntegration: $e');
+        LoggerFactory.error(
+            '❌ Error cleaning up CustomListsAuthIntegration: $e');
       }
 
       LoggerFactory.info('✅ Post-login services cleaned up');
@@ -250,10 +281,10 @@ class PostLoginInitializationService {
   }
 
   /// Fuerza la inicialización manual para un usuario específico
-  void forceInitialization(String userId, Ref ref) {
+  void forceInitialization(String userId) {
     LoggerFactory.info(
         '🔧 Force initializing post-login services for: $userId');
-    _initializePostLoginServices(userId, ref);
+    _initializePostLoginServices(userId);
     _currentUserId = userId;
   }
 

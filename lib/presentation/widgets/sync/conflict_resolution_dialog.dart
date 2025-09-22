@@ -229,19 +229,20 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
           children: ConflictStrategy.values.where((strategy) {
             return widget.allowMerge || strategy != ConflictStrategy.merge;
           }).map((strategy) {
-            return RadioListTile<ConflictStrategy>(
-              value: strategy,
-              groupValue: _selectedStrategy,
-              onChanged: _isResolving
-                  ? null
-                  : (value) {
-                      if (value != null) {
-                        setState(() {
-                          _selectedStrategy = value;
-                          _errorMessage = null;
-                        });
-                      }
-                    },
+            final isSelected = _selectedStrategy == strategy;
+            final colors = theme.colorScheme;
+
+            return ListTile(
+              leading: Icon(
+                isSelected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: _isResolving
+                    ? colors.onSurface.withValues(alpha: 0.4)
+                    : (isSelected
+                        ? colors.primary
+                        : colors.onSurface.withValues(alpha: 0.6)),
+              ),
               title: Text(_getStrategyTitle(strategy)),
               subtitle: Text(
                 _getStrategyDescription(strategy),
@@ -250,6 +251,14 @@ class _ConflictResolutionDialogState<T extends SyncableEntity>
                 ),
               ),
               dense: true,
+              onTap: _isResolving
+                  ? null
+                  : () {
+                      setState(() {
+                        _selectedStrategy = strategy;
+                        _errorMessage = null;
+                      });
+                    },
             );
           }).toList(),
         )

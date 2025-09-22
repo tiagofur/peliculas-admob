@@ -1,61 +1,67 @@
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:http/http.dart' as http;
+import 'package:peliculas/core/logging/logger_factory.dart';
 
 const String supabaseUrl = 'https://fyzujpifkzftweynrudh.supabase.co';
-const String serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5enVqcGlma3pmdHdleW5ydWRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTM1OTE5OCwiZXhwIjoyMDcwOTM1MTk4fQ.O5echdaf1eCKbgG7vaqaRg8q3ew9kuScvl9nVUBJeyM';
+const String serviceRoleKey =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5enVqcGlma3pmdHdleW5ydWRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTM1OTE5OCwiZXhwIjoyMDcwOTM1MTk4fQ.O5echdaf1eCKbgG7vaqaRg8q3ew9kuScvl9nVUBJeyM';
 const String targetEmail = 'tiagofur@gmail.com';
 
 void main() async {
-  print('🧹 Iniciando limpieza de listas para $targetEmail...');
+  await LoggerFactory.info(
+      '🧹 Iniciando limpieza de listas para $targetEmail...');
 
   try {
     // 1. Buscar el usuario por email
-    print('📧 Buscando usuario...');
+    await LoggerFactory.info('📧 Buscando usuario...');
     final userId = await findUserByEmail(targetEmail);
     if (userId == null) {
-      print('❌ Usuario no encontrado');
+      await LoggerFactory.error('❌ Usuario no encontrado');
       return;
     }
-    print('✅ Usuario encontrado: $userId');
+    await LoggerFactory.info('✅ Usuario encontrado: $userId');
 
     // 2. Obtener todas las listas del usuario
-    print('📋 Obteniendo listas...');
+    await LoggerFactory.info('📋 Obteniendo listas...');
     final lists = await getUserLists(userId);
-    print('📊 Encontradas ${lists.length} listas');
+    await LoggerFactory.info('📊 Encontradas ${lists.length} listas');
 
     if (lists.isEmpty) {
-      print('ℹ️ No hay listas para eliminar');
+      await LoggerFactory.info('ℹ️ No hay listas para eliminar');
       return;
     }
 
     // 3. Mostrar las listas que se van a eliminar
-    print('\n📝 Listas a eliminar:');
+    await LoggerFactory.info('\n📝 Listas a eliminar:');
     for (var list in lists) {
-      print('  - ${list['name']} (ID: ${list['id']})');
+      await LoggerFactory.info('  - ${list['name']} (ID: ${list['id']})');
     }
 
     // 4. Confirmar eliminación
-    print('\n⚠️ ¿Estás seguro de que quieres eliminar TODAS estas listas? (y/n)');
+    await LoggerFactory.warning(
+        '\n⚠️ ¿Estás seguro de que quieres eliminar TODAS estas listas? (y/n)');
     final confirmation = stdin.readLineSync();
     if (confirmation?.toLowerCase() != 'y') {
-      print('❌ Operación cancelada');
+      await LoggerFactory.info('❌ Operación cancelada');
       return;
     }
 
     // 5. Eliminar items de las listas primero
-    print('\n🗑️ Eliminando items de las listas...');
+    await LoggerFactory.info('\n🗑️ Eliminando items de las listas...');
     await deleteAllListItems(userId);
 
     // 6. Eliminar las listas
-    print('🗑️ Eliminando listas...');
+    await LoggerFactory.info('🗑️ Eliminando listas...');
     await deleteAllUserLists(userId);
 
-    print('\n✅ ¡Limpieza completada! Todas las listas han sido eliminadas.');
-    print('🔄 Puedes abrir la app ahora con listas limpias.');
-
+    await LoggerFactory.info(
+        '\n✅ ¡Limpieza completada! Todas las listas han sido eliminadas.');
+    await LoggerFactory.info(
+        '🔄 Puedes abrir la app ahora con listas limpias.');
   } catch (e) {
-    print('❌ Error durante la limpieza: $e');
+    await LoggerFactory.error('❌ Error durante la limpieza: $e');
   }
 }
 
@@ -112,9 +118,10 @@ Future<void> deleteAllListItems(String userId) async {
   );
 
   if (response.statusCode != 204) {
-    print('⚠️ Warning: Error eliminando items: ${response.statusCode}');
+    await LoggerFactory.warning(
+        '⚠️ Warning: Error eliminando items: ${response.statusCode}');
   } else {
-    print('✅ Items de listas eliminados');
+    await LoggerFactory.info('✅ Items de listas eliminados');
   }
 }
 
@@ -132,5 +139,5 @@ Future<void> deleteAllUserLists(String userId) async {
     throw Exception('Error eliminando listas: ${response.statusCode}');
   }
 
-  print('✅ Listas eliminadas');
+  await LoggerFactory.info('✅ Listas eliminadas');
 }

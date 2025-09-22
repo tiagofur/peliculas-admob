@@ -20,7 +20,6 @@ import 'migration_integration_complete_test.mocks.dart';
   MockSpec<User>(),
   MockSpec<ICustomListsRepository>(),
   MockSpec<CustomListsSharedPreferencesDatasource>(),
-  MockSpec<SupabaseQueryBuilder>(),
 ])
 void main() {
   group('Migration Integration Complete Tests', () {
@@ -49,7 +48,6 @@ void main() {
       mockAuthClient = MockGoTrueClient();
       mockUser = MockUser();
       mockLocalDataSource = MockCustomListsSharedPreferencesDatasource();
-
 
       // Setup mock behaviors
       when(mockSupabaseClient.auth).thenReturn(mockAuthClient);

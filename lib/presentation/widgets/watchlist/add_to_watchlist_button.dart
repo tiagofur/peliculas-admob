@@ -225,19 +225,21 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
   }
 
   Widget _buildPriorityOptions() {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Column(
       children: WatchlistPriority.values.map((priority) {
+        final isSelected = _selectedPriority == priority;
+
         return ListTile(
-          leading: Radio<WatchlistPriority>(
-            value: priority,
-            groupValue: _selectedPriority,
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _selectedPriority = value;
-                });
-              }
-            },
+          leading: Icon(
+            isSelected
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color: isSelected
+                ? colors.primary
+                : colors.onSurface.withValues(alpha: 0.6),
           ),
           title: Row(
             children: [

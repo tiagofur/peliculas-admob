@@ -114,7 +114,7 @@ class SettingsScreen extends ConsumerWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withAlpha(204), // 0.8 alpha
+                            .withValues(alpha: 0.8),
                       ),
                 ),
               ],
@@ -245,7 +245,7 @@ class SettingsScreen extends ConsumerWidget {
                         color: Theme.of(context)
                             .colorScheme
                             .onSurface
-                            .withAlpha(204), // 0.8 alpha
+                            .withValues(alpha: 0.8),
                       ),
                 ),
               ],
@@ -265,14 +265,13 @@ class SettingsScreen extends ConsumerWidget {
           leading: const Icon(Icons.brightness_auto),
           title: Text(l10n?.system ?? 'System'),
           subtitle: Text(l10n?.systemThemeSubtitle ?? 'Follow system theme'),
-          trailing: Radio<app_theme.ThemeMode>(
-            value: app_theme.ThemeMode.system,
-            groupValue: themeState.themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-              }
-            },
+          trailing: Icon(
+            themeState.themeMode == app_theme.ThemeMode.system
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: themeState.themeMode == app_theme.ThemeMode.system
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
           onTap: () {
             ref
@@ -284,14 +283,13 @@ class SettingsScreen extends ConsumerWidget {
           leading: const Icon(Icons.light_mode),
           title: Text(l10n?.light ?? 'Light'),
           subtitle: Text(l10n?.lightThemeSubtitle ?? 'Always light theme'),
-          trailing: Radio<app_theme.ThemeMode>(
-            value: app_theme.ThemeMode.light,
-            groupValue: themeState.themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-              }
-            },
+          trailing: Icon(
+            themeState.themeMode == app_theme.ThemeMode.light
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: themeState.themeMode == app_theme.ThemeMode.light
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
           onTap: () {
             ref
@@ -303,14 +301,13 @@ class SettingsScreen extends ConsumerWidget {
           leading: const Icon(Icons.dark_mode),
           title: Text(l10n?.dark ?? 'Dark'),
           subtitle: Text(l10n?.darkThemeSubtitle ?? 'Always dark theme'),
-          trailing: Radio<app_theme.ThemeMode>(
-            value: app_theme.ThemeMode.dark,
-            groupValue: themeState.themeMode,
-            onChanged: (value) {
-              if (value != null) {
-                ref.read(themeNotifierProvider.notifier).setThemeMode(value);
-              }
-            },
+          trailing: Icon(
+            themeState.themeMode == app_theme.ThemeMode.dark
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: themeState.themeMode == app_theme.ThemeMode.dark
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
           onTap: () {
             ref
@@ -334,15 +331,13 @@ class SettingsScreen extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.language),
           title: Text(l10n?.spanish ?? 'Español'),
-          trailing: Radio<String>(
-            value: 'es',
-            groupValue: currentLocale.languageCode,
-            onChanged: (value) {
-              if (value != null) {
-                _showLanguageChangeDialog(
-                    context, Locale(value), localeNotifier);
-              }
-            },
+          trailing: Icon(
+            currentLocale.languageCode == 'es'
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: currentLocale.languageCode == 'es'
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
           onTap: () {
             _showLanguageChangeDialog(
@@ -352,15 +347,13 @@ class SettingsScreen extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.language),
           title: Text(l10n?.english ?? 'English'),
-          trailing: Radio<String>(
-            value: 'en',
-            groupValue: currentLocale.languageCode,
-            onChanged: (value) {
-              if (value != null) {
-                _showLanguageChangeDialog(
-                    context, Locale(value), localeNotifier);
-              }
-            },
+          trailing: Icon(
+            currentLocale.languageCode == 'en'
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: currentLocale.languageCode == 'en'
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
           onTap: () {
             _showLanguageChangeDialog(
@@ -370,15 +363,13 @@ class SettingsScreen extends ConsumerWidget {
         ListTile(
           leading: const Icon(Icons.language),
           title: Text(l10n?.portuguese ?? 'Português'),
-          trailing: Radio<String>(
-            value: 'pt',
-            groupValue: currentLocale.languageCode,
-            onChanged: (value) {
-              if (value != null) {
-                _showLanguageChangeDialog(
-                    context, Locale(value), localeNotifier);
-              }
-            },
+          trailing: Icon(
+            currentLocale.languageCode == 'pt'
+                ? Icons.check_circle
+                : Icons.radio_button_unchecked,
+            color: currentLocale.languageCode == 'pt'
+                ? Theme.of(context).colorScheme.primary
+                : null,
           ),
           onTap: () {
             _showLanguageChangeDialog(
@@ -423,13 +414,13 @@ class SettingsScreen extends ConsumerWidget {
                           color: Theme.of(context)
                               .colorScheme
                               .outline
-                              .withAlpha(77), // 0.3 alpha
+                              .withValues(alpha: 0.3),
                           width: 1,
                         ),
                   boxShadow: [
                     if (isSelected)
                       BoxShadow(
-                        color: color.withAlpha(102), // 0.4 alpha
+                        color: color.withValues(alpha: 0.4),
                         blurRadius: 8,
                         spreadRadius: 2,
                       ),

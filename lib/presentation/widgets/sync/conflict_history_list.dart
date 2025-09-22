@@ -777,6 +777,9 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
   }
 
   void _showTypeFilterDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -786,27 +789,42 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
           children: [
             Column(
               children: [
-                RadioListTile<ConflictType?>(
-                  value: null,
-                  groupValue: _selectedType,
-                  onChanged: (value) {
-                    setState(() => _selectedType = value);
+                ListTile(
+                  leading: Icon(
+                    _selectedType == null
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    color: _selectedType == null
+                        ? colors.primary
+                        : colors.onSurface.withValues(alpha: 0.6),
+                  ),
+                  title: const Text('Todos'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  onTap: () {
+                    setState(() => _selectedType = null);
                     Navigator.pop(context);
                     _applyFilters();
                   },
-                  title: const Text('Todos'),
                 ),
-                ...ConflictType.values
-                    .map((type) => RadioListTile<ConflictType?>(
-                          value: type,
-                          groupValue: _selectedType,
-                          onChanged: (value) {
-                            setState(() => _selectedType = value);
-                            Navigator.pop(context);
-                            _applyFilters();
-                          },
-                          title: Text(_getConflictTypeDescription(type)),
-                        )),
+                ...ConflictType.values.map((type) => ListTile(
+                      leading: Icon(
+                        _selectedType == type
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: _selectedType == type
+                            ? colors.primary
+                            : colors.onSurface.withValues(alpha: 0.6),
+                      ),
+                      title: Text(_getConflictTypeDescription(type)),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      onTap: () {
+                        setState(() => _selectedType = type);
+                        Navigator.pop(context);
+                        _applyFilters();
+                      },
+                    )),
               ],
             )
           ],
@@ -816,6 +834,9 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
   }
 
   void _showStrategyFilterDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -825,27 +846,42 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
           children: [
             Column(
               children: [
-                RadioListTile<ConflictStrategy?>(
-                  value: null,
-                  groupValue: _selectedStrategy,
-                  onChanged: (value) {
-                    setState(() => _selectedStrategy = value);
+                ListTile(
+                  leading: Icon(
+                    _selectedStrategy == null
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    color: _selectedStrategy == null
+                        ? colors.primary
+                        : colors.onSurface.withValues(alpha: 0.6),
+                  ),
+                  title: const Text('Todas'),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  onTap: () {
+                    setState(() => _selectedStrategy = null);
                     Navigator.pop(context);
                     _applyFilters();
                   },
-                  title: const Text('Todas'),
                 ),
-                ...ConflictStrategy.values
-                    .map((strategy) => RadioListTile<ConflictStrategy?>(
-                          value: strategy,
-                          groupValue: _selectedStrategy,
-                          onChanged: (value) {
-                            setState(() => _selectedStrategy = value);
-                            Navigator.pop(context);
-                            _applyFilters();
-                          },
-                          title: Text(_getStrategyLabel(strategy)),
-                        )),
+                ...ConflictStrategy.values.map((strategy) => ListTile(
+                      leading: Icon(
+                        _selectedStrategy == strategy
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: _selectedStrategy == strategy
+                            ? colors.primary
+                            : colors.onSurface.withValues(alpha: 0.6),
+                      ),
+                      title: Text(_getStrategyLabel(strategy)),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      onTap: () {
+                        setState(() => _selectedStrategy = strategy);
+                        Navigator.pop(context);
+                        _applyFilters();
+                      },
+                    )),
               ],
             )
           ],

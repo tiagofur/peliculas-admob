@@ -31,7 +31,8 @@ void main() {
     late MockICustomListsRepository mockRepository;
     late MockListSyncService mockSyncService;
     late MockSupabaseClient mockSupabaseClient;
-    late MockCustomListsSharedPreferencesDatasource mockCustomListsSharedPreferencesDatasource;
+    late MockCustomListsSharedPreferencesDatasource
+        mockCustomListsSharedPreferencesDatasource;
     late ProviderContainer container;
     late PostLoginInitializationService postLoginService;
     late ListsMigrationService migrationService;
@@ -44,7 +45,8 @@ void main() {
       mockRepository = MockICustomListsRepository();
       mockSyncService = MockListSyncService();
       mockSupabaseClient = MockSupabaseClient();
-      mockCustomListsSharedPreferencesDatasource = MockCustomListsSharedPreferencesDatasource();
+      mockCustomListsSharedPreferencesDatasource =
+          MockCustomListsSharedPreferencesDatasource();
 
       // Configurar container básico
       container = ProviderContainer();
@@ -72,16 +74,15 @@ void main() {
       // Assert: Verificar que el servicio está en estado inicial
       expect(postLoginService.isInitialized, false);
 
-      LoggerFactory.info('✅ PostLoginInitializationService inicializado correctamente');
+      LoggerFactory.info(
+          '✅ PostLoginInitializationService inicializado correctamente');
     });
 
     test('Verificar que el servicio puede ejecutar inicialización forzada',
         () async {
       // Act: Intentar ejecutar inicialización forzada
       try {
-        // Crear un Ref válido usando ProviderContainer
-        final ref = container.read;
-        postLoginService.forceInitialization('test-user-123', ref as Ref);
+        postLoginService.forceInitialization('test-user-123');
         LoggerFactory.info('✅ Inicialización forzada ejecutada sin errores');
       } catch (e) {
         LoggerFactory.warning(
@@ -91,14 +92,29 @@ void main() {
     });
 
     test('Verificar inicialización del servicio', () async {
-      // Act: Ejecutar inicialización
-      final ref = container.read;
-      postLoginService.initialize(ref as Ref);
+      // Act: Ejecutar inicialización con callbacks mock
+      final callbacks = PostLoginInitializationCallbacks(
+        enableFavoritesAutoRefresh: () {},
+        initializeFavoritesProvider: () {},
+        initializeWatchedProvider: () {},
+        initializeWatchlistProvider: () {},
+        enableCustomListsAfterLogin: () {},
+        initializeCustomListsAuth: (String userId) {},
+        enableCustomListsNotifier: () {},
+        getMigrationService: () async => migrationService,
+        invalidateCustomLists: () {},
+        disableFavoritesAutoRefresh: () {},
+        stopSilentSync: () {},
+        cleanupCustomListsAuth: () {},
+      );
+
+      postLoginService.initialize(callbacks);
 
       // Assert: Verificar que la inicialización se ejecutó sin errores
       expect(postLoginService.isInitialized, isTrue);
 
-      LoggerFactory.info('✅ Inicialización del servicio ejecutada correctamente');
+      LoggerFactory.info(
+          '✅ Inicialización del servicio ejecutada correctamente');
     });
 
     test('Verificar disposición del servicio', () {
@@ -120,9 +136,7 @@ void main() {
       // Act & Assert
       expect(
         () async {
-          final ref = container.read;
-          return postLoginService.forceInitialization(
-              'test-user-123', ref as Ref);
+          return postLoginService.forceInitialization('test-user-123');
         },
         returnsNormally, // No debe lanzar excepción, debe manejar el error internamente
       );
@@ -145,8 +159,7 @@ void main() {
       expect(migrationService.isMigrationCompleted(), isTrue);
 
       // Act
-      final ref = container.read;
-      postLoginService.forceInitialization('test-user-123', ref as Ref);
+      postLoginService.forceInitialization('test-user-123');
 
       // Esperar un momento
       await Future.delayed(const Duration(milliseconds: 200));
@@ -175,20 +188,19 @@ void main() {
       when(mockRepository.addMovieToList(any, any,
               position: anyNamed('position')))
           .thenAnswer((_) async => ListItem(
-            id: 'test-item-id',
-            listId: 'test-list-id',
-            movieId: 123,
-            movieTitle: 'Test Movie',
-            position: 0,
-            addedAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ));
+                id: 'test-item-id',
+                listId: 'test-list-id',
+                movieId: 123,
+                movieTitle: 'Test Movie',
+                position: 0,
+                addedAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              ));
 
       when(mockSyncService.startAutoSync()).thenAnswer((_) async {});
 
       // Act
-      final ref = container.read;
-      postLoginService.forceInitialization('test-user-123', ref as Ref);
+      postLoginService.forceInitialization('test-user-123');
 
       // Esperar para que se complete la inicialización
       await Future.delayed(const Duration(milliseconds: 600));
@@ -221,11 +233,11 @@ class SyncResult {
     required this.duration,
     required this.timestamp,
   });
-  
+
   final bool success;
-   final int syncedLists;
-   final int syncedItems;
-   final List<dynamic> conflicts;
-   final Duration duration;
-   final DateTime timestamp;
+  final int syncedLists;
+  final int syncedItems;
+  final List<dynamic> conflicts;
+  final Duration duration;
+  final DateTime timestamp;
 }
