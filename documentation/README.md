@@ -1,3 +1,43 @@
+# 📚 Documentation Status Overview
+
+## Current Documentation Structure
+
+### ⚠️ PENDING (In Root)
+
+Documentation for features and fixes that are NOT yet implemented.
+
+### ✅ FINISHED
+
+Documentation for completed features moved to `/finished` folder.
+
+## Critical Issues Status
+
+### 🔴 P0 - Critical Blockers (Must fix for beta)
+
+1. **Custom Lists System** - Movies not saving locally or to Supabase
+2. **Real-Time Sync** - Not functioning across devices
+3. **System Permissions** - Missing configuration for Android/iOS/macOS
+
+### 🟠 P1 - High Priority
+
+1. **Movie Details** - Technical info incomplete, showing category IDs instead of names
+2. **Streaming Platforms** - Broken links (404 errors)
+3. **TMDB → Trakt Migration** - Pending implementation
+
+### 🟡 P2 - Medium Priority
+
+1. **Series Support** - UI/UX design needed
+2. **Windows Permissions** - Verify requirements
+
+## Quick Navigation
+
+- [Pending Features](./README.md) - This file
+- [Completed Features](./finished/README.md) - Finished documentation
+- [Critical Fixes](./01-CRITICAL-FIXES.md) - Immediate action items
+- [Roadmap](./02-ROADMAP.md) - Development timeline
+
+Last Updated: January 2025
+
 # Project Documentation Overview
 
 Welcome to the documentation for the Peliculas-Admob application. This document serves as the main entry point, providing an overview of the project and links to detailed documentation files that cover various aspects of the application.
@@ -24,6 +64,7 @@ Welcome to the documentation for the Peliculas-Admob application. This document 
 ## Additional Documentation
 
 ### Technical Documentation
+
 - [API Integration](technical/API-INTEGRATION.md) - Details the API integration process, including endpoints and data handling.
 - [Database Schema](technical/DATABASE-SCHEMA.md) - Outlines the database schema, including tables, relationships, and data types.
 - [State Management](technical/STATE-MANAGEMENT.md) - Describes the state management approach used in the application.
@@ -31,12 +72,14 @@ Welcome to the documentation for the Peliculas-Admob application. This document 
 - [Code Quality](technical/CODE-QUALITY.md) - Discusses code quality standards and practices followed in the project.
 
 ### Business Documentation
+
 - [Competitive Analysis](business/COMPETITIVE-ANALYSIS.md) - Provides an analysis of competitors in the market.
 - [User Personas](business/USER-PERSONAS.md) - Outlines user personas to guide design and development decisions.
 - [Monetization Strategy](business/MONETIZACION-ESTRATEGIA.md) - Details the monetization strategy, including pricing models and advertising options.
 - [Marketing Plan](business/MARKETING-PLAN.md) - Presents a marketing plan to promote the application and attract users.
 
 ### Implementation Documentation
+
 - [Phase 1: Critical Fixes](implementation/PHASE-1-CRITICAL-FIXES.md) - Outlines critical fixes to be implemented in the first phase of development.
 - [Phase 2: Core Features](implementation/PHASE-2-CORE-FEATURES.md) - Details the core features to be developed in the second phase.
 - [Phase 3: Enhancements](implementation/PHASE-3-ENHANCEMENTS.md) - Describes enhancements to be made in the third phase of development.
