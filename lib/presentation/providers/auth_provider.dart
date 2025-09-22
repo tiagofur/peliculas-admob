@@ -19,6 +19,33 @@ import '../../services/lists_migration_service.dart';
 import '../../services/migration_rollback_service.dart';
 import './hybrid_repositories_provider.dart';
 
+// Typedef para los callbacks que necesita AuthNotifier
+typedef GetCurrentUserCallback = User? Function();
+typedef GetAnonymousDataMigratorCallback = dynamic Function();
+typedef SetHasLocalDataCallback = void Function(bool hasData);
+typedef ForceSyncCallback = void Function();
+
+// Clase que encapsula todos los callbacks necesarios para AuthNotifier
+class AuthCallbacks {
+  const AuthCallbacks({
+    required this.getCurrentUser,
+    required this.getAnonymousDataMigrator,
+    required this.setHasLocalData,
+    required this.forceSyncFavorites,
+    required this.forceSyncWatchlist,
+    required this.forceSyncWatched,
+    required this.forceSyncCustomLists,
+  });
+
+  final GetCurrentUserCallback getCurrentUser;
+  final GetAnonymousDataMigratorCallback getAnonymousDataMigrator;
+  final SetHasLocalDataCallback setHasLocalData;
+  final ForceSyncCallback forceSyncFavorites;
+  final ForceSyncCallback forceSyncWatchlist;
+  final ForceSyncCallback forceSyncWatched;
+  final ForceSyncCallback forceSyncCustomLists;
+}
+
 // Enum para definir el modo de la aplicación
 enum AppMode {
   guest, // Usuario no autenticado usando datos locales
@@ -219,12 +246,12 @@ final currentUserStatsProvider = FutureProvider<UserStats?>((ref) async {
 
 // Notifier para operaciones de autenticación
 class AuthNotifier extends StateNotifier<AsyncValue<void>> {
-  AuthNotifier(this._authRepository, this._ref)
+  AuthNotifier(this._authRepository, this._callbacks)
       : super(const AsyncValue.data(null));
   final AuthRepository _authRepository;
 
-  // TODO: MEMORY LEAK FIX - Eliminar almacenamiento de _ref y usar callbacks
-  final Ref _ref;
+  // ✅ MEMORY LEAK FIX - Usar callbacks en lugar de almacenar _ref
+  final AuthCallbacks _callbacks;
 
   Future<void> signIn({
     required String email,
@@ -331,7 +358,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       try {
         final logger = LoggerFactory.getLogger('AuthNotifier');
 
-        final user = _ref.read(currentUserProvider);
+        final user = _callbacks.getCurrentUser();
         if (user == null) {
           logger.warning('Usuario no disponible para sincronización');
           return;
@@ -344,12 +371,12 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         await _executeMigrationPhase(user.id, logger);
 
         // 2. Detectar y migrar datos locales de usuario anónimo (funcionalidad existente)
-        final migrator = _ref.read(anonymousDataMigratorProvider);
+        final migrator = _callbacks.getAnonymousDataMigrator();
         final detectedData = await migrator.detectAnonymousData();
 
         if (detectedData.isNotEmpty) {
           logger.info('Datos anónimos detectados, iniciando migración');
-          _ref.read(appStateProvider.notifier).setHasLocalData(true);
+          _callbacks.setHasLocalData(true);
 
           final migrationResult = await migrator.migrateAllData(user.id);
 
@@ -367,10 +394,10 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         logger.info('Iniciando sincronización de repositorios');
 
         // Disparar la sincronización para cada repositorio sin esperar (no await)
-        _ref.read(hybridFavoritesRepositoryProvider).forceSync();
-        _ref.read(hybridWatchlistRepositoryProvider).forceSync();
-        _ref.read(hybridWatchedRepositoryProvider).forceSync();
-        _ref.read(hybridCustomListsRepositoryProvider).forceSync();
+        _callbacks.forceSyncFavorites();
+        _callbacks.forceSyncWatchlist();
+        _callbacks.forceSyncWatched();
+        _callbacks.forceSyncCustomLists();
 
         // Habilitar los providers directos
         // Los providers directos ahora se inicializan automáticamente
@@ -470,7 +497,24 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
 final authNotifierProvider =
     StateNotifierProvider<AuthNotifier, AsyncValue<void>>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(authRepository, ref);
+
+  // ✅ MEMORY LEAK FIX - Crear callbacks en lugar de pasar ref directamente
+  final callbacks = AuthCallbacks(
+    getCurrentUser: () => ref.read(currentUserProvider),
+    getAnonymousDataMigrator: () => ref.read(anonymousDataMigratorProvider),
+    setHasLocalData: (hasData) =>
+        ref.read(appStateProvider.notifier).setHasLocalData(hasData),
+    forceSyncFavorites: () =>
+        ref.read(hybridFavoritesRepositoryProvider).forceSync(),
+    forceSyncWatchlist: () =>
+        ref.read(hybridWatchlistRepositoryProvider).forceSync(),
+    forceSyncWatched: () =>
+        ref.read(hybridWatchedRepositoryProvider).forceSync(),
+    forceSyncCustomLists: () =>
+        ref.read(hybridCustomListsRepositoryProvider).forceSync(),
+  );
+
+  return AuthNotifier(authRepository, callbacks);
 });
 
 // Notifier para operaciones de perfil

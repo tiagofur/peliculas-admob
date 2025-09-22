@@ -2,18 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/analytics/analytics_service.dart';
-import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/user_movie_ratings_provider.dart' as ratings;
 import '../../widgets/profile_avatar.dart';
-import '../../widgets/ratings/star_rating_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -153,16 +150,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildProfileHeader(theme, profile),
           const SizedBox(height: 32),
 
-          // Estadísticas
-          // if (stats != null) ...[
-          //   _buildStatsSection(theme, stats),
-          //   const SizedBox(height: 32),
-          // ],
-
-          // Valoraciones recientes
-          // _buildRatingsSection(theme),
-          // const SizedBox(height: 32),
-
           // Formulario de edición o información
           if (_isEditing)
             _buildEditForm(theme, profile)
@@ -236,35 +223,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildStatItem(
-      ThemeData theme, String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 32,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
       ],
     );
   }
@@ -803,179 +761,5 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         },
       ),
     );
-  }
-
-  /// Builds the rating statistics section
-  Widget _buildRatingStats(ThemeData theme, Map<String, dynamic> stats) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.star, color: Colors.amber, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Your Ratings',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  theme,
-                  'Total',
-                  stats['totalRatings'].toString(),
-                  Icons.movie,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  theme,
-                  'Average',
-                  '${stats['averageRating']}/10',
-                  Icons.star_half,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  theme,
-                  'With Reviews',
-                  stats['ratingsWithReview'].toString(),
-                  Icons.rate_review,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  theme,
-                  'Recent',
-                  stats['recentRatingsCount'].toString(),
-                  Icons.schedule,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds a small stat card
-  Widget _buildStatCard(
-      ThemeData theme, String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 16, color: theme.colorScheme.primary),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Builds the recent ratings section
-  Widget _buildRecentRatings(
-      ThemeData theme, List<SyncableMovieRating> ratings) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.history, color: Colors.green, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'Recent Ratings',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...ratings.take(5).map((rating) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    SimpleStarRating(
-                      rating: rating.rating / 2, // Convert to 5-star scale
-                      size: 14,
-                      showRating: false,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        rating.movieTitle,
-                        style: theme.textTheme.bodyMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Text(
-                      '${rating.rating}/10',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              )),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () => _showAllRatings(context),
-            child: const Text('View All Ratings'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Shows all user ratings in a dedicated screen
-  void _showAllRatings(BuildContext context) {
-    context.go('/ratings');
   }
 }
