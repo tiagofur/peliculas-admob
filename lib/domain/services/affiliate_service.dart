@@ -50,54 +50,102 @@ class AffiliateService {
     String? imdbId,
     String country = 'MX',
   }) {
+    // PRIMERA PRIORIDAD: Usar el link directo de TMDB si está disponible
+    if (provider.link != null && provider.link!.isNotEmpty) {
+      return _enhanceWithAffiliateParams(provider.link!, provider.providerId);
+    }
+
+    // SEGUNDA PRIORIDAD: Generar URL basada en la plataforma conocida
     final platformKey = _providerIds[provider.providerId];
     if (platformKey == null) {
-      return provider.link ?? _baseUrls.values.first;
+      // Plataforma no reconocida, usar URL genérica de búsqueda
+      return _generateSearchUrl(provider.providerName, movieTitle);
     }
 
     final baseUrl = _baseUrls[platformKey];
     if (baseUrl == null) {
-      return provider.link ?? '';
+      return _generateSearchUrl(provider.providerName, movieTitle);
     }
 
+    return _generatePlatformUrl(platformKey, baseUrl, movieTitle, imdbId);
+  }
+
+  /// Mejora un URL existente con parámetros de afiliado si es posible
+  static String _enhanceWithAffiliateParams(String originalUrl, int providerId) {
+    final platformKey = _providerIds[providerId];
+
+    switch (platformKey) {
+      case 'amazon_prime':
+        if (_amazonAffiliateId != null && !originalUrl.contains('tag=')) {
+          final separator = originalUrl.contains('?') ? '&' : '?';
+          return '$originalUrl${separator}tag=$_amazonAffiliateId';
+        }
+        break;
+
+      case 'disney_plus':
+        if (_disneyAffiliateId != null && !originalUrl.contains('affiliate_id=')) {
+          final separator = originalUrl.contains('?') ? '&' : '?';
+          return '$originalUrl${separator}affiliate_id=$_disneyAffiliateId';
+        }
+        break;
+
+      case 'apple_tv':
+        if (_appleTvAffiliateId != null && !originalUrl.contains('at=')) {
+          final separator = originalUrl.contains('?') ? '&' : '?';
+          return '$originalUrl${separator}at=$_appleTvAffiliateId';
+        }
+        break;
+    }
+
+    return originalUrl; // Devolver URL original si no se puede mejorar
+  }
+
+  /// Genera URL para plataformas conocidas
+  static String _generatePlatformUrl(String platformKey, String baseUrl, String? movieTitle, String? imdbId) {
     switch (platformKey) {
       case 'netflix':
-        // Netflix no tiene programa de afiliados público, solo enlace directo
         return baseUrl;
 
       case 'amazon_prime':
-        if (_amazonAffiliateId != null && imdbId != null) {
-          return '$baseUrl/$imdbId?tag=$_amazonAffiliateId';
+        if (imdbId != null) {
+          final url = '$baseUrl/$imdbId';
+          return _amazonAffiliateId != null ? '$url?tag=$_amazonAffiliateId' : url;
         }
         return baseUrl;
 
       case 'disney_plus':
-        if (_disneyAffiliateId != null) {
-          return '$baseUrl?affiliate_id=$_disneyAffiliateId';
-        }
-        return baseUrl;
+        return _disneyAffiliateId != null
+            ? '$baseUrl?affiliate_id=$_disneyAffiliateId'
+            : baseUrl;
 
       case 'hbo_max':
-        if (_hboMaxAffiliateId != null) {
-          return '$baseUrl?ref=$_hboMaxAffiliateId';
-        }
-        return baseUrl;
+        return _hboMaxAffiliateId != null
+            ? '$baseUrl?ref=$_hboMaxAffiliateId'
+            : baseUrl;
 
       case 'paramount':
-        if (_paramountAffiliateId != null) {
-          return '$baseUrl?partner=$_paramountAffiliateId';
-        }
-        return baseUrl;
+        return _paramountAffiliateId != null
+            ? '$baseUrl?partner=$_paramountAffiliateId'
+            : baseUrl;
 
       case 'apple_tv':
-        if (_appleTvAffiliateId != null) {
-          return '$baseUrl?at=$_appleTvAffiliateId';
-        }
-        return baseUrl;
+        return _appleTvAffiliateId != null
+            ? '$baseUrl?at=$_appleTvAffiliateId'
+            : baseUrl;
 
       default:
-        return provider.link ?? baseUrl;
+        return baseUrl;
     }
+  }
+
+  /// Genera URL de búsqueda genérica para plataformas no reconocidas
+  static String _generateSearchUrl(String providerName, String? movieTitle) {
+    if (movieTitle == null || movieTitle.isEmpty) {
+      return 'https://www.google.com/search?q=${Uri.encodeComponent(providerName)}';
+    }
+
+    final searchQuery = Uri.encodeComponent('$providerName $movieTitle movie watch');
+    return 'https://www.google.com/search?q=$searchQuery';
   }
 
   /// Verifica si una plataforma tiene soporte para enlaces de afiliados

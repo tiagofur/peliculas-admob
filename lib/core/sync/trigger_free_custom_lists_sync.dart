@@ -179,7 +179,10 @@ class TriggerFreeCustomListsSync {
 
       LoggerFactory.info('📊 [TriggerFree] Datos a insertar: $insertData');
 
-      // Verificar si ya existe antes de insertar
+      // 1. Verificar si la lista existe (para listas predeterminadas, crear si no existe)
+      await _ensureListExists(userId, listId);
+
+      // 2. Verificar si ya existe antes de insertar
       LoggerFactory.info(
           '🔍 [TriggerFree] Verificando si película ya existe...');
       final existing = await _supabase
@@ -203,13 +206,9 @@ class TriggerFreeCustomListsSync {
 
       LoggerFactory.info(
           '🚀 [TriggerFree] Ejecutando inserción en user_list_items...');
-      final result =
-          await _supabase.from('user_list_items').insert(insertData).select();
 
-      LoggerFactory.info(
-          '✅ [TriggerFree] Inserción exitosa - resultado: $result');
-      LoggerFactory.info(
-          '🎉 [TriggerFree] Película $movieId agregada exitosamente a lista $listId');
+      // Intentar insertar con retry en caso de conflictos temporales
+      await _insertWithRetry(insertData, movieId, listId);
     } catch (e, stackTrace) {
       LoggerFactory.error(
           '❌ [TriggerFree] ERROR CRÍTICO agregando película a lista: $e');
@@ -405,6 +404,174 @@ class TriggerFreeCustomListsSync {
         return 'blue_grey';
       default:
         return 'blue'; // Default blue
+    }
+  }
+
+  /// Asegura que una lista existe (especialmente para listas predeterminadas)
+  Future<void> _ensureListExists(String userId, String listId) async {
+    try {
+      // Verificar si la lista ya existe
+      final existingLists = await _supabase
+          .from('user_lists')
+          .select('id')
+          .eq('id', listId)
+          .eq('user_id', userId)
+          .eq('is_deleted', false);
+
+      if (existingLists.isNotEmpty) {
+        LoggerFactory.debug('✅ [TriggerFree] Lista $listId ya existe');
+        return;
+      }
+
+      // Si es una lista predeterminada, crearla
+      if (_isDefaultList(listId)) {
+        LoggerFactory.info('🆕 [TriggerFree] Creando lista predeterminada: $listId');
+        await _createDefaultList(userId, listId);
+      } else {
+        throw Exception('Lista personalizada $listId no existe y no se puede crear automáticamente');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ [TriggerFree] Error verificando/creando lista $listId: $e');
+      rethrow;
+    }
+  }
+
+  /// Verifica si es una lista predeterminada
+  bool _isDefaultList(String listId) {
+    const defaultLists = [
+      'en-familia',
+      'en-pareja',
+      'clasicos',
+      'sugeridas',
+      'con-amigos',
+      'noches-lluvia',
+      'cortas',
+      'premiadas',
+    ];
+    return defaultLists.contains(listId);
+  }
+
+  /// Crea una lista predeterminada
+  Future<void> _createDefaultList(String userId, String listId) async {
+    final defaultListData = _getDefaultListData(listId);
+    if (defaultListData == null) {
+      throw Exception('Datos no encontrados para lista predeterminada: $listId');
+    }
+
+    await _supabase.from('user_lists').insert({
+      'id': listId,
+      'user_id': userId,
+      'name': defaultListData['name'],
+      'description': defaultListData['description'],
+      'emoji': defaultListData['emoji'],
+      'color_hex': defaultListData['color_hex'],
+      'is_default': true,
+      'is_public': false,
+      'sync_version': 1,
+      'is_deleted': false,
+    });
+
+    LoggerFactory.info('✅ [TriggerFree] Lista predeterminada $listId creada');
+  }
+
+  /// Obtiene los datos de una lista predeterminada
+  Map<String, dynamic>? _getDefaultListData(String listId) {
+    switch (listId) {
+      case 'en-familia':
+        return {
+          'name': 'En Familia',
+          'description': 'Películas aptas para toda la familia',
+          'emoji': '👨‍👩‍👧‍👦',
+          'color_hex': '#FF9800', // orange
+        };
+      case 'en-pareja':
+        return {
+          'name': 'En Pareja',
+          'description': 'Películas románticas y de citas',
+          'emoji': '💕',
+          'color_hex': '#E91E63', // pink
+        };
+      case 'clasicos':
+        return {
+          'name': 'Clásicos',
+          'description': 'Clásicos imperdibles del cine',
+          'emoji': '🏆',
+          'color_hex': '#9C27B0', // purple
+        };
+      case 'sugeridas':
+        return {
+          'name': 'Sugeridas',
+          'description': 'Películas sugeridas por la comunidad',
+          'emoji': '🎯',
+          'color_hex': '#2196F3', // blue
+        };
+      case 'con-amigos':
+        return {
+          'name': 'Con Amigos',
+          'description': 'Perfectas para ver en grupo',
+          'emoji': '👥',
+          'color_hex': '#4CAF50', // green
+        };
+      case 'noches-lluvia':
+        return {
+          'name': 'Noches de Lluvia',
+          'description': 'Para esos días grises y tranquilos',
+          'emoji': '🌧️',
+          'color_hex': '#607D8B', // blue_grey
+        };
+      case 'cortas':
+        return {
+          'name': 'Cortas',
+          'description': 'Películas de menos de 90 minutos',
+          'emoji': '⏱️',
+          'color_hex': '#FFEB3B', // yellow
+        };
+      case 'premiadas':
+        return {
+          'name': 'Premiadas',
+          'description': 'Ganadoras de premios importantes',
+          'emoji': '🏅',
+          'color_hex': '#FF5722', // deep_orange
+        };
+      default:
+        return null;
+    }
+  }
+
+  /// Inserta con retry logic para manejar conflictos temporales
+  Future<void> _insertWithRetry(Map<String, dynamic> insertData, int movieId, String listId) async {
+    const maxRetries = 3;
+    const retryDelay = Duration(milliseconds: 500);
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final result = await _supabase
+            .from('user_list_items')
+            .insert(insertData)
+            .select();
+
+        LoggerFactory.info(
+            '✅ [TriggerFree] Inserción exitosa en intento $attempt - resultado: $result');
+        LoggerFactory.info(
+            '🎉 [TriggerFree] Película $movieId agregada exitosamente a lista $listId');
+        return; // Éxito, salir del loop
+      } catch (e) {
+        LoggerFactory.warning(
+            '⚠️ [TriggerFree] Intento $attempt/$maxRetries falló: $e');
+
+        if (attempt == maxRetries) {
+          LoggerFactory.error(
+              '❌ [TriggerFree] Todos los intentos fallaron para película $movieId en lista $listId');
+          rethrow; // Re-lanzar el error después del último intento
+        }
+
+        // Esperar antes del siguiente intento
+        if (attempt < maxRetries) {
+          LoggerFactory.info(
+              '⏳ [TriggerFree] Esperando ${retryDelay.inMilliseconds}ms antes del siguiente intento...');
+          await Future.delayed(retryDelay);
+        }
+      }
     }
   }
 }
