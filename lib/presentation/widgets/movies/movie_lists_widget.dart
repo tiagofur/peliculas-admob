@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/entities.dart';
-import '../../providers/custom_lists_provider.dart';
+import '../../providers/storage/direct_custom_lists_provider.dart';
 
 class MovieListsWidget extends ConsumerStatefulWidget {
   const MovieListsWidget({super.key, required this.movie});
@@ -34,7 +34,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
 
   @override
   Widget build(BuildContext context) {
-    final allLists = ref.watch(listsProvider);
+    final customListsState = ref.watch(directCustomListsProvider);
+    final allLists = customListsState.getAllListsWithMovies();
     final listsContainingMovie = allLists
         .where((list) => list.movieIds.contains(widget.movie.id))
         .toList();
@@ -317,7 +318,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   void _toggleMovieInList(CustomList list, bool isInList) {
     if (isInList) {
       ref
-          .read(allListsNotifierProvider.notifier)
+          .read(directCustomListsProvider.notifier)
           .removeMovieFromList(list.id, widget.movie.id);
 
       // Mostrar confirmación de eliminación
@@ -330,7 +331,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       );
     } else {
       ref
-          .read(allListsNotifierProvider.notifier)
+          .read(directCustomListsProvider.notifier)
           .addMovieToList(list.id, widget.movie.id);
 
       // Mostrar confirmación de adición
@@ -400,6 +401,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
         return Colors.grey;
       case 'blue_grey':
         return Colors.blueGrey;
+      case 'black':
+        return Colors.black87; // Usamos black87 para mejor visibilidad
       default:
         return Colors.blue;
     }
@@ -424,68 +427,43 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
   bool _isButtonEnabled = false;
 
   final List<String> _emojis = [
-    '🎬',
-    '🍿',
-    '🎭',
-    '🎪',
-    '🎨',
-    '🎵',
-    '🎸',
-    '🎤',
-    '🎧',
-    '🎮',
-    '📚',
-    '📖',
-    '📝',
-    '📊',
-    '📈',
-    '📉',
-    '📋',
-    '📌',
-    '📍',
-    '📎',
-    '💡',
-    '💭',
-    '💫',
-    '⭐',
-    '🌟',
-    '✨',
-    '🔥',
-    '❤️',
-    '💙',
-    '💚',
-    '💛',
-    '💜',
-    '🧡',
-    '🖤',
-    '🤍',
-    '🤎',
-    '💖',
-    '💕',
-    '💗',
-    '💓',
+    // Cine y entretenimiento
+    '🎬', '🍿', '🎭', '🎪', '🎨', '🎥', '📽️', '📹', '📺', '🎞️',
+    // Géneros de películas
+    '🚀', '💥', '🔫', '⚔️', '🗡️', '🛡️', '🏰', '🦸', '🦹', '👽',
+    '❤️', '💕', '💗', '💘', '😍', '🌹', '💐', '🌸', '💒', '👫',
+    '😂', '🤣', '😄', '🎭', '🤡', '🎪', '🎈', '🎊', '🎉', '🥳',
+    '👻', '💀', '🎃', '🕷️', '🦇', '🧟', '🔪', '⚰️', '🩸', '😱',
+    '🚗', '🏎️', '🚁', '✈️', '🚀', '💎', '💰', '🗺️', '🏴‍☠️', '⚡',
+    // Momentos y ocasiones
+    '🌙', '⭐', '🌟', '✨', '☀️', '🌅', '🌇', '🌆', '🌃', '🏙️',
+    '🍷', '🥂', '🍾', '🍸', '🍹', '☕', '🍰', '🎂', '🍕', '🍔',
+    '🏠', '🛋️', '🛏️', '🧸', '📚', '📖', '☔', '🌧️', '⛈️', '❄️',
+    // Especiales
+    '💫', '🔥', '💡', '💭', '📋', '📌', '📍', '🎯', '🏆', '🥇',
   ];
 
   final List<String> _colors = [
-    'red',
-    'pink',
-    'purple',
-    'deep_purple',
-    'indigo',
-    'blue',
-    'light_blue',
-    'cyan',
-    'teal',
-    'green',
-    'light_green',
-    'lime',
-    'yellow',
-    'amber',
-    'orange',
-    'deep_orange',
-    'brown',
-    'grey',
-    'blue_grey'
+    'red',        // Rojo - Acción, Drama
+    'pink',       // Rosa - Romance, Comedia romántica
+    'purple',     // Morado - Fantasía, Misterio
+    'deep_purple', // Morado oscuro - Terror, Thriller
+    'indigo',     // Índigo - Ciencia ficción
+    'blue',       // Azul - Drama, Clásicos
+    'light_blue', // Azul claro - Familiar, Animación
+    'cyan',       // Cian - Aventura
+    'teal',       // Verde azulado - Documentales
+    'green',      // Verde - Comedia, Natural
+    'light_green', // Verde claro - Familia
+    'lime',       // Lima - Juvenil
+    'yellow',     // Amarillo - Comedia, Infantil
+    'amber',      // Ámbar - Clásicos dorados
+    'orange',     // Naranja - Aventura, Acción
+    'deep_orange', // Naranja oscuro - Suspense
+    'brown',      // Marrón - Western, Histórico
+    'grey',       // Gris - Noir, Indie
+    'blue_grey',  // Gris azulado - Moderno
+    'black',      // Negro - Terror, Thriller
   ];
 
   @override
@@ -601,10 +579,10 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         padding: const EdgeInsets.all(8),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 8,
+                          crossAxisCount: 10,
                           childAspectRatio: 1,
-                          crossAxisSpacing: 4,
-                          mainAxisSpacing: 4,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 6,
                         ),
                         itemCount: _emojis.length,
                         itemBuilder: (context, index) {
@@ -630,7 +608,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                               ),
                               child: Center(
                                 child: Text(emoji,
-                                    style: const TextStyle(fontSize: 18)),
+                                    style: const TextStyle(fontSize: 20)),
                               ),
                             ),
                           );
@@ -642,7 +620,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         style: TextStyle(fontWeight: FontWeight.w500)),
                     const SizedBox(height: 8),
                     Container(
-                      height: 60,
+                      height: 65,
                       decoration: BoxDecoration(
                         border: Border.all(
                             color: Theme.of(context)
@@ -721,9 +699,9 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                     onPressed: _isButtonEnabled
                         ? () async {
                             try {
-                              // Crear la lista usando el nuevo provider
+                              // Crear la lista usando el provider directo
                               await ref
-                                  .read(allListsNotifierProvider.notifier)
+                                  .read(directCustomListsProvider.notifier)
                                   .createList(
                                     name: _nameController.text.trim(),
                                     description:
@@ -734,13 +712,15 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                               // Esperar un frame para que se actualice el provider
                               await Future.delayed(
-                                  const Duration(milliseconds: 100));
+                                  const Duration(milliseconds: 500));
 
                               if (_addCurrentMovie) {
                                 // Obtener el ID de la lista recién creada y agregar la película
-                                final newList = ref.read(listsProvider).last;
+                                final customListsState = ref.read(directCustomListsProvider);
+                                final allLists = customListsState.getAllListsWithMovies();
+                                final newList = allLists.lastWhere((list) => !list.isDefault);
                                 await ref
-                                    .read(allListsNotifierProvider.notifier)
+                                    .read(directCustomListsProvider.notifier)
                                     .addMovieToList(newList.id, widget.movieId);
                               }
 
@@ -759,8 +739,9 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                                       action: SnackBarAction(
                                         label: 'Ver',
                                         onPressed: () {
-                                          final newList =
-                                              ref.read(listsProvider).last;
+                                          final customListsState = ref.read(directCustomListsProvider);
+                                          final allLists = customListsState.getAllListsWithMovies();
+                                          final newList = allLists.lastWhere((list) => !list.isDefault);
                                           GoRouter.of(scaffoldContext).push(
                                               '/my-library/lists/${newList.id}');
                                         },
@@ -834,6 +815,8 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
         return Colors.grey;
       case 'blue_grey':
         return Colors.blueGrey;
+      case 'black':
+        return Colors.black87; // Usamos black87 para mejor visibilidad
       default:
         return Colors.blue;
     }

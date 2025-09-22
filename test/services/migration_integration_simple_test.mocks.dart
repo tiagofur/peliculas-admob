@@ -1685,6 +1685,57 @@ class MockGoTrueClient extends _i1.Mock implements _i4.GoTrueClient {
       ) as _i6.Future<List<_i4.UserIdentity>>);
 
   @override
+  _i6.Future<_i4.AuthResponse> linkIdentityWithIdToken({
+    required _i4.OAuthProvider? provider,
+    required String? idToken,
+    String? accessToken,
+    String? nonce,
+    String? captchaToken,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #linkIdentityWithIdToken,
+          [],
+          {
+            #provider: provider,
+            #idToken: idToken,
+            #accessToken: accessToken,
+            #nonce: nonce,
+            #captchaToken: captchaToken,
+          },
+        ),
+        returnValue: _i6.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
+          this,
+          Invocation.method(
+            #linkIdentityWithIdToken,
+            [],
+            {
+              #provider: provider,
+              #idToken: idToken,
+              #accessToken: accessToken,
+              #nonce: nonce,
+              #captchaToken: captchaToken,
+            },
+          ),
+        )),
+        returnValueForMissingStub:
+            _i6.Future<_i4.AuthResponse>.value(_FakeAuthResponse_13(
+          this,
+          Invocation.method(
+            #linkIdentityWithIdToken,
+            [],
+            {
+              #provider: provider,
+              #idToken: idToken,
+              #accessToken: accessToken,
+              #nonce: nonce,
+              #captchaToken: captchaToken,
+            },
+          ),
+        )),
+      ) as _i6.Future<_i4.AuthResponse>);
+
+  @override
   _i6.Future<_i4.OAuthResponse> getLinkIdentityUrl(
     _i4.OAuthProvider? provider, {
     String? redirectTo,

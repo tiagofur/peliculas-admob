@@ -40,13 +40,116 @@ class CustomListsState {
     return list.copyWith(movieIds: movieIds);
   }
 
-  /// Obtiene todas las listas con sus películas incluidas
+  /// Obtiene todas las listas con sus películas incluidas (incluyendo predeterminadas)
   List<CustomList> getAllListsWithMovies() {
-    return lists.keys.map((listId) {
+    final customLists = lists.keys.map((listId) {
       final list = lists[listId]!;
       final movieIds = listItems[listId] ?? [];
       return list.copyWith(movieIds: movieIds);
     }).toList();
+
+    // Agregar listas predeterminadas con sus items
+    final defaultLists = _getDefaultListsWithItems();
+
+    return [...defaultLists, ...customLists];
+  }
+
+  /// Obtiene las listas predeterminadas con sus items
+  List<CustomList> _getDefaultListsWithItems() {
+    final now = DateTime.now();
+
+    final defaultLists = [
+      CustomList(
+        id: 'quiero-ver',
+        name: 'Quiero Ver',
+        description: 'Películas que quiero ver próximamente',
+        emoji: '🍿',
+        movieIds: listItems['quiero-ver'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'blue',
+      ),
+      CustomList(
+        id: 'para-el-fin-de-semana',
+        name: 'Para el Fin de Semana',
+        description: 'Películas perfectas para relajarse',
+        emoji: '🛋️',
+        movieIds: listItems['para-el-fin-de-semana'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'green',
+      ),
+      CustomList(
+        id: 'noche-de-citas',
+        name: 'Noche de Citas',
+        description: 'Películas románticas para ver en pareja',
+        emoji: '💕',
+        movieIds: listItems['noche-de-citas'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'pink',
+      ),
+      CustomList(
+        id: 'con-amigos',
+        name: 'Con Amigos',
+        description: 'Películas divertidas para ver en grupo',
+        emoji: '👥',
+        movieIds: listItems['con-amigos'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'orange',
+      ),
+      CustomList(
+        id: 'clasicos-pendientes',
+        name: 'Clásicos Pendientes',
+        description: 'Películas clásicas que debo ver',
+        emoji: '🎭',
+        movieIds: listItems['clasicos-pendientes'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'purple',
+      ),
+      CustomList(
+        id: 'accion-y-aventura',
+        name: 'Acción y Aventura',
+        description: 'Para cuando quiero adrenalina',
+        emoji: '💥',
+        movieIds: listItems['accion-y-aventura'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'red',
+      ),
+      CustomList(
+        id: 'documentales',
+        name: 'Documentales',
+        description: 'Para aprender algo nuevo',
+        emoji: '📚',
+        movieIds: listItems['documentales'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'teal',
+      ),
+      CustomList(
+        id: 'cuando-llueve',
+        name: 'Cuando Llueve',
+        description: 'Películas perfectas para días lluviosos',
+        emoji: '🌧️',
+        movieIds: listItems['cuando-llueve'] ?? [],
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: true,
+        color: 'indigo',
+      ),
+    ];
+
+    return defaultLists;
   }
 }
 
@@ -102,11 +205,29 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       final listsMap = <String, CustomList>{};
       final listItemsMap = <String, List<int>>{};
 
-      // Cargar cada lista y sus items
+      // Cargar cada lista personalizada y sus items
       for (final list in customLists) {
         listsMap[list.id] = list;
         final movieIds = await _sync.getListItems(currentUser.id, list.id);
         listItemsMap[list.id] = movieIds;
+      }
+
+      // Cargar items de las listas predeterminadas desde Supabase
+      final defaultListsIds = [
+        'quiero-ver',
+        'para-el-fin-de-semana',
+        'noche-de-citas',
+        'con-amigos',
+        'clasicos-pendientes',
+        'accion-y-aventura',
+        'documentales',
+        'cuando-llueve'
+      ];
+
+      for (final listId in defaultListsIds) {
+        final movieIds = await _sync.getListItems(currentUser.id, listId);
+        listItemsMap[listId] = movieIds;
+        LoggerFactory.debug('DirectCustomLists: Cargados ${movieIds.length} items para lista predeterminada $listId');
       }
 
       state = CustomListsState(
@@ -114,9 +235,11 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
         listItems: listItemsMap,
       );
 
+      final totalLists = customLists.length + defaultListsIds.length;
       LoggerFactory.info(
-          'DirectCustomLists: Cargadas ${customLists.length} listas directas');
-      LoggerFactory.debug('DirectCustomLists: IDs: ${listsMap.keys.toList()}');
+          'DirectCustomLists: Cargadas ${customLists.length} listas personalizadas + ${defaultListsIds.length} predeterminadas = $totalLists total');
+      LoggerFactory.debug('DirectCustomLists: IDs personalizadas: ${listsMap.keys.toList()}');
+      LoggerFactory.debug('DirectCustomLists: IDs predeterminadas: $defaultListsIds');
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error cargando: $e');
       state = const CustomListsState();

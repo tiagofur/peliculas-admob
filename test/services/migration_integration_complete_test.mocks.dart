@@ -229,6 +229,59 @@ class _FakeListItem_18 extends _i1.SmartFake implements _i4.ListItem {
         );
 }
 
+class _FakeSupabaseStreamFilterBuilder_19 extends _i1.SmartFake
+    implements _i2.SupabaseStreamFilterBuilder {
+  _FakeSupabaseStreamFilterBuilder_19(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakePostgrestQueryBuilder_20<T> extends _i1.SmartFake
+    implements _i2.PostgrestQueryBuilder<T> {
+  _FakePostgrestQueryBuilder_20(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakePostgrestBuilder_21<T, S, R> extends _i1.SmartFake
+    implements _i2.PostgrestBuilder<T, S, R> {
+  _FakePostgrestBuilder_21(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeUri_22 extends _i1.SmartFake implements Uri {
+  _FakeUri_22(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
+class _FakeFuture_23<T> extends _i1.SmartFake implements _i5.Future<T> {
+  _FakeFuture_23(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [SupabaseClient].
 ///
 /// See the documentation for Mockito's code generation for more information.
@@ -1228,6 +1281,57 @@ class MockGoTrueClient extends _i1.Mock implements _i2.GoTrueClient {
       ) as _i5.Future<List<_i2.UserIdentity>>);
 
   @override
+  _i5.Future<_i2.AuthResponse> linkIdentityWithIdToken({
+    required _i2.OAuthProvider? provider,
+    required String? idToken,
+    String? accessToken,
+    String? nonce,
+    String? captchaToken,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #linkIdentityWithIdToken,
+          [],
+          {
+            #provider: provider,
+            #idToken: idToken,
+            #accessToken: accessToken,
+            #nonce: nonce,
+            #captchaToken: captchaToken,
+          },
+        ),
+        returnValue: _i5.Future<_i2.AuthResponse>.value(_FakeAuthResponse_11(
+          this,
+          Invocation.method(
+            #linkIdentityWithIdToken,
+            [],
+            {
+              #provider: provider,
+              #idToken: idToken,
+              #accessToken: accessToken,
+              #nonce: nonce,
+              #captchaToken: captchaToken,
+            },
+          ),
+        )),
+        returnValueForMissingStub:
+            _i5.Future<_i2.AuthResponse>.value(_FakeAuthResponse_11(
+          this,
+          Invocation.method(
+            #linkIdentityWithIdToken,
+            [],
+            {
+              #provider: provider,
+              #idToken: idToken,
+              #accessToken: accessToken,
+              #nonce: nonce,
+              #captchaToken: captchaToken,
+            },
+          ),
+        )),
+      ) as _i5.Future<_i2.AuthResponse>);
+
+  @override
   _i5.Future<_i2.OAuthResponse> getLinkIdentityUrl(
     _i2.OAuthProvider? provider, {
     String? redirectTo,
@@ -1920,4 +2024,437 @@ class MockCustomListsSharedPreferencesDatasource extends _i1.Mock
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
+}
+
+/// A class which mocks [SupabaseQueryBuilder].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockSupabaseQueryBuilder extends _i1.Mock
+    implements _i2.SupabaseQueryBuilder {
+  @override
+  _i2.SupabaseStreamFilterBuilder stream({required List<String>? primaryKey}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #stream,
+          [],
+          {#primaryKey: primaryKey},
+        ),
+        returnValue: _FakeSupabaseStreamFilterBuilder_19(
+          this,
+          Invocation.method(
+            #stream,
+            [],
+            {#primaryKey: primaryKey},
+          ),
+        ),
+        returnValueForMissingStub: _FakeSupabaseStreamFilterBuilder_19(
+          this,
+          Invocation.method(
+            #stream,
+            [],
+            {#primaryKey: primaryKey},
+          ),
+        ),
+      ) as _i2.SupabaseStreamFilterBuilder);
+
+  @override
+  _i2.PostgrestFilterBuilder<List<Map<String, dynamic>>> select(
+          [String? columns = r'*']) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #select,
+          [columns],
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<List<Map<String, dynamic>>>(
+          this,
+          Invocation.method(
+            #select,
+            [columns],
+          ),
+        ),
+        returnValueForMissingStub:
+            _FakePostgrestFilterBuilder_7<List<Map<String, dynamic>>>(
+          this,
+          Invocation.method(
+            #select,
+            [columns],
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<List<Map<String, dynamic>>>);
+
+  @override
+  _i2.PostgrestFilterBuilder<dynamic> insert(
+    Object? values, {
+    bool? defaultToNull = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #insert,
+          [values],
+          {#defaultToNull: defaultToNull},
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #insert,
+            [values],
+            {#defaultToNull: defaultToNull},
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #insert,
+            [values],
+            {#defaultToNull: defaultToNull},
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<dynamic>);
+
+  @override
+  _i2.PostgrestFilterBuilder<dynamic> upsert(
+    Object? values, {
+    String? onConflict,
+    bool? ignoreDuplicates = false,
+    bool? defaultToNull = true,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #upsert,
+          [values],
+          {
+            #onConflict: onConflict,
+            #ignoreDuplicates: ignoreDuplicates,
+            #defaultToNull: defaultToNull,
+          },
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #upsert,
+            [values],
+            {
+              #onConflict: onConflict,
+              #ignoreDuplicates: ignoreDuplicates,
+              #defaultToNull: defaultToNull,
+            },
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #upsert,
+            [values],
+            {
+              #onConflict: onConflict,
+              #ignoreDuplicates: ignoreDuplicates,
+              #defaultToNull: defaultToNull,
+            },
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<dynamic>);
+
+  @override
+  _i2.PostgrestFilterBuilder<dynamic> update(Map<dynamic, dynamic>? values) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #update,
+          [values],
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #update,
+            [values],
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #update,
+            [values],
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<dynamic>);
+
+  @override
+  _i2.PostgrestFilterBuilder<dynamic> delete() => (super.noSuchMethod(
+        Invocation.method(
+          #delete,
+          [],
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #delete,
+            [],
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestFilterBuilder_7<dynamic>(
+          this,
+          Invocation.method(
+            #delete,
+            [],
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<dynamic>);
+
+  @override
+  _i2.PostgrestFilterBuilder<int> count(
+          [_i2.CountOption? option = _i2.CountOption.exact]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #count,
+          [option],
+        ),
+        returnValue: _FakePostgrestFilterBuilder_7<int>(
+          this,
+          Invocation.method(
+            #count,
+            [option],
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestFilterBuilder_7<int>(
+          this,
+          Invocation.method(
+            #count,
+            [option],
+          ),
+        ),
+      ) as _i2.PostgrestFilterBuilder<int>);
+
+  @override
+  _i2.PostgrestQueryBuilder<dynamic> setHeader(
+    String? key,
+    String? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setHeader,
+          [
+            key,
+            value,
+          ],
+        ),
+        returnValue: _FakePostgrestQueryBuilder_20<dynamic>(
+          this,
+          Invocation.method(
+            #setHeader,
+            [
+              key,
+              value,
+            ],
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestQueryBuilder_20<dynamic>(
+          this,
+          Invocation.method(
+            #setHeader,
+            [
+              key,
+              value,
+            ],
+          ),
+        ),
+      ) as _i2.PostgrestQueryBuilder<dynamic>);
+
+  @override
+  _i2.PostgrestBuilder<U, U, dynamic> withConverter<U>(
+          _i2.PostgrestConverter<U, dynamic>? converter) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #withConverter,
+          [converter],
+        ),
+        returnValue: _FakePostgrestBuilder_21<U, U, dynamic>(
+          this,
+          Invocation.method(
+            #withConverter,
+            [converter],
+          ),
+        ),
+        returnValueForMissingStub: _FakePostgrestBuilder_21<U, U, dynamic>(
+          this,
+          Invocation.method(
+            #withConverter,
+            [converter],
+          ),
+        ),
+      ) as _i2.PostgrestBuilder<U, U, dynamic>);
+
+  @override
+  Uri appendSearchParams(
+    String? key,
+    String? value, [
+    Uri? url,
+  ]) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #appendSearchParams,
+          [
+            key,
+            value,
+            url,
+          ],
+        ),
+        returnValue: _FakeUri_22(
+          this,
+          Invocation.method(
+            #appendSearchParams,
+            [
+              key,
+              value,
+              url,
+            ],
+          ),
+        ),
+        returnValueForMissingStub: _FakeUri_22(
+          this,
+          Invocation.method(
+            #appendSearchParams,
+            [
+              key,
+              value,
+              url,
+            ],
+          ),
+        ),
+      ) as Uri);
+
+  @override
+  Uri overrideSearchParams(
+    String? key,
+    String? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #overrideSearchParams,
+          [
+            key,
+            value,
+          ],
+        ),
+        returnValue: _FakeUri_22(
+          this,
+          Invocation.method(
+            #overrideSearchParams,
+            [
+              key,
+              value,
+            ],
+          ),
+        ),
+        returnValueForMissingStub: _FakeUri_22(
+          this,
+          Invocation.method(
+            #overrideSearchParams,
+            [
+              key,
+              value,
+            ],
+          ),
+        ),
+      ) as Uri);
+
+  @override
+  _i5.Stream<dynamic> asStream() => (super.noSuchMethod(
+        Invocation.method(
+          #asStream,
+          [],
+        ),
+        returnValue: _i5.Stream<dynamic>.empty(),
+        returnValueForMissingStub: _i5.Stream<dynamic>.empty(),
+      ) as _i5.Stream<dynamic>);
+
+  @override
+  _i5.Future<dynamic> catchError(
+    Function? onError, {
+    bool Function(Object)? test,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #catchError,
+          [onError],
+          {#test: test},
+        ),
+        returnValue: _i5.Future<dynamic>.value(),
+        returnValueForMissingStub: _i5.Future<dynamic>.value(),
+      ) as _i5.Future<dynamic>);
+
+  @override
+  _i5.Future<U> then<U>(
+    _i5.FutureOr<U> Function(dynamic)? onValue, {
+    Function? onError,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #then,
+          [onValue],
+          {#onError: onError},
+        ),
+        returnValue: _i6.ifNotNull(
+              _i6.dummyValueOrNull<U>(
+                this,
+                Invocation.method(
+                  #then,
+                  [onValue],
+                  {#onError: onError},
+                ),
+              ),
+              (U v) => _i5.Future<U>.value(v),
+            ) ??
+            _FakeFuture_23<U>(
+              this,
+              Invocation.method(
+                #then,
+                [onValue],
+                {#onError: onError},
+              ),
+            ),
+        returnValueForMissingStub: _i6.ifNotNull(
+              _i6.dummyValueOrNull<U>(
+                this,
+                Invocation.method(
+                  #then,
+                  [onValue],
+                  {#onError: onError},
+                ),
+              ),
+              (U v) => _i5.Future<U>.value(v),
+            ) ??
+            _FakeFuture_23<U>(
+              this,
+              Invocation.method(
+                #then,
+                [onValue],
+                {#onError: onError},
+              ),
+            ),
+      ) as _i5.Future<U>);
+
+  @override
+  _i5.Future<dynamic> timeout(
+    Duration? timeLimit, {
+    _i5.FutureOr<dynamic> Function()? onTimeout,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #timeout,
+          [timeLimit],
+          {#onTimeout: onTimeout},
+        ),
+        returnValue: _i5.Future<dynamic>.value(),
+        returnValueForMissingStub: _i5.Future<dynamic>.value(),
+      ) as _i5.Future<dynamic>);
+
+  @override
+  _i5.Future<dynamic> whenComplete(_i5.FutureOr<void> Function()? action) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #whenComplete,
+          [action],
+        ),
+        returnValue: _i5.Future<dynamic>.value(),
+        returnValueForMissingStub: _i5.Future<dynamic>.value(),
+      ) as _i5.Future<dynamic>);
 }

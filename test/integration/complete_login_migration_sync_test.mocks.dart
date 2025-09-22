@@ -1720,6 +1720,57 @@ class MockGoTrueClient extends _i1.Mock implements _i5.GoTrueClient {
       ) as _i7.Future<List<_i5.UserIdentity>>);
 
   @override
+  _i7.Future<_i5.AuthResponse> linkIdentityWithIdToken({
+    required _i5.OAuthProvider? provider,
+    required String? idToken,
+    String? accessToken,
+    String? nonce,
+    String? captchaToken,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #linkIdentityWithIdToken,
+          [],
+          {
+            #provider: provider,
+            #idToken: idToken,
+            #accessToken: accessToken,
+            #nonce: nonce,
+            #captchaToken: captchaToken,
+          },
+        ),
+        returnValue: _i7.Future<_i5.AuthResponse>.value(_FakeAuthResponse_15(
+          this,
+          Invocation.method(
+            #linkIdentityWithIdToken,
+            [],
+            {
+              #provider: provider,
+              #idToken: idToken,
+              #accessToken: accessToken,
+              #nonce: nonce,
+              #captchaToken: captchaToken,
+            },
+          ),
+        )),
+        returnValueForMissingStub:
+            _i7.Future<_i5.AuthResponse>.value(_FakeAuthResponse_15(
+          this,
+          Invocation.method(
+            #linkIdentityWithIdToken,
+            [],
+            {
+              #provider: provider,
+              #idToken: idToken,
+              #accessToken: accessToken,
+              #nonce: nonce,
+              #captchaToken: captchaToken,
+            },
+          ),
+        )),
+      ) as _i7.Future<_i5.AuthResponse>);
+
+  @override
   _i7.Future<_i5.OAuthResponse> getLinkIdentityUrl(
     _i5.OAuthProvider? provider, {
     String? redirectTo,

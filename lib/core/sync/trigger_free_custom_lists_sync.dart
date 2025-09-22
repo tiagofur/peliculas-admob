@@ -46,7 +46,7 @@ class TriggerFreeCustomListsSync {
     try {
       LoggerFactory.info('📥 [TriggerFree] Obteniendo items de lista: $listId');
 
-      // 🔧 FIXED: Agregar filtro por list_id que faltaba
+      // 🔧 FIXED: Agregar filtro por list_id y excluir elementos eliminados
       final response = await _supabase
           .from('user_list_items')
           .select('movie_id')
@@ -168,11 +168,11 @@ class TriggerFreeCustomListsSync {
 
       final insertData = {
         'list_id': listId,
-        'user_id': userId,
         'movie_id': movieId,
         'movie_title': movieTitle ?? 'Movie $movieId',
+        'position': 0, // Default position
         'added_at': now,
-        'last_modified_at': now,
+        'user_id': userId, // CRITICAL: Include user_id for RLS policies
         'is_deleted': false,
         'sync_version': 1,
       };
@@ -186,8 +186,8 @@ class TriggerFreeCustomListsSync {
           .from('user_list_items')
           .select('id')
           .eq('list_id', listId)
-          .eq('user_id', userId)
           .eq('movie_id', movieId)
+          .eq('user_id', userId)
           .eq('is_deleted', false);
 
       LoggerFactory.info(
@@ -237,13 +237,18 @@ class TriggerFreeCustomListsSync {
       LoggerFactory.info(
           '🗑️ [TriggerFree] Removiendo película $movieId de lista $listId');
 
-      // 🔧 FIXED: Filtrar por list_id Y movie_id específicos
+      // 🔧 FIXED: Usar soft delete para mantener consistencia con la arquitectura de sync
       await _supabase
           .from('user_list_items')
-          .delete()
+          .update({
+            'is_deleted': true,
+            'last_modified_at': DateTime.now().toUtc().toIso8601String(),
+            'sync_version': DateTime.now().millisecondsSinceEpoch,
+          })
           .eq('list_id', listId)
           .eq('movie_id', movieId)
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('is_deleted', false);
 
       LoggerFactory.info('✅ [TriggerFree] Película removida de lista');
     } catch (e) {

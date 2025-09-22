@@ -718,6 +718,31 @@ class _TechnicalDetails extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          // Primera fila: Runtime y Director
+          Row(
+            children: [
+              if (movie.runtime != null && (movie.runtime ?? 0) > 0)
+                Expanded(
+                  child: _DetailItem(
+                    label: 'Duración',
+                    value: _formatRuntime(movie.runtime!),
+                    icon: Icons.access_time,
+                  ),
+                ),
+              if (_getDirector(movie) != null)
+                Expanded(
+                  child: _DetailItem(
+                    label: 'Director',
+                    value: _getDirector(movie)!,
+                    icon: Icons.person,
+                  ),
+                ),
+            ],
+          ),
+          if ((movie.runtime != null && (movie.runtime ?? 0) > 0) ||
+              _getDirector(movie) != null)
+            const SizedBox(height: 8),
+          // Segunda fila: Presupuesto e Ingresos (si están disponibles)
           if (movie.budget != null && (movie.budget ?? 0) > 0)
             Row(
               children: [
@@ -742,6 +767,7 @@ class _TechnicalDetails extends StatelessWidget {
             ),
           if (movie.budget != null && (movie.budget ?? 0) > 0)
             const SizedBox(height: 8),
+          // Tercera fila: Popularidad e IMDb
           Row(
             children: [
               Expanded(
@@ -1123,5 +1149,45 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Formatea la duración en minutos a formato "Xh Ym"
+String _formatRuntime(int minutes) {
+  final hours = minutes ~/ 60;
+  final remainingMinutes = minutes % 60;
+
+  if (hours > 0 && remainingMinutes > 0) {
+    return '${hours}h ${remainingMinutes}m';
+  } else if (hours > 0) {
+    return '${hours}h';
+  } else {
+    return '${remainingMinutes}m';
+  }
+}
+
+/// Obtiene el director principal de la película desde los créditos
+String? _getDirector(Movie movie) {
+  try {
+    if (movie.credits == null) return null;
+
+    final crew = movie.credits!['crew'];
+    if (crew == null || crew is! List) return null;
+
+    final crewList = crew;
+    if (crewList.isEmpty) return null;
+
+    final director = crewList.firstWhere(
+      (person) => person is Map && person['job'] == 'Director',
+      orElse: () => null,
+    );
+
+    if (director == null || director is! Map) return null;
+
+    final name = director['name'];
+    return name is String ? name : null;
+  } catch (e) {
+    LoggerFactory.debug('Error extracting director: $e');
+    return null;
   }
 }

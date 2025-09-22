@@ -44,8 +44,7 @@ class Movie {
       id: json['id'] ?? 0,
       adult: json['adult'] ?? false,
       backdropPath: json['backdrop_path'] ?? '',
-      genreIds:
-          json['genre_ids'] != null ? List<String>.from(json['genre_ids']) : [],
+      genreIds: _parseGenreIds(json['genre_ids']),
       originalLanguage: json['original_language'] ?? '',
       originalTitle: json['original_title'] ?? '',
       overview: json['overview'] ?? '',
@@ -244,5 +243,54 @@ class Movie {
       'spoken_languages': spokenLanguages,
       'belongs_to_collection': belongsToCollection,
     };
+  }
+
+  // Mapeo de IDs de géneros TMDB a nombres
+  static const Map<int, String> _genreMap = {
+    28: 'Acción',
+    12: 'Aventura',
+    16: 'Animación',
+    35: 'Comedia',
+    80: 'Crimen',
+    99: 'Documental',
+    18: 'Drama',
+    10751: 'Familia',
+    14: 'Fantasía',
+    36: 'Historia',
+    27: 'Terror',
+    10402: 'Música',
+    9648: 'Misterio',
+    10749: 'Romance',
+    878: 'Ciencia Ficción',
+    10770: 'Película de TV',
+    53: 'Thriller',
+    10752: 'Guerra',
+    37: 'Western'
+  };
+
+  /// Convierte IDs de géneros a nombres de géneros
+  static List<String> _parseGenreIds(dynamic genreIds) {
+    try {
+      if (genreIds == null) return [];
+
+      // Si ya son strings (nombres de géneros), los devolvemos tal como están
+      if (genreIds is List<String>) {
+        return List<String>.from(genreIds);
+      }
+
+      // Si son enteros (IDs), los convertimos a nombres
+      if (genreIds is List) {
+        return genreIds
+            .whereType<int>()
+            .map((id) => _genreMap[id] ?? 'Desconocido')
+            .where((genre) => genre != 'Desconocido')
+            .toList();
+      }
+
+      return [];
+    } catch (e) {
+      // En caso de error, devolver lista vacía para evitar crashes
+      return [];
+    }
   }
 }

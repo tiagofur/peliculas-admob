@@ -10,7 +10,14 @@
       "Bash(grep:*)",
       "WebFetch(domain:fyzujpifkzftweynrudh.supabase.co)",
       "Bash(dart run:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(supabase status:*)",
+      "Bash(flutter test:*)",
+      "Bash(flutter packages pub run build_runner build:*)",
+      "Bash(flutter logs:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter clean:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

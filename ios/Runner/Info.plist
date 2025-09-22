@@ -78,5 +78,38 @@
 		<array>
 			<string>applinks:peliculas.creapolis.dev</string>
 		</array>
+		
+		<!-- Camera Usage Description -->
+		<key>NSCameraUsageDescription</key>
+		<string>This app needs camera access to take profile pictures</string>
+		
+		<!-- Photo Library Usage Description -->
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>This app needs photo library access to select profile pictures</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>This app needs permission to save movie posters to your photo library</string>
+		
+		<!-- Network Security -->
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
+		
+		<!-- Background Modes for Notifications -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		
+		<!-- SKAdNetwork for AdMob -->
+		<key>SKAdNetworkItems</key>
+		<array>
+			<dict>
+				<key>SKAdNetworkIdentifier</key>
+				<string>cstr6suwn9.skadnetwork</string>
+			</dict>
+		</array>
 	</dict>
 </plist>
