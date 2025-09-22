@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../config/theme/app_theme.dart' as app_theme;
-import '../../generated/app_localizations.dart';
+import '../../l10n/app_localizations.dart';
 import '../providers/locale/locale_provider.dart';
 import '../providers/theme/theme_provider.dart';
 
@@ -121,6 +122,46 @@ class SettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 16),
 
+          // Sección de Notificaciones
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.notifications,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Notificaciones',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: const Icon(Icons.access_time),
+                    title: const Text('Permisos de Recordatorios'),
+                    subtitle: const Text(
+                        'Configura permisos para alarmas y recordatorios'),
+                    trailing: const Icon(Icons.arrow_forward_ios),
+                    onTap: () {
+                      context.push('/settings/notifications-permissions');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
           // Información adicional
           Card(
             child: Padding(
@@ -219,6 +260,11 @@ class SettingsScreen extends ConsumerWidget {
           RadioListTile<String>(
             value: 'en',
             title: Text(l10n.english),
+            secondary: const Icon(Icons.language),
+          ),
+          RadioListTile<String>(
+            value: 'pt',
+            title: Text(l10n.portuguese),
             secondary: const Icon(Icons.language),
           ),
         ],

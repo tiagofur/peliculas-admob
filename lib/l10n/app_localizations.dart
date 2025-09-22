@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
+import 'app_localizations_pt.dart';
 
 // ignore_for_file: type=lint
 
@@ -95,7 +96,8 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('es')
+    Locale('es'),
+    Locale('pt')
   ];
 
   /// The application title
@@ -200,6 +202,12 @@ abstract class AppLocalizations {
   /// **'English'**
   String get english;
 
+  /// Portuguese language option
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese'**
+  String get portuguese;
+
   /// Description for language selection
   ///
   /// In en, this message translates to:
@@ -265,6 +273,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start exploring'**
   String get startExploring;
+
+  /// Title for empty watched movies list
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t watched any movies'**
+  String get noWatchedMovies;
+
+  /// Message for empty watched movies list
+  ///
+  /// In en, this message translates to:
+  /// **'Movies you mark as watched will appear here.'**
+  String get noWatchedMoviesMessage;
+
+  /// Title for empty watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'Your watchlist is empty'**
+  String get emptyWatchlist;
+
+  /// Message for empty watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'Movies you add to your watchlist will appear here.'**
+  String get emptyWatchlistMessage;
 
   /// Login screen title
   ///
@@ -517,6 +549,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reason'**
   String get reason;
+
+  /// About screen title
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// Version label
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get version;
+
+  /// Developed by label
+  ///
+  /// In en, this message translates to:
+  /// **'Developed by'**
+  String get developedBy;
+
+  /// Privacy policy label
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// Help and support screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Help and Support'**
+  String get helpAndSupport;
+
+  /// FAQ section title
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently Asked Questions (FAQ)'**
+  String get faq;
+
+  /// FAQ question about adding movies to watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'How can I add a movie to my watchlist?'**
+  String get howToAddMovieToWatchlist;
+
+  /// FAQ answer about adding movies to watchlist
+  ///
+  /// In en, this message translates to:
+  /// **'To add a movie, simply go to the movie details and press the \'Add to Watchlist\' icon.'**
+  String get howToAddMovieToWatchlistAnswer;
+
+  /// FAQ question about synchronization
+  ///
+  /// In en, this message translates to:
+  /// **'How does synchronization work?'**
+  String get howDoesSyncWork;
+
+  /// FAQ answer about synchronization
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is automatically synchronized across all your devices when you have an internet connection. If you are offline, the changes will be saved locally and will be synchronized the next time you connect.'**
+  String get howDoesSyncWorkAnswer;
+
+  /// FAQ question about contacting support
+  ///
+  /// In en, this message translates to:
+  /// **'How do I contact support?'**
+  String get howToContactSupport;
+
+  /// FAQ answer about contacting support
+  ///
+  /// In en, this message translates to:
+  /// **'You can contact us by email at: support@moviesapp.com'**
+  String get howToContactSupportAnswer;
+
+  /// Easy difficulty label
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get easy;
+
+  /// Medium difficulty label
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get medium;
+
+  /// Hard difficulty label
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get hard;
+
+  /// Expert difficulty label
+  ///
+  /// In en, this message translates to:
+  /// **'Expert'**
+  String get expert;
+
+  /// Progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progress;
+
+  /// No description provided for @progressPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}% complete'**
+  String progressPercentage(String value);
+
+  /// No description provided for @points.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} points'**
+  String points(String value);
+
+  /// Completed status label
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get completed;
+
+  /// Expired status label
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get expired;
+
+  /// Message when no challenges are available
+  ///
+  /// In en, this message translates to:
+  /// **'No challenges available'**
+  String get noChallengesAvailable;
+
+  /// Challenge statistics section title
+  ///
+  /// In en, this message translates to:
+  /// **'Your Challenge Stats'**
+  String get yourChallengeStats;
+
+  /// Active status label
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get active;
+
+  /// Movies watched statistic label
+  ///
+  /// In en, this message translates to:
+  /// **'Movies Watched'**
+  String get moviesWatched;
+
+  /// Reviews written statistic label
+  ///
+  /// In en, this message translates to:
+  /// **'Reviews Written'**
+  String get reviewsWritten;
+
+  /// Movies shared statistic label
+  ///
+  /// In en, this message translates to:
+  /// **'Movies Shared'**
+  String get moviesShared;
+
+  /// Genres explored statistic label
+  ///
+  /// In en, this message translates to:
+  /// **'Genres Explored'**
+  String get genresExplored;
+
+  /// No description provided for @engagementScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Engagement Score: {value}%'**
+  String engagementScore(String value);
+
+  /// Time indicator for just now
+  ///
+  /// In en, this message translates to:
+  /// **'Just now'**
+  String get justNow;
+
+  /// No description provided for @minutesAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}m ago'**
+  String minutesAgo(String value);
+
+  /// No description provided for @hoursAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}h ago'**
+  String hoursAgo(String value);
+
+  /// No description provided for @daysAgo.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}d ago'**
+  String daysAgo(String value);
+
+  /// Number of badges earned
+  ///
+  /// In en, this message translates to:
+  /// **'{count,plural, =1{1 badge}other{{count} badges}}'**
+  String badges(int count);
+
+  /// No description provided for @daysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count,plural, =1{1 day left}other{{count} days left}}'**
+  String daysLeft(int count);
+
+  /// No description provided for @hoursLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count,plural, =1{1 hour left}other{{count} hours left}}'**
+  String hoursLeft(int count);
+
+  /// No description provided for @minutesLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{count,plural, =1{1 minute left}other{{count} minutes left}}'**
+  String minutesLeft(int count);
 }
 
 class _AppLocalizationsDelegate
@@ -530,7 +784,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'es'].contains(locale.languageCode);
+      <String>['en', 'es', 'pt'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -543,6 +797,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
+    case 'pt':
+      return AppLocalizationsPt();
   }
 
   throw FlutterError(

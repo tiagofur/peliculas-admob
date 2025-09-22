@@ -113,7 +113,7 @@ class PostLoginInitializationService {
     Timer(const Duration(milliseconds: 400), () {
       try {
         // Solo acceder al provider para que se inicialice y configure los listeners
-        ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
+        ref.read(directWatchlistMoviesProvider.notifier);
         LoggerFactory.info(
             '✅ DirectWatchlist listeners habilitados para sync tiempo real');
       } catch (e) {

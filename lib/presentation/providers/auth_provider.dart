@@ -18,8 +18,6 @@ import '../../services/id_mapping_service.dart';
 import '../../services/lists_migration_service.dart';
 import '../../services/migration_rollback_service.dart';
 import './hybrid_repositories_provider.dart';
-import './storage/direct_watched_provider.dart';
-import './storage/direct_watchlist_provider.dart';
 
 // Enum para definir el modo de la aplicación
 enum AppMode {
@@ -375,7 +373,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
         _ref.read(hybridCustomListsRepositoryProvider).forceSync();
 
         // Habilitar los providers directos
-        _ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
+        // Los providers directos ahora se inicializan automáticamente
 
         logger.info('Sincronización post-autenticación completada');
       } catch (e) {

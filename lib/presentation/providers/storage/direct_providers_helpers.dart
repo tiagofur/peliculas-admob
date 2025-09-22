@@ -3,16 +3,17 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
+import 'direct_custom_lists_provider.dart';
 import 'direct_favorites_provider.dart';
+import 'direct_ratings_provider.dart';
 import 'direct_watched_provider.dart';
 import 'direct_watchlist_provider.dart';
-import 'direct_custom_lists_provider.dart';
-import 'direct_ratings_provider.dart';
 
 /// 🔧 Helper providers para mejorar la sincronización entre los direct providers
 
 /// Provider que maneja la inicialización de todos los direct providers
-final directProvidersInitializationProvider = Provider<DirectProvidersInitialization>((ref) {
+final directProvidersInitializationProvider =
+    Provider<DirectProvidersInitialization>((ref) {
   return DirectProvidersInitialization(ref);
 });
 
@@ -31,7 +32,8 @@ class DirectProvidersInitialization {
         return;
       }
 
-      LoggerFactory.info('🚀 DirectProviders: Inicializando todos los providers...');
+      LoggerFactory.info(
+          '🚀 DirectProviders: Inicializando todos los providers...');
 
       // Ejecutar todas las inicializaciones en paralelo
       await Future.wait([
@@ -42,7 +44,8 @@ class DirectProvidersInitialization {
         _initializeRatingsProvider(),
       ]);
 
-      LoggerFactory.info('✅ DirectProviders: Todos los providers inicializados correctamente');
+      LoggerFactory.info(
+          '✅ DirectProviders: Todos los providers inicializados correctamente');
     } catch (e, stackTrace) {
       LoggerFactory.error('❌ DirectProviders: Error inicializando: $e');
       LoggerFactory.debug('❌ Stack trace: $stackTrace');
@@ -75,9 +78,8 @@ class DirectProvidersInitialization {
   /// Inicializa el provider de watchlist
   Future<void> _initializeWatchlistProvider() async {
     try {
-      final watchlistNotifier = ref.read(directWatchlistMoviesProvider.notifier);
-      watchlistNotifier.enableAfterLogin();
-      LoggerFactory.debug('✅ Watchlist provider inicializado');
+      // La inicialización ahora es automática en el constructor del provider
+      LoggerFactory.debug('✅ Watchlist provider inicializado automáticamente');
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando watchlist provider: $e');
       rethrow;
@@ -100,31 +102,72 @@ class DirectProvidersInitialization {
   Future<void> _initializeRatingsProvider() async {
     try {
       // Los ratings no necesitan inicialización especial ya que se auto-inicializan
-      // Pero podemos hacer una carga inicial
-      final ratingsNotifier = ref.read(directRatingsProvider.notifier);
-      await ratingsNotifier.refresh();
-      LoggerFactory.debug('✅ Ratings provider inicializado');
+      // Pero podemos hacer una carga inicial de forma segura
+      try {
+        final ratingsNotifier = ref.read(directRatingsProvider.notifier);
+        await ratingsNotifier.refresh();
+        LoggerFactory.debug('✅ Ratings provider inicializado');
+      } catch (providerError) {
+        // Si el provider ya fue disposed o hay un error, no es crítico
+        LoggerFactory.debug(
+            'ℹ️ Ratings provider no pudo inicializarse (puede estar disposed): $providerError');
+      }
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando ratings provider: $e');
-      rethrow;
+      // No hacer rethrow aquí ya que ratings no es crítico para la app
     }
   }
 
   /// Refresca todos los providers
   Future<void> refreshAllProviders() async {
     try {
-      LoggerFactory.info('🔄 DirectProviders: Refrescando todos los providers...');
+      LoggerFactory.info(
+          '🔄 DirectProviders: Refrescando todos los providers...');
 
-      // Ejecutar refreshes que retornan Future<void>
-      await Future.wait<void>([
-        ref.read(directFavoriteMoviesProvider.notifier).refresh(),
-        ref.read(directWatchedMoviesProvider.notifier).refresh(),
-        ref.read(directCustomListsProvider.notifier).refresh(),
-        ref.read(directRatingsProvider.notifier).refresh(),
-      ]);
-      
-      // Enable watchlist provider after login
-      ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
+      // Crear una lista de futures que manejan errores individualmente
+      final futures = <Future<void>>[];
+
+      // Agregar refreshes con manejo de errores individual
+      try {
+        futures.add(ref.read(directFavoriteMoviesProvider.notifier).refresh());
+      } catch (e) {
+        LoggerFactory.debug(
+            'ℹ️ DirectFavorites provider no pudo refrescarse: $e');
+      }
+
+      try {
+        futures.add(ref.read(directWatchedMoviesProvider.notifier).refresh());
+      } catch (e) {
+        LoggerFactory.debug(
+            'ℹ️ DirectWatched provider no pudo refrescarse: $e');
+      }
+
+      try {
+        futures.add(ref.read(directCustomListsProvider.notifier).refresh());
+      } catch (e) {
+        LoggerFactory.debug(
+            'ℹ️ DirectCustomLists provider no pudo refrescarse: $e');
+      }
+
+      try {
+        futures.add(ref.read(directRatingsProvider.notifier).refresh());
+      } catch (e) {
+        LoggerFactory.debug(
+            'ℹ️ DirectRatings provider no pudo refrescarse: $e');
+      }
+
+      // Esperar todos los futures disponibles
+      if (futures.isNotEmpty) {
+        await Future.wait(futures);
+      }
+
+      // Enable watchlist provider after login con manejo de errores
+      try {
+        ref.read(directWatchlistMoviesProvider.notifier).refresh();
+      } catch (e) {
+        LoggerFactory.debug(
+            'ℹ️ DirectWatchlist provider no pudo refrescarse: $e');
+      }
 
       LoggerFactory.info('✅ DirectProviders: Refresh completado');
     } catch (e) {
@@ -135,11 +178,12 @@ class DirectProvidersInitialization {
   /// Limpia el estado de todos los providers (para logout)
   void clearAllProviders() {
     try {
-      LoggerFactory.info('🧹 DirectProviders: Limpiando estado de todos los providers...');
+      LoggerFactory.info(
+          '🧹 DirectProviders: Limpiando estado de todos los providers...');
 
       // Los providers se resetearán automáticamente cuando no haya usuario
       // No necesitamos acceder directamente al estado protegido
-      
+
       LoggerFactory.info('✅ DirectProviders: Estado limpiado');
     } catch (e) {
       LoggerFactory.error('❌ DirectProviders: Error limpiando estado: $e');
@@ -152,12 +196,14 @@ final directProvidersInitializedProvider = StateProvider<bool>((ref) => false);
 
 /// Provider que observa cambios de autenticación y maneja la inicialización
 final authStateDirectProvidersProvider = StreamProvider<bool>((ref) {
-  return Supabase.instance.client.auth.onAuthStateChange.asyncMap((authState) async {
+  return Supabase.instance.client.auth.onAuthStateChange
+      .asyncMap((authState) async {
     final user = authState.session?.user;
 
     if (user != null) {
       // Usuario autenticado - inicializar providers
-      LoggerFactory.info('🔐 AuthState: Usuario autenticado, inicializando providers...');
+      LoggerFactory.info(
+          '🔐 AuthState: Usuario autenticado, inicializando providers...');
 
       try {
         final initialization = ref.read(directProvidersInitializationProvider);
@@ -170,7 +216,8 @@ final authStateDirectProvidersProvider = StreamProvider<bool>((ref) {
       }
     } else {
       // Usuario no autenticado - limpiar providers
-      LoggerFactory.info('🚪 AuthState: Usuario desautenticado, limpiando providers...');
+      LoggerFactory.info(
+          '🚪 AuthState: Usuario desautenticado, limpiando providers...');
 
       final initialization = ref.read(directProvidersInitializationProvider);
       initialization.clearAllProviders();
@@ -181,11 +228,22 @@ final authStateDirectProvidersProvider = StreamProvider<bool>((ref) {
 });
 
 /// Provider combinado para verificar si una película está en alguna lista
-final movieInAnyListProvider = Provider.family<MovieListStatus, int>((ref, movieId) {
+final movieInAnyListProvider =
+    Provider.family<MovieListStatus, int>((ref, movieId) {
   final isFavorite = ref.watch(directIsFavoriteProvider(movieId));
   final isWatched = ref.watch(directIsWatchedProvider(movieId));
-  final isInWatchlist = ref.watch(directWatchlistMoviesProvider.select((state) => state.containsKey(movieId)));
-  final isRated = ref.watch(directRatingsProvider.select((state) => state.isMovieRated(movieId)));
+  final isInWatchlist = ref.watch(directWatchlistMoviesProvider
+      .select((state) => state.containsKey(movieId)));
+
+  // Manejo seguro del provider de ratings para evitar errores de disposed
+  bool isRated = false;
+  try {
+    isRated = ref.watch(
+        directRatingsProvider.select((state) => state.isMovieRated(movieId)));
+  } catch (e) {
+    LoggerFactory.debug(
+        '📝 MovieInAnyList: DirectRatingsProvider disposed, usando valor por defecto para isRated');
+  }
 
   return MovieListStatus(
     isFavorite: isFavorite,

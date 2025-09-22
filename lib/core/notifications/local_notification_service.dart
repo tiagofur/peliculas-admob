@@ -29,6 +29,10 @@ class LocalNotificationService {
 
   bool get isInitialized => _isInitialized;
 
+  /// Getter público para acceder al plugin (para verificación de permisos)
+  FlutterLocalNotificationsPlugin? get plugin =>
+      _flutterLocalNotificationsPlugin;
+
   /// Establece la clave de navegación global para permitir navegación desde notificaciones
   void setNavigatorKey(GlobalKey<NavigatorState> navigatorKey) {
     _globalNavigatorKey = navigatorKey;
@@ -103,14 +107,52 @@ class LocalNotificationService {
                   AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
+        // Solo pedir permisos básicos de notificaciones, NO alarmas exactas
         await androidImplementation.requestNotificationsPermission();
-        await androidImplementation.requestExactAlarmsPermission();
+
+        // NO pedir automáticamente permisos de alarmas exactas
+        // await androidImplementation.requestExactAlarmsPermission();
+
+        if (kDebugMode) {
+          LoggerFactory.info(
+              '✅ Basic notification permissions requested (alarms permission skipped)');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error('Error requesting Android permissions: $e');
       }
     }
+  }
+
+  /// Solicita permisos de alarmas exactas solo cuando se necesiten
+  Future<bool> requestExactAlarmsPermissionIfNeeded() async {
+    if (!Platform.isAndroid) return true;
+
+    try {
+      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+          _flutterLocalNotificationsPlugin
+              ?.resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        // Verificar si ya tiene el permiso
+        final hasPermission =
+            await androidImplementation.canScheduleExactNotifications();
+        if (hasPermission == true) {
+          return true;
+        }
+
+        // Solo pedir si realmente se necesita
+        await androidImplementation.requestExactAlarmsPermission();
+        return true;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        LoggerFactory.error('Error requesting exact alarms permission: $e');
+      }
+    }
+    return false;
   }
 
   /// Maneja el tap en una notificación local

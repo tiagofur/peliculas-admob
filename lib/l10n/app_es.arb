@@ -17,6 +17,13 @@
   "selectLanguage": "Seleccionar idioma",
   "spanish": "Español",
   "english": "Inglés",
+  "@english": {
+    "description": "Opción de idioma inglés"
+  },
+  "portuguese": "Portugués",
+  "@portuguese": {
+    "description": "Opción de idioma portugués"
+  },
   "languageDescription": "Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.",
   "home": "Inicio",
   "favorites": "Favoritos",
@@ -28,6 +35,25 @@
   "notWatchedYet": "¡Aún no has visto nada!",
   "noWatchedMessage": "No tienes películas marcadas como vistas",
   "startExploring": "Empieza a explorar",
+  "@startExploring": {
+    "description": "Texto del botón para empezar a explorar películas"
+  },
+  "noWatchedMovies": "No has visto películas",
+  "@noWatchedMovies": {
+    "description": "Título para la lista de películas vistas vacía"
+  },
+  "noWatchedMoviesMessage": "Las películas que marques como vistas aparecerán aquí.",
+  "@noWatchedMoviesMessage": {
+    "description": "Mensaje para la lista de películas vistas vacía"
+  },
+  "emptyWatchlist": "Tu watchlist está vacía",
+  "@emptyWatchlist": {
+    "description": "Título para la watchlist vacía"
+  },
+  "emptyWatchlistMessage": "Las películas que agregues a tu watchlist aparecerán aquí.",
+  "@emptyWatchlistMessage": {
+    "description": "Mensaje para la watchlist vacía"
+  },
   "login": "Iniciar sesión",
   "register": "Registrarse",
   "streaming": "Streaming",
@@ -69,5 +95,194 @@
   "entity": "Entidad",
   "detected": "Detectado",
   "strategy": "Estrategia",
-  "reason": "Razón"
+  "reason": "Razón",
+  "about": "Acerca de",
+  "@about": {
+    "description": "Título de la pantalla Acerca de"
+  },
+  "version": "Versión",
+  "@version": {
+    "description": "Etiqueta de versión"
+  },
+  "developedBy": "Desarrollado por",
+  "@developedBy": {
+    "description": "Etiqueta desarrollado por"
+  },
+  "privacyPolicy": "Política de Privacidad",
+  "@privacyPolicy": {
+    "description": "Etiqueta de política de privacidad"
+  },
+  "helpAndSupport": "Ayuda y Soporte",
+  "@helpAndSupport": {
+    "description": "Título de la pantalla de ayuda y soporte"
+  },
+  "faq": "Preguntas Frecuentes (FAQ)",
+  "@faq": {
+    "description": "Título de la sección de preguntas frecuentes"
+  },
+  "howToAddMovieToWatchlist": "¿Cómo puedo agregar una película a mi watchlist?",
+  "@howToAddMovieToWatchlist": {
+    "description": "Pregunta FAQ sobre agregar películas a la watchlist"
+  },
+  "howToAddMovieToWatchlistAnswer": "Para agregar una película, simplemente ve a los detalles de la película y presiona el ícono de 'Agregar a Watchlist'.",
+  "@howToAddMovieToWatchlistAnswer": {
+    "description": "Respuesta FAQ sobre agregar películas a la watchlist"
+  },
+  "howDoesSyncWork": "¿Cómo funciona la sincronización?",
+  "@howDoesSyncWork": {
+    "description": "Pregunta FAQ sobre sincronización"
+  },
+  "howDoesSyncWorkAnswer": "Tus datos se sincronizan automáticamente entre todos tus dispositivos cuando tienes conexión a internet. Si estás offline, los cambios se guardarán localmente y se sincronizarán la próxima vez que te conectes.",
+  "@howDoesSyncWorkAnswer": {
+    "description": "Respuesta FAQ sobre sincronización"
+  },
+  "howToContactSupport": "¿Cómo contacto a soporte?",
+  "@howToContactSupport": {
+    "description": "Pregunta FAQ sobre contactar soporte"
+  },
+  "howToContactSupportAnswer": "Puedes contactarnos por correo electrónico a: soporte@peliculasapp.com",
+  "@howToContactSupportAnswer": {
+    "description": "Respuesta FAQ sobre contactar soporte"
+  },
+  "easy": "Fácil",
+  "@easy": {
+    "description": "Etiqueta de dificultad fácil"
+  },
+  "medium": "Medio",
+  "@medium": {
+    "description": "Etiqueta de dificultad medio"
+  },
+  "hard": "Difícil",
+  "@hard": {
+    "description": "Etiqueta de dificultad difícil"
+  },
+  "expert": "Experto",
+  "@expert": {
+    "description": "Etiqueta de dificultad experto"
+  },
+  "progress": "Progreso",
+  "@progress": {
+    "description": "Etiqueta de progreso"
+  },
+  "progressPercentage": "{value}% completado",
+  "@progressPercentage": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "points": "{value} puntos",
+  "@points": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "completed": "Completado",
+  "@completed": {
+    "description": "Etiqueta de estado completado"
+  },
+  "expired": "Expirado",
+  "@expired": {
+    "description": "Etiqueta de estado expirado"
+  },
+  "noChallengesAvailable": "No hay desafíos disponibles",
+  "@noChallengesAvailable": {
+    "description": "Mensaje cuando no hay desafíos disponibles"
+  },
+  "yourChallengeStats": "Tus Estadísticas de Desafíos",
+  "@yourChallengeStats": {
+    "description": "Título de la sección de estadísticas de desafíos"
+  },
+  "active": "Activos",
+  "@active": {
+    "description": "Etiqueta de estado activo"
+  },
+  "moviesWatched": "Películas Vistas",
+  "@moviesWatched": {
+    "description": "Etiqueta de estadística de películas vistas"
+  },
+  "reviewsWritten": "Reseñas Escritas",
+  "@reviewsWritten": {
+    "description": "Etiqueta de estadística de reseñas escritas"
+  },
+  "moviesShared": "Películas Compartidas",
+  "@moviesShared": {
+    "description": "Etiqueta de estadística de películas compartidas"
+  },
+  "genresExplored": "Géneros Explorados",
+  "@genresExplored": {
+    "description": "Etiqueta de estadística de géneros explorados"
+  },
+  "engagementScore": "Puntuación de Compromiso: {value}%",
+  "@engagementScore": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Justo ahora",
+  "@justNow": {
+    "description": "Indicador de tiempo para justo ahora"
+  },
+  "minutesAgo": "Hace {value}m",
+  "@minutesAgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "Hace {value}h",
+  "@hoursAgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "daysAgo": "Hace {value}d",
+  "@daysAgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "badges": "{count,plural, =1{1 insignia}other{{count} insignias}}",
+  "@badges": {
+    "description": "Número de insignias ganadas",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysLeft": "{count,plural, =1{1 día restante}other{{count} días restantes}}",
+  "@daysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursLeft": "{count,plural, =1{1 hora restante}other{{count} horas restantes}}",
+  "@hoursLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesLeft": "{count,plural, =1{1 minuto restante}other{{count} minutos restantes}}",
+  "@minutesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

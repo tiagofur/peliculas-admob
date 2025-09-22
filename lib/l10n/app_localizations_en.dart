@@ -61,6 +61,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get english => 'English';
 
   @override
+  String get portuguese => 'Portuguese';
+
+  @override
   String get languageDescription =>
       'Change the app language. The app will restart to apply the new language.';
 
@@ -93,6 +96,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get startExploring => 'Start exploring';
+
+  @override
+  String get noWatchedMovies => 'You haven\'t watched any movies';
+
+  @override
+  String get noWatchedMoviesMessage =>
+      'Movies you mark as watched will appear here.';
+
+  @override
+  String get emptyWatchlist => 'Your watchlist is empty';
+
+  @override
+  String get emptyWatchlistMessage =>
+      'Movies you add to your watchlist will appear here.';
 
   @override
   String get login => 'Login';
@@ -221,4 +238,163 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reason => 'Reason';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get version => 'Version';
+
+  @override
+  String get developedBy => 'Developed by';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get helpAndSupport => 'Help and Support';
+
+  @override
+  String get faq => 'Frequently Asked Questions (FAQ)';
+
+  @override
+  String get howToAddMovieToWatchlist =>
+      'How can I add a movie to my watchlist?';
+
+  @override
+  String get howToAddMovieToWatchlistAnswer =>
+      'To add a movie, simply go to the movie details and press the \'Add to Watchlist\' icon.';
+
+  @override
+  String get howDoesSyncWork => 'How does synchronization work?';
+
+  @override
+  String get howDoesSyncWorkAnswer =>
+      'Your data is automatically synchronized across all your devices when you have an internet connection. If you are offline, the changes will be saved locally and will be synchronized the next time you connect.';
+
+  @override
+  String get howToContactSupport => 'How do I contact support?';
+
+  @override
+  String get howToContactSupportAnswer =>
+      'You can contact us by email at: support@moviesapp.com';
+
+  @override
+  String get easy => 'Easy';
+
+  @override
+  String get medium => 'Medium';
+
+  @override
+  String get hard => 'Hard';
+
+  @override
+  String get expert => 'Expert';
+
+  @override
+  String get progress => 'Progress';
+
+  @override
+  String progressPercentage(String value) {
+    return '$value% complete';
+  }
+
+  @override
+  String points(String value) {
+    return '$value points';
+  }
+
+  @override
+  String get completed => 'Completed';
+
+  @override
+  String get expired => 'Expired';
+
+  @override
+  String get noChallengesAvailable => 'No challenges available';
+
+  @override
+  String get yourChallengeStats => 'Your Challenge Stats';
+
+  @override
+  String get active => 'Active';
+
+  @override
+  String get moviesWatched => 'Movies Watched';
+
+  @override
+  String get reviewsWritten => 'Reviews Written';
+
+  @override
+  String get moviesShared => 'Movies Shared';
+
+  @override
+  String get genresExplored => 'Genres Explored';
+
+  @override
+  String engagementScore(String value) {
+    return 'Engagement Score: $value%';
+  }
+
+  @override
+  String get justNow => 'Just now';
+
+  @override
+  String minutesAgo(String value) {
+    return '${value}m ago';
+  }
+
+  @override
+  String hoursAgo(String value) {
+    return '${value}h ago';
+  }
+
+  @override
+  String daysAgo(String value) {
+    return '${value}d ago';
+  }
+
+  @override
+  String badges(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count badges',
+      one: '1 badge',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String daysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days left',
+      one: '1 day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String hoursLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours left',
+      one: '1 hour left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes left',
+      one: '1 minute left',
+    );
+    return '$_temp0';
+  }
 }

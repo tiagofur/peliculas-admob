@@ -101,6 +101,10 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
   late final RatingsHiveDatasource _localDatasource;
   late final TriggerFreeRatingsSync _syncService;
   StreamSubscription<List<Map<String, dynamic>>>? _realtimeSubscription;
+  bool _isDisposing = false;
+
+  /// Verifica si el provider está disponible para operaciones
+  bool get _isAvailable => mounted && !_isDisposing;
 
   /// Inicializa el provider
   Future<void> _init() async {
@@ -110,15 +114,36 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
       LoggerFactory.info(
           '🎬 [DirectRatings] Inicializando provider para user: $userId');
 
-      // Inicializar servicios
+      // Inicializar servicios con timeout
       _localDatasource = RatingsHiveDatasource();
       _syncService = TriggerFreeRatingsSync.instance;
 
-      // Cargar datos iniciales del storage local
-      await _loadInitialData();
+      // Cargar datos iniciales del storage local con timeout
+      await _loadInitialData().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          LoggerFactory.warning(
+              '⏰ [DirectRatings] Timeout en _loadInitialData');
+          return;
+        },
+      );
 
-      // Configurar suscripción a tiempo real
-      await _setupRealTimeSync();
+      // Configurar suscripción a tiempo real con timeout
+      await _setupRealTimeSync().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          LoggerFactory.warning(
+              '⏰ [DirectRatings] Timeout en _setupRealTimeSync');
+          return;
+        },
+      );
+
+      // Verificar mounted antes de actualizar estado final
+      if (!mounted) {
+        LoggerFactory.debug(
+            '🚫 [DirectRatings] Provider disposed durante inicialización, ignorando estado final');
+        return;
+      }
 
       state = state.copyWith(isInitialized: true);
 
@@ -126,16 +151,20 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
           '✅ [DirectRatings] Provider inicializado correctamente');
     } catch (e) {
       LoggerFactory.error('❌ [DirectRatings] Error inicializando provider: $e');
-      state = state.copyWith(error: 'Error inicializando ratings: $e');
+
+      // Verificar mounted antes de actualizar estado de error
+      if (mounted) {
+        state = state.copyWith(error: 'Error inicializando ratings: $e');
+      }
     }
   }
 
   /// Carga datos iniciales del storage local
   Future<void> _loadInitialData() async {
     // Verificar si el provider aún está activo
-    if (!mounted) {
+    if (!_isAvailable) {
       LoggerFactory.debug(
-          '🚫 [DirectRatings] Provider disposed, ignorando _loadInitialData');
+          '🚫 [DirectRatings] Provider disposed/disposing, ignorando _loadInitialData');
       return;
     }
 
@@ -145,9 +174,9 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
           '📱 [DirectRatings] Cargados ${localRatings.length} ratings del storage local');
 
       // Verificar mounted antes de actualizar estado
-      if (!mounted) {
+      if (!_isAvailable) {
         LoggerFactory.debug(
-            '🚫 [DirectRatings] Provider disposed durante carga inicial, ignorando actualización');
+            '🚫 [DirectRatings] Provider disposed/disposing durante carga inicial, ignorando actualización');
         return;
       }
 
@@ -162,7 +191,7 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
       LoggerFactory.error('❌ [DirectRatings] Error cargando datos locales: $e');
 
       // Verificar mounted antes de actualizar estado de error
-      if (mounted) {
+      if (_isAvailable) {
         state = state.copyWith(error: 'Error cargando datos locales: $e');
       }
     }
@@ -246,6 +275,13 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
 
   /// Configura la suscripción a tiempo real
   Future<void> _setupRealTimeSync() async {
+    // Verificar si el provider aún está activo antes de configurar
+    if (!mounted) {
+      LoggerFactory.debug(
+          '🚫 [DirectRatings] Provider disposed, ignorando _setupRealTimeSync');
+      return;
+    }
+
     try {
       LoggerFactory.info('🔄 [DirectRatings] Configurando real-time sync');
 
@@ -257,17 +293,28 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
           .eq('user_id', userId)
           .listen(
             (List<Map<String, dynamic>> data) {
-              _handleRealtimeEvent(data);
+              // Verificar mounted antes de procesar el evento
+              if (mounted) {
+                _handleRealtimeEvent(data);
+              }
             },
             onError: (error) {
               LoggerFactory.error(
                   '❌ [DirectRatings] Error en real-time sync: $error');
+
+              // Si hay error, cancelar la suscripción para evitar loops
+              _realtimeSubscription?.cancel();
+              _realtimeSubscription = null;
             },
+            cancelOnError: true, // Cancelar automáticamente en caso de error
           );
 
       LoggerFactory.info('✅ [DirectRatings] Real-time sync configurado');
     } catch (e) {
       LoggerFactory.error('❌ [DirectRatings] Error configurando real-time: $e');
+      // Asegurar que la suscripción esté limpia en caso de error
+      _realtimeSubscription?.cancel();
+      _realtimeSubscription = null;
     }
   }
 
@@ -786,6 +833,9 @@ class DirectRatingsProvider extends StateNotifier<DirectRatingsState> {
   @override
   void dispose() {
     LoggerFactory.info('🔧 [DirectRatings] Limpiando provider...');
+
+    // Marcar como en proceso de dispose para evitar operaciones concurrentes
+    _isDisposing = true;
 
     // Cancelar suscripción real-time de forma segura
     if (_realtimeSubscription != null) {

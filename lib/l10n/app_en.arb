@@ -68,6 +68,10 @@
   "@english": {
     "description": "English language option"
   },
+  "portuguese": "Portuguese",
+  "@portuguese": {
+    "description": "Portuguese language option"
+  },
   "languageDescription": "Change the app language. The app will restart to apply the new language.",
   "@languageDescription": {
     "description": "Description for language selection"
@@ -111,6 +115,22 @@
   "startExploring": "Start exploring",
   "@startExploring": {
     "description": "Button text to start exploring movies"
+  },
+  "noWatchedMovies": "You haven't watched any movies",
+  "@noWatchedMovies": {
+    "description": "Title for empty watched movies list"
+  },
+  "noWatchedMoviesMessage": "Movies you mark as watched will appear here.",
+  "@noWatchedMoviesMessage": {
+    "description": "Message for empty watched movies list"
+  },
+  "emptyWatchlist": "Your watchlist is empty",
+  "@emptyWatchlist": {
+    "description": "Title for empty watchlist"
+  },
+  "emptyWatchlistMessage": "Movies you add to your watchlist will appear here.",
+  "@emptyWatchlistMessage": {
+    "description": "Message for empty watchlist"
   },
   "login": "Login",
   "@login": {
@@ -279,5 +299,194 @@
   "reason": "Reason",
   "@reason": {
     "description": "Reason label"
+  },
+  "about": "About",
+  "@about": {
+    "description": "About screen title"
+  },
+  "version": "Version",
+  "@version": {
+    "description": "Version label"
+  },
+  "developedBy": "Developed by",
+  "@developedBy": {
+    "description": "Developed by label"
+  },
+  "privacyPolicy": "Privacy Policy",
+  "@privacyPolicy": {
+    "description": "Privacy policy label"
+  },
+  "helpAndSupport": "Help and Support",
+  "@helpAndSupport": {
+    "description": "Help and support screen title"
+  },
+  "faq": "Frequently Asked Questions (FAQ)",
+  "@faq": {
+    "description": "FAQ section title"
+  },
+  "howToAddMovieToWatchlist": "How can I add a movie to my watchlist?",
+  "@howToAddMovieToWatchlist": {
+    "description": "FAQ question about adding movies to watchlist"
+  },
+  "howToAddMovieToWatchlistAnswer": "To add a movie, simply go to the movie details and press the 'Add to Watchlist' icon.",
+  "@howToAddMovieToWatchlistAnswer": {
+    "description": "FAQ answer about adding movies to watchlist"
+  },
+  "howDoesSyncWork": "How does synchronization work?",
+  "@howDoesSyncWork": {
+    "description": "FAQ question about synchronization"
+  },
+  "howDoesSyncWorkAnswer": "Your data is automatically synchronized across all your devices when you have an internet connection. If you are offline, the changes will be saved locally and will be synchronized the next time you connect.",
+  "@howDoesSyncWorkAnswer": {
+    "description": "FAQ answer about synchronization"
+  },
+  "howToContactSupport": "How do I contact support?",
+  "@howToContactSupport": {
+    "description": "FAQ question about contacting support"
+  },
+  "howToContactSupportAnswer": "You can contact us by email at: support@moviesapp.com",
+  "@howToContactSupportAnswer": {
+    "description": "FAQ answer about contacting support"
+  },
+  "easy": "Easy",
+  "@easy": {
+    "description": "Easy difficulty label"
+  },
+  "medium": "Medium",
+  "@medium": {
+    "description": "Medium difficulty label"
+  },
+  "hard": "Hard",
+  "@hard": {
+    "description": "Hard difficulty label"
+  },
+  "expert": "Expert",
+  "@expert": {
+    "description": "Expert difficulty label"
+  },
+  "progress": "Progress",
+  "@progress": {
+    "description": "Progress label"
+  },
+  "progressPercentage": "{value}% complete",
+  "@progressPercentage": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "points": "{value} points",
+  "@points": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "completed": "Completed",
+  "@completed": {
+    "description": "Completed status label"
+  },
+  "expired": "Expired",
+  "@expired": {
+    "description": "Expired status label"
+  },
+  "noChallengesAvailable": "No challenges available",
+  "@noChallengesAvailable": {
+    "description": "Message when no challenges are available"
+  },
+  "yourChallengeStats": "Your Challenge Stats",
+  "@yourChallengeStats": {
+    "description": "Challenge statistics section title"
+  },
+  "active": "Active",
+  "@active": {
+    "description": "Active status label"
+  },
+  "moviesWatched": "Movies Watched",
+  "@moviesWatched": {
+    "description": "Movies watched statistic label"
+  },
+  "reviewsWritten": "Reviews Written",
+  "@reviewsWritten": {
+    "description": "Reviews written statistic label"
+  },
+  "moviesShared": "Movies Shared",
+  "@moviesShared": {
+    "description": "Movies shared statistic label"
+  },
+  "genresExplored": "Genres Explored",
+  "@genresExplored": {
+    "description": "Genres explored statistic label"
+  },
+  "engagementScore": "Engagement Score: {value}%",
+  "@engagementScore": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "justNow": "Just now",
+  "@justNow": {
+    "description": "Time indicator for just now"
+  },
+  "minutesAgo": "{value}m ago",
+  "@minutesAgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "hoursAgo": "{value}h ago",
+  "@hoursAgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "daysAgo": "{value}d ago",
+  "@daysAgo": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "badges": "{count,plural, =1{1 badge}other{{count} badges}}",
+  "@badges": {
+    "description": "Number of badges earned",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysLeft": "{count,plural, =1{1 day left}other{{count} days left}}",
+  "@daysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursLeft": "{count,plural, =1{1 hour left}other{{count} hours left}}",
+  "@hoursLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesLeft": "{count,plural, =1{1 minute left}other{{count} minutes left}}",
+  "@minutesLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

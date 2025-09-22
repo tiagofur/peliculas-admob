@@ -316,7 +316,8 @@ class MainApp extends ConsumerWidget {
 
     // REACTIVAR: INICIALIZACIÓN POST-LOGIN (con modificaciones anti-bloqueo)
     // FIXED: Legacy compatibility restored
-    ref.watch(postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
+    ref.watch(
+        postLoginInitializationProvider); // Reactivado para habilitar enableAfterLogin()
 
     // Los DirectProviders se inicializarán automáticamente cuando sean necesarios
     // para evitar bloqueos en el startup - inicialización ya manejada arriba

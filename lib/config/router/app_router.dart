@@ -3,21 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../presentation/providers/auth_provider.dart';
-import '../../presentation/screens/auth/login_screen.dart';
-import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/app_info/about_screen.dart';
 import '../../presentation/screens/app_info/help_screen.dart';
 import '../../presentation/screens/app_info/privacy_policy_screen.dart';
+import '../../presentation/screens/auth/login_screen.dart';
+import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/ratings/user_ratings_screen.dart';
 import '../../presentation/screens/screens.dart';
+import '../../presentation/screens/settings/notifications_permissions_screen.dart';
 import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/watchlist_screen.dart';
-
 import '../../presentation/views/list_share_web_view.dart';
+import '../../presentation/views/lists/lists_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
-import '../../presentation/views/lists/lists_view.dart';
 import '../../presentation/views/views.dart';
 import '../../presentation/widgets/shared/page_transitions.dart';
 
@@ -745,6 +745,24 @@ final appRouter = GoRouter(
         return CustomTransitionPage(
           key: state.pageKey,
           child: const SettingsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return CinematicPageTransitions.slideUpTransition(
+              page: child,
+              duration: const Duration(milliseconds: 500),
+            ).transitionsBuilder(context, animation, secondaryAnimation, child);
+          },
+        );
+      },
+    ),
+
+    // Ruta de permisos de notificaciones
+    GoRoute(
+      path: '/settings/notifications-permissions',
+      name: NotificationsPermissionsScreen.name,
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const NotificationsPermissionsScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return CinematicPageTransitions.slideUpTransition(
               page: child,
