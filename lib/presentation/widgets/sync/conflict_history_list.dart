@@ -796,16 +796,17 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   },
                   title: const Text('Todos'),
                 ),
-                ...ConflictType.values.map((type) => RadioListTile<ConflictType?>(
-                      value: type,
-                      groupValue: _selectedType,
-                      onChanged: (value) {
-                        setState(() => _selectedType = value);
-                        Navigator.pop(context);
-                        _applyFilters();
-                      },
-                      title: Text(_getConflictTypeDescription(type)),
-                    )),
+                ...ConflictType.values
+                    .map((type) => RadioListTile<ConflictType?>(
+                          value: type,
+                          groupValue: _selectedType,
+                          onChanged: (value) {
+                            setState(() => _selectedType = value);
+                            Navigator.pop(context);
+                            _applyFilters();
+                          },
+                          title: Text(_getConflictTypeDescription(type)),
+                        )),
               ],
             )
           ],
@@ -834,16 +835,17 @@ class _ConflictHistoryListState extends ConsumerState<ConflictHistoryList> {
                   },
                   title: const Text('Todas'),
                 ),
-                ...ConflictStrategy.values.map((strategy) => RadioListTile<ConflictStrategy?>(
-                      value: strategy,
-                      groupValue: _selectedStrategy,
-                      onChanged: (value) {
-                        setState(() => _selectedStrategy = value);
-                        Navigator.pop(context);
-                        _applyFilters();
-                      },
-                      title: Text(_getStrategyLabel(strategy)),
-                    )),
+                ...ConflictStrategy.values
+                    .map((strategy) => RadioListTile<ConflictStrategy?>(
+                          value: strategy,
+                          groupValue: _selectedStrategy,
+                          onChanged: (value) {
+                            setState(() => _selectedStrategy = value);
+                            Navigator.pop(context);
+                            _applyFilters();
+                          },
+                          title: Text(_getStrategyLabel(strategy)),
+                        )),
               ],
             )
           ],
