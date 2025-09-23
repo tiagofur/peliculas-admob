@@ -172,6 +172,7 @@ class _Genres extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Los genreIds ya están convertidos a nombres en español por el Movie.fromJson
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Wrap(
@@ -179,8 +180,8 @@ class _Genres extends StatelessWidget {
         spacing: 8,
         runSpacing: 8,
         children: movie.genreIds
-            .map((gender) => Chip(
-                  label: Text(gender, style: const TextStyle(fontSize: 12)),
+            .map((genreName) => Chip(
+                  label: Text(genreName, style: const TextStyle(fontSize: 12)),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   visualDensity: VisualDensity.compact,
                 ))

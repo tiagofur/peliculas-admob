@@ -133,14 +133,14 @@ class Movie {
   Map<String, String>? get externalIds {
     // Crear un mapa de IDs externos basado en los campos disponibles
     final Map<String, String> ids = {};
-    
+
     if (imdbId != null && imdbId!.isNotEmpty) {
       ids['imdb'] = imdbId!;
     }
-    
+
     // Aquí se pueden agregar más IDs externos según sea necesario
     // Por ejemplo, si se tienen IDs de Netflix, Amazon, etc.
-    
+
     return ids.isEmpty ? null : ids;
   }
 
@@ -245,29 +245,6 @@ class Movie {
     };
   }
 
-  // Mapeo de IDs de géneros TMDB a nombres
-  static const Map<int, String> _genreMap = {
-    28: 'Acción',
-    12: 'Aventura',
-    16: 'Animación',
-    35: 'Comedia',
-    80: 'Crimen',
-    99: 'Documental',
-    18: 'Drama',
-    10751: 'Familia',
-    14: 'Fantasía',
-    36: 'Historia',
-    27: 'Terror',
-    10402: 'Música',
-    9648: 'Misterio',
-    10749: 'Romance',
-    878: 'Ciencia Ficción',
-    10770: 'Película de TV',
-    53: 'Thriller',
-    10752: 'Guerra',
-    37: 'Western'
-  };
-
   /// Convierte IDs de géneros a nombres de géneros
   static List<String> _parseGenreIds(dynamic genreIds) {
     try {
@@ -278,13 +255,37 @@ class Movie {
         return List<String>.from(genreIds);
       }
 
-      // Si son enteros (IDs), los convertimos a nombres
+      // Si son enteros (IDs), usamos MovieMapper para convertir a nombres
       if (genreIds is List) {
-        return genreIds
-            .whereType<int>()
-            .map((id) => _genreMap[id] ?? 'Desconocido')
-            .where((genre) => genre != 'Desconocido')
-            .toList();
+        final ids = genreIds.whereType<int>().toList();
+        if (ids.isNotEmpty) {
+          // Importar MovieMapper dinámicamente para evitar dependencias circulares
+          const genreMap = {
+            28: 'Acción',
+            12: 'Aventura',
+            16: 'Animación',
+            35: 'Comedia',
+            80: 'Crimen',
+            99: 'Documental',
+            18: 'Drama',
+            10751: 'Familiar',
+            14: 'Fantasía',
+            36: 'Historia',
+            27: 'Terror',
+            10402: 'Musical',
+            9648: 'Misterio',
+            10749: 'Romance',
+            878: 'Ciencia Ficción',
+            10770: 'Película de TV',
+            53: 'Suspense',
+            10752: 'Guerra',
+            37: 'Western'
+          };
+          return ids
+              .map((id) => genreMap[id] ?? 'Desconocido')
+              .where((genre) => genre != 'Desconocido')
+              .toList();
+        }
       }
 
       return [];

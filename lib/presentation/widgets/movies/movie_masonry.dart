@@ -51,30 +51,40 @@ class _MovieMasonryState extends State<MovieMasonry> {
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
         itemCount: totalItems,
+        // 🚀 PERFORMANCE: Cache widgets para mejor scroll en masonry
+        cacheExtent: 500.0,
         itemBuilder: (context, index) {
-          // Verificar si esta posición debe mostrar un anuncio
-          if (_shouldShowAd(index)) {
-            return const GridAdWidget(
-              aspectRatio: 0.7,
-              showLabel: true,
-              borderRadius: 12,
-            );
-          }
-
-          // Calcular el índice real de la película
-          final movieIndex = _getMovieIndex(index);
-
-          if (movieIndex == 1) {
-            return Container(
-              margin: const EdgeInsets.only(top: 20),
-              child: MoviePosterLink(movie: widget.movies[movieIndex]),
-            );
-          }
-
-          return MoviePosterLink(movie: widget.movies[movieIndex]);
+          // 🚀 PERFORMANCE: RepaintBoundary para cada item del masonry
+          return RepaintBoundary(
+            child: _buildMasonryItem(index),
+          );
         },
       ),
     );
+  }
+
+  /// 🚀 PERFORMANCE: Método optimizado para construir items del masonry
+  Widget _buildMasonryItem(int index) {
+    // Verificar si esta posición debe mostrar un anuncio
+    if (_shouldShowAd(index)) {
+      return const GridAdWidget(
+        aspectRatio: 0.7,
+        showLabel: true,
+        borderRadius: 12,
+      );
+    }
+
+    // Calcular el índice real de la película
+    final movieIndex = _getMovieIndex(index);
+
+    if (movieIndex == 1) {
+      return Container(
+        margin: const EdgeInsets.only(top: 20),
+        child: MoviePosterLink(movie: widget.movies[movieIndex]),
+      );
+    }
+
+    return MoviePosterLink(movie: widget.movies[movieIndex]);
   }
 
   /// Calcula el número total de items incluyendo anuncios

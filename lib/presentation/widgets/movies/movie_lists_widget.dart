@@ -51,8 +51,10 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
     final isMobile = screenWidth < 600;
     final itemHeight = isMobile ? 60.0 : 80.0;
     final spacing = isMobile ? 6.0 : 8.0;
-    final rowsNeeded = (defaultLists.length / 2).ceil().clamp(1, isMobile ? 3 : 4);
-    final fixedHeight = (rowsNeeded * itemHeight) + ((rowsNeeded - 1) * spacing);
+    final rowsNeeded =
+        (defaultLists.length / 2).ceil().clamp(1, isMobile ? 3 : 4);
+    final fixedHeight =
+        (rowsNeeded * itemHeight) + ((rowsNeeded - 1) * spacing);
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 12 : 16),
@@ -61,7 +63,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
         children: [
           Row(
             children: [
-              Icon(Icons.list_alt, color: colors.primary, size: isMobile ? 20 : 24),
+              Icon(Icons.list_alt,
+                  color: colors.primary, size: isMobile ? 20 : 24),
               SizedBox(width: isMobile ? 6 : 8),
               Expanded(
                 child: Text(
@@ -81,9 +84,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                 ),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isMobile ? 6 : 8,
-                    vertical: isMobile ? 2 : 4
-                  ),
+                      horizontal: isMobile ? 6 : 8, vertical: isMobile ? 2 : 4),
                 ),
               ),
             ],
@@ -110,7 +111,9 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                           SizedBox(width: isMobile ? 2 : 4),
                           Flexible(
                             child: Text(
-                              isMobile ? 'Predeter. (${defaultLists.length})' : 'Predeterminadas (${defaultLists.length})',
+                              isMobile
+                                  ? 'Predeter. (${defaultLists.length})'
+                                  : 'Predeterminadas (${defaultLists.length})',
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -125,7 +128,9 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                           SizedBox(width: isMobile ? 2 : 4),
                           Flexible(
                             child: Text(
-                              isMobile ? 'Personal. (${customLists.length})' : 'Personalizadas (${customLists.length})',
+                              isMobile
+                                  ? 'Personal. (${customLists.length})'
+                                  : 'Personalizadas (${customLists.length})',
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -232,12 +237,15 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       );
     }
 
+    // ✅ PERFORMANCE FIX: Optimized GridView with cacheExtent and RepaintBoundary
     final gridView = GridView.builder(
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       physics: enableScroll
           ? const AlwaysScrollableScrollPhysics()
           : const NeverScrollableScrollPhysics(),
+      // 🚀 PERFORMANCE: Cache extra widgets for smoother scrolling
+      cacheExtent: 200.0,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: isMobile ? 3.0 : 2.5, // Más ancho en móvil
@@ -248,10 +256,13 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       itemBuilder: (context, index) {
         final list = lists[index];
         final isInList = listsContainingMovie.any((l) => l.id == list.id);
-        return _buildListCard(list, isInList, colors, textStyles, isMobile);
+
+        // 🚀 PERFORMANCE: RepaintBoundary para evitar rebuilds innecesarios
+        return RepaintBoundary(
+          child: _buildListCard(list, isInList, colors, textStyles, isMobile),
+        );
       },
     );
-
     return gridView;
   }
 
@@ -327,7 +338,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                 if (list.isDefault && !isMobile) ...[
                   const SizedBox(width: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
                       borderRadius: BorderRadius.circular(6),
@@ -478,26 +490,26 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
   ];
 
   final List<String> _colors = [
-    'red',        // Rojo - Acción, Drama
-    'pink',       // Rosa - Romance, Comedia romántica
-    'purple',     // Morado - Fantasía, Misterio
+    'red', // Rojo - Acción, Drama
+    'pink', // Rosa - Romance, Comedia romántica
+    'purple', // Morado - Fantasía, Misterio
     'deep_purple', // Morado oscuro - Terror, Thriller
-    'indigo',     // Índigo - Ciencia ficción
-    'blue',       // Azul - Drama, Clásicos
+    'indigo', // Índigo - Ciencia ficción
+    'blue', // Azul - Drama, Clásicos
     'light_blue', // Azul claro - Familiar, Animación
-    'cyan',       // Cian - Aventura
-    'teal',       // Verde azulado - Documentales
-    'green',      // Verde - Comedia, Natural
+    'cyan', // Cian - Aventura
+    'teal', // Verde azulado - Documentales
+    'green', // Verde - Comedia, Natural
     'light_green', // Verde claro - Familia
-    'lime',       // Lima - Juvenil
-    'yellow',     // Amarillo - Comedia, Infantil
-    'amber',      // Ámbar - Clásicos dorados
-    'orange',     // Naranja - Aventura, Acción
+    'lime', // Lima - Juvenil
+    'yellow', // Amarillo - Comedia, Infantil
+    'amber', // Ámbar - Clásicos dorados
+    'orange', // Naranja - Aventura, Acción
     'deep_orange', // Naranja oscuro - Suspense
-    'brown',      // Marrón - Western, Histórico
-    'grey',       // Gris - Noir, Indie
-    'blue_grey',  // Gris azulado - Moderno
-    'black',      // Negro - Terror, Thriller
+    'brown', // Marrón - Western, Histórico
+    'grey', // Gris - Noir, Indie
+    'blue_grey', // Gris azulado - Moderno
+    'black', // Negro - Terror, Thriller
   ];
 
   @override
@@ -611,6 +623,8 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                       ),
                       child: GridView.builder(
                         padding: const EdgeInsets.all(8),
+                        // 🚀 PERFORMANCE: Cache para grid de emojis
+                        cacheExtent: 100.0,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 10,
@@ -667,6 +681,8 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 10),
                         scrollDirection: Axis.horizontal,
+                        // 🚀 PERFORMANCE: Cache para lista horizontal de colores
+                        cacheExtent: 200.0,
                         itemCount: _colors.length,
                         itemBuilder: (context, index) {
                           final colorName = _colors[index];
@@ -750,9 +766,12 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                               if (_addCurrentMovie) {
                                 // Obtener el ID de la lista recién creada y agregar la película
-                                final customListsState = ref.read(directCustomListsProvider);
-                                final allLists = customListsState.getAllListsWithMovies();
-                                final newList = allLists.lastWhere((list) => !list.isDefault);
+                                final customListsState =
+                                    ref.read(directCustomListsProvider);
+                                final allLists =
+                                    customListsState.getAllListsWithMovies();
+                                final newList = allLists
+                                    .lastWhere((list) => !list.isDefault);
                                 await ref
                                     .read(directCustomListsProvider.notifier)
                                     .addMovieToList(newList.id, widget.movieId);
@@ -773,9 +792,12 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                                       action: SnackBarAction(
                                         label: 'Ver',
                                         onPressed: () {
-                                          final customListsState = ref.read(directCustomListsProvider);
-                                          final allLists = customListsState.getAllListsWithMovies();
-                                          final newList = allLists.lastWhere((list) => !list.isDefault);
+                                          final customListsState = ref
+                                              .read(directCustomListsProvider);
+                                          final allLists = customListsState
+                                              .getAllListsWithMovies();
+                                          final newList = allLists.lastWhere(
+                                              (list) => !list.isDefault);
                                           GoRouter.of(scaffoldContext).push(
                                               '/my-library/lists/${newList.id}');
                                         },

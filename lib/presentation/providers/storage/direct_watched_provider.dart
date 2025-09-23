@@ -124,14 +124,22 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
 
   void _setupRealtimeListeners() {
     if (_realtimeChannel != null) return;
+    if (_currentUserId == null) return; // Safety check
 
     try {
-      _realtimeChannel = Supabase.instance.client.channel('public:user_watched_movies').onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'user_watched_movies',
-        callback: _handleRealtimeChange,
-      );
+      _realtimeChannel = Supabase.instance.client
+          .channel('public:user_watched_movies_$_currentUserId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'user_watched_movies',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUserId!,
+            ),
+            callback: _handleRealtimeChange,
+          );
 
       _realtimeChannel!.subscribe((status, [error]) {
         if (error != null) {
@@ -152,7 +160,7 @@ class DirectWatchedNotifier extends StateNotifier<Map<int, Movie>> {
     // Simplificado: Recargar todo al recibir cualquier cambio relevante.
     _loadWatchedFromSupabase();
   }
-  
+
   void _unsubscribeFromRealtime() {
     _realtimeChannel?.unsubscribe();
     _realtimeChannel = null;

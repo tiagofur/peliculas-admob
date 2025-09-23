@@ -125,14 +125,22 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
 
   void _setupRealtimeListeners() {
     if (_realtimeChannel != null) return;
+    if (_currentUserId == null) return; // Safety check
 
     try {
-      _realtimeChannel = Supabase.instance.client.channel('public:user_favorites').onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: 'user_favorites',
-        callback: _handleRealtimeEvent,
-      );
+      _realtimeChannel = Supabase.instance.client
+          .channel('public:user_favorites_$_currentUserId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'user_favorites',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: _currentUserId!,
+            ),
+            callback: _handleRealtimeEvent,
+          );
 
       _realtimeChannel!.subscribe((status, [error]) {
         if (error != null) {
@@ -142,7 +150,8 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
         }
       });
     } catch (e) {
-      LoggerFactory.error('❌ DirectFavorites: Error configurando listeners: $e');
+      LoggerFactory.error(
+          '❌ DirectFavorites: Error configurando listeners: $e');
     }
   }
 
@@ -155,7 +164,7 @@ class DirectFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
     // pero la recarga es más robusta contra estados inconsistentes.
     _loadFavoritesFromSupabase();
   }
-  
+
   void _unsubscribeFromRealtime() {
     _realtimeChannel?.unsubscribe();
     _realtimeChannel = null;

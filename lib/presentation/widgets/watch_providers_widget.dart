@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -140,12 +141,14 @@ class WatchProvidersWidget extends StatelessWidget {
             if (provider.logoPath.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
-                child: Image.network(
-                  'https://image.tmdb.org/t/p/w45${provider.logoPath}',
+                // 🚀 PERFORMANCE: Using CachedNetworkImage for better caching
+                child: CachedNetworkImage(
+                  imageUrl:
+                      'https://image.tmdb.org/t/p/w45${provider.logoPath}',
                   width: 24,
                   height: 24,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
+                  errorWidget: (context, url, error) {
                     return Container(
                       width: 24,
                       height: 24,

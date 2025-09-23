@@ -13,8 +13,7 @@ import '../../../domain/entities/custom_list.dart';
 import '../../../infrastructure/datasources/supabase_custom_lists_datasource.dart';
 import '../../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../../services/list_sync_service.dart';
-// import '../custom_lists_providers.dart'; // Unused import
-// OfflineChange está definido en list_sync_service.dart
+// 🧹 CLEANUP: Removed unused import references
 
 /// Estado para listas con sus películas
 class CustomListsState {
@@ -1772,31 +1771,5 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   }
 }
 
-// TODO: These providers need to be updated for legacy compatibility
-// Commenting out for now to fix compilation errors
-
-// /// Provider para obtener todas las listas como Map
-// final directCustomListsMapProvider = Provider<Map<String, CustomList>>((ref) {
-//   final currentState = ref.watch(directCustomListsProvider);
-//   return currentState.lists;
-// });
-
-// /// Provider para obtener todas las listas con sus películas
-// final directCustomListsWithMoviesProvider = Provider<List<CustomList>>((ref) {
-//   final notifier = ref.read(directCustomListsProvider.notifier);
-//   return notifier.allListsWithMovies;
-// });
-
-// /// Provider para verificar si una película está en una lista específica
-// final isMovieInDirectListProvider =
-//     Provider.family<bool, ({String listId, int movieId})>((ref, params) {
-//   final notifier = ref.read(directCustomListsProvider.notifier);
-//   return notifier.isMovieInList(params.listId, params.movieId);
-// });
-
-// /// Provider para obtener las listas que contienen una película específica
-// final directMovieListsProvider =
-//     Provider.family<List<CustomList>, int>((ref, movieId) {
-//   final notifier = ref.read(directCustomListsProvider.notifier);
-//   return notifier.getListsContainingMovie(movieId);
-// });
+// 🧹 CLEANUP: Removed commented legacy providers that were not being used
+// This reduces file size by ~30 lines and improves code readability

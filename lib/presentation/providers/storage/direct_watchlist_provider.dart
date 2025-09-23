@@ -163,11 +163,16 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
       Future.microtask(() async {
         try {
           _realtimeChannel = Supabase.instance.client
-              .channel('public:user_watchlist')
+              .channel('public:user_watchlist_$_currentUserId')
               .onPostgresChanges(
                 event: PostgresChangeEvent.all,
                 schema: 'public',
                 table: 'user_watchlist',
+                filter: PostgresChangeFilter(
+                  type: PostgresChangeFilterType.eq,
+                  column: 'user_id',
+                  value: _currentUserId!,
+                ),
                 callback: _handleRealtimeEvent,
               );
 
