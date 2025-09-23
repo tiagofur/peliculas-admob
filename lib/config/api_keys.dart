@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+import '../core/logging/logger_factory.dart';
+
 // Archivo de configuración de claves API
 // TODAS las claves se cargan desde variables de entorno o dart-define
 // NO HAY CLAVES HARDCODEADAS por seguridad
@@ -79,7 +81,7 @@ class ApiKeys {
   // Validación de todas las claves en startup
   static void validateConfiguration() {
     if (kDebugMode) {
-      print('🔑 Validating API configuration...');
+      LoggerFactory.info('🔑 Validating API configuration...');
     }
 
     try {
@@ -89,10 +91,10 @@ class ApiKeys {
       final traktSecret = traktClientSecret;
 
       if (kDebugMode) {
-        print('✅ TMDB API Key: ${tmdb.substring(0, 8)}...');
-        print('✅ Trakt API Key: ${trakt.substring(0, 8)}...');
-        print('✅ Trakt Client ID: ${traktId.substring(0, 8)}...');
-        print('✅ Trakt Secret: ${traktSecret.substring(0, 8)}...');
+        LoggerFactory.info('✅ TMDB API Key: ${tmdb.substring(0, 8)}...');
+        LoggerFactory.info('✅ Trakt API Key: ${trakt.substring(0, 8)}...');
+        LoggerFactory.info('✅ Trakt Client ID: ${traktId.substring(0, 8)}...');
+        LoggerFactory.info('✅ Trakt Secret: ${traktSecret.substring(0, 8)}...');
       }
 
       // Opcional: validar Supabase si está presente
@@ -100,21 +102,21 @@ class ApiKeys {
         final supaUrl = supabaseUrl;
         final supaKey = supabaseAnonKey;
         if (kDebugMode) {
-          print('✅ Supabase URL: ${supaUrl.substring(0, 20)}...');
-          print('✅ Supabase Key: ${supaKey.substring(0, 8)}...');
+          LoggerFactory.info('✅ Supabase URL: ${supaUrl.substring(0, 20)}...');
+          LoggerFactory.info('✅ Supabase Key: ${supaKey.substring(0, 8)}...');
         }
       } catch (e) {
         if (kDebugMode) {
-          print('⚠️  Supabase not configured (optional)');
+          LoggerFactory.info('⚠️  Supabase not configured (optional)');
         }
       }
 
       if (kDebugMode) {
-        print('✅ All required API keys configured successfully');
+        LoggerFactory.info('✅ All required API keys configured successfully');
       }
     } catch (e) {
       if (kDebugMode) {
-        print('❌ API configuration error: $e');
+        LoggerFactory.error('❌ API configuration error: $e');
       }
       rethrow;
     }

@@ -2,17 +2,22 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import 'base_provider_with_cleanup.dart';
 
 /// Ejemplo de provider optimizado que previene memory leaks
-class OptimizedMovieProvider extends BaseProviderWithCleanup<AsyncValue<List<Movie>>> {
-  OptimizedMovieProvider() : super(const AsyncValue.loading()) {
+class OptimizedMovieProvider
+    extends BaseProviderWithCleanup<AsyncValue<List<Movie>>> {
+  @override
+  AsyncValue<List<Movie>> build() {
     _init();
+    return const AsyncValue<List<Movie>>.loading();
   }
 
   void _init() {
     // Timer periódico para actualizar datos
-    final timer = Timer.periodic(Duration(minutes: 5), (_) => _refreshData());
+    final timer =
+        Timer.periodic(const Duration(minutes: 5), (_) => _refreshData());
     addTimer(timer); // Se cancelará automáticamente al disponer
 
     // Suscripción a stream de cambios
@@ -42,7 +47,7 @@ class OptimizedMovieProvider extends BaseProviderWithCleanup<AsyncValue<List<Mov
       state = AsyncValue.data(movies);
     } catch (error) {
       // Log error but don't update state to avoid breaking current data
-      print('Error refreshing data: $error');
+      LoggerFactory.error('Error refreshing data: $error');
     }
   }
 
@@ -50,21 +55,23 @@ class OptimizedMovieProvider extends BaseProviderWithCleanup<AsyncValue<List<Mov
   void onDispose() {
     // Limpiar recursos adicionales específicos de este provider
     _movieRepository.clearCache();
-    print('OptimizedMovieProvider disposed successfully');
+    LoggerFactory.info('OptimizedMovieProvider disposed successfully');
   }
 
   // Mock dependencies - replace with actual implementations
   late final _movieRepository = MockMovieRepository();
   late final _movieStream = Stream<List<Movie>>.periodic(
-    Duration(seconds: 30),
+    const Duration(seconds: 30),
     (_) => [Movie(id: 1, title: 'Test Movie')],
   );
 }
 
 /// Ejemplo usando el mixin AutoCleanupMixin
-class OptimizedSearchProvider extends StateNotifier<String> with AutoCleanupMixin {
-  OptimizedSearchProvider() : super('') {
+class OptimizedSearchProvider extends Notifier<String> with AutoCleanupMixin {
+  @override
+  String build() {
     _init();
+    return '';
   }
 
   void _init() {
@@ -80,7 +87,7 @@ class OptimizedSearchProvider extends StateNotifier<String> with AutoCleanupMixi
         .where((query) => query.length >= 3) // Mínimo 3 caracteres
         .listen((query) {
       debounceTimer?.cancel();
-      debounceTimer = Timer(Duration(milliseconds: 500), () {
+      debounceTimer = Timer(const Duration(milliseconds: 500), () {
         _performSearch(query);
       });
       addTimer(debounceTimer!);
@@ -96,27 +103,31 @@ class OptimizedSearchProvider extends StateNotifier<String> with AutoCleanupMixi
 
   void _performSearch(String query) async {
     // Implement actual search logic here
-    print('Searching for: $query');
+    LoggerFactory.info('Searching for: $query');
   }
 
-  @override
-  void dispose() {
-    print('OptimizedSearchProvider disposed successfully');
-    super.dispose(); // Calls mixin cleanup automatically
+  void cleanup() {
+    LoggerFactory.info('OptimizedSearchProvider disposed successfully');
+    cleanupMixin(); // Calls mixin cleanup automatically
   }
 }
 
 /// Ejemplo de provider con múltiples suscripciones y timers
-class ComplexOptimizedProvider extends BaseProviderWithCleanup<Map<String, dynamic>> {
-  ComplexOptimizedProvider() : super({}) {
+class ComplexOptimizedProvider
+    extends BaseProviderWithCleanup<Map<String, dynamic>> {
+  @override
+  Map<String, dynamic> build() {
     _setupMultipleSubscriptions();
+    return {};
   }
 
   void _setupMultipleSubscriptions() {
     // Múltiples timers para diferentes tareas
-    addTimer(Timer.periodic(Duration(seconds: 10), (_) => _syncData()));
-    addTimer(Timer.periodic(Duration(minutes: 1), (_) => _cleanupCache()));
-    addTimer(Timer.periodic(Duration(minutes: 5), (_) => _reportAnalytics()));
+    addTimer(Timer.periodic(const Duration(seconds: 10), (_) => _syncData()));
+    addTimer(
+        Timer.periodic(const Duration(minutes: 1), (_) => _cleanupCache()));
+    addTimer(
+        Timer.periodic(const Duration(minutes: 5), (_) => _reportAnalytics()));
 
     // Múltiples suscripciones a diferentes streams
     addSubscription(_authStream.listen(_handleAuthChange));
@@ -125,11 +136,12 @@ class ComplexOptimizedProvider extends BaseProviderWithCleanup<Map<String, dynam
 
     // Suscripción condicional que se puede cancelar manualmente
     if (_shouldListenToSpecialEvents) {
-      final specialSubscription = _specialEventStream.listen(_handleSpecialEvent);
+      final specialSubscription =
+          _specialEventStream.listen(_handleSpecialEvent);
       addSubscription(specialSubscription);
 
       // Después de cierto tiempo, cancelar esta suscripción específica
-      Timer(Duration(minutes: 10), () {
+      Timer(const Duration(minutes: 10), () {
         cancelSubscription(specialSubscription);
       });
     }
@@ -166,31 +178,36 @@ class ComplexOptimizedProvider extends BaseProviderWithCleanup<Map<String, dynam
   @override
   void onDispose() {
     // Limpiar recursos específicos
-    print('ComplexOptimizedProvider disposed with ${_subscriptions.length} subscriptions and ${_timers.length} timers cleaned up');
+    LoggerFactory.info('ComplexOptimizedProvider disposed successfully');
   }
 
   // Mock streams - replace with actual implementations
   final bool _shouldListenToSpecialEvents = true;
-  late final _authStream = Stream<String>.periodic(Duration(seconds: 30), (_) => 'authenticated');
-  late final _networkStream = Stream<bool>.periodic(Duration(seconds: 15), (_) => true);
-  late final _dataStream = Stream<Map<String, dynamic>>.periodic(Duration(seconds: 45), (_) => {'timestamp': DateTime.now().millisecondsSinceEpoch});
-  late final _specialEventStream = Stream<String>.periodic(Duration(minutes: 2), (_) => 'special_event');
+  late final _authStream = Stream<String>.periodic(
+      const Duration(seconds: 30), (_) => 'authenticated');
+  late final _networkStream =
+      Stream<bool>.periodic(const Duration(seconds: 15), (_) => true);
+  late final _dataStream = Stream<Map<String, dynamic>>.periodic(
+      const Duration(seconds: 45),
+      (_) => {'timestamp': DateTime.now().millisecondsSinceEpoch});
+  late final _specialEventStream = Stream<String>.periodic(
+      const Duration(minutes: 2), (_) => 'special_event');
 }
 
 // Mock classes for the examples
 class Movie {
+  Movie({required this.id, required this.title});
   final int id;
   final String title;
-  Movie({required this.id, required this.title});
 }
 
 class MockMovieRepository {
   Future<List<Movie>> getMovies() async {
-    await Future.delayed(Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
     return [Movie(id: 1, title: 'Test Movie')];
   }
 
   void clearCache() {
-    print('Cache cleared');
+    LoggerFactory.info('Cache cleared');
   }
 }

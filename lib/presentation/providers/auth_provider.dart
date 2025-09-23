@@ -17,6 +17,7 @@ import '../../infrastructure/services/anonymous_data_migrator.dart';
 import '../../services/id_mapping_service.dart';
 import '../../services/lists_migration_service.dart';
 import '../../services/migration_rollback_service.dart';
+import '../../services/unified_default_lists_service.dart';
 import './hybrid_repositories_provider.dart';
 
 // Typedef para los callbacks que necesita AuthNotifier
@@ -82,6 +83,12 @@ class AppState {
 // Provider del repositorio de autenticación
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl();
+});
+
+// Provider del servicio unificado de listas predeterminadas
+final unifiedDefaultListsServiceProvider =
+    Provider<UnifiedDefaultListsService>((ref) {
+  return UnifiedDefaultListsService();
 });
 
 // Provider del estado de autenticación
@@ -468,6 +475,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       } else {
         logger.info('No se requiere migración de listas');
       }
+
+      // Ejecutar servicio unificado para asegurar listas predeterminadas consistentes
+      logger.info('Ejecutando servicio unificado de listas predeterminadas');
+      final unifiedService = UnifiedDefaultListsService();
+      await unifiedService.initializeDefaultListsForUser();
     } catch (e) {
       logger.error('Error crítico durante migración de listas: $e');
 

@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Base provider que maneja automáticamente la limpieza de recursos
 /// para prevenir memory leaks
-abstract class BaseProviderWithCleanup<T> extends StateNotifier<T> {
-  BaseProviderWithCleanup(T state) : super(state);
-
+abstract class BaseProviderWithCleanup<T> extends Notifier<T> {
   /// Lista de suscripciones que se cancelarán automáticamente al disponer
   final List<StreamSubscription> _subscriptions = [];
 
@@ -51,8 +49,8 @@ abstract class BaseProviderWithCleanup<T> extends StateNotifier<T> {
     _timers.clear();
   }
 
-  @override
-  void dispose() {
+  /// Método para limpiar recursos manualmente
+  void cleanup() {
     // Cancelar todas las suscripciones
     cancelAllSubscriptions();
 
@@ -61,8 +59,6 @@ abstract class BaseProviderWithCleanup<T> extends StateNotifier<T> {
 
     // Llamar al dispose personalizado si existe
     onDispose();
-
-    super.dispose();
   }
 
   /// Override este método en subclases para limpiar recursos adicionales
@@ -119,8 +115,8 @@ abstract class BaseAsyncProviderWithCleanup<T> extends AsyncNotifier<T> {
   /// Override este método en subclases para limpiar recursos adicionales
   void onDispose() {}
 
-  @override
-  void dispose() {
+  /// Método para limpiar recursos manualmente
+  void cleanup() {
     // Cancelar todas las suscripciones
     cancelAllSubscriptions();
 
@@ -129,13 +125,11 @@ abstract class BaseAsyncProviderWithCleanup<T> extends AsyncNotifier<T> {
 
     // Llamar al dispose personalizado si existe
     onDispose();
-
-    super.dispose();
   }
 }
 
 /// Mixin para providers que necesitan cleanup automático
-mixin AutoCleanupMixin<T> on StateNotifier<T> {
+mixin AutoCleanupMixin {
   final List<StreamSubscription> _subscriptions = [];
   final List<Timer> _timers = [];
 
@@ -171,10 +165,8 @@ mixin AutoCleanupMixin<T> on StateNotifier<T> {
     _timers.clear();
   }
 
-  @override
-  void dispose() {
+  void cleanupMixin() {
     cancelAllSubscriptions();
     cancelAllTimers();
-    super.dispose();
   }
 }

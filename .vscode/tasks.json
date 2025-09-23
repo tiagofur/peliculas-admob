@@ -1,0 +1,74 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Fix Windows CMake Issues",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/fix_windows_cmake.ps1"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [],
+      "detail": "Regenera archivos de configuración de CMake para Windows"
+    },
+    {
+      "label": "Flutter: Clean and Get Dependencies",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["clean"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "dependsOrder": "sequence",
+      "dependsOn": [],
+      "detail": "Limpia el proyecto Flutter y obtiene dependencias"
+    },
+    {
+      "label": "Flutter: Get Dependencies Only",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["pub", "get"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [],
+      "detail": "Obtiene las dependencias del proyecto Flutter"
+    },
+    {
+      "label": "Flutter: Build Windows Debug",
+      "type": "shell",
+      "command": "flutter",
+      "args": ["build", "windows", "--debug"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [],
+      "detail": "Construye la aplicación para Windows en modo debug"
+    }
+  ]
+}
