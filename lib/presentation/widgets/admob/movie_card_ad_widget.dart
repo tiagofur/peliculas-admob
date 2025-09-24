@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
-import 'adsense_web_widget.dart';
 
 /// Widget de anuncio que imita el tamaño y estilo de las tarjetas de películas
 /// para integrarse perfectamente en listas horizontales
@@ -37,8 +36,14 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
   }
 
   void _loadAd() {
-    // En web se usa AdSense, no AdMob
+    // No cargar anuncios en web
     if (kIsWeb) {
+      if (mounted) {
+        setState(() {
+          _isAdFailed = true;
+          _isAdLoaded = false;
+        });
+      }
       return;
     }
 
@@ -78,18 +83,6 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // En web, usar AdSense con dimensiones de tarjeta de película
-    if (kIsWeb) {
-      return AdSenseWebWidget(
-        adSlot: AdHelper.adSenseNativeSlot,
-        width: widget.width,
-        height: widget.height,
-        isResponsive: false,
-        showLabel: widget.showLabel,
-        borderRadius: widget.borderRadius,
-      );
-    }
-
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

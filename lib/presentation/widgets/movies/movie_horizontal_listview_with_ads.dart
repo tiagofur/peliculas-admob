@@ -53,8 +53,10 @@ class _MovieHorizontalListviewWithAdsState
     scrollController.addListener(() {
       if (widget.loadNextPage == null) return;
 
-      if ((scrollController.position.pixels + 200) >=
-          scrollController.position.maxScrollExtent) {
+      // ✅ PERFORMANCE OPTIMIZATION: More aggressive lazy loading
+      // Load when user reaches 80% of content instead of 95%
+      final threshold = scrollController.position.maxScrollExtent * 0.8;
+      if (scrollController.position.pixels >= threshold) {
         widget.loadNextPage!();
       }
     });
@@ -421,7 +423,15 @@ class _Title extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
       child: Row(
         children: [
-          if (title != null) Text(title!, style: titleStyle),
+          if (title != null)
+            Expanded(
+              child: Text(
+                title!,
+                style: titleStyle,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
           const Spacer(),
           if (subTitle != null)
             FilledButton.tonal(

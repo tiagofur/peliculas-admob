@@ -82,7 +82,9 @@ void main() {
         () async {
       // Act: Intentar ejecutar inicialización forzada
       try {
-        postLoginService.forceInitialization('test-user-123');
+        // Crear un Ref válido usando ProviderContainer
+        final ref = container.read;
+        postLoginService.forceInitialization('test-user-123', ref as Ref);
         LoggerFactory.info('✅ Inicialización forzada ejecutada sin errores');
       } catch (e) {
         LoggerFactory.warning(
@@ -92,23 +94,9 @@ void main() {
     });
 
     test('Verificar inicialización del servicio', () async {
-      // Act: Ejecutar inicialización con callbacks mock
-      final callbacks = PostLoginInitializationCallbacks(
-        enableFavoritesAutoRefresh: () {},
-        initializeFavoritesProvider: () {},
-        initializeWatchedProvider: () {},
-        initializeWatchlistProvider: () {},
-        enableCustomListsAfterLogin: () {},
-        initializeCustomListsAuth: (String userId) {},
-        enableCustomListsNotifier: () {},
-        getMigrationService: () async => migrationService,
-        invalidateCustomLists: () {},
-        disableFavoritesAutoRefresh: () {},
-        stopSilentSync: () {},
-        cleanupCustomListsAuth: () {},
-      );
-
-      postLoginService.initialize(callbacks);
+      // Act: Ejecutar inicialización
+      final ref = container.read;
+      postLoginService.initialize(ref as Ref);
 
       // Assert: Verificar que la inicialización se ejecutó sin errores
       expect(postLoginService.isInitialized, isTrue);
@@ -136,7 +124,9 @@ void main() {
       // Act & Assert
       expect(
         () async {
-          return postLoginService.forceInitialization('test-user-123');
+          final ref = container.read;
+          return postLoginService.forceInitialization(
+              'test-user-123', ref as Ref);
         },
         returnsNormally, // No debe lanzar excepción, debe manejar el error internamente
       );
@@ -159,7 +149,8 @@ void main() {
       expect(migrationService.isMigrationCompleted(), isTrue);
 
       // Act
-      postLoginService.forceInitialization('test-user-123');
+      final ref = container.read;
+      postLoginService.forceInitialization('test-user-123', ref as Ref);
 
       // Esperar un momento
       await Future.delayed(const Duration(milliseconds: 200));
@@ -200,7 +191,8 @@ void main() {
       when(mockSyncService.startAutoSync()).thenAnswer((_) async {});
 
       // Act
-      postLoginService.forceInitialization('test-user-123');
+      final ref = container.read;
+      postLoginService.forceInitialization('test-user-123', ref as Ref);
 
       // Esperar para que se complete la inicialización
       await Future.delayed(const Duration(milliseconds: 600));

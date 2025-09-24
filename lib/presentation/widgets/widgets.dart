@@ -1,6 +1,6 @@
 export 'actors/actors_by_movie.dart';
 
-export 'achievements/achievement_card.dart';
+export 'achievements/achievement_card_widget.dart';
 export 'achievements/achievement_share_dialog.dart';
 
 export 'movies/movie_horizontal_listview.dart';

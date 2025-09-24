@@ -6,31 +6,30 @@ import '../api_keys.dart';
 
 class Environment {
   // Eliminar propiedades estáticas con valores por defecto peligrosos
-  
+
   // En su lugar, usar la nueva clase ApiKeys que maneja todo de forma segura
   static String get theMovieDbKey => ApiKeys.tmdbApiKey;
   static String get traktClientId => ApiKeys.traktClientId;
   static String get traktClientSecret => ApiKeys.traktClientSecret;
-  
+
   // Método mejorado de carga que usa la nueva estructura
   static Future<void> load() async {
     try {
       // Cargar .env para todas las plataformas (no solo móviles)
       await dotenv.load(fileName: '.env');
-      
+
       if (kDebugMode) {
         LoggerFactory.info('Environment loaded from .env file');
       }
-      
+
       // Validar que todas las claves estén configuradas
       ApiKeys.validateConfiguration();
-      
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.warning('Could not load .env file: $e');
         LoggerFactory.info('Will try to use dart-define values');
       }
-      
+
       // Intentar validar usando dart-define
       try {
         ApiKeys.validateConfiguration();
@@ -39,7 +38,7 @@ class Environment {
         }
       } catch (configError) {
         LoggerFactory.error('Configuration error: $configError');
-        
+
         if (kDebugMode) {
           LoggerFactory.error('''
 ❌ API Keys not configured properly!
@@ -60,7 +59,7 @@ Please set your API keys using ONE of these methods:
 Copy .env.example to .env and fill in your real keys.
 ''');
         }
-        
+
         rethrow;
       }
     }
@@ -75,7 +74,7 @@ Copy .env.example to .env and fill in your real keys.
       return false;
     }
   }
-  
+
   // Método para obtener información de configuración (sin exponer claves)
   static Map<String, dynamic> getConfigurationStatus() {
     try {
@@ -83,13 +82,16 @@ Copy .env.example to .env and fill in your real keys.
       final traktConfigured = ApiKeys.traktApiKey.isNotEmpty;
       final traktIdConfigured = ApiKeys.traktClientId.isNotEmpty;
       final traktSecretConfigured = ApiKeys.traktClientSecret.isNotEmpty;
-      
+
       return {
         'tmdb_configured': tmdbConfigured,
         'trakt_configured': traktConfigured,
         'trakt_id_configured': traktIdConfigured,
         'trakt_secret_configured': traktSecretConfigured,
-        'all_configured': tmdbConfigured && traktConfigured && traktIdConfigured && traktSecretConfigured,
+        'all_configured': tmdbConfigured &&
+            traktConfigured &&
+            traktIdConfigured &&
+            traktSecretConfigured,
       };
     } catch (e) {
       return {

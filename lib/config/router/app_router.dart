@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../presentation/providers/auth_provider.dart';
+import '../../presentation/screens/achievements_screen.dart';
 import '../../presentation/screens/app_info/about_screen.dart';
 import '../../presentation/screens/app_info/help_screen.dart';
 import '../../presentation/screens/app_info/privacy_policy_screen.dart';
@@ -11,11 +12,10 @@ import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/ratings/user_ratings_screen.dart';
 import '../../presentation/screens/screens.dart';
-import '../../presentation/screens/settings/notifications_permissions_screen.dart';
+import '../../presentation/screens/notification_settings_screen.dart';
 import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/watchlist_screen.dart';
 import '../../presentation/views/list_share_web_view.dart';
-import '../../presentation/views/lists/lists_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
 import '../../presentation/views/views.dart';
@@ -93,7 +93,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: '/my-library/lists',
                         name: 'lists',
-                        builder: (context, state) => const ListsView(),
+                        builder: (context, state) => const CustomListsView(),
                         routes: [
                           GoRoute(
                             path: ':listId',
@@ -173,7 +173,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       GoRoute(
                         path: '/statistics/achievements',
                         name: 'achievements',
-                        builder: (context, state) => const AchievementsView(),
+                        builder: (context, state) {
+                          return Consumer(
+                            builder: (context, ref, child) {
+                              final currentUser =
+                                  ref.watch(currentUserProvider);
+                              return AchievementsScreen(
+                                userId: currentUser?.id ?? '',
+                              );
+                            },
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -403,14 +413,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // Ruta de permisos de notificaciones
+      // Ruta de configuración de notificaciones
       GoRoute(
-        path: '/settings/notifications-permissions',
-        name: NotificationsPermissionsScreen.name,
+        path: '/notification-settings',
+        name: 'notification-settings',
         pageBuilder: (context, state) {
           return CustomTransitionPage(
             key: state.pageKey,
-            child: const NotificationsPermissionsScreen(),
+            child: const NotificationSettingsScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(
@@ -607,7 +617,16 @@ final appRouter = GoRouter(
                     GoRoute(
                       path: '/statistics/achievements',
                       name: 'achievements',
-                      builder: (context, state) => const AchievementsView(),
+                      builder: (context, state) {
+                        return Consumer(
+                          builder: (context, ref, child) {
+                            final currentUser = ref.watch(currentUserProvider);
+                            return AchievementsScreen(
+                              userId: currentUser?.id ?? '',
+                            );
+                          },
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -775,14 +794,14 @@ final appRouter = GoRouter(
       },
     ),
 
-    // Ruta de permisos de notificaciones
+    // Ruta de configuración de notificaciones
     GoRoute(
-      path: '/settings/notifications-permissions',
-      name: NotificationsPermissionsScreen.name,
+      path: '/notification-settings',
+      name: 'notification-settings',
       pageBuilder: (context, state) {
         return CustomTransitionPage(
           key: state.pageKey,
-          child: const NotificationsPermissionsScreen(),
+          child: const NotificationSettingsScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return CinematicPageTransitions.slideUpTransition(
               page: child,

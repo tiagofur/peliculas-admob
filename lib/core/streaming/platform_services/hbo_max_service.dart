@@ -17,9 +17,9 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     http.Client? httpClient,
     required AnalyticsService analytics,
     required RealAvailabilityService availabilityService,
-  }) : _httpClient = httpClient ?? http.Client(),
-       _analytics = analytics,
-       _availabilityService = availabilityService {
+  })  : _httpClient = httpClient ?? http.Client(),
+        _analytics = analytics,
+        _availabilityService = availabilityService {
     _baseUrl = StreamingApiConfig.hboMaxBaseUrl;
   }
 
@@ -27,7 +27,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
   final AnalyticsService _analytics;
 
   final RealAvailabilityService _availabilityService;
-  
+
   late final String _baseUrl;
 
   /// Check if a movie is available on HBO Max
@@ -39,13 +39,13 @@ class HboMaxService implements StreamingPlatformServiceInterface {
   }) async {
     try {
       // Checking HBO Max availability for movie
-      
+
       // Try RealAvailabilityService first
       final availabilityList = await _availabilityService.checkAvailability(
         movieId,
         region: region,
       );
-      
+
       if (availabilityList.isNotEmpty) {
         final realAvailability = availabilityList.first;
         _analytics.trackEvent(AnalyticsEventType.userEngagement, {
@@ -56,14 +56,14 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         });
         return realAvailability;
       }
-      
+
       // Try direct HBO Max API if configured
       if (StreamingApiConfig.isHboMaxConfigured) {
         final directAvailability = await _checkDirectHboMaxAvailability(
           tmdbId: movieId,
           region: region,
         );
-        
+
         if (directAvailability != null) {
           _analytics.trackEvent(AnalyticsEventType.userEngagement, {
             'movie_id': movieId,
@@ -74,22 +74,21 @@ class HboMaxService implements StreamingPlatformServiceInterface {
           return directAvailability;
         }
       }
-      
+
       // Fallback to simulation
       final simulatedAvailability = await _simulateHboMaxAvailability(
         tmdbId: movieId,
         region: region,
       );
-      
+
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'movie_id': movieId,
         'region': region,
         'available': simulatedAvailability?.isAvailable ?? false,
         'api_used': 'simulation',
       });
-      
+
       return simulatedAvailability;
-      
     } catch (e) {
       // Error checking HBO Max availability
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
@@ -109,7 +108,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
   }) async {
     try {
       // Searching HBO Max content
-      
+
       // Try real API if configured
       if (StreamingApiConfig.isHboMaxConfigured) {
         final realResults = await _searchHboMaxContent(
@@ -117,7 +116,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
           region: region,
           limit: limit,
         );
-        
+
         if (realResults.isNotEmpty) {
           _analytics.trackEvent(AnalyticsEventType.userEngagement, {
             'query': query,
@@ -127,22 +126,21 @@ class HboMaxService implements StreamingPlatformServiceInterface {
           return realResults;
         }
       }
-      
+
       // Fallback to simulation
       final simulatedResults = await _simulateHboMaxSearch(
         query: query,
         region: region,
         limit: limit,
       );
-      
+
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'query': query,
         'results_count': simulatedResults.length,
         'api_used': 'simulation',
       });
-      
+
       return simulatedResults;
-      
     } catch (e) {
       // Error searching HBO Max content
       return [];
@@ -156,14 +154,14 @@ class HboMaxService implements StreamingPlatformServiceInterface {
   }) async {
     try {
       // Getting HBO Max trending content
-      
+
       // Try real API if configured
       if (StreamingApiConfig.isHboMaxConfigured) {
         final realResults = await _getTrendingHboMaxContent(
           region: region,
           limit: limit,
         );
-        
+
         if (realResults.isNotEmpty) {
           _analytics.trackEvent(AnalyticsEventType.userEngagement, {
             'results_count': realResults.length,
@@ -172,20 +170,19 @@ class HboMaxService implements StreamingPlatformServiceInterface {
           return realResults;
         }
       }
-      
+
       // Fallback to simulation
       final simulatedResults = await _simulateHboMaxTrending(
         region: region,
         limit: limit,
       );
-      
+
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'results_count': simulatedResults.length,
         'api_used': 'simulation',
       });
-      
+
       return simulatedResults;
-      
     } catch (e) {
       // Error getting HBO Max trending content
       return [];
@@ -203,7 +200,8 @@ class HboMaxService implements StreamingPlatformServiceInterface {
 
   /// Get available subscription plans
   @override
-  Future<List<SubscriptionPlan>> getSubscriptionPlans({String region = 'US'}) async {
+  Future<List<SubscriptionPlan>> getSubscriptionPlans(
+      {String region = 'US'}) async {
     return [
       const SubscriptionPlan(
         id: 'hbo_max_monthly',
@@ -276,8 +274,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/search')
-          .replace(queryParameters: {
+      final url = Uri.parse('$_baseUrl/search').replace(queryParameters: {
         'q': query,
         'region': region,
         'limit': limit.toString(),
@@ -307,8 +304,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/trending')
-          .replace(queryParameters: {
+      final url = Uri.parse('$_baseUrl/trending').replace(queryParameters: {
         'region': region,
         'limit': limit.toString(),
         'content_type': 'movie',
@@ -333,10 +329,11 @@ class HboMaxService implements StreamingPlatformServiceInterface {
   }
 
   /// Parse HBO Max availability response
-  PlatformAvailability _parseHboMaxAvailability(Map<String, dynamic> data, String tmdbId) {
+  PlatformAvailability _parseHboMaxAvailability(
+      Map<String, dynamic> data, String tmdbId) {
     final availability = data['availability'] as Map<String, dynamic>? ?? {};
     final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
-    
+
     return PlatformAvailability(
       platform: StreamingPlatform.hboMax,
       isAvailable: availability['is_available'] as bool? ?? false,
@@ -347,8 +344,10 @@ class HboMaxService implements StreamingPlatformServiceInterface {
       currency: 'USD',
       quality: metadata['video_quality'] as String? ?? '4K Dolby Vision',
       deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages: List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
-      subtitleLanguages: List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+      audioLanguages:
+          List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
+      subtitleLanguages:
+          List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
     );
   }
 
@@ -362,8 +361,9 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         overview: movie['overview'] as String? ?? '',
         posterPath: movie['poster_path'] as String? ?? '',
         backdropPath: movie['backdrop_path'] as String? ?? '',
-        releaseDate: movie['release_date'] != null 
-            ? DateTime.tryParse(movie['release_date'] as String) ?? DateTime.now()
+        releaseDate: movie['release_date'] != null
+            ? DateTime.tryParse(movie['release_date'] as String) ??
+                DateTime.now()
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,
@@ -469,7 +469,8 @@ class HboMaxService implements StreamingPlatformServiceInterface {
       return Movie(
         id: int.parse(movieId),
         title: trendingTitles[index],
-        overview: 'Trending HBO Max exclusive content with premium production values.',
+        overview:
+            'Trending HBO Max exclusive content with premium production values.',
         posterPath: '/trending_hbo_$movieId.jpg',
         backdropPath: '/trending_hbo_backdrop_$movieId.jpg',
         releaseDate: DateTime.parse('2023-$month-01'),

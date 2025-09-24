@@ -321,7 +321,8 @@ class ComprehensiveSyncService {
       favorites: favoritesStats,
       watchlist: watchlistStats,
       lastFullSync: _lastFullSync ?? DateTime.fromMillisecondsSinceEpoch(0),
-      lastIncrementalSync: _lastIncrementalSync ?? DateTime.fromMillisecondsSinceEpoch(0),
+      lastIncrementalSync:
+          _lastIncrementalSync ?? DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 

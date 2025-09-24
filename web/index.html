@@ -90,10 +90,13 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png" />
 
-    <title id="page-title">
-      Películas - Descubre tu próxima película favorita
-    </title>
-    <link rel="manifest" href="manifest.json" />
+    <!-- Google Fonts - Noto Sans and Emoji fallbacks for Web -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Noto+Color+Emoji&family=Noto+Emoji&display=swap"
+      rel="stylesheet"
+    />
 
     <!-- Google AdSense -->
     <script
@@ -101,6 +104,12 @@
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4576016092724628"
       crossorigin="anonymous"
     ></script>
+    <meta name="google-adsense-account" content="ca-pub-4576016092724628" />
+
+    <title id="page-title">
+      Películas - Descubre tu próxima película favorita
+    </title>
+    <link rel="manifest" href="manifest.json" />
 
     <!-- Deep Links and App Detection Script -->
     <script>
@@ -257,6 +266,16 @@
         min-height: 100%;
         background-color: #eebeb8;
         background-size: 100% 100%;
+        /* Configuración de fuentes para Web con fallbacks completos */
+        font-family: "Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+          "Helvetica Neue", sans-serif;
+      }
+
+      /* Configuración específica para soporte de emojis y caracteres especiales */
+      * {
+        font-family: "Noto Sans", "Noto Color Emoji", "Noto Emoji",
+          "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif !important;
       }
 
       .center {
@@ -310,10 +329,38 @@
     </style>
     <script id="splash-screen-script">
       function removeSplashFromWeb() {
+        console.log("🎬 Removing splash screen from web");
         document.getElementById("splash")?.remove();
         document.getElementById("splash-branding")?.remove();
         document.body.style.background = "transparent";
+        console.log("✅ Web splash screen removed");
       }
+
+      // ✅ AUTO TIMEOUT: Remover splash screen automáticamente después de 5 segundos
+      // para evitar que se quede congelado
+      let splashTimeout = setTimeout(() => {
+        console.log("⏰ Auto-removing splash screen due to timeout");
+        removeSplashFromWeb();
+      }, 5000);
+
+      // Función para cancelar el timeout si la app se inicializa correctamente
+      window.cancelSplashTimeout = function () {
+        if (splashTimeout) {
+          clearTimeout(splashTimeout);
+          splashTimeout = null;
+          console.log("✅ Splash timeout cancelled - app initialized properly");
+        }
+      };
+
+      // Detectar cuando Flutter está listo
+      window.addEventListener("flutter-initialized", () => {
+        console.log("🚀 Flutter initialized event received");
+        window.cancelSplashTimeout();
+        // Dar un pequeño delay para asegurar que la UI esté lista
+        setTimeout(() => {
+          removeSplashFromWeb();
+        }, 100);
+      });
     </script>
   </head>
   <body>

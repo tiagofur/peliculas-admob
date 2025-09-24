@@ -2,18 +2,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peliculas/infrastructure/services/anonymous_data_migrator.dart';
 
+import 'helpers/test_setup_helper.dart';
+
 void main() {
   group('AnonymousDataMigrator Tests', () {
     late ProviderContainer container;
     late AnonymousDataMigrator migrator;
 
-    setUp(() {
+    setUp(() async {
+      await TestSetupHelper.setupTest();
       container = ProviderContainer();
       migrator = container.read(anonymousDataMigratorProvider);
     });
 
-    tearDown(() {
+    tearDown(() async {
       container.dispose();
+      await TestSetupHelper.tearDownTest();
     });
 
     test('detectAnonymousData retorna mapa vacío si no hay datos', () async {
@@ -117,6 +121,7 @@ void main() {
     testWidgets('AppState detecta datos locales correctamente', (tester) async {
       // Test de integración básico - requiere configuración completa de providers
       // Este test verifica que la integración básica funciona
+      await TestSetupHelper.setupTest();
 
       final container = ProviderContainer();
 
@@ -125,6 +130,7 @@ void main() {
           () => container.read(anonymousDataMigratorProvider), returnsNormally);
 
       container.dispose();
+      await TestSetupHelper.tearDownTest();
     });
   });
 }

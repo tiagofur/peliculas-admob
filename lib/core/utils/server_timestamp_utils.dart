@@ -12,33 +12,67 @@ class ServerTimestampUtils {
     try {
       final client = Supabase.instance.client;
 
-      // Usar función SQL para obtener timestamp del servidor
-      final response = await client
-          .rpc('get_server_timestamp')
-          .timeout(const Duration(seconds: 5));
+      // Método 1: Intentar usar función RPC get_server_timestamp
+      try {
+        final response = await client
+            .rpc('get_server_timestamp')
+            .timeout(const Duration(seconds: 3));
 
-      if (response != null && response is String) {
-        return DateTime.parse(response);
+        if (response != null) {
+          // La función RPC devuelve un timestamp ISO string
+          if (response is String) {
+            return DateTime.parse(response);
+          }
+          // O puede devolver directamente como timestamp
+          return DateTime.parse(response.toString());
+        }
+      } catch (rpcError) {
+        _logger.debug('RPC get_server_timestamp no disponible: $rpcError');
+        // Continuar con método alternativo
       }
 
-      // Si no hay función RPC, usar una consulta simple
-      final result = await client
-          .from('sync_metadata')
-          .select('created_at')
-          .limit(1)
-          .single()
-          .timeout(const Duration(seconds: 5));
+      // Método 2: Usar consulta SQL directa como fallback
+      try {
+        final result = await client
+            .from('user_profiles')
+            .select('created_at')
+            .limit(1)
+            .order('created_at')
+            .timeout(const Duration(seconds: 3));
 
-      // Extraer el timestamp del servidor
-      final serverTime = result['created_at'] as String?;
-      if (serverTime != null) {
-        return DateTime.parse(serverTime);
+        if (result.isNotEmpty) {
+          final serverTime = result.first['created_at'] as String?;
+          if (serverTime != null) {
+            _logger.debug('✅ Server timestamp obtenido via consulta SQL');
+            return DateTime.parse(serverTime);
+          }
+        }
+      } catch (queryError) {
+        _logger.debug('Consulta SQL de timestamp falló: $queryError');
       }
 
-      throw Exception('No se pudo obtener timestamp del servidor');
+      // Método 3: Usar una consulta mínima que siempre funciona
+      try {
+        final result = await client
+            .from('user_lists')
+            .select('created_at')
+            .limit(1)
+            .timeout(const Duration(seconds: 2));
+
+        if (result.isNotEmpty) {
+          final serverTime = result.first['created_at'] as String?;
+          if (serverTime != null) {
+            _logger.debug('✅ Server timestamp obtenido via tabla user_lists');
+            return DateTime.parse(serverTime);
+          }
+        }
+      } catch (userListsError) {
+        _logger.debug('Consulta de user_lists falló: $userListsError');
+      }
+
+      throw Exception('Todos los métodos de server timestamp fallaron');
     } catch (e) {
-      _logger
-          .warning('⚠️ No se pudo obtener server timestamp, usando local: $e');
+      _logger.debug('⚠️ Usando timestamp local como fallback: $e');
       return DateTime.now();
     }
   }

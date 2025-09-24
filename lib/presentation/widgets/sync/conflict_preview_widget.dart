@@ -509,8 +509,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
       children: [
         _buildDetailRow(context, 'Película', item.movieTitle),
         _buildDetailRow(context, 'Agregado', _formatDate(item.addedAt)),
-        _buildDetailRow(
-            context, 'Prioridad', item.priority.toString()),
+        _buildDetailRow(context, 'Prioridad', item.priority.toString()),
         if (item.personalNotes != null && item.personalNotes!.isNotEmpty)
           _buildDetailRow(context, 'Notas', item.personalNotes!, maxLines: 2),
         _buildDetailRow(

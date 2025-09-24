@@ -337,8 +337,6 @@ class StreamingPlatformsList extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        // 🚀 PERFORMANCE: Cache para scroll horizontal de plataformas
-        cacheExtent: 400.0,
         itemCount: platforms.length,
         itemBuilder: (context, index) {
           final platform = platforms[index];

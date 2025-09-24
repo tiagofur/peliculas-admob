@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Transiciones cinematográficas personalizadas para navegación entre páginas
 class CinematicPageTransitions {
-  /// Transición de desvanecimiento con escala
+  /// Transición de desvanecimiento con escala - ✅ OPTIMIZADA
   static PageRouteBuilder fadeScaleTransition({
     required Widget page,
-    Duration duration = const Duration(milliseconds: 600),
+    Duration duration = const Duration(milliseconds: 350), // Más rápida para mejor UX
   }) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -43,10 +43,10 @@ class CinematicPageTransitions {
     );
   }
 
-  /// Transición de deslizamiento desde abajo con rebote
+  /// Transición de deslizamiento desde abajo con rebote - ✅ OPTIMIZADA
   static PageRouteBuilder slideUpTransition({
     required Widget page,
-    Duration duration = const Duration(milliseconds: 500),
+    Duration duration = const Duration(milliseconds: 400), // Ligeramente más rápida
   }) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => page,

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/services/sync_performance_metrics.dart';
-import '../../l10n/app_localizations.dart';
 
 /// Dashboard en tiempo real para monitorear el rendimiento de sincronización
 /// Cumple con los requisitos del issue #69 para verificación de latencia
@@ -92,8 +91,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)?.realtimeSyncDashboard ??
-            'Realtime Sync Dashboard'),
+        title: const Text('Dashboard de Sincronización Realtime'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
@@ -138,7 +136,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  AppLocalizations.of(context)?.systemStatus ?? 'System Status',
+                  'Estado del Sistema',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ],
@@ -148,8 +146,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    AppLocalizations.of(context)?.performanceScore ??
-                        'Performance Score',
+                    'Score de Rendimiento',
                     '${(metrics.performanceScore * 100).toStringAsFixed(1)}%',
                     _getScoreColor(metrics.performanceScore),
                   ),
@@ -157,11 +154,8 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildMetricCard(
-                    AppLocalizations.of(context)?.connectionStatus ??
-                        'Connection Status',
-                    metrics.isOnline
-                        ? (AppLocalizations.of(context)?.online ?? 'Online')
-                        : (AppLocalizations.of(context)?.offline ?? 'Offline'),
+                    'Estado de Conexión',
+                    metrics.isOnline ? 'Online' : 'Offline',
                     metrics.isOnline ? Colors.green : Colors.red,
                   ),
                 ),
@@ -191,13 +185,12 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              AppLocalizations.of(context)?.syncLatency ?? 'Sync Latency',
+              'Latencia de Sincronización',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
             Text(
-              AppLocalizations.of(context)?.latencyTarget ??
-                  'Target: < 1.5 seconds (Issue #69 requirement)',
+              'Objetivo: < 1.5 segundos (Requerimiento del Issue #69)',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.grey[600],
                   ),
@@ -207,7 +200,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    AppLocalizations.of(context)?.avgSync ?? 'Avg Sync',
+                    'Sync Promedio',
                     '${avgSyncMs}ms',
                     syncLatencyAlert ? Colors.red : Colors.green,
                     alert: syncLatencyAlert,
@@ -216,7 +209,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildMetricCard(
-                    AppLocalizations.of(context)?.avgRealtime ?? 'Avg Realtime',
+                    'Realtime Promedio',
                     '${avgRealtimeMs}ms',
                     realtimeLatencyAlert ? Colors.red : Colors.green,
                     alert: realtimeLatencyAlert,
@@ -243,7 +236,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              AppLocalizations.of(context)?.realtimeEvents ?? 'Realtime Events',
+              'Eventos en Tiempo Real',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
@@ -251,8 +244,7 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    AppLocalizations.of(context)?.eventsReceived ??
-                        'Events Received',
+                    'Eventos Recibidos',
                     '${metrics.realtimeEventsReceived}',
                     Colors.blue,
                   ),

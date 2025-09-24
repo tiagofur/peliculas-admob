@@ -4,7 +4,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
 import '../../../core/monetization/monetization_analytics_service.dart';
-import 'adsense_web_widget.dart';
 
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({super.key});
@@ -98,9 +97,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // En web, usar AdSense
+    // No mostrar anuncios en web
     if (kIsWeb) {
-      return const AdSenseBannerWidget();
+      return const SizedBox.shrink();
     }
 
     final bannerAd = _bannerAd;

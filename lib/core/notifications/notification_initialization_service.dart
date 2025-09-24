@@ -24,7 +24,7 @@ class NotificationInitializationService {
 
   bool get isInitialized => _isInitialized;
   NotificationManager? get notificationManager => _notificationManager;
-  
+
   /// Getter para acceder al cliente de Supabase
   SupabaseClient get _supabase => Supabase.instance.client;
 

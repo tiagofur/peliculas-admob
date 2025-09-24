@@ -97,7 +97,8 @@ class CustomListsHiveDataSource {
       await box.delete(listId);
       await itemsBox.delete(listId);
 
-      LoggerFactory.debug('CustomListsHive: Lista eliminada del cache: $listId');
+      LoggerFactory.debug(
+          'CustomListsHive: Lista eliminada del cache: $listId');
     } catch (e) {
       LoggerFactory.error('CustomListsHive: Error eliminando lista: $e');
     }
@@ -118,7 +119,8 @@ class CustomListsHiveDataSource {
 
       return CustomList.fromJson(data);
     } catch (e) {
-      LoggerFactory.error('CustomListsHive: Error obteniendo lista $listId: $e');
+      LoggerFactory.error(
+          'CustomListsHive: Error obteniendo lista $listId: $e');
       return null;
     }
   }

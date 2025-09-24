@@ -37,7 +37,8 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'movie_id': movieId,
         'region': region,
-        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+        'api_used':
+            StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
       });
 
       // Try real availability service first
@@ -56,7 +57,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
           tmdbId: movieId,
           region: region,
         );
-        
+
         if (directAvailability != null) {
           return directAvailability;
         }
@@ -84,7 +85,8 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         'query': query,
         'region': region,
         'limit': limit,
-        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+        'api_used':
+            StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
       });
 
       // If Prime Video API is configured, use real API
@@ -94,7 +96,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
           region: region,
           limit: limit,
         );
-        
+
         if (realResults.isNotEmpty) {
           return realResults;
         }
@@ -120,7 +122,8 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'region': region,
         'limit': limit,
-        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+        'api_used':
+            StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
       });
 
       // If Prime Video API is configured, use real API
@@ -129,7 +132,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
           region: region,
           limit: limit,
         );
-        
+
         if (realResults.isNotEmpty) {
           return realResults;
         }
@@ -294,8 +297,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/search')
-          .replace(queryParameters: {
+      final url = Uri.parse('$_baseUrl/search').replace(queryParameters: {
         'q': query,
         'region': region,
         'limit': limit.toString(),
@@ -325,8 +327,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/trending')
-          .replace(queryParameters: {
+      final url = Uri.parse('$_baseUrl/trending').replace(queryParameters: {
         'region': region,
         'limit': limit.toString(),
         'content_type': 'movie',
@@ -351,16 +352,18 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
   }
 
   /// Parse Prime Video availability response
-  PlatformAvailability _parsePrimeAvailability(Map<String, dynamic> data, String tmdbId) {
+  PlatformAvailability _parsePrimeAvailability(
+      Map<String, dynamic> data, String tmdbId) {
     final availability = data['availability'] as Map<String, dynamic>? ?? {};
     final pricing = data['pricing'] as Map<String, dynamic>? ?? {};
     final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
-    
+
     return PlatformAvailability(
       platform: StreamingPlatform.primeVideo,
       isAvailable: availability['is_available'] as bool? ?? false,
       isFree: availability['is_free'] as bool? ?? false,
-      requiresSubscription: availability['requires_subscription'] as bool? ?? true,
+      requiresSubscription:
+          availability['requires_subscription'] as bool? ?? true,
       canRent: availability['can_rent'] as bool? ?? true,
       canPurchase: availability['can_purchase'] as bool? ?? true,
       rentalPrice: (pricing['rental_price'] as num?)?.toDouble(),
@@ -368,8 +371,10 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
       currency: pricing['currency'] as String? ?? 'USD',
       quality: metadata['video_quality'] as String? ?? '4K Ultra HD',
       deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages: List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
-      subtitleLanguages: List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+      audioLanguages:
+          List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
+      subtitleLanguages:
+          List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
     );
   }
 
@@ -383,8 +388,9 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         overview: movie['overview'] as String? ?? '',
         posterPath: movie['poster_path'] as String? ?? '',
         backdropPath: movie['backdrop_path'] as String? ?? '',
-        releaseDate: movie['release_date'] != null 
-            ? DateTime.tryParse(movie['release_date'] as String) ?? DateTime.now()
+        releaseDate: movie['release_date'] != null
+            ? DateTime.tryParse(movie['release_date'] as String) ??
+                DateTime.now()
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,

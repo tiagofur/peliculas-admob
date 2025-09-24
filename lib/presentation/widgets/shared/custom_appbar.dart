@@ -57,7 +57,8 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                             context: context,
                             delegate: SearchMovieDelegate(
                                 initialMovies: const [],
-                                searchMovies: (query) => movieRepository.searchMovies(query)))
+                                searchMovies: (query) =>
+                                    movieRepository.searchMovies(query)))
                         .then((movie) {
                       if (movie == null) return;
                       if (context.mounted) {

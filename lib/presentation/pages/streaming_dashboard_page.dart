@@ -38,7 +38,8 @@ class _StreamingDashboardPageState extends State<StreamingDashboardPage>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadDashboardData();
-    _analytics.trackEvent(AnalyticsEventType.userEngagement, {'action': 'streaming_dashboard_opened'});
+    _analytics.trackEvent(AnalyticsEventType.userEngagement,
+        {'action': 'streaming_dashboard_opened'});
   }
 
   @override
@@ -262,8 +263,6 @@ class _StreamingDashboardPageState extends State<StreamingDashboardPage>
     );
   }
 
-
-
   Widget _buildRecommendations() {
     return ContentRecommendationsWidget(
       subscriptions: _subscriptions,
@@ -404,8 +403,6 @@ class _StreamingDashboardPageState extends State<StreamingDashboardPage>
     }
   }
 
-
-
   void _searchContent(String query) async {
     if (query.trim().isEmpty) return;
 
@@ -429,7 +426,8 @@ class _StreamingDashboardPageState extends State<StreamingDashboardPage>
       // Search content across subscribed platforms
       final searchResults = await _streamingManager.searchContent(
         query: query,
-        platformIds: subscribedPlatformIds.isNotEmpty ? subscribedPlatformIds : null,
+        platformIds:
+            subscribedPlatformIds.isNotEmpty ? subscribedPlatformIds : null,
       );
 
       if (mounted) {

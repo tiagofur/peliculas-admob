@@ -23,13 +23,14 @@ class UserSubscriptionsWidget extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
 
   @override
-  State<UserSubscriptionsWidget> createState() => _UserSubscriptionsWidgetState();
+  State<UserSubscriptionsWidget> createState() =>
+      _UserSubscriptionsWidgetState();
 }
 
 class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
   final SubscriptionManager _subscriptionManager = SubscriptionManager();
   final AnalyticsService _analytics = AnalyticsService.instance;
-  
+
   List<UserSubscription> _subscriptions = [];
   bool _isLoading = true;
   String? _error;
@@ -49,10 +50,10 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
 
       await _subscriptionManager.initialize();
       final subscriptions = _subscriptionManager.subscriptions;
-      
+
       setState(() {
-        _subscriptions = widget.showInactiveSubscriptions 
-            ? subscriptions 
+        _subscriptions = widget.showInactiveSubscriptions
+            ? subscriptions
             : subscriptions.where((s) => s.isCurrentlyActive).toList();
         _isLoading = false;
       });
@@ -62,11 +63,13 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
         {
           'action': 'subscriptions_loaded',
           'count': _subscriptions.length,
-          'active_count': _subscriptions.where((s) => s.isCurrentlyActive).length,
+          'active_count':
+              _subscriptions.where((s) => s.isCurrentlyActive).length,
         },
       );
     } catch (e) {
-      LoggerFactory.error('Error loading subscriptions: $e', category: LogCategory.error);
+      LoggerFactory.error('Error loading subscriptions: $e',
+          category: LogCategory.error);
       setState(() {
         _error = 'Failed to load subscriptions';
         _isLoading = false;
@@ -85,11 +88,12 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
         await _subscriptionManager.addSubscription(result);
         await _loadSubscriptions();
         widget.onSubscriptionChanged?.call();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Subscription to ${result.platformName} added successfully'),
+              content: Text(
+                  'Subscription to ${result.platformName} added successfully'),
               backgroundColor: Colors.green,
             ),
           );
@@ -105,7 +109,8 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
           },
         );
       } catch (e) {
-        LoggerFactory.error('Error adding subscription: $e', category: LogCategory.error);
+        LoggerFactory.error('Error adding subscription: $e',
+            category: LogCategory.error);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -123,7 +128,7 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
       await _subscriptionManager.updateSubscription(subscription);
       await _loadSubscriptions();
       widget.onSubscriptionChanged?.call();
-      
+
       await _analytics.trackEvent(
         AnalyticsEventType.userEngagement,
         {
@@ -133,7 +138,8 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
         },
       );
     } catch (e) {
-      LoggerFactory.error('Error updating subscription: $e', category: LogCategory.error);
+      LoggerFactory.error('Error updating subscription: $e',
+          category: LogCategory.error);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -173,11 +179,12 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
         await _subscriptionManager.removeSubscription(subscription.id);
         await _loadSubscriptions();
         widget.onSubscriptionChanged?.call();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${subscription.platformName} subscription removed'),
+              content:
+                  Text('${subscription.platformName} subscription removed'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -192,7 +199,8 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
           },
         );
       } catch (e) {
-        LoggerFactory.error('Error removing subscription: $e', category: LogCategory.error);
+        LoggerFactory.error('Error removing subscription: $e',
+            category: LogCategory.error);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -230,15 +238,15 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
             Text(
               'My Subscriptions',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             if (_subscriptions.isNotEmpty)
               Text(
                 '${_subscriptions.length} active subscription${_subscriptions.length != 1 ? 's' : ''}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                      color: Colors.grey[600],
+                    ),
               ),
           ],
         ),
@@ -298,15 +306,14 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
     return Column(
       children: [
         ..._subscriptions.map((subscription) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SubscriptionCard(
-            subscription: subscription,
-            onUpdate: _updateSubscription,
-            onRemove: _removeSubscription,
-          ),
-        )),
-        if (_subscriptions.length > 3)
-          _buildSummaryCard(),
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SubscriptionCard(
+                subscription: subscription,
+                onUpdate: _updateSubscription,
+                onRemove: _removeSubscription,
+              ),
+            )),
+        if (_subscriptions.length > 3) _buildSummaryCard(),
       ],
     );
   }
@@ -326,15 +333,15 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
             Text(
               'No Subscriptions Yet',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Add your streaming subscriptions to track costs and availability',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[500],
-              ),
+                    color: Colors.grey[500],
+                  ),
               textAlign: TextAlign.center,
             ),
             if (widget.showAddButton) ...[
@@ -364,7 +371,7 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
       0,
       (sum, sub) => sum + sub.monthlyCost,
     );
-    
+
     final expiringSoon = _subscriptions.where((s) => s.isExpiringSoon).length;
 
     return Card(
@@ -379,15 +386,15 @@ class _UserSubscriptionsWidgetState extends State<UserSubscriptionsWidget> {
                   Text(
                     'Monthly Total',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                    ),
+                          color: Colors.grey[600],
+                        ),
                   ),
                   Text(
                     '\$${totalCost.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).primaryColor,
+                        ),
                   ),
                 ],
               ),

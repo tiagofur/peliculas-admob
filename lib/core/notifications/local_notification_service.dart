@@ -29,10 +29,6 @@ class LocalNotificationService {
 
   bool get isInitialized => _isInitialized;
 
-  /// Getter público para acceder al plugin (para verificación de permisos)
-  FlutterLocalNotificationsPlugin? get plugin =>
-      _flutterLocalNotificationsPlugin;
-
   /// Establece la clave de navegación global para permitir navegación desde notificaciones
   void setNavigatorKey(GlobalKey<NavigatorState> navigatorKey) {
     _globalNavigatorKey = navigatorKey;
@@ -79,7 +75,11 @@ class LocalNotificationService {
 
       // Solicitar permisos en Android 13+
       if (Platform.isAndroid) {
-        await _requestAndroidPermissions();
+        final hasPermissions = await _requestAndroidPermissions();
+        if (!hasPermissions) {
+          LoggerFactory.warning(
+              '⚠️ La app no tiene todos los permisos necesarios para notificaciones');
+        }
       }
 
       _isInitialized = true;
@@ -97,36 +97,7 @@ class LocalNotificationService {
   }
 
   /// Solicita permisos para Android 13+
-  Future<void> _requestAndroidPermissions() async {
-    if (!Platform.isAndroid) return;
-
-    try {
-      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
-          _flutterLocalNotificationsPlugin
-              ?.resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>();
-
-      if (androidImplementation != null) {
-        // Solo pedir permisos básicos de notificaciones, NO alarmas exactas
-        await androidImplementation.requestNotificationsPermission();
-
-        // NO pedir automáticamente permisos de alarmas exactas
-        // await androidImplementation.requestExactAlarmsPermission();
-
-        if (kDebugMode) {
-          LoggerFactory.info(
-              '✅ Basic notification permissions requested (alarms permission skipped)');
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        LoggerFactory.error('Error requesting Android permissions: $e');
-      }
-    }
-  }
-
-  /// Solicita permisos de alarmas exactas solo cuando se necesiten
-  Future<bool> requestExactAlarmsPermissionIfNeeded() async {
+  Future<bool> _requestAndroidPermissions() async {
     if (!Platform.isAndroid) return true;
 
     try {
@@ -136,23 +107,82 @@ class LocalNotificationService {
                   AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
-        // Verificar si ya tiene el permiso
-        final hasPermission =
-            await androidImplementation.canScheduleExactNotifications();
-        if (hasPermission == true) {
-          return true;
+        // Solicitar permiso de notificaciones
+        final notificationPermission =
+            await androidImplementation.requestNotificationsPermission();
+        LoggerFactory.info(
+            '✅ Permiso de notificaciones: $notificationPermission');
+
+        // Solicitar permiso de alarmas exactas
+        final exactAlarmsPermission =
+            await androidImplementation.requestExactAlarmsPermission();
+        LoggerFactory.info(
+            '✅ Permiso de alarmas exactas: $exactAlarmsPermission');
+
+        final hasAllPermissions = (notificationPermission ?? false) &&
+            (exactAlarmsPermission ?? false);
+
+        if (hasAllPermissions) {
+          LoggerFactory.info(
+              '✅ Todos los permisos de Android otorgados correctamente');
+        } else {
+          LoggerFactory.warning(
+              '⚠️ Algunos permisos no fueron otorgados - Notificaciones: $notificationPermission, Alarmas: $exactAlarmsPermission');
         }
 
-        // Solo pedir si realmente se necesita
-        await androidImplementation.requestExactAlarmsPermission();
-        return true;
+        return hasAllPermissions;
       }
+
+      LoggerFactory.warning(
+          '⚠️ No se pudo acceder a la implementación de Android');
+      return false;
     } catch (e) {
-      if (kDebugMode) {
-        LoggerFactory.error('Error requesting exact alarms permission: $e');
-      }
+      LoggerFactory.error('❌ Error solicitando permisos de Android: $e');
+      return false;
     }
-    return false;
+  }
+
+  /// Verifica si los permisos de notificación están habilitados
+  Future<bool> checkNotificationPermissions() async {
+    if (!_isInitialized || _flutterLocalNotificationsPlugin == null) {
+      return false;
+    }
+
+    if (!Platform.isAndroid) {
+      return true; // En iOS se manejan durante la inicialización
+    }
+
+    try {
+      final androidImplementation = _flutterLocalNotificationsPlugin
+          ?.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+
+      if (androidImplementation != null) {
+        // Verificar si tenemos permisos de notificaciones
+        final hasNotificationPermission =
+            await androidImplementation.areNotificationsEnabled();
+
+        LoggerFactory.info(
+            '🔍 Estado permisos notificaciones: $hasNotificationPermission');
+
+        return hasNotificationPermission ?? false;
+      }
+
+      return false;
+    } catch (e) {
+      LoggerFactory.error('❌ Error verificando permisos: $e');
+      return false;
+    }
+  }
+
+  /// Solicita permisos de notificación de forma interactiva
+  Future<bool> requestNotificationPermissions() async {
+    if (!_isInitialized || _flutterLocalNotificationsPlugin == null) {
+      LoggerFactory.error('❌ Servicio de notificaciones no inicializado');
+      return false;
+    }
+
+    return await _requestAndroidPermissions();
   }
 
   /// Maneja el tap en una notificación local

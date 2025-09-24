@@ -9,6 +9,8 @@ import 'package:peliculas/presentation/providers/hybrid_repositories_provider.da
 import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/test_setup_helper.dart';
+
 void main() {
   group('Multi-Device Watched Movies Synchronization Tests', () {
     late ProviderContainer deviceA;
@@ -18,8 +20,8 @@ void main() {
     const String testUserId = 'multi_device_user_123';
 
     setUp(() async {
-      // Initialize shared preferences for testing
-      SharedPreferences.setMockInitialValues({});
+      // Initialize all test dependencies
+      await TestSetupHelper.setupTest();
 
       // Create two provider containers simulating different devices
       deviceA = ProviderContainer(overrides: [
@@ -38,9 +40,10 @@ void main() {
       await repoB.initializeLocal();
     });
 
-    tearDown(() {
+    tearDown(() async {
       deviceA.dispose();
       deviceB.dispose();
+      await TestSetupHelper.tearDownTest();
     });
 
     test('should sync watched movie from device A to device B', () async {

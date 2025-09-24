@@ -107,7 +107,7 @@ class ApiKeys {
         }
       } catch (e) {
         if (kDebugMode) {
-          LoggerFactory.info('⚠️  Supabase not configured (optional)');
+          LoggerFactory.warning('⚠️  Supabase not configured (optional)');
         }
       }
 

@@ -11,7 +11,7 @@ class MinimalSyncIndicator extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isSyncing = ref.watch(syncStatusProvider);
-    
+
     if (!isSyncing) {
       return const SizedBox.shrink();
     }
@@ -29,7 +29,6 @@ class MinimalSyncIndicator extends ConsumerWidget {
           stops: const [0.0, 0.5, 1.0],
         ),
       ),
-
     );
   }
 }
@@ -75,7 +74,7 @@ class _MinimalSyncIndicatorShimmerState
   @override
   Widget build(BuildContext context) {
     final isSyncing = ref.watch(syncStatusProvider);
-    
+
     if (!isSyncing) {
       return const SizedBox.shrink();
     }
@@ -107,7 +106,7 @@ class _MinimalSyncIndicatorShimmerState
             ),
           ),
         );
-       },
-     );
-   }
- }
+      },
+    );
+  }
+}

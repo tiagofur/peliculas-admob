@@ -12,6 +12,7 @@ dependencies:
   cached_network_image: ^3.4.1
   card_swiper: ^3.0.1
   connectivity_plus: ^7.0.0
+  cupertino_icons: ^1.0.8 # Added for iOS-style icons
   dio: ^5.7.0
   fl_chart: ^1.0.0
   flutter:
@@ -53,7 +54,15 @@ dependencies:
   confetti: ^0.8.0
   lottie: ^3.3.1
   json_annotation: ^4.8.1
-  web: ^1.1.1
+  equatable: ^2.0.7
+  # Phase 3 Performance & Caching
+  flutter_cache_manager: ^3.4.1
+  # Phase 3 Animations & UX
+  flutter_animate: ^4.5.0
+  # Phase 3 Monetization
+  in_app_purchase: ^3.2.1
+  # Phase 3 Advanced UI
+  flutter_staggered_animations: ^1.1.1
 
 dev_dependencies:
   analyzer: ^6.4.1
@@ -61,7 +70,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  golden_toolkit: ^0.15.0
+  # golden_toolkit: ^0.15.0  # REMOVED: Package discontinued
   hive_generator: ^2.0.1
   json_serializable: ^6.8.0
   integration_test:

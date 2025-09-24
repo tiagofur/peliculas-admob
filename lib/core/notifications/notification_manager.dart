@@ -865,8 +865,6 @@ class NotificationManager {
     }
   }
 
-
-
   /// Muestra una notificación local pública (para uso externo)
   Future<void> showLocalNotification({
     required int id,

@@ -148,7 +148,7 @@ class ConflictResolver {
 
       // Mostrar diálogo de resolución de conflictos
       final completer = Completer<ConflictResolution>();
-      
+
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
@@ -167,15 +167,14 @@ class ConflictResolver {
 
       // Esperar la resolución del usuario
       final resolution = await completer.future;
-      
+
       LoggerFactory.info(
           '✅ User resolved conflict using strategy: ${resolution.strategy.name}');
-      
+
       return resolution.resolvedEntity;
     } catch (e) {
       LoggerFactory.error('❌ Error showing conflict resolution UI: $e');
-      LoggerFactory.info(
-          'ℹ️ Falling back to local wins due to UI error');
+      LoggerFactory.info('ℹ️ Falling back to local wins due to UI error');
       return _resolveLocalWins(conflict);
     }
   }
@@ -398,12 +397,12 @@ class ConflictResolver {
   BuildContext? _getCurrentContext() {
     // Implementación con fallback automático para evitar dependencias circulares
     LoggerFactory.debug('🔍 Attempting to get current navigation context');
-    
+
     // En una implementación completa, esto podría usar:
     // - Un NavigatorKey global configurado en MaterialApp
     // - Un servicio de navegación inyectado
     // - El contexto pasado como parámetro al ConflictResolver
-    
+
     return null; // Fallback a estrategia automática
   }
 }

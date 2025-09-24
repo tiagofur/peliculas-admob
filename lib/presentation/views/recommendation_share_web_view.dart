@@ -57,7 +57,7 @@ class _RecommendationShareContent extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withAlpha(179),
+                  Colors.black.withValues(alpha: 179 / 255),
                   Colors.transparent,
                 ],
               ),
@@ -75,13 +75,17 @@ class _RecommendationShareContent extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: [
                           Theme.of(context).primaryColor,
-                          Theme.of(context).primaryColor.withAlpha(179),
+                          Theme.of(context)
+                              .primaryColor
+                              .withValues(alpha: 179 / 255),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).primaryColor.withAlpha(77),
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withValues(alpha: 77 / 255),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -147,13 +151,17 @@ class _RecommendationShareContent extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         Theme.of(context).primaryColor,
-                        Theme.of(context).primaryColor.withAlpha(179),
+                        Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: 179 / 255),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).primaryColor.withAlpha(77),
+                        color: Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: 77 / 255),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -357,7 +365,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withAlpha(179),
+        color: Colors.white.withValues(alpha: 179 / 255),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

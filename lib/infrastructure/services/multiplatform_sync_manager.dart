@@ -237,7 +237,7 @@ class MultiplataformSyncManager {
       // Realizar sincronización real con los managers disponibles
       final syncResults = <String, bool>{};
       var totalSynced = 0;
-      
+
       // Sincronizar watchlist si está disponible
       try {
         final container = _providerContainer;
@@ -246,7 +246,7 @@ class MultiplataformSyncManager {
           container.invalidate(watchlistProvider);
           container.invalidate(simpleFavoritesProvider);
           container.invalidate(watchedMoviesProvider);
-          
+
           LoggerFactory.info('📋 Providers invalidados para sincronización');
           totalSynced += 3;
           syncResults['providers'] = true;
@@ -255,7 +255,7 @@ class MultiplataformSyncManager {
         LoggerFactory.warning('⚠️ Error sincronizando providers: $e');
         syncResults['providers'] = false;
       }
-      
+
       // Sincronizar configuración local si es necesario
       try {
         // Aquí se podría agregar lógica para sincronizar configuraciones
@@ -268,10 +268,11 @@ class MultiplataformSyncManager {
       }
 
       _lastSuccessfulSync = DateTime.now();
-      
-      final successCount = syncResults.values.where((success) => success).length;
-      LoggerFactory.info('✅ Sincronización completada ($reason): $successCount/$totalSynced componentes sincronizados');
-      
+
+      final successCount =
+          syncResults.values.where((success) => success).length;
+      LoggerFactory.info(
+          '✅ Sincronización completada ($reason): $successCount/$totalSynced componentes sincronizados');
     } catch (e) {
       LoggerFactory.error('❌ Error en sincronización ($reason): $e');
     }
@@ -322,10 +323,10 @@ class MultiplataformSyncManager {
   /// Obtiene el estado actual de sincronización
   Map<String, dynamic> getSyncStatus() {
     // Calcular número de sincronizaciones basado en tiempo transcurrido
-    final syncCount = _lastSuccessfulSync != null 
+    final syncCount = _lastSuccessfulSync != null
         ? DateTime.now().difference(_lastSuccessfulSync!).inHours + 1
         : 0;
-        
+
     return {
       'is_syncing': _isPeriodicSyncActive,
       'last_sync': _lastSuccessfulSync?.toIso8601String(),
@@ -339,10 +340,10 @@ class MultiplataformSyncManager {
   /// Obtiene el estado detallado del manager para diagnóstico
   Map<String, dynamic> getManagerStatus() {
     // Calcular número de sincronizaciones basado en tiempo transcurrido
-    final syncCount = _lastSuccessfulSync != null 
+    final syncCount = _lastSuccessfulSync != null
         ? DateTime.now().difference(_lastSuccessfulSync!).inHours + 1
         : 0;
-        
+
     return {
       'is_syncing': _isPeriodicSyncActive,
       'last_sync_time': _lastSuccessfulSync?.toIso8601String(),
@@ -386,7 +387,8 @@ class MultiplataformSyncManager {
   /// Maneja inserción de datos desde tiempo real
   Future<void> handleRealtimeInsert(
       String tableName, Map<String, dynamic> data) async {
-    LoggerFactory.info('⚡ Realtime INSERT en $tableName: ${data['id'] ?? 'null'}');
+    LoggerFactory.info(
+        '⚡ Realtime INSERT en $tableName: ${data['id'] ?? 'null'}');
 
     try {
       // Invalidate specific providers based on table
@@ -402,7 +404,8 @@ class MultiplataformSyncManager {
   /// Maneja actualización de datos desde tiempo real
   Future<void> handleRealtimeUpdate(
       String tableName, Map<String, dynamic> data) async {
-    LoggerFactory.info('⚡ Realtime UPDATE en $tableName: ${data['id'] ?? 'null'}');
+    LoggerFactory.info(
+        '⚡ Realtime UPDATE en $tableName: ${data['id'] ?? 'null'}');
 
     try {
       // Invalidate specific providers based on table

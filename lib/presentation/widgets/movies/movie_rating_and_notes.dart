@@ -18,15 +18,13 @@ class MovieRatingAndNotes extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ratingAsync = ref.watch(movieRatingProvider(movie.id));
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
 
     return Container(
-      margin: EdgeInsets.all(isMobile ? 12 : 16),
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
@@ -36,21 +34,17 @@ class MovieRatingAndNotes extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.star, color: Colors.amber, size: isMobile ? 18 : 20),
-              SizedBox(width: isMobile ? 6 : 8),
-              Expanded(
-                child: Text(
-                  'Tu valoración',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: isMobile ? 16 : null,
-                      ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+              const Icon(Icons.star, color: Colors.amber, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Your Rating',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
             ],
           ),
-          SizedBox(height: isMobile ? 8 : 12),
+          const SizedBox(height: 12),
           ratingAsync.when(
             loading: () => const Center(
               child: CircularProgressIndicator(),
@@ -82,11 +76,14 @@ class MovieRatingAndNotes extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color:
-                Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
               style: BorderStyle.solid,
             ),
           ),
@@ -95,7 +92,10 @@ class MovieRatingAndNotes extends ConsumerWidget {
               Icon(
                 Icons.star_border,
                 size: 48,
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.7),
               ),
               const SizedBox(height: 8),
               Text(
@@ -149,8 +149,10 @@ class MovieRatingAndNotes extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color:
-                Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Column(

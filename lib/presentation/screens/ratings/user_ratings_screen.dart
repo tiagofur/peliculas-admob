@@ -19,7 +19,7 @@ class UserRatingsScreen extends ConsumerStatefulWidget {
 class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  
+
   String _sortBy = 'created_at'; // 'created_at', 'rating', 'movie_title'
   bool _ascending = false;
   double? _filterRating;
@@ -60,14 +60,16 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Ordenamiento
-              const Text('Ordenar por:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Ordenar por:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButton<String>(
                 value: _sortBy,
                 isExpanded: true,
                 items: const [
                   DropdownMenuItem(value: 'created_at', child: Text('Fecha')),
-                  DropdownMenuItem(value: 'rating', child: Text('Calificación')),
+                  DropdownMenuItem(
+                      value: 'rating', child: Text('Calificación')),
                   DropdownMenuItem(value: 'movie_title', child: Text('Título')),
                 ],
                 onChanged: (value) {
@@ -91,9 +93,10 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               // Filtro por calificación
-              const Text('Filtrar por calificación:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Filtrar por calificación:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               DropdownButton<double?>(
                 value: _filterRating,
@@ -113,7 +116,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Filtro por reseñas
               Row(
                 children: [
@@ -182,12 +185,15 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
 
     // Filtrar por calificación mínima
     if (_filterRating != null) {
-      filtered = filtered.where((rating) => rating.rating >= _filterRating!).toList();
+      filtered =
+          filtered.where((rating) => rating.rating >= _filterRating!).toList();
     }
 
     // Filtrar solo con reseñas
     if (_showOnlyWithReviews) {
-      filtered = filtered.where((rating) => rating.review != null && rating.review!.isNotEmpty).toList();
+      filtered = filtered
+          .where((rating) => rating.review != null && rating.review!.isNotEmpty)
+          .toList();
     }
 
     // Ordenar
@@ -221,7 +227,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
         children: [
           // MinimalSyncIndicator
           // const MinimalSyncIndicator(),
-          
+
           // AppBar personalizado
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -262,7 +268,7 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Barra de búsqueda
                   TextField(
                     controller: _searchController,
@@ -291,12 +297,14 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
               ),
             ),
           ),
-          
+
           // Contenido principal
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                await ref.read(userRatingsProvider.notifier).loadRatings(refresh: true);
+                await ref
+                    .read(userRatingsProvider.notifier)
+                    .loadRatings(refresh: true);
               },
               child: _buildContent(filteredRatings, ratingsState),
             ),
@@ -337,7 +345,9 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                ref.read(userRatingsProvider.notifier).loadRatings(refresh: true);
+                ref
+                    .read(userRatingsProvider.notifier)
+                    .loadRatings(refresh: true);
               },
               child: const Text('Reintentar'),
             ),
@@ -354,7 +364,10 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
             Icon(
               Icons.star_border,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -365,8 +378,11 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
             Text(
               'Comienza calificando algunas películas',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
+                  ),
             ),
           ],
         ),
@@ -392,8 +408,6 @@ class _UserRatingsScreenState extends ConsumerState<UserRatingsScreen> {
       },
     );
   }
-
-
 }
 
 class _RatingCard extends StatelessWidget {
@@ -427,13 +441,14 @@ class _RatingCard extends StatelessWidget {
                       ? Image.network(
                           'https://image.tmdb.org/t/p/w500${rating.moviePosterPath}',
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _buildPosterPlaceholder(),
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildPosterPlaceholder(),
                         )
                       : _buildPosterPlaceholder(),
                 ),
               ),
               const SizedBox(width: 16),
-              
+
               // Información
               Expanded(
                 child: Column(
@@ -443,13 +458,13 @@ class _RatingCard extends StatelessWidget {
                     Text(
                       rating.movieTitle,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Rating y fecha
                     Row(
                       children: [
@@ -470,20 +485,25 @@ class _RatingCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Text(
                           rating.rating.toStringAsFixed(1),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const Spacer(),
                         Text(
                           dateFormat.format(rating.createdAt),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
                         ),
                       ],
                     ),
-                    
+
                     // Reseña (si existe)
                     if (rating.review != null && rating.review!.isNotEmpty) ...[
                       const SizedBox(height: 8),

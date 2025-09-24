@@ -331,7 +331,7 @@ class PooledChannel {
   Future<void> _subscribe() async {
     int retryCount = 0;
     const maxRetries = 3;
-    
+
     while (retryCount < maxRetries) {
       try {
         channel.subscribe();
@@ -341,14 +341,17 @@ class PooledChannel {
         return;
       } catch (e) {
         retryCount++;
-        LoggerFactory.error('❌ Error suscribiendo canal para $tableName (intento $retryCount): $e');
-        
+        LoggerFactory.error(
+            '❌ Error suscribiendo canal para $tableName (intento $retryCount): $e');
+
         if (retryCount < maxRetries) {
-          LoggerFactory.info('🔄 Reintentando suscripción en ${RealtimeChannelPool._reconnectDelay.inSeconds}s...');
+          LoggerFactory.info(
+              '🔄 Reintentando suscripción en ${RealtimeChannelPool._reconnectDelay.inSeconds}s...');
           await Future.delayed(RealtimeChannelPool._reconnectDelay);
         } else {
           _isSubscribed = false;
-          LoggerFactory.error('💥 Falló suscripción después de $maxRetries intentos para $tableName');
+          LoggerFactory.error(
+              '💥 Falló suscripción después de $maxRetries intentos para $tableName');
         }
       }
     }

@@ -178,19 +178,22 @@ class CombinedStatsView extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [typeColor.withAlpha(25), typeColor.withAlpha(12)],
+          colors: [
+            typeColor.withValues(alpha: 25 / 255),
+            typeColor.withValues(alpha: 12 / 255)
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: typeColor.withAlpha(76)),
+        border: Border.all(color: typeColor.withValues(alpha: 76 / 255)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: typeColor.withAlpha(51),
+              color: typeColor.withValues(alpha: 51 / 255),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(typeIcon, color: typeColor, size: 24),
@@ -210,7 +213,7 @@ class CombinedStatsView extends ConsumerWidget {
                 Text(
                   typeDescription,
                   style: textStyles.bodySmall?.copyWith(
-                    color: colors.onSurface.withAlpha(178),
+                    color: colors.onSurface.withValues(alpha: 178 / 255),
                   ),
                 ),
               ],
@@ -467,7 +470,7 @@ class CombinedStatsView extends ConsumerWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.outline.withAlpha(51)),
+        border: Border.all(color: colors.outline.withValues(alpha: 51 / 255)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,9 +504,9 @@ class CombinedStatsView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
+        color: color.withValues(alpha: 25 / 255),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withAlpha(76)),
+        border: Border.all(color: color.withValues(alpha: 76 / 255)),
       ),
       child: Column(
         children: [
@@ -521,7 +524,7 @@ class CombinedStatsView extends ConsumerWidget {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: color.withAlpha(204),
+              color: color.withValues(alpha: 204 / 255),
             ),
             textAlign: TextAlign.center,
           ),
@@ -539,9 +542,9 @@ class CombinedStatsView extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withAlpha(25),
+        color: color.withValues(alpha: 25 / 255),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withAlpha(76)),
+        border: Border.all(color: color.withValues(alpha: 76 / 255)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -554,7 +557,7 @@ class CombinedStatsView extends ConsumerWidget {
                 title,
                 style: TextStyle(
                   fontSize: 12,
-                  color: color.withAlpha(204),
+                  color: color.withValues(alpha: 204 / 255),
                 ),
               ),
             ],
@@ -605,7 +608,7 @@ class CombinedStatsView extends ConsumerWidget {
         const SizedBox(height: 8),
         LinearProgressIndicator(
           value: percentage,
-          backgroundColor: color.withAlpha(51),
+          backgroundColor: color.withValues(alpha: 51 / 255),
           valueColor: AlwaysStoppedAnimation<Color>(color),
         ),
       ],

@@ -33,7 +33,20 @@ class ConnectivityDetector {
   // Configuración
   static const Duration _checkInterval = Duration(seconds: 30);
   static const Duration _timeoutDuration = Duration(seconds: 5);
-  static const String _testUrl = 'https://httpbin.org/get';
+
+  // ✅ FIXED: Usar endpoints alternativos que no causen CORS issues
+  static const List<String> _testUrls = [
+    'https://www.google.com/generate_204', // Google connectivity check endpoint
+    'https://connectivitycheck.gstatic.com/generate_204', // Google alternative
+    'https://www.cloudflare.com/cdn-cgi/trace', // Cloudflare endpoint
+    'https://httpstat.us/200', // HTTP status testing service
+  ];
+  static const List<String> _testHosts = [
+    'google.com',
+    'cloudflare.com',
+    'github.com',
+    'stackoverflow.com',
+  ];
 
   /// Stream de cambios de conectividad
   Stream<ConnectivityStatus> get onConnectivityChanged =>
@@ -156,57 +169,86 @@ class ConnectivityDetector {
 
   /// Prueba de conexión para Web
   Future<bool> _testWebConnection() async {
+    // 🔧 FIXED: En Web, evitar peticiones externas que causan CORS
+    // En su lugar, asumir conectividad basada en el estado de Connectivity+
     try {
-      // En Web, usar fetch API a través de http package
-      final response = await http.get(
-        Uri.parse(_testUrl),
-        headers: {'Cache-Control': 'no-cache'},
-      ).timeout(_timeoutDuration);
+      LoggerFactory.info('🌐 [WEB] Verificando conectividad básica...');
 
-      return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (e) {
-      LoggerFactory.info('🌐 Prueba de conexión Web falló: $e');
-      // Verificar navigator.onLine como fallback en Web
-      if (kIsWeb) {
-        // En Web, usar navigator.onLine como indicador adicional
-        LoggerFactory.info('🌐 Verificando navigator.onLine como fallback');
-        return true; // Asumir conexión en Web si no se puede verificar
+      // Verificar estado básico de conectividad
+      final connectivityResult = await Connectivity().checkConnectivity();
+      LoggerFactory.info('🌐 [WEB] Estado conectividad: $connectivityResult');
+
+      // Si no hay conectividad de red, retornar false
+      if (connectivityResult.contains(ConnectivityResult.none)) {
+        LoggerFactory.info('❌ [WEB] Sin conectividad de red');
+        return false;
       }
-      return false;
+
+      // En Web, si hay conectividad reportada, asumir que funciona
+      // Las peticiones a APIs específicas (Supabase, etc.) manejarán sus propios errores
+      LoggerFactory.info(
+          '✅ [WEB] Conectividad disponible (sin prueba externa)');
+      return true;
+    } catch (e) {
+      LoggerFactory.warning(
+          '⚠️ [WEB] Error verificando conectividad básica: $e');
+
+      // Fallback final: asumir conectividad en Web
+      // Esto permite que la app funcione y que las APIs manejen sus propios errores
+      LoggerFactory.info(
+          '🌐 [WEB] Fallback: asumiendo conectividad disponible');
+      return true;
     }
   }
 
   /// Prueba de conexión para plataformas nativas
   Future<bool> _testNativeConnection() async {
-    try {
-      // Usar Socket para una verificación más rápida
-      final socket = await Socket.connect(
-        'httpbin.org',
-        80,
-        timeout: _timeoutDuration,
-      );
-
-      socket.destroy();
-      return true;
-    } catch (e) {
-      LoggerFactory.info('📱 Prueba de conexión nativa falló: $e');
-
-      // Fallback a HTTP request
+    // ✅ FIXED: Usar múltiples hosts para Socket connections
+    for (final host in _testHosts) {
       try {
-        final response = await http.get(
-          Uri.parse(_testUrl),
-          headers: {'Cache-Control': 'no-cache'},
-        ).timeout(_timeoutDuration);
+        LoggerFactory.info('📱 Probando conexión Socket a: $host');
 
-        return response.statusCode >= 200 && response.statusCode < 300;
-      } catch (httpError) {
-        LoggerFactory.info('📱 Fallback HTTP también falló: $httpError');
-        // Ser más estricto: si ambas pruebas fallan, no hay conexión
-        LoggerFactory.warning(
-            '⚠️ Sin conexión detectada - ambas pruebas fallaron');
-        return false;
+        final socket = await Socket.connect(
+          host,
+          80,
+          timeout: _timeoutDuration,
+        );
+
+        socket.destroy();
+        LoggerFactory.info('✅ Conexión Socket exitosa a: $host');
+        return true;
+      } catch (e) {
+        LoggerFactory.info('⚠️ Socket falló para $host: $e');
+        continue; // Probar siguiente host
       }
     }
+
+    // Fallback a HTTP requests si Socket connections fallan
+    for (final url in _testUrls) {
+      try {
+        LoggerFactory.info('📱 Fallback HTTP para: $url');
+
+        final response = await http.get(
+          Uri.parse(url),
+          headers: {
+            'Cache-Control': 'no-cache',
+            'User-Agent': 'PeliculasApp/1.0',
+          },
+        ).timeout(_timeoutDuration);
+
+        if (response.statusCode == 200 || response.statusCode == 204) {
+          LoggerFactory.info('✅ Conexión HTTP exitosa via: $url');
+          return true;
+        }
+      } catch (httpError) {
+        LoggerFactory.info('⚠️ HTTP falló para $url: $httpError');
+        continue; // Probar siguiente URL
+      }
+    }
+
+    LoggerFactory.warning(
+        '❌ Todas las pruebas de conectividad nativa fallaron');
+    return false;
   }
 
   /// Actualiza el estado de conectividad

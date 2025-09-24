@@ -63,8 +63,10 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   WatchedMoviesNotifier({
     required this.repository,
     required this.onMovieWatched,
-  }) : super(const WatchedMoviesState()) {
-    loadNextPage();
+  }) : super(const WatchedMoviesState());
+
+  Future<void> init() async {
+    await loadNextPage();
   }
 
   final HybridWatchedRepository repository;

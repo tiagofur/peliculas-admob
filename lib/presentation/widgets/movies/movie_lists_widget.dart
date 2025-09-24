@@ -34,11 +34,11 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
 
   @override
   Widget build(BuildContext context) {
-    final customListsState = ref.watch(directCustomListsProvider);
-    final allLists = customListsState.getAllListsWithMovies();
-    final listsContainingMovie = allLists
-        .where((list) => list.movieIds.contains(widget.movie.id))
-        .toList();
+    // TODO: Temporary fix - access notifier directly until providers are restored
+    final notifier = ref.read(directCustomListsProvider.notifier);
+    final allLists = notifier.allListsWithMovies;
+    final listsContainingMovie =
+        notifier.getListsContainingMovie(widget.movie.id);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -46,50 +46,40 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
     final defaultLists = allLists.where((list) => list.isDefault).toList();
     final customLists = allLists.where((list) => !list.isDefault).toList();
 
-    // Altura responsiva más pequeña para móvil
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-    final itemHeight = isMobile ? 60.0 : 80.0;
-    final spacing = isMobile ? 6.0 : 8.0;
-    final rowsNeeded =
-        (defaultLists.length / 2).ceil().clamp(1, isMobile ? 3 : 4);
-    final fixedHeight =
-        (rowsNeeded * itemHeight) + ((rowsNeeded - 1) * spacing);
+    // Calcular altura fija basada en las listas predeterminadas (máximo 8 listas en 4 filas)
+    final defaultListsCount = defaultLists.length;
+    final rowsNeeded = (defaultListsCount / 2).ceil().clamp(1, 4);
+    final fixedHeight = (rowsNeeded * 80.0) +
+        ((rowsNeeded - 1) * 8.0); // altura de card + spacing
 
     return Container(
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.list_alt,
-                  color: colors.primary, size: isMobile ? 20 : 24),
-              SizedBox(width: isMobile ? 6 : 8),
-              Expanded(
-                child: Text(
-                  'Mis Listas',
-                  style: textStyles.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: isMobile ? 16 : null,
-                  ),
+              Icon(Icons.list_alt, color: colors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Mis Listas',
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              const Spacer(),
               TextButton.icon(
                 onPressed: () => _showCreateListDialog(context),
-                icon: Icon(Icons.add, size: isMobile ? 14 : 16),
-                label: Text(
-                  isMobile ? 'Nueva' : 'Nueva lista',
-                  style: TextStyle(fontSize: isMobile ? 12 : 14),
-                ),
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('Nueva lista'),
                 style: TextButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 6 : 8, vertical: isMobile ? 2 : 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
               ),
             ],
           ),
-          SizedBox(height: isMobile ? 6 : 8),
+          const SizedBox(height: 8), // Reducido de 12 a 8
           if (allLists.isEmpty)
             _buildEmptyState(colors, textStyles)
           else
@@ -100,23 +90,14 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                   labelColor: colors.primary,
                   unselectedLabelColor: colors.onSurface.withValues(alpha: 0.6),
                   indicatorColor: colors.primary,
-                  labelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
-                  unselectedLabelStyle: TextStyle(fontSize: isMobile ? 12 : 14),
                   tabs: [
                     Tab(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.star_outline, size: isMobile ? 14 : 16),
-                          SizedBox(width: isMobile ? 2 : 4),
-                          Flexible(
-                            child: Text(
-                              isMobile
-                                  ? 'Predeter. (${defaultLists.length})'
-                                  : 'Predeterminadas (${defaultLists.length})',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          const Icon(Icons.star_outline, size: 16),
+                          const SizedBox(width: 4),
+                          Text('Predeterminadas (${defaultLists.length})'),
                         ],
                       ),
                     ),
@@ -124,22 +105,15 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.folder_outlined, size: isMobile ? 14 : 16),
-                          SizedBox(width: isMobile ? 2 : 4),
-                          Flexible(
-                            child: Text(
-                              isMobile
-                                  ? 'Personal. (${customLists.length})'
-                                  : 'Personalizadas (${customLists.length})',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
+                          const Icon(Icons.folder_outlined, size: 16),
+                          const SizedBox(width: 4),
+                          Text('Personalizadas (${customLists.length})'),
                         ],
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: isMobile ? 6 : 8),
+                const SizedBox(height: 8),
                 SizedBox(
                   height: fixedHeight,
                   child: TabBarView(
@@ -147,15 +121,16 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                     children: [
                       // Pestaña de listas predeterminadas
                       _buildListsGrid(defaultLists, listsContainingMovie,
-                          colors, textStyles, false, isMobile),
+                          colors, textStyles, false // sin scroll
+                          ),
                       // Pestaña de listas personalizadas
                       _buildListsGrid(
                           customLists,
                           listsContainingMovie,
                           colors,
                           textStyles,
-                          customLists.length > (isMobile ? 6 : 8),
-                          isMobile),
+                          customLists.length > 8 // con scroll si hay más de 8
+                          ),
                     ],
                   ),
                 ),
@@ -167,39 +142,32 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   }
 
   Widget _buildEmptyState(ColorScheme colors, TextTheme textStyles) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-
     return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 24),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           Icon(
             Icons.playlist_add,
-            size: isMobile ? 36 : 48,
+            size: 48,
             color: colors.onSurface.withValues(alpha: 0.4),
           ),
-          SizedBox(height: isMobile ? 6 : 8),
+          const SizedBox(height: 8),
           Text(
             'No tienes listas aún',
             style: textStyles.titleSmall?.copyWith(
               color: colors.onSurface.withValues(alpha: 0.6),
-              fontSize: isMobile ? 14 : null,
             ),
           ),
-          SizedBox(height: isMobile ? 3 : 4),
+          const SizedBox(height: 4),
           Text(
-            isMobile
-                ? 'Crea tu primera lista'
-                : 'Crea tu primera lista para organizar tus películas',
+            'Crea tu primera lista para organizar tus películas',
             style: textStyles.bodySmall?.copyWith(
               color: colors.onSurface.withValues(alpha: 0.5),
-              fontSize: isMobile ? 12 : null,
             ),
             textAlign: TextAlign.center,
           ),
@@ -213,8 +181,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       List<CustomList> listsContainingMovie,
       ColorScheme colors,
       TextTheme textStyles,
-      bool enableScroll,
-      bool isMobile) {
+      bool enableScroll) {
     if (lists.isEmpty) {
       return Center(
         child: Column(
@@ -237,47 +204,41 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       );
     }
 
-    // ✅ PERFORMANCE FIX: Optimized GridView with cacheExtent and RepaintBoundary
     final gridView = GridView.builder(
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       physics: enableScroll
           ? const AlwaysScrollableScrollPhysics()
           : const NeverScrollableScrollPhysics(),
-      // 🚀 PERFORMANCE: Cache extra widgets for smoother scrolling
-      cacheExtent: 200.0,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: isMobile ? 3.0 : 2.5, // Más ancho en móvil
-        crossAxisSpacing: isMobile ? 6 : 8,
-        mainAxisSpacing: isMobile ? 6 : 8,
+        childAspectRatio: 2.5,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
       ),
       itemCount: lists.length,
       itemBuilder: (context, index) {
         final list = lists[index];
         final isInList = listsContainingMovie.any((l) => l.id == list.id);
-
-        // 🚀 PERFORMANCE: RepaintBoundary para evitar rebuilds innecesarios
-        return RepaintBoundary(
-          child: _buildListCard(list, isInList, colors, textStyles, isMobile),
-        );
+        return _buildListCard(list, isInList, colors, textStyles);
       },
     );
+
     return gridView;
   }
 
   Widget _buildListCard(CustomList list, bool isInList, ColorScheme colors,
-      TextTheme textStyles, bool isMobile) {
+      TextTheme textStyles) {
     final listColor = _getColorFromString(list.color);
 
     return GestureDetector(
       onTap: () => _toggleMovieInList(list, isInList),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.all(isMobile ? 8 : 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isInList ? listColor.withValues(alpha: 0.15) : colors.surface,
-          borderRadius: BorderRadius.circular(isMobile ? 8 : 12),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isInList ? listColor : colors.outline.withValues(alpha: 0.2),
             width: isInList ? 2 : 1,
@@ -285,22 +246,20 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Row(
               children: [
                 Text(
                   list.emoji,
-                  style: TextStyle(fontSize: isMobile ? 14 : 16),
+                  style: const TextStyle(fontSize: 16),
                 ),
-                SizedBox(width: isMobile ? 6 : 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     list.name,
                     style: textStyles.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: isInList ? listColor : colors.onSurface,
-                      fontSize: isMobile ? 12 : 14,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -314,41 +273,36 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
                     color: isInList
                         ? listColor
                         : colors.onSurface.withValues(alpha: 0.6),
-                    size: isMobile ? 16 : 20,
+                    size: 20,
                   ),
                 ),
               ],
             ),
-            SizedBox(height: isMobile ? 2 : 4),
+            const SizedBox(height: 4),
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    '${list.movieIds.length} películas',
-                    style: textStyles.bodySmall?.copyWith(
-                      color: isInList
-                          ? listColor.withValues(alpha: 0.8)
-                          : colors.onSurface.withValues(alpha: 0.6),
-                      fontSize: isMobile ? 10 : 12,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  '${list.movieIds.length} películas',
+                  style: textStyles.bodySmall?.copyWith(
+                    color: isInList
+                        ? listColor.withValues(alpha: 0.8)
+                        : colors.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
-                if (list.isDefault && !isMobile) ...[
-                  const SizedBox(width: 4),
+                if (list.isDefault) ...[
+                  const SizedBox(width: 8),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'Def',
+                      'Por defecto',
                       style: textStyles.labelSmall?.copyWith(
                         color: colors.onPrimaryContainer,
-                        fontSize: 8,
+                        fontSize: 10,
                       ),
                     ),
                   ),
@@ -391,7 +345,10 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
             textColor: Colors.white,
             onPressed: () {
               // Navegar a la lista
-              context.go('/my-library/lists/${list.id}');
+              Navigator.of(context).pushNamed(
+                '/list-detail',
+                arguments: list.id,
+              );
             },
           ),
         ),
@@ -447,8 +404,6 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
         return Colors.grey;
       case 'blue_grey':
         return Colors.blueGrey;
-      case 'black':
-        return Colors.black87; // Usamos black87 para mejor visibilidad
       default:
         return Colors.blue;
     }
@@ -473,43 +428,68 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
   bool _isButtonEnabled = false;
 
   final List<String> _emojis = [
-    // Cine y entretenimiento
-    '🎬', '🍿', '🎭', '🎪', '🎨', '🎥', '📽️', '📹', '📺', '🎞️',
-    // Géneros de películas
-    '🚀', '💥', '🔫', '⚔️', '🗡️', '🛡️', '🏰', '🦸', '🦹', '👽',
-    '❤️', '💕', '💗', '💘', '😍', '🌹', '💐', '🌸', '💒', '👫',
-    '😂', '🤣', '😄', '🎭', '🤡', '🎪', '🎈', '🎊', '🎉', '🥳',
-    '👻', '💀', '🎃', '🕷️', '🦇', '🧟', '🔪', '⚰️', '🩸', '😱',
-    '🚗', '🏎️', '🚁', '✈️', '🚀', '💎', '💰', '🗺️', '🏴‍☠️', '⚡',
-    // Momentos y ocasiones
-    '🌙', '⭐', '🌟', '✨', '☀️', '🌅', '🌇', '🌆', '🌃', '🏙️',
-    '🍷', '🥂', '🍾', '🍸', '🍹', '☕', '🍰', '🎂', '🍕', '🍔',
-    '🏠', '🛋️', '🛏️', '🧸', '📚', '📖', '☔', '🌧️', '⛈️', '❄️',
-    // Especiales
-    '💫', '🔥', '💡', '💭', '📋', '📌', '📍', '🎯', '🏆', '🥇',
+    '🎬',
+    '🍿',
+    '🎭',
+    '🎪',
+    '🎨',
+    '🎵',
+    '🎸',
+    '🎤',
+    '🎧',
+    '🎮',
+    '📚',
+    '📖',
+    '📝',
+    '📊',
+    '📈',
+    '📉',
+    '📋',
+    '📌',
+    '📍',
+    '📎',
+    '💡',
+    '💭',
+    '💫',
+    '⭐',
+    '🌟',
+    '✨',
+    '🔥',
+    '❤️',
+    '💙',
+    '💚',
+    '💛',
+    '💜',
+    '🧡',
+    '🖤',
+    '🤍',
+    '🤎',
+    '💖',
+    '💕',
+    '💗',
+    '💓',
   ];
 
   final List<String> _colors = [
-    'red', // Rojo - Acción, Drama
-    'pink', // Rosa - Romance, Comedia romántica
-    'purple', // Morado - Fantasía, Misterio
-    'deep_purple', // Morado oscuro - Terror, Thriller
-    'indigo', // Índigo - Ciencia ficción
-    'blue', // Azul - Drama, Clásicos
-    'light_blue', // Azul claro - Familiar, Animación
-    'cyan', // Cian - Aventura
-    'teal', // Verde azulado - Documentales
-    'green', // Verde - Comedia, Natural
-    'light_green', // Verde claro - Familia
-    'lime', // Lima - Juvenil
-    'yellow', // Amarillo - Comedia, Infantil
-    'amber', // Ámbar - Clásicos dorados
-    'orange', // Naranja - Aventura, Acción
-    'deep_orange', // Naranja oscuro - Suspense
-    'brown', // Marrón - Western, Histórico
-    'grey', // Gris - Noir, Indie
-    'blue_grey', // Gris azulado - Moderno
-    'black', // Negro - Terror, Thriller
+    'red',
+    'pink',
+    'purple',
+    'deep_purple',
+    'indigo',
+    'blue',
+    'light_blue',
+    'cyan',
+    'teal',
+    'green',
+    'light_green',
+    'lime',
+    'yellow',
+    'amber',
+    'orange',
+    'deep_orange',
+    'brown',
+    'grey',
+    'blue_grey'
   ];
 
   @override
@@ -623,14 +603,12 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                       ),
                       child: GridView.builder(
                         padding: const EdgeInsets.all(8),
-                        // 🚀 PERFORMANCE: Cache para grid de emojis
-                        cacheExtent: 100.0,
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 10,
+                          crossAxisCount: 8,
                           childAspectRatio: 1,
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 6,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
                         ),
                         itemCount: _emojis.length,
                         itemBuilder: (context, index) {
@@ -656,7 +634,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                               ),
                               child: Center(
                                 child: Text(emoji,
-                                    style: const TextStyle(fontSize: 20)),
+                                    style: const TextStyle(fontSize: 18)),
                               ),
                             ),
                           );
@@ -668,7 +646,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         style: TextStyle(fontWeight: FontWeight.w500)),
                     const SizedBox(height: 8),
                     Container(
-                      height: 65,
+                      height: 60,
                       decoration: BoxDecoration(
                         border: Border.all(
                             color: Theme.of(context)
@@ -681,8 +659,6 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 10),
                         scrollDirection: Axis.horizontal,
-                        // 🚀 PERFORMANCE: Cache para lista horizontal de colores
-                        cacheExtent: 200.0,
                         itemCount: _colors.length,
                         itemBuilder: (context, index) {
                           final colorName = _colors[index];
@@ -749,7 +725,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                     onPressed: _isButtonEnabled
                         ? () async {
                             try {
-                              // Crear la lista usando el provider directo
+                              // Crear la lista usando Direct provider
                               await ref
                                   .read(directCustomListsProvider.notifier)
                                   .createList(
@@ -762,19 +738,22 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                               // Esperar un frame para que se actualice el provider
                               await Future.delayed(
-                                  const Duration(milliseconds: 500));
+                                  const Duration(milliseconds: 100));
 
                               if (_addCurrentMovie) {
                                 // Obtener el ID de la lista recién creada y agregar la película
-                                final customListsState =
-                                    ref.read(directCustomListsProvider);
-                                final allLists =
-                                    customListsState.getAllListsWithMovies();
-                                final newList = allLists
-                                    .lastWhere((list) => !list.isDefault);
-                                await ref
-                                    .read(directCustomListsProvider.notifier)
-                                    .addMovieToList(newList.id, widget.movieId);
+                                final notifier = ref
+                                    .read(directCustomListsProvider.notifier);
+                                final customLists = notifier.allListsWithMovies
+                                    .where((l) => !l.isDefault)
+                                    .toList();
+                                if (customLists.isNotEmpty) {
+                                  final newList = customLists.last;
+                                  await ref
+                                      .read(directCustomListsProvider.notifier)
+                                      .addMovieToList(
+                                          newList.id, widget.movieId);
+                                }
                               }
 
                               if (mounted) {
@@ -792,14 +771,18 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                                       action: SnackBarAction(
                                         label: 'Ver',
                                         onPressed: () {
-                                          final customListsState = ref
-                                              .read(directCustomListsProvider);
-                                          final allLists = customListsState
-                                              .getAllListsWithMovies();
-                                          final newList = allLists.lastWhere(
-                                              (list) => !list.isDefault);
-                                          GoRouter.of(scaffoldContext).push(
-                                              '/my-library/lists/${newList.id}');
+                                          final notifier = ref.read(
+                                              directCustomListsProvider
+                                                  .notifier);
+                                          final customLists = notifier
+                                              .allListsWithMovies
+                                              .where((l) => !l.isDefault)
+                                              .toList();
+                                          if (customLists.isNotEmpty) {
+                                            final newList = customLists.last;
+                                            GoRouter.of(scaffoldContext)
+                                                .push('/lists/${newList.id}');
+                                          }
                                         },
                                       ),
                                     ),
@@ -871,8 +854,6 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
         return Colors.grey;
       case 'blue_grey':
         return Colors.blueGrey;
-      case 'black':
-        return Colors.black87; // Usamos black87 para mejor visibilidad
       default:
         return Colors.blue;
     }

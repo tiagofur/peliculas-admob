@@ -557,7 +557,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(allListsNotifierProvider.notifier).clearList(list.id);
+              // ref.read(allListsNotifierProvider.notifier).clearList(list.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Lista "${list.name}" vaciada')),
@@ -585,7 +585,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
           ),
           ElevatedButton(
             onPressed: () {
-              ref.read(allListsNotifierProvider.notifier).deleteList(list.id);
+              // ref.read(allListsNotifierProvider.notifier).deleteList(list.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Lista "${list.name}" eliminada')),
@@ -1038,13 +1038,13 @@ class _EditListDialogState extends ConsumerState<_EditListDialog> {
           onPressed: _nameController.text.trim().isEmpty
               ? null
               : () {
-                  ref.read(allListsNotifierProvider.notifier).updateList(
-                        widget.list.id,
-                        name: _nameController.text.trim(),
-                        description: _descriptionController.text.trim(),
-                        emoji: _selectedEmoji,
-                        color: _selectedColor,
-                      );
+                  // ref.read(allListsNotifierProvider.notifier).updateList(
+                  //      widget.list.id,
+                  //      name: _nameController.text.trim(),
+                  //      description: _descriptionController.text.trim(),
+                  //      emoji: _selectedEmoji,
+                  //      color: _selectedColor,
+                  //    );
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -1136,10 +1136,10 @@ class _DuplicateListDialogState extends ConsumerState<_DuplicateListDialog> {
           onPressed: _nameController.text.trim().isEmpty
               ? null
               : () {
-                  ref.read(allListsNotifierProvider.notifier).duplicateList(
-                        widget.list.id,
-                        _nameController.text.trim(),
-                      );
+                  // ref.read(allListsNotifierProvider.notifier).duplicateList(
+                  //      widget.list.id,
+                  //      _nameController.text.trim(),
+                  //    );
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

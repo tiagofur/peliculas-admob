@@ -83,28 +83,31 @@ class AdaptiveCacheConfig {
   /// Estima la memoria del dispositivo basada en la plataforma
   int _estimateDeviceMemory() {
     if (kIsWeb) {
-      // En web, asumir menos memoria disponible
-      return 2048; // 2GB estimado para web
+      // En web, asumir memoria moderada pero optimizada
+      return 3072; // 3GB estimado para web (mejorado)
     }
 
     if (Platform.isAndroid || Platform.isIOS) {
-      // Para móviles, usar heurísticas basadas en resolución de pantalla
+      // Para móviles, usar heurísticas mejoradas basadas en resolución de pantalla
       final size = PlatformDispatcher.instance.views.first.physicalSize;
       final pixels = size.width * size.height;
 
-      if (pixels > 3000000) {
-        // ~2K+ resolution
+      if (pixels > 4000000) {
+        // ~4K resolution - dispositivos flagship modernos
+        return 12288; // 12GB estimado para dispositivos premium 2024+
+      } else if (pixels > 3000000) {
+        // ~2K+ resolution - dispositivos premium
         return 8192; // 8GB estimado para dispositivos premium
       } else if (pixels > 2000000) {
-        // ~1080p
-        return 4096; // 4GB estimado para dispositivos mid-range
+        // ~1080p - dispositivos mid-range modernos
+        return 6144; // 6GB estimado para dispositivos mid-range mejorado
       } else {
-        return 2048; // 2GB estimado para dispositivos básicos
+        return 3072; // 3GB estimado para dispositivos básicos (mejorado)
       }
     }
 
-    // Desktop: asumir más memoria disponible
-    return 8192; // 8GB estimado para desktop
+    // Desktop: asumir mucha más memoria disponible en 2024
+    return 16384; // 16GB estimado para desktop moderno
   }
 
   /// Detecta el tipo de dispositivo
@@ -161,19 +164,19 @@ class AdaptiveCacheConfig {
 
     switch (capabilities.performanceTier) {
       case PerformanceTier.high:
-        memoryMultiplier = 3.0; // 150MB
-        diskMultiplier = 4.0; // 1GB
-        concurrentDownloads = 5;
+        memoryMultiplier = 4.0; // 200MB - más agresivo para dispositivos premium
+        diskMultiplier = 6.0; // 1.5GB - aprovechar almacenamiento abundante
+        concurrentDownloads = 8; // más descargas paralelas
         break;
       case PerformanceTier.medium:
-        memoryMultiplier = 2.0; // 100MB
-        diskMultiplier = 2.0; // 500MB
-        concurrentDownloads = 3;
+        memoryMultiplier = 2.5; // 125MB - mejorado para mid-range modernos
+        diskMultiplier = 3.0; // 750MB - balanceado
+        concurrentDownloads = 4; // más descargas
         break;
       case PerformanceTier.low:
-        memoryMultiplier = 1.0; // 50MB
-        diskMultiplier = 1.0; // 250MB
-        concurrentDownloads = 2;
+        memoryMultiplier = 1.5; // 75MB - un poco más generoso
+        diskMultiplier = 1.5; // 375MB - mejorado pero conservador
+        concurrentDownloads = 2; // mantener conservador
         break;
     }
 

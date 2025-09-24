@@ -96,8 +96,6 @@ class StreamingServiceManager {
     );
   }
 
-
-
   /// Get real-time availability service
   RealtimeAvailabilityService get realtimeAvailability =>
       _realtimeAvailabilityService;
@@ -120,8 +118,6 @@ class StreamingServiceManager {
         return null;
     }
   }
-
-
 
   bool _isInitialized = false;
   String _currentRegion = 'US';

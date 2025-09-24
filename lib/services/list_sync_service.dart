@@ -314,7 +314,8 @@ class ListSyncService {
   void _startConnectivityMonitoring() {
     _connectivity.onConnectivityChanged.listen((results) {
       // results es una List<ConnectivityResult>, verificamos si hay conexión
-      final hasConnection = results.any((result) => result != ConnectivityResult.none);
+      final hasConnection =
+          results.any((result) => result != ConnectivityResult.none);
       if (hasConnection && _syncConfig.autoSyncEnabled) {
         startAutoSync();
       }

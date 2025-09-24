@@ -508,7 +508,7 @@ class SyncCoordinator {
   Future<void> dispose() async {
     try {
       LoggerFactory.info('🔒 Starting SyncCoordinator disposal...');
-      
+
       // Marcar como no sincronizando para prevenir nuevas operaciones
       _isSyncing = false;
       _isInitialized = false;
@@ -518,14 +518,16 @@ class SyncCoordinator {
         await _connectionSubscription?.cancel();
         LoggerFactory.info('✅ Connection subscription cancelled');
       } catch (e) {
-        LoggerFactory.warning('⚠️ Failed to cancel connection subscription: $e');
+        LoggerFactory.warning(
+            '⚠️ Failed to cancel connection subscription: $e');
       }
-      
+
       try {
         await _backgroundSyncSubscription?.cancel();
         LoggerFactory.info('✅ Background sync subscription cancelled');
       } catch (e) {
-        LoggerFactory.warning('⚠️ Failed to cancel background sync subscription: $e');
+        LoggerFactory.warning(
+            '⚠️ Failed to cancel background sync subscription: $e');
       }
 
       // Cerrar RealtimeSyncManager con timeout
@@ -553,12 +555,13 @@ class SyncCoordinator {
       final managerDisposalFutures = _syncManagers.entries.map((entry) async {
         final entityType = entry.key;
         final manager = entry.value;
-        
+
         try {
           await manager.dispose().timeout(
             const Duration(seconds: 10),
             onTimeout: () {
-              LoggerFactory.warning('⚠️ Manager disposal timed out for $entityType');
+              LoggerFactory.warning(
+                  '⚠️ Manager disposal timed out for $entityType');
             },
           );
           LoggerFactory.info('✅ Manager disposed: $entityType');
@@ -566,7 +569,7 @@ class SyncCoordinator {
           LoggerFactory.warning('⚠️ Failed to dispose manager $entityType: $e');
         }
       });
-      
+
       await Future.wait(managerDisposalFutures, eagerError: false);
       _syncManagers.clear();
 
@@ -583,12 +586,12 @@ class SyncCoordinator {
       LoggerFactory.info('✅ SyncCoordinator disposed successfully');
     } catch (e) {
       LoggerFactory.error('❌ Error during SyncCoordinator disposal: $e');
-      
+
       // Forzar limpieza en caso de error
       _isSyncing = false;
       _isInitialized = false;
       _syncManagers.clear();
-      
+
       if (!_eventController.isClosed) {
         _eventController.close();
       }

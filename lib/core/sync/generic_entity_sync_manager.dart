@@ -132,7 +132,8 @@ class GenericEntitySyncManager<T extends SyncableEntity>
   Future<void> deleteEntity(String entityId) async {
     // Implementación básica - solo registra la operación
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('🗑️ Deleting entity $entityId for $entityType (generic implementation)');
+    LoggerFactory.info(
+        '🗑️ Deleting entity $entityId for $entityType (generic implementation)');
     // En una implementación real, esto eliminaría la entidad del almacenamiento remoto
   }
 
@@ -140,7 +141,8 @@ class GenericEntitySyncManager<T extends SyncableEntity>
   Future<Map<String, dynamic>?> getRemoteEntity(String entityId) async {
     // Implementación básica - retorna null
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('📥 Getting remote entity $entityId for $entityType (generic implementation)');
+    LoggerFactory.info(
+        '📥 Getting remote entity $entityId for $entityType (generic implementation)');
     return null;
   }
 
@@ -148,7 +150,8 @@ class GenericEntitySyncManager<T extends SyncableEntity>
   Future<T> mergeEntities(T localEntity, T remoteEntity) async {
     // Implementación básica - usa estrategia "remote wins"
     // Las subclases pueden sobrescribir este método para funcionalidad específica
-    LoggerFactory.info('🔀 Merging entities for $entityType (generic implementation - remote wins)');
+    LoggerFactory.info(
+        '🔀 Merging entities for $entityType (generic implementation - remote wins)');
     return remoteEntity;
   }
 }

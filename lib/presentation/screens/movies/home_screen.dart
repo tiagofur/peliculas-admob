@@ -26,7 +26,6 @@ class HomeScreen extends StatelessWidget {
             right: 0,
             child: SilentSyncIndicator(),
           ),
-
         ],
       ),
       bottomNavigationBar: CustomBottomNavigation(

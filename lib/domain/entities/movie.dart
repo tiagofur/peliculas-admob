@@ -44,7 +44,8 @@ class Movie {
       id: json['id'] ?? 0,
       adult: json['adult'] ?? false,
       backdropPath: json['backdrop_path'] ?? '',
-      genreIds: _parseGenreIds(json['genre_ids']),
+      genreIds:
+          json['genre_ids'] != null ? List<String>.from(json['genre_ids']) : [],
       originalLanguage: json['original_language'] ?? '',
       originalTitle: json['original_title'] ?? '',
       overview: json['overview'] ?? '',
@@ -243,55 +244,5 @@ class Movie {
       'spoken_languages': spokenLanguages,
       'belongs_to_collection': belongsToCollection,
     };
-  }
-
-  /// Convierte IDs de géneros a nombres de géneros
-  static List<String> _parseGenreIds(dynamic genreIds) {
-    try {
-      if (genreIds == null) return [];
-
-      // Si ya son strings (nombres de géneros), los devolvemos tal como están
-      if (genreIds is List<String>) {
-        return List<String>.from(genreIds);
-      }
-
-      // Si son enteros (IDs), usamos MovieMapper para convertir a nombres
-      if (genreIds is List) {
-        final ids = genreIds.whereType<int>().toList();
-        if (ids.isNotEmpty) {
-          // Importar MovieMapper dinámicamente para evitar dependencias circulares
-          const genreMap = {
-            28: 'Acción',
-            12: 'Aventura',
-            16: 'Animación',
-            35: 'Comedia',
-            80: 'Crimen',
-            99: 'Documental',
-            18: 'Drama',
-            10751: 'Familiar',
-            14: 'Fantasía',
-            36: 'Historia',
-            27: 'Terror',
-            10402: 'Musical',
-            9648: 'Misterio',
-            10749: 'Romance',
-            878: 'Ciencia Ficción',
-            10770: 'Película de TV',
-            53: 'Suspense',
-            10752: 'Guerra',
-            37: 'Western'
-          };
-          return ids
-              .map((id) => genreMap[id] ?? 'Desconocido')
-              .where((genre) => genre != 'Desconocido')
-              .toList();
-        }
-      }
-
-      return [];
-    } catch (e) {
-      // En caso de error, devolver lista vacía para evitar crashes
-      return [];
-    }
   }
 }

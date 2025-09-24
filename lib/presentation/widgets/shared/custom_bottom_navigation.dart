@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../l10n/app_localizations.dart';
+import '../../../generated/app_localizations.dart';
 
 class CustomBottomNavigation extends ConsumerWidget {
   const CustomBottomNavigation({

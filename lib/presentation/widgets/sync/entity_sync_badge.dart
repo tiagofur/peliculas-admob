@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/syncable_entity.dart';
-import '../../../l10n/app_localizations.dart';
 
 /// Widget badge que muestra el estado de sincronización de un elemento individual
 class EntitySyncBadge extends ConsumerWidget {
@@ -50,7 +49,7 @@ class EntitySyncBadge extends ConsumerWidget {
         color: backgroundColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: iconColor.withAlpha((0.3 * 255).round()),
+          color: iconColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -105,19 +104,19 @@ class EntitySyncBadge extends ConsumerWidget {
   Color _getBackgroundColor(ColorScheme colors) {
     switch (status) {
       case SyncItemStatus.synced:
-        return colors.primary.withAlpha((0.1 * 255).round());
+        return colors.primary.withValues(alpha: 0.1);
       case SyncItemStatus.pendingUpload:
       case SyncItemStatus.uploading:
-        return colors.tertiary.withAlpha((0.1 * 255).round());
+        return colors.tertiary.withValues(alpha: 0.1);
       case SyncItemStatus.pendingDownload:
       case SyncItemStatus.downloading:
-        return colors.secondary.withAlpha((0.1 * 255).round());
+        return colors.secondary.withValues(alpha: 0.1);
       case SyncItemStatus.conflict:
-        return colors.error.withAlpha((0.1 * 255).round());
+        return colors.error.withValues(alpha: 0.1);
       case SyncItemStatus.error:
-        return colors.error.withAlpha((0.1 * 255).round());
+        return colors.error.withValues(alpha: 0.1);
       case SyncItemStatus.processing:
-        return colors.secondary.withAlpha((0.1 * 255).round());
+        return colors.secondary.withValues(alpha: 0.1);
     }
   }
 
@@ -134,9 +133,9 @@ class EntitySyncBadge extends ConsumerWidget {
       case SyncItemStatus.error:
         return 'Error de sincronización';
       case SyncItemStatus.uploading:
-        return AppLocalizations.of(context)?.uploading ?? 'Uploading...';
+        return 'Subiendo...';
       case SyncItemStatus.downloading:
-        return AppLocalizations.of(context)?.downloading ?? 'Downloading...';
+        return 'Descargando...';
       case SyncItemStatus.processing:
         return 'Procesando cambios';
     }
@@ -169,7 +168,7 @@ class EntitySyncBadgeExpanded extends ConsumerWidget {
         color: _getBackgroundColor(colors),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getIconColor(colors).withAlpha((0.3 * 255).round()),
+          color: _getIconColor(colors).withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -252,19 +251,19 @@ class EntitySyncBadgeExpanded extends ConsumerWidget {
   Color _getBackgroundColor(ColorScheme colors) {
     switch (status) {
       case SyncItemStatus.synced:
-        return colors.primary.withAlpha((0.1 * 255).round());
+        return colors.primary.withValues(alpha: 0.1);
       case SyncItemStatus.pendingUpload:
       case SyncItemStatus.uploading:
-        return colors.tertiary.withAlpha((0.1 * 255).round());
+        return colors.tertiary.withValues(alpha: 0.1);
       case SyncItemStatus.pendingDownload:
       case SyncItemStatus.downloading:
-        return colors.secondary.withAlpha((0.1 * 255).round());
+        return colors.secondary.withValues(alpha: 0.1);
       case SyncItemStatus.conflict:
-        return colors.error.withAlpha((0.1 * 255).round());
+        return colors.error.withValues(alpha: 0.1);
       case SyncItemStatus.error:
-        return colors.error.withAlpha((0.1 * 255).round());
+        return colors.error.withValues(alpha: 0.1);
       case SyncItemStatus.processing:
-        return colors.secondary.withAlpha((0.1 * 255).round());
+        return colors.secondary.withValues(alpha: 0.1);
     }
   }
 

@@ -77,7 +77,7 @@ class MockSyncableEntity extends SyncableEntity {
 
 class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   MockEntitySyncManager() : super(entityType: 'mock', userId: 'mock');
-  
+
   // Simulación de almacenamiento local
   final List<SyncableEntity> _localEntities = [];
   final List<SyncableEntity> _remoteEntities = [];
@@ -86,11 +86,11 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   Future<List<SyncableEntity>> getLocalPendingSync({DateTime? since}) async {
     // Implementación más realista: filtrar entidades locales pendientes
     await Future.delayed(const Duration(milliseconds: 100)); // Simular latencia
-    
+
     if (since == null) {
       return List.from(_localEntities);
     }
-    
+
     return _localEntities
         .where((entity) => entity.lastModifiedAt.isAfter(since))
         .toList();
@@ -99,8 +99,9 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   @override
   Future<List<SyncableEntity>> getRemoteChanges({DateTime? since}) async {
     // Implementación más realista: simular cambios remotos
-    await Future.delayed(const Duration(milliseconds: 200)); // Simular latencia de red
-    
+    await Future.delayed(
+        const Duration(milliseconds: 200)); // Simular latencia de red
+
     // Generar algunos cambios remotos simulados
     if (_remoteEntities.isEmpty) {
       _remoteEntities.addAll([
@@ -116,11 +117,11 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
         ),
       ]);
     }
-    
+
     if (since == null) {
       return List.from(_remoteEntities);
     }
-    
+
     return _remoteEntities
         .where((entity) => entity.lastModifiedAt.isAfter(since))
         .toList();
@@ -129,11 +130,12 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   @override
   Future<SyncResult> uploadChanges(List<SyncableEntity> entities) async {
     // Implementación más realista: simular subida con posibles errores
-    await Future.delayed(const Duration(milliseconds: 300)); // Simular latencia de red
-    
+    await Future.delayed(
+        const Duration(milliseconds: 300)); // Simular latencia de red
+
     var successCount = 0;
     var errorCount = 0;
-    
+
     for (final entity in entities) {
       try {
         // Simular 90% de éxito
@@ -150,7 +152,7 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
         errorCount++;
       }
     }
-    
+
     if (errorCount > 0) {
       return SyncResult.failure(
         itemsProcessed: successCount,
@@ -158,7 +160,7 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
         message: 'Error subiendo $errorCount de ${entities.length} entidades',
       );
     }
-    
+
     return SyncResult.success(
       itemsProcessed: successCount,
       message: 'Subidas $successCount entidades exitosamente',
@@ -169,9 +171,9 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   Future<SyncResult> downloadChanges(List<SyncableEntity> entities) async {
     // Implementación más realista: simular descarga con procesamiento
     await Future.delayed(const Duration(milliseconds: 250)); // Simular latencia
-    
+
     var processedCount = 0;
-    
+
     for (final entity in entities) {
       try {
         // Simular procesamiento de entidad remota
@@ -183,7 +185,7 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
         continue;
       }
     }
-    
+
     return SyncResult.success(
       itemsProcessed: processedCount,
       message: 'Descargadas $processedCount entidades',
@@ -194,16 +196,15 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   Future<List<ConflictInfo<SyncableEntity>>> detectConflicts() async {
     // Implementación más realista: detectar conflictos reales
     await Future.delayed(const Duration(milliseconds: 150));
-    
+
     final conflicts = <ConflictInfo<SyncableEntity>>[];
-    
+
     // Buscar entidades que existen tanto local como remotamente con diferentes versiones
     for (final localEntity in _localEntities) {
-      final remoteEntity = _remoteEntities
-          .where((e) => e.id == localEntity.id)
-          .firstOrNull;
-          
-      if (remoteEntity != null && 
+      final remoteEntity =
+          _remoteEntities.where((e) => e.id == localEntity.id).firstOrNull;
+
+      if (remoteEntity != null &&
           localEntity.syncVersion != remoteEntity.syncVersion) {
         conflicts.add(ConflictInfo(
           localEntity: localEntity,
@@ -213,7 +214,7 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
         ));
       }
     }
-    
+
     return conflicts;
   }
 
@@ -222,10 +223,10 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
       ConflictInfo<SyncableEntity> conflict) async {
     // Implementación más realista: resolver conflictos basado en timestamp
     await Future.delayed(const Duration(milliseconds: 50));
-    
+
     final local = conflict.localEntity;
     final remote = conflict.remoteEntity;
-    
+
     // Resolver basado en la fecha de modificación más reciente
     if (local.lastModifiedAt.isAfter(remote.lastModifiedAt)) {
       return local.copyWith(syncVersion: remote.syncVersion + 1);
@@ -252,8 +253,8 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
     // En producción, esto debería crear la entidad específica correcta
     return MockSyncableEntity(
       id: data['id'] ?? '',
-      lastModifiedAt: data['lastModified'] != null 
-          ? DateTime.parse(data['lastModified']) 
+      lastModifiedAt: data['lastModified'] != null
+          ? DateTime.parse(data['lastModified'])
           : DateTime.now(),
       syncVersion: data['syncVersion'] ?? 1,
     );
@@ -275,7 +276,7 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   Future<void> deleteEntity(String entityId) async {
     // Implementación mock: eliminar de almacenamiento local y remoto
     await Future.delayed(const Duration(milliseconds: 100));
-    
+
     _localEntities.removeWhere((e) => e.id == entityId);
     _remoteEntities.removeWhere((e) => e.id == entityId);
   }
@@ -284,7 +285,7 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   Future<Map<String, dynamic>?> getRemoteEntity(String entityId) async {
     // Implementación mock: buscar entidad en almacenamiento remoto simulado
     await Future.delayed(const Duration(milliseconds: 150));
-    
+
     try {
       final entity = _remoteEntities.firstWhere((e) => e.id == entityId);
       return serializeForRemote(entity);
@@ -300,15 +301,17 @@ class MockEntitySyncManager extends EntitySyncManager<SyncableEntity> {
   ) async {
     // Implementación mock: fusionar entidades basado en timestamp
     await Future.delayed(const Duration(milliseconds: 50));
-    
+
     // Usar la entidad con la fecha de modificación más reciente
     // pero incrementar la versión de sincronización
-    final newerEntity = localEntity.lastModifiedAt.isAfter(remoteEntity.lastModifiedAt)
-        ? localEntity
-        : remoteEntity;
-        
-    final maxVersion = [localEntity.syncVersion, remoteEntity.syncVersion].reduce((a, b) => a > b ? a : b);
-    
+    final newerEntity =
+        localEntity.lastModifiedAt.isAfter(remoteEntity.lastModifiedAt)
+            ? localEntity
+            : remoteEntity;
+
+    final maxVersion = [localEntity.syncVersion, remoteEntity.syncVersion]
+        .reduce((a, b) => a > b ? a : b);
+
     return newerEntity.copyWith(
       syncVersion: maxVersion + 1,
       lastModifiedAt: DateTime.now(),

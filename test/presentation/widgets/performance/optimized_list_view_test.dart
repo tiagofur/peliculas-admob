@@ -5,7 +5,8 @@ import 'package:peliculas/presentation/widgets/performance/optimized_list_view.d
 void main() {
   group('OptimizedListView', () {
     group('Basic Rendering', () {
-      testWidgets('should render empty state when no items', (WidgetTester tester) async {
+      testWidgets('should render empty state when no items',
+          (WidgetTester tester) async {
         // Arrange
         const items = <String>[];
 
@@ -47,7 +48,8 @@ void main() {
         expect(find.text('Item 3'), findsOneWidget);
       });
 
-      testWidgets('should wrap items in RepaintBoundary', (WidgetTester tester) async {
+      testWidgets('should wrap items in RepaintBoundary',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1'];
 
@@ -69,7 +71,8 @@ void main() {
     });
 
     group('Load More Functionality', () {
-      testWidgets('should render with load more callback without errors', (WidgetTester tester) async {
+      testWidgets('should render with load more callback without errors',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
         // Act
@@ -78,10 +81,8 @@ void main() {
             home: Scaffold(
               body: OptimizedListView<String>(
                 items: items,
-                itemBuilder: (context, item, index) => SizedBox(
-                  height: 100, 
-                  child: ListTile(title: Text(item))
-                ),
+                itemBuilder: (context, item, index) =>
+                    SizedBox(height: 100, child: ListTile(title: Text(item))),
                 onLoadMore: () {
                   // Load more callback
                 },
@@ -96,16 +97,17 @@ void main() {
         expect(find.text('Item 1'), findsOneWidget);
         expect(find.text('Item 2'), findsOneWidget);
         expect(find.text('Item 3'), findsOneWidget);
-        
+
         // Test scrolling behavior - should not throw errors
         await tester.drag(find.byType(ListView), const Offset(0, -100));
         await tester.pump();
-        
+
         // Should still render properly after scroll
         expect(find.byType(ListView), findsOneWidget);
       });
 
-      testWidgets('should handle load more callback', (WidgetTester tester) async {
+      testWidgets('should handle load more callback',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
         bool loadMoreCalled = false;
@@ -118,10 +120,8 @@ void main() {
                 height: 200,
                 child: OptimizedListView<String>(
                   items: items,
-                  itemBuilder: (context, item, index) => SizedBox(
-                    height: 100, 
-                    child: ListTile(title: Text(item))
-                  ),
+                  itemBuilder: (context, item, index) =>
+                      SizedBox(height: 100, child: ListTile(title: Text(item))),
                   onLoadMore: () {
                     loadMoreCalled = true;
                   },
@@ -141,7 +141,8 @@ void main() {
         expect(loadMoreCalled, isTrue);
       });
 
-      testWidgets('should not trigger load more multiple times', (WidgetTester tester) async {
+      testWidgets('should not trigger load more multiple times',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
         int loadMoreCallCount = 0;
@@ -154,10 +155,8 @@ void main() {
                 height: 200,
                 child: OptimizedListView<String>(
                   items: items,
-                  itemBuilder: (context, item, index) => SizedBox(
-                    height: 100, 
-                    child: ListTile(title: Text(item))
-                  ),
+                  itemBuilder: (context, item, index) =>
+                      SizedBox(height: 100, child: ListTile(title: Text(item))),
                   onLoadMore: () {
                     loadMoreCallCount++;
                   },
@@ -172,7 +171,7 @@ void main() {
         await tester.drag(find.byType(ListView), const Offset(0, -250));
         await tester.pump(); // Trigger load more
         await tester.pump(); // Post frame callback
-        
+
         // Additional scrolls should not trigger more calls
         await tester.drag(find.byType(ListView), const Offset(0, -50));
         await tester.pump();
@@ -184,7 +183,8 @@ void main() {
     });
 
     group('Controller Management', () {
-      testWidgets('should use provided controller', (WidgetTester tester) async {
+      testWidgets('should use provided controller',
+          (WidgetTester tester) async {
         // Arrange
         final controller = ScrollController();
         const items = ['Item 1', 'Item 2', 'Item 3'];
@@ -206,7 +206,8 @@ void main() {
         expect(controller.hasClients, isTrue);
       });
 
-      testWidgets('should create internal controller when none provided', (WidgetTester tester) async {
+      testWidgets('should create internal controller when none provided',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
 
@@ -250,7 +251,8 @@ void main() {
         expect(listView.scrollDirection, Axis.horizontal);
       });
 
-      testWidgets('should apply shrinkWrap property', (WidgetTester tester) async {
+      testWidgets('should apply shrinkWrap property',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
 
@@ -274,7 +276,8 @@ void main() {
     });
 
     group('Lifecycle', () {
-      testWidgets('should dispose controller when widget is disposed', (WidgetTester tester) async {
+      testWidgets('should dispose controller when widget is disposed',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
 
@@ -291,7 +294,8 @@ void main() {
         );
 
         // Dispose widget
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Text('Empty'))));
+        await tester
+            .pumpWidget(const MaterialApp(home: Scaffold(body: Text('Empty'))));
 
         // Assert - Should not throw any errors during disposal
         expect(find.text('Empty'), findsOneWidget);
@@ -299,7 +303,8 @@ void main() {
     });
 
     group('Estimated Item Height', () {
-      testWidgets('should use estimated item height for load more threshold', (WidgetTester tester) async {
+      testWidgets('should use estimated item height for load more threshold',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
         bool loadMoreCalled = false;
@@ -316,9 +321,8 @@ void main() {
                   estimatedItemHeight: estimatedHeight,
                   loadMoreThreshold: 1,
                   itemBuilder: (context, item, index) => SizedBox(
-                    height: estimatedHeight, 
-                    child: ListTile(title: Text(item))
-                  ),
+                      height: estimatedHeight,
+                      child: ListTile(title: Text(item))),
                   onLoadMore: () {
                     loadMoreCalled = true;
                   },
@@ -339,7 +343,8 @@ void main() {
     });
 
     group('Edge Cases', () {
-      testWidgets('should handle empty load more callback gracefully', (WidgetTester tester) async {
+      testWidgets('should handle empty load more callback gracefully',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3'];
 
@@ -364,7 +369,8 @@ void main() {
         expect(find.text('Item 1'), findsOneWidget);
       });
 
-      testWidgets('should handle single item list', (WidgetTester tester) async {
+      testWidgets('should handle single item list',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Single Item'];
 
@@ -389,7 +395,8 @@ void main() {
 
   group('OptimizedGridView', () {
     group('Basic Grid Rendering', () {
-      testWidgets('should render empty state for grid', (WidgetTester tester) async {
+      testWidgets('should render empty state for grid',
+          (WidgetTester tester) async {
         // Arrange
         const items = <String>[];
 
@@ -410,7 +417,8 @@ void main() {
         expect(find.text('No hay elementos para mostrar'), findsOneWidget);
       });
 
-      testWidgets('should render grid items correctly', (WidgetTester tester) async {
+      testWidgets('should render grid items correctly',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4'];
 
@@ -436,7 +444,8 @@ void main() {
     });
 
     group('Grid Load More', () {
-      testWidgets('should render grid with load more functionality', (WidgetTester tester) async {
+      testWidgets('should render grid with load more functionality',
+          (WidgetTester tester) async {
         // Arrange
         const items = ['Item 1', 'Item 2', 'Item 3', 'Item 4'];
 
@@ -464,11 +473,11 @@ void main() {
         expect(find.byType(GridView), findsOneWidget);
         expect(find.text('Item 1'), findsOneWidget);
         expect(find.text('Item 2'), findsOneWidget);
-        
+
         // Test scrolling behavior
         await tester.drag(find.byType(GridView), const Offset(0, -50));
         await tester.pump();
-        
+
         // Should still render properly after scroll
         expect(find.byType(GridView), findsOneWidget);
       });
@@ -476,7 +485,8 @@ void main() {
   });
 
   group('ListPerformanceAnalyzer Extension', () {
-    testWidgets('should apply performance monitoring without errors', (WidgetTester tester) async {
+    testWidgets('should apply performance monitoring without errors',
+        (WidgetTester tester) async {
       // Arrange & Act
       await tester.pumpWidget(
         MaterialApp(

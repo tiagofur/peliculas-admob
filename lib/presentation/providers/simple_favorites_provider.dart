@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
@@ -9,9 +9,11 @@ import '../../domain/entities/movie.dart';
 import '../../infrastructure/datasources/favorite_movies_hive_datasource.dart';
 
 /// Provider simplificado para favoritos - solo para debugging
-class SimpleFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
-  SimpleFavoritesNotifier() : super({}) {
+class SimpleFavoritesNotifier extends Notifier<Map<int, Movie>> {
+  @override
+  Map<int, Movie> build() {
     _initializeService();
+    return {};
   }
 
   final SimpleFavoritesSync _syncService = SimpleFavoritesSync.instance;
@@ -200,27 +202,21 @@ class SimpleFavoritesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Obtiene todos los favoritos como lista
   List<Movie> get favoritesList => state.values.toList();
 
-  @override
   void dispose() {
     _authSubscription?.cancel();
-    super.dispose();
   }
 }
 
 /// Provider principal simplificado
 final simpleFavoritesProvider =
-    StateNotifierProvider<SimpleFavoritesNotifier, Map<int, Movie>>((ref) {
-  return SimpleFavoritesNotifier();
+    NotifierProvider<SimpleFavoritesNotifier, Map<int, Movie>>(
+        SimpleFavoritesNotifier.new);
+
+/// Providers de utilidad
+final isFavoriteProvider = Provider.family<bool, int>((ref, movieId) {
+  return ref.watch(simpleFavoritesProvider).containsKey(movieId);
 });
 
-// TODO: These providers need to be updated for legacy compatibility
-// Commenting out for now to fix compilation errors
-
-// /// Providers de utilidad
-// final isFavoriteProvider = Provider.family<bool, int>((ref, movieId) {
-//   return ref.watch(simpleFavoritesProvider).containsKey(movieId);
-// });
-
-// final favoritesCountProvider = Provider<int>((ref) {
-//   return ref.watch(simpleFavoritesProvider).length;
-// });
+final favoritesCountProvider = Provider<int>((ref) {
+  return ref.watch(simpleFavoritesProvider).length;
+});

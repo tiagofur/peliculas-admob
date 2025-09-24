@@ -76,7 +76,7 @@ class StreamingPlatformServiceFactory {
     http.Client? httpClient,
   }) {
     final client = httpClient ?? http.Client();
-    
+
     return {
       'netflix': createNetflixService(
         analytics: analytics,

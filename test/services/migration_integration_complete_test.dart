@@ -20,6 +20,7 @@ import 'migration_integration_complete_test.mocks.dart';
   MockSpec<User>(),
   MockSpec<ICustomListsRepository>(),
   MockSpec<CustomListsSharedPreferencesDatasource>(),
+  // MockSpec<SupabaseQueryBuilder>(), // Comentado temporalmente para resolver error de @immutable
 ])
 void main() {
   group('Migration Integration Complete Tests', () {

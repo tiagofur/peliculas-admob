@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-
-import '../../../core/analytics/analytics_service.dart';
-import '../../../core/cache/cache_service.dart';
-import '../../../core/streaming/streaming_service_manager.dart';
 import '../../../domain/entities/streaming_availability.dart';
 import '../../../domain/entities/streaming_platform.dart';
+import '../../../core/streaming/streaming_service_manager.dart';
+import '../../../core/analytics/analytics_service.dart';
+
+import '../../../core/cache/cache_service.dart';
 import 'platform_availability_card.dart';
-import 'streaming_error_widget.dart';
 import 'streaming_loading_indicator.dart';
+import 'streaming_error_widget.dart';
 
 /// Widget that displays streaming availability for a movie
 class StreamingAvailabilityWidget extends StatefulWidget {
@@ -250,8 +250,6 @@ class _StreamingAvailabilityWidgetState
           width: double.maxFinite,
           child: ListView.builder(
             shrinkWrap: true,
-            // 🚀 PERFORMANCE: Cache para lista de plataformas
-            cacheExtent: 300.0,
             itemCount: _availability!.platforms.length,
             itemBuilder: (context, index) {
               final platform = _availability!.platforms[index];

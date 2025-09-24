@@ -76,7 +76,8 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
                   // Convert star index (0-4) to rating value (2, 4, 6, 8, 10)
                   final starRating = starIndex + (isLeftHalf ? 0.5 : 1.0);
                   if (starRating >= 0.5 && starRating <= 5.0) {
-                    final rating = starRating * 2.0; // Convert to 10-point scale
+                    final rating =
+                        starRating * 2.0; // Convert to 10-point scale
                     _handleTap(rating);
                   }
                 },
@@ -209,7 +210,8 @@ class _RatingSliderWidgetState extends State<RatingSliderWidget> {
           children: [
             Text('Rating: ${_currentRating.toStringAsFixed(1)}'),
             SimpleStarRating(
-              rating: _currentRating / 2, // Convert 10-point to 5-star scale for display
+              rating: _currentRating /
+                  2, // Convert 10-point to 5-star scale for display
               showRating: false,
             ),
           ],

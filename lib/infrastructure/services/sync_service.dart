@@ -708,54 +708,52 @@ final syncServiceProvider = Provider<SyncService>((ref) {
 });
 
 // Provider para el estado de sincronización
-// TODO: Fix legacy compatibility for StateNotifierProvider
-// final syncStateProvider =
-//     StateNotifierProvider<SyncStateNotifier, AsyncValue<SyncResult?>>((ref) {
-//   return SyncStateNotifier(ref);
-// });
+final syncStateProvider = AsyncNotifierProvider<SyncStateNotifier, SyncResult?>(
+    SyncStateNotifier.new);
 
 // Notifier para manejar el estado de sincronización
-// TODO: Fix legacy compatibility for StateNotifier
-// class SyncStateNotifier extends StateNotifier<AsyncValue<SyncResult?>> {
-//   SyncStateNotifier(this._ref) : super(const AsyncValue.data(null));
-//   final Ref _ref;
+class SyncStateNotifier extends AsyncNotifier<SyncResult?> {
+  @override
+  Future<SyncResult?> build() async {
+    return null; // Estado inicial
+  }
 
-//   /// Ejecutar sincronización completa
-//   Future<void> syncAll() async {
-//     state = const AsyncValue.loading();
+  /// Ejecutar sincronización completa
+  Future<void> syncAll() async {
+    state = const AsyncValue.loading();
 
-//     try {
-//       final syncService = _ref.read(syncServiceProvider);
-//       final result = await syncService.syncAllData();
+    try {
+      final syncService = ref.read(syncServiceProvider);
+      final result = await syncService.syncAllData();
 
-//       state = AsyncValue.data(result);
-//     } catch (e, stackTrace) {
-//       state = AsyncValue.error(e, stackTrace);
-//     }
-//   }
+      state = AsyncValue.data(result);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
 
-//   /// Ejecutar sincronización forzada
-//   Future<void> forceSyncAll() async {
-//     state = const AsyncValue.loading();
+  /// Ejecutar sincronización forzada
+  Future<void> forceSyncAll() async {
+    state = const AsyncValue.loading();
 
-//     try {
-//       final syncService = _ref.read(syncServiceProvider);
-//       final result = await syncService.forceSyncAllData();
+    try {
+      final syncService = ref.read(syncServiceProvider);
+      final result = await syncService.forceSyncAllData();
 
-//       state = AsyncValue.data(result);
-//     } catch (e, stackTrace) {
-//       state = AsyncValue.error(e, stackTrace);
-//     }
-//   }
+      state = AsyncValue.data(result);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
 
-//   /// Obtener estado de sincronización
-//   Map<String, dynamic> getSyncStatus() {
-//     final syncService = _ref.read(syncServiceProvider);
-//     return syncService.getSyncStatus();
-//   }
+  /// Obtener estado de sincronización
+  Map<String, dynamic> getSyncStatus() {
+    final syncService = ref.read(syncServiceProvider);
+    return syncService.getSyncStatus();
+  }
 
-//   /// Limpiar estado de sincronización
-//   void clearState() {
-//     state = const AsyncValue.data(null);
-//   }
-// }
+  /// Limpiar estado de sincronización
+  void clearState() {
+    state = const AsyncValue.data(null);
+  }
+}

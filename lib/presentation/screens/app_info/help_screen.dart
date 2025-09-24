@@ -1,49 +1,49 @@
 import 'package:flutter/material.dart';
 
-import '../../../l10n/app_localizations.dart';
-
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.helpAndSupport),
+        title: const Text('Ayuda y Soporte'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(20.0),
-        children: [
+        children: const [
           Text(
-            l10n.faq,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            'Preguntas Frecuentes (FAQ)',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           ExpansionTile(
-            title: Text(l10n.howToAddMovieToWatchlist),
+            title: Text('¿Cómo puedo agregar una película a mi watchlist?'),
             children: [
               Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Text(l10n.howToAddMovieToWatchlistAnswer),
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                    'Para agregar una película, simplemente ve a los detalles de la película y presiona el ícono de "Agregar a Watchlist".'),
               ),
             ],
           ),
           ExpansionTile(
-            title: Text(l10n.howDoesSyncWork),
+            title: Text('¿Cómo funciona la sincronización?'),
             children: [
               Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Text(l10n.howDoesSyncWorkAnswer),
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                    'Tus datos se sincronizan automáticamente entre todos tus dispositivos cuando tienes conexión a internet. Si estás offline, los cambios se guardarán localmente y se sincronizarán la próxima vez que te conectes.'),
               ),
             ],
           ),
           ExpansionTile(
-            title: Text(l10n.howToContactSupport),
+            title: Text('¿Cómo contacto a soporte?'),
             children: [
               Padding(
-                padding: const EdgeInsets.all(15.0),
-                child: Text(l10n.howToContactSupportAnswer),
+                padding: EdgeInsets.all(15.0),
+                child: Text(
+                    'Puedes contactarnos por correo electrónico a: soporte@peliculasapp.com'),
               ),
             ],
           ),

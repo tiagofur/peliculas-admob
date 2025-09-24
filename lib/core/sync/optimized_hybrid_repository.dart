@@ -31,7 +31,8 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   })  : _syncManager = syncManager,
         _syncCoordinator = syncCoordinator,
         _channelPool = channelPool ?? RealtimeChannelPool.instance,
-        _performanceMonitor = performanceMonitor ?? RealtimePerformanceMonitor.instance,
+        _performanceMonitor =
+            performanceMonitor ?? RealtimePerformanceMonitor.instance,
         _dataValidator = dataValidator ?? RealtimeDataValidator.instance,
         _cacheMaxSize = cacheMaxSize,
         _cacheExpiry = cacheExpiry {
@@ -50,26 +51,27 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
 
   // Cache inteligente con LRU y expiración
   final LinkedHashMap<String, CacheEntry<T>> _entityCache = LinkedHashMap();
-  final LinkedHashMap<String, CacheEntry<List<T>>> _queryCache = LinkedHashMap();
-  
+  final LinkedHashMap<String, CacheEntry<List<T>>> _queryCache =
+      LinkedHashMap();
+
   // Pool de subscripciones real-time optimizado
   PooledChannel? _channel;
-  
+
   // Serialización optimizada con pool de objetos
   final Queue<Map<String, dynamic>> _serializationPool = Queue();
-  
+
   // Gestión de eventos optimizada
   final StreamController<RepositoryEvent<T>> _eventController =
       StreamController<RepositoryEvent<T>>.broadcast();
-  
+
   // Throttling para operaciones batch
   Timer? _batchTimer;
   final List<BatchOperation<T>> _pendingBatchOperations = [];
-  
+
   // Estado del repositorio
   bool _isInitialized = false;
   bool _isDisposed = false;
-  
+
   // Métricas de rendimiento
   int _cacheHits = 0;
   int _cacheMisses = 0;
@@ -84,16 +86,16 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
 
   /// Estadísticas de cache
   Map<String, dynamic> get cacheStatistics => {
-    'entity_cache_size': _entityCache.length,
-    'query_cache_size': _queryCache.length,
-    'cache_hits': _cacheHits,
-    'cache_misses': _cacheMisses,
-    'hit_ratio': _cacheHits + _cacheMisses > 0 
-        ? _cacheHits / (_cacheHits + _cacheMisses) 
-        : 0.0,
-    'serialization_count': _serializationCount,
-    'deserialization_count': _deserializationCount,
-  };
+        'entity_cache_size': _entityCache.length,
+        'query_cache_size': _queryCache.length,
+        'cache_hits': _cacheHits,
+        'cache_misses': _cacheMisses,
+        'hit_ratio': _cacheHits + _cacheMisses > 0
+            ? _cacheHits / (_cacheHits + _cacheMisses)
+            : 0.0,
+        'serialization_count': _serializationCount,
+        'deserialization_count': _deserializationCount,
+      };
 
   // =============================================
   // MÉTODOS ABSTRACTOS - IMPLEMENTAR EN SUBCLASES
@@ -141,18 +143,19 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     try {
       // Inicializar almacenamiento local
       await initializeLocal();
-      
+
       // Configurar subscripción real-time optimizada
       await _setupOptimizedRealtimeSubscription();
-      
+
       // Inicializar cache con datos existentes
       await _warmupCache();
-      
+
       _isInitialized = true;
-      
-      _emitEvent(RepositoryEventType.initialized, 'Repository initialized with optimizations');
-      LoggerFactory.info('✅ OptimizedHybridRepository<$entityType> initialized');
-      
+
+      _emitEvent(RepositoryEventType.initialized,
+          'Repository initialized with optimizations');
+      LoggerFactory.info(
+          '✅ OptimizedHybridRepository<$entityType> initialized');
     } catch (e) {
       LoggerFactory.error('❌ Failed to initialize optimized repository: $e');
       _isInitialized = true; // Continue even if initialization fails
@@ -165,7 +168,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
 
     try {
       _channel = await _channelPool.getChannelForTable(tableName, userId);
-      
+
       // Configurar el canal para escuchar eventos
       _channel!.channel.onPostgresChanges(
         event: PostgresChangeEvent.all,
@@ -179,38 +182,37 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
         callback: _handleOptimizedRealtimePayload,
       );
 
-      LoggerFactory.info('⚡️ Optimized realtime subscription setup for $tableName');
-      
+      LoggerFactory.info(
+          '⚡️ Optimized realtime subscription setup for $tableName');
     } catch (e) {
-      LoggerFactory.error('❌ Failed to setup optimized realtime subscription: $e');
+      LoggerFactory.error(
+          '❌ Failed to setup optimized realtime subscription: $e');
     }
   }
-
-
 
   /// Precarga cache con datos frecuentemente accedidos
   Future<void> _warmupCache() async {
     try {
       final localData = await getLocalData();
-      
+
       // Cachear entidades más recientes
       final recentEntities = localData
-          .where((e) => e.lastModifiedAt.isAfter(
-              DateTime.now().subtract(const Duration(hours: 24))))
+          .where((e) => e.lastModifiedAt
+              .isAfter(DateTime.now().subtract(const Duration(hours: 24))))
           .take(_cacheMaxSize ~/ 2)
           .toList();
-      
+
       for (final entity in recentEntities) {
         _cacheEntity(entity);
       }
-      
+
       // Cachear consulta completa si es pequeña
       if (localData.length <= 100) {
         _cacheQuery('all', localData);
       }
-      
-      LoggerFactory.info('🔥 Cache warmed up with ${recentEntities.length} entities');
-      
+
+      LoggerFactory.info(
+          '🔥 Cache warmed up with ${recentEntities.length} entities');
     } catch (e) {
       LoggerFactory.warning('⚠️ Cache warmup failed: $e');
     }
@@ -223,7 +225,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Obtiene entidad del cache o la carga
   Future<T?> _getCachedEntity(String id) async {
     final cacheEntry = _entityCache[id];
-    
+
     if (cacheEntry != null && !cacheEntry.isExpired) {
       _cacheHits++;
       // Mover al final (LRU)
@@ -231,7 +233,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       _entityCache[id] = cacheEntry;
       return cacheEntry.data;
     }
-    
+
     _cacheMisses++;
     return null;
   }
@@ -242,7 +244,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       // Remover el más antiguo (LRU)
       _entityCache.remove(_entityCache.keys.first);
     }
-    
+
     _entityCache[entity.id] = CacheEntry(
       data: entity,
       timestamp: DateTime.now(),
@@ -253,7 +255,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Obtiene resultado de consulta del cache
   List<T>? _getCachedQuery(String queryKey) {
     final cacheEntry = _queryCache[queryKey];
-    
+
     if (cacheEntry != null && !cacheEntry.isExpired) {
       _cacheHits++;
       // Mover al final (LRU)
@@ -261,7 +263,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       _queryCache[queryKey] = cacheEntry;
       return cacheEntry.data;
     }
-    
+
     _cacheMisses++;
     return null;
   }
@@ -272,7 +274,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       // Remover el más antiguo (LRU)
       _queryCache.remove(_queryCache.keys.first);
     }
-    
+
     _queryCache[queryKey] = CacheEntry(
       data: List.from(results),
       timestamp: DateTime.now(),
@@ -283,7 +285,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Invalida cache para una entidad
   void _invalidateEntityCache(String id) {
     _entityCache.remove(id);
-    
+
     // Invalidar consultas que puedan contener esta entidad
     _queryCache.clear();
   }
@@ -301,7 +303,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Serializa entidad usando pool de objetos
   Map<String, dynamic> _optimizedSerialize(T entity) {
     _serializationCount++;
-    
+
     // Reutilizar mapa del pool si está disponible
     Map<String, dynamic> map;
     if (_serializationPool.isNotEmpty) {
@@ -310,22 +312,22 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     } else {
       map = <String, dynamic>{};
     }
-    
+
     // Usar método optimizado de la subclase
     final result = serializeForRemote(entity);
-    
+
     // Devolver mapa al pool
     if (_serializationPool.length < 10) {
       _serializationPool.add(map);
     }
-    
+
     return result;
   }
 
   /// Deserializa con validación y cache
   T _optimizedDeserialize(Map<String, dynamic> data) {
     _deserializationCount++;
-    
+
     // Validar datos antes de deserializar
     final validationResult = _dataValidator.validateRealtimeEvent(
       tableName: tableName,
@@ -333,11 +335,11 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       eventType: 'INSERT',
       newRecord: data,
     );
-    
+
     if (!validationResult.isValid) {
       throw Exception('Data validation failed: ${validationResult.message}');
     }
-    
+
     return deserializeFromRemote(data);
   }
 
@@ -348,40 +350,47 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Procesa operaciones en batch para mejor rendimiento
   void _queueBatchOperation(BatchOperation<T> operation) {
     _pendingBatchOperations.add(operation);
-    
+
     // Configurar timer para procesar batch
     _batchTimer?.cancel();
-    _batchTimer = Timer(const Duration(milliseconds: 100), _processBatchOperations);
+    _batchTimer =
+        Timer(const Duration(milliseconds: 100), _processBatchOperations);
   }
 
   /// Procesa todas las operaciones batch pendientes
   Future<void> _processBatchOperations() async {
     if (_pendingBatchOperations.isEmpty) return;
-    
+
     final operations = List<BatchOperation<T>>.from(_pendingBatchOperations);
     _pendingBatchOperations.clear();
-    
+
     try {
       // Agrupar operaciones por tipo
-      final creates = operations.where((op) => op.type == BatchOperationType.create).toList();
-      final updates = operations.where((op) => op.type == BatchOperationType.update).toList();
-      final deletes = operations.where((op) => op.type == BatchOperationType.delete).toList();
-      
+      final creates = operations
+          .where((op) => op.type == BatchOperationType.create)
+          .toList();
+      final updates = operations
+          .where((op) => op.type == BatchOperationType.update)
+          .toList();
+      final deletes = operations
+          .where((op) => op.type == BatchOperationType.delete)
+          .toList();
+
       // Procesar cada tipo en batch
       if (creates.isNotEmpty) {
         await _processBatchCreates(creates);
       }
-      
+
       if (updates.isNotEmpty) {
         await _processBatchUpdates(updates);
       }
-      
+
       if (deletes.isNotEmpty) {
         await _processBatchDeletes(deletes);
       }
-      
-      LoggerFactory.info('📦 Processed batch: ${creates.length} creates, ${updates.length} updates, ${deletes.length} deletes');
-      
+
+      LoggerFactory.info(
+          '📦 Processed batch: ${creates.length} creates, ${updates.length} updates, ${deletes.length} deletes');
     } catch (e) {
       LoggerFactory.error('❌ Batch processing failed: $e');
     }
@@ -420,13 +429,14 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   // =============================================
 
   /// Maneja eventos real-time con validación y optimizaciones
-  Future<void> _handleOptimizedRealtimePayload(PostgresChangePayload payload) async {
+  Future<void> _handleOptimizedRealtimePayload(
+      PostgresChangePayload payload) async {
     final startTime = DateTime.now();
-    
+
     try {
       // Registrar métricas
       _performanceMonitor.recordTableMetrics(tableName, eventsProcessed: 1);
-      
+
       // Validar evento
       final validationResult = _dataValidator.validateRealtimeEvent(
         tableName: tableName,
@@ -438,32 +448,33 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
         oldRecord: payload.oldRecord,
         newRecord: payload.newRecord,
       );
-      
+
       if (!validationResult.isValid) {
-        LoggerFactory.warning('⚠️ Invalid realtime event: ${validationResult.message}');
+        LoggerFactory.warning(
+            '⚠️ Invalid realtime event: ${validationResult.message}');
         return;
       }
-      
+
       // Procesar evento según tipo
       switch (payload.eventType) {
         case PostgresChangeEvent.insert:
         case PostgresChangeEvent.update:
           final entity = _optimizedDeserialize(payload.newRecord);
-          
+
           _queueBatchOperation(BatchOperation(
-            type: payload.eventType == PostgresChangeEvent.insert 
-                ? BatchOperationType.create 
+            type: payload.eventType == PostgresChangeEvent.insert
+                ? BatchOperationType.create
                 : BatchOperationType.update,
             entity: entity,
           ));
-          
+
           _emitEvent(
             RepositoryEventType.itemUpdated,
             'Realtime ${payload.eventType.name}',
             entity: entity,
           );
-                  break;
-          
+          break;
+
         case PostgresChangeEvent.delete:
           final entityId = payload.oldRecord['id']?.toString();
           if (entityId != null) {
@@ -471,26 +482,27 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
               type: BatchOperationType.delete,
               entityId: entityId,
             ));
-            
+
             _emitEvent(
               RepositoryEventType.itemRemoved,
               'Realtime delete',
               entityId: entityId,
             );
           }
-                  break;
-          
+          break;
+
         case PostgresChangeEvent.all:
-          LoggerFactory.debug('Unhandled realtime event type: ${payload.eventType}');
+          LoggerFactory.debug(
+              'Unhandled realtime event type: ${payload.eventType}');
           break;
       }
-      
+
       // Registrar métricas de finalización
-      _performanceMonitor.recordTableMetrics(tableName, batchSize: 1, processingTime: DateTime.now().difference(startTime));
-      
+      _performanceMonitor.recordTableMetrics(tableName,
+          batchSize: 1, processingTime: DateTime.now().difference(startTime));
     } catch (e) {
       LoggerFactory.error('❌ Error processing realtime event: $e');
-      
+
       // Registrar error en métricas
       _performanceMonitor.recordTableMetrics(tableName, eventsProcessed: 0);
     }
@@ -503,68 +515,70 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Obtiene entidad por ID con cache
   Future<dynamic> getById(String id) async {
     if (!_isInitialized) await _initialize();
-    
+
     // Intentar desde cache primero
     final cachedEntity = await _getCachedEntity(id);
     if (cachedEntity != null) {
       return convertToModel(cachedEntity);
     }
-    
+
     // Buscar en almacenamiento local
     final localData = await getLocalData();
     final entity = localData.where((e) => e.id == id).firstOrNull;
-    
+
     if (entity != null) {
       _cacheEntity(entity);
       return convertToModel(entity);
     }
-    
+
     return null;
   }
 
   /// Obtiene todos los elementos con cache inteligente
   Future<List<dynamic>> getAll() async {
     if (!_isInitialized) await _initialize();
-    
+
     // Intentar desde cache de consulta
     final cachedResults = _getCachedQuery('all');
     if (cachedResults != null) {
       return cachedResults.map(convertToModel).toList();
     }
-    
+
     // Obtener desde almacenamiento local
     final entities = await getLocalData();
-    
+
     // Cachear resultado
     _cacheQuery('all', entities);
-    
+
     // Cachear entidades individuales también
-    for (final entity in entities.take(50)) { // Limitar para evitar sobrecarga
+    for (final entity in entities.take(50)) {
+      // Limitar para evitar sobrecarga
       _cacheEntity(entity);
     }
-    
+
     return entities.map(convertToModel).toList();
   }
 
   /// Agrega elemento con optimizaciones
   Future<void> add(dynamic model) async {
     if (!_isInitialized) await _initialize();
-    
+
     try {
       final entity = convertFromModel(model, userId);
-      
+
       // Operación batch para mejor rendimiento
       _queueBatchOperation(BatchOperation(
         type: BatchOperationType.create,
         entity: entity,
       ));
-      
+
       // Cola para sincronización
       await _queueForSync(entity, SyncOperationType.create);
-      
-      _emitEvent(RepositoryEventType.itemAdded, 'Item added with optimizations', entity: entity);
-      LoggerFactory.info('➕ Added $entityType with optimizations: ${entity.id}');
-      
+
+      _emitEvent(RepositoryEventType.itemAdded, 'Item added with optimizations',
+          entity: entity);
+      LoggerFactory.info(
+          '➕ Added $entityType with optimizations: ${entity.id}');
     } catch (e) {
       LoggerFactory.error('❌ Failed to add $entityType: $e');
       _emitEvent(RepositoryEventType.error, 'Failed to add item: $e');
@@ -579,25 +593,26 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<void> syncWithSupabase() async {
     if (!_isInitialized) await _initialize();
-    
+
     if (_syncManager != null) {
       try {
         _emitEvent(RepositoryEventType.syncStarted, 'Optimized sync started');
-        
+
         final result = await _syncManager!.performFullSync();
-        
+
         // Limpiar cache después de sync exitoso
         if (result.success) {
           _queryCache.clear();
           _cleanExpiredCache();
         }
-        
+
         _emitEvent(
-          result.success ? RepositoryEventType.syncCompleted : RepositoryEventType.syncError,
+          result.success
+              ? RepositoryEventType.syncCompleted
+              : RepositoryEventType.syncError,
           'Optimized sync ${result.success ? 'completed' : 'failed'}: ${result.toString()}',
           result: result,
         );
-        
       } catch (e) {
         LoggerFactory.error('❌ Optimized sync failed: $e');
         _emitEvent(RepositoryEventType.syncError, 'Optimized sync failed: $e');
@@ -672,18 +687,20 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   // =============================================
 
   /// Cola una entidad para sincronización
-  Future<void> _queueForSync(T? entity, SyncOperationType operationType, {String? entityId}) async {
+  Future<void> _queueForSync(T? entity, SyncOperationType operationType,
+      {String? entityId}) async {
     if (_syncCoordinator != null) {
       Map<String, dynamic> data;
-      
+
       if (entity != null) {
         data = _optimizedSerialize(entity);
-      } else if (operationType == SyncOperationType.delete && entityId != null) {
+      } else if (operationType == SyncOperationType.delete &&
+          entityId != null) {
         data = {'id': entityId, 'is_deleted': true};
       } else {
         return;
       }
-      
+
       await _syncCoordinator!.queueSyncOperation(
         entityType: entityType,
         entityId: entity?.id ?? entityId!,
@@ -717,7 +734,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
     SyncResult? result,
   }) {
     if (_isDisposed) return;
-    
+
     final event = RepositoryEvent<T>(
       type: type,
       message: message,
@@ -726,14 +743,14 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       entityId: entityId,
       result: result,
     );
-    
+
     _eventController.add(event);
   }
 
   /// Obtiene estadísticas completas del repositorio
   Future<Map<String, dynamic>> getStatistics() async {
     final localData = await getLocalData();
-    
+
     return {
       'entity_type': entityType,
       'local_count': localData.length,
@@ -749,30 +766,30 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   /// Libera recursos optimizadamente
   Future<void> dispose() async {
     if (_isDisposed) return;
-    
+
     _isDisposed = true;
-    
+
     // Cancelar timers
     _batchTimer?.cancel();
-    
+
     // Procesar operaciones batch pendientes
     if (_pendingBatchOperations.isNotEmpty) {
       await _processBatchOperations();
     }
-    
+
     // Liberar canal del pool
     if (_channel != null) {
       await _channelPool.releaseChannel(_channel!.tableName);
     }
-    
+
     // Limpiar caches
     _entityCache.clear();
     _queryCache.clear();
     _serializationPool.clear();
-    
+
     // Cerrar stream
     await _eventController.close();
-    
+
     LoggerFactory.info('🔒 OptimizedHybridRepository<$entityType> disposed');
   }
 }
@@ -788,11 +805,11 @@ class CacheEntry<T> {
     required this.timestamp,
     required this.expiry,
   });
-  
+
   final T data;
   final DateTime timestamp;
   final Duration expiry;
-  
+
   bool get isExpired => DateTime.now().difference(timestamp) > expiry;
 }
 
@@ -803,7 +820,7 @@ class BatchOperation<T> {
     this.entity,
     this.entityId,
   });
-  
+
   final BatchOperationType type;
   final T? entity;
   final String? entityId;

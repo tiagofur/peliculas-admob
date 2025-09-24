@@ -39,11 +39,12 @@ class RealAvailabilityService {
     bool useCache = true,
   }) async {
     final cacheKey = '${tmdbId}_$region';
-    
+
     // Check cache first
     if (useCache && _cache.containsKey(cacheKey)) {
       final cached = _cache[cacheKey]!;
-      if (DateTime.now().difference(cached.timestamp) < StreamingApiConfig.availabilityCacheExpiration) {
+      if (DateTime.now().difference(cached.timestamp) <
+          StreamingApiConfig.availabilityCacheExpiration) {
         _logger.info('Returning cached availability for movie: $tmdbId');
         return cached.availability;
       }
@@ -51,33 +52,33 @@ class RealAvailabilityService {
 
     try {
       List<PlatformAvailability> availability = [];
-      
+
       // Try Watchmode API first (most comprehensive)
       if (StreamingApiConfig.isWatchmodeConfigured) {
         availability = await _checkWatchmodeAvailability(tmdbId, region);
       }
-      
+
       // Fallback to JustWatch API if Watchmode fails
       if (availability.isEmpty && StreamingApiConfig.isJustWatchConfigured) {
         availability = await _checkJustWatchAvailability(tmdbId, region);
       }
-      
+
       // Fallback to simulated data if no real APIs are available
       if (availability.isEmpty) {
         availability = await _getSimulatedAvailability(tmdbId, region);
       }
-      
+
       // Cache the results
       _cache[cacheKey] = CachedAvailability(
         availability: availability,
         timestamp: DateTime.now(),
       );
-      
+
       // Clean cache if it gets too large
       if (_cache.length > StreamingApiConfig.maxCacheSize) {
         _cleanCache();
       }
-      
+
       _analyticsService.trackEvent(
         AnalyticsEventType.userEngagement,
         {
@@ -88,7 +89,7 @@ class RealAvailabilityService {
           'cache_used': false,
         },
       );
-      
+
       return availability;
     } catch (e) {
       _logger.error('Error checking movie availability: $e');
@@ -100,7 +101,7 @@ class RealAvailabilityService {
           'error': e.toString(),
         },
       );
-      
+
       // Return simulated data as fallback
       return _getSimulatedAvailability(tmdbId, region);
     }
@@ -113,8 +114,8 @@ class RealAvailabilityService {
   ) async {
     try {
       final url = Uri.parse(
-        '${StreamingApiConfig.watchmodeBaseUrl}/title/$tmdbId/sources'
-      ).replace(queryParameters: {
+              '${StreamingApiConfig.watchmodeBaseUrl}/title/$tmdbId/sources')
+          .replace(queryParameters: {
         'regions': region,
         'source_types': 'sub,free,rent,buy',
       });
@@ -143,8 +144,7 @@ class RealAvailabilityService {
   ) async {
     try {
       final url = Uri.parse(
-        '${StreamingApiConfig.justWatchBaseUrl}/titles/movie/$tmdbId/locale/${region.toLowerCase()}'
-      );
+          '${StreamingApiConfig.justWatchBaseUrl}/titles/movie/$tmdbId/locale/${region.toLowerCase()}');
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.justWatchHeaders)
@@ -166,11 +166,11 @@ class RealAvailabilityService {
   /// Parse Watchmode API response
   List<PlatformAvailability> _parseWatchmodeResponse(List data) {
     final List<PlatformAvailability> availability = [];
-    
+
     for (final source in data) {
       final platformName = source['name'] as String?;
       final platform = _mapPlatformName(platformName);
-      
+
       if (platform != null) {
         availability.add(PlatformAvailability(
           platform: platform,
@@ -189,19 +189,20 @@ class RealAvailabilityService {
         ));
       }
     }
-    
+
     return availability;
   }
 
   /// Parse JustWatch API response
-  List<PlatformAvailability> _parseJustWatchResponse(Map<String, dynamic> data) {
+  List<PlatformAvailability> _parseJustWatchResponse(
+      Map<String, dynamic> data) {
     final List<PlatformAvailability> availability = [];
     final offers = data['offers'] as List? ?? [];
-    
+
     for (final offer in offers) {
       final platformName = offer['package']?['technical_name'] as String?;
       final platform = _mapPlatformName(platformName);
-      
+
       if (platform != null) {
         availability.add(PlatformAvailability(
           platform: platform,
@@ -220,25 +221,29 @@ class RealAvailabilityService {
         ));
       }
     }
-    
+
     return availability;
   }
 
   /// Map platform names to StreamingPlatform enum
   StreamingPlatform? _mapPlatformName(String? platformName) {
     if (platformName == null) return null;
-    
+
     final name = platformName.toLowerCase();
-    
+
     if (name.contains('netflix')) return StreamingPlatform.netflix;
-    if (name.contains('prime') || name.contains('amazon')) return StreamingPlatform.primeVideo;
+    if (name.contains('prime') || name.contains('amazon')) {
+      return StreamingPlatform.primeVideo;
+    }
     if (name.contains('disney')) return StreamingPlatform.disneyPlus;
-    if (name.contains('hbo') || name.contains('max')) return StreamingPlatform.hboMax;
+    if (name.contains('hbo') || name.contains('max')) {
+      return StreamingPlatform.hboMax;
+    }
     if (name.contains('hulu')) return StreamingPlatform.hulu;
     if (name.contains('apple')) return StreamingPlatform.appleTv;
     if (name.contains('paramount')) return StreamingPlatform.paramountPlus;
     if (name.contains('peacock')) return StreamingPlatform.peacock;
-    
+
     return null;
   }
 
@@ -249,13 +254,18 @@ class RealAvailabilityService {
   ) async {
     // Simulate some delay
     await Future.delayed(const Duration(milliseconds: 300));
-    
-    final platforms = [StreamingPlatform.netflix, StreamingPlatform.primeVideo, StreamingPlatform.disneyPlus];
+
+    final platforms = [
+      StreamingPlatform.netflix,
+      StreamingPlatform.primeVideo,
+      StreamingPlatform.disneyPlus
+    ];
     final availability = <PlatformAvailability>[];
-    
+
     // Simulate availability on 1-2 platforms
-    final availableCount = (int.parse(tmdbId.replaceAll(RegExp(r'[^0-9]'), '')) % 3) + 1;
-    
+    final availableCount =
+        (int.parse(tmdbId.replaceAll(RegExp(r'[^0-9]'), '')) % 3) + 1;
+
     for (int i = 0; i < availableCount && i < platforms.length; i++) {
       availability.add(PlatformAvailability(
         platform: platforms[i],
@@ -271,15 +281,16 @@ class RealAvailabilityService {
         subtitleLanguages: ['en'],
       ));
     }
-    
+
     return availability;
   }
 
   /// Clean old cache entries
   void _cleanCache() {
     final now = DateTime.now();
-    _cache.removeWhere((key, value) => 
-        now.difference(value.timestamp) > StreamingApiConfig.availabilityCacheExpiration);
+    _cache.removeWhere((key, value) =>
+        now.difference(value.timestamp) >
+        StreamingApiConfig.availabilityCacheExpiration);
   }
 
   /// Clear all cache

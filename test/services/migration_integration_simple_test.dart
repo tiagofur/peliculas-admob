@@ -32,7 +32,7 @@ void main() {
     setUp(() async {
       mockLocalDataSource = MockCustomListsSharedPreferencesDatasource();
       mockRepository = MockICustomListsRepository();
-      
+
       // Initialize SharedPreferences with mock data
       SharedPreferences.setMockInitialValues({
         'lists_migration_completed': false,
@@ -58,7 +58,7 @@ void main() {
     test('Debe verificar estado inicial de migración', () {
       // Act
       final isCompleted = migrationService.isMigrationCompleted();
-      
+
       // Assert
       expect(isCompleted, isFalse);
     });
@@ -66,7 +66,7 @@ void main() {
     test('Debe marcar migración como completada', () async {
       // Act
       await migrationService.markMigrationCompleted();
-      
+
       // Assert
       final isCompleted = migrationService.isMigrationCompleted();
       expect(isCompleted, isTrue);
@@ -81,7 +81,7 @@ void main() {
       // Arrange
       when(mockRepository.getDefaultLists())
           .thenAnswer((_) async => <CustomList>[]);
-      
+
       // Act & Assert - should not throw
       await expectLater(
         () => migrationService.migrateDefaultLists('test-user-id'),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
-import '../../providers/providers.dart';
+import '../../providers/custom_lists_providers.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/storage/direct_watched_provider.dart';
 import 'movie_rating.dart';
@@ -92,10 +92,9 @@ class _MovieListItemState extends ConsumerState<MovieListItem>
     );
   }
 
-  void _removeFromList() {
-    ref
-        .read(allListsNotifierProvider.notifier)
-        .removeMovieFromList(widget.listId, widget.movie.id);
+  void _removeFromList() async {
+    final listActions = await ref.read(listActionsProvider.future);
+    await listActions.removeMovieFromList(widget.listId, widget.movie.id);
 
     // Notificar al widget padre para que actualice la UI
     widget.onRemove?.call();

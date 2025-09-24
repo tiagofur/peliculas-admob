@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,18 +26,68 @@ class HomeViewState extends ConsumerState<HomeView>
   void initState() {
     super.initState();
 
+    // ✅ PERFORMANCE OPTIMIZATION: Load progressively instead of all at once
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
-        ref.read(popularMoviesProvider.notifier).loadNextPage();
-        ref.read(topRatedMoviesProvider.notifier).loadNextPage();
-        ref.read(upcomingMoviesProvider.notifier).loadNextPage();
-        // Cargar favoritos al iniciar la app
-        ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
-        // Cargar recomendaciones paginadas
-        ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage();
+        _loadDataProgressively();
       }
     });
+  }
+
+  /// ✅ PERFORMANCE OPTIMIZATION: Aggressive progressive loading for faster startup
+  Future<void> _loadDataProgressively() async {
+    if (!mounted) return;
+
+    try {
+      // Priority 1: Load essential content IMMEDIATELY (nowPlaying for slideshow)
+      LoggerFactory.info('📱 Loading critical content (nowPlaying)...');
+      final criticalFuture = ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
+
+      // Start popular load immediately in parallel (no waiting)
+      LoggerFactory.info('📱 Starting popular content load...');
+      final popularFuture = ref.read(popularMoviesProvider.notifier).loadNextPage();
+
+      // Wait only for critical content to show slideshow ASAP
+      await criticalFuture;
+      if (!mounted) return;
+
+      // Minimal delay for UI responsiveness
+      await Future.delayed(const Duration(milliseconds: 50));
+
+      // Wait for popular to complete
+      await popularFuture;
+      if (!mounted) return;
+
+      // Priority 3: Load remaining content in parallel with minimal delay
+      LoggerFactory.info('📱 Loading additional content in parallel...');
+      final additionalContentFutures = <Future>[
+        ref.read(topRatedMoviesProvider.notifier).loadNextPage(),
+        ref.read(upcomingMoviesProvider.notifier).loadNextPage(),
+      ];
+
+      // Priority 4: Start user-specific data loading immediately (don't wait)
+      LoggerFactory.info('📱 Starting user-specific content load...');
+      final userDataFutures = <Future>[
+        ref.read(directFavoriteMoviesProvider.notifier).loadNextPage(),
+        ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage(),
+      ];
+
+      // Execute all remaining operations in parallel
+      await Future.wait([
+        Future.wait(additionalContentFutures),
+        Future.wait(userDataFutures),
+      ]);
+
+      if (!mounted) return;
+      LoggerFactory.info('✅ Aggressive progressive loading completed successfully');
+    } catch (e) {
+      LoggerFactory.error('❌ Error in progressive loading: $e');
+      // If progressive loading fails, at least load critical content
+      if (mounted) {
+        unawaited(ref.read(nowPlayingMoviesProvider.notifier).loadNextPage());
+        unawaited(ref.read(popularMoviesProvider.notifier).loadNextPage());
+      }
+    }
   }
 
   @override

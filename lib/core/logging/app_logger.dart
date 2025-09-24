@@ -131,24 +131,28 @@ class AppLogger {
   }
 
   // ========== MÉTODOS ESTÁTICOS PARA FACILITAR EL USO ==========
-  
+
   /// Static debug method for easy access
-  static void d(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+  static void d(String message,
+      {String? tag, Object? error, StackTrace? stackTrace}) {
     instance.debug(message, tag: tag, error: error, stackTrace: stackTrace);
   }
 
-  /// Static info method for easy access  
-  static void i(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+  /// Static info method for easy access
+  static void i(String message,
+      {String? tag, Object? error, StackTrace? stackTrace}) {
     instance.info(message, tag: tag, error: error, stackTrace: stackTrace);
   }
 
   /// Static warning method for easy access
-  static void w(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+  static void w(String message,
+      {String? tag, Object? error, StackTrace? stackTrace}) {
     instance.warning(message, tag: tag, error: error, stackTrace: stackTrace);
   }
 
   /// Static error method for easy access
-  static void e(String message, {String? tag, Object? error, StackTrace? stackTrace}) {
+  static void e(String message,
+      {String? tag, Object? error, StackTrace? stackTrace}) {
     instance.error(message, tag: tag, error: error, stackTrace: stackTrace);
   }
 

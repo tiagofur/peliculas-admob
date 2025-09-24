@@ -21,11 +21,11 @@ class UserMovieRating {
       moviePosterPath: json['movie_poster_path']?.toString(),
       rating: (json['rating'] as num?)?.toDouble() ?? 1.0,
       review: json['review']?.toString(),
-      createdAt: json['created_at'] != null 
-          ? DateTime.parse(json['created_at'].toString()) 
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
           : DateTime.now(),
-      updatedAt: json['last_modified_at'] != null 
-          ? DateTime.parse(json['last_modified_at'].toString()) 
+      updatedAt: json['last_modified_at'] != null
+          ? DateTime.parse(json['last_modified_at'].toString())
           : DateTime.now(),
     );
   }
@@ -105,8 +105,7 @@ class UserMovieRating {
   bool get isValidRating => rating >= 1.0 && rating <= 10.0;
 
   /// Valida que la reseña no exceda el límite
-  bool get isValidReview =>
-      review == null || (review?.length ?? 0) <= 500;
+  bool get isValidReview => review == null || (review?.length ?? 0) <= 500;
 
   /// Valida que la entidad sea válida
   bool get isValid => isValidRating && isValidReview;

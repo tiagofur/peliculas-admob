@@ -87,7 +87,8 @@ class SyncableCustomList extends SyncableEntity {
       category: json['category'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? <String>[],
       collaboratorIds:
-          (json['collaborator_ids'] as List<dynamic>?)?.cast<String>() ?? <String>[],
+          (json['collaborator_ids'] as List<dynamic>?)?.cast<String>() ??
+              <String>[],
       createdAt: DateTime.parse(json['created_at'] as String),
       lastModifiedAt: DateTime.parse(json['last_modified_at'] as String),
       isDeleted: json['is_deleted'] as bool? ?? false,

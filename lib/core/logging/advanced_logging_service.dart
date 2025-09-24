@@ -28,35 +28,35 @@ class AdvancedLoggingService {
   static const Duration _metricsAggregationInterval = Duration(minutes: 1);
   static const Duration _alertCheckInterval = Duration(seconds: 30);
   static const Duration _logRotationInterval = Duration(hours: 24);
-  
+
   // Almacenamiento de logs y métricas
   final Queue<LogEntry> _logEntries = Queue<LogEntry>();
   final Queue<MetricEntry> _metricEntries = Queue<MetricEntry>();
   final Map<String, PerformanceMetrics> _performanceMetrics = {};
   final Map<String, AlertRule> _alertRules = {};
   final Queue<Alert> _activeAlerts = Queue<Alert>();
-  
+
   // Agregaciones de métricas
   final Map<String, AggregatedMetrics> _aggregatedMetrics = {};
-  
+
   // Timers para procesamiento
   Timer? _metricsAggregationTimer;
   Timer? _alertCheckTimer;
   Timer? _logRotationTimer;
-  
+
   // Streams para eventos
-  final StreamController<LogEntry> _logStreamController = 
+  final StreamController<LogEntry> _logStreamController =
       StreamController<LogEntry>.broadcast();
-  final StreamController<Alert> _alertStreamController = 
+  final StreamController<Alert> _alertStreamController =
       StreamController<Alert>.broadcast();
-  final StreamController<DashboardUpdate> _dashboardStreamController = 
+  final StreamController<DashboardUpdate> _dashboardStreamController =
       StreamController<DashboardUpdate>.broadcast();
-  
+
   // Estado del servicio
   bool _isInitialized = false;
   bool _isDisposed = false;
   String? _logDirectory;
-  
+
   // Contadores de rendimiento
   int _totalLogs = 0;
   int _totalMetrics = 0;
@@ -70,7 +70,8 @@ class AdvancedLoggingService {
   Stream<Alert> get alertStream => _alertStreamController.stream;
 
   /// Stream de actualizaciones del dashboard
-  Stream<DashboardUpdate> get dashboardStream => _dashboardStreamController.stream;
+  Stream<DashboardUpdate> get dashboardStream =>
+      _dashboardStreamController.stream;
 
   /// Indica si el servicio está inicializado
   bool get isInitialized => _isInitialized;
@@ -89,23 +90,24 @@ class AdvancedLoggingService {
     try {
       // Configurar directorio de logs
       await _setupLogDirectory();
-      
+
       // Configurar reglas de alerta por defecto
       _setupDefaultAlertRules();
-      
+
       // Iniciar timers de procesamiento
       _startTimers();
-      
+
       // Cargar logs existentes si los hay
       await _loadExistingLogs();
-      
+
       _isInitialized = true;
       _serviceStartTime = DateTime.now();
-      
-      await logInfo('AdvancedLoggingService', 'Service initialized successfully');
-      
+
+      await logInfo(
+          'AdvancedLoggingService', 'Service initialized successfully');
     } catch (e) {
-      SafeDeveloperLog.log('❌ Failed to initialize AdvancedLoggingService: $e', error: e);
+      SafeDeveloperLog.log('❌ Failed to initialize AdvancedLoggingService: $e',
+          error: e);
       _isInitialized = true; // Continue even if initialization fails
     }
   }
@@ -115,12 +117,11 @@ class AdvancedLoggingService {
     try {
       final appDir = await getApplicationDocumentsDirectory();
       _logDirectory = '${appDir.path}/logs';
-      
+
       final logDir = Directory(_logDirectory!);
       if (!await logDir.exists()) {
         await logDir.create(recursive: true);
       }
-      
     } catch (e) {
       SafeDeveloperLog.log('⚠️ Failed to setup log directory: $e', error: e);
     }
@@ -139,7 +140,7 @@ class AdvancedLoggingService {
       severity: AlertSeverity.high,
       enabled: true,
     ));
-    
+
     // Alerta por latencia alta
     addAlertRule(AlertRule(
       id: 'high_latency',
@@ -151,7 +152,7 @@ class AdvancedLoggingService {
       severity: AlertSeverity.medium,
       enabled: true,
     ));
-    
+
     // Alerta por fallos de conexión
     addAlertRule(AlertRule(
       id: 'connection_failures',
@@ -163,7 +164,7 @@ class AdvancedLoggingService {
       severity: AlertSeverity.high,
       enabled: true,
     ));
-    
+
     // Alerta por uso excesivo de memoria
     addAlertRule(AlertRule(
       id: 'memory_usage',
@@ -185,14 +186,14 @@ class AdvancedLoggingService {
         _aggregateMetrics();
       }
     });
-    
+
     // Timer para verificación de alertas
     _alertCheckTimer = Timer.periodic(_alertCheckInterval, (_) {
       if (!_isDisposed) {
         _checkAlerts();
       }
     });
-    
+
     // Timer para rotación de logs
     _logRotationTimer = Timer.periodic(_logRotationInterval, (_) {
       if (!_isDisposed) {
@@ -204,13 +205,14 @@ class AdvancedLoggingService {
   /// Carga logs existentes del almacenamiento
   Future<void> _loadExistingLogs() async {
     if (_logDirectory == null) return;
-    
+
     try {
       final logFile = File('$_logDirectory/current.log');
       if (await logFile.exists()) {
         final lines = await logFile.readAsLines();
-        
-        for (final line in lines.take(1000)) { // Cargar solo los últimos 1000
+
+        for (final line in lines.take(1000)) {
+          // Cargar solo los últimos 1000
           try {
             final json = jsonDecode(line);
             final entry = LogEntry.fromJson(json);
@@ -219,8 +221,9 @@ class AdvancedLoggingService {
             // Ignorar líneas malformadas
           }
         }
-        
-        SafeDeveloperLog.log('📄 Loaded ${_logEntries.length} existing log entries');
+
+        SafeDeveloperLog.log(
+            '📄 Loaded ${_logEntries.length} existing log entries');
       }
     } catch (e) {
       SafeDeveloperLog.log('⚠️ Failed to load existing logs: $e', error: e);
@@ -232,33 +235,41 @@ class AdvancedLoggingService {
   // =============================================
 
   /// Registra un log de información
-  Future<void> logInfo(String component, String message, {Map<String, dynamic>? metadata}) async {
+  Future<void> logInfo(String component, String message,
+      {Map<String, dynamic>? metadata}) async {
     await _addLogEntry(LogLevel.info, component, message, metadata: metadata);
   }
 
   /// Registra un log de advertencia
-  Future<void> logWarning(String component, String message, {Map<String, dynamic>? metadata}) async {
-    await _addLogEntry(LogLevel.warning, component, message, metadata: metadata);
+  Future<void> logWarning(String component, String message,
+      {Map<String, dynamic>? metadata}) async {
+    await _addLogEntry(LogLevel.warning, component, message,
+        metadata: metadata);
   }
 
   /// Registra un log de error
-  Future<void> logError(String component, String message, {Map<String, dynamic>? metadata, StackTrace? stackTrace}) async {
+  Future<void> logError(String component, String message,
+      {Map<String, dynamic>? metadata, StackTrace? stackTrace}) async {
     final errorMetadata = Map<String, dynamic>.from(metadata ?? {});
     if (stackTrace != null) {
       errorMetadata['stack_trace'] = stackTrace.toString();
     }
-    await _addLogEntry(LogLevel.error, component, message, metadata: errorMetadata);
+    await _addLogEntry(LogLevel.error, component, message,
+        metadata: errorMetadata);
   }
 
   /// Registra un log de debug
-  Future<void> logDebug(String component, String message, {Map<String, dynamic>? metadata}) async {
+  Future<void> logDebug(String component, String message,
+      {Map<String, dynamic>? metadata}) async {
     if (kDebugMode) {
-      await _addLogEntry(LogLevel.debug, component, message, metadata: metadata);
+      await _addLogEntry(LogLevel.debug, component, message,
+          metadata: metadata);
     }
   }
 
   /// Registra una métrica de rendimiento
-  Future<void> recordMetric(String name, double value, {String? unit, Map<String, dynamic>? tags}) async {
+  Future<void> recordMetric(String name, double value,
+      {String? unit, Map<String, dynamic>? tags}) async {
     final entry = MetricEntry(
       name: name,
       value: value,
@@ -266,21 +277,22 @@ class AdvancedLoggingService {
       tags: tags ?? {},
       timestamp: DateTime.now(),
     );
-    
+
     _metricEntries.add(entry);
     _totalMetrics++;
-    
+
     // Mantener límite de métricas
     while (_metricEntries.length > _maxMetricEntries) {
       _metricEntries.removeFirst();
     }
-    
+
     // Actualizar métricas de rendimiento
     _updatePerformanceMetrics(name, value);
   }
 
   /// Registra el tiempo de ejecución de una operación
-  Future<void> recordExecutionTime(String operation, Duration duration, {Map<String, dynamic>? metadata}) async {
+  Future<void> recordExecutionTime(String operation, Duration duration,
+      {Map<String, dynamic>? metadata}) async {
     await recordMetric(
       'execution_time_$operation',
       duration.inMilliseconds.toDouble(),
@@ -293,7 +305,8 @@ class AdvancedLoggingService {
   }
 
   /// Registra un evento de sincronización
-  Future<void> recordSyncEvent(String eventType, String tableName, {bool success = true, String? error}) async {
+  Future<void> recordSyncEvent(String eventType, String tableName,
+      {bool success = true, String? error}) async {
     await recordMetric(
       'sync_event',
       success ? 1.0 : 0.0,
@@ -304,9 +317,10 @@ class AdvancedLoggingService {
         if (error != null) 'error': error,
       },
     );
-    
+
     if (!success && error != null) {
-      await logError('SyncService', 'Sync event failed: $eventType for $tableName', 
+      await logError(
+          'SyncService', 'Sync event failed: $eventType for $tableName',
           metadata: {'error': error, 'table': tableName});
     }
   }
@@ -326,7 +340,7 @@ class AdvancedLoggingService {
         if (networkType != null) 'network_type': networkType,
       },
     );
-    
+
     if (latency != null) {
       await recordMetric(
         'connection_latency',
@@ -335,7 +349,7 @@ class AdvancedLoggingService {
         tags: {'network_type': networkType ?? 'unknown'},
       );
     }
-    
+
     if (bandwidth != null) {
       await recordMetric(
         'connection_bandwidth',
@@ -351,7 +365,8 @@ class AdvancedLoggingService {
   // =============================================
 
   /// Agrega una entrada de log
-  Future<void> _addLogEntry(LogLevel level, String component, String message, {Map<String, dynamic>? metadata}) async {
+  Future<void> _addLogEntry(LogLevel level, String component, String message,
+      {Map<String, dynamic>? metadata}) async {
     final entry = LogEntry(
       level: level,
       component: component,
@@ -359,21 +374,21 @@ class AdvancedLoggingService {
       timestamp: DateTime.now(),
       metadata: metadata ?? {},
     );
-    
+
     _logEntries.add(entry);
     _totalLogs++;
-    
+
     // Mantener límite de logs en memoria
     while (_logEntries.length > _maxLogEntries) {
       _logEntries.removeFirst();
     }
-    
+
     // Emitir al stream
     _logStreamController.add(entry);
-    
+
     // Escribir a archivo si es posible
     await _writeLogToFile(entry);
-    
+
     // Log también al sistema estándar
     _logToStandardOutput(entry);
   }
@@ -381,7 +396,7 @@ class AdvancedLoggingService {
   /// Escribe log a archivo
   Future<void> _writeLogToFile(LogEntry entry) async {
     if (_logDirectory == null) return;
-    
+
     try {
       final logFile = File('$_logDirectory/current.log');
       final json = jsonEncode(entry.toJson());
@@ -397,9 +412,9 @@ class AdvancedLoggingService {
     final level = entry.level.name.toUpperCase();
     final component = entry.component;
     final message = entry.message;
-    
+
     final logLine = '[$timestamp] $level [$component] $message';
-    
+
     switch (entry.level) {
       case LogLevel.error:
         LoggerFactory.error(logLine);
@@ -423,7 +438,7 @@ class AdvancedLoggingService {
   /// Actualiza métricas de rendimiento
   void _updatePerformanceMetrics(String name, double value) {
     final metrics = _performanceMetrics[name] ?? PerformanceMetrics(name: name);
-    
+
     metrics.addValue(value);
     _performanceMetrics[name] = metrics;
   }
@@ -432,25 +447,25 @@ class AdvancedLoggingService {
   void _aggregateMetrics() {
     final now = DateTime.now();
     final windowStart = now.subtract(_metricsAggregationInterval);
-    
+
     // Agrupar métricas por nombre en la ventana de tiempo
     final Map<String, List<MetricEntry>> groupedMetrics = {};
-    
+
     for (final metric in _metricEntries) {
       if (metric.timestamp.isAfter(windowStart)) {
         groupedMetrics.putIfAbsent(metric.name, () => []).add(metric);
       }
     }
-    
+
     // Crear agregaciones
     for (final entry in groupedMetrics.entries) {
       final metricName = entry.key;
       final metrics = entry.value;
-      
+
       if (metrics.isNotEmpty) {
         final values = metrics.map((m) => m.value).toList();
         values.sort();
-        
+
         final aggregated = AggregatedMetrics(
           name: metricName,
           count: metrics.length,
@@ -463,11 +478,11 @@ class AdvancedLoggingService {
           timestamp: now,
           timeWindow: _metricsAggregationInterval,
         );
-        
+
         _aggregatedMetrics[metricName] = aggregated;
       }
     }
-    
+
     // Emitir actualización del dashboard
     _emitDashboardUpdate();
   }
@@ -489,17 +504,17 @@ class AdvancedLoggingService {
   /// Verifica alertas según las reglas configuradas
   void _checkAlerts() {
     final now = DateTime.now();
-    
+
     for (final rule in _alertRules.values) {
       if (!rule.enabled) continue;
-      
+
       final shouldAlert = _evaluateAlertCondition(rule, now);
-      
+
       if (shouldAlert) {
         final existingAlert = _activeAlerts
             .where((a) => a.ruleId == rule.id && !a.isResolved)
             .firstOrNull;
-        
+
         if (existingAlert == null) {
           // Crear nueva alerta
           final alert = Alert(
@@ -512,20 +527,20 @@ class AdvancedLoggingService {
             isResolved: false,
             metadata: _getAlertMetadata(rule, now),
           );
-          
+
           _activeAlerts.add(alert);
           _totalAlerts++;
-          
+
           // Emitir alerta
           _alertStreamController.add(alert);
-          
+
           // Log de la alerta
-          logWarning('AlertSystem', 'Alert triggered: ${rule.name}', 
+          logWarning('AlertSystem', 'Alert triggered: ${rule.name}',
               metadata: alert.metadata);
         }
       }
     }
-    
+
     // Limpiar alertas antiguas
     _cleanupOldAlerts();
   }
@@ -533,44 +548,49 @@ class AdvancedLoggingService {
   /// Evalúa si se debe disparar una alerta
   bool _evaluateAlertCondition(AlertRule rule, DateTime now) {
     final windowStart = now.subtract(rule.timeWindow);
-    
+
     switch (rule.condition) {
       case AlertCondition.errorRate:
         final errorCount = _logEntries
-            .where((log) => log.level == LogLevel.error && log.timestamp.isAfter(windowStart))
+            .where((log) =>
+                log.level == LogLevel.error &&
+                log.timestamp.isAfter(windowStart))
             .length;
         return errorCount >= rule.threshold;
-        
+
       case AlertCondition.averageLatency:
         final latencyMetrics = _metricEntries
-            .where((m) => m.name.contains('latency') && m.timestamp.isAfter(windowStart))
+            .where((m) =>
+                m.name.contains('latency') && m.timestamp.isAfter(windowStart))
             .toList();
         if (latencyMetrics.isEmpty) return false;
-        
-        final avgLatency = latencyMetrics
-            .map((m) => m.value)
-            .fold(0.0, (a, b) => a + b) / latencyMetrics.length;
+
+        final avgLatency =
+            latencyMetrics.map((m) => m.value).fold(0.0, (a, b) => a + b) /
+                latencyMetrics.length;
         return avgLatency >= rule.threshold;
-        
+
       case AlertCondition.connectionFailures:
         final failureCount = _logEntries
-            .where((log) => log.message.toLowerCase().contains('connection') && 
-                          log.message.toLowerCase().contains('fail') &&
-                          log.timestamp.isAfter(windowStart))
+            .where((log) =>
+                log.message.toLowerCase().contains('connection') &&
+                log.message.toLowerCase().contains('fail') &&
+                log.timestamp.isAfter(windowStart))
             .length;
         return failureCount >= rule.threshold;
-        
+
       case AlertCondition.memoryUsage:
         final memoryMetrics = _metricEntries
-            .where((m) => m.name.contains('memory') && m.timestamp.isAfter(windowStart))
+            .where((m) =>
+                m.name.contains('memory') && m.timestamp.isAfter(windowStart))
             .toList();
         if (memoryMetrics.isEmpty) return false;
-        
+
         final maxMemory = memoryMetrics
             .map((m) => m.value)
             .fold(0.0, (a, b) => a > b ? a : b);
         return maxMemory >= rule.threshold;
-        
+
       case AlertCondition.custom:
         // Para condiciones personalizadas, siempre retornar false por ahora
         return false;
@@ -580,7 +600,7 @@ class AdvancedLoggingService {
   /// Obtiene metadatos para una alerta
   Map<String, dynamic> _getAlertMetadata(AlertRule rule, DateTime timestamp) {
     final windowStart = timestamp.subtract(rule.timeWindow);
-    
+
     return {
       'rule_id': rule.id,
       'condition': rule.condition.name,
@@ -594,8 +614,9 @@ class AdvancedLoggingService {
   /// Limpia alertas antiguas
   void _cleanupOldAlerts() {
     final cutoff = DateTime.now().subtract(const Duration(hours: 24));
-    
-    while (_activeAlerts.isNotEmpty && _activeAlerts.first.timestamp.isBefore(cutoff)) {
+
+    while (_activeAlerts.isNotEmpty &&
+        _activeAlerts.first.timestamp.isBefore(cutoff)) {
       _activeAlerts.removeFirst();
     }
   }
@@ -628,7 +649,7 @@ class AdvancedLoggingService {
       aggregatedMetrics: Map.from(_aggregatedMetrics),
       performanceMetrics: Map.from(_performanceMetrics),
     );
-    
+
     _dashboardStreamController.add(update);
   }
 
@@ -637,16 +658,19 @@ class AdvancedLoggingService {
     final now = DateTime.now();
     final last24h = now.subtract(const Duration(hours: 24));
     final lastHour = now.subtract(const Duration(hours: 1));
-    
-    final logsLast24h = _logEntries.where((log) => log.timestamp.isAfter(last24h)).length;
-    final logsLastHour = _logEntries.where((log) => log.timestamp.isAfter(lastHour)).length;
-    
+
+    final logsLast24h =
+        _logEntries.where((log) => log.timestamp.isAfter(last24h)).length;
+    final logsLastHour =
+        _logEntries.where((log) => log.timestamp.isAfter(lastHour)).length;
+
     final errorsLast24h = _logEntries
-        .where((log) => log.level == LogLevel.error && log.timestamp.isAfter(last24h))
+        .where((log) =>
+            log.level == LogLevel.error && log.timestamp.isAfter(last24h))
         .length;
-    
+
     final activeAlertCount = _activeAlerts.where((a) => !a.isResolved).length;
-    
+
     return DashboardStatistics(
       totalLogs: _totalLogs,
       totalMetrics: _totalMetrics,
@@ -672,12 +696,15 @@ class AdvancedLoggingService {
   }) {
     var filtered = _logEntries.where((log) {
       if (level != null && log.level != level) return false;
-      if (component != null && !log.component.toLowerCase().contains(component.toLowerCase())) return false;
+      if (component != null &&
+          !log.component.toLowerCase().contains(component.toLowerCase())) {
+        return false;
+      }
       if (startTime != null && log.timestamp.isBefore(startTime)) return false;
       if (endTime != null && log.timestamp.isAfter(endTime)) return false;
       return true;
     });
-    
+
     return filtered.take(limit).toList();
   }
 
@@ -689,12 +716,17 @@ class AdvancedLoggingService {
     int limit = 1000,
   }) {
     var filtered = _metricEntries.where((metric) {
-      if (name != null && !metric.name.toLowerCase().contains(name.toLowerCase())) return false;
-      if (startTime != null && metric.timestamp.isBefore(startTime)) return false;
+      if (name != null &&
+          !metric.name.toLowerCase().contains(name.toLowerCase())) {
+        return false;
+      }
+      if (startTime != null && metric.timestamp.isBefore(startTime)) {
+        return false;
+      }
       if (endTime != null && metric.timestamp.isAfter(endTime)) return false;
       return true;
     });
-    
+
     return filtered.take(limit).toList();
   }
 
@@ -708,7 +740,7 @@ class AdvancedLoggingService {
       endTime: endTime,
       limit: 10000,
     );
-    
+
     final export = {
       'export_timestamp': DateTime.now().toIso8601String(),
       'start_time': startTime?.toIso8601String(),
@@ -716,7 +748,7 @@ class AdvancedLoggingService {
       'total_logs': logs.length,
       'logs': logs.map((log) => log.toJson()).toList(),
     };
-    
+
     return jsonEncode(export);
   }
 
@@ -727,18 +759,18 @@ class AdvancedLoggingService {
   /// Rota los archivos de log
   Future<void> _rotateLogs() async {
     if (_logDirectory == null) return;
-    
+
     try {
       final currentLogFile = File('$_logDirectory/current.log');
-      
+
       if (await currentLogFile.exists()) {
         final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
         final rotatedLogFile = File('$_logDirectory/log_$timestamp.log');
-        
+
         await currentLogFile.rename(rotatedLogFile.path);
-        
+
         logInfo('LogRotation', 'Log file rotated to: ${rotatedLogFile.path}');
-        
+
         // Limpiar logs antiguos (mantener solo los últimos 7 días)
         await _cleanupOldLogFiles();
       }
@@ -750,13 +782,13 @@ class AdvancedLoggingService {
   /// Limpia archivos de log antiguos
   Future<void> _cleanupOldLogFiles() async {
     if (_logDirectory == null) return;
-    
+
     try {
       final logDir = Directory(_logDirectory!);
       final files = await logDir.list().toList();
-      
+
       final cutoff = DateTime.now().subtract(const Duration(days: 7));
-      
+
       for (final file in files) {
         if (file is File && file.path.contains('log_')) {
           final stat = await file.stat();
@@ -778,19 +810,19 @@ class AdvancedLoggingService {
   /// Libera recursos del servicio
   Future<void> dispose() async {
     if (_isDisposed) return;
-    
+
     _isDisposed = true;
-    
+
     // Cancelar timers
     _metricsAggregationTimer?.cancel();
     _alertCheckTimer?.cancel();
     _logRotationTimer?.cancel();
-    
+
     // Cerrar streams
     await _logStreamController.close();
     await _alertStreamController.close();
     await _dashboardStreamController.close();
-    
+
     // Limpiar datos
     _logEntries.clear();
     _metricEntries.clear();
@@ -798,7 +830,7 @@ class AdvancedLoggingService {
     _alertRules.clear();
     _activeAlerts.clear();
     _aggregatedMetrics.clear();
-    
+
     SafeDeveloperLog.log('🔒 AdvancedLoggingService disposed');
   }
 }
@@ -903,7 +935,7 @@ class PerformanceMetrics {
     if (value < _min) _min = value;
     if (value > _max) _max = value;
     _lastUpdate = DateTime.now();
-    
+
     // Mantener solo los últimos 1000 valores
     if (_values.length > 1000) {
       final removed = _values.removeAt(0);

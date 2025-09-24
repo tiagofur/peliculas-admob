@@ -26,8 +26,12 @@ class UserSubscription {
       type: SubscriptionType.fromString(json['type'] as String),
       monthlyCost: (json['monthlyCost'] as num).toDouble(),
       startDate: DateTime.parse(json['startDate'] as String),
-      endDate: json['endDate'] != null ? DateTime.parse(json['endDate'] as String) : null,
-      nextBillingDate: json['nextBillingDate'] != null ? DateTime.parse(json['nextBillingDate'] as String) : null,
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'] as String)
+          : null,
+      nextBillingDate: json['nextBillingDate'] != null
+          ? DateTime.parse(json['nextBillingDate'] as String)
+          : null,
       isActive: json['isActive'] as bool,
       autoRenew: json['autoRenew'] as bool? ?? true,
       billingCycle: json['billingCycle'] as String?,
@@ -51,7 +55,7 @@ class UserSubscription {
   }) {
     final now = DateTime.now();
     final nextBilling = _calculateNextBilling(startDate, billingCycle);
-    
+
     return UserSubscription(
       id: _generateId(),
       platformId: platformId,
@@ -76,7 +80,8 @@ class UserSubscription {
   }
 
   /// Calculate next billing date based on start date and billing cycle
-  static DateTime _calculateNextBilling(DateTime startDate, String? billingCycle) {
+  static DateTime _calculateNextBilling(
+      DateTime startDate, String? billingCycle) {
     switch (billingCycle?.toLowerCase()) {
       case 'yearly':
       case 'annual':
@@ -88,8 +93,6 @@ class UserSubscription {
         return DateTime(startDate.year, startDate.month + 1, startDate.day);
     }
   }
-
-
 
   final String id;
   final String platformId;
@@ -213,7 +216,6 @@ class UserSubscription {
     };
   }
 
-
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
@@ -240,7 +242,7 @@ enum SubscriptionType {
   trial('Trial');
 
   const SubscriptionType(this.displayName);
-  
+
   final String displayName;
 
   /// Get subscription type from string

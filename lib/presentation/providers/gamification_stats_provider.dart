@@ -1,63 +1,85 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/analytics/analytics_service.dart';
 import '../../core/gamification/gamification_manager.dart';
+import '../../core/gamification/widgets/achievement_notification.dart';
 import '../../core/logging/logger_factory.dart';
-import 'movie_ratings_provider.dart' as ratings;
+import '../../services/gamification_service.dart';
+import 'social_sharing_provider.dart';
 import 'user_stats_provider.dart';
 
-/// Provider para obtener el número total de ratings del usuario
-final totalUserRatingsProvider = FutureProvider<int>((ref) async {
-  final ratingsStats = ref.watch(ratings.userRatingStatsProvider);
-  return ratingsStats?['totalRatings'] ?? 0;
-});
-
-/// Provider para obtener el número total de contenido compartido
-final totalSharedContentProvider = FutureProvider<int>((ref) async {
-  try {
-    final analyticsService = AnalyticsService.instance;
-    final events = analyticsService.getEvents();
-
-    // Contar eventos de compartir (movieShare, listShare, etc.)
-    final shareEvents = events
-        .where((event) =>
-            event.type == AnalyticsEventType.movieShare ||
-            event.properties['activity_type'] == 'movie_shared' ||
-            event.properties['activity_type'] == 'list_shared' ||
-            event.properties['activity_type'] == 'recommendation_shared')
-        .length;
-
-    return shareEvents;
-  } catch (e) {
-    LoggerFactory.error('❌ Error obteniendo total de contenido compartido: $e');
-    return 0;
-  }
-});
+final navigatorKeyProvider = Provider<GlobalKey<NavigatorState>>((ref) =>
+    throw UnimplementedError('Debe proveerse el navigatorKey en main.dart'));
 
 /// Provider que integra las estadísticas del usuario con el sistema de gamificación
 final gamificationStatsIntegrationProvider = FutureProvider<void>((ref) async {
   // Observar cambios en las estadísticas básicas del usuario
   final basicStats = ref.watch(basicUserStatsProvider);
-  final totalRatings = await ref.watch(totalUserRatingsProvider.future);
-  final totalShared = await ref.watch(totalSharedContentProvider.future);
   final gamificationManager = GamificationManager.instance;
+  final navigatorKey = ref.read(navigatorKeyProvider);
+
+  // Mostrar notificación de logros con confetti para cualquier logro desbloqueado
+  gamificationManager.achievementUnlockedStream.listen((achievement) {
+    if (navigatorKey.currentContext != null) {
+      AchievementNotification.show(
+        navigatorKey.currentContext!,
+        achievement,
+        showConfetti: true,
+      );
+    }
+  });
+
+  // Escuchar eventos de compartir en tiempo real
+  ref.listen<ShareState>(shareStateProvider, (prev, next) async {
+    if (next is ShareStateSuccess && next.message.contains('compartida')) {
+      // Actualizar progreso local y logros
+      // Aquí deberías pasar el movieId real si lo tienes
+      await gamificationManager.trackMovieShared('shared_movie_id');
+      // Sincronizar con Supabase (stub, implementar real)
+      await gamificationManager.syncProgressWithSupabase.call();
+      // Verificar logros desbloqueados
+      final newAchievements = await gamificationManager.checkAchievements();
+      if (newAchievements.isNotEmpty) {
+        for (final achievement in newAchievements) {
+          if (navigatorKey.currentContext != null) {
+            AchievementNotification.show(
+              navigatorKey.currentContext!,
+              achievement,
+              showConfetti: true,
+            );
+          }
+        }
+      }
+    }
+  });
 
   try {
-    // FIXED: Actualizar estadísticas de gamificación con datos reales
+    // Actualizar estadísticas de gamificación con datos reales
     await gamificationManager.updateUserStats(
       totalWatched: basicStats.totalWatched,
       totalFavorites: basicStats.totalFavorites,
-      totalRatings: totalRatings,
+      totalRatings: ref.read(userRatingStatsProvider).maybeWhen(
+            data: (stats) => stats.totalRatings,
+            orElse: () => 0,
+          ),
       totalLists: basicStats.totalLists,
-      totalShared: totalShared,
+      totalShared: (await gamificationManager.getUserProgress()).contentShared,
     );
 
+    // Sincronizar progreso inicial con Supabase
+    await gamificationManager.syncProgressWithSupabase();
+
     LoggerFactory.info(
-        '🏆 Estadísticas de gamificación actualizadas: ${basicStats.totalFavorites} favoritos, ${basicStats.totalWatched} vistas');
+      '🏆 Estadísticas de gamificación actualizadas: ${basicStats.totalFavorites} favoritos, ${basicStats.totalWatched} vistas',
+    );
   } catch (e) {
     LoggerFactory.error(
-        '❌ Error actualizando estadísticas de gamificación: $e');
+      '❌ Error actualizando estadísticas de gamificación: $e',
+    );
   }
+
+  /// Provider global para acceder al navigatorKey (debe estar definido en main.dart)
+// Si tienes un navigatorKey global, puedes proveerlo aquí correctamente
 });
 
 /// Provider que notifica cuando hay nuevos logros desbloqueados
@@ -98,4 +120,34 @@ final recentAchievementsProvider = FutureProvider.autoDispose((ref) async {
 
   final gamificationManager = GamificationManager.instance;
   return await gamificationManager.getRecentAchievements(limit: 5);
+});
+
+// === Providers para el nuevo GamificationService ===
+
+/// Provider para el servicio de gamificación
+final gamificationServiceProvider = Provider<GamificationService>((ref) {
+  return gamificationServiceInstance;
+});
+
+/// Provider para obtener las estadísticas de gamificación de un usuario
+final gamificationStatsProvider =
+    FutureProvider.family<GamificationStats, String>((ref, userId) async {
+  final service = ref.read(gamificationServiceProvider);
+  return await service.getGamificationStats(userId);
+});
+
+/// Provider para obtener el progreso detallado de logros activos
+final activeAchievementProgressProvider =
+    FutureProvider.family<List<DetailedAchievementProgress>, String>(
+        (ref, userId) async {
+  final service = ref.read(gamificationServiceProvider);
+  return await service.getActiveAchievementProgress(userId);
+});
+
+/// Provider para obtener todo el progreso detallado de logros
+final detailedAchievementProgressProvider =
+    FutureProvider.family<List<DetailedAchievementProgress>, String>(
+        (ref, userId) async {
+  final service = ref.read(gamificationServiceProvider);
+  return await service.getDetailedAchievementProgress(userId);
 });

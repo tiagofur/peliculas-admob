@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/streaming_availability.dart';
@@ -152,13 +151,12 @@ class PlatformAvailabilityCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(5),
-        // 🚀 PERFORMANCE: Using CachedNetworkImage for better caching
-        child: CachedNetworkImage(
-          imageUrl: availability.platform.iconUrl,
+        child: Image.network(
+          availability.platform.iconUrl,
           width: size,
           height: size,
           fit: BoxFit.cover,
-          errorWidget: (context, url, error) =>
+          errorBuilder: (context, error, stackTrace) =>
               _buildFallbackIcon(context, size),
         ),
       ),

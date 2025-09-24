@@ -232,15 +232,12 @@ class StreamingActionButton extends StatelessWidget {
   Future<void> _launchPlatform() async {
     try {
       // Track analytics
-      AnalyticsService().trackEvent(
-        'streaming_platform_launch',
-        {
-          'platform': platform.name,
-          'movie_title': movieTitle,
-          'availability_type': availability.availabilityType,
-          'is_free': availability.isFree,
-        }
-      );
+      AnalyticsService().trackEvent('streaming_platform_launch', {
+        'platform': platform.name,
+        'movie_title': movieTitle,
+        'availability_type': availability.availabilityType,
+        'is_free': availability.isFree,
+      });
 
       // Try to launch the platform's deep link or app
       String? targetUrl;
@@ -264,8 +261,6 @@ class StreamingActionButton extends StatelessWidget {
       LoggerFactory.error('Failed to launch platform: $e');
     }
   }
-
-
 }
 
 /// Button styles for streaming action buttons

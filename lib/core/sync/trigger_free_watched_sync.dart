@@ -1,11 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/movie.dart';
+import '../../presentation/providers/storage/direct_sync_provider.dart';
 import '../logging/logger_factory.dart';
 
 /// Servicio de sincronización que evita completamente los triggers de PostgreSQL
 /// usando operaciones directas INSERT/DELETE en lugar de UPSERT
-class TriggerFreeWatchedSync {
+class TriggerFreeWatchedSync implements BaseSync {
   TriggerFreeWatchedSync._internal();
 
   static final TriggerFreeWatchedSync _instance =
@@ -15,7 +16,8 @@ class TriggerFreeWatchedSync {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Obtiene películas vistas del usuario (igual que favoritos)
-  Future<List<Movie>> getUserWatchedMovies(String userId) async {
+  @override
+  Future<List<Map<String, dynamic>>> getUserMovies(String userId) async {
     try {
       LoggerFactory.info(
           '📥 [TriggerFree] Obteniendo películas vistas: $userId');
@@ -29,12 +31,10 @@ class TriggerFreeWatchedSync {
       final List<dynamic> data = response as List<dynamic>;
       final watchedMovies = data.cast<Map<String, dynamic>>();
 
-      final movies = watchedMovies.map((data) => _dataToMovie(data)).toList();
-
       LoggerFactory.info(
-          '✅ [TriggerFree] Encontradas ${movies.length} películas vistas');
+          '✅ [TriggerFree] Encontradas ${watchedMovies.length} películas vistas');
 
-      return movies;
+      return watchedMovies;
     } catch (e) {
       LoggerFactory.error(
           '❌ [TriggerFree] Error obteniendo películas vistas: $e');
@@ -43,7 +43,8 @@ class TriggerFreeWatchedSync {
   }
 
   /// Añadir película vista usando upsert y fallback (igual que favoritos)
-  Future<void> addWatchedMovie(String userId, Movie movie) async {
+  @override
+  Future<void> addMovie(String userId, Movie movie) async {
     try {
       LoggerFactory.info(
           '➕ [TriggerFree] Agregando película vista: ${movie.title}');
@@ -83,16 +84,18 @@ class TriggerFreeWatchedSync {
   }
 
   /// Remueve una película vista usando DELETE directo (igual que favoritos)
-  Future<void> removeWatchedMovie(String userId, int movieId) async {
+  @override
+  Future<void> removeMovie(String userId, int movieId) async {
     try {
       LoggerFactory.info(
-          '🗑️ [TriggerFree] Removiendo película vista: $movieId');
+          '🗑️ [TriggerFree] Removiendo película vista: $movieId para el usuario $userId');
 
       // DELETE no debería activar triggers UPDATE (igual que favoritos)
       await _supabase
           .from('user_watched_movies')
           .delete()
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('movie_id', movieId);
 
       LoggerFactory.info('✅ [TriggerFree] Película vista removida: $movieId');
     } catch (e) {
@@ -127,7 +130,7 @@ class TriggerFreeWatchedSync {
       if (e.toString().contains('duplicate') ||
           e.toString().contains('unique')) {
         // Si ya existe, hacer DELETE + INSERT
-        await removeWatchedMovie(userId, movie.id);
+        await removeMovie(userId, movie.id);
         await _supabase.from('user_watched_movies').insert(watchedData);
       } else {
         rethrow;
@@ -167,26 +170,4 @@ class TriggerFreeWatchedSync {
     }
   }
 
-  /// Convierte data de BD a Movie (igual que favoritos)
-  Movie _dataToMovie(Map<String, dynamic> data) {
-    return Movie(
-      id: data['movie_id'] as int,
-      title: data['movie_title'] as String,
-      posterPath: data['movie_poster_path'] as String? ?? '',
-      backdropPath: data['movie_backdrop_path'] as String? ?? '',
-      overview: data['movie_overview'] as String? ?? '',
-      releaseDate: data['movie_release_date'] != null
-          ? (DateTime.tryParse(data['movie_release_date'] as String) ??
-              DateTime.now())
-          : DateTime.now(),
-      voteAverage: (data['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
-      genreIds: [], // No disponible en watched
-      adult: false,
-      originalLanguage: 'en',
-      originalTitle: data['movie_title'] as String,
-      popularity: 0.0,
-      video: false,
-      voteCount: 0,
-    );
-  }
 }

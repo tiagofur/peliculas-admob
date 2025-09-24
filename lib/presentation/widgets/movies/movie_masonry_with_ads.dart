@@ -80,12 +80,27 @@ class _MovieMasonryWithAdsState extends State<MovieMasonryWithAds> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ RESPONSIVE OPTIMIZATION: Adaptive grid based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount;
+    if (screenWidth > 1200) {
+      crossAxisCount = 6; // Desktop/large tablet
+    } else if (screenWidth > 900) {
+      crossAxisCount = 5; // Large tablet
+    } else if (screenWidth > 600) {
+      crossAxisCount = 4; // Tablet portrait
+    } else if (screenWidth > 400) {
+      crossAxisCount = 3; // Large phone
+    } else {
+      crossAxisCount = 2; // Small phone
+    }
+
     return MasonryGridView.builder(
       controller: _scrollController,
       physics: const BouncingScrollPhysics(),
       itemCount: _mixedItems.length,
-      gridDelegate: const SliverSimpleGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
       ),
       itemBuilder: (context, index) {
         final item = _mixedItems[index];

@@ -65,18 +65,12 @@ class _MovieHorizontalListviewState extends State<MovieHorizontalListview> {
             itemCount: widget.movies.length,
             scrollDirection: Axis.horizontal,
             physics: const AlwaysScrollableScrollPhysics(),
-            // 🚀 PERFORMANCE: Cache widgets para scroll más fluido
-            cacheExtent:
-                600.0, // Cache horizontal más amplio para horizontal scroll
             itemBuilder: (context, index) {
-              // 🚀 PERFORMANCE: RepaintBoundary para evitar rebuilds
-              return RepaintBoundary(
-                child: FadeInRight(
-                  delay: Duration(milliseconds: index * 100),
-                  child: _Slide(
-                    movie: widget.movies[index],
-                    index: index,
-                  ),
+              return FadeInRight(
+                delay: Duration(milliseconds: index * 100),
+                child: _Slide(
+                  movie: widget.movies[index],
+                  index: index,
                 ),
               );
             },

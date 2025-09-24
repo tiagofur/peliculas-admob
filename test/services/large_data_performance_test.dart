@@ -19,7 +19,6 @@ import 'large_data_performance_test.mocks.dart';
   SyncCoordinator,
   ConnectivityManager,
 ])
-
 class LargeDataEntity {
   LargeDataEntity({
     required this.id,
@@ -70,7 +69,8 @@ void main() {
 
       when(mockConnectivityManager.connectionStatus)
           .thenAnswer((_) => connectionStatusController.stream);
-      when(mockConnectivityManager.currentStatus).thenReturn(ConnectionStatus.online);
+      when(mockConnectivityManager.currentStatus)
+          .thenReturn(ConnectionStatus.online);
 
       when(mockSyncCoordinator.queueSyncOperation(
         entityType: anyNamed('entityType'),
@@ -184,8 +184,10 @@ void main() {
         priority: anyNamed('priority'),
       )).called(entityCount);
 
-      LoggerFactory.info('✅ $entityCount entidades procesadas en ${totalTime.inSeconds}s');
-      LoggerFactory.info('✅ Throughput: ${throughput.toStringAsFixed(2)} entidades/segundo');
+      LoggerFactory.info(
+          '✅ $entityCount entidades procesadas en ${totalTime.inSeconds}s');
+      LoggerFactory.info(
+          '✅ Throughput: ${throughput.toStringAsFixed(2)} entidades/segundo');
     });
 
     test('debe manejar picos de carga masiva sin degradación', () async {
@@ -214,7 +216,8 @@ void main() {
       final normalTime = DateTime.now().difference(normalStartTime);
       final normalThroughput = normalLoad / normalTime.inSeconds;
 
-      LoggerFactory.debug('📊 Carga normal: ${normalThroughput.toStringAsFixed(2)} ent/seg');
+      LoggerFactory.debug(
+          '📊 Carga normal: ${normalThroughput.toStringAsFixed(2)} ent/seg');
 
       // Pico de carga
       final spikeStartTime = DateTime.now();
@@ -237,8 +240,10 @@ void main() {
           (normalThroughput - spikeThroughput) / normalThroughput;
       expect(degradation, lessThan(0.3));
 
-      LoggerFactory.debug('📊 Pico de carga: ${spikeThroughput.toStringAsFixed(2)} ent/seg');
-      LoggerFactory.info('✅ Degradación: ${(degradation * 100).toStringAsFixed(1)}%');
+      LoggerFactory.debug(
+          '📊 Pico de carga: ${spikeThroughput.toStringAsFixed(2)} ent/seg');
+      LoggerFactory.info(
+          '✅ Degradación: ${(degradation * 100).toStringAsFixed(1)}%');
     });
 
     test('debe optimizar memoria durante procesamiento masivo', () async {
@@ -347,7 +352,8 @@ void main() {
         );
       });
 
-      LoggerFactory.info('📊 Generado dataset complejo de $entityCount entidades');
+      LoggerFactory.info(
+          '📊 Generado dataset complejo de $entityCount entidades');
       LoggerFactory.info(
           '📊 Tamaño por entidad: ~${(complexDataset.first.toJson().toString().length)} caracteres');
 
@@ -375,7 +381,8 @@ void main() {
 
       LoggerFactory.info(
           '✅ $entityCount entidades complejas procesadas en ${totalTime.inSeconds}s');
-      LoggerFactory.info('✅ Throughput: ${throughput.toStringAsFixed(2)} entidades/segundo');
+      LoggerFactory.info(
+          '✅ Throughput: ${throughput.toStringAsFixed(2)} entidades/segundo');
     });
 
     test('debe recuperarse eficientemente después de fallo con gran backlog',
@@ -391,7 +398,8 @@ void main() {
       connectionStatusController.add(ConnectionStatus.offline);
       await Future.delayed(const Duration(seconds: 2));
 
-      LoggerFactory.info('📊 Simulando recuperación con backlog de $backlogSize entidades');
+      LoggerFactory.info(
+          '📊 Simulando recuperación con backlog de $backlogSize entidades');
 
       // Act - Recuperación
       connectionStatusController.add(ConnectionStatus.online);

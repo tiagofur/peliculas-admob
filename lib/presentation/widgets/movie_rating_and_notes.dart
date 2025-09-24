@@ -197,10 +197,10 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = ref.watch(appStateProvider);
+    final currentUser = ref.watch(currentUserProvider);
 
-    // Show login prompt for guest users
-    if (!appState.isAuthenticated) {
+    // Show login prompt for guest users - use currentUser as primary check
+    if (currentUser == null) {
       return Card(
         margin: const EdgeInsets.all(16),
         child: Padding(

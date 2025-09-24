@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/gamification/challenge_system.dart';
-import '../l10n/app_localizations.dart';
 
 class ChallengeCompletionCelebration extends StatelessWidget {
   const ChallengeCompletionCelebration({
@@ -52,9 +51,9 @@ class ChallengeCompletionCelebration extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Challenge completed text
-                  Text(
-                    AppLocalizations.of(context)!.challengeCompleted,
-                    style: const TextStyle(
+                  const Text(
+                    '¡Desafío Completado!',
+                    style: TextStyle(
                       fontSize: 24,
                       color: Colors.green,
                     ),

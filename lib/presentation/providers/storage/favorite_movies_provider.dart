@@ -54,8 +54,6 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     try {
       final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
 
-
-
       if (favoriteMoviesMap.isNotEmpty) {
         state = favoriteMoviesMap;
         LoggerFactory.info(
@@ -139,13 +137,9 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     }
   }
 
-
-
   /// Configura el auto-refresh para detectar cambios en tiempo real
   void _setupAutoRefresh() {
     if (_refreshTimer != null) return; // Ya está configurado
-
-
 
     LoggerFactory.info('ℹ️ Auto-refresh desactivado para evitar conflictos');
   }
@@ -161,8 +155,6 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
     //   _syncFromSupabaseBackground();
     // });
   }
-
-
 
   /// Deshabilita el auto-refresh
   void disableAutoRefresh() {

@@ -3,43 +3,12 @@ import '../models/moviedb/movie_details.dart';
 import '../models/moviedb/movie_moviedb.dart';
 
 class MovieMapper {
-  // Mapeo de IDs de géneros TMDB a nombres en español
-  static const Map<int, String> genreMap = {
-    28: 'Acción',
-    12: 'Aventura',
-    16: 'Animación',
-    35: 'Comedia',
-    80: 'Crimen',
-    99: 'Documental',
-    18: 'Drama',
-    10751: 'Familiar',
-    14: 'Fantasía',
-    36: 'Historia',
-    27: 'Terror',
-    10402: 'Musical',
-    9648: 'Misterio',
-    10749: 'Romance',
-    878: 'Ciencia Ficción',
-    10770: 'Película de TV',
-    53: 'Suspense',
-    10752: 'Guerra',
-    37: 'Western'
-  };
-
-  /// Convierte IDs de géneros a nombres
-  static List<String> getGenreNames(List<int> genreIds) {
-    return genreIds
-        .map((id) => genreMap[id] ?? 'Unknown')
-        .where((genre) => genre != 'Unknown')
-        .toList();
-  }
-
   static Movie movieDBToEntity(MovieMovieDB moviedb) => Movie(
       adult: moviedb.adult,
       backdropPath: (moviedb.backdropPath != '')
           ? 'https://image.tmdb.org/t/p/w500${moviedb.backdropPath}'
           : 'https://sd.keepcalms.com/i-w600/keep-calm-poster-not-found.jpg',
-      genreIds: getGenreNames(moviedb.genreIds),
+      genreIds: moviedb.genreIds.map((e) => e.toString()).toList(),
       id: moviedb.id,
       originalLanguage: moviedb.originalLanguage,
       originalTitle: moviedb.originalTitle,

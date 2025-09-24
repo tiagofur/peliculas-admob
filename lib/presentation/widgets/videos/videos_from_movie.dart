@@ -8,7 +8,6 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart'
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/video.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../providers/movies/movies_repository_provider.dart';
 import '../../services/pip_service.dart';
 import '../shared/cinema_mode.dart';
@@ -30,9 +29,8 @@ class VideosFromMovie extends ConsumerWidget {
 
     return moviesFromVideo.when(
       data: (videos) => _VideosList(videos: videos),
-      error: (_, __) => Center(
-          child: Text(AppLocalizations.of(context)?.couldNotLoadSimilarMovies ??
-              'Could not load similar movies')),
+      error: (_, __) =>
+          const Center(child: Text('No se pudo cargar películas similares')),
       loading: () =>
           const Center(child: CircularProgressIndicator(strokeWidth: 2)),
     );
@@ -323,8 +321,7 @@ class _YouTubeVideoPlayerState extends State<_YouTubeVideoPlayer> {
             ElevatedButton.icon(
               onPressed: () => _openYouTubeVideo(),
               icon: const Icon(Icons.open_in_new),
-              label: Text(
-                  AppLocalizations.of(context)?.openYouTube ?? 'Open YouTube'),
+              label: const Text('Abrir YouTube'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
@@ -379,7 +376,7 @@ class _WebYouTubePlayer extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: _openYouTubeVideo,
                 icon: const Icon(Icons.open_in_new, size: 16),
-                label: Text(AppLocalizations.of(context)?.youTube ?? 'YouTube'),
+                label: const Text('YouTube'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,

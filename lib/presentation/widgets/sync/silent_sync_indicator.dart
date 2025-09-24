@@ -47,8 +47,6 @@ class SilentSyncIndicator extends ConsumerWidget {
   }
 }
 
-
-
 /// Floating Action Button con indicador de sync
 class SyncAwareFAB extends ConsumerWidget {
   const SyncAwareFAB({

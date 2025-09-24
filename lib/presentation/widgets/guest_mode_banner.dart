@@ -1,26 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../providers/auth_provider.dart';
 
 // Banner que muestra los beneficios del registro en modo guest
-class GuestModeBanner extends ConsumerStatefulWidget {
+class GuestModeBanner extends ConsumerWidget {
   const GuestModeBanner({super.key});
 
   @override
-  ConsumerState<GuestModeBanner> createState() => _GuestModeBannerState();
-}
-
-class _GuestModeBannerState extends ConsumerState<GuestModeBanner> {
-  bool _isVisible = true;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final appState = ref.watch(appStateProvider);
 
-    // Solo mostrar en modo guest y si no ha sido cerrado
-    if (appState.mode != AppMode.guest || !_isVisible) {
+    // Solo mostrar en modo guest
+    if (appState.mode != AppMode.guest) {
       return const SizedBox.shrink();
     }
 
@@ -56,27 +48,12 @@ class _GuestModeBannerState extends ConsumerState<GuestModeBanner> {
                 size: 24,
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '¡Desbloquea más funciones!',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _isVisible = false;
-                  });
-                },
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                tooltip: 'Cerrar',
+              Text(
+                '¡Desbloquea más funciones!',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
               ),
             ],
           ),
@@ -124,7 +101,7 @@ class _GuestModeBannerState extends ConsumerState<GuestModeBanner> {
                   child: const Text('Crear cuenta'),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed: () => context.push('/login'),
@@ -132,23 +109,6 @@ class _GuestModeBannerState extends ConsumerState<GuestModeBanner> {
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton(
-              onPressed: () {
-                setState(() {
-                  _isVisible = false;
-                });
-              },
-              child: Text(
-                'Continuar sin cuenta',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
           ),
         ],
       ),

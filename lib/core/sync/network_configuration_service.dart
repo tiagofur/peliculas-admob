@@ -362,8 +362,9 @@ class NetworkConfigurationService {
 
       final stopwatch = Stopwatch()..start();
 
-      final request =
-          await client.getUrl(Uri.parse('https://httpbin.org/bytes/1024'));
+      // ✅ FIXED: Usar endpoint alternativo sin CORS issues
+      final request = await client
+          .getUrl(Uri.parse('https://www.cloudflare.com/cdn-cgi/trace'));
       final response = await request.close();
 
       int totalBytes = 0;

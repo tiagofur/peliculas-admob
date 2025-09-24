@@ -54,11 +54,9 @@ class MovieInfoSection extends StatelessWidget {
           const SizedBox(height: 16),
 
         // Idiomas hablados
-        if (movie.spokenLanguages != null &&
-            movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           _SpokenLanguages(movie: movie),
-        if (movie.spokenLanguages != null &&
-            movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Streaming Quick Action Button
@@ -228,11 +226,9 @@ class EnhancedMovieInfo extends ConsumerWidget {
           const SizedBox(height: 16),
 
         // Idiomas hablados
-        if (movie.spokenLanguages != null &&
-            movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           _SpokenLanguages(movie: movie),
-        if (movie.spokenLanguages != null &&
-            movie.spokenLanguages!.isNotEmpty)
+        if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
 
         // Watch Providers - Plataformas de streaming
@@ -696,6 +692,17 @@ class _TechnicalDetails extends StatelessWidget {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
+    // DEBUG: Imprimir datos técnicos para verificar qué se está recibiendo
+    LoggerFactory.debug(
+        '🎬 DEBUG - Detalles técnicos de la película: ${movie.title}');
+    LoggerFactory.debug('  💰 Budget: ${movie.budget}');
+    LoggerFactory.debug('  💵 Revenue: ${movie.revenue}');
+    LoggerFactory.debug('  ⏰ Runtime: ${movie.runtime}');
+    LoggerFactory.debug('  🌟 Popularity: ${movie.popularity}');
+    LoggerFactory.debug('  🎭 IMDb ID: ${movie.imdbId}');
+    LoggerFactory.debug(
+        '  🏭 Production Companies: ${movie.productionCompanies}');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -718,32 +725,10 @@ class _TechnicalDetails extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          // Primera fila: Runtime y Director
-          Row(
-            children: [
-              if (movie.runtime != null && (movie.runtime ?? 0) > 0)
-                Expanded(
-                  child: _DetailItem(
-                    label: 'Duración',
-                    value: _formatRuntime(movie.runtime!),
-                    icon: Icons.access_time,
-                  ),
-                ),
-              if (_getDirector(movie) != null)
-                Expanded(
-                  child: _DetailItem(
-                    label: 'Director',
-                    value: _getDirector(movie)!,
-                    icon: Icons.person,
-                  ),
-                ),
-            ],
-          ),
-          if ((movie.runtime != null && (movie.runtime ?? 0) > 0) ||
-              _getDirector(movie) != null)
-            const SizedBox(height: 8),
-          // Segunda fila: Presupuesto e Ingresos (si están disponibles)
-          if (movie.budget != null && (movie.budget ?? 0) > 0)
+          if (movie.budget != null && (movie.budget ?? 0) > 0) ...[
+            // DEBUG
+            Text('DEBUG: Mostrando presupuesto: ${movie.budget}',
+                style: const TextStyle(fontSize: 10, color: Colors.red)),
             Row(
               children: [
                 Expanded(
@@ -765,9 +750,9 @@ class _TechnicalDetails extends StatelessWidget {
                   ),
               ],
             ),
+          ],
           if (movie.budget != null && (movie.budget ?? 0) > 0)
             const SizedBox(height: 8),
-          // Tercera fila: Popularidad e IMDb
           Row(
             children: [
               Expanded(
@@ -1149,45 +1134,5 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-/// Formatea la duración en minutos a formato "Xh Ym"
-String _formatRuntime(int minutes) {
-  final hours = minutes ~/ 60;
-  final remainingMinutes = minutes % 60;
-
-  if (hours > 0 && remainingMinutes > 0) {
-    return '${hours}h ${remainingMinutes}m';
-  } else if (hours > 0) {
-    return '${hours}h';
-  } else {
-    return '${remainingMinutes}m';
-  }
-}
-
-/// Obtiene el director principal de la película desde los créditos
-String? _getDirector(Movie movie) {
-  try {
-    if (movie.credits == null) return null;
-
-    final crew = movie.credits!['crew'];
-    if (crew == null || crew is! List) return null;
-
-    final crewList = crew;
-    if (crewList.isEmpty) return null;
-
-    final director = crewList.firstWhere(
-      (person) => person is Map && person['job'] == 'Director',
-      orElse: () => null,
-    );
-
-    if (director == null || director is! Map) return null;
-
-    final name = director['name'];
-    return name is String ? name : null;
-  } catch (e) {
-    LoggerFactory.debug('Error extracting director: $e');
-    return null;
   }
 }

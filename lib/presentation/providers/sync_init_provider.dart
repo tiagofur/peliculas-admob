@@ -51,13 +51,24 @@ class AuthSyncListener {
   Future<void> _handleUserAuthenticated() async {
     try {
       LoggerFactory.info(
-          '🔐 Usuario autenticado - SYNC AUTOMÁTICO DESHABILITADO');
+          '🔐 Usuario autenticado - iniciando sincronización en background');
 
-      // NO inicializar ningún servicio de sincronización automática para evitar bloqueos
+      // Iniciar sincronización de manera asíncrona para no bloquear el login
+      final syncService = getSyncService();
+
+      // Llamar onUserAuthenticated que maneja la sincronización en background
+      Future.microtask(() async {
+        try {
+          await syncService.onUserAuthenticated();
+          LoggerFactory.info('✅ Sincronización post-login completada');
+        } catch (e) {
+          LoggerFactory.error('❌ Error en sincronización post-login: $e');
+          // No relanzar error para no afectar el flujo de login
+        }
+      });
+
       LoggerFactory.info(
-          '⚠️ Sincronización automática deshabilitada para evitar congelamiento');
-      LoggerFactory.info(
-          '💡 El usuario puede sincronizar manualmente desde Settings');
+          '� Sincronización programada - continuará en background');
     } catch (e) {
       LoggerFactory.error('❌ Error en configuración post-login: $e');
     }

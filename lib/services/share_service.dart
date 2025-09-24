@@ -13,9 +13,9 @@ import '../models/shareable_content.dart';
 /// Service for handling sharing functionality across the app
 class ShareService {
   static const String _baseUrl = 'https://peliculas.creapolis.dev';
-  static const String _appName = 'Movies';
+  static const String _appName = 'Películas';
   static const String _appDescription =
-      'Discover, organize and share your favorite movies';
+      'Descubre, organiza y comparte tus películas favoritas';
 
   static GamificationIntegrationService? _gamificationService;
 

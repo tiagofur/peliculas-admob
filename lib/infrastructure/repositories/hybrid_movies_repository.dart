@@ -257,10 +257,10 @@ class HybridMoviesRepository implements MoviesRepository {
     }
 
     try {
-      // 4. Intentar con Trakt primero
-      LoggerFactory.info('🎬 Obteniendo película $id de Trakt...');
-      final traktMovie = await _traktApiService.getMovieDetails(id);
-      final movie = await TraktMovieMapper.toEntity(traktMovie);
+      // 4. Para detalles de película, priorizar TMDB (tiene datos técnicos completos)
+      LoggerFactory.info(
+          '🎬 Obteniendo película $id de TMDB primero para detalles técnicos...');
+      final movie = await _tmdbDatasource.getMovieById(id);
 
       // Guardar en ambos caches
       _saveToCache(cacheKey, [movie]);
@@ -268,12 +268,13 @@ class HybridMoviesRepository implements MoviesRepository {
 
       return movie;
     } catch (e) {
-      LoggerFactory.warning('⚠️ Error obteniendo película de Trakt: $e');
+      LoggerFactory.warning('⚠️ Error obteniendo película de TMDB: $e');
 
       try {
-        // 5. Fallback a TMDB
-        LoggerFactory.info('🔄 Fallback: obteniendo película $id de TMDB...');
-        final movie = await _tmdbDatasource.getMovieById(id);
+        // 5. Fallback a Trakt
+        LoggerFactory.info('🔄 Fallback: obteniendo película $id de Trakt...');
+        final traktMovie = await _traktApiService.getMovieDetails(id);
+        final movie = await TraktMovieMapper.toEntity(traktMovie);
 
         // Guardar en ambos caches
         _saveToCache(cacheKey, [movie]);
@@ -281,7 +282,7 @@ class HybridMoviesRepository implements MoviesRepository {
 
         return movie;
       } catch (tmdbError) {
-        LoggerFactory.error('❌ Error también en TMDB: $tmdbError');
+        LoggerFactory.error('❌ Error también en Trakt: $tmdbError');
 
         // 6. Último intento con cache offline (incluso si expirado)
         final oldCachedMovie =

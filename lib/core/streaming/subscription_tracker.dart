@@ -465,8 +465,9 @@ class SubscriptionTracker {
     String subscriptionId,
   ) async {
     try {
-      _logger.info('Verificando suscripción $subscriptionId en plataforma $platformId');
-      
+      _logger.info(
+          'Verificando suscripción $subscriptionId en plataforma $platformId');
+
       // Simulate external API call with realistic delay
       await Future.delayed(const Duration(milliseconds: 800));
 
@@ -474,16 +475,17 @@ class SubscriptionTracker {
       // Lógica más realista: verificar si la suscripción es válida
       final subscriptionHash = subscriptionId.hashCode;
       final platformHash = platformId.hashCode;
-      
+
       // Combinar hashes para crear un resultado más determinista
       final combinedHash = (subscriptionHash + platformHash).abs();
-      
+
       // 85% de probabilidad de que la suscripción sea válida
       // Pero basado en características de la suscripción, no en tiempo
       final isValid = (combinedHash % 100) < 85;
-      
-      _logger.info('Verificación de suscripción $subscriptionId: ${isValid ? "válida" : "inválida"}');
-      
+
+      _logger.info(
+          'Verificación de suscripción $subscriptionId: ${isValid ? "válida" : "inválida"}');
+
       return isValid;
     } catch (e) {
       _logger.error('Error verificando suscripción $subscriptionId: $e');

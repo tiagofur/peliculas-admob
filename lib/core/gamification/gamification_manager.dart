@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/supabase_config.dart';
 import '../logging/base_logger.dart';
 import '../logging/logger_factory.dart';
 import 'models/achievement.dart';
@@ -17,6 +18,32 @@ import 'models/user_progress.dart';
 class GamificationManager extends ChangeNotifier {
   factory GamificationManager() => _instance;
   GamificationManager._internal();
+
+  /// Sincroniza el progreso de gamificación con Supabase
+  Future<void> syncProgressWithSupabase() async {
+    try {
+      final supabase = SupabaseConfig.client;
+      final userId = _userProgress.userId;
+      final progressMap = _userProgress.toJson();
+      await supabase.from('user_profiles').upsert({
+        'user_id': userId,
+        'total_points': progressMap['totalPoints'],
+        'current_level': progressMap['currentLevel'],
+        'movies_watched': progressMap['moviesWatched'],
+        'movies_favorited': progressMap['moviesFavorited'],
+        'content_shared': progressMap['contentShared'],
+        'reviews_written': progressMap['reviewsWritten'],
+        'watchlists_completed': progressMap['watchlistsCompleted'],
+        'genres_explored': progressMap['genresExplored'],
+        'streak_days': progressMap['streakDays'],
+        'last_activity_date': progressMap['lastActivityDate'].toIso8601String(),
+      }, onConflict: 'user_id');
+      LoggerFactory.info('Progreso de gamificación sincronizado con Supabase');
+    } catch (e) {
+      LoggerFactory.error('Error sincronizando progreso con Supabase: $e');
+    }
+  }
+
   // Track last checked achievement IDs
   final Set<String> _lastCheckedAchievementIds = {};
 

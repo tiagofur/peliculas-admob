@@ -71,10 +71,11 @@ class _StarRatingInputState extends State<StarRatingInput> {
           final starIndex = index + 1;
           final starValue = starIndex * 2.0; // Each star represents 2 points
           final isStarFilled = starValue <= _currentRating;
-          
+
           return Semantics(
             button: true,
-            label: 'Calificar con $starIndex de ${widget.maxRating} estrellas (valor ${starValue.toInt()})',
+            label:
+                'Calificar con $starIndex de ${widget.maxRating} estrellas (valor ${starValue.toInt()})',
             onTap: () => _updateRating(starIndex),
             child: GestureDetector(
               onTap: () => _updateRating(starIndex),
@@ -138,7 +139,7 @@ class StarRatingDisplay extends StatelessWidget {
             final starIndex = index + 1;
             final starValue = starIndex * 2.0; // Each star represents 2 points
             final isStarFilled = starValue <= rating;
-            
+
             return Padding(
               padding: EdgeInsets.only(
                 right: index < maxRating - 1 ? spacing : 0,
@@ -146,9 +147,8 @@ class StarRatingDisplay extends StatelessWidget {
               child: Icon(
                 isStarFilled ? Icons.star : Icons.star_border,
                 size: size,
-                color: isStarFilled
-                    ? color
-                    : color.withValues(alpha: 0.3 * 255),
+                color:
+                    isStarFilled ? color : color.withValues(alpha: 0.3 * 255),
                 semanticLabel:
                     isStarFilled ? 'Estrella llena' : 'Estrella vacía',
               ),
@@ -268,9 +268,10 @@ class _InteractiveStarRatingState extends State<InteractiveStarRating> {
             mainAxisSize: MainAxisSize.min,
             children: List.generate(widget.maxRating, (index) {
               final starIndex = index + 1;
-              final starValue = starIndex * 2.0; // Each star represents 2 points
+              final starValue =
+                  starIndex * 2.0; // Each star represents 2 points
               final isStarFilled = starValue <= displayRating;
-              
+
               return Semantics(
                 button: widget.enabled,
                 enabled: widget.enabled,

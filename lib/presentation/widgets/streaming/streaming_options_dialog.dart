@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/streaming_availability.dart';
 import '../../../domain/entities/streaming_platform.dart';
 
-
 import 'streaming_action_button.dart';
 
 /// Dialog that shows all streaming options for a movie
@@ -47,21 +46,19 @@ class _StreamingOptionsDialogState extends State<StreamingOptionsDialog>
   }
 
   void _categorizeplatforms() {
-    _freePlatforms = widget.platforms
-        .where((p) => p.isAvailable && p.isFree)
-        .toList();
-    
+    _freePlatforms =
+        widget.platforms.where((p) => p.isAvailable && p.isFree).toList();
+
     _subscriptionPlatforms = widget.platforms
         .where((p) => p.isAvailable && p.requiresSubscription && !p.isFree)
         .toList();
-    
+
     _rentalPlatforms = widget.platforms
         .where((p) => p.isAvailable && !p.requiresSubscription && !p.isFree)
         .toList();
-    
-    _unavailablePlatforms = widget.platforms
-        .where((p) => !p.isAvailable)
-        .toList();
+
+    _unavailablePlatforms =
+        widget.platforms.where((p) => !p.isAvailable).toList();
   }
 
   int _getTabCount() {
@@ -75,61 +72,62 @@ class _StreamingOptionsDialogState extends State<StreamingOptionsDialog>
 
   List<Tab> _buildTabs() {
     List<Tab> tabs = [];
-    
+
     if (_freePlatforms.isNotEmpty) {
       tabs.add(Tab(
         icon: const Icon(Icons.free_breakfast),
         text: 'Free (${_freePlatforms.length})',
       ));
     }
-    
+
     if (_subscriptionPlatforms.isNotEmpty) {
       tabs.add(Tab(
         icon: const Icon(Icons.subscriptions),
         text: 'Subscription (${_subscriptionPlatforms.length})',
       ));
     }
-    
+
     if (_rentalPlatforms.isNotEmpty) {
       tabs.add(Tab(
         icon: const Icon(Icons.payment),
         text: 'Rental (${_rentalPlatforms.length})',
       ));
     }
-    
+
     if (_unavailablePlatforms.isNotEmpty) {
       tabs.add(Tab(
         icon: const Icon(Icons.block),
         text: 'Unavailable (${_unavailablePlatforms.length})',
       ));
     }
-    
+
     return tabs;
   }
 
   List<Widget> _buildTabViews() {
     List<Widget> views = [];
-    
+
     if (_freePlatforms.isNotEmpty) {
       views.add(_buildPlatformList(_freePlatforms, true));
     }
-    
+
     if (_subscriptionPlatforms.isNotEmpty) {
       views.add(_buildPlatformList(_subscriptionPlatforms, true));
     }
-    
+
     if (_rentalPlatforms.isNotEmpty) {
       views.add(_buildPlatformList(_rentalPlatforms, true));
     }
-    
+
     if (_unavailablePlatforms.isNotEmpty) {
       views.add(_buildPlatformList(_unavailablePlatforms, false));
     }
-    
+
     return views;
   }
 
-  Widget _buildPlatformList(List<PlatformAvailability> platforms, bool isAvailable) {
+  Widget _buildPlatformList(
+      List<PlatformAvailability> platforms, bool isAvailable) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: platforms.length,
@@ -159,7 +157,6 @@ class _StreamingOptionsDialogState extends State<StreamingOptionsDialog>
           children: [
             const SizedBox(height: 4),
             _buildAvailabilityInfo(platform),
-
           ],
         ),
         trailing: isAvailable
@@ -229,7 +226,8 @@ class _StreamingOptionsDialogState extends State<StreamingOptionsDialog>
     }
 
     if (platform.formattedPurchasePrice != null) {
-      badges.add(_buildBadge('Buy ${platform.formattedPurchasePrice}', Colors.purple));
+      badges.add(
+          _buildBadge('Buy ${platform.formattedPurchasePrice}', Colors.purple));
     }
 
     return Wrap(
@@ -257,8 +255,6 @@ class _StreamingOptionsDialogState extends State<StreamingOptionsDialog>
       ),
     );
   }
-
-
 
   void _handlePlatformSelection(PlatformAvailability platform) {
     if (widget.onPlatformSelected != null) {
@@ -293,16 +289,20 @@ class _StreamingOptionsDialogState extends State<StreamingOptionsDialog>
                       children: [
                         Text(
                           'Streaming Options',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           widget.movieTitle,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey[600],
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

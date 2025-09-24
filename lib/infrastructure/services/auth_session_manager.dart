@@ -28,78 +28,117 @@ class AuthSessionManager {
   // Configuración
   static const Duration _sessionValidationInterval = Duration(minutes: 5);
   static const Duration _maxSessionAge = Duration(days: 30);
+  static const Duration _operationTimeout = Duration(seconds: 30);
+  static const int _maxRetryAttempts = 3;
+  static const Duration _baseRetryDelay = Duration(seconds: 2);
 
   Timer? _validationTimer;
   String? _deviceId;
   bool _isInitialized = false;
+  int _consecutiveFailures = 0;
+  DateTime? _lastFailureTime;
 
   /// Inicializa el gestor de sesiones
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      // Generar o recuperar ID de dispositivo único
-      await _initializeDeviceId();
+      // Ejecutar inicialización con timeout
+      await _executeWithTimeout(
+        () async {
+          // Generar o recuperar ID de dispositivo único
+          await _initializeDeviceId();
 
-      // Recuperar sesión persistente si existe
-      await _recoverPersistedSession();
+          // Recuperar sesión persistente si existe
+          await _recoverPersistedSession();
 
-      // Iniciar validación periódica
-      _startPeriodicValidation();
+          // Iniciar validación periódica
+          _startPeriodicValidation();
+        },
+        timeout: _operationTimeout,
+        operationName: 'initialize',
+      );
 
       _isInitialized = true;
+      _consecutiveFailures = 0; // Reset failure count on success
 
       if (kDebugMode) {
         LoggerFactory.info('✅ AuthSessionManager inicializado correctamente');
       }
     } catch (e) {
+      _recordFailure();
       LoggerFactory.error('❌ Error inicializando AuthSessionManager: $e');
-      rethrow;
+
+      // En caso de fallo crítico, seguir adelante sin sesión persistente
+      _isInitialized = true; // Mark as initialized to avoid loops
+      LoggerFactory.warning(
+          '⚠️ Continuando sin sesión persistente debido a error');
     }
   }
 
   /// Guarda la sesión actual de forma segura
   Future<void> persistSession(Session session) async {
     try {
-      final sessionData = {
-        'access_token': session.accessToken,
-        'refresh_token': session.refreshToken,
-        'expires_at': session.expiresAt,
-        'user_id': session.user.id,
-        'device_id': _deviceId,
-        'created_at': DateTime.now().millisecondsSinceEpoch,
-      };
+      await _executeWithTimeout(
+        () async {
+          final sessionData = {
+            'access_token': session.accessToken,
+            'refresh_token': session.refreshToken,
+            'expires_at': session.expiresAt,
+            'user_id': session.user.id,
+            'device_id': _deviceId,
+            'created_at': DateTime.now().millisecondsSinceEpoch,
+          };
 
-      // Encriptar datos de sesión
-      final encryptedData = _encryptSessionData(sessionData);
+          // Encriptar datos de sesión
+          final encryptedData = _encryptSessionData(sessionData);
 
-      // Guardar sesión encriptada
-      await _storage.saveString(_sessionKey, encryptedData);
+          // Guardar sesión encriptada
+          await _storage.saveString(_sessionKey, encryptedData);
 
-      // Guardar hash del token para validación rápida
-      final tokenHash = _generateTokenHash(session.accessToken);
-      await _storage.saveString(_sessionTokenKey, tokenHash);
+          // Guardar hash del token para validación rápida
+          final tokenHash = _generateTokenHash(session.accessToken);
+          await _storage.saveString(_sessionTokenKey, tokenHash);
 
-      // Actualizar timestamp de última validación
-      await _storage.saveString(
-        _lastValidationKey,
-        DateTime.now().millisecondsSinceEpoch.toString(),
+          // Actualizar timestamp de última validación
+          await _storage.saveString(
+            _lastValidationKey,
+            DateTime.now().millisecondsSinceEpoch.toString(),
+          );
+        },
+        timeout: _operationTimeout,
+        operationName: 'persistSession',
       );
+
+      _consecutiveFailures = 0; // Reset on success
 
       if (kDebugMode) {
         LoggerFactory.info('✅ Sesión persistida de forma segura');
       }
     } catch (e) {
+      _recordFailure();
       LoggerFactory.error('❌ Error persistiendo sesión: $e');
-      throw Exception('Error al guardar sesión');
+      throw Exception('Error al guardar sesión: $e');
     }
   }
 
   /// Recupera una sesión persistente
   Future<bool> recoverSession() async {
     try {
-      return await _recoverPersistedSession();
+      // Check circuit breaker
+      if (_shouldCircuitBreak()) {
+        LoggerFactory.warning(
+            '🚨 Circuit breaker activo - omitiendo recovery por fallos consecutivos');
+        return false;
+      }
+
+      return await _executeWithTimeout(
+        () => _recoverPersistedSession(),
+        timeout: _operationTimeout,
+        operationName: 'recoverSession',
+      );
     } catch (e) {
+      _recordFailure();
       LoggerFactory.error('❌ Error recuperando sesión: $e');
       return false;
     }
@@ -108,41 +147,49 @@ class AuthSessionManager {
   /// Valida si la sesión actual sigue siendo válida
   Future<bool> validateCurrentSession() async {
     try {
-      final currentUser = _supabase.auth.currentUser;
-      if (currentUser == null) return false;
+      return await _executeWithTimeout(
+        () async {
+          final currentUser = _supabase.auth.currentUser;
+          if (currentUser == null) return false;
 
-      // Verificar si la sesión ha expirado
-      final session = _supabase.auth.currentSession;
-      if (session == null) return false;
+          // Verificar si la sesión ha expirado
+          final session = _supabase.auth.currentSession;
+          if (session == null) return false;
 
-      final now = DateTime.now();
-      final expiresAt =
-          DateTime.fromMillisecondsSinceEpoch((session.expiresAt ?? 0) * 1000);
+          final now = DateTime.now();
+          final expiresAt = DateTime.fromMillisecondsSinceEpoch(
+              (session.expiresAt ?? 0) * 1000);
 
-      // Si expira en menos de 5 minutos, considerar inválida para forzar refresh
-      if (expiresAt.difference(now).inMinutes < 5) {
-        if (kDebugMode) {
-          LoggerFactory.info(
-              '🔄 Sesión próxima a expirar, marcando como inválida');
-        }
-        return false;
-      }
-
-      // Verificar hash del token almacenado
-      final storedHash = await _storage.getString(_sessionTokenKey);
-      if (storedHash != null) {
-        final currentHash = _generateTokenHash(session.accessToken);
-        if (storedHash != currentHash) {
-          if (kDebugMode) {
-            LoggerFactory.warning(
-                '⚠️ Hash de token no coincide, sesión comprometida');
+          // Si expira en menos de 5 minutos, considerar inválida para forzar refresh
+          if (expiresAt.difference(now).inMinutes < 5) {
+            if (kDebugMode) {
+              LoggerFactory.info(
+                  '🔄 Sesión próxima a expirar, marcando como inválida');
+            }
+            return false;
           }
-          return false;
-        }
-      }
 
-      return true;
+          // Verificar hash del token almacenado
+          final storedHash = await _storage.getString(_sessionTokenKey);
+          if (storedHash != null) {
+            final currentHash = _generateTokenHash(session.accessToken);
+            if (storedHash != currentHash) {
+              if (kDebugMode) {
+                LoggerFactory.warning(
+                    '⚠️ Hash de token no coincide, sesión comprometida');
+              }
+              return false;
+            }
+          }
+
+          return true;
+        },
+        timeout: const Duration(seconds: 10), // Shorter timeout for validation
+        operationName: 'validateCurrentSession',
+        maxRetries: 2, // Fewer retries for validation
+      );
     } catch (e) {
+      _recordFailure();
       LoggerFactory.error('❌ Error validando sesión: $e');
       return false;
     }
@@ -278,39 +325,99 @@ class AuthSessionManager {
 
   Future<bool> _attemptTokenRefresh(Map<String, dynamic> sessionData) async {
     try {
-      final refreshToken = sessionData['refresh_token'] as String?;
-      if (refreshToken == null) return false;
+      return await _executeWithTimeout(
+        () async {
+          final refreshToken = sessionData['refresh_token'] as String?;
+          if (refreshToken == null) {
+            throw Exception('Refresh token no disponible');
+          }
 
-      final response = await _supabase.auth.refreshSession(refreshToken);
-      if (response.session != null) {
-        // Persistir la nueva sesión
-        await persistSession(response.session!);
+          final response = await _supabase.auth.refreshSession(refreshToken);
+          if (response.session != null) {
+            // Persistir la nueva sesión
+            await persistSession(response.session!);
 
-        if (kDebugMode) {
-          LoggerFactory.info('✅ Token refrescado y sesión actualizada');
-        }
-        return true;
-      }
-      return false;
+            if (kDebugMode) {
+              LoggerFactory.info('✅ Token refrescado y sesión actualizada');
+            }
+            return true;
+          }
+
+          throw Exception('Respuesta de refresh inválida');
+        },
+        timeout: _operationTimeout,
+        operationName: 'attemptTokenRefresh',
+        maxRetries: 2, // Limit retries for refresh to avoid loops
+      );
     } catch (e) {
+      _recordFailure();
       LoggerFactory.error('❌ Error refrescando token: $e');
-      await clearSession();
+
+      // Only clear session on non-recoverable errors
+      if (e.toString().contains('refresh_token_not_found') ||
+          e.toString().contains('invalid_grant') ||
+          e.toString().contains('Token has expired')) {
+        await clearSession();
+      }
+
       return false;
     }
   }
 
   void _startPeriodicValidation() {
+    _validationTimer?.cancel(); // Cancel existing timer if any
+
     _validationTimer =
         Timer.periodic(_sessionValidationInterval, (timer) async {
-      if (!await validateCurrentSession()) {
-        if (kDebugMode) {
-          LoggerFactory.warning(
-              '⚠️ Validación de sesión fallida, iniciando limpieza');
+      try {
+        // Don't validate if circuit breaker is active
+        if (_shouldCircuitBreak()) {
+          LoggerFactory.info(
+              '🛑 Omitiendo validación periódica - circuit breaker activo');
+          return;
         }
-        timer.cancel();
-        await clearSession();
+
+        final isValid = await validateCurrentSession();
+
+        if (!isValid) {
+          if (kDebugMode) {
+            LoggerFactory.warning(
+                '⚠️ Validación periódica fallida, iniciando limpieza');
+          }
+          timer.cancel();
+          await clearSession();
+
+          // Notify about session invalidation if needed
+          _notifySessionInvalidated();
+        } else {
+          // Reset failure count on successful validation
+          if (_consecutiveFailures > 0) {
+            LoggerFactory.info(
+                '✅ Validación exitosa - reseteando contador de fallos');
+            _consecutiveFailures = 0;
+            _lastFailureTime = null;
+          }
+        }
+      } catch (e) {
+        LoggerFactory.error('❌ Error en validación periódica: $e');
+        _recordFailure();
+
+        // If too many consecutive failures, stop validation
+        if (_consecutiveFailures >= _maxRetryAttempts * 2) {
+          LoggerFactory.warning(
+              '🚨 Deteniendo validación periódica por exceso de fallos');
+          timer.cancel();
+        }
       }
     });
+  }
+
+  /// Notifica cuando la sesión se ha invalidado (placeholder para eventos futuros)
+  void _notifySessionInvalidated() {
+    if (kDebugMode) {
+      LoggerFactory.info('📢 Sesión invalidada - notificando a listeners');
+    }
+    // Future: Emit events to notify other parts of the app
   }
 
   bool _isSessionDataValid(Map<String, dynamic> sessionData) {
@@ -361,10 +468,78 @@ class AuthSessionManager {
     return digest.toString();
   }
 
+  /// Ejecuta una operación con timeout y retry logic
+  Future<T> _executeWithTimeout<T>(
+    Future<T> Function() operation, {
+    required Duration timeout,
+    required String operationName,
+    int? maxRetries,
+  }) async {
+    maxRetries ??= _maxRetryAttempts;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation().timeout(timeout);
+      } catch (e) {
+        final isLastAttempt = attempt == maxRetries;
+
+        if (isLastAttempt) {
+          LoggerFactory.error(
+              '❌ $operationName falló después de $maxRetries intentos: $e');
+          rethrow;
+        }
+
+        // Calcular delay con exponential backoff
+        final delay = Duration(
+          milliseconds: _baseRetryDelay.inMilliseconds *
+              (1 << (attempt - 1)), // 2^(attempt-1)
+        );
+
+        LoggerFactory.warning(
+            '⚠️ $operationName intento $attempt/$maxRetries falló: $e. '
+            'Reintentando en ${delay.inMilliseconds}ms');
+
+        await Future.delayed(delay);
+      }
+    }
+
+    throw Exception(
+        'Operación $operationName falló después de $maxRetries intentos');
+  }
+
+  /// Registra un fallo para tracking
+  void _recordFailure() {
+    _consecutiveFailures++;
+    _lastFailureTime = DateTime.now();
+
+    if (_consecutiveFailures >= _maxRetryAttempts) {
+      LoggerFactory.warning(
+          '🚨 AuthSessionManager: $_consecutiveFailures fallos consecutivos');
+    }
+  }
+
+  /// Verifica si deberíamos hacer circuit breaking por demasiados fallos
+  bool _shouldCircuitBreak() {
+    if (_consecutiveFailures < _maxRetryAttempts) return false;
+    if (_lastFailureTime == null) return false;
+
+    // Si han pasado más de 10 minutos desde el último fallo, resetear
+    if (DateTime.now().difference(_lastFailureTime!) >
+        const Duration(minutes: 10)) {
+      _consecutiveFailures = 0;
+      _lastFailureTime = null;
+      return false;
+    }
+
+    return true;
+  }
+
   /// Libera recursos del gestor
   void dispose() {
     _validationTimer?.cancel();
     _validationTimer = null;
     _isInitialized = false;
+    _consecutiveFailures = 0;
+    _lastFailureTime = null;
   }
 }

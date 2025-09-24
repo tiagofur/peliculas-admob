@@ -8,8 +8,6 @@ import '../../models/shareable_content.dart';
 import '../../services/share_service.dart';
 import '../providers/providers.dart';
 
-/// Web view for sharing individual movies
-/// Provides a responsive, SEO-optimized page for movie sharing
 class MovieShareWebView extends ConsumerStatefulWidget {
   const MovieShareWebView({
     super.key,
@@ -24,57 +22,86 @@ class MovieShareWebView extends ConsumerStatefulWidget {
 }
 
 class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
-  ShareableContent? _shareableContent;
-  bool _isLoading = true;
-  String? _error;
-
   @override
   void initState() {
     super.initState();
-    _loadMovieData();
-  }
-
-  Future<void> _loadMovieData() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      // Load movie using movieInfoProvider
+    // Se retrasa la llamada para evitar modificar el provider durante el build.
+    Future(() {
       ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
-
-      // Wait a bit for the movie to load
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      final movie = ref.read(movieInfoProvider)[widget.movieId];
-
-      if (movie != null) {
-        // Create shareable content
-        _shareableContent = ShareableContent.movie(
-          movieTitle: movie.title,
-          movieDescription: movie.overview,
-          movieId: int.parse(widget.movieId),
-          posterUrl: movie.posterPath.isNotEmpty ? movie.posterPath : null,
-          additionalData: {
-            'releaseDate': movie.releaseDate.year.toString(),
-            'genres': movie.genreIds.join(', '),
-            'voteAverage': movie.voteAverage.toString(),
-          },
-        );
-      } else {
-        _error = 'No se pudo cargar la información de la película';
-      }
-    } catch (e) {
-      _error = 'Error al cargar la película: $e';
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+    });
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final movieCacheAsync = ref.watch(movieInfoProvider);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: movieCacheAsync.when(
+        loading: () => const Center(
+          child: CircularProgressIndicator(),
+        ),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.grey,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error: $error',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref
+                    .read(movieInfoProvider.notifier)
+                    .loadMovie(widget.movieId),
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+        data: (movieMap) {
+          final movie = movieMap[widget.movieId];
+          if (movie == null) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final shareableContent = ShareableContent.movie(
+            movieTitle: movie.title,
+            movieDescription: movie.overview,
+            movieId: movie.id,
+            posterUrl: movie.posterPath.isNotEmpty ? movie.posterPath : null,
+            additionalData: {
+              'releaseDate': movie.releaseDate.year.toString(),
+              'genres': movie.genreIds.join(', '),
+              'voteAverage': movie.voteAverage.toString(),
+            },
+          );
+          return _MovieShareViewContent(
+              movie: movie, shareableContent: shareableContent);
+        },
+      ),
+    );
+  }
+}
+
+class _MovieShareViewContent extends StatelessWidget {
+  const _MovieShareViewContent({
+    required this.movie,
+    required this.shareableContent,
+  });
+
+  final Movie movie;
+  final ShareableContent shareableContent;
 
   Future<void> _launchAppStore() async {
     const appStoreUrl = 'https://peliculas.creapolis.dev';
@@ -86,48 +113,22 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
   }
 
   Future<void> _openInApp() async {
-    final deepLink =
-        ShareService.generateMovieAppDeepLink(int.parse(widget.movieId));
+    final deepLink = ShareService.generateMovieAppDeepLink(movie.id);
     final uri = Uri.parse(deepLink);
 
     try {
       final launched =
           await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched) {
-        // Fallback to app store if app is not installed
         await _launchAppStore();
       }
     } catch (e) {
-      // Fallback to app store if there's any error
       await _launchAppStore();
     }
   }
 
-  Future<void> _shareMovie() async {
-    if (_shareableContent != null && mounted) {
-      // Create a Movie object from the shareable content for ShareService
-      final content = _shareableContent;
-      if (content != null) {
-        final movie = Movie(
-          id: content.metadata?['movieId'] ?? 0,
-          title: content.metadata?['movieTitle'] ?? content.title,
-          overview: content.description,
-          posterPath: content.imageUrl ?? '',
-          adult: false,
-          backdropPath: '',
-          genreIds: [],
-          originalLanguage: '',
-          originalTitle: content.title,
-          popularity: 0.0,
-          releaseDate: DateTime.now(),
-          video: false,
-          voteAverage: 0.0,
-          voteCount: 0,
-        );
-
-        ShareService.shareMovie(context: context, movie: movie);
-      }
-    }
+  Future<void> _shareMovie(BuildContext context) async {
+    ShareService.shareMovie(context: context, movie: movie);
   }
 
   @override
@@ -138,63 +139,14 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
     final isTablet = size.width > 768 && size.width <= 1024;
     final isMobile = size.width <= 768;
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _error ?? 'Error desconocido',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadMovieData,
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                )
-              : _shareableContent != null
-                  ? _buildContent(context, theme, isDesktop, isTablet, isMobile)
-                  : const Center(
-                      child: Text('No se encontró información de la película'),
-                    ),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, ThemeData theme, bool isDesktop,
-      bool isTablet, bool isMobile) {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Hero Section
           _buildHeroSection(theme, isDesktop, isTablet, isMobile),
-
-          // Content Section
           _buildContentSection(theme, isDesktop, isTablet, isMobile),
-
-          // Call to Action Section
-          _buildCallToActionSection(theme, isDesktop, isTablet, isMobile),
-
-          // Footer
-          _buildFooter(theme),
+          _buildCallToActionSection(
+              context, theme, isDesktop, isTablet, isMobile),
+          _buildFooter(context, theme),
         ],
       ),
     );
@@ -202,9 +154,6 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
 
   Widget _buildHeroSection(
       ThemeData theme, bool isDesktop, bool isTablet, bool isMobile) {
-    final content = _shareableContent;
-    if (content == null) return const SizedBox.shrink();
-
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -223,8 +172,8 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
           vertical: isDesktop ? 80 : (isTablet ? 60 : 40),
         ),
         child: isDesktop
-            ? _buildDesktopHero(content, theme)
-            : _buildMobileHero(content, theme, isMobile),
+            ? _buildDesktopHero(shareableContent, theme)
+            : _buildMobileHero(shareableContent, theme, isMobile),
       ),
     );
   }
@@ -233,13 +182,11 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Movie Poster
         Expanded(
           flex: 2,
           child: _buildPosterImage(content, 400),
         ),
         const SizedBox(width: 48),
-        // Movie Info
         Expanded(
           flex: 3,
           child: _buildMovieInfo(content, theme, isDesktop: true),
@@ -252,10 +199,8 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
       ShareableContent content, ThemeData theme, bool isMobile) {
     return Column(
       children: [
-        // Movie Poster
         _buildPosterImage(content, isMobile ? 250 : 300),
         const SizedBox(height: 24),
-        // Movie Info
         _buildMovieInfo(content, theme, isDesktop: false),
       ],
     );
@@ -309,7 +254,6 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
       crossAxisAlignment:
           isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
-        // Title
         Text(
           content.title,
           style: theme.textTheme.headlineMedium?.copyWith(
@@ -319,8 +263,6 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
           textAlign: isDesktop ? TextAlign.start : TextAlign.center,
         ),
         const SizedBox(height: 16),
-
-        // Movie Details
         if (metadata['releaseDate'] != null || metadata['genres'] != null)
           Wrap(
             alignment: isDesktop ? WrapAlignment.start : WrapAlignment.center,
@@ -333,7 +275,6 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
                 _buildInfoChip('⭐ ${metadata['voteAverage']}', theme),
             ],
           ),
-
         if (metadata['genres'] != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -344,10 +285,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
             textAlign: isDesktop ? TextAlign.start : TextAlign.center,
           ),
         ],
-
         const SizedBox(height: 24),
-
-        // Description
         Text(
           content.description,
           style: theme.textTheme.bodyLarge?.copyWith(
@@ -412,8 +350,8 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
     );
   }
 
-  Widget _buildCallToActionSection(
-      ThemeData theme, bool isDesktop, bool isTablet, bool isMobile) {
+  Widget _buildCallToActionSection(BuildContext context, ThemeData theme,
+      bool isDesktop, bool isTablet, bool isMobile) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
@@ -422,7 +360,6 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
       ),
       child: Column(
         children: [
-          // Action Buttons
           if (isDesktop)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -436,7 +373,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
                 const SizedBox(width: 16),
                 _buildActionButton(
                   '📤 Compartir',
-                  _shareMovie,
+                  () => _shareMovie(context),
                   theme,
                   isPrimary: false,
                 ),
@@ -455,17 +392,14 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
                 const SizedBox(height: 12),
                 _buildActionButton(
                   '📤 Compartir',
-                  _shareMovie,
+                  () => _shareMovie(context),
                   theme,
                   isPrimary: false,
                   fullWidth: true,
                 ),
               ],
             ),
-
           const SizedBox(height: 32),
-
-          // Download App Section
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
@@ -554,7 +488,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
     );
   }
 
-  Widget _buildFooter(ThemeData theme) {
+  Widget _buildFooter(BuildContext context, ThemeData theme) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(32),

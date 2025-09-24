@@ -8,20 +8,23 @@ import 'package:peliculas/presentation/providers/hybrid_repositories_provider.da
 import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/test_setup_helper.dart';
+
 void main() {
   group('Watched Movies Real-time Sync Integration Tests', () {
     late ProviderContainer container;
     const String testUserId = 'integration_test_user';
 
     setUp(() async {
-      SharedPreferences.setMockInitialValues({});
+      await TestSetupHelper.setupTest();
       container = ProviderContainer(overrides: [
         currentUserIdProvider.overrideWithValue(testUserId),
       ]);
     });
 
-    tearDown(() {
+    tearDown(() async {
       container.dispose();
+      await TestSetupHelper.tearDownTest();
     });
 
     testWidgets('Complete watched movies sync flow integration test',

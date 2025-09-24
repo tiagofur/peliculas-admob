@@ -26,9 +26,7 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
   Future<List<Movie>> loadMovies({int limit = 10, offset = 0}) async {
     final box = await _getBox();
 
-    final allMovies = box.values
-        .cast<Movie>()
-        .toList();
+    final allMovies = box.values.cast<Movie>().toList();
 
     final endIndex = (offset + limit).clamp(0, allMovies.length);
     if (offset >= allMovies.length) return [];
@@ -49,55 +47,63 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
   // NOTA: Esta clase se enfoca en favoritos. Los métodos de watchlist
   // deberían ser manejados por WatchlistHiveDatasource, pero implementamos
   // funcionalidad básica para evitar crashes
-  
+
   @override
   Future<void> addToWatchlist(Movie movie, WatchlistPriority priority) async {
-    LoggerFactory.warning('⚠️ addToWatchlist llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ addToWatchlist llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     // Implementación básica para evitar crashes
     return;
   }
 
   @override
   Future<List<WatchlistMovie>> getAllWatchlistMovies() async {
-    LoggerFactory.warning('⚠️ getAllWatchlistMovies llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ getAllWatchlistMovies llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return [];
   }
 
   @override
   Future<int> getWatchlistCount() async {
-    LoggerFactory.warning('⚠️ getWatchlistCount llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ getWatchlistCount llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return 0;
   }
 
   @override
   Future<WatchlistMovie?> getWatchlistMovie(int movieId) async {
-    LoggerFactory.warning('⚠️ getWatchlistMovie llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ getWatchlistMovie llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return null;
   }
 
   @override
   Future<bool> isMovieInWatchlist(int movieId) async {
-    LoggerFactory.warning('⚠️ isMovieInWatchlist llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ isMovieInWatchlist llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return false;
   }
 
   @override
   Future<List<WatchlistMovie>> loadWatchlistMovies(
       {int limit = 10, int offset = 0, WatchlistPriority? priority}) async {
-    LoggerFactory.warning('⚠️ loadWatchlistMovies llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ loadWatchlistMovies llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return [];
   }
 
   @override
   Future<void> removeFromWatchlist(int movieId) async {
-    LoggerFactory.warning('⚠️ removeFromWatchlist llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ removeFromWatchlist llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return;
   }
 
   @override
   Future<void> updateWatchlistPriority(
       int movieId, WatchlistPriority priority) async {
-    LoggerFactory.warning('⚠️ updateWatchlistPriority llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
+    LoggerFactory.warning(
+        '⚠️ updateWatchlistPriority llamado en FavoriteMoviesHiveDatasource - usar WatchlistHiveDatasource');
     return;
   }
 

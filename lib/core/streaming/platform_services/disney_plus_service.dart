@@ -11,7 +11,6 @@ import '../real_availability_service.dart';
 import 'platform_services.dart';
 import '../../analytics/analytics_service.dart';
 
-
 /// Disney+ streaming service implementation
 class DisneyPlusService implements StreamingPlatformServiceInterface {
   DisneyPlusService({
@@ -39,7 +38,8 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
         'action': 'disney_availability_check',
         'movie_id': movieId,
         'region': region,
-        'api_used': StreamingApiConfig.isDisneyPlusConfigured ? 'real' : 'simulated',
+        'api_used':
+            StreamingApiConfig.isDisneyPlusConfigured ? 'real' : 'simulated',
       });
 
       // Try real availability service first
@@ -58,7 +58,7 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
           tmdbId: movieId,
           region: region,
         );
-        
+
         if (directAvailability != null) {
           return directAvailability;
         }
@@ -86,7 +86,8 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
         'query': query,
         'region': region,
         'limit': limit,
-        'api_used': StreamingApiConfig.isDisneyPlusConfigured ? 'real' : 'simulated',
+        'api_used':
+            StreamingApiConfig.isDisneyPlusConfigured ? 'real' : 'simulated',
       });
 
       // If Disney+ API is configured, use real API
@@ -96,7 +97,7 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
           region: region,
           limit: limit,
         );
-        
+
         if (realResults.isNotEmpty) {
           return realResults;
         }
@@ -331,8 +332,7 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/search')
-          .replace(queryParameters: {
+      final url = Uri.parse('$_baseUrl/search').replace(queryParameters: {
         'q': query,
         'region': region,
         'limit': limit.toString(),
@@ -356,13 +356,12 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
     }
   }
 
-
-
   /// Parse Disney+ availability response
-  PlatformAvailability _parseDisneyAvailability(Map<String, dynamic> data, String tmdbId) {
+  PlatformAvailability _parseDisneyAvailability(
+      Map<String, dynamic> data, String tmdbId) {
     final availability = data['availability'] as Map<String, dynamic>? ?? {};
     final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
-    
+
     return PlatformAvailability(
       platform: StreamingPlatform.disneyPlus,
       isAvailable: availability['is_available'] as bool? ?? false,
@@ -373,8 +372,10 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
       currency: 'USD',
       quality: metadata['video_quality'] as String? ?? '4K Dolby Vision',
       deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages: List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
-      subtitleLanguages: List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+      audioLanguages:
+          List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
+      subtitleLanguages:
+          List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
     );
   }
 
@@ -388,8 +389,9 @@ class DisneyPlusService implements StreamingPlatformServiceInterface {
         overview: movie['overview'] as String? ?? '',
         posterPath: movie['poster_path'] as String? ?? '',
         backdropPath: movie['backdrop_path'] as String? ?? '',
-        releaseDate: movie['release_date'] != null 
-            ? DateTime.tryParse(movie['release_date'] as String) ?? DateTime.now()
+        releaseDate: movie['release_date'] != null
+            ? DateTime.tryParse(movie['release_date'] as String) ??
+                DateTime.now()
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/watchlist_movie.dart';
-import '../../../l10n/app_localizations.dart';
 import '../../providers/storage/direct_watchlist_provider.dart';
 
 class AddToWatchlistButton extends ConsumerStatefulWidget {
@@ -64,11 +63,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
                 isInWatchlist ? Icons.bookmark : Icons.bookmark_border,
                 color: iconColor,
               ),
-        tooltip: isInWatchlist
-            ? (AppLocalizations.of(context)?.removeFromWatchlist ??
-                'Remove from watchlist')
-            : (AppLocalizations.of(context)?.addToWatchlist ??
-                'Add to watchlist'),
+        tooltip: isInWatchlist ? 'Remover de watchlist' : 'Agregar a watchlist',
       );
     }
 
@@ -86,10 +81,7 @@ class _AddToWatchlistButtonState extends ConsumerState<AddToWatchlistButton> {
               size: 20,
             ),
       label: widget.showLabel
-          ? Text(isInWatchlist
-              ? (AppLocalizations.of(context)?.inWatchlist ?? 'In Watchlist')
-              : (AppLocalizations.of(context)?.addToWatchlist ??
-                  'Add to Watchlist'))
+          ? Text(isInWatchlist ? 'En Watchlist' : 'Agregar a Watchlist')
           : const SizedBox.shrink(),
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
@@ -190,8 +182,7 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: Text(AppLocalizations.of(context)?.addToWatchlistTitle ??
-          'Add to Watchlist'),
+      title: const Text('Agregar a Watchlist'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +195,7 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
           ),
           const SizedBox(height: 16),
           Text(
-            AppLocalizations.of(context)?.selectPriority ?? 'Select priority:',
+            'Selecciona la prioridad:',
             style: theme.textTheme.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -214,56 +205,51 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(AppLocalizations.of(context)?.cancel ?? 'Cancel'),
+          child: const Text('Cancelar'),
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(_selectedPriority),
-          child: Text(AppLocalizations.of(context)?.add ?? 'Add'),
+          child: const Text('Agregar'),
         ),
       ],
     );
   }
 
   Widget _buildPriorityOptions() {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    return Column(
-      children: WatchlistPriority.values.map((priority) {
-        final isSelected = _selectedPriority == priority;
-
-        return ListTile(
-          leading: Icon(
-            isSelected
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
-            color: isSelected
-                ? colors.primary
-                : colors.onSurface.withValues(alpha: 0.6),
-          ),
-          title: Row(
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: _getPriorityColor(priority),
-                  shape: BoxShape.circle,
+    return RadioGroup<WatchlistPriority>(
+      groupValue: _selectedPriority,
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedPriority = value;
+          });
+        }
+      },
+      child: Column(
+        children: WatchlistPriority.values.map((priority) {
+          return ListTile(
+            leading: Radio<WatchlistPriority>(
+              value: priority,
+            ),
+            title: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: _getPriorityColor(priority),
+                    shape: BoxShape.circle,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(priority.displayName),
-            ],
-          ),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          onTap: () {
-            setState(() {
-              _selectedPriority = priority;
-            });
-          },
-        );
-      }).toList(),
+                const SizedBox(width: 12),
+                Text(priority.displayName),
+              ],
+            ),
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+          );
+        }).toList(),
+      ),
     );
   }
 

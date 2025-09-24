@@ -7,6 +7,8 @@ import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
 import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/test_setup_helper.dart';
+
 void main() {
   group('Watched Movies Real-time Sync Integration Tests', () {
     late ProviderContainer container;
@@ -15,8 +17,8 @@ void main() {
     const String testUserId = 'test_user_123';
 
     setUp(() async {
-      // Initialize shared preferences for testing
-      SharedPreferences.setMockInitialValues({});
+      // Initialize all test dependencies
+      await TestSetupHelper.setupTest();
 
       container = ProviderContainer();
 
@@ -32,8 +34,9 @@ void main() {
       await repository.initializeLocal();
     });
 
-    tearDown(() {
+    tearDown(() async {
       container.dispose();
+      await TestSetupHelper.tearDownTest();
     });
 
     test('should create WatchedSyncManager with correct table name', () {

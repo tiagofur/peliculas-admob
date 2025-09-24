@@ -44,7 +44,8 @@ final personalizedRecommendationsProvider =
   if (favoriteMovies.isNotEmpty || watchedMoviesState.movies.isNotEmpty) {
     try {
       // Generar recomendaciones ML mejoradas
-      final favoriteMoviesList = favoriteMovies.values.toList();
+      final favoriteMoviesList =
+          favoriteMovies.values.map((syncable) => syncable.movie).toList();
       final mlRecommendations = await mlService.getMLEnhancedRecommendations(
         userId: 1, // En implementación real, obtener del contexto de usuario
         favoriteMovies: favoriteMoviesList,
@@ -67,7 +68,8 @@ final personalizedRecommendationsProvider =
     final recommendations = <Recommendation>[];
 
     if (favoriteMovies.isNotEmpty) {
-      final favoriteMoviesList = favoriteMovies.values.toList();
+      final favoriteMoviesList =
+          favoriteMovies.values.map((syncable) => syncable.movie).toList();
       final favoritesRecs = await datasource
           .getRecommendationsBasedOnFavorites(favoriteMoviesList);
       recommendations.addAll(favoritesRecs.take(10));
@@ -123,7 +125,8 @@ final userBehaviorAnalysisProvider =
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   return await mlService.analyzeUserBehavior(
     favoriteMovies: favoriteMoviesList,
     watchedMovies: watchedMoviesState.movies
@@ -144,7 +147,7 @@ final similarMoviesProvider =
   // Find a target movie from favorites or watched movies
   Movie? targetMovie;
   if (favoriteMovies.containsKey(movieId)) {
-    targetMovie = favoriteMovies[movieId];
+    targetMovie = favoriteMovies[movieId]?.movie;
   } else {
     // Try to find in watched movies and convert to Movie
     SyncableWatchedMovie? syncableWatchedMovie;
@@ -178,7 +181,8 @@ final similarMoviesProvider =
     }
   }
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   return await mlService.findSimilarMovies(
     targetMovie: targetMovie!,
     favoriteMovies: favoriteMoviesList,
@@ -196,7 +200,8 @@ final recommendationExplanationProvider =
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
   final mlService = ref.watch(mlRecommendationServiceProvider);
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   return mlService.explainRecommendation(
     recommendation,
     favoriteMovies: favoriteMoviesList,
@@ -213,7 +218,8 @@ final personalizedInsightsProvider =
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   return await mlService.generatePersonalizedInsights(
     favoriteMovies: favoriteMoviesList,
     watchedMovies: watchedMoviesState.movies
@@ -229,7 +235,8 @@ final nextMoviePredictionProvider =
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   final prediction = await mlService.predictNextMovie(
     favoriteMovies: favoriteMoviesList,
     watchedMovies: watchedMoviesState.movies
@@ -261,7 +268,8 @@ final engagementScoreProvider = FutureProvider<double>((ref) async {
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   final engagementScore = await mlService.calculateEngagementScore(
     favoriteMovies: favoriteMoviesList,
     watchedMovies: watchedMoviesState.movies
@@ -287,7 +295,8 @@ final userPreferencesProvider = FutureProvider<UserPreferences>((ref) async {
 
   if (favoriteMovies.isNotEmpty || watchedMoviesState.movies.isNotEmpty) {
     final datasource = RecommendationsMoviedbDatasource();
-    final favoriteMoviesList = favoriteMovies.values.toList();
+    final favoriteMoviesList =
+        favoriteMovies.values.map((syncable) => syncable.movie).toList();
     return await datasource.analyzeUserPreferences(
       favoriteMoviesList,
       watchedMoviesState.movies.map((movie) => movie.toWatchedMovie()).toList(),
@@ -317,7 +326,8 @@ final recommendationsUserStatsProvider =
   AppLogger.provider('RecommendationsUserStatsProvider',
       '   🔚 Última página: ${watchedMoviesState.isLastPage}');
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
   final stats = {
     'totalFavorites': favoriteMovies.length,
     'totalWatched': watchedMoviesState.movies.length,
@@ -335,7 +345,8 @@ final basicUserStatsProvider = Provider<BasicUserStats>((ref) {
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
 
-  final favoriteMoviesList = favoriteMovies.values.toList();
+  final favoriteMoviesList =
+      favoriteMovies.values.map((syncable) => syncable.movie).toList();
 
   return BasicUserStats(
     totalFavorites: favoriteMovies.length,

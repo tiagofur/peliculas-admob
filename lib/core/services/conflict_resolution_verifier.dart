@@ -219,7 +219,8 @@ class ConflictResolutionVerifier {
 
       return true;
     } catch (e) {
-      SafeDeveloperLog.log('Error parseando updated_at: $e', name: 'ConflictVerifier', error: e);
+      SafeDeveloperLog.log('Error parseando updated_at: $e',
+          name: 'ConflictVerifier', error: e);
       return false;
     }
   }

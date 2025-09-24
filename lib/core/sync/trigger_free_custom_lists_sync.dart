@@ -46,7 +46,7 @@ class TriggerFreeCustomListsSync {
     try {
       LoggerFactory.info('📥 [TriggerFree] Obteniendo items de lista: $listId');
 
-      // 🔧 FIXED: Agregar filtro por list_id y excluir elementos eliminados
+      // 🔧 FIXED: Agregar filtro por list_id que faltaba
       final response = await _supabase
           .from('user_list_items')
           .select('movie_id')
@@ -164,33 +164,67 @@ class TriggerFreeCustomListsSync {
       LoggerFactory.info(
           '🔥 [TriggerFree] INICIO - Agregando película $movieId a lista $listId para user $userId');
 
+      // ✅ DEBUG: Verificar autenticación detallada
+      final currentUser = _supabase.auth.currentUser;
+      LoggerFactory.info(
+          '🔐 [TriggerFree] DEBUG - Usuario actual: ${currentUser?.id}');
+      LoggerFactory.info('🔐 [TriggerFree] DEBUG - Usuario pasado: $userId');
+      LoggerFactory.info(
+          '🔐 [TriggerFree] DEBUG - ¿Son iguales?: ${currentUser?.id == userId}');
+
+      if (currentUser == null) {
+        LoggerFactory.error(
+            '❌ [TriggerFree] ERROR CRÍTICO - Usuario no autenticado en Supabase');
+        throw Exception('Usuario no autenticado');
+      }
+
+      // ✅ DEBUG: Verificar que la lista existe antes de agregar película
+      LoggerFactory.info(
+          '🔍 [TriggerFree] DEBUG - Verificando que lista $listId existe...');
+      final listExists = await _supabase
+          .from('user_lists')
+          .select('id, name')
+          .eq('id', listId)
+          .eq('user_id', userId)
+          .eq('is_deleted', false);
+
+      LoggerFactory.info(
+          '📊 [TriggerFree] DEBUG - Resultado verificación lista: $listExists');
+
+      if (listExists.isEmpty) {
+        LoggerFactory.error(
+            '❌ [TriggerFree] ERROR CRÍTICO - Lista $listId no existe en Supabase');
+        throw Exception('Lista no encontrada: $listId');
+      }
+
+      final listData = listExists.first;
+      LoggerFactory.info(
+          '✅ [TriggerFree] DEBUG - Lista encontrada: ${listData['name']} (ID: ${listData['id']})');
+
       final now = DateTime.now().toUtc().toIso8601String();
 
       final insertData = {
         'list_id': listId,
+        'user_id': userId,
         'movie_id': movieId,
         'movie_title': movieTitle ?? 'Movie $movieId',
-        'position': 0, // Default position
         'added_at': now,
-        'user_id': userId, // CRITICAL: Include user_id for RLS policies
+        'last_modified_at': now,
         'is_deleted': false,
         'sync_version': 1,
       };
 
       LoggerFactory.info('📊 [TriggerFree] Datos a insertar: $insertData');
 
-      // 1. Verificar si la lista existe (para listas predeterminadas, crear si no existe)
-      await _ensureListExists(userId, listId);
-
-      // 2. Verificar si ya existe antes de insertar
+      // Verificar si ya existe antes de insertar
       LoggerFactory.info(
           '🔍 [TriggerFree] Verificando si película ya existe...');
       final existing = await _supabase
           .from('user_list_items')
           .select('id')
           .eq('list_id', listId)
-          .eq('movie_id', movieId)
           .eq('user_id', userId)
+          .eq('movie_id', movieId)
           .eq('is_deleted', false);
 
       LoggerFactory.info(
@@ -206,9 +240,13 @@ class TriggerFreeCustomListsSync {
 
       LoggerFactory.info(
           '🚀 [TriggerFree] Ejecutando inserción en user_list_items...');
+      final result =
+          await _supabase.from('user_list_items').insert(insertData).select();
 
-      // Intentar insertar con retry en caso de conflictos temporales
-      await _insertWithRetry(insertData, movieId, listId);
+      LoggerFactory.info(
+          '✅ [TriggerFree] Inserción exitosa - resultado: $result');
+      LoggerFactory.info(
+          '🎉 [TriggerFree] Película $movieId agregada exitosamente a lista $listId');
     } catch (e, stackTrace) {
       LoggerFactory.error(
           '❌ [TriggerFree] ERROR CRÍTICO agregando película a lista: $e');
@@ -236,18 +274,13 @@ class TriggerFreeCustomListsSync {
       LoggerFactory.info(
           '🗑️ [TriggerFree] Removiendo película $movieId de lista $listId');
 
-      // 🔧 FIXED: Usar soft delete para mantener consistencia con la arquitectura de sync
+      // 🔧 FIXED: Filtrar por list_id Y movie_id específicos
       await _supabase
           .from('user_list_items')
-          .update({
-            'is_deleted': true,
-            'last_modified_at': DateTime.now().toUtc().toIso8601String(),
-            'sync_version': DateTime.now().millisecondsSinceEpoch,
-          })
+          .delete()
           .eq('list_id', listId)
           .eq('movie_id', movieId)
-          .eq('user_id', userId)
-          .eq('is_deleted', false);
+          .eq('user_id', userId);
 
       LoggerFactory.info('✅ [TriggerFree] Película removida de lista');
     } catch (e) {
@@ -303,14 +336,16 @@ class TriggerFreeCustomListsSync {
   /// Test básico de conectividad
   Future<bool> testConnection() async {
     try {
-      LoggerFactory.info('🔗 [TriggerFree] Probando conexión...');
+      LoggerFactory.info('🔗 [TriggerFree] Probando conexión a Supabase...');
 
-      await _supabase.from('user_lists').select('count').limit(1);
+      // 🔧 FIXED: Usar una query simple a Supabase sin contar en límites externos
+      final response = await _supabase.from('user_lists').select('id').limit(1);
 
-      LoggerFactory.info('✅ [TriggerFree] Conexión exitosa');
+      LoggerFactory.info('✅ [TriggerFree] Conexión a Supabase exitosa');
+      LoggerFactory.info('📊 [TriggerFree] Respuesta: ${response.toString()}');
       return true;
     } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error de conexión: $e');
+      LoggerFactory.error('❌ [TriggerFree] Error de conexión a Supabase: $e');
       return false;
     }
   }
@@ -404,174 +439,6 @@ class TriggerFreeCustomListsSync {
         return 'blue_grey';
       default:
         return 'blue'; // Default blue
-    }
-  }
-
-  /// Asegura que una lista existe (especialmente para listas predeterminadas)
-  Future<void> _ensureListExists(String userId, String listId) async {
-    try {
-      // Verificar si la lista ya existe
-      final existingLists = await _supabase
-          .from('user_lists')
-          .select('id')
-          .eq('id', listId)
-          .eq('user_id', userId)
-          .eq('is_deleted', false);
-
-      if (existingLists.isNotEmpty) {
-        LoggerFactory.debug('✅ [TriggerFree] Lista $listId ya existe');
-        return;
-      }
-
-      // Si es una lista predeterminada, crearla
-      if (_isDefaultList(listId)) {
-        LoggerFactory.info('🆕 [TriggerFree] Creando lista predeterminada: $listId');
-        await _createDefaultList(userId, listId);
-      } else {
-        throw Exception('Lista personalizada $listId no existe y no se puede crear automáticamente');
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ [TriggerFree] Error verificando/creando lista $listId: $e');
-      rethrow;
-    }
-  }
-
-  /// Verifica si es una lista predeterminada
-  bool _isDefaultList(String listId) {
-    const defaultLists = [
-      'en-familia',
-      'en-pareja',
-      'clasicos',
-      'sugeridas',
-      'con-amigos',
-      'noches-lluvia',
-      'cortas',
-      'premiadas',
-    ];
-    return defaultLists.contains(listId);
-  }
-
-  /// Crea una lista predeterminada
-  Future<void> _createDefaultList(String userId, String listId) async {
-    final defaultListData = _getDefaultListData(listId);
-    if (defaultListData == null) {
-      throw Exception('Datos no encontrados para lista predeterminada: $listId');
-    }
-
-    await _supabase.from('user_lists').insert({
-      'id': listId,
-      'user_id': userId,
-      'name': defaultListData['name'],
-      'description': defaultListData['description'],
-      'emoji': defaultListData['emoji'],
-      'color_hex': defaultListData['color_hex'],
-      'is_default': true,
-      'is_public': false,
-      'sync_version': 1,
-      'is_deleted': false,
-    });
-
-    LoggerFactory.info('✅ [TriggerFree] Lista predeterminada $listId creada');
-  }
-
-  /// Obtiene los datos de una lista predeterminada
-  Map<String, dynamic>? _getDefaultListData(String listId) {
-    switch (listId) {
-      case 'en-familia':
-        return {
-          'name': 'En Familia',
-          'description': 'Películas aptas para toda la familia',
-          'emoji': '👨‍👩‍👧‍👦',
-          'color_hex': '#FF9800', // orange
-        };
-      case 'en-pareja':
-        return {
-          'name': 'En Pareja',
-          'description': 'Películas románticas y de citas',
-          'emoji': '💕',
-          'color_hex': '#E91E63', // pink
-        };
-      case 'clasicos':
-        return {
-          'name': 'Clásicos',
-          'description': 'Clásicos imperdibles del cine',
-          'emoji': '🏆',
-          'color_hex': '#9C27B0', // purple
-        };
-      case 'sugeridas':
-        return {
-          'name': 'Sugeridas',
-          'description': 'Películas sugeridas por la comunidad',
-          'emoji': '🎯',
-          'color_hex': '#2196F3', // blue
-        };
-      case 'con-amigos':
-        return {
-          'name': 'Con Amigos',
-          'description': 'Perfectas para ver en grupo',
-          'emoji': '👥',
-          'color_hex': '#4CAF50', // green
-        };
-      case 'noches-lluvia':
-        return {
-          'name': 'Noches de Lluvia',
-          'description': 'Para esos días grises y tranquilos',
-          'emoji': '🌧️',
-          'color_hex': '#607D8B', // blue_grey
-        };
-      case 'cortas':
-        return {
-          'name': 'Cortas',
-          'description': 'Películas de menos de 90 minutos',
-          'emoji': '⏱️',
-          'color_hex': '#FFEB3B', // yellow
-        };
-      case 'premiadas':
-        return {
-          'name': 'Premiadas',
-          'description': 'Ganadoras de premios importantes',
-          'emoji': '🏅',
-          'color_hex': '#FF5722', // deep_orange
-        };
-      default:
-        return null;
-    }
-  }
-
-  /// Inserta con retry logic para manejar conflictos temporales
-  Future<void> _insertWithRetry(Map<String, dynamic> insertData, int movieId, String listId) async {
-    const maxRetries = 3;
-    const retryDelay = Duration(milliseconds: 500);
-
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        final result = await _supabase
-            .from('user_list_items')
-            .insert(insertData)
-            .select();
-
-        LoggerFactory.info(
-            '✅ [TriggerFree] Inserción exitosa en intento $attempt - resultado: $result');
-        LoggerFactory.info(
-            '🎉 [TriggerFree] Película $movieId agregada exitosamente a lista $listId');
-        return; // Éxito, salir del loop
-      } catch (e) {
-        LoggerFactory.warning(
-            '⚠️ [TriggerFree] Intento $attempt/$maxRetries falló: $e');
-
-        if (attempt == maxRetries) {
-          LoggerFactory.error(
-              '❌ [TriggerFree] Todos los intentos fallaron para película $movieId en lista $listId');
-          rethrow; // Re-lanzar el error después del último intento
-        }
-
-        // Esperar antes del siguiente intento
-        if (attempt < maxRetries) {
-          LoggerFactory.info(
-              '⏳ [TriggerFree] Esperando ${retryDelay.inMilliseconds}ms antes del siguiente intento...');
-          await Future.delayed(retryDelay);
-        }
-      }
     }
   }
 }

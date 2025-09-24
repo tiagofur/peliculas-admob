@@ -68,8 +68,7 @@ class DefaultListsManager {
         // Verificar si la lista ya existe para este usuario específico
         final existingLists = await _repository.getDefaultLists();
         final exists = existingLists.any((list) =>
-            list.defaultType == config.defaultType &&
-            list.userId == userId);
+            list.defaultType == config.defaultType && list.userId == userId);
 
         if (!exists) {
           final defaultList = _createDefaultListFromConfig(config, userId);
@@ -82,7 +81,8 @@ class DefaultListsManager {
   }
 
   /// Crea una lista por defecto a partir de su configuración
-  CustomList _createDefaultListFromConfig(DefaultListConfig config, String userId) {
+  CustomList _createDefaultListFromConfig(
+      DefaultListConfig config, String userId) {
     return CustomList(
       id: '', // Se generará en el servidor
       name: config.name,
@@ -104,84 +104,69 @@ class DefaultListsManager {
   /// Obtiene la configuración de todas las listas por defecto
   List<DefaultListConfig> _getDefaultListsConfiguration() {
     return [
-      // Lista de Favoritos
       const DefaultListConfig(
-        localId: 'favorites',
-        name: 'Mis Favoritas',
-        description: 'Películas que más me han gustado',
-        emoji: '❤️',
-        color: '#EF4444',
-        defaultType: 'favorites',
-      ),
-
-      // Lista de Pendientes por Ver
-      const DefaultListConfig(
-        localId: 'watchlist',
-        name: 'Por Ver',
+        localId: 'quiero-ver',
+        name: 'Quiero Ver',
         description: 'Películas que quiero ver próximamente',
-        emoji: '📺',
+        emoji: '🍿',
         color: '#3B82F6',
         defaultType: 'watchlist',
       ),
-
-      // Lista de Vistas Recientemente
       const DefaultListConfig(
-        localId: 'recently_watched',
-        name: 'Vistas Recientemente',
-        description: 'Películas que he visto últimamente',
-        emoji: '👁️',
+        localId: 'para-el-fin-de-semana',
+        name: 'Para el Fin de Semana',
+        description: 'Películas perfectas para relajarse',
+        emoji: '🛋️',
         color: '#10B981',
-        defaultType: 'recently_watched',
+        defaultType: 'weekend',
       ),
-
-      // Lista de Recomendaciones
       const DefaultListConfig(
-        localId: 'recommendations',
-        name: 'Recomendadas',
-        description: 'Películas recomendadas para ti',
-        emoji: '🎯',
-        color: '#8B5CF6',
-        defaultType: 'recommendations',
+        localId: 'noche-de-citas',
+        name: 'Noche de Citas',
+        description: 'Películas románticas para ver en pareja',
+        emoji: '💕',
+        color: '#EF4444',
+        defaultType: 'date-night',
       ),
-
-      // Lista de Clásicos
       const DefaultListConfig(
-        localId: 'classics',
-        name: 'Clásicos Imperdibles',
-        description: 'Las mejores películas de todos los tiempos',
-        emoji: '🏆',
+        localId: 'con-amigos',
+        name: 'Con Amigos',
+        description: 'Películas divertidas para ver en grupo',
+        emoji: '👥',
         color: '#F59E0B',
+        defaultType: 'with-friends',
+      ),
+      const DefaultListConfig(
+        localId: 'clasicos-pendientes',
+        name: 'Clásicos Pendientes',
+        description: 'Películas clásicas que debo ver',
+        emoji: '🎭',
+        color: '#8B5CF6',
         defaultType: 'classics',
       ),
-
-      // Lista de Trending
       const DefaultListConfig(
-        localId: 'trending',
-        name: 'Tendencias',
-        description: 'Lo más popular del momento',
-        emoji: '🔥',
-        color: '#EF4444',
-        defaultType: 'trending',
+        localId: 'accion-y-aventura',
+        name: 'Acción y Aventura',
+        description: 'Para cuando quiero adrenalina',
+        emoji: '💥',
+        color: '#D97706',
+        defaultType: 'action',
       ),
-
-      // Lista de Maraton
       const DefaultListConfig(
-        localId: 'marathon',
-        name: 'Para un Maratón',
-        description: 'Películas para ver una tras otra',
-        emoji: '🍿',
-        color: '#F97316',
-        defaultType: 'marathon',
+        localId: 'documentales',
+        name: 'Documentales',
+        description: 'Para aprender algo nuevo',
+        emoji: '📚',
+        color: '#06B6D4',
+        defaultType: 'documentaries',
       ),
-
-      // Lista de Placeres Culpables
       const DefaultListConfig(
-        localId: 'guilty_pleasures',
-        name: 'Placeres Culpables',
-        description: 'Películas que amas en secreto',
-        emoji: '🤫',
-        color: '#EC4899',
-        defaultType: 'guilty_pleasures',
+        localId: 'cuando-llueve',
+        name: 'Cuando Llueve',
+        description: 'Películas perfectas para días lluviosos',
+        emoji: '🌧️',
+        color: '#64748B',
+        defaultType: 'rainy-day',
       ),
     ];
   }

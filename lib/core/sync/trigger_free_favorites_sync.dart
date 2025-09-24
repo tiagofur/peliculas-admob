@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/movie.dart';
+import '../../presentation/providers/storage/direct_sync_provider.dart';
 import '../logging/logger_factory.dart';
 
 /// Servicio que evita completamente los triggers de PostgreSQL
 /// usando operaciones SQL manuales que no activan triggers
-class TriggerFreeFavoritesSync {
+class TriggerFreeFavoritesSync implements BaseSync {
   TriggerFreeFavoritesSync._internal();
 
   static final TriggerFreeFavoritesSync _instance =
@@ -17,7 +18,8 @@ class TriggerFreeFavoritesSync {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Agrega un favorito usando SQL manual para evitar triggers
-  Future<void> addFavorite(String userId, Movie movie) async {
+  @override
+  Future<void> addMovie(String userId, Movie movie) async {
     try {
       LoggerFactory.info('➕ [TriggerFree] Agregando favorito: ${movie.title}');
 
@@ -55,7 +57,8 @@ class TriggerFreeFavoritesSync {
   }
 
   /// Remueve un favorito usando DELETE directo
-  Future<void> removeFavorite(String userId, int movieId) async {
+  @override
+  Future<void> removeMovie(String userId, int movieId) async {
     try {
       LoggerFactory.info('🗑️ [TriggerFree] Removiendo favorito: $movieId');
 
@@ -98,7 +101,7 @@ class TriggerFreeFavoritesSync {
       if (e.toString().contains('duplicate') ||
           e.toString().contains('unique')) {
         // Si ya existe, hacer DELETE + INSERT
-        await removeFavorite(userId, movie.id);
+        await removeMovie(userId, movie.id);
         await _supabase.from('user_favorites').insert(favoriteData);
       } else {
         rethrow;
@@ -107,7 +110,8 @@ class TriggerFreeFavoritesSync {
   }
 
   /// Obtiene favoritos del usuario
-  Future<List<Movie>> getUserFavorites(String userId) async {
+  @override
+  Future<List<Map<String, dynamic>>> getUserMovies(String userId) async {
     try {
       LoggerFactory.info('📥 [TriggerFree] Obteniendo favoritos: $userId');
 
@@ -115,18 +119,15 @@ class TriggerFreeFavoritesSync {
           .from('user_favorites')
           .select('*')
           .eq('user_id', userId)
-          .eq('is_deleted', false)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
       final favorites = data.cast<Map<String, dynamic>>();
 
-      final movies = favorites.map((data) => _dataToMovie(data)).toList();
-
       LoggerFactory.info(
-          '✅ [TriggerFree] Encontrados ${movies.length} favoritos');
+          '✅ [TriggerFree] Encontrados ${favorites.length} favoritos');
 
-      return movies;
+      return favorites;
     } catch (e) {
       LoggerFactory.error('❌ [TriggerFree] Error obteniendo favoritos: $e');
       return [];
@@ -166,26 +167,4 @@ class TriggerFreeFavoritesSync {
     }
   }
 
-  /// Convierte data de BD a Movie
-  Movie _dataToMovie(Map<String, dynamic> data) {
-    return Movie(
-      id: data['movie_id'] as int,
-      title: data['movie_title'] as String,
-      posterPath: data['movie_poster_path'] as String? ?? '',
-      backdropPath: data['movie_backdrop_path'] as String? ?? '',
-      overview: data['movie_overview'] as String? ?? '',
-      releaseDate: data['movie_release_date'] != null
-          ? (DateTime.tryParse(data['movie_release_date'] as String) ??
-              DateTime.now())
-          : DateTime.now(),
-      voteAverage: (data['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
-      genreIds: [], // No disponible en favoritos
-      adult: false,
-      originalLanguage: 'en',
-      originalTitle: data['movie_title'] as String,
-      popularity: 0.0,
-      video: false,
-      voteCount: 0,
-    );
-  }
 }

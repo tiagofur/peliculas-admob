@@ -114,14 +114,15 @@ class AutoDefaultListsService {
 
       for (final config in _defaultConfigs) {
         // Verificar por defaultType en lugar de solo por nombre para evitar duplicados
-        final exists = existingLists.any((list) => 
-          list.defaultType == config.defaultType && 
-          list.isDefault == true);
+        final exists = existingLists.any((list) =>
+            list.defaultType == config.defaultType && list.isDefault == true);
         if (!exists) {
           missingLists.add(config);
-          LoggerFactory.info('❌ Lista faltante: ${config.name} (tipo: ${config.defaultType})');
+          LoggerFactory.info(
+              '❌ Lista faltante: ${config.name} (tipo: ${config.defaultType})');
         } else {
-          LoggerFactory.info('✅ Lista existe: ${config.name} (tipo: ${config.defaultType})');
+          LoggerFactory.info(
+              '✅ Lista existe: ${config.name} (tipo: ${config.defaultType})');
         }
       }
 

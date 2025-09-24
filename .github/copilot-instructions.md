@@ -38,13 +38,14 @@ cd peliculas-admob
 ```
 
 **Environment file**: The `.env` file is already configured with API keys. For Supabase integration, add your credentials:
+
 ```env
 # Add to existing .env file if needed
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_key
 ```
 
-**Note**: Movie API keys are pre-configured. Do NOT modify existing THE_MOVIEDB_KEY or TRAKT_* keys unless required.
+**Note**: Movie API keys are pre-configured. Do NOT modify existing THE*MOVIEDB_KEY or TRAKT*\* keys unless required.
 
 ## Build and Development Workflows
 
@@ -117,6 +118,7 @@ flutter test test/golden_tests/
 ### Test Organization (65+ test files)
 
 **Key Test Categories**:
+
 - **Error Handling**: `test/error_handling_test.dart`, `test/error_reporting_test.dart`
 - **Offline Functionality**: `test/offline_functionality_test.dart`, `test/offline_cache_test.dart`
 - **Sync Integration**: `test/sync_integration_test.dart`, `test/realtime_sync_complex_test.dart`
@@ -126,6 +128,7 @@ flutter test test/golden_tests/
 - **Performance**: `test/realtime_latency_performance_test.dart`
 
 **Integration Tests (8 files)**:
+
 - `integration_test/movie_browsing_flow_test.dart`
 - `integration_test/user_authentication_flow_test.dart`
 - `integration_test/watchlist_flow_test.dart`
@@ -177,28 +180,33 @@ grep -r "TODO\|FIXME\|HACK" lib/ || echo "No issues found"
 After ANY changes, validate these scenarios (based on integration test coverage):
 
 1. **App Launch Flow** (`movie_browsing_flow_test.dart`):
+
    - App opens without crashes
    - Splash screen displays correctly
    - Main navigation loads with content
 
 2. **Movie Browsing Flow** (`movie_browsing_flow_test.dart`):
+
    - Navigate to movie list
    - Search for movies
    - Open movie details
    - Return to list
 
 3. **User Authentication Flow** (`user_authentication_flow_test.dart`):
+
    - Login/logout functionality
    - Session persistence
    - Authentication error handling
 
 4. **Watchlist Flow** (`watchlist_flow_test.dart`):
+
    - Add movies to watchlist
    - Remove from watchlist
    - Sync across devices
    - Offline capabilities
 
 5. **Sharing Functionality** (`sharing_functionality_flow_test.dart`):
+
    - Share movie information
    - Deep linking
    - Social media integration
@@ -211,8 +219,9 @@ After ANY changes, validate these scenarios (based on integration test coverage)
 ### Performance Validation
 
 Verify performance after changes:
+
 - App startup: < 3 seconds
-- Navigation transitions: < 500ms  
+- Navigation transitions: < 500ms
 - Movie list loading: < 2 seconds
 - Search results: < 1 second
 
@@ -289,17 +298,20 @@ lib/
 ## File Locations and Important Paths
 
 ### Critical Files
+
 - `pubspec.yaml` - Dependencies and configuration
 - `analysis_options.yaml` - Lint rules and analysis settings
 - `.env` - Environment variables (create manually)
 - `lib/main.dart` - Application entry point
 
 ### Development Scripts
+
 - `scripts/setup_dev.sh` - Development environment setup
-- `scripts/quality_check.sh` - Code quality validation  
+- `scripts/quality_check.sh` - Code quality validation
 - `scripts/run_comprehensive_tests.sh` - Full test suite
 
 ### Documentation
+
 - `README.md` - Project overview and quick start
 - `docs/CI_CD_PIPELINE.md` - Detailed CI/CD documentation
 - `docs/QUICK_TESTING_CHECKLIST.md` - Manual testing guide
@@ -308,24 +320,28 @@ lib/
 - `.github/pull_request_template.md` - PR template
 
 ### Configuration Files
+
 - `.github/workflows/` - CI/CD pipeline definitions
 - `android/` - Android-specific configuration
-- `ios/` - iOS-specific configuration  
+- `ios/` - iOS-specific configuration
 - `web/` - Web-specific configuration
 
 ## Platform-Specific Notes
 
 ### Android Development
+
 - Minimum SDK: Check `android/app/build.gradle`
 - Build outputs: `build/app/outputs/`
 - Google Mobile Ads integration configured
 
-### Web Development  
+### Web Development
+
 - Build output: `build/web/`
 - SKIA rendering supported
 - Progressive Web App configured
 
 ### Desktop Support
+
 - Linux, macOS, Windows supported
 - Platform-specific code in respective directories
 
@@ -336,18 +352,21 @@ lib/
 The CI system runs these workflows automatically:
 
 1. **CI Pipeline** (`.github/workflows/ci.yml`):
+
    - Code formatting validation
    - Static analysis (`flutter analyze --fatal-infos --fatal-warnings`)
    - Unit tests with coverage
-   - Integration tests  
+   - Integration tests
    - Build validation (Web + Android)
 
 2. **Golden Tests** (`.github/workflows/golden_tests.yml`):
+
    - UI regression testing
    - Automatic golden file generation
    - Failure artifact uploads
 
 3. **Security & Quality** (`.github/workflows/security-quality.yml`):
+
    - Dependency auditing (`dart pub audit`)
    - Performance analysis
    - Bundle size checks
@@ -361,6 +380,7 @@ The CI system runs these workflows automatically:
 ### PR Requirements
 
 **NEVER** submit PRs without local validation. All PRs must pass:
+
 - Format check: `dart format --set-exit-if-changed .`
 - Analysis: `flutter analyze --fatal-infos --fatal-warnings`
 - Tests: All 65+ unit tests and 8+ integration tests
@@ -369,18 +389,21 @@ The CI system runs these workflows automatically:
 ### Performance and Dependencies
 
 ### Flutter Version
+
 - Required: SDK >= 3.0.0 < 4.0.0
 - Dart SDK included with Flutter
 - Check with: `flutter --version`
 
 ### Key Dependencies
+
 - `flutter_riverpod` - State management
-- `supabase_flutter` - Backend integration  
+- `supabase_flutter` - Backend integration
 - `google_mobile_ads` - Monetization
 - `go_router` - Navigation
 - `hive` & `isar` - Local storage
 
 ### Development Dependencies
+
 - `flutter_test` - Testing framework
 - `mockito` - Mocking for tests (generates .mocks.dart files)
 - `integration_test` - E2E testing
@@ -402,3 +425,68 @@ flutter packages pub run build_runner build --delete-conflicting-outputs
 ```
 
 **ALWAYS** check `pubspec.yaml` for current dependency versions before making changes.
+
+## Coding Standards and Best Practices
+
+### Logging Standards
+
+**NEVER** use `print()` statements for debugging or logging. **ALWAYS** use the project's centralized logging system:
+
+```dart
+// ❌ WRONG: Never use print()
+print('Debug message');
+print('Error occurred: $error');
+
+// ✅ CORRECT: Use LoggerFactory from core/logging/logger_factory.dart
+import '../../core/logging/logger_factory.dart';
+
+LoggerFactory.info('Debug message');
+LoggerFactory.error('Error occurred: $error');
+LoggerFactory.warning('Warning message');
+LoggerFactory.debug('Debug information');
+```
+
+**Available LoggerFactory methods**:
+
+- `LoggerFactory.info()` - General information
+- `LoggerFactory.error()` - Error messages
+- `LoggerFactory.warning()` - Warning messages
+- `LoggerFactory.debug()` - Debug information
+
+### Color Opacity Standards
+
+**NEVER** use deprecated `withOpacity()` method. **ALWAYS** use modern `.withValues()` for color transparency:
+
+```dart
+// ❌ WRONG: Deprecated methods
+Color.red.withOpacity(0.5)
+Colors.blue.withAlpha(128)
+someColor.withOpacity(0.8)
+
+// ✅ CORRECT: Use .withValues() for all opacity/alpha changes
+Color.red.withValues(alpha: 0.5)
+Colors.blue.withValues(alpha: 0.5)  // 128/255 ≈ 0.5
+someColor.withValues(alpha: 0.8)
+```
+
+**Migration Rules**:
+
+- Replace `withOpacity(opacity)` → `withValues(alpha: opacity)`
+- Replace `withAlpha(alphaValue)` → `withValues(alpha: alphaValue / 255.0)`
+- Replace `withRed(red)` → `withValues(red: red / 255.0)`
+- Replace `withGreen(green)` → `withValues(green: green / 255.0)`
+- Replace `withBlue(blue)` → `withValues(blue: blue / 255.0)`
+
+**When encountering deprecated color methods**: Automatically suggest migration to `.withValues()` with proper alpha/color value conversion.
+
+### Code Quality Enforcement
+
+**ALWAYS** follow these patterns:
+
+1. **No print statements** - Use LoggerFactory
+2. **No withOpacity/withAlpha** - Use withValues()
+3. **Proper imports** - Import LoggerFactory when adding logging
+4. **Consistent formatting** - Run `dart format .` before commits
+5. **Static analysis compliance** - Zero warnings/errors in `flutter analyze`
+
+These standards ensure consistent, maintainable, and future-proof code across the entire project.

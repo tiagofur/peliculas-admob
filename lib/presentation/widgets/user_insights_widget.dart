@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/ml/recommendation_engine.dart';
 import '../../core/ml/user_behavior_analyzer.dart';
-import '../../l10n/app_localizations.dart';
 import '../providers/recommendations/recommendations_provider.dart';
 
 class UserInsightsWidget extends ConsumerWidget {
@@ -71,9 +70,7 @@ class UserInsightsWidget extends ConsumerWidget {
             // Engagement Score
             engagementScoreAsync.when(
               data: (score) => _buildEngagementScore(context, score),
-              loading: () => _buildLoadingCard(
-                  AppLocalizations.of(context)?.calculatingEngagement ??
-                      'Calculating engagement...'),
+              loading: () => _buildLoadingCard('Calculando engagement...'),
               error: (error, stack) =>
                   _buildErrorCard('Error al calcular engagement'),
             ),
@@ -83,9 +80,7 @@ class UserInsightsWidget extends ConsumerWidget {
             // Behavior Analysis
             behaviorAnalysisAsync.when(
               data: (analysis) => _buildBehaviorAnalysis(context, analysis),
-              loading: () => _buildLoadingCard(
-                  AppLocalizations.of(context)?.analyzingBehavior ??
-                      'Analyzing behavior...'),
+              loading: () => _buildLoadingCard('Analizando comportamiento...'),
               error: (error, stack) =>
                   _buildErrorCard('Error en análisis de comportamiento'),
             ),
@@ -96,9 +91,7 @@ class UserInsightsWidget extends ConsumerWidget {
             personalizedInsightsAsync.when(
               data: (insights) =>
                   _buildPersonalizedInsightsList(context, insights),
-              loading: () => _buildLoadingCard(
-                  AppLocalizations.of(context)?.generatingInsights ??
-                      'Generating insights...'),
+              loading: () => _buildLoadingCard('Generando insights...'),
               error: (error, stack) =>
                   _buildErrorCard('Error al generar insights'),
             ),

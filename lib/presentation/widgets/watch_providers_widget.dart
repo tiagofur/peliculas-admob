@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -6,7 +5,6 @@ import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/watch_provider.dart';
 import '../../domain/entities/watch_providers.dart';
 import '../../domain/services/affiliate_service.dart';
-import '../../l10n/app_localizations.dart';
 
 class WatchProvidersWidget extends StatelessWidget {
   const WatchProvidersWidget({
@@ -34,9 +32,9 @@ class WatchProvidersWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              AppLocalizations.of(context)?.availableOn ?? 'Available on:',
-              style: const TextStyle(
+            const Text(
+              'Disponible en:',
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -141,14 +139,12 @@ class WatchProvidersWidget extends StatelessWidget {
             if (provider.logoPath.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
-                // 🚀 PERFORMANCE: Using CachedNetworkImage for better caching
-                child: CachedNetworkImage(
-                  imageUrl:
-                      'https://image.tmdb.org/t/p/w45${provider.logoPath}',
+                child: Image.network(
+                  'https://image.tmdb.org/t/p/w45${provider.logoPath}',
                   width: 24,
                   height: 24,
                   fit: BoxFit.cover,
-                  errorWidget: (context, url, error) {
+                  errorBuilder: (context, error, stackTrace) {
                     return Container(
                       width: 24,
                       height: 24,

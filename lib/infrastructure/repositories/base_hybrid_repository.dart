@@ -305,38 +305,45 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     try {
       // Intentar obtener datos remotos primero si hay conexión
       List<T> entities;
-      
+
       try {
         if (_syncManager != null && userId != 'anonymous_user') {
-          LoggerFactory.debug('🌐 Attempting to get remote data for $entityType');
+          LoggerFactory.debug(
+              '🌐 Attempting to get remote data for $entityType');
           final remoteEntities = await _syncManager!.getRemoteChanges();
-          
+
           if (remoteEntities.isNotEmpty) {
             // Actualizar datos locales con los remotos
             for (final entity in remoteEntities) {
               await saveToLocal(entity);
             }
             entities = remoteEntities;
-            LoggerFactory.debug('✅ Using ${entities.length} remote $entityType items');
+            LoggerFactory.debug(
+                '✅ Using ${entities.length} remote $entityType items');
           } else {
             // Si no hay datos remotos, usar locales
             entities = await getLocalData();
-            LoggerFactory.debug('📱 Using ${entities.length} local $entityType items (no remote data)');
+            LoggerFactory.debug(
+                '📱 Using ${entities.length} local $entityType items (no remote data)');
           }
         } else {
           // Sin sync manager o usuario anónimo, usar solo datos locales
           entities = await getLocalData();
-          LoggerFactory.debug('📱 Using ${entities.length} local $entityType items (no sync manager)');
+          LoggerFactory.debug(
+              '📱 Using ${entities.length} local $entityType items (no sync manager)');
         }
       } catch (remoteError) {
         // Si falla la obtención remota, usar datos locales como fallback
-        LoggerFactory.warning('⚠️ Remote data fetch failed, using local fallback: $remoteError');
+        LoggerFactory.warning(
+            '⚠️ Remote data fetch failed, using local fallback: $remoteError');
         entities = await getLocalData();
-        LoggerFactory.debug('📱 Using ${entities.length} local $entityType items (remote fallback)');
+        LoggerFactory.debug(
+            '📱 Using ${entities.length} local $entityType items (remote fallback)');
       }
 
       final models = entities.map(convertToModel).toList();
-      LoggerFactory.debug('📋 Retrieved ${models.length} $entityType items total');
+      LoggerFactory.debug(
+          '📋 Retrieved ${models.length} $entityType items total');
       return models;
     } catch (e) {
       LoggerFactory.error('❌ Failed to get $entityType items: $e');
@@ -362,7 +369,8 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     try {
       // Forzar sincronización completa primero
       if (_syncManager != null && userId != 'anonymous_user') {
-        LoggerFactory.info('🔄 Forcing full sync before data retrieval for $entityType');
+        LoggerFactory.info(
+            '🔄 Forcing full sync before data retrieval for $entityType');
         await _syncManager!.performFullSync();
       }
 
@@ -370,10 +378,12 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
       final entities = await getLocalData();
       final models = entities.map(convertToModel).toList();
 
-      LoggerFactory.debug('📋 Retrieved ${models.length} $entityType items after forced sync');
+      LoggerFactory.debug(
+          '📋 Retrieved ${models.length} $entityType items after forced sync');
       return models;
     } catch (e) {
-      LoggerFactory.error('❌ Failed to get $entityType items with forced sync: $e');
+      LoggerFactory.error(
+          '❌ Failed to get $entityType items with forced sync: $e');
       // Fallback a datos locales sin sync
       final entities = await getLocalData();
       return entities.map(convertToModel).toList();

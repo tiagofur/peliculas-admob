@@ -8,6 +8,7 @@ import '../../../services/share_service.dart';
 import '../../providers/custom_lists_provider.dart';
 import '../../providers/movies/movie_info_provider.dart';
 import '../../providers/search/search_movies_provider.dart';
+import '../../providers/storage/direct_custom_lists_provider.dart';
 import '../../widgets/movies/movie_masonry_with_ads.dart';
 
 class ListDetailView extends ConsumerStatefulWidget {
@@ -22,20 +23,13 @@ class ListDetailView extends ConsumerStatefulWidget {
 class _ListDetailViewState extends ConsumerState<ListDetailView> {
   @override
   Widget build(BuildContext context) {
-    final lists = ref.watch(listsProvider);
-    final customListIndex =
-        lists.indexWhere((list) => list.id == widget.listId);
-    if (customListIndex == -1) {
-      return const Scaffold(
-        body: Center(child: Text('Lista no encontrada')),
-      );
-    }
-    final customList = lists[customListIndex];
+    final customList = ref.watch(listByIdProvider(widget.listId));
 
     // Debug: Mostrar qué ID estamos buscando
     LoggerFactory.info(
         'ListDetailView: Buscando lista con ID: ${widget.listId}');
-    LoggerFactory.info('ListDetailView: Lista encontrada: ${customList.name}');
+    LoggerFactory.info(
+        'ListDetailView: Lista encontrada: ${customList?.name ?? 'null'}');
     LoggerFactory.info(
         'ListDetailView: Tipo de customList: ${customList.runtimeType}');
 
@@ -72,6 +66,7 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
 
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
+    final moviesCacheAsync = ref.watch(movieInfoProvider);
 
     if (customList.movieIds.isEmpty) {
       return Scaffold(
@@ -87,33 +82,71 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
       );
     }
 
-    final moviesMap = ref.watch(movieInfoProvider);
-
-    // Pre-fetch movies that are not in the map
-    for (final movieId in customList.movieIds) {
-      if (moviesMap[movieId.toString()] == null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(movieInfoProvider.notifier).loadMovie(movieId.toString());
-        });
-      }
-    }
-
-    final movies = customList.movieIds
-        .map((id) => moviesMap[id.toString()])
-        .where((movie) => movie != null)
-        .cast<Movie>()
-        .toList();
-
-    return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          _buildSliverAppBar(customList, colors, textStyles),
-          SliverFillRemaining(
-            child: MasonryWithAds(movies: movies),
-          ),
-        ],
+    // Usar .when para manejar los estados del caché de películas
+    return moviesCacheAsync.when(
+      loading: () => Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(customList, colors, textStyles),
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ],
+        ),
       ),
-      floatingActionButton: _buildFloatingActionButton(customList, colors),
+      error: (err, stack) => Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            _buildSliverAppBar(customList, colors, textStyles),
+            SliverFillRemaining(
+              child: Center(child: Text('Error al cargar películas: $err')),
+            ),
+          ],
+        ),
+      ),
+      data: (moviesMap) {
+        // Pre-cargar películas que no están en el mapa
+        for (final movieId in customList.movieIds) {
+          if (moviesMap[movieId.toString()] == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ref
+                    .read(movieInfoProvider.notifier)
+                    .loadMovie(movieId.toString());
+              }
+            });
+          }
+        }
+
+        final movies = customList.movieIds
+            .map((id) => moviesMap[id.toString()])
+            .where((movie) => movie != null)
+            .cast<Movie>()
+            .toList();
+
+        return Scaffold(
+          body: CustomScrollView(
+            slivers: [
+              _buildSliverAppBar(customList, colors, textStyles),
+              // Si la lista de películas no está vacía, mostrar la albañilería
+              if (movies.isNotEmpty)
+                SliverFillRemaining(
+                  child: MasonryWithAds(movies: movies),
+                )
+              // Opcional: mostrar un loader si algunas películas aún están cargando
+              else if (movies.length < customList.movieIds.length)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else // Si no hay películas (aún), mostrar el estado vacío
+                SliverFillRemaining(
+                  child: _buildEmptyState(colors, textStyles),
+                ),
+            ],
+          ),
+          floatingActionButton: _buildFloatingActionButton(customList, colors),
+        );
+      },
     );
   }
 
@@ -350,22 +383,57 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
     );
   }
 
-  void _duplicateList(CustomList customList) {
-    ref
-        .read(allListsNotifierProvider.notifier)
-        .duplicateList(customList.id, '${customList.name} (Copia)');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Lista "${customList.name}" duplicada'),
-        action: SnackBarAction(
-          label: 'Ver',
-          onPressed: () {
-            final duplicatedList = ref.read(listsProvider).last;
-            context.push('/my-library/lists/${duplicatedList.id}');
-          },
-        ),
-      ),
-    );
+  void _duplicateList(CustomList customList) async {
+    try {
+      // Crear nueva lista con los mismos datos
+      await ref.read(directCustomListsProvider.notifier).createList(
+            name: '${customList.name} (Copia)',
+            description: customList.description.isNotEmpty
+                ? '${customList.description} (Copia)'
+                : 'Copia de ${customList.name}',
+            emoji: customList.emoji,
+            color: customList.color,
+          );
+
+      // Añadir todas las películas de la lista original a la nueva
+      for (final movieId in customList.movieIds) {
+        final allLists = ref.read(directCustomListsWithMoviesProvider);
+        if (allLists.isNotEmpty) {
+          final newList = allLists.last; // La lista recién creada
+          await ref.read(directCustomListsProvider.notifier).addMovieToList(
+                newList.id,
+                movieId,
+              );
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lista "${customList.name}" duplicada'),
+            action: SnackBarAction(
+              label: 'Ver',
+              onPressed: () {
+                final allLists = ref.read(directCustomListsWithMoviesProvider);
+                if (allLists.isNotEmpty) {
+                  final duplicatedList = allLists.last;
+                  context.push('/lists/${duplicatedList.id}');
+                }
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al duplicar lista: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   void _shareList(CustomList customList) async {
@@ -404,14 +472,30 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () {
-              ref
-                  .read(allListsNotifierProvider.notifier)
-                  .clearList(customList.id);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Lista "${customList.name}" vaciada')),
-              );
+            onPressed: () async {
+              try {
+                // Remover todas las películas de la lista
+                for (final movieId in customList.movieIds) {
+                  await ref
+                      .read(directCustomListsProvider.notifier)
+                      .removeMovieFromList(
+                        customList.id,
+                        movieId,
+                      );
+                }
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Lista "${customList.name}" vaciada')),
+                );
+              } catch (e) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al vaciar lista: $e'),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
             },
             child: const Text('Vaciar'),
           ),
@@ -436,15 +520,26 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
-            onPressed: () {
-              ref
-                  .read(allListsNotifierProvider.notifier)
-                  .deleteList(customList.id);
-              Navigator.of(context).pop();
-              context.pop(); // Volver a la vista anterior
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Lista "${customList.name}" eliminada')),
-              );
+            onPressed: () async {
+              try {
+                await ref
+                    .read(directCustomListsProvider.notifier)
+                    .deleteList(customList.id);
+                Navigator.of(context).pop();
+                context.pop(); // Volver a la vista anterior
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('Lista "${customList.name}" eliminada')),
+                );
+              } catch (e) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al eliminar lista: $e'),
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                );
+              }
             },
             child: const Text('Eliminar'),
           ),
@@ -707,15 +802,26 @@ class _EditListDialogState extends ConsumerState<_EditListDialog> {
         FilledButton(
           onPressed: _nameController.text.trim().isEmpty
               ? null
-              : () {
-                  ref.read(allListsNotifierProvider.notifier).updateList(
-                        widget.customList.id,
-                        name: _nameController.text.trim(),
-                        description: _descriptionController.text.trim(),
-                        emoji: _selectedEmoji,
-                        color: _selectedColor,
-                      );
-                  Navigator.of(context).pop();
+              : () async {
+                  try {
+                    await ref
+                        .read(directCustomListsProvider.notifier)
+                        .updateList(
+                          widget.customList.id,
+                          name: _nameController.text.trim(),
+                          description: _descriptionController.text.trim(),
+                          emoji: _selectedEmoji,
+                          color: _selectedColor,
+                        );
+                    Navigator.of(context).pop();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al actualizar lista: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
                 },
           child: const Text('Guardar'),
         ),
@@ -882,7 +988,7 @@ class _AddMovieDialogState extends ConsumerState<_AddMovieDialog> {
                             try {
                               // Agregar película a la lista usando el provider
                               await ref
-                                  .read(allListsNotifierProvider.notifier)
+                                  .read(directCustomListsProvider.notifier)
                                   .addMovieToList(
                                     widget.listId,
                                     movie.id,

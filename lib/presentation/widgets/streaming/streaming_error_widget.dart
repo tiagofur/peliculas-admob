@@ -20,7 +20,7 @@ class StreamingErrorWidget extends StatelessWidget {
     if (compact) {
       return _buildCompactError(context);
     }
-    
+
     return _buildFullError(context);
   }
 
@@ -28,7 +28,8 @@ class StreamingErrorWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
+        color:
+            Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
@@ -49,8 +50,8 @@ class StreamingErrorWidget extends StatelessWidget {
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
+                    color: Theme.of(context).colorScheme.error,
+                  ),
             ),
           ),
           if (onRetry != null) ...[
@@ -83,7 +84,10 @@ class StreamingErrorWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.1),
+                color: Theme.of(context)
+                    .colorScheme
+                    .errorContainer
+                    .withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -97,17 +101,20 @@ class StreamingErrorWidget extends StatelessWidget {
           Text(
             'Unable to Load Streaming Info',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.error,
-            ),
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.error,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
             message,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
+                ),
             textAlign: TextAlign.center,
           ),
           if (onRetry != null) ...[
@@ -139,9 +146,9 @@ class StreamingNetworkError extends StreamingErrorWidget {
     super.onRetry,
     super.compact = false,
   }) : super(
-    message: 'Check your internet connection and try again',
-    showIcon: true,
-  );
+          message: 'Check your internet connection and try again',
+          showIcon: true,
+        );
 }
 
 class StreamingTimeoutError extends StreamingErrorWidget {
@@ -150,9 +157,9 @@ class StreamingTimeoutError extends StreamingErrorWidget {
     super.onRetry,
     super.compact = false,
   }) : super(
-    message: 'Request timed out. Please try again',
-    showIcon: true,
-  );
+          message: 'Request timed out. Please try again',
+          showIcon: true,
+        );
 }
 
 class StreamingServiceError extends StreamingErrorWidget {
@@ -161,9 +168,9 @@ class StreamingServiceError extends StreamingErrorWidget {
     super.onRetry,
     super.compact = false,
   }) : super(
-    message: 'Streaming service is temporarily unavailable',
-    showIcon: true,
-  );
+          message: 'Streaming service is temporarily unavailable',
+          showIcon: true,
+        );
 }
 
 class StreamingRegionError extends StreamingErrorWidget {
@@ -173,9 +180,9 @@ class StreamingRegionError extends StreamingErrorWidget {
     super.compact = false,
     required String region,
   }) : super(
-    message: 'Streaming data not available for $region',
-    showIcon: true,
-  );
+          message: 'Streaming data not available for $region',
+          showIcon: true,
+        );
 }
 
 /// Error widget for when no streaming platforms are available
@@ -199,7 +206,10 @@ class NoStreamingAvailableWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              color: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -212,8 +222,8 @@ class NoStreamingAvailableWidget extends StatelessWidget {
           Text(
             'Not Available for Streaming',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
@@ -222,16 +232,22 @@ class NoStreamingAvailableWidget extends StatelessWidget {
                 ? '$movieTitle is not currently available on any streaming platform'
                 : 'This movie is not currently available on any streaming platform',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
             'Try checking back later or explore other platforms',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-            ),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.5),
+                ),
             textAlign: TextAlign.center,
           ),
           if (onSearchAlternatives != null) ...[

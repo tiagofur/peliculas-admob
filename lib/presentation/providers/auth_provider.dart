@@ -2,50 +2,17 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../core/config/supabase_config.dart';
-import '../../core/exceptions/auth_exceptions.dart';
+import '../../core/auth/auth_flow_optimizer.dart';
+import '../../core/error_handling/centralized_error_handler.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
-import '../../infrastructure/services/anonymous_data_migrator.dart';
-import '../../services/id_mapping_service.dart';
-import '../../services/lists_migration_service.dart';
-import '../../services/migration_rollback_service.dart';
-import '../../services/unified_default_lists_service.dart';
-import './hybrid_repositories_provider.dart';
-
-// Typedef para los callbacks que necesita AuthNotifier
-typedef GetCurrentUserCallback = User? Function();
-typedef GetAnonymousDataMigratorCallback = dynamic Function();
-typedef SetHasLocalDataCallback = void Function(bool hasData);
-typedef ForceSyncCallback = void Function();
-
-// Clase que encapsula todos los callbacks necesarios para AuthNotifier
-class AuthCallbacks {
-  const AuthCallbacks({
-    required this.getCurrentUser,
-    required this.getAnonymousDataMigrator,
-    required this.setHasLocalData,
-    required this.forceSyncFavorites,
-    required this.forceSyncWatchlist,
-    required this.forceSyncWatched,
-    required this.forceSyncCustomLists,
-  });
-
-  final GetCurrentUserCallback getCurrentUser;
-  final GetAnonymousDataMigratorCallback getAnonymousDataMigrator;
-  final SetHasLocalDataCallback setHasLocalData;
-  final ForceSyncCallback forceSyncFavorites;
-  final ForceSyncCallback forceSyncWatchlist;
-  final ForceSyncCallback forceSyncWatched;
-  final ForceSyncCallback forceSyncCustomLists;
-}
+import '../../services/data_migration_service.dart';
+import '../mixins/error_handling_mixin.dart';
 
 // Enum para definir el modo de la aplicación
 enum AppMode {
@@ -85,12 +52,6 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl();
 });
 
-// Provider del servicio unificado de listas predeterminadas
-final unifiedDefaultListsServiceProvider =
-    Provider<UnifiedDefaultListsService>((ref) {
-  return UnifiedDefaultListsService();
-});
-
 // Provider del estado de autenticación
 final authStateProvider = StreamProvider<User?>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
@@ -125,7 +86,11 @@ class AppStateNotifier extends StateNotifier<AppState> {
   AppStateNotifier(Ref ref) : super(const AppState(mode: AppMode.guest)) {
     // ✅ Usar ref localmente sin almacenarlo (evita memory leak)
     _initializeWithRef(ref);
+    // Initialize flow optimizer for startup optimization
+    _initializeFlowOptimizer();
   }
+
+  final AuthFlowOptimizer _flowOptimizer = AuthFlowOptimizer.instance;
 
   // ✅ FIX: Método que configura listeners sin almacenar ref
   void _initializeWithRef(Ref ref) {
@@ -200,29 +165,51 @@ class AppStateNotifier extends StateNotifier<AppState> {
     state = state.copyWith(hasLocalData: hasData);
   }
 
-  // ✅ FIX: Método que detecta datos locales usando ref como parámetro
+  // ✅ IMPLEMENTADO: Método que detecta datos locales usando servicio dedicado
   void _detectLocalDataOnStartup(Ref ref) {
     // Ejecutar en background para no bloquear la UI
     Future.microtask(() async {
       try {
-        final migrator = ref.read(anonymousDataMigratorProvider);
-        final detectedData = await migrator.detectAnonymousData();
+        final migrationService = ref.read(dataMigrationServiceProvider);
+        final localDataStatus = await migrationService.detectLocalData();
 
-        final hasLocalData = detectedData.isNotEmpty;
-        if (hasLocalData != state.hasLocalData) {
-          state = state.copyWith(hasLocalData: hasLocalData);
+        LoggerFactory.info('📱 Detección de datos locales completada: '
+            'Películas vistas: ${localDataStatus.totalWatchedMovies}, '
+            'Calificaciones: ${localDataStatus.totalRatings}, '
+            'Listas: ${localDataStatus.totalCustomLists}');
 
-          if (hasLocalData) {
-            final totalItems =
-                detectedData.values.fold(0, (sum, count) => sum + count);
-            LoggerFactory.info(
-                '📱 Datos locales detectados al startup: $totalItems items ($detectedData)');
-          }
-        }
+        state = state.copyWith(hasLocalData: localDataStatus.hasAnyData);
       } catch (e) {
         LoggerFactory.error('❌ Error detectando datos locales en startup: $e');
+        state = state.copyWith(hasLocalData: false);
       }
     });
+  }
+
+  /// Inicializa el optimizador de flujos para mejorar el startup
+  Future<void> _initializeFlowOptimizer() async {
+    try {
+      LoggerFactory.info(
+          '🚀 Initializing AuthFlowOptimizer for startup optimization');
+
+      // Initialize the optimizer
+      await _flowOptimizer.initialize();
+
+      // Optimize startup flow in background
+      Future.microtask(() async {
+        final sessionRecovered = await _flowOptimizer.optimizeStartupFlow();
+        if (sessionRecovered) {
+          LoggerFactory.info(
+              '✅ Startup optimization: Session recovered successfully');
+        } else {
+          LoggerFactory.info(
+              'ℹ️ Startup optimization: Ready for new authentication');
+        }
+      });
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to initialize AuthFlowOptimizer: $e');
+      // Continue normal initialization even if optimizer fails
+    }
   }
 
   // ✅ FIX: Implementar dispose para limpiar recursos
@@ -251,36 +238,54 @@ final currentUserStatsProvider = FutureProvider<UserStats?>((ref) async {
   return await authRepository.getUserStats(user.id);
 });
 
-// Notifier para operaciones de autenticación
-class AuthNotifier extends StateNotifier<AsyncValue<void>> {
-  AuthNotifier(this._authRepository, this._callbacks)
-      : super(const AsyncValue.data(null));
-  final AuthRepository _authRepository;
+/// Callback type for post-authentication operations
+typedef PostAuthCallback = Future<void> Function(User user);
 
-  // ✅ MEMORY LEAK FIX - Usar callbacks en lugar de almacenar _ref
-  final AuthCallbacks _callbacks;
+// Notifier para operaciones de autenticación
+class AuthNotifier extends StateNotifier<AsyncValue<void>>
+    with ErrorHandlingMixin<AsyncValue<void>> {
+  AuthNotifier(this._authRepository, {PostAuthCallback? onAuthSuccess})
+      : _onAuthSuccess = onAuthSuccess,
+        _flowOptimizer = AuthFlowOptimizer.instance,
+        super(const AsyncValue.data(null));
+
+  final AuthRepository _authRepository;
+  final PostAuthCallback? _onAuthSuccess;
+  final AuthFlowOptimizer _flowOptimizer;
 
   Future<void> signIn({
     required String email,
     required String password,
   }) async {
-    state = const AsyncValue.loading();
-    try {
-      await _authRepository.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    await safeUpdateState<void>(
+      () async {
+        // Use optimized login flow
+        final success = await _flowOptimizer.optimizeLoginFlow(
+          email: email,
+          password: password,
+        );
 
-      // Ejecutar sincronización después del login exitoso
-      _syncDataAfterAuth();
+        if (!success) {
+          throw Exception('Login optimization failed');
+        }
 
-      state = const AsyncValue.data(null);
-    } on EmailConfirmationRequiredException catch (e, stackTrace) {
-      // Manejar específicamente la excepción de confirmación de email
-      state = AsyncValue.error(e, stackTrace);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
-    }
+        // Ejecutar callback post-autenticación si está disponible
+        final user = _authRepository.currentUser;
+        if (user != null && _onAuthSuccess != null) {
+          await _onAuthSuccess!(user);
+        }
+      },
+      onSuccess: (_) {
+        state = const AsyncValue.data(null);
+        LoggerFactory.info('✅ Sign in successful (optimized flow)');
+      },
+      onError: (userError) {
+        state = AsyncValue.error(userError, StackTrace.current);
+        LoggerFactory.warning('❌ Sign in failed: ${userError.title}');
+      },
+      operationName: 'signIn',
+      context: OperationContext.authentication,
+    );
   }
 
   Future<void> signUp({
@@ -289,34 +294,48 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
     required String fullName,
     String? avatarUrl,
   }) async {
-    state = const AsyncValue.loading();
-    try {
-      await _authRepository.signUpWithEmailAndPassword(
-        email: email,
-        password: password,
-        fullName: fullName,
-        avatarUrl: avatarUrl,
-      );
+    await safeUpdateState<void>(
+      () async {
+        await _authRepository.signUpWithEmailAndPassword(
+          email: email,
+          password: password,
+          fullName: fullName,
+          avatarUrl: avatarUrl,
+        );
 
-      // Ejecutar sincronización después del registro exitoso
-      _syncDataAfterAuth();
-
-      state = const AsyncValue.data(null);
-    } on EmailConfirmationRequiredException catch (e, stackTrace) {
-      // Manejar específicamente la excepción de confirmación de email
-      state = AsyncValue.error(e, stackTrace);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
-    }
+        // Ejecutar callback post-autenticación si está disponible
+        final user = _authRepository.currentUser;
+        if (user != null && _onAuthSuccess != null) {
+          await _onAuthSuccess!(user);
+        }
+      },
+      onSuccess: (_) {
+        state = const AsyncValue.data(null);
+        LoggerFactory.info('✅ Sign up successful');
+      },
+      onError: (userError) {
+        state = AsyncValue.error(userError, StackTrace.current);
+        LoggerFactory.warning('❌ Sign up failed: ${userError.title}');
+      },
+      operationName: 'signUp',
+      context: OperationContext.authentication,
+    );
   }
 
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
-      await _authRepository.signOut();
-      state = const AsyncValue.data(null);
+      // Use optimized logout flow
+      final success = await _flowOptimizer.optimizeLogoutFlow();
+      if (success) {
+        state = const AsyncValue.data(null);
+        LoggerFactory.info('✅ Sign out successful (optimized flow)');
+      } else {
+        throw Exception('Logout optimization failed');
+      }
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
+      LoggerFactory.error('❌ Sign out failed: $e');
     }
   }
 
@@ -357,176 +376,50 @@ class AuthNotifier extends StateNotifier<AsyncValue<void>> {
       state = AsyncValue.error(e, stackTrace);
     }
   }
+}
 
-  // Método privado para sincronizar datos después de autenticación
-  void _syncDataAfterAuth() {
-    // Ejecutar sincronización y migración en background sin bloquear la UI
-    Future.microtask(() async {
-      try {
-        final logger = LoggerFactory.getLogger('AuthNotifier');
-
-        final user = _callbacks.getCurrentUser();
-        if (user == null) {
-          logger.warning('Usuario no disponible para sincronización');
-          return;
-        }
-
-        logger.info(
-            'Iniciando migración y sincronización para usuario: ${user.id}');
-
-        // 1. Ejecutar migración de listas personalizadas (nueva funcionalidad)
-        await _executeMigrationPhase(user.id, logger);
-
-        // 2. Detectar y migrar datos locales de usuario anónimo (funcionalidad existente)
-        final migrator = _callbacks.getAnonymousDataMigrator();
-        final detectedData = await migrator.detectAnonymousData();
-
-        if (detectedData.isNotEmpty) {
-          logger.info('Datos anónimos detectados, iniciando migración');
-          _callbacks.setHasLocalData(true);
-
-          final migrationResult = await migrator.migrateAllData(user.id);
-
-          if (migrationResult.success) {
-            logger.info('Migración de datos anónimos completada exitosamente');
-          } else {
-            logger.warning(
-                'Migración de datos anónimos falló: ${migrationResult.errors}');
-          }
-        } else {
-          logger.info('No se detectaron datos anónimos para migrar');
-        }
-
-        // 3. Ejecutar sincronización de todas las entidades en segundo plano
-        logger.info('Iniciando sincronización de repositorios');
-
-        // Disparar la sincronización para cada repositorio sin esperar (no await)
-        _callbacks.forceSyncFavorites();
-        _callbacks.forceSyncWatchlist();
-        _callbacks.forceSyncWatched();
-        _callbacks.forceSyncCustomLists();
-
-        // Habilitar los providers directos
-        // Los providers directos ahora se inicializan automáticamente
-
-        logger.info('Sincronización post-autenticación completada');
-      } catch (e) {
-        // Log del error pero no afectar la experiencia del usuario
-        final logger = LoggerFactory.getLogger('AuthNotifier');
-        logger.error('Error durante sincronización post-autenticación: $e');
-      }
-    });
-  }
-
-  /// Ejecuta la fase de migración de listas personalizadas
-  Future<void> _executeMigrationPhase(String userId, dynamic logger) async {
+/// Factory para crear callback post-autenticación
+PostAuthCallback _createPostAuthCallback(Ref ref) {
+  return (User user) async {
     try {
-      logger.info('Iniciando migración de listas personalizadas');
+      final logger = LoggerFactory.getLogger('PostAuthCallback');
+      logger.info(
+          'Ejecutando sincronización post-autenticación para: ${user.id}');
 
-      // Obtener instancias de los servicios de migración
-      final prefs = await SharedPreferences.getInstance();
-      final supabase = SupabaseConfig.client;
-      final localDataSource = CustomListsSharedPreferencesDatasource();
-      final idMappingService = IdMappingService(prefs);
-      final rollbackService = MigrationRollbackService(
-        prefs,
-        supabase,
-        localDataSource,
-        idMappingService,
-      );
+      // ✅ IMPLEMENTADO: Migración y sincronización usando servicio dedicado
+      final migrationService = ref.read(dataMigrationServiceProvider);
 
-      final migrationService = ListsMigrationService(
-        prefs,
-        localDataSource,
-        supabase,
-      );
+      // Ejecutar migración en background para no bloquear la UI
+      Future.microtask(() async {
+        try {
+          final result = await migrationService.migrateAndSyncData(user.id);
 
-      // Verificar si la migración ya fue ejecutada
-      final migrationCompleted =
-          prefs.getBool('lists_migration_completed') ?? false;
-      if (migrationCompleted) {
-        logger.info('Migración de listas ya completada previamente');
-        return;
-      }
+          if (result.success) {
+            logger.info('✅ Migración completada exitosamente: '
+                '${result.totalMigrated} elementos migrados');
+          } else {
+            logger.error('❌ Error en migración: ${result.error}');
+          }
+        } catch (e) {
+          logger.error('❌ Error ejecutando migración post-auth: $e');
+        }
+      });
 
-      // Crear punto de rollback antes de la migración
-      final rollbackId = await rollbackService.createRollbackPoint(
-        userId,
-        'Migración automática de listas personalizadas',
-      );
-
-      logger.info('Punto de rollback creado: $rollbackId');
-
-      // Ejecutar análisis de migración
-      final analysis = await migrationService.analyzeMigrationNeeds(userId);
-
-      if (analysis.hasWork) {
-        logger.info('Migración necesaria');
-
-        // Ejecutar migración completa
-        await migrationService.migrateDefaultLists(userId);
-
-        logger.info('Migración de listas completada');
-
-        // Marcar migración como completada
-        await migrationService.markMigrationCompleted();
-        await prefs.setString(
-            'lists_migration_date', DateTime.now().toIso8601String());
-      } else {
-        logger.info('No se requiere migración de listas');
-      }
-
-      // Ejecutar servicio unificado para asegurar listas predeterminadas consistentes
-      logger.info('Ejecutando servicio unificado de listas predeterminadas');
-      final unifiedService = UnifiedDefaultListsService();
-      await unifiedService.initializeDefaultListsForUser();
+      logger.info('✅ Usuario autenticado exitosamente');
     } catch (e) {
-      logger.error('Error crítico durante migración de listas: $e');
-
-      // Intentar rollback automático en caso de error crítico
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final supabase = SupabaseConfig.client;
-        final localDataSource = CustomListsSharedPreferencesDatasource();
-        final idMappingService = IdMappingService(prefs);
-        final rollbackService = MigrationRollbackService(
-          prefs,
-          supabase,
-          localDataSource,
-          idMappingService,
-        );
-
-        await rollbackService.executeAutoRollback(userId);
-        logger.info('Rollback automático ejecutado tras error crítico');
-      } catch (rollbackError) {
-        logger.error('Error durante rollback automático: $rollbackError');
-      }
+      LoggerFactory.error('❌ Error en callback post-autenticación: $e');
     }
-  }
+  };
 }
 
 // Provider del notifier de autenticación
 final authNotifierProvider =
     StateNotifierProvider<AuthNotifier, AsyncValue<void>>((ref) {
   final authRepository = ref.watch(authRepositoryProvider);
-
-  // ✅ MEMORY LEAK FIX - Crear callbacks en lugar de pasar ref directamente
-  final callbacks = AuthCallbacks(
-    getCurrentUser: () => ref.read(currentUserProvider),
-    getAnonymousDataMigrator: () => ref.read(anonymousDataMigratorProvider),
-    setHasLocalData: (hasData) =>
-        ref.read(appStateProvider.notifier).setHasLocalData(hasData),
-    forceSyncFavorites: () =>
-        ref.read(hybridFavoritesRepositoryProvider).forceSync(),
-    forceSyncWatchlist: () =>
-        ref.read(hybridWatchlistRepositoryProvider).forceSync(),
-    forceSyncWatched: () =>
-        ref.read(hybridWatchedRepositoryProvider).forceSync(),
-    forceSyncCustomLists: () =>
-        ref.read(hybridCustomListsRepositoryProvider).forceSync(),
+  return AuthNotifier(
+    authRepository,
+    onAuthSuccess: _createPostAuthCallback(ref),
   );
-
-  return AuthNotifier(authRepository, callbacks);
 });
 
 // Notifier para operaciones de perfil

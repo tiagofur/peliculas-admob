@@ -102,11 +102,13 @@ void main() {
     test('Debe migrar listas por defecto exitosamente', () async {
       // Arrange
       const userId = 'test-user-123';
-      
+
       // Configurar mocks del repositorio
-      when(mockRepository.getDefaultLists()).thenAnswer((_) async => <CustomList>[]);
+      when(mockRepository.getDefaultLists())
+          .thenAnswer((_) async => <CustomList>[]);
       when(mockRepository.createList(any)).thenAnswer((invocation) async {
-        final CustomList inputList = invocation.positionalArguments[0] as CustomList;
+        final CustomList inputList =
+            invocation.positionalArguments[0] as CustomList;
         return inputList.copyWith(id: 'new-id-${inputList.name}');
       });
 

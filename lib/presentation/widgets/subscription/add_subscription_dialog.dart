@@ -14,16 +14,16 @@ class AddSubscriptionDialog extends StatefulWidget {
 class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
   final _formKey = GlobalKey<FormState>();
   final _costController = TextEditingController();
-  
+
   StreamingPlatform? _selectedPlatform;
   SubscriptionType _selectedType = SubscriptionType.premium;
   String _selectedBillingCycle = 'monthly';
   DateTime _startDate = DateTime.now();
   bool _autoRenew = true;
-  
+
   final List<String> _billingCycles = [
     'monthly',
-    'quarterly', 
+    'quarterly',
     'yearly',
   ];
 
@@ -78,9 +78,9 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
             child: Text(
               'Add Subscription',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
           ),
           IconButton(
@@ -121,8 +121,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
         Text(
           'Streaming Platform',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -135,7 +135,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
             decoration: const InputDecoration(
               hintText: 'Select a platform',
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             validator: (value) {
               if (value == null) {
@@ -189,8 +190,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
         Text(
           'Subscription Type',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -208,7 +209,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
                 }
               },
               backgroundColor: Colors.grey[100],
-              selectedColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+              selectedColor:
+                  Theme.of(context).primaryColor.withValues(alpha: 0.2),
               checkmarkColor: Theme.of(context).primaryColor,
             );
           }).toList(),
@@ -224,8 +226,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
         Text(
           'Monthly Cost',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -240,7 +242,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
@@ -264,8 +267,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
         Text(
           'Billing Cycle',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -277,7 +280,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
             initialValue: _selectedBillingCycle,
             decoration: const InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             items: _billingCycles.map((cycle) {
               return DropdownMenuItem(
@@ -305,8 +309,8 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
         Text(
           'Start Date',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+                fontWeight: FontWeight.w600,
+              ),
         ),
         const SizedBox(height: 8),
         InkWell(
@@ -343,15 +347,15 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
               Text(
                 'Auto Renew',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                      fontWeight: FontWeight.w600,
+                    ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Automatically renew this subscription',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                      color: Colors.grey[600],
+                    ),
               ),
             ],
           ),
@@ -410,7 +414,7 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
-    
+
     if (date != null) {
       setState(() {
         _startDate = date;
@@ -421,7 +425,7 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
   void _addSubscription() {
     if (_formKey.currentState?.validate() ?? false) {
       final cost = double.parse(_costController.text);
-      
+
       final subscription = UserSubscription.create(
         platformId: _selectedPlatform!.id,
         platformName: _selectedPlatform!.name,
@@ -434,7 +438,7 @@ class _AddSubscriptionDialogState extends State<AddSubscriptionDialog> {
           'platform_id': _selectedPlatform!.id,
         },
       );
-      
+
       Navigator.of(context).pop(subscription);
     }
   }

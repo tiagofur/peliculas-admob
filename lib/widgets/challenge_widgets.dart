@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/gamification/challenge_notifications.dart';
 import '../core/gamification/models/challenge.dart';
 import '../core/gamification/models/challenge_enums.dart';
-import '../l10n/app_localizations.dart';
 import '../presentation/providers/challenge_providers.dart';
 
 /// Widget to display a single challenge card
@@ -25,7 +24,6 @@ class ChallengeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       elevation: 2,
@@ -71,19 +69,19 @@ class ChallengeCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  _buildDifficultyBadge(l10n, theme),
+                  _buildDifficultyBadge(theme),
                 ],
               ),
               if (showProgress) ...[
                 const SizedBox(height: 12),
-                _buildProgressSection(l10n, theme),
+                _buildProgressSection(theme),
               ],
               if (!isCompact) ...[
                 const SizedBox(height: 12),
-                _buildRewardSection(l10n, theme),
+                _buildRewardSection(theme),
               ],
               const SizedBox(height: 8),
-              _buildTimeSection(l10n, theme),
+              _buildTimeSection(theme),
             ],
           ),
         ),
@@ -132,26 +130,26 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildDifficultyBadge(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildDifficultyBadge(ThemeData theme) {
     Color badgeColor;
     String difficultyText;
 
     switch (challenge.difficulty) {
       case ChallengeDifficulty.easy:
         badgeColor = Colors.green;
-        difficultyText = l10n.easy;
+        difficultyText = 'Easy';
         break;
       case ChallengeDifficulty.medium:
         badgeColor = Colors.orange;
-        difficultyText = l10n.medium;
+        difficultyText = 'Medium';
         break;
       case ChallengeDifficulty.hard:
         badgeColor = Colors.red;
-        difficultyText = l10n.hard;
+        difficultyText = 'Hard';
         break;
       case ChallengeDifficulty.expert:
         badgeColor = Colors.purple;
-        difficultyText = l10n.expert;
+        difficultyText = 'Expert';
         break;
     }
 
@@ -172,7 +170,7 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressSection(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildProgressSection(ThemeData theme) {
     final progressPercentage = challenge.progressPercentage;
     final colorScheme = theme.colorScheme;
 
@@ -183,7 +181,7 @@ class ChallengeCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              l10n.progress,
+              'Progress',
               style: theme.textTheme.labelMedium?.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -206,8 +204,7 @@ class ChallengeCard extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          l10n.progressPercentage(
-              (progressPercentage * 100).round().toString()),
+          '${(progressPercentage * 100).round()}% complete',
           style: theme.textTheme.labelSmall?.copyWith(
             color: colorScheme.onSurface,
           ),
@@ -216,7 +213,7 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildRewardSection(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildRewardSection(ThemeData theme) {
     return Row(
       children: [
         const Icon(
@@ -226,7 +223,7 @@ class ChallengeCard extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          l10n.points(challenge.rewardPoints.toString()),
+          '${challenge.rewardPoints} points',
           style: theme.textTheme.labelMedium?.copyWith(
             fontWeight: FontWeight.bold,
             color: Colors.amber.shade700,
@@ -241,7 +238,7 @@ class ChallengeCard extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            l10n.badges(challenge.rewardBadges.length),
+            '${challenge.rewardBadges.length} badge${challenge.rewardBadges.length != 1 ? 's' : ''}',
             style: theme.textTheme.labelMedium?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,
@@ -252,7 +249,7 @@ class ChallengeCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTimeSection(AppLocalizations l10n, ThemeData theme) {
+  Widget _buildTimeSection(ThemeData theme) {
     final timeRemaining = challenge.timeRemaining;
     final colorScheme = theme.colorScheme;
 
@@ -261,20 +258,23 @@ class ChallengeCard extends StatelessWidget {
     IconData timeIcon;
 
     if (challenge.isCompleted) {
-      timeText = l10n.completed;
+      timeText = 'Completed';
       timeColor = Colors.green;
       timeIcon = Icons.check_circle;
     } else if (challenge.isExpired) {
-      timeText = l10n.expired;
+      timeText = 'Expired';
       timeColor = Colors.red;
       timeIcon = Icons.cancel;
     } else {
       if (timeRemaining.inDays > 0) {
-        timeText = l10n.daysLeft(timeRemaining.inDays);
+        timeText =
+            '${timeRemaining.inDays} day${timeRemaining.inDays != 1 ? 's' : ''} left';
       } else if (timeRemaining.inHours > 0) {
-        timeText = l10n.hoursLeft(timeRemaining.inHours);
+        timeText =
+            '${timeRemaining.inHours} hour${timeRemaining.inHours != 1 ? 's' : ''} left';
       } else {
-        timeText = l10n.minutesLeft(timeRemaining.inMinutes);
+        timeText =
+            '${timeRemaining.inMinutes} minute${timeRemaining.inMinutes != 1 ? 's' : ''} left';
       }
 
       if (timeRemaining.inHours < 24) {
@@ -322,7 +322,6 @@ class ChallengeList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
     if (challenges.isEmpty) {
       return Center(
         child: Padding(
@@ -337,7 +336,7 @@ class ChallengeList extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                emptyMessage ?? l10n.noChallengesAvailable,
+                emptyMessage ?? 'No challenges available',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
@@ -375,7 +374,6 @@ class ChallengeStats extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(userStatsProvider);
     final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -385,7 +383,7 @@ class ChallengeStats extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              l10n.yourChallengeStats,
+              'Your Challenge Stats',
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -396,7 +394,7 @@ class ChallengeStats extends ConsumerWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    l10n.active,
+                    'Active',
                     stats['activeChallenges'].toString(),
                     Icons.play_circle_outline,
                     Colors.blue,
@@ -405,7 +403,7 @@ class ChallengeStats extends ConsumerWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    l10n.completed,
+                    'Completed',
                     stats['completedChallenges'].toString(),
                     Icons.check_circle_outline,
                     Colors.green,
@@ -419,7 +417,7 @@ class ChallengeStats extends ConsumerWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    l10n.moviesWatched,
+                    'Movies Watched',
                     stats['totalMoviesWatched'].toString(),
                     Icons.movie,
                     Colors.purple,
@@ -428,7 +426,7 @@ class ChallengeStats extends ConsumerWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    l10n.reviewsWritten,
+                    'Reviews Written',
                     stats['totalReviewsWritten'].toString(),
                     Icons.rate_review,
                     Colors.orange,
@@ -442,7 +440,7 @@ class ChallengeStats extends ConsumerWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    l10n.moviesShared,
+                    'Movies Shared',
                     stats['totalMoviesShared'].toString(),
                     Icons.share,
                     Colors.teal,
@@ -451,7 +449,7 @@ class ChallengeStats extends ConsumerWidget {
                 Expanded(
                   child: _buildStatItem(
                     context,
-                    l10n.genresExplored,
+                    'Genres Explored',
                     stats['totalGenresExplored'].toString(),
                     Icons.explore,
                     Colors.red,
@@ -468,14 +466,7 @@ class ChallengeStats extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              l10n.engagementScore(((stats['engagementScore'] is double
-                          ? stats['engagementScore'] as double
-                          : double.tryParse(
-                                  stats['engagementScore'].toString()) ??
-                              0.0) *
-                      100)
-                  .round()
-                  .toString()),
+              'Engagement Score: ${((stats['engagementScore'] is double ? stats['engagementScore'] as double : double.tryParse(stats['engagementScore'].toString()) ?? 0.0) * 100).round()}%',
               style: theme.textTheme.labelMedium?.copyWith(
                 color: theme.colorScheme.onSurface,
               ),
@@ -596,7 +587,6 @@ class ChallengeNotificationItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -621,7 +611,7 @@ class ChallengeNotificationItem extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              _formatTime(notification.createdAt, l10n),
+              _formatTime(notification.createdAt),
               style: theme.textTheme.labelSmall?.copyWith(
                 color: colorScheme.onSurface,
               ),
@@ -682,18 +672,18 @@ class ChallengeNotificationItem extends StatelessWidget {
     );
   }
 
-  String _formatTime(DateTime dateTime, AppLocalizations l10n) {
+  String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inMinutes < 1) {
-      return l10n.justNow;
+      return 'Just now';
     } else if (difference.inHours < 1) {
-      return l10n.minutesAgo(difference.inMinutes.toString());
+      return '${difference.inMinutes}m ago';
     } else if (difference.inDays < 1) {
-      return l10n.hoursAgo(difference.inHours.toString());
+      return '${difference.inHours}h ago';
     } else if (difference.inDays < 7) {
-      return l10n.daysAgo(difference.inDays.toString());
+      return '${difference.inDays}d ago';
     } else {
       return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }

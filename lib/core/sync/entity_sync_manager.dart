@@ -332,12 +332,13 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       LoggerFactory.info('🔄 Starting incremental sync for $entityType');
 
       // Solo sincronizar cambios desde la última sincronización
-      final lastSync = _lastSyncAt ?? DateTime.now().subtract(const Duration(hours: 24));
-      
+      final lastSync =
+          _lastSyncAt ?? DateTime.now().subtract(const Duration(hours: 24));
+
       // Fase 1: Subir cambios locales pendientes
       _emitProgress(SyncPhase.uploading, 0, 2, 'Uploading pending changes');
       final localChanges = await getLocalPendingSync();
-      
+
       if (localChanges.isNotEmpty) {
         final uploadResult = await uploadChanges(localChanges);
         totalProcessed += localChanges.length;
@@ -348,7 +349,7 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
       // Fase 2: Descargar solo cambios remotos recientes
       _emitProgress(SyncPhase.downloading, 1, 2, 'Downloading recent changes');
       final recentChanges = await getRemoteChanges(since: lastSync);
-      
+
       if (recentChanges.isNotEmpty) {
         final downloadResult = await downloadChanges(recentChanges);
         totalProcessed += recentChanges.length;
@@ -375,7 +376,8 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
             );
 
       await _updateSyncStats(result);
-      LoggerFactory.info('✅ Incremental sync completed for $entityType: ${result.toString()}');
+      LoggerFactory.info(
+          '✅ Incremental sync completed for $entityType: ${result.toString()}');
 
       return result;
     } catch (e) {
@@ -463,7 +465,8 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
               LoggerFactory.info('🗑️ Deleted entity ${operation.entityId}');
             } catch (e) {
               await _syncQueue.markFailed(operation.id, 'Delete failed: $e');
-              errors.add('Delete operation failed for ${operation.entityId}: $e');
+              errors
+                  .add('Delete operation failed for ${operation.entityId}: $e');
             }
             break;
 
@@ -472,18 +475,20 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
               // Fusionar datos locales y remotos
               final localEntity = deserializeFromLocal(operation.data);
               final remoteData = await getRemoteEntity(operation.entityId);
-              
+
               if (remoteData != null) {
                 final remoteEntity = deserializeFromRemote(remoteData);
-                final mergedEntity = await mergeEntities(localEntity, remoteEntity);
+                final mergedEntity =
+                    await mergeEntities(localEntity, remoteEntity);
                 final result = await uploadChanges([mergedEntity]);
-                
+
                 if (result.success) {
                   await _syncQueue.markCompleted(operation.id);
                   successful++;
                   LoggerFactory.info('🔀 Merged entity ${operation.entityId}');
                 } else {
-                  await _syncQueue.markFailed(operation.id, result.errors.join(', '));
+                  await _syncQueue.markFailed(
+                      operation.id, result.errors.join(', '));
                   errors.addAll(result.errors);
                 }
               } else {
@@ -493,13 +498,15 @@ abstract class EntitySyncManager<T extends SyncableEntity> {
                   await _syncQueue.markCompleted(operation.id);
                   successful++;
                 } else {
-                  await _syncQueue.markFailed(operation.id, result.errors.join(', '));
+                  await _syncQueue.markFailed(
+                      operation.id, result.errors.join(', '));
                   errors.addAll(result.errors);
                 }
               }
             } catch (e) {
               await _syncQueue.markFailed(operation.id, 'Merge failed: $e');
-              errors.add('Merge operation failed for ${operation.entityId}: $e');
+              errors
+                  .add('Merge operation failed for ${operation.entityId}: $e');
             }
             break;
         }

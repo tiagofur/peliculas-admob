@@ -14,7 +14,8 @@ class StreamingLoadingIndicator extends StatefulWidget {
   final int platformCount;
 
   @override
-  State<StreamingLoadingIndicator> createState() => _StreamingLoadingIndicatorState();
+  State<StreamingLoadingIndicator> createState() =>
+      _StreamingLoadingIndicatorState();
 }
 
 class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
@@ -27,17 +28,17 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
   @override
   void initState() {
     super.initState();
-    
+
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _shimmerController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
-    
+
     _pulseAnimation = Tween<double>(
       begin: 0.3,
       end: 1.0,
@@ -45,7 +46,7 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
       parent: _pulseController,
       curve: Curves.easeInOut,
     ));
-    
+
     _shimmerAnimation = Tween<double>(
       begin: -1.0,
       end: 2.0,
@@ -53,7 +54,7 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
       parent: _shimmerController,
       curve: Curves.easeInOut,
     ));
-    
+
     _pulseController.repeat(reverse: true);
     _shimmerController.repeat();
   }
@@ -71,8 +72,7 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
       children: [
         _buildLoadingMessage(),
         const SizedBox(height: 16),
-        if (widget.showPlatformPlaceholders)
-          _buildPlatformPlaceholders(),
+        if (widget.showPlatformPlaceholders) _buildPlatformPlaceholders(),
       ],
     );
   }
@@ -100,8 +100,11 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
               Text(
                 widget.message,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
+                    ),
               ),
             ],
           ),
@@ -167,7 +170,8 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
     );
   }
 
-  Widget _buildShimmerBox(double width, double height, {bool isCircular = false}) {
+  Widget _buildShimmerBox(double width, double height,
+      {bool isCircular = false}) {
     return Container(
       width: width,
       height: height,
@@ -193,7 +197,10 @@ class _StreamingLoadingIndicatorState extends State<StreamingLoadingIndicator>
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                      Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.05),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.5, 1.0],
@@ -241,8 +248,11 @@ class CompactStreamingLoader extends StatelessWidget {
           Text(
             message!,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
+                ),
           ),
         ],
       ],

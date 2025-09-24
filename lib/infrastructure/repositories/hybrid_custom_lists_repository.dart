@@ -162,13 +162,15 @@ class HybridCustomListsRepository
   }
 
   /// Obtiene lista personalizada por nombre con sincronización forzada
-  Future<SyncableCustomList?> getCustomListByNameWithForcedSync(String name) async {
+  Future<SyncableCustomList?> getCustomListByNameWithForcedSync(
+      String name) async {
     try {
       final customLists = await getAllCustomListsWithForcedSync();
       final matches = customLists.where((list) => list.name == name);
       return matches.isNotEmpty ? matches.first : null;
     } catch (e) {
-      LoggerFactory.error('❌ Failed to get custom list by name with forced sync: $e');
+      LoggerFactory.error(
+          '❌ Failed to get custom list by name with forced sync: $e');
       return null;
     }
   }
@@ -252,21 +254,6 @@ class HybridCustomListsRepository
       }
     } catch (e) {
       LoggerFactory.error('❌ Failed to remove movie from list: $e');
-      rethrow;
-    }
-  }
-
-  /// Elimina TODAS las listas (para debugging)
-  Future<void> clearAllLists() async {
-    try {
-      if (_prefs == null) await initializeLocal();
-
-      // Limpiar todas las listas locales
-      await _prefs!.setStringList(_storageKey, []);
-
-      LoggerFactory.info('🗑️ Cleared all custom lists from local storage');
-    } catch (e) {
-      LoggerFactory.error('❌ Failed to clear all lists: $e');
       rethrow;
     }
   }

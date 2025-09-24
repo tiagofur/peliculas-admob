@@ -35,7 +35,8 @@ class ProgressTrackingService {
 
       SafeDeveloperLog.log('✅ Progress tracking initialized');
     } catch (e) {
-      SafeDeveloperLog.log('❌ Error initializing progress tracking: $e', error: e);
+      SafeDeveloperLog.log('❌ Error initializing progress tracking: $e',
+          error: e);
     }
   }
 

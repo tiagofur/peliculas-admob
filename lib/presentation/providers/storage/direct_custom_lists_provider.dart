@@ -1,19 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/trigger_free_custom_lists_sync.dart';
 import '../../../domain/entities/custom_list.dart';
-import '../../../infrastructure/datasources/supabase_custom_lists_datasource.dart';
-import '../../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../../services/list_sync_service.dart';
-// 🧹 CLEANUP: Removed unused import references
+import '../custom_lists_providers.dart';
+// OfflineChange está definido en list_sync_service.dart
 
 /// Estado para listas con sus películas
 class CustomListsState {
@@ -44,173 +40,36 @@ class CustomListsState {
     return list.copyWith(movieIds: movieIds);
   }
 
-  /// Obtiene todas las listas con sus películas incluidas (incluyendo predeterminadas)
+  /// Obtiene todas las listas con sus películas incluidas
   List<CustomList> getAllListsWithMovies() {
-    final customLists = lists.keys.map((listId) {
+    return lists.keys.map((listId) {
       final list = lists[listId]!;
       final movieIds = listItems[listId] ?? [];
       return list.copyWith(movieIds: movieIds);
     }).toList();
-
-    // Agregar listas predeterminadas con sus items
-    final defaultLists = _getDefaultListsWithItems();
-
-    return [...defaultLists, ...customLists];
-  }
-
-  /// Obtiene las listas predeterminadas con sus items
-  List<CustomList> _getDefaultListsWithItems() {
-    final now = DateTime.now();
-
-    final defaultLists = [
-      CustomList(
-        id: 'en-familia',
-        name: 'En Familia',
-        description: 'Películas aptas para toda la familia',
-        emoji: '👨‍👩‍👧‍👦',
-        movieIds: listItems['en-familia'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'orange',
-      ),
-      CustomList(
-        id: 'en-pareja',
-        name: 'En Pareja',
-        description: 'Películas románticas y de citas',
-        emoji: '�',
-        movieIds: listItems['en-pareja'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'pink',
-      ),
-      CustomList(
-        id: 'clasicos',
-        name: 'Clásicos',
-        description: 'Clásicos imperdibles del cine',
-        emoji: '🏆',
-        movieIds: listItems['clasicos'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'purple',
-      ),
-      CustomList(
-        id: 'sugeridas',
-        name: 'Sugeridas',
-        description: 'Recomendaciones personalizadas',
-        emoji: '⭐',
-        movieIds: listItems['sugeridas'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'teal',
-      ),
-      CustomList(
-        id: 'con-amigos',
-        name: 'Con Amigos',
-        description: 'Películas para grupos y reuniones',
-        emoji: '🍕',
-        movieIds: listItems['con-amigos'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'yellow',
-      ),
-      CustomList(
-        id: 'noches-lluvia',
-        name: 'Noches de Lluvia',
-        description: 'Películas cómodas para días lluviosos',
-        emoji: '�️',
-        movieIds: listItems['noches-lluvia'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'grey',
-      ),
-      CustomList(
-        id: 'cortas',
-        name: 'Películas Cortas',
-        description: 'Películas de menos de 100 minutos',
-        emoji: '⏱️',
-        movieIds: listItems['cortas'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'cyan',
-      ),
-      CustomList(
-        id: 'premiadas',
-        name: 'Premiadas',
-        description: 'Ganadoras de premios importantes',
-        emoji: '🏅',
-        movieIds: listItems['premiadas'] ?? [],
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'amber',
-      ),
-    ];
-
-    return defaultLists;
   }
 }
 
 /// Provider directo que evita completamente el repositorio híbrido
 /// y solo usa TriggerFreeCustomListsSync para operaciones de Supabase
 final directCustomListsProvider =
-    StateNotifierProvider<DirectCustomListsNotifier, CustomListsState>((ref) {
-  // Note: listSyncServiceProvider is a FutureProvider, but we'll handle it in the notifier
-  return DirectCustomListsNotifier(
-    // ref: ref, // Commented out for legacy compatibility
-    onListCreated: (CustomList list) {
-      // Opcional: trackear creación de lista para achievements
-      // ref.read(achievementsProvider.notifier).trackListCreated();
-    },
-  );
-});
+    NotifierProvider<DirectCustomListsNotifier, CustomListsState>(
+        DirectCustomListsNotifier.new);
 
-class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
-  DirectCustomListsNotifier({
-    // required this.ref, // Commented out for legacy compatibility
-    required this.onListCreated,
-  }) : super(const CustomListsState()) {
-    _init();
+class DirectCustomListsNotifier extends Notifier<CustomListsState> {
+  @override
+  CustomListsState build() {
+    _loadListsFromSupabase();
+    _setupRealtimeListeners();
+    _initializeSync();
+    return const CustomListsState();
   }
 
-  /// Inicializa el provider: caché local primero, luego sincronización
-  Future<void> _init() async {
-    try {
-      // 1. Cargar desde caché local primero (instantáneo)
-      await _loadFromLocal();
-
-      // 2. Luego sincronizar con Supabase en background
-      await _loadListsFromSupabase();
-
-      // 3. Configurar listeners real-time
-      _setupRealtimeListeners();
-
-      // 4. Inicializar servicio de sync offline
-      _initializeSync();
-
-      LoggerFactory.info(
-          '✅ DirectCustomListsProvider inicializado completamente');
-    } catch (e) {
-      LoggerFactory.error(
-          '❌ Error inicializando DirectCustomListsProvider: $e');
-    }
-  }
-
-  // final Ref ref; // Commented out for legacy compatibility
-  final Function(CustomList list) onListCreated;
   ListSyncService? _syncService;
   final TriggerFreeCustomListsSync _sync = TriggerFreeCustomListsSync.instance;
   RealtimeChannel? _listsChannel;
   RealtimeChannel? _listItemsChannel;
   String? _currentUserId;
-  Timer? _reconnectionTimer;
-  bool _isRealtimeConnected = false;
 
   /// Cargar listas directamente desde Supabase
   Future<void> _loadListsFromSupabase() async {
@@ -232,21 +91,11 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       final listsMap = <String, CustomList>{};
       final listItemsMap = <String, List<int>>{};
 
-      // Cargar cada lista personalizada y sus items
+      // Cargar cada lista y sus items
       for (final list in customLists) {
         listsMap[list.id] = list;
         final movieIds = await _sync.getListItems(currentUser.id, list.id);
         listItemsMap[list.id] = movieIds;
-      }
-
-      // Cargar items de las listas predeterminadas desde Supabase
-      final defaultListsIds = _getDefaultListIds();
-
-      for (final listId in defaultListsIds) {
-        final movieIds = await _sync.getListItems(currentUser.id, listId);
-        listItemsMap[listId] = movieIds;
-        LoggerFactory.debug(
-            'DirectCustomLists: Cargados ${movieIds.length} items para lista predeterminada $listId');
       }
 
       state = CustomListsState(
@@ -254,16 +103,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
         listItems: listItemsMap,
       );
 
-      final totalLists = customLists.length + defaultListsIds.length;
       LoggerFactory.info(
-          'DirectCustomLists: Cargadas ${customLists.length} listas personalizadas + ${defaultListsIds.length} predeterminadas = $totalLists total');
-      LoggerFactory.debug(
-          'DirectCustomLists: IDs personalizadas: ${listsMap.keys.toList()}');
-      LoggerFactory.debug(
-          'DirectCustomLists: IDs predeterminadas: $defaultListsIds');
-
-      // Persistir los datos recién cargados
-      await _persistToLocal();
+          'DirectCustomLists: Cargadas ${customLists.length} listas directas');
+      LoggerFactory.debug('DirectCustomLists: IDs: ${listsMap.keys.toList()}');
     } catch (e) {
       LoggerFactory.error('DirectCustomLists: Error cargando: $e');
       state = const CustomListsState();
@@ -273,24 +115,9 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   /// Inicializar sincronización con ListSyncService
   void _initializeSync() async {
     try {
-      LoggerFactory.info(
-          'DirectCustomLists: Initializing ListSyncService directly...');
+      _syncService = await ref.read(listSyncServiceProvider.future);
 
-      // Crear dependencias directamente sin usar ref (legacy compatibility)
-      final supabaseDataSource =
-          SupabaseCustomListsDataSource(Supabase.instance.client);
-      final prefs = await SharedPreferences.getInstance();
-      final connectivity = Connectivity();
-
-      // Crear repository con las dependencias
-      final repository =
-          CustomListsRepositoryImpl(supabaseDataSource, prefs, connectivity);
-
-      // Crear sync service
-      _syncService = ListSyncService(repository, prefs, connectivity);
-
-      LoggerFactory.info(
-          'DirectCustomLists: ListSyncService created successfully');
+      LoggerFactory.info('DirectCustomLists: Sync service initialized');
 
       // Escuchar cambios de estado de sincronización
       _syncService!.syncStatusStream.listen((status) {
@@ -305,15 +132,10 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       });
 
       // Iniciar auto-sync si está habilitado
-      await _syncService!.startAutoSync();
-
-      LoggerFactory.info(
-          'DirectCustomLists: Sync service initialized successfully without ref');
+      _syncService!.startAutoSync();
     } catch (e) {
       LoggerFactory.error(
           'DirectCustomLists: Error initializing sync service: $e');
-      // No hacer rethrow para que no afecte la funcionalidad básica
-      // El provider puede funcionar sin sync service
     }
   }
 
@@ -368,7 +190,7 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       if (createdList != null) {
         LoggerFactory.info(
             '✅ [CREAR LISTA] Lista creada exitosamente en Supabase: ${newList.name}');
-        onListCreated(createdList);
+        // Lista creada exitosamente - se podría trackear para achievements
       } else {
         LoggerFactory.error(
             '❌ [CREAR LISTA] TriggerFreeCustomListsSync retornó null');
@@ -521,34 +343,51 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
 
   /// Añadir película a lista
   Future<void> addMovieToList(String listId, int movieId) async {
+    LoggerFactory.info('🎬 [DEBUG] ===== INICIANDO ADD MOVIE TO LIST =====');
     LoggerFactory.info(
-        '🎬 [DEBUG] Iniciando addMovieToList - listId: $listId, movieId: $movieId');
+        '🎬 [DEBUG] Parámetros - listId: $listId, movieId: $movieId');
 
     final currentUser = Supabase.instance.client.auth.currentUser;
+    LoggerFactory.info('🔐 [DEBUG] Usuario Supabase: ${currentUser?.id}');
+    LoggerFactory.info('🔐 [DEBUG] Email usuario: ${currentUser?.email}');
+    LoggerFactory.info('🔐 [DEBUG] ¿Autenticado?: ${currentUser != null}');
+
     if (currentUser == null) {
       LoggerFactory.error(
-          '❌ [DEBUG] Usuario no autenticado - cancelando addMovieToList');
+          '❌ [DEBUG] ERROR CRÍTICO: Usuario no autenticado - cancelando addMovieToList');
       return;
     }
-    LoggerFactory.info('✅ [DEBUG] Usuario autenticado: ${currentUser.id}');
+    LoggerFactory.info(
+        '✅ [DEBUG] Usuario autenticado correctamente: ${currentUser.id}');
 
     final currentState = state;
     final currentItems = currentState.listItems[listId] ?? [];
 
-    // Verificar si la lista existe (personalizada o predeterminada)
-    final isDefaultList = _isDefaultList(listId);
-    final isCustomList = currentState.lists.containsKey(listId);
+    // ✅ DEBUG: Estado detallado del provider
+    LoggerFactory.info('📊 [DEBUG] Estado actual del provider:');
+    LoggerFactory.info(
+        '📊 [DEBUG] - Total listas cargadas: ${currentState.lists.length}');
+    LoggerFactory.info(
+        '📊 [DEBUG] - Lista items totales: ${currentState.listItems.length}');
+    LoggerFactory.info(
+        '📊 [DEBUG] - Items en lista $listId: ${currentItems.length}');
+    LoggerFactory.info(
+        '📊 [DEBUG] - Listas disponibles: ${currentState.lists.keys.toList()}');
 
-    if (!isDefaultList && !isCustomList) {
-      LoggerFactory.error('❌ [DEBUG] Lista $listId no existe');
+    // Verificar si la lista existe
+    if (!currentState.lists.containsKey(listId)) {
+      LoggerFactory.error(
+          '❌ [DEBUG] ERROR CRÍTICO: Lista $listId no existe en el estado local');
       LoggerFactory.info(
-          '📋 [DEBUG] Listas personalizadas: ${currentState.lists.keys.toList()}');
-      LoggerFactory.info(
-          '📋 [DEBUG] Listas predeterminadas: ${_getDefaultListIds()}');
+          '📋 [DEBUG] Listas disponibles completas: ${currentState.lists.entries.map((e) => '${e.key}: ${e.value.name}').toList()}');
       return;
     }
+
+    final targetList = currentState.lists[listId]!;
     LoggerFactory.info(
-        '✅ [DEBUG] Lista $listId existe (predeterminada: $isDefaultList, personalizada: $isCustomList)');
+        '✅ [DEBUG] Lista encontrada: "${targetList.name}" (${targetList.id})');
+    LoggerFactory.info('✅ [DEBUG] Lista es default: ${targetList.isDefault}');
+    LoggerFactory.info('✅ [DEBUG] Lista createdAt: ${targetList.createdAt}');
 
     if (currentItems.contains(movieId)) {
       LoggerFactory.info(
@@ -567,17 +406,20 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     state = currentState.copyWith(listItems: updatedItems);
     LoggerFactory.info('✅ [DEBUG] Estado local actualizado optimísticamente');
 
-    // Persistir inmediatamente en caché local
-    await _persistToLocal();
-
     try {
-      // Usar TriggerFreeCustomListsSync directamente
-      LoggerFactory.info('📡 [DEBUG] Llamando a TriggerFreeCustomListsSync...');
-      await _sync.addMovieToList(currentUser.id, listId, movieId);
+      // Usar TriggerFreeCustomListsSync directamente (sin test de conexión previo)
+      LoggerFactory.info(
+          '📡 [DEBUG] Llamando a TriggerFreeCustomListsSync.addMovieToList...');
+      LoggerFactory.info(
+          '📡 [DEBUG] Parámetros sync: userId=${currentUser.id}, listId=$listId, movieId=$movieId');
+
+      await _sync.addMovieToList(currentUser.id, listId, movieId,
+          movieTitle: 'Movie Title $movieId');
+
       LoggerFactory.info(
           '✅ [DEBUG] TriggerFreeCustomListsSync completado exitosamente');
       LoggerFactory.info(
-          '🎉 [SUCCESS] Película $movieId agregada a lista $listId');
+          '🎉 [SUCCESS] Película $movieId agregada a lista $listId exitosamente');
     } catch (e, stackTrace) {
       LoggerFactory.error('❌ [ERROR] Error agregando película a lista: $e');
       LoggerFactory.error('📍 [ERROR] StackTrace: $stackTrace');
@@ -619,15 +461,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     final currentItems = currentState.listItems[listId] ?? [];
     if (!currentItems.contains(movieId)) return; // No está en la lista
 
-    // Verificar si la lista existe (personalizada o predeterminada)
-    final isDefaultList = _isDefaultList(listId);
-    final isCustomList = currentState.lists.containsKey(listId);
-
-    if (!isDefaultList && !isCustomList) {
-      LoggerFactory.error('❌ Lista $listId no existe');
-      return;
-    }
-
     LoggerFactory.debug(
         'DirectCustomLists: Removiendo película $movieId de lista $listId');
 
@@ -636,9 +469,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     updatedItems[listId] = currentItems.where((id) => id != movieId).toList();
 
     state = currentState.copyWith(listItems: updatedItems);
-
-    // Persistir inmediatamente en caché local
-    await _persistToLocal();
 
     try {
       await _sync.removeMovieFromList(currentUser.id, listId, movieId);
@@ -669,225 +499,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     }
   }
 
-  /// Verificar si es una lista predeterminada
-  bool _isDefaultList(String listId) {
-    return _getDefaultListIds().contains(listId);
-  }
-
-  /// Obtener IDs de listas predeterminadas (deben coincidir con defaultType del repository)
-  List<String> _getDefaultListIds() {
-    return [
-      'en-familia',
-      'en-pareja',
-      'clasicos',
-      'sugeridas',
-      'con-amigos',
-      'noches-lluvia',
-      'cortas',
-      'premiadas',
-    ];
-  }
-
-  /// Verifica si las listas predeterminadas ya han sido inicializadas para el usuario
-  Future<bool> areDefaultListsInitialized(String userId) async {
-    try {
-      LoggerFactory.info(
-          '🔍 Verificando si las listas predeterminadas ya están creadas para usuario: $userId');
-
-      // Obtener todas las listas del usuario desde Supabase
-      final userLists = await _sync.getUserLists(userId);
-      final defaultIds = _getDefaultListIds();
-
-      // Contar cuántas listas predeterminadas ya existen
-      final existingDefaultIds = userLists
-          .where((list) => list.isDefault && defaultIds.contains(list.id))
-          .map((list) => list.id)
-          .toList();
-
-      LoggerFactory.info(
-          '📊 Listas predeterminadas encontradas: ${existingDefaultIds.length}/${defaultIds.length}');
-      LoggerFactory.debug('📋 IDs encontrados: $existingDefaultIds');
-      LoggerFactory.debug('📋 IDs esperados: $defaultIds');
-
-      // Si tiene al menos 6 de las 8 listas, consideramos que ya están inicializadas
-      // Esto permite tolerancia para migraciones o actualizaciones futuras
-      final isInitialized = existingDefaultIds.length >= 6;
-
-      LoggerFactory.info(isInitialized
-          ? '✅ Listas predeterminadas ya inicializadas'
-          : '❌ Listas predeterminadas necesitan ser creadas');
-
-      return isInitialized;
-    } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Error verificando listas predeterminadas: $e');
-      LoggerFactory.debug('Stack trace: $stackTrace');
-      // En caso de error, asumir que no están creadas para ser conservadores
-      return false;
-    }
-  }
-
-  /// Inicializa las listas predeterminadas si no existen ya para el usuario
-  Future<void> initializeDefaultListsIfNeeded(String userId) async {
-    try {
-      LoggerFactory.info(
-          '🚀 Iniciando verificación de listas predeterminadas para usuario: $userId');
-
-      // Verificar si ya están creadas
-      if (await areDefaultListsInitialized(userId)) {
-        LoggerFactory.info(
-            '✅ Las listas predeterminadas ya existen, omitiendo creación');
-        return;
-      }
-
-      LoggerFactory.info('📝 Creando listas predeterminadas faltantes...');
-
-      // Obtener las definiciones de las listas predeterminadas
-      final defaultListsDefinitions = _getDefaultListsDefinitions();
-
-      // Crear cada lista en Supabase si no existe
-      int createdCount = 0;
-      for (final listDef in defaultListsDefinitions) {
-        try {
-          // Verificar si esta lista específica ya existe
-          final userLists = await _sync.getUserLists(userId);
-          final existsAlready = userLists.any(
-              (existing) => existing.id == listDef.id && existing.isDefault);
-
-          if (existsAlready) {
-            LoggerFactory.debug(
-                '⏭️ Lista ${listDef.name} ya existe, omitiendo');
-            continue;
-          }
-
-          // Crear la lista en Supabase
-          LoggerFactory.info('➕ Creando lista predeterminada: ${listDef.name}');
-          final createdList = await _sync.createList(userId, listDef);
-
-          if (createdList != null) {
-            createdCount++;
-            LoggerFactory.info('✅ Lista creada exitosamente: ${listDef.name}');
-          } else {
-            LoggerFactory.warning(
-                '⚠️ No se pudo crear la lista: ${listDef.name}');
-          }
-
-          // Pequeña pausa para evitar saturar Supabase
-          await Future.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          LoggerFactory.error('❌ Error creando lista ${listDef.name}: $e');
-          // Continuar con las demás listas aunque una falle
-        }
-      }
-
-      LoggerFactory.info(
-          '🎉 Proceso de inicialización completado. Listas creadas: $createdCount/${defaultListsDefinitions.length}');
-
-      // Recargar las listas desde Supabase para actualizar el estado local
-      await _loadListsFromSupabase();
-    } catch (e, stackTrace) {
-      LoggerFactory.error(
-          '❌ Error en inicialización de listas predeterminadas: $e');
-      LoggerFactory.debug('Stack trace: $stackTrace');
-      // No hacer throw para no bloquear el flujo de la app
-    }
-  }
-
-  /// Obtiene las definiciones de las listas predeterminadas sin depender del estado actual
-  List<CustomList> _getDefaultListsDefinitions() {
-    final now = DateTime.now();
-
-    return [
-      CustomList(
-        id: 'en-familia',
-        name: 'En Familia',
-        description: 'Películas aptas para toda la familia',
-        emoji: '👨‍👩‍👧‍👦',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'orange',
-      ),
-      CustomList(
-        id: 'en-pareja',
-        name: 'En Pareja',
-        description: 'Películas románticas y de citas',
-        emoji: '💕',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'pink',
-      ),
-      CustomList(
-        id: 'clasicos',
-        name: 'Clásicos',
-        description: 'Clásicos imperdibles del cine',
-        emoji: '🏆',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'purple',
-      ),
-      CustomList(
-        id: 'sugeridas',
-        name: 'Sugeridas',
-        description: 'Recomendaciones personalizadas',
-        emoji: '⭐',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'teal',
-      ),
-      CustomList(
-        id: 'con-amigos',
-        name: 'Con Amigos',
-        description: 'Películas para grupos y reuniones',
-        emoji: '🍕',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'yellow',
-      ),
-      CustomList(
-        id: 'noches-lluvia',
-        name: 'Noches de Lluvia',
-        description: 'Películas cómodas para días lluviosos',
-        emoji: '🌧️',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'grey',
-      ),
-      CustomList(
-        id: 'cortas',
-        name: 'Películas Cortas',
-        description: 'Películas de menos de 100 minutos',
-        emoji: '⏱️',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'cyan',
-      ),
-      CustomList(
-        id: 'premiadas',
-        name: 'Premiadas',
-        description: 'Ganadoras de premios importantes',
-        emoji: '🏅',
-        movieIds: [], // Lista vacía para inicialización
-        createdAt: now,
-        lastModifiedAt: now,
-        isDefault: true,
-        color: 'amber',
-      ),
-    ];
-  }
-
   /// Alternar película en lista (añadir si no está, remover si está)
   Future<void> toggleMovieInList(String listId, int movieId) async {
     final currentState = state;
@@ -902,94 +513,45 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
   /// Configurar listeners de tiempo real
   void _setupRealtimeListeners() {
     try {
-      if (_currentUserId == null) {
-        LoggerFactory.warning(
-            '⚠️ No hay usuario autenticado, saltando setup real-time');
-        return;
-      }
-
       LoggerFactory.info(
-          '📡 [REAL-TIME] Configurando listeners para usuario: $_currentUserId');
-
-      // Limpiar listeners existentes primero
-      _cleanupRealtimeListeners();
+          '📡 [REAL-TIME CUSTOM LISTS] Configurando listeners de tiempo real...');
 
       // Listener para cambios en listas
       _listsChannel = Supabase.instance.client
-          .channel('custom_lists_$_currentUserId')
+          .channel(
+              'custom_lists_realtime_${DateTime.now().millisecondsSinceEpoch}')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_lists',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'user_id',
-              value: _currentUserId!,
-            ),
             callback: _handleListsRealtimeEvent,
+            filter: _currentUserId != null
+                ? PostgresChangeFilter(
+                    type: PostgresChangeFilterType.eq,
+                    column: 'user_id',
+                    value: _currentUserId)
+                : null,
           )
-          .subscribe((status, error) {
-        LoggerFactory.info('📡 Lista Channel status: $status');
-        if (error != null) {
-          LoggerFactory.error('📡 Lista Channel error: $error');
-        }
-        _isRealtimeConnected = status == RealtimeSubscribeStatus.subscribed;
-        if (!_isRealtimeConnected) {
-          _startReconnectionTimer();
-        }
-      });
+          .subscribe();
 
       // Listener para cambios en items de listas
       _listItemsChannel = Supabase.instance.client
-          .channel('list_items_$_currentUserId')
+          .channel(
+              'list_items_realtime_${DateTime.now().millisecondsSinceEpoch}')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_list_items',
-            filter: PostgresChangeFilter(
-              type: PostgresChangeFilterType.eq,
-              column: 'user_id',
-              value: _currentUserId!,
-            ),
             callback: _handleListItemsRealtimeEvent,
           )
-          .subscribe((status, error) {
-        LoggerFactory.info('📡 Items Channel status: $status');
-        if (error != null) {
-          LoggerFactory.error('📡 Items Channel error: $error');
-        }
-        _isRealtimeConnected = status == RealtimeSubscribeStatus.subscribed;
-        if (!_isRealtimeConnected) {
-          _startReconnectionTimer();
-        }
-      });
+          .subscribe();
 
-      LoggerFactory.info('✅ Real-time listeners configurados');
+      LoggerFactory.info(
+          '✅ DirectCustomLists: Listeners de tiempo real configurados');
     } catch (e) {
-      LoggerFactory.error('❌ Error configurando real-time listeners: $e');
-      _startReconnectionTimer();
+      LoggerFactory.error(
+          '❌ DirectCustomLists: Error configurando listeners: $e');
     }
-  }
-
-  void _cleanupRealtimeListeners() {
-    _listsChannel?.unsubscribe();
-    _listItemsChannel?.unsubscribe();
-    _listsChannel = null;
-    _listItemsChannel = null;
-    _reconnectionTimer?.cancel();
-    _isRealtimeConnected = false;
-  }
-
-  void _startReconnectionTimer() {
-    _reconnectionTimer?.cancel();
-    _reconnectionTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (!_isRealtimeConnected && _currentUserId != null) {
-        LoggerFactory.info('🔄 Intentando reconectar real-time...');
-        _setupRealtimeListeners();
-      } else if (_isRealtimeConnected) {
-        timer.cancel();
-      }
-    });
   }
 
   /// Maneja eventos de tiempo real para listas
@@ -1216,9 +778,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
 
         state =
             currentState.copyWith(lists: updatedLists, listItems: updatedItems);
-
-        // Persistir cambios inmediatamente
-        _persistToLocal();
       }
     } catch (e, stackTrace) {
       LoggerFactory.error(
@@ -1243,9 +802,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       updatedItems.remove(listId);
       state =
           currentState.copyWith(lists: updatedLists, listItems: updatedItems);
-
-      // Persistir cambios inmediatamente
-      _persistToLocal();
     } else {
       final customList = _recordToCustomList(newRecord);
       LoggerFactory.info(
@@ -1254,9 +810,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
       final updatedLists = Map<String, CustomList>.from(currentState2.lists);
       updatedLists[listId] = customList;
       state = currentState2.copyWith(lists: updatedLists);
-
-      // Persistir cambios inmediatamente
-      _persistToLocal();
     }
   }
 
@@ -1475,10 +1028,6 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     }
 
     _currentUserId = currentUser.id;
-
-    // Inicializar listas predeterminadas si es necesario (solo se ejecuta una vez por usuario)
-    await initializeDefaultListsIfNeeded(currentUser.id);
-
     await _loadListsFromSupabase();
     _setupRealtimeListeners();
 
@@ -1524,23 +1073,43 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     return currentState.getAllListsWithMovies();
   }
 
+  /// ✅ DEBUG: Método para debug completo del estado
+  Future<void> debugFullState() async {
+    LoggerFactory.info('🐛 [DEBUG] ===== ESTADO COMPLETO DEL SISTEMA =====');
+
+    // Usuario
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    LoggerFactory.info(
+        '👤 [DEBUG] Usuario: ${currentUser?.id} (${currentUser?.email})');
+
+    // Estado local
+    final currentState = state;
+    LoggerFactory.info(
+        '📊 [DEBUG] Listas locales: ${currentState.lists.length}');
+    LoggerFactory.info(
+        '📊 [DEBUG] Total items: ${currentState.listItems.values.fold(0, (sum, items) => sum + items.length)}');
+
+    // Detalles de cada lista
+    for (final entry in currentState.lists.entries) {
+      final listId = entry.key;
+      final list = entry.value;
+      final items = currentState.listItems[listId] ?? [];
+      LoggerFactory.info(
+          '📋 [DEBUG] Lista "${list.name}" ($listId): ${items.length} items - Default: ${list.isDefault}');
+    }
+
+    // Verificar estado de autenticación en lugar de test de conexión
+    final isAuthenticated = currentUser != null;
+    LoggerFactory.info(
+        '🔐 [DEBUG] Estado Supabase: ${isAuthenticated ? "✅ Autenticado" : "❌ No autenticado"}');
+
+    LoggerFactory.info(
+        '🐛 [DEBUG] ============================================');
+  }
+
   /// Refresca todas las listas desde Supabase
   Future<void> refresh() async {
     await _loadListsFromSupabase();
-  }
-
-  /// Fuerza la inicialización de listas predeterminadas (uso manual/debug)
-  /// Normalmente no es necesario llamar este método ya que se ejecuta automáticamente al login
-  Future<void> forceInitializeDefaultLists() async {
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
-      LoggerFactory.warning('No hay usuario autenticado');
-      return;
-    }
-
-    LoggerFactory.info(
-        '🔧 Forzando inicialización manual de listas predeterminadas');
-    await initializeDefaultListsIfNeeded(currentUser.id);
   }
 
   /// 🔄 ADDED: Manejar evento genérico de tiempo real para listas (PostgresChangeEvent.all)
@@ -1691,85 +1260,35 @@ class DirectCustomListsNotifier extends StateNotifier<CustomListsState> {
     }
   }
 
-  /// Persiste el estado actual en almacenamiento local
-  Future<void> _persistToLocal() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Guardar listas personalizadas
-      final listsJson =
-          state.lists.values.map((list) => list.toJson()).toList();
-      await prefs.setString('custom_lists_cache', jsonEncode(listsJson));
-
-      // Guardar items de listas
-      final itemsJson = <String, dynamic>{};
-      state.listItems.forEach((listId, movieIds) {
-        itemsJson[listId] = movieIds;
-      });
-      await prefs.setString('custom_list_items_cache', jsonEncode(itemsJson));
-
-      // Guardar timestamp de última sincronización
-      await prefs.setString(
-          'custom_lists_last_sync', DateTime.now().toIso8601String());
-
-      LoggerFactory.debug('✅ Estado de Custom Lists persistido localmente');
-    } catch (e) {
-      LoggerFactory.error('❌ Error persistiendo estado local: $e');
-    }
-  }
-
-  /// Carga el estado desde almacenamiento local
-  Future<void> _loadFromLocal() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Cargar listas
-      final listsString = prefs.getString('custom_lists_cache');
-      if (listsString != null) {
-        final listsJson = jsonDecode(listsString) as List;
-        final lists = <String, CustomList>{};
-        for (final json in listsJson) {
-          final list = CustomList.fromJson(json as Map<String, dynamic>);
-          lists[list.id] = list;
-        }
-
-        // Cargar items
-        final itemsString = prefs.getString('custom_list_items_cache');
-        final items = <String, List<int>>{};
-        if (itemsString != null) {
-          final itemsJson = jsonDecode(itemsString) as Map<String, dynamic>;
-          itemsJson.forEach((listId, movieIds) {
-            items[listId] = List<int>.from(movieIds as List);
-          });
-        }
-
-        // Actualizar estado solo si hay datos
-        if (lists.isNotEmpty || items.isNotEmpty) {
-          state = CustomListsState(
-            lists: lists,
-            listItems: items,
-          );
-
-          final lastSync = prefs.getString('custom_lists_last_sync');
-          LoggerFactory.info(
-              '✅ Estado de Custom Lists cargado desde caché local');
-          if (lastSync != null) {
-            LoggerFactory.debug('📅 Última sincronización: $lastSync');
-          }
-        }
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ Error cargando estado local: $e');
-    }
-  }
-
-  @override
-  void dispose() {
+  void cleanup() {
     LoggerFactory.info('🗑️ DirectCustomLists: Cerrando listeners...');
-    _cleanupRealtimeListeners();
-    super.dispose();
+    _listsChannel?.unsubscribe();
+    _listItemsChannel?.unsubscribe();
   }
 }
 
-// 🧹 CLEANUP: Removed commented legacy providers that were not being used
-// This reduces file size by ~30 lines and improves code readability
+/// Provider para obtener todas las listas como Map
+final directCustomListsMapProvider = Provider<Map<String, CustomList>>((ref) {
+  final currentState = ref.watch(directCustomListsProvider);
+  return currentState.lists;
+});
+
+/// Provider para obtener todas las listas con sus películas
+final directCustomListsWithMoviesProvider = Provider<List<CustomList>>((ref) {
+  final notifier = ref.read(directCustomListsProvider.notifier);
+  return notifier.allListsWithMovies;
+});
+
+/// Provider para verificar si una película está en una lista específica
+final isMovieInDirectListProvider =
+    Provider.family<bool, ({String listId, int movieId})>((ref, params) {
+  final notifier = ref.read(directCustomListsProvider.notifier);
+  return notifier.isMovieInList(params.listId, params.movieId);
+});
+
+/// Provider para obtener las listas que contienen una película específica
+final directMovieListsProvider =
+    Provider.family<List<CustomList>, int>((ref, movieId) {
+  final notifier = ref.read(directCustomListsProvider.notifier);
+  return notifier.getListsContainingMovie(movieId);
+});

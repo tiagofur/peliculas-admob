@@ -41,7 +41,7 @@ final userStatsDataProvider = Provider.autoDispose<
       '📊 UserStats - Favoritos: ${favoriteMovies.length}, Vistas: ${watchedMoviesList.length}, Listas personalizadas: ${customLists.length}, Listas por defecto: ${defaultLists.length}');
 
   return (
-    favoriteMovies: favoriteMovies,
+    favoriteMovies: favoriteMovies.map((syncable) => syncable.movie).toList(),
     watchedMovies: watchedMoviesList,
     customLists: customLists,
     defaultLists: defaultLists,

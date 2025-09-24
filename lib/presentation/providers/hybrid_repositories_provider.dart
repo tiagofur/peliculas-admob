@@ -43,7 +43,8 @@ final watchedMoviesHiveDatasourceProvider =
 final customListsRepositoryProvider = Provider<CustomListsRepository>((ref) {
   // Este provider necesita ser implementado correctamente
   // Por ahora retornamos el hybrid repository
-  return ref.watch(hybridCustomListsRepositoryProvider) as CustomListsRepository;
+  return ref.watch(hybridCustomListsRepositoryProvider)
+      as CustomListsRepository;
 });
 
 // Provider para el datasource de Hive de watchlist
