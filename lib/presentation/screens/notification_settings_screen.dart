@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/notifications/local_notification_service.dart';
@@ -351,28 +352,14 @@ class _NotificationSettingsScreenState
               title: const Text('Horario de notificaciones'),
               subtitle: const Text('08:00 - 22:00'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                // TODO: Implementar configuración de horario
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Configuración de horario próximamente'),
-                  ),
-                );
-              },
+              onTap: () => _showTimeRangeDialog(),
             ),
             ListTile(
               leading: const Icon(Icons.volume_up),
               title: const Text('Sonido de notificaciones'),
               subtitle: const Text('Sonido predeterminado'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                // TODO: Implementar configuración de sonido
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Configuración de sonido próximamente'),
-                  ),
-                );
-              },
+              onTap: () => _showSoundDialog(),
             ),
             ListTile(
               leading: const Icon(Icons.science),
@@ -429,9 +416,31 @@ class _NotificationSettingsScreenState
     );
   }
 
-  void _saveNotificationPreference(String key, bool value) {
-    // TODO: Implementar guardado de preferencias
-    LoggerFactory.info('💾 Guardando preferencia $key: $value');
+  Future<void> _saveNotificationPreference(String key, bool value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notification_$key', value);
+      LoggerFactory.info('💾 Preferencia guardada $key: $value');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Configuración de $key guardada'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error guardando preferencia $key: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error guardando configuración'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _sendTestNotification() async {
@@ -460,6 +469,136 @@ class _NotificationSettingsScreenState
             content: Text('❌ Error: $e'),
             backgroundColor: Colors.red,
           ),
+        );
+      }
+    }
+  }
+
+  /// Muestra diálogo para configurar horario de notificaciones
+  Future<void> _showTimeRangeDialog() async {
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+
+    final result = await showDialog<Map<String, TimeOfDay>>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Horario de notificaciones'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Selecciona el horario en el que deseas recibir notificaciones:'),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Column(
+                        children: [
+                          const Text('Inicio'),
+                          TextButton(
+                            onPressed: () async {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: startTime ?? const TimeOfDay(hour: 8, minute: 0),
+                              );
+                              if (time != null) {
+                                setState(() => startTime = time);
+                              }
+                            },
+                            child: Text(startTime?.format(context) ?? '08:00'),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        children: [
+                          const Text('Fin'),
+                          TextButton(
+                            onPressed: () async {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: endTime ?? const TimeOfDay(hour: 22, minute: 0),
+                              );
+                              if (time != null) {
+                                setState(() => endTime = time);
+                              }
+                            },
+                            child: Text(endTime?.format(context) ?? '22:00'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancelar'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop({
+                      'start': startTime ?? const TimeOfDay(hour: 8, minute: 0),
+                      'end': endTime ?? const TimeOfDay(hour: 22, minute: 0),
+                    });
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      await _saveNotificationPreference('time_range', true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Horario configurado: ${result['start']!.format(context)} - ${result['end']!.format(context)}',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  /// Muestra diálogo para configurar sonido de notificaciones
+  Future<void> _showSoundDialog() async {
+    final sounds = [
+      'Sonido predeterminado',
+      'Alerta suave',
+      'Campanilla',
+      'Notificación discreta',
+      'Sin sonido',
+    ];
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return SimpleDialog(
+          title: const Text('Sonido de notificaciones'),
+          children: sounds
+              .map(
+                (sound) => SimpleDialogOption(
+                  onPressed: () => Navigator.of(context).pop(sound),
+                  child: Text(sound),
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+
+    if (result != null) {
+      await _saveNotificationPreference('sound', true);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sonido configurado: $result')),
         );
       }
     }

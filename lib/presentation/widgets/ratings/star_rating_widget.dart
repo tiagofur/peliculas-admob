@@ -55,8 +55,6 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
   @override
   Widget build(BuildContext context) {
     // ✅ MOBILE OPTIMIZATION: Responsive star spacing
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 400; // Small mobile screens
 
     return Row(
       mainAxisSize: MainAxisSize.min,

@@ -6,7 +6,6 @@ import 'package:peliculas/domain/entities/movie.dart';
 import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
 import 'package:peliculas/presentation/providers/hybrid_repositories_provider.dart';
 import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/test_setup_helper.dart';
 

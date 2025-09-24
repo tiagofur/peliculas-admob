@@ -1,4 +1,5 @@
 import 'dart:io';
+import '_logging_utils.dart';
 
 void main() async {
   final file = File(
@@ -10,5 +11,5 @@ void main() async {
       'favoriteMovies.values.map((syncable) => syncable.movie).toList()');
 
   await file.writeAsString(content);
-  print('✅ Reemplazos completados en recommendations_provider.dart');
+  logSuccess('Reemplazos completados en recommendations_provider.dart');
 }

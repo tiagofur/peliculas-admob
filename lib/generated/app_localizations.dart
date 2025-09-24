@@ -1,12 +1,66 @@
-// This is a placeholder file for the generated localizations
-// Run 'flutter gen-l10n' to generate the actual app_localizations.dart file
-
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'generated/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
 abstract class AppLocalizations {
   AppLocalizations(String locale)
       : localeName = intl.Intl.canonicalizedLocale(locale.toString());
@@ -20,6 +74,16 @@ abstract class AppLocalizations {
   static const LocalizationsDelegate<AppLocalizations> delegate =
       _AppLocalizationsDelegate();
 
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
     delegate,
@@ -28,62 +92,515 @@ abstract class AppLocalizations {
     GlobalWidgetsLocalizations.delegate,
   ];
 
+  /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
     Locale('es')
   ];
 
-  // Placeholder methods - these will be replaced by generated methods
-  String get appTitle => 'Movies';
-  String get settings => 'Settings';
-  String get appearance => 'Appearance';
-  String get themeMode => 'Theme Mode';
-  String get themeColor => 'Theme Color';
-  String get information => 'Information';
-  String get systemThemeDescription =>
-      'The \'System\' mode will automatically follow your device\'s theme setting.';
-  String get system => 'System';
-  String get systemThemeSubtitle => 'Follow device configuration';
-  String get light => 'Light';
-  String get lightThemeSubtitle => 'Theme with light colors';
-  String get dark => 'Dark';
-  String get darkThemeSubtitle => 'Theme with dark colors';
-  String get language => 'Language';
-  String get selectLanguage => 'Select Language';
-  String get spanish => 'Spanish';
-  String get english => 'English';
-  String get languageDescription =>
-      'Change the app language. The app will restart to apply the new language.';
-  String get home => 'Home';
-  String get favorites => 'Favorites';
-  String get watchlist => 'Watchlist';
-  String get profile => 'Profile';
-  String get noFavorites => 'Ohhh no!!';
-  String get noFavoritesMessage => 'You don\'t have any favorite movies';
-  String get startSearching => 'Start searching';
-  String get notWatchedYet => 'You haven\'t watched anything yet!';
-  String get noWatchedMessage => 'You don\'t have any movies marked as watched';
-  String get startExploring => 'Start exploring';
-  String get login => 'Login';
-  String get register => 'Register';
-  String get streaming => 'Streaming';
-  String get myLibrary => 'My Library';
-  String get statistics => 'Statistics';
-  String get challenges => 'Challenges';
-  String get rateThisMovie => 'Rate this movie';
-  String get yourRating => 'Your Rating';
-  String get quickRate => 'Quick Rate';
-  String get rateAndReview => 'Rate & Review';
-  String get shareYourOpinion => 'Share your opinion with the community';
-  String get editRating => 'Edit Rating';
-  String get deleteRating => 'Delete Rating';
-  String get confirmDeleteRating => 'Are you sure you want to delete your rating for this movie?';
-  String get delete => 'Delete';
-  String get ratingDeletedSuccessfully => 'Rating deleted successfully!';
-  String get noCustomLists => 'No custom lists yet!';
-  String get noCustomListsMessage => 'You haven\'t created any custom movie lists';
-  String get startCreating => 'Start creating';
-  String get createYourFirstList => 'Create your first list';
+  /// The application title
+  ///
+  /// In en, this message translates to:
+  /// **'Movies'**
+  String get appTitle;
+
+  /// Settings screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings;
+
+  /// Appearance settings section title
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// Theme mode selection label
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Mode'**
+  String get themeMode;
+
+  /// Theme color selection label
+  ///
+  /// In en, this message translates to:
+  /// **'Theme Color'**
+  String get themeColor;
+
+  /// Information section title
+  ///
+  /// In en, this message translates to:
+  /// **'Information'**
+  String get information;
+
+  /// Description for system theme mode
+  ///
+  /// In en, this message translates to:
+  /// **'The \'System\' mode will automatically follow your device\'s theme setting.'**
+  String get systemThemeDescription;
+
+  /// System theme mode option
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get system;
+
+  /// Subtitle for system theme mode
+  ///
+  /// In en, this message translates to:
+  /// **'Follow device configuration'**
+  String get systemThemeSubtitle;
+
+  /// Light theme mode option
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get light;
+
+  /// Subtitle for light theme mode
+  ///
+  /// In en, this message translates to:
+  /// **'Theme with light colors'**
+  String get lightThemeSubtitle;
+
+  /// Dark theme mode option
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get dark;
+
+  /// Subtitle for dark theme mode
+  ///
+  /// In en, this message translates to:
+  /// **'Theme with dark colors'**
+  String get darkThemeSubtitle;
+
+  /// Language selection section title
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// Language selection label
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language'**
+  String get selectLanguage;
+
+  /// Spanish language option
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish'**
+  String get spanish;
+
+  /// English language option
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// Description for language selection
+  ///
+  /// In en, this message translates to:
+  /// **'Change the app language. The app will restart to apply the new language.'**
+  String get languageDescription;
+
+  /// Home screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// Favorites screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Favorites'**
+  String get favorites;
+
+  /// Watchlist screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Watchlist'**
+  String get watchlist;
+
+  /// Profile screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No favorites exclamation
+  ///
+  /// In en, this message translates to:
+  /// **'Ohhh no!!'**
+  String get noFavorites;
+
+  /// Message when user has no favorite movies
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have any favorite movies'**
+  String get noFavoritesMessage;
+
+  /// Button text to start searching for movies
+  ///
+  /// In en, this message translates to:
+  /// **'Start searching'**
+  String get startSearching;
+
+  /// Message when user hasn't watched any movies
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t watched anything yet!'**
+  String get notWatchedYet;
+
+  /// Message when user has no watched movies
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have any movies marked as watched'**
+  String get noWatchedMessage;
+
+  /// Button text to start exploring movies
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get startExploring;
+
+  /// Login screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get login;
+
+  /// Register screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Register'**
+  String get register;
+
+  /// Streaming screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming'**
+  String get streaming;
+
+  /// My Library tab label
+  ///
+  /// In en, this message translates to:
+  /// **'My Library'**
+  String get myLibrary;
+
+  /// Statistics tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statistics;
+
+  /// Challenges tab label
+  ///
+  /// In en, this message translates to:
+  /// **'Challenges'**
+  String get challenges;
+
+  /// Conflict resolution dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict Resolution'**
+  String get conflictResolution;
+
+  /// Conflict detection message
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization Conflict Detected'**
+  String get conflictDetected;
+
+  /// Conflict resolution description
+  ///
+  /// In en, this message translates to:
+  /// **'A conflict has been detected during synchronization. Please choose how to resolve it:'**
+  String get conflictDescription;
+
+  /// Local version label
+  ///
+  /// In en, this message translates to:
+  /// **'Local Version'**
+  String get localVersion;
+
+  /// Remote version label
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Version'**
+  String get remoteVersion;
+
+  /// Merged version label
+  ///
+  /// In en, this message translates to:
+  /// **'Merged Version'**
+  String get mergedVersion;
+
+  /// Keep local version button
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Local'**
+  String get keepLocal;
+
+  /// Keep remote version button
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Remote'**
+  String get keepRemote;
+
+  /// Merge changes button
+  ///
+  /// In en, this message translates to:
+  /// **'Merge Changes'**
+  String get mergeChanges;
+
+  /// Manual choice button
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Choice'**
+  String get manualChoice;
+
+  /// Resolve conflict button
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve Conflict'**
+  String get resolveConflict;
+
+  /// Cancel button
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// Conflict preview section title
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict Preview'**
+  String get conflictPreview;
+
+  /// Merge preview section title
+  ///
+  /// In en, this message translates to:
+  /// **'Merge Preview'**
+  String get mergePreview;
+
+  /// Conflict history title
+  ///
+  /// In en, this message translates to:
+  /// **'Conflict History'**
+  String get conflictHistory;
+
+  /// Message when no conflicts are recorded
+  ///
+  /// In en, this message translates to:
+  /// **'No conflicts recorded'**
+  String get noConflictsRecorded;
+
+  /// Description for empty conflict history
+  ///
+  /// In en, this message translates to:
+  /// **'Synchronization conflicts will appear here when they occur'**
+  String get conflictsWillAppearHere;
+
+  /// Refresh button
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// Export button
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export;
+
+  /// Clear history button
+  ///
+  /// In en, this message translates to:
+  /// **'Clear History'**
+  String get clearHistory;
+
+  /// Filters section title
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get filters;
+
+  /// Search field placeholder
+  ///
+  /// In en, this message translates to:
+  /// **'Search by entity, type or strategy...'**
+  String get searchPlaceholder;
+
+  /// All filter option
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get all;
+
+  /// Concurrent modification conflict type
+  ///
+  /// In en, this message translates to:
+  /// **'Concurrent Modification'**
+  String get concurrentModification;
+
+  /// Delete vs modify conflict type
+  ///
+  /// In en, this message translates to:
+  /// **'Delete vs Modify'**
+  String get deleteVsModify;
+
+  /// Duplicate creation conflict type
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate Creation'**
+  String get duplicateCreation;
+
+  /// Local wins strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Local Wins'**
+  String get localWins;
+
+  /// Remote wins strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Remote Wins'**
+  String get remoteWins;
+
+  /// Merge strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Merge'**
+  String get merge;
+
+  /// User choice strategy
+  ///
+  /// In en, this message translates to:
+  /// **'Manual Choice'**
+  String get userChoice;
+
+  /// Resolved status
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get resolved;
+
+  /// Pending status
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get pending;
+
+  /// Entity label
+  ///
+  /// In en, this message translates to:
+  /// **'Entity'**
+  String get entity;
+
+  /// Detected label
+  ///
+  /// In en, this message translates to:
+  /// **'Detected'**
+  String get detected;
+
+  /// Strategy label
+  ///
+  /// In en, this message translates to:
+  /// **'Strategy'**
+  String get strategy;
+
+  /// Reason label
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get reason;
+
+  /// Title for rating a movie
+  ///
+  /// In en, this message translates to:
+  /// **'Rate this movie'**
+  String get rateThisMovie;
+
+  /// Label for user's rating
+  ///
+  /// In en, this message translates to:
+  /// **'Your Rating'**
+  String get yourRating;
+
+  /// Quick rating button text
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Rate'**
+  String get quickRate;
+
+  /// Full rating and review button text
+  ///
+  /// In en, this message translates to:
+  /// **'Rate & Review'**
+  String get rateAndReview;
+
+  /// Subtitle for rating section
+  ///
+  /// In en, this message translates to:
+  /// **'Share your opinion with the community'**
+  String get shareYourOpinion;
+
+  /// Edit rating button text
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Rating'**
+  String get editRating;
+
+  /// Delete rating dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Rating'**
+  String get deleteRating;
+
+  /// Confirm delete rating message
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete your rating for this movie?'**
+  String get confirmDeleteRating;
+
+  /// Delete button text
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// Success message after deleting rating
+  ///
+  /// In en, this message translates to:
+  /// **'Rating deleted successfully!'**
+  String get ratingDeletedSuccessfully;
+
+  /// Message when user has no custom lists
+  ///
+  /// In en, this message translates to:
+  /// **'No custom lists yet!'**
+  String get noCustomLists;
+
+  /// Detailed message when no custom lists exist
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any custom movie lists'**
+  String get noCustomListsMessage;
+
+  /// Button text to start creating lists
+  ///
+  /// In en, this message translates to:
+  /// **'Start creating'**
+  String get startCreating;
+
+  /// Call to action for creating first custom list
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first list'**
+  String get createYourFirstList;
 }
 
 class _AppLocalizationsDelegate
@@ -92,7 +609,7 @@ class _AppLocalizationsDelegate
 
   @override
   Future<AppLocalizations> load(Locale locale) {
-    return SynchronousFuture<AppLocalizations>(_lookupAppLocalizations(locale));
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
   }
 
   @override
@@ -103,220 +620,18 @@ class _AppLocalizationsDelegate
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
-AppLocalizations _lookupAppLocalizations(Locale locale) {
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
   }
+
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Check that you have added the locale '
-    'you are testing to supportedLocales on your AppLocalizations instance.',
-  );
-}
-
-/// English localizations
-class AppLocalizationsEn extends AppLocalizations {
-  AppLocalizationsEn() : super('en');
-
-  @override
-  String get appTitle => 'Movies';
-  @override
-  String get settings => 'Settings';
-  @override
-  String get appearance => 'Appearance';
-  @override
-  String get themeMode => 'Theme Mode';
-  @override
-  String get themeColor => 'Theme Color';
-  @override
-  String get information => 'Information';
-  @override
-  String get systemThemeDescription => 'The \'System\' mode will automatically follow your device\'s theme setting.';
-  @override
-  String get system => 'System';
-  @override
-  String get systemThemeSubtitle => 'Follow device configuration';
-  @override
-  String get light => 'Light';
-  @override
-  String get lightThemeSubtitle => 'Theme with light colors';
-  @override
-  String get dark => 'Dark';
-  @override
-  String get darkThemeSubtitle => 'Theme with dark colors';
-  @override
-  String get language => 'Language';
-  @override
-  String get selectLanguage => 'Select Language';
-  @override
-  String get spanish => 'Spanish';
-  @override
-  String get english => 'English';
-  @override
-  String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
-  @override
-  String get home => 'Home';
-  @override
-  String get favorites => 'Favorites';
-  @override
-  String get watchlist => 'Watchlist';
-  @override
-  String get profile => 'Profile';
-  @override
-  String get noFavorites => 'Ohhh no!!';
-  @override
-  String get noFavoritesMessage => 'You don\'t have any favorite movies';
-  @override
-  String get startSearching => 'Start searching';
-  @override
-  String get notWatchedYet => 'You haven\'t watched anything yet!';
-  @override
-  String get noWatchedMessage => 'You don\'t have any movies marked as watched';
-  @override
-  String get startExploring => 'Start exploring';
-  @override
-  String get login => 'Login';
-  @override
-  String get register => 'Register';
-  @override
-  String get streaming => 'Streaming';
-  @override
-  String get myLibrary => 'My Library';
-  @override
-  String get statistics => 'Statistics';
-  @override
-  String get challenges => 'Challenges';
-  @override
-  String get rateThisMovie => 'Rate this movie';
-  @override
-  String get yourRating => 'Your Rating';
-  @override
-  String get quickRate => 'Quick Rate';
-  @override
-  String get rateAndReview => 'Rate & Review';
-  @override
-  String get shareYourOpinion => 'Share your opinion with the community';
-  @override
-  String get editRating => 'Edit Rating';
-  @override
-  String get deleteRating => 'Delete Rating';
-  @override
-  String get confirmDeleteRating => 'Are you sure you want to delete your rating for this movie?';
-  @override
-  String get delete => 'Delete';
-  @override
-  String get ratingDeletedSuccessfully => 'Rating deleted successfully!';
-  @override
-  String get noCustomLists => 'No custom lists yet!';
-  @override
-  String get noCustomListsMessage => 'You haven\'t created any custom movie lists';
-  @override
-  String get startCreating => 'Start creating';
-  @override
-  String get createYourFirstList => 'Create your first list';
-}
-
-/// Spanish localizations
-class AppLocalizationsEs extends AppLocalizations {
-  AppLocalizationsEs() : super('es');
-
-  @override
-  String get appTitle => 'Películas';
-  @override
-  String get settings => 'Configuración';
-  @override
-  String get appearance => 'Apariencia';
-  @override
-  String get themeMode => 'Modo de tema';
-  @override
-  String get themeColor => 'Color del tema';
-  @override
-  String get information => 'Información';
-  @override
-  String get systemThemeDescription => 'El modo \'Sistema\' seguirá automáticamente la configuración de tema de tu dispositivo.';
-  @override
-  String get system => 'Sistema';
-  @override
-  String get systemThemeSubtitle => 'Seguir la configuración del dispositivo';
-  @override
-  String get light => 'Claro';
-  @override
-  String get lightThemeSubtitle => 'Tema con colores claros';
-  @override
-  String get dark => 'Oscuro';
-  @override
-  String get darkThemeSubtitle => 'Tema con colores oscuros';
-  @override
-  String get language => 'Idioma';
-  @override
-  String get selectLanguage => 'Seleccionar idioma';
-  @override
-  String get spanish => 'Español';
-  @override
-  String get english => 'Inglés';
-  @override
-  String get languageDescription => 'Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.';
-  @override
-  String get home => 'Inicio';
-  @override
-  String get favorites => 'Favoritos';
-  @override
-  String get watchlist => 'Lista de seguimiento';
-  @override
-  String get profile => 'Perfil';
-  @override
-  String get noFavorites => '¡Ohhh no!';
-  @override
-  String get noFavoritesMessage => 'No tienes películas favoritas';
-  @override
-  String get startSearching => 'Empieza a buscar';
-  @override
-  String get notWatchedYet => '¡Aún no has visto nada!';
-  @override
-  String get noWatchedMessage => 'No tienes películas marcadas como vistas';
-  @override
-  String get startExploring => 'Empieza a explorar';
-  @override
-  String get login => 'Iniciar sesión';
-  @override
-  String get register => 'Registrarse';
-  @override
-  String get streaming => 'Streaming';
-  @override
-  String get myLibrary => 'Mi Biblioteca';
-  @override
-  String get statistics => 'Estadísticas';
-  @override
-  String get challenges => 'Desafíos';
-  @override
-  String get rateThisMovie => 'Califica esta película';
-  @override
-  String get yourRating => 'Tu Calificación';
-  @override
-  String get quickRate => 'Calificación Rápida';
-  @override
-  String get rateAndReview => 'Calificar y Reseñar';
-  @override
-  String get shareYourOpinion => 'Comparte tu opinión con la comunidad';
-  @override
-  String get editRating => 'Editar Calificación';
-  @override
-  String get deleteRating => 'Eliminar Calificación';
-  @override
-  String get confirmDeleteRating => '¿Estás seguro de que quieres eliminar tu calificación de esta película?';
-  @override
-  String get delete => 'Eliminar';
-  @override
-  String get ratingDeletedSuccessfully => '¡Calificación eliminada exitosamente!';
-  @override
-  String get noCustomLists => '¡Aún no tienes listas personalizadas!';
-  @override
-  String get noCustomListsMessage => 'No has creado ninguna lista personalizada de películas';
-  @override
-  String get startCreating => 'Empieza a crear';
-  @override
-  String get createYourFirstList => 'Crea tu primera lista';
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

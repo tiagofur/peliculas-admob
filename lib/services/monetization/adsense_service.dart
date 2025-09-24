@@ -1,10 +1,20 @@
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:js' as js;
+import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart';
+import 'package:web/web.dart' as web;
 
 import '../../core/logging/logger_factory.dart';
+
+// JavaScript interop definitions for AdSense
+@JS()
+external JSObject get window;
+
+@JS('window.adsbygoogle')
+external JSArray<JSObject>? get adsbygoogle;
+
+@JS()
+external void eval(String script);
 
 /// Servicio de AdSense para monetización en web y desktop
 /// Implementa Google AdSense con enfoque en experiencia de usuario
@@ -58,7 +68,7 @@ class AdSenseService {
   /// Verifica si AdSense está cargado
   bool _isAdSenseLoaded() {
     try {
-      return js.context['adsbygoogle'] != null;
+      return adsbygoogle != null;
     } catch (e) {
       return false;
     }
@@ -68,41 +78,38 @@ class AdSenseService {
   Future<void> _loadAdSenseScript() async {
     final completer = Completer<void>();
 
-    final script = html.ScriptElement()
-      ..src =
-          'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$_publisherId'
-      ..async = true
-      ..crossOrigin = 'anonymous';
+    final script = web.document.createElement('script') as web.HTMLScriptElement;
+    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$_publisherId';
+    script.async = true;
+    script.crossOrigin = 'anonymous';
 
-    script.onLoad.listen((_) {
+    script.addEventListener('load', (web.Event event) {
       LoggerFactory.info('Script AdSense cargado exitosamente');
       completer.complete();
-    });
+    }.toJS);
 
-    script.onError.listen((_) {
+    script.addEventListener('error', (web.Event event) {
       LoggerFactory.error('Error cargando script AdSense');
       completer.completeError('Failed to load AdSense script');
-    });
+    }.toJS);
 
-    html.document.head?.append(script);
+    web.document.head?.appendChild(script);
     return completer.future;
   }
 
   /// Configura AdSense con opciones UX-friendly
   void _configureAdSense() {
     try {
-      if (js.context['adsbygoogle'] != null) {
+      if (adsbygoogle != null) {
         // Configuración global de AdSense
-        js.context.callMethod('eval', [
-          '''
+        eval('''
           (window.adsbygoogle = window.adsbygoogle || []).push({
             google_ad_client: "$_publisherId",
             enable_page_level_ads: false,
             overlays: {bottom: false, top: false},
             auto_ads: false
           });
-        '''
-        ]);
+        ''');
       }
     } catch (e) {
       LoggerFactory.error('Error configurando AdSense: $e');
@@ -182,13 +189,11 @@ class AdSenseService {
     if (!_isInitialized) return;
 
     try {
-      js.context.callMethod('eval', [
-        '''
+      eval('''
         if (window.adsbygoogle && document.getElementById('$adId')) {
           (window.adsbygoogle = window.adsbygoogle || []).push({});
         }
-      '''
-      ]);
+      ''');
 
       LoggerFactory.debug('Anuncio AdSense activado: $adId');
     } catch (e) {

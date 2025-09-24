@@ -120,7 +120,7 @@ class AdaptiveMonetizationManager {
 
     // Evaluar con estrategia UX-first
     final userType = await _userPrefs.getUserType();
-    final decision = _uxStrategy.shouldShowAd(
+    final decision = await _uxStrategy.shouldShowAd(
       adType: AdTypeUX.banner,
       userType: userType,
       appContext: context,
@@ -147,7 +147,7 @@ class AdaptiveMonetizationManager {
 
     // Evaluar con estrategia UX-first (más estricta para intersticiales)
     final userType = await _userPrefs.getUserType();
-    final decision = _uxStrategy.shouldShowAd(
+    final decision = await _uxStrategy.shouldShowAd(
       adType: AdTypeUX.interstitial,
       userType: userType,
       appContext: context,
@@ -221,7 +221,7 @@ class AdaptiveMonetizationManager {
 
     // Los anuncios de recompensa siempre están permitidos (usuario los solicita)
     final userType = await _userPrefs.getUserType();
-    final decision = _uxStrategy.shouldShowAd(
+    final decision = await _uxStrategy.shouldShowAd(
       adType: AdTypeUX.rewarded,
       userType: userType,
       appContext: appContext,

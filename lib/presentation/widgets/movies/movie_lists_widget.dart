@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../providers/storage/direct_custom_lists_provider.dart';
+import '../../providers/custom_lists_provider.dart';
 
 class MovieListsWidget extends ConsumerStatefulWidget {
   const MovieListsWidget({super.key, required this.movie});
@@ -34,11 +35,22 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Temporary fix - access notifier directly until providers are restored
+    // Usar el provider apropiado para obtener las listas
+    final allListsAsync = ref.watch(allListsProvider);
+
+    return allListsAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text('Error cargando listas: $error'),
+      ),
+      data: (allListsState) => _buildContent(context, allListsState),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, AllListsState allListsState) {
+    final allLists = allListsState.allLists;
     final notifier = ref.read(directCustomListsProvider.notifier);
-    final allLists = notifier.allListsWithMovies;
-    final listsContainingMovie =
-        notifier.getListsContainingMovie(widget.movie.id);
+    final listsContainingMovie = notifier.getListsContainingMovie(widget.movie.id);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

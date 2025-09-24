@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/logging/logger_factory.dart';
-import '../../../domain/entities/movie.dart';
-import '../movies/movie_horizontal_listview_with_ads.dart';
-import '../movies/movie_masonry_with_ads.dart';
-import 'full_width_ad_widget.dart';
-import 'grid_ad_widget.dart';
-import 'movie_card_ad_widget.dart';
+import 'package:peliculas/core/logging/logger_factory.dart';
+import 'package:peliculas/domain/entities/movie.dart';
+import 'package:peliculas/presentation/widgets/movies/movie_horizontal_listview_with_ads.dart';
+import 'package:peliculas/presentation/widgets/movies/movie_masonry_with_ads.dart';
+import 'package:peliculas/presentation/widgets/admob/full_width_ad_widget.dart';
+import 'package:peliculas/presentation/widgets/admob/grid_ad_widget.dart';
+import 'package:peliculas/presentation/widgets/admob/movie_card_ad_widget.dart';
 
 /// Ejemplos de uso de todos los widgets de anuncios
 /// Este archivo demuestra cómo integrar los anuncios en diferentes contextos

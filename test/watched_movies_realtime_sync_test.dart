@@ -5,7 +5,6 @@ import 'package:peliculas/core/sync/watched_sync_manager.dart';
 import 'package:peliculas/domain/entities/movie.dart';
 import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
 import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers/test_setup_helper.dart';
 

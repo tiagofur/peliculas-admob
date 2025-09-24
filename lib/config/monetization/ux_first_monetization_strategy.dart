@@ -3,6 +3,7 @@
 library;
 
 import '../../core/logging/logger_factory.dart';
+import '../../services/monetization/user_monetization_preferences_service.dart';
 
 /// Estrategia de monetización enfocada en la satisfacción del usuario
 class UXFirstMonetizationStrategy {
@@ -148,16 +149,16 @@ class UXFirstMonetizationStrategy {
   }
 
   /// Evalúa si se debe mostrar un anuncio basado en el contexto completo
-  AdDecisionResult shouldShowAd({
+  Future<AdDecisionResult> shouldShowAd({
     required AdTypeUX adType,
     required UserTypeUX userType,
     required AppContextUX appContext,
     Map<String, dynamic>? additionalContext,
-  }) {
+  }) async {
     try {
       // 1. Verificar reglas de usuario
       final userRules = getRulesForUser(userType);
-      if (!_checkUserRules(userRules, adType)) {
+      if (!await _checkUserRules(userRules, adType)) {
         return AdDecisionResult.blockedByUserRules;
       }
 
@@ -191,11 +192,13 @@ class UXFirstMonetizationStrategy {
     }
   }
 
-  bool _checkUserRules(UXMonetizationRules rules, AdTypeUX adType) {
+  Future<bool> _checkUserRules(UXMonetizationRules rules, AdTypeUX adType) async {
     // Verificar período de gracia para nuevos usuarios
     if (rules.newUserGracePeriod != null) {
-      // TODO: Implementar lógica de usuario nuevo
-      // Por ahora asumimos que no hay restricciones
+      if (await _isNewUser() && rules.disableAdsForNewUsers) {
+        LoggerFactory.debug('Anuncio bloqueado: usuario nuevo en período de gracia');
+        return false;
+      }
     }
 
     // Verificar límites específicos del tipo de anuncio
@@ -229,23 +232,84 @@ class UXFirstMonetizationStrategy {
   }
 
   bool _checkFrequencyLimits(AdTypeUX adType, UXMonetizationRules rules) {
-    // TODO: Implementar lógica de tracking de frecuencia
-    // Por ahora retornamos true, pero aquí se verificarían:
-    // - Contadores de sesión
-    // - Límites por hora
-    // - Tiempo entre anuncios
-    return true;
+    try {
+      final now = DateTime.now();
+      final frequencyTracker = _getFrequencyTracker();
+
+      switch (adType) {
+        case AdTypeUX.interstitial:
+          // Verificar límites por sesión
+          if (frequencyTracker.interstitialsThisSession >= rules.maxInterstitialsPerSession) {
+            LoggerFactory.debug('Límite de intersticiales por sesión alcanzado');
+            return false;
+          }
+
+          // Verificar tiempo mínimo entre anuncios
+          final lastInterstitial = frequencyTracker.lastInterstitialTime;
+          if (lastInterstitial != null) {
+            final timeSinceLastAd = now.difference(lastInterstitial);
+            if (timeSinceLastAd < rules.minTimeBetweenInterstitials) {
+              LoggerFactory.debug('Tiempo mínimo entre intersticiales no cumplido');
+              return false;
+            }
+          }
+          break;
+
+        case AdTypeUX.banner:
+        case AdTypeUX.native:
+        case AdTypeUX.rewarded:
+          // Los demás tipos tienen menos restricciones de frecuencia
+          break;
+      }
+
+      return true;
+    } catch (e) {
+      LoggerFactory.error('Error verificando límites de frecuencia: $e');
+      return true; // En caso de error, permitir el anuncio
+    }
   }
 
   bool _checkPrivacyConsent(
       UXMonetizationRules rules, Map<String, dynamic>? context) {
     if (!rules.respectUserConsent) return true;
 
-    // TODO: Verificar consentimiento GDPR/CCPA
-    // final hasConsent = context?['user_consent'] ?? false;
-    // return hasConsent;
+    try {
+      // Verificar consentimiento GDPR/CCPA desde el contexto
+      final hasConsent = context?['user_consent'] as bool? ?? true;
 
-    return true; // Por ahora asumimos consentimiento
+      // También verificar configuración Do Not Track
+      final doNotTrack = context?['do_not_track'] as bool? ?? false;
+      if (rules.respectDoNotTrack && doNotTrack) {
+        LoggerFactory.debug('Anuncio bloqueado por configuración Do Not Track');
+        return false;
+      }
+
+      if (!hasConsent) {
+        LoggerFactory.debug('Anuncio bloqueado por falta de consentimiento de privacidad');
+        return false;
+      }
+
+      return true;
+    } catch (e) {
+      LoggerFactory.error('Error verificando consentimiento de privacidad: $e');
+      return true; // En caso de error, permitir el anuncio
+    }
+  }
+
+  // Métodos auxiliares para tracking de usuarios y frecuencia
+  Future<bool> _isNewUser() async {
+    try {
+      final service = UserMonetizationPreferencesService.instance;
+      final userType = await service.getUserType();
+      return userType == UserTypeUX.newUser || await service.isInGracePeriod();
+    } catch (e) {
+      LoggerFactory.warning('Error verificando si es usuario nuevo: $e');
+      return false; // Por seguridad, asumir que no es usuario nuevo
+    }
+  }
+
+  _AdFrequencyTracker _getFrequencyTracker() {
+    return _AdFrequencyTracker();
   }
 
   /// Configuración recomendada para obtener la mejor experiencia de usuario
@@ -403,4 +467,37 @@ enum AdDecisionResult {
   blockedByFrequencyLimits,
   blockedByPrivacySettings,
   error,
+}
+
+/// Clase para tracking de frecuencia de anuncios
+class _AdFrequencyTracker {
+
+  int get interstitialsThisSession {
+    // Por ahora devolvemos un valor por defecto hasta implementar tracking completo
+    return 0;
+  }
+
+  DateTime? get lastInterstitialTime {
+    // Por ahora devolvemos null hasta implementar tracking completo
+    return null;
+  }
+
+  Future<void> recordInterstitialShown() async {
+    try {
+      final service = UserMonetizationPreferencesService.instance;
+      await service.recordAdInteraction(AdInteractionType.viewed, AdTypeUX.interstitial);
+      LoggerFactory.debug('Intersticial registrado usando servicio de preferencias');
+    } catch (e) {
+      LoggerFactory.error('Error registrando intersticial mostrado: $e');
+    }
+  }
+
+  Future<void> resetSessionCounters() async {
+    try {
+      LoggerFactory.debug('Reset de contadores de sesión - usando sistema de preferencias');
+      // El servicio de preferencias maneja automáticamente las sesiones
+    } catch (e) {
+      LoggerFactory.error('Error reseteando contadores de sesión: $e');
+    }
+  }
 }

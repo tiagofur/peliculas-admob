@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../core/monetization/ad_frequency_controller.dart';
-import '../core/monetization/monetization_analytics_service.dart';
-import '../core/monetization/monetization_initializer.dart';
-import '../presentation/widgets/admob/controlled_ad_widget.dart';
+import 'package:peliculas/core/monetization/ad_frequency_controller.dart';
+import 'package:peliculas/core/monetization/monetization_analytics_service.dart';
+import 'package:peliculas/core/monetization/monetization_initializer.dart';
+import 'package:peliculas/presentation/widgets/admob/controlled_ad_widget.dart';
 
 /// Ejemplo de integración del sistema de monetización optimizado
 class MonetizationIntegrationExample extends StatefulWidget {

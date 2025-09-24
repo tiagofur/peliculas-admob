@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/error_handling/centralized_error_handler.dart';
-import '../../core/exceptions/app_exceptions.dart';
-import '../widgets/error_widgets.dart';
+import 'package:peliculas/core/error_handling/centralized_error_handler.dart';
+import 'package:peliculas/core/exceptions/app_exceptions.dart';
+import 'package:peliculas/presentation/widgets/error_widgets.dart';
 
 /// Página de demostración del sistema de error handling mejorado
 class ErrorHandlingDemoView extends ConsumerWidget {

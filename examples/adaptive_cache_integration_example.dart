@@ -3,11 +3,11 @@
 
 import 'package:flutter/material.dart';
 
-import '../core/cache/adaptive_cache_config.dart';
-import '../core/cache/image_cache_manager.dart';
-import '../core/cache/image_cache_performance_metrics.dart';
-import '../core/cache/network_aware_strategy.dart';
-import '../core/services/logger_factory.dart';
+import 'package:peliculas/core/cache/adaptive_cache_config.dart';
+import 'package:peliculas/core/cache/image_cache_manager.dart';
+import 'package:peliculas/core/cache/image_cache_performance_metrics.dart';
+import 'package:peliculas/core/cache/network_aware_strategy.dart';
+import 'package:peliculas/core/services/logger_factory.dart';
 
 /// Example of how to initialize the adaptive caching system
 class AdaptiveCacheIntegrationExample {

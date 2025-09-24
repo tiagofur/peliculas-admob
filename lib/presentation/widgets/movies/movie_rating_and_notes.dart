@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../generated/app_localizations.dart';
 import '../../providers/movie_ratings_provider.dart';
 import '../ratings/movie_rating_widget.dart';
 import '../ratings/rating_dialog.dart';
@@ -59,10 +60,10 @@ class MovieRatingAndNotes extends ConsumerWidget {
             data: (rating) {
               if (rating == null) {
                 // No hay calificación - mostrar botón para calificar
-                return _buildNoRatingState(context, ref);
+                return _buildNoRatingState(context, ref, l10n);
               } else {
                 // Hay calificación - mostrar calificación existente
-                return _buildExistingRating(context, ref, rating);
+                return _buildExistingRating(context, ref, rating, l10n);
               }
             },
           ),
@@ -71,7 +72,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoRatingState(BuildContext context, WidgetRef ref) {
+  Widget _buildNoRatingState(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     return Column(
       children: [
         Container(
@@ -143,7 +144,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
     );
   }
 
-  Widget _buildExistingRating(BuildContext context, WidgetRef ref, rating) {
+  Widget _buildExistingRating(BuildContext context, WidgetRef ref, rating, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
