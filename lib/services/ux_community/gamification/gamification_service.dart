@@ -577,7 +577,8 @@ class GamificationService {
         'pointsAwarded': achievement.pointsReward,
       });
 
-      LoggerFactory.info('Achievement unlocked: ${achievement.name} for user $userId');
+      LoggerFactory.info(
+          'Achievement unlocked: ${achievement.name} for user $userId');
       return true;
     } catch (e) {
       LoggerFactory.error('Error unlocking achievement: $e');
@@ -774,7 +775,8 @@ class GamificationService {
         'rewards': challenge.rewards,
       });
 
-      LoggerFactory.info('Challenge completed: ${challenge.name} by user $userId');
+      LoggerFactory.info(
+          'Challenge completed: ${challenge.name} by user $userId');
     } catch (e) {
       LoggerFactory.error('Error completing challenge: $e');
     }

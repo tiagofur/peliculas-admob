@@ -69,5 +69,19 @@
   "entity": "Entidad",
   "detected": "Detectado",
   "strategy": "Estrategia",
-  "reason": "Razón"
+  "reason": "Razón",
+  "rateThisMovie": "Califica esta película",
+  "yourRating": "Tu Calificación",
+  "quickRate": "Calificación Rápida",
+  "rateAndReview": "Calificar y Reseñar",
+  "shareYourOpinion": "Comparte tu opinión con la comunidad",
+  "editRating": "Editar Calificación",
+  "deleteRating": "Eliminar Calificación",
+  "confirmDeleteRating": "¿Estás seguro de que quieres eliminar tu calificación de esta película?",
+  "delete": "Eliminar",
+  "ratingDeletedSuccessfully": "¡Calificación eliminada exitosamente!",
+  "noCustomLists": "¡Aún no tienes listas personalizadas!",
+  "noCustomListsMessage": "No has creado ninguna lista personalizada de películas",
+  "startCreating": "Empieza a crear",
+  "createYourFirstList": "Crea tu primera lista"
 }

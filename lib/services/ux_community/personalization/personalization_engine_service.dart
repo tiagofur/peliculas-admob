@@ -442,9 +442,11 @@ class PersonalizationEngineService {
       await _loadRecommendations();
       await _loadDeviceSyncProfiles();
       await _loadContentInteractions();
-      LoggerFactory.info('PersonalizationEngineService initialized successfully');
+      LoggerFactory.info(
+          'PersonalizationEngineService initialized successfully');
     } catch (e) {
-      LoggerFactory.error('Error initializing PersonalizationEngineService: $e');
+      LoggerFactory.error(
+          'Error initializing PersonalizationEngineService: $e');
     }
   }
 
@@ -1019,7 +1021,8 @@ class PersonalizationEngineService {
         'deviceName': deviceName,
       });
 
-      LoggerFactory.info('Device registered: $deviceName ($deviceId) for user $userId');
+      LoggerFactory.info(
+          'Device registered: $deviceName ($deviceId) for user $userId');
     } catch (e) {
       LoggerFactory.error('Error registering device: $e');
     }

@@ -18,6 +18,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ratingAsync = ref.watch(movieRatingProvider(movie.id));
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -37,7 +38,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
               const Icon(Icons.star, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Your Rating',
+                l10n.yourRating,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -99,14 +100,14 @@ class MovieRatingAndNotes extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Rate this movie',
+                l10n.rateThisMovie,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Share your opinion with the community',
+                l10n.shareYourOpinion,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context)
                           .colorScheme
@@ -125,7 +126,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _showQuickRating(context),
                 icon: const Icon(Icons.star, size: 18),
-                label: const Text('Quick Rate'),
+                label: Text(l10n.quickRate),
               ),
             ),
             const SizedBox(width: 8),
@@ -133,7 +134,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
               child: ElevatedButton.icon(
                 onPressed: () => _showFullRatingDialog(context),
                 icon: const Icon(Icons.rate_review, size: 18),
-                label: const Text('Rate & Review'),
+                label: Text(l10n.rateAndReview),
               ),
             ),
           ],
@@ -251,12 +252,12 @@ class MovieRatingAndNotes extends ConsumerWidget {
               child: OutlinedButton.icon(
                 onPressed: () => _showFullRatingDialog(context, rating),
                 icon: const Icon(Icons.edit, size: 18),
-                label: const Text('Edit Rating'),
+                label: Text(l10n.editRating),
               ),
             ),
             const SizedBox(width: 8),
             IconButton(
-              onPressed: () => _deleteRating(context, ref),
+              onPressed: () => _deleteRating(context, ref, l10n),
               icon: const Icon(Icons.delete),
               color: Theme.of(context).colorScheme.error,
             ),
@@ -283,13 +284,14 @@ class MovieRatingAndNotes extends ConsumerWidget {
     );
   }
 
-  Future<void> _deleteRating(BuildContext context, WidgetRef ref) async {
+  Future<void> _deleteRating(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Rating'),
-        content: const Text(
-          'Are you sure you want to delete your rating for this movie?',
+        title: Text(l10n.deleteRating),
+        content: Text(
+          l10n.confirmDeleteRating,
         ),
         actions: [
           TextButton(
@@ -299,7 +301,7 @@ class MovieRatingAndNotes extends ConsumerWidget {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.delete),
           ),
         ],
       ),
@@ -311,8 +313,8 @@ class MovieRatingAndNotes extends ConsumerWidget {
 
       if (success && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Rating deleted successfully!'),
+          SnackBar(
+            content: Text(l10n.ratingDeletedSuccessfully),
             backgroundColor: Colors.green,
           ),
         );

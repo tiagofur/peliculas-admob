@@ -32,8 +32,8 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
   void initState() {
     super.initState();
 
-    // Inicializar con valores existentes o valores por defecto
-    _rating = widget.existingRating?.rating ?? 5.0;
+    // ✅ SIMPLIFIED: Initialize with 5-star rating (2.5 = middle, like 5/10 was)
+    _rating = widget.existingRating?.rating ?? 2.5;
     _reviewController = TextEditingController(
       text: widget.existingRating?.review ?? '',
     );
@@ -54,8 +54,15 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600),
-        padding: const EdgeInsets.all(24),
+        constraints: BoxConstraints(
+          maxWidth:
+              MediaQuery.of(context).size.width * 0.9, // ✅ Responsive width
+          maxHeight:
+              MediaQuery.of(context).size.height * 0.8, // ✅ Responsive height
+        ),
+        padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400
+            ? 16
+            : 24), // ✅ Compact padding on small screens
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -117,17 +124,19 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         ),
         const SizedBox(height: 16),
         StarRatingWidget(
-          rating: _rating / 2, // Convert to 5-star scale for display
-          size: 40,
+          rating: _rating, // ✅ Direct 5-star rating, no conversion needed
+          size: MediaQuery.of(context).size.width < 400
+              ? 32
+              : 40, // ✅ Responsive star size
           onRatingChanged: (starRating) {
             setState(() {
-              _rating = starRating * 2; // Convert back to 10-point scale
+              _rating = starRating; // ✅ Direct assignment, no conversion
             });
           },
         ),
         const SizedBox(height: 8),
         Text(
-          '${_rating.toStringAsFixed(1)}/10.0',
+          '${_rating.toStringAsFixed(1)}/5',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(context).primaryColor,
@@ -136,10 +145,10 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         const SizedBox(height: 8),
         Slider(
           value: _rating,
-          min: 1.0,
-          max: 10.0,
-          divisions: 18, // Allow 0.5 increments
-          label: _rating.toStringAsFixed(1),
+          min: 0.5,
+          max: 5.0,
+          divisions: 9, // Allow 0.5 increments (0.5 to 5.0 = 9 divisions)
+          label: '${_rating.toStringAsFixed(1)}/5',
           onChanged: (value) {
             setState(() {
               _rating = value;
@@ -149,8 +158,8 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('1.0', style: Theme.of(context).textTheme.bodySmall),
-            Text('10.0', style: Theme.of(context).textTheme.bodySmall),
+            Text('0.5/5', style: Theme.of(context).textTheme.bodySmall),
+            Text('5.0/5', style: Theme.of(context).textTheme.bodySmall),
           ],
         ),
       ],
@@ -370,7 +379,7 @@ class QuickRatingDialog extends ConsumerStatefulWidget {
 }
 
 class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
-  double _rating = 5.0;
+  double _rating = 2.5; // ✅ Default to 2.5/5 stars (middle rating)
   bool _isSubmitting = false;
 
   @override
@@ -381,17 +390,19 @@ class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           StarRatingWidget(
-            rating: _rating / 2, // Convert to 5-star scale
-            size: 32,
+            rating: _rating, // ✅ Direct 5-star rating
+            size: MediaQuery.of(context).size.width < 400
+                ? 28
+                : 32, // ✅ Smaller stars on mobile
             onRatingChanged: (starRating) {
               setState(() {
-                _rating = starRating * 2; // Convert back to 10-point scale
+                _rating = starRating; // ✅ Direct assignment, no conversion
               });
             },
           ),
           const SizedBox(height: 8),
           Text(
-            '${_rating.toStringAsFixed(1)}/10.0',
+            '${_rating.toStringAsFixed(1)}/5',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),

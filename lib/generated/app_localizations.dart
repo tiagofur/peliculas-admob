@@ -70,6 +70,20 @@ abstract class AppLocalizations {
   String get myLibrary => 'My Library';
   String get statistics => 'Statistics';
   String get challenges => 'Challenges';
+  String get rateThisMovie => 'Rate this movie';
+  String get yourRating => 'Your Rating';
+  String get quickRate => 'Quick Rate';
+  String get rateAndReview => 'Rate & Review';
+  String get shareYourOpinion => 'Share your opinion with the community';
+  String get editRating => 'Edit Rating';
+  String get deleteRating => 'Delete Rating';
+  String get confirmDeleteRating => 'Are you sure you want to delete your rating for this movie?';
+  String get delete => 'Delete';
+  String get ratingDeletedSuccessfully => 'Rating deleted successfully!';
+  String get noCustomLists => 'No custom lists yet!';
+  String get noCustomListsMessage => 'You haven\'t created any custom movie lists';
+  String get startCreating => 'Start creating';
+  String get createYourFirstList => 'Create your first list';
 }
 
 class _AppLocalizationsDelegate
@@ -103,7 +117,7 @@ AppLocalizations _lookupAppLocalizations(Locale locale) {
   );
 }
 
-// English localizations
+/// English localizations
 class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn() : super('en');
 
@@ -120,8 +134,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get information => 'Information';
   @override
-  String get systemThemeDescription =>
-      'The \'System\' mode will automatically follow your device\'s theme setting.';
+  String get systemThemeDescription => 'The \'System\' mode will automatically follow your device\'s theme setting.';
   @override
   String get system => 'System';
   @override
@@ -143,8 +156,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get english => 'English';
   @override
-  String get languageDescription =>
-      'Change the app language. The app will restart to apply the new language.';
+  String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
   @override
   String get home => 'Home';
   @override
@@ -177,9 +189,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get statistics => 'Statistics';
   @override
   String get challenges => 'Challenges';
+  @override
+  String get rateThisMovie => 'Rate this movie';
+  @override
+  String get yourRating => 'Your Rating';
+  @override
+  String get quickRate => 'Quick Rate';
+  @override
+  String get rateAndReview => 'Rate & Review';
+  @override
+  String get shareYourOpinion => 'Share your opinion with the community';
+  @override
+  String get editRating => 'Edit Rating';
+  @override
+  String get deleteRating => 'Delete Rating';
+  @override
+  String get confirmDeleteRating => 'Are you sure you want to delete your rating for this movie?';
+  @override
+  String get delete => 'Delete';
+  @override
+  String get ratingDeletedSuccessfully => 'Rating deleted successfully!';
+  @override
+  String get noCustomLists => 'No custom lists yet!';
+  @override
+  String get noCustomListsMessage => 'You haven\'t created any custom movie lists';
+  @override
+  String get startCreating => 'Start creating';
+  @override
+  String get createYourFirstList => 'Create your first list';
 }
 
-// Spanish localizations
+/// Spanish localizations
 class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs() : super('es');
 
@@ -196,8 +236,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get information => 'Información';
   @override
-  String get systemThemeDescription =>
-      'El modo \'Sistema\' seguirá automáticamente la configuración de tema de tu dispositivo.';
+  String get systemThemeDescription => 'El modo \'Sistema\' seguirá automáticamente la configuración de tema de tu dispositivo.';
   @override
   String get system => 'Sistema';
   @override
@@ -219,8 +258,7 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get english => 'Inglés';
   @override
-  String get languageDescription =>
-      'Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.';
+  String get languageDescription => 'Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.';
   @override
   String get home => 'Inicio';
   @override
@@ -253,4 +291,32 @@ class AppLocalizationsEs extends AppLocalizations {
   String get statistics => 'Estadísticas';
   @override
   String get challenges => 'Desafíos';
+  @override
+  String get rateThisMovie => 'Califica esta película';
+  @override
+  String get yourRating => 'Tu Calificación';
+  @override
+  String get quickRate => 'Calificación Rápida';
+  @override
+  String get rateAndReview => 'Calificar y Reseñar';
+  @override
+  String get shareYourOpinion => 'Comparte tu opinión con la comunidad';
+  @override
+  String get editRating => 'Editar Calificación';
+  @override
+  String get deleteRating => 'Eliminar Calificación';
+  @override
+  String get confirmDeleteRating => '¿Estás seguro de que quieres eliminar tu calificación de esta película?';
+  @override
+  String get delete => 'Eliminar';
+  @override
+  String get ratingDeletedSuccessfully => '¡Calificación eliminada exitosamente!';
+  @override
+  String get noCustomLists => '¡Aún no tienes listas personalizadas!';
+  @override
+  String get noCustomListsMessage => 'No has creado ninguna lista personalizada de películas';
+  @override
+  String get startCreating => 'Empieza a crear';
+  @override
+  String get createYourFirstList => 'Crea tu primera lista';
 }

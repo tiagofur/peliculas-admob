@@ -41,11 +41,13 @@ class HomeViewState extends ConsumerState<HomeView>
     try {
       // Priority 1: Load essential content IMMEDIATELY (nowPlaying for slideshow)
       LoggerFactory.info('📱 Loading critical content (nowPlaying)...');
-      final criticalFuture = ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
+      final criticalFuture =
+          ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
 
       // Start popular load immediately in parallel (no waiting)
       LoggerFactory.info('📱 Starting popular content load...');
-      final popularFuture = ref.read(popularMoviesProvider.notifier).loadNextPage();
+      final popularFuture =
+          ref.read(popularMoviesProvider.notifier).loadNextPage();
 
       // Wait only for critical content to show slideshow ASAP
       await criticalFuture;
@@ -79,7 +81,8 @@ class HomeViewState extends ConsumerState<HomeView>
       ]);
 
       if (!mounted) return;
-      LoggerFactory.info('✅ Aggressive progressive loading completed successfully');
+      LoggerFactory.info(
+          '✅ Aggressive progressive loading completed successfully');
     } catch (e) {
       LoggerFactory.error('❌ Error in progressive loading: $e');
       // If progressive loading fails, at least load critical content

@@ -54,6 +54,10 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ MOBILE OPTIMIZATION: Responsive star spacing
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 400; // Small mobile screens
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
@@ -73,12 +77,11 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
                   final isLeftHalf =
                       (localPosition.dx % starWidth) < (starWidth / 2);
 
-                  // Convert star index (0-4) to rating value (2, 4, 6, 8, 10)
+                  // ✅ SIMPLIFIED: Direct 5-star rating (0.5, 1.0, 1.5... 5.0)
                   final starRating = starIndex + (isLeftHalf ? 0.5 : 1.0);
                   if (starRating >= 0.5 && starRating <= 5.0) {
-                    final rating =
-                        starRating * 2.0; // Convert to 10-point scale
-                    _handleTap(rating);
+                    _handleTap(
+                        starRating); // Direct 5-star rating, no conversion
                   }
                 },
           child: _buildStar(index),
@@ -90,6 +93,10 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
   Widget _buildStar(int index) {
     final starValue = index + 1;
     final difference = _currentRating - starValue;
+
+    // ✅ MOBILE OPTIMIZATION: Check screen size for compact layout
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 400;
 
     Widget star;
 
@@ -125,7 +132,7 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 1),
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 0.5 : 1),
       child: star,
     );
   }
@@ -160,7 +167,7 @@ class SimpleStarRating extends StatelessWidget {
         if (showRating) ...[
           const SizedBox(width: 4),
           Text(
-            rating.toStringAsFixed(1),
+            '${rating.toStringAsFixed(1)}/5',
             style: TextStyle(
               fontSize: size * 0.8,
               fontWeight: FontWeight.bold,
@@ -178,8 +185,8 @@ class RatingSliderWidget extends StatefulWidget {
     super.key,
     required this.rating,
     this.onRatingChanged,
-    this.min = 1.0,
-    this.max = 10.0,
+    this.min = 0.5,
+    this.max = 5.0,
   });
 
   final double rating;
@@ -210,8 +217,7 @@ class _RatingSliderWidgetState extends State<RatingSliderWidget> {
           children: [
             Text('Rating: ${_currentRating.toStringAsFixed(1)}'),
             SimpleStarRating(
-              rating: _currentRating /
-                  2, // Convert 10-point to 5-star scale for display
+              rating: _currentRating, // Direct 5-star rating display
               showRating: false,
             ),
           ],
@@ -220,8 +226,8 @@ class _RatingSliderWidgetState extends State<RatingSliderWidget> {
           value: _currentRating,
           min: widget.min,
           max: widget.max,
-          divisions:
-              ((widget.max - widget.min) * 2).round(), // Allow 0.5 increments
+          divisions: ((widget.max - widget.min) * 2)
+              .round(), // Allow 0.5 increments (0.5 to 5.0 = 9 divisions)
           label: _currentRating.toStringAsFixed(1),
           onChanged: (value) {
             setState(() {
@@ -234,11 +240,11 @@ class _RatingSliderWidgetState extends State<RatingSliderWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              widget.min.toString(),
+              '${widget.min.toString()}/5',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             Text(
-              widget.max.toString(),
+              '${widget.max.toString()}/5',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],

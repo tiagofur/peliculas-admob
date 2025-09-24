@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../domain/entities/entities.dart';
+import '../../../generated/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -40,6 +41,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
     final listStats = ref.watch(listStatsProvider);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
@@ -100,7 +102,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
                     controller: _tabController,
                     children: [
                       _buildDefaultListsTab(defaultLists),
-                      _buildCustomListsTab(customLists),
+                      _buildCustomListsTab(customLists, l10n),
                     ],
                   ),
                 ),
@@ -221,41 +223,25 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
     );
   }
 
-  Widget _buildCustomListsTab(List<CustomList> lists) {
+  Widget _buildCustomListsTab(List<CustomList> lists, AppLocalizations l10n) {
     if (lists.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(
-              Icons.playlist_add,
-              size: 64,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No tienes listas personalizadas',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Crea tu primera lista personalizada',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.7),
-                  ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => _showCreateListDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('Crear Lista'),
-            ),
+            Icon(Icons.playlist_add_outlined,
+                size: 60, color: Theme.of(context).colorScheme.primary),
+            Text(l10n.noCustomLists,
+                style: TextStyle(
+                    fontSize: 30,
+                    color: Theme.of(context).colorScheme.primary)),
+            Text(l10n.noCustomListsMessage,
+                style: const TextStyle(fontSize: 20)),
+            const SizedBox(height: 20),
+            FilledButton.tonal(
+                onPressed: () => _showCreateListDialog(context),
+                child: Text(l10n.startCreating))
           ],
         ),
       );

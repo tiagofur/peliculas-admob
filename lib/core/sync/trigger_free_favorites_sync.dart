@@ -166,5 +166,4 @@ class TriggerFreeFavoritesSync implements BaseSync {
       return false;
     }
   }
-
 }

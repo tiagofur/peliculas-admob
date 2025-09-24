@@ -221,4 +221,48 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reason => 'Reason';
+
+  @override
+  String get rateThisMovie => 'Rate this movie';
+
+  @override
+  String get yourRating => 'Your Rating';
+
+  @override
+  String get quickRate => 'Quick Rate';
+
+  @override
+  String get rateAndReview => 'Rate & Review';
+
+  @override
+  String get shareYourOpinion => 'Share your opinion with the community';
+
+  @override
+  String get editRating => 'Edit Rating';
+
+  @override
+  String get deleteRating => 'Delete Rating';
+
+  @override
+  String get confirmDeleteRating =>
+      'Are you sure you want to delete your rating for this movie?';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get ratingDeletedSuccessfully => 'Rating deleted successfully!';
+
+  @override
+  String get noCustomLists => 'No custom lists yet!';
+
+  @override
+  String get noCustomListsMessage =>
+      'You haven\'t created any custom movie lists';
+
+  @override
+  String get startCreating => 'Start creating';
+
+  @override
+  String get createYourFirstList => 'Create your first list';
 }

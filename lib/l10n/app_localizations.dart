@@ -517,6 +517,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reason'**
   String get reason;
+
+  /// Title for rating a movie
+  ///
+  /// In en, this message translates to:
+  /// **'Rate this movie'**
+  String get rateThisMovie;
+
+  /// Label for user's rating
+  ///
+  /// In en, this message translates to:
+  /// **'Your Rating'**
+  String get yourRating;
+
+  /// Quick rating button text
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Rate'**
+  String get quickRate;
+
+  /// Full rating and review button text
+  ///
+  /// In en, this message translates to:
+  /// **'Rate & Review'**
+  String get rateAndReview;
+
+  /// Subtitle for rating section
+  ///
+  /// In en, this message translates to:
+  /// **'Share your opinion with the community'**
+  String get shareYourOpinion;
+
+  /// Edit rating button text
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Rating'**
+  String get editRating;
+
+  /// Delete rating dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Rating'**
+  String get deleteRating;
+
+  /// Confirm delete rating message
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete your rating for this movie?'**
+  String get confirmDeleteRating;
+
+  /// Delete button text
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// Success message after deleting rating
+  ///
+  /// In en, this message translates to:
+  /// **'Rating deleted successfully!'**
+  String get ratingDeletedSuccessfully;
+
+  /// Message when user has no custom lists
+  ///
+  /// In en, this message translates to:
+  /// **'No custom lists yet!'**
+  String get noCustomLists;
+
+  /// Detailed message when no custom lists exist
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t created any custom movie lists'**
+  String get noCustomListsMessage;
+
+  /// Button text to start creating lists
+  ///
+  /// In en, this message translates to:
+  /// **'Start creating'**
+  String get startCreating;
+
+  /// Call to action for creating first custom list
+  ///
+  /// In en, this message translates to:
+  /// **'Create your first list'**
+  String get createYourFirstList;
 }
 
 class _AppLocalizationsDelegate

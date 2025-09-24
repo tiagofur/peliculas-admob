@@ -91,7 +91,6 @@ class TestSetupHelper {
     }
   }
 
-
   /// Initialize SharedPreferences for testing
   static void initializeSharedPreferences() {
     SharedPreferences.setMockInitialValues({});
@@ -152,7 +151,8 @@ class TestSetupHelper {
   }
 
   /// Register adapter safely without throwing if already registered
-  static void _registerAdapterSafely(int typeId, TypeAdapter Function() adapterFactory) {
+  static void _registerAdapterSafely(
+      int typeId, TypeAdapter Function() adapterFactory) {
     if (!Hive.isAdapterRegistered(typeId)) {
       Hive.registerAdapter(adapterFactory());
     }

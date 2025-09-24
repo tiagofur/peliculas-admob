@@ -5,7 +5,8 @@ class CinematicPageTransitions {
   /// Transición de desvanecimiento con escala - ✅ OPTIMIZADA
   static PageRouteBuilder fadeScaleTransition({
     required Widget page,
-    Duration duration = const Duration(milliseconds: 350), // Más rápida para mejor UX
+    Duration duration =
+        const Duration(milliseconds: 350), // Más rápida para mejor UX
   }) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => page,
@@ -46,7 +47,8 @@ class CinematicPageTransitions {
   /// Transición de deslizamiento desde abajo con rebote - ✅ OPTIMIZADA
   static PageRouteBuilder slideUpTransition({
     required Widget page,
-    Duration duration = const Duration(milliseconds: 400), // Ligeramente más rápida
+    Duration duration =
+        const Duration(milliseconds: 400), // Ligeramente más rápida
   }) {
     return PageRouteBuilder(
       pageBuilder: (context, animation, secondaryAnimation) => page,

@@ -169,5 +169,4 @@ class TriggerFreeWatchedSync implements BaseSync {
       return false;
     }
   }
-
 }

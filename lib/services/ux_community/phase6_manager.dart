@@ -448,7 +448,8 @@ class Phase6Manager {
       // Update service configurations based on settings
       await _applySettingsToServices(updatedSettings);
 
-      LoggerFactory.info('Phase 6 settings updated for user ${settings.userId}');
+      LoggerFactory.info(
+          'Phase 6 settings updated for user ${settings.userId}');
     } catch (e) {
       LoggerFactory.error('Error updating Phase 6 settings: $e');
     }
@@ -489,15 +490,18 @@ class Phase6Manager {
   Future<void> _applySettingsToServices(Phase6Settings settings) async {
     // Apply accessibility settings across all services
     if (isFeatureEnabled(settings.userId, Phase6Feature.accessibility)) {
-      LoggerFactory.debug('Applying accessibility settings for user ${settings.userId}');
+      LoggerFactory.debug(
+          'Applying accessibility settings for user ${settings.userId}');
     }
 
     // Apply personalization settings
     if (isFeatureEnabled(settings.userId, Phase6Feature.personalization)) {
-      LoggerFactory.debug('Applying personalization settings for user ${settings.userId}');
+      LoggerFactory.debug(
+          'Applying personalization settings for user ${settings.userId}');
     }
 
-    LoggerFactory.info('Settings applied to services for user ${settings.userId}');
+    LoggerFactory.info(
+        'Settings applied to services for user ${settings.userId}');
   }
 
   // Cross-Service Event Handling
@@ -539,7 +543,8 @@ class Phase6Manager {
         await _handleCommunityContribution(eventData);
         break;
       default:
-        LoggerFactory.warning('Unhandled cross-service event: ${eventData.eventType}');
+        LoggerFactory.warning(
+            'Unhandled cross-service event: ${eventData.eventType}');
     }
 
     // Mark event as processed
@@ -556,7 +561,8 @@ class Phase6Manager {
 
   Future<void> _handleAchievementUnlocked(
       CrossServiceEventData eventData) async {
-    LoggerFactory.info('Achievement unlocked event processed for user ${eventData.userId}');
+    LoggerFactory.info(
+        'Achievement unlocked event processed for user ${eventData.userId}');
   }
 
   Future<void> _handleThemeChanged(CrossServiceEventData eventData) async {
@@ -569,16 +575,19 @@ class Phase6Manager {
       );
     }
 
-    LoggerFactory.info('Theme change event processed for user ${eventData.userId}');
+    LoggerFactory.info(
+        'Theme change event processed for user ${eventData.userId}');
   }
 
   Future<void> _handleSocialActivity(CrossServiceEventData eventData) async {
-    LoggerFactory.info('Social activity event processed for user ${eventData.userId}');
+    LoggerFactory.info(
+        'Social activity event processed for user ${eventData.userId}');
   }
 
   Future<void> _handleAccessibilityChanged(
       CrossServiceEventData eventData) async {
-    LoggerFactory.info('Accessibility change event processed for user ${eventData.userId}');
+    LoggerFactory.info(
+        'Accessibility change event processed for user ${eventData.userId}');
   }
 
   Future<void> _handlePersonalizationUpdated(

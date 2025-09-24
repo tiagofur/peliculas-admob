@@ -221,4 +221,49 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get reason => 'Razón';
+
+  @override
+  String get rateThisMovie => 'Califica esta película';
+
+  @override
+  String get yourRating => 'Tu Calificación';
+
+  @override
+  String get quickRate => 'Calificación Rápida';
+
+  @override
+  String get rateAndReview => 'Calificar y Reseñar';
+
+  @override
+  String get shareYourOpinion => 'Comparte tu opinión con la comunidad';
+
+  @override
+  String get editRating => 'Editar Calificación';
+
+  @override
+  String get deleteRating => 'Eliminar Calificación';
+
+  @override
+  String get confirmDeleteRating =>
+      '¿Estás seguro de que quieres eliminar tu calificación de esta película?';
+
+  @override
+  String get delete => 'Eliminar';
+
+  @override
+  String get ratingDeletedSuccessfully =>
+      '¡Calificación eliminada exitosamente!';
+
+  @override
+  String get noCustomLists => '¡Aún no tienes listas personalizadas!';
+
+  @override
+  String get noCustomListsMessage =>
+      'No has creado ninguna lista personalizada de películas';
+
+  @override
+  String get startCreating => 'Empieza a crear';
+
+  @override
+  String get createYourFirstList => 'Crea tu primera lista';
 }

@@ -164,7 +164,8 @@ class AdaptiveCacheConfig {
 
     switch (capabilities.performanceTier) {
       case PerformanceTier.high:
-        memoryMultiplier = 4.0; // 200MB - más agresivo para dispositivos premium
+        memoryMultiplier =
+            4.0; // 200MB - más agresivo para dispositivos premium
         diskMultiplier = 6.0; // 1.5GB - aprovechar almacenamiento abundante
         concurrentDownloads = 8; // más descargas paralelas
         break;

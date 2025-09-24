@@ -113,7 +113,7 @@ class MovieRatingWidget extends ConsumerWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  rating.rating.toStringAsFixed(1),
+                  '${rating.rating.toStringAsFixed(1)}/5',
                   style: TextStyle(
                     fontSize: size * 0.8,
                     fontWeight: FontWeight.bold,
@@ -232,7 +232,7 @@ class UserRatingStatsWidget extends ConsumerWidget {
             _buildStatRow(
               context,
               'Average Rating',
-              '${stats['averageRating']}/10.0',
+              '${stats['averageRating']}/5.0',
               Icons.star_half,
             ),
             _buildStatRow(
@@ -333,7 +333,7 @@ class RecentRatingsWidget extends ConsumerWidget {
                         )
                       : null,
                   trailing: Text(
-                    '${rating.rating}/10',
+                    '${rating.rating}/5',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   dense: true,

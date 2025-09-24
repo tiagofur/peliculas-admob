@@ -279,5 +279,61 @@
   "reason": "Reason",
   "@reason": {
     "description": "Reason label"
+  },
+  "rateThisMovie": "Rate this movie",
+  "@rateThisMovie": {
+    "description": "Title for rating a movie"
+  },
+  "yourRating": "Your Rating",
+  "@yourRating": {
+    "description": "Label for user's rating"
+  },
+  "quickRate": "Quick Rate",
+  "@quickRate": {
+    "description": "Quick rating button text"
+  },
+  "rateAndReview": "Rate & Review",
+  "@rateAndReview": {
+    "description": "Full rating and review button text"
+  },
+  "shareYourOpinion": "Share your opinion with the community",
+  "@shareYourOpinion": {
+    "description": "Subtitle for rating section"
+  },
+  "editRating": "Edit Rating",
+  "@editRating": {
+    "description": "Edit rating button text"
+  },
+  "deleteRating": "Delete Rating",
+  "@deleteRating": {
+    "description": "Delete rating dialog title"
+  },
+  "confirmDeleteRating": "Are you sure you want to delete your rating for this movie?",
+  "@confirmDeleteRating": {
+    "description": "Confirm delete rating message"
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "ratingDeletedSuccessfully": "Rating deleted successfully!",
+  "@ratingDeletedSuccessfully": {
+    "description": "Success message after deleting rating"
+  },
+  "noCustomLists": "No custom lists yet!",
+  "@noCustomLists": {
+    "description": "Message when user has no custom lists"
+  },
+  "noCustomListsMessage": "You haven't created any custom movie lists",
+  "@noCustomListsMessage": {
+    "description": "Detailed message when no custom lists exist"
+  },
+  "startCreating": "Start creating",
+  "@startCreating": {
+    "description": "Button text to start creating lists"
+  },
+  "createYourFirstList": "Create your first list",
+  "@createYourFirstList": {
+    "description": "Call to action for creating first custom list"
   }
 }
