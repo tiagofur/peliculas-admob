@@ -218,6 +218,29 @@ class EnhancedUserProfileService {
       final moviesThisYear =
           watchedMovies.where((m) => m.watchedDate.year == currentYear).length;
 
+      // Calcular mes favorito basado en actividad real del usuario
+      String favoriteMonth = 'Sin datos';
+      if (watchedMovies.isNotEmpty) {
+        final monthCounts = <int, int>{};
+        for (final watchedMovie in watchedMovies) {
+          final month = watchedMovie.watchedDate.month;
+          monthCounts[month] = (monthCounts[month] ?? 0) + 1;
+        }
+
+        if (monthCounts.isNotEmpty) {
+          final favoriteMonthNumber = monthCounts.entries
+              .reduce((a, b) => a.value > b.value ? a : b)
+              .key;
+
+          // Convertir número de mes a nombre en español
+          const monthNames = [
+            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+          ];
+          favoriteMonth = monthNames[favoriteMonthNumber];
+        }
+      }
+
       final annualStats = {
         'year': currentYear,
         'moviesThisYear': moviesThisYear,
@@ -226,7 +249,7 @@ class EnhancedUserProfileService {
                 .reduce((a, b) => a.value > b.value ? a : b)
                 .key
             : 'N/A',
-        'favoriteMonthForMovies': 'March', // TODO: calcular mes favorito real
+        'favoriteMonthForMovies': favoriteMonth,
         'longestMovieWatched': watchedMovies.isNotEmpty
             ? watchedMovies
                 .map((m) => m.movie.runtime ?? 120)

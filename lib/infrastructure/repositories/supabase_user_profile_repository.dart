@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/enhanced_user_profile.dart';
+import '../../domain/entities/movie.dart';
 
 /// Repository para gestionar perfiles de usuario en Supabase
 class SupabaseUserProfileRepository {
@@ -31,7 +32,7 @@ class SupabaseUserProfileRepository {
       final data = response.first;
       LoggerFactory.info('✅ Profile data retrieved successfully');
 
-      return _buildEnhancedUserProfile(data);
+      return await _buildEnhancedUserProfile(data);
     } catch (e) {
       LoggerFactory.error('❌ Failed to fetch user profile: $e');
       rethrow;
@@ -313,8 +314,116 @@ class SupabaseUserProfileRepository {
   // MÉTODOS PRIVADOS DE CONSTRUCCIÓN
   // ===================
 
+  /// Obtiene las películas favoritas del usuario basadas en ratings altos (4+ estrellas)
+  Future<List<Movie>> _getUserFavoriteMovies(String userId) async {
+    try {
+      LoggerFactory.info('🎬 Fetching favorite movies for user: $userId');
+
+      // Consultar ratings altos del usuario desde Supabase
+      final response = await _supabase
+          .from('movie_ratings')
+          .select('''
+            movie_id,
+            rating,
+            movie_title,
+            movie_poster_path,
+            movie_overview,
+            movie_release_date,
+            movie_genre_ids,
+            movie_vote_average,
+            movie_vote_count,
+            movie_popularity,
+            movie_adult,
+            movie_video,
+            movie_original_language,
+            movie_original_title,
+            movie_backdrop_path
+          ''')
+          .eq('user_id', userId)
+          .gte('rating', 4.0) // Solo películas con 4+ estrellas
+          .order('rating', ascending: false)
+          .order('created_at', ascending: false)
+          .limit(20); // Máximo 20 películas favoritas
+
+      final favoriteMovies = <Movie>[];
+      for (final data in response) {
+        try {
+          // Construir objeto Movie desde los datos guardados
+          final movie = Movie(
+            id: data['movie_id'] as int,
+            title: data['movie_title'] as String? ?? 'Título desconocido',
+            overview: data['movie_overview'] as String? ?? '',
+            posterPath: data['movie_poster_path'] as String? ?? '',
+            backdropPath: data['movie_backdrop_path'] as String? ?? '',
+            releaseDate: data['movie_release_date'] != null
+                ? DateTime.parse(data['movie_release_date'] as String)
+                : DateTime.now(),
+            genreIds: _parseGenreIds(data['movie_genre_ids']),
+            voteAverage:
+                (data['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
+            voteCount: data['movie_vote_count'] as int? ?? 0,
+            popularity: (data['movie_popularity'] as num?)?.toDouble() ?? 0.0,
+            adult: data['movie_adult'] as bool? ?? false,
+            video: data['movie_video'] as bool? ?? false,
+            originalLanguage:
+                data['movie_original_language'] as String? ?? 'en',
+            originalTitle: data['movie_original_title'] as String? ?? '',
+          );
+          favoriteMovies.add(movie);
+        } catch (movieError) {
+          LoggerFactory.warning(
+              '⚠️ Error parsing favorite movie ${data['movie_id']}: $movieError');
+        }
+      }
+
+      LoggerFactory.info('✅ Found ${favoriteMovies.length} favorite movies');
+      return favoriteMovies;
+    } catch (e) {
+      LoggerFactory.error('❌ Failed to fetch favorite movies: $e');
+      return []; // Devolver lista vacía en caso de error
+    }
+  }
+
+  /// Parsea lista de IDs de géneros desde diferentes formatos
+  List<String> _parseGenreIds(dynamic genreData) {
+    if (genreData == null) return [];
+
+    if (genreData is String) {
+      // Si es string, podría ser JSON array o lista separada por comas
+      try {
+        if (genreData.startsWith('[') && genreData.endsWith(']')) {
+          // Formato JSON array
+          final parsed = genreData
+              .substring(1, genreData.length - 1)
+              .split(',')
+              .map((s) => s.trim().replaceAll('"', ''))
+              .where((s) => s.isNotEmpty)
+              .toList();
+          return parsed;
+        } else {
+          // Lista separada por comas
+          return genreData
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+      } catch (e) {
+        LoggerFactory.warning('⚠️ Error parsing genre string: $e');
+        return [];
+      }
+    }
+
+    if (genreData is List) {
+      return genreData.map((e) => e.toString()).toList();
+    }
+
+    return [];
+  }
+
   /// Construye EnhancedUserProfile desde datos de Supabase
-  EnhancedUserProfile _buildEnhancedUserProfile(Map<String, dynamic> data) {
+  Future<EnhancedUserProfile> _buildEnhancedUserProfile(
+      Map<String, dynamic> data) async {
     final profileData = data['profile_data'] as Map<String, dynamic>;
     final statsData = data['statistics_data'] as Map<String, dynamic>?;
     final preferencesData = data['preferences_data'] as Map<String, dynamic>?;
@@ -354,7 +463,8 @@ class SupabaseUserProfileRepository {
           : DateTime.now(),
       preferences: preferences,
       stats: updatedStats,
-      favoriteMovies: [], // TODO: Implementar películas favoritas
+      favoriteMovies:
+          await _getUserFavoriteMovies(profileData['user_id'] as String),
       customFields:
           (profileData['custom_fields'] as Map<String, dynamic>?) ?? {},
     );
