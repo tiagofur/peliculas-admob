@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../providers/auth_provider.dart';
 
 // Banner que muestra los beneficios del registro en modo guest
@@ -48,12 +49,15 @@ class GuestModeBanner extends ConsumerWidget {
                 size: 24,
               ),
               const SizedBox(width: 8),
-              Text(
-                '¡Desbloquea más funciones!',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+              Expanded(
+                child: Text(
+                  '¡Desbloquea más funciones!',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -94,18 +98,33 @@ class GuestModeBanner extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => context.push('/register'),
-                  child: const Text('Crear cuenta'),
+                  style: OutlinedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Crear cuenta',
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton(
                   onPressed: () => context.push('/login'),
-                  child: const Text('Iniciar sesión'),
+                  style: FilledButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                  ),
+                  child: const Text(
+                    'Iniciar sesión',
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],

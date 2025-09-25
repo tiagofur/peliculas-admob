@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
@@ -7,6 +8,7 @@ import '../../../domain/entities/movie.dart';
 import '../admob/ad_integration_helper.dart';
 import '../admob/full_width_ad_widget.dart';
 import '../admob/grid_ad_widget.dart';
+import '../admob/web_safe_ad_widgets.dart';
 import 'movie_card_with_actions.dart';
 
 /// Versión mejorada de MovieMasonry que integra anuncios
@@ -149,10 +151,12 @@ class _GridAdCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Padding(
       padding: EdgeInsets.all(4),
-      child: GridAdWidget(
-        aspectRatio: 0.7, // Mismo ratio que los posters de películas
-        showLabel: true,
-      ),
+      child: kIsWeb
+          ? WebSafeGridAdWidget()
+          : GridAdWidget(
+              aspectRatio: 0.7, // Mismo ratio que los posters de películas
+              showLabel: true,
+            ),
     );
   }
 }
@@ -168,9 +172,11 @@ class _FullWidthAdCard extends StatelessWidget {
       // Usar el ancho completo disponible
       width: double.infinity,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: const CompactFullWidthAdWidget(
-        margin: EdgeInsets.zero,
-      ),
+      child: kIsWeb
+          ? const SizedBox.shrink()
+          : const CompactFullWidthAdWidget(
+              margin: EdgeInsets.zero,
+            ),
     );
   }
 }

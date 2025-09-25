@@ -13,7 +13,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'config/constants/environment.dart';
-import 'config/deep_links/deep_link_handler.dart';
 import 'config/router/app_router.dart';
 import 'config/theme/app_theme.dart' as app_theme;
 import 'config/theme/custom_scroll_behavior.dart';
@@ -24,6 +23,45 @@ import 'core/state/app_state_restoration.dart';
 import 'generated/app_localizations.dart';
 import 'presentation/providers/locale/locale_provider.dart';
 import 'presentation/providers/theme/theme_provider.dart';
+
+// Simple Web App for debugging
+class SimpleWebApp extends material.StatelessWidget {
+  const SimpleWebApp({super.key});
+
+  @override
+  material.Widget build(material.BuildContext context) {
+    return material.Scaffold(
+      appBar: material.AppBar(
+        title: const material.Text('Películas - Web Debug'),
+      ),
+      body: const material.Center(
+        child: material.Column(
+          mainAxisAlignment: material.MainAxisAlignment.center,
+          children: [
+            material.Icon(
+              material.Icons.check_circle,
+              color: material.Colors.green,
+              size: 64,
+            ),
+            material.SizedBox(height: 16),
+            material.Text(
+              '¡Web App Funcionando!',
+              style: material.TextStyle(
+                fontSize: 24,
+                fontWeight: material.FontWeight.bold,
+              ),
+            ),
+            material.SizedBox(height: 8),
+            material.Text(
+              'Los servicios básicos están funcionando correctamente',
+              textAlign: material.TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -165,45 +203,19 @@ class MainApp extends ConsumerWidget {
       ),
     ));
 
-    // ✅ USAR ROUTER REAL
-    final router = ref.read(appRouterProvider);
-    LoggerFactory.info('✅ Router real cargado exitosamente');
+    // ✅ USAR ROUTER SIMPLE PARA DEBUGGEAR
+    LoggerFactory.info('✅ Usando configuración simplificada para debug web');
 
     // Initialize deep link handler for web only once
-    if (kIsWeb && !DeepLinkHandler.isInitialized) {
-      DeepLinkHandler.initialize(router);
-    }
+    // TEMPORARILY DISABLED for web debugging
+    // if (kIsWeb && !DeepLinkHandler.isInitialized) {
+    //   DeepLinkHandler.initialize(router);
+    // }
 
-    // Usar MaterialApp regular para web para evitar problemas de compatibilidad
-    if (kIsWeb) {
-      return AppStateRestoration(
-        child: NavigationErrorBoundary(
-          child: material.ScrollConfiguration(
-            behavior: CustomScrollBehavior(),
-            child: material.MaterialApp.router(
-              routerConfig: router,
-              debugShowCheckedModeBanner: false,
-              theme: appTheme.getTheme(context),
-              darkTheme: app_theme.AppTheme(
-                selectedColor: appTheme.selectedColor,
-                themeMode: app_theme.ThemeMode.dark,
-              ).getTheme(context),
-              themeMode: _convertToFlutterThemeMode(appTheme.themeMode),
-              locale: localeState.locale,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              builder: (context, child) {
-                // Actualizar la UI del sistema cuando cambie el tema
-                appTheme.updateSystemUIOverlay(context);
-                return child ?? const material.SizedBox.shrink();
-              },
-            ),
-          ),
-        ),
-      );
-    }
+    // Usar MaterialApp.router para todas las plataformas (incluida web)
+    final router = ref.read(appRouterProvider);
+    LoggerFactory.info('✅ Router cargado exitosamente');
 
-    // Usar PiPMaterialApp solo en plataformas nativas (no web)
     return AppStateRestoration(
       child: NavigationErrorBoundary(
         child: material.ScrollConfiguration(

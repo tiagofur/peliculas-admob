@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import '../../../core/logging/logger_factory.dart';
+import 'web_safe_ad_widgets.dart';
 
 /// Widget de anuncio que ocupa el espacio de una tarjeta en grids verticales
 /// Se integra perfectamente en MasonryGridView manteniendo el flujo visual
+/// Compatible con web (AdSense) y móvil (AdMob)
 class GridAdWidget extends StatefulWidget {
   const GridAdWidget({
     super.key,
@@ -34,8 +37,15 @@ class _GridAdWidgetState extends State<GridAdWidget> {
   }
 
   void _loadAd() {
-    // No cargar anuncios en web
+    // En web, usar el sistema web-safe (no hacer nada aquí)
     if (kIsWeb) {
+      LoggerFactory.info('Usando AdSense para grid ads en web');
+      return;
+    }
+
+    // Solo cargar AdMob si la plataforma lo soporta
+    if (!AdHelper.isAdMobSupported) {
+      LoggerFactory.warning('AdMob no soportado en esta plataforma');
       if (mounted) {
         setState(() {
           _isAdFailed = true;
@@ -45,32 +55,44 @@ class _GridAdWidgetState extends State<GridAdWidget> {
       return;
     }
 
-    _nativeAd = NativeAd(
-      adUnitId: AdHelper.nativeAdUnitId,
-      factoryId: 'listTile', // Usando el factory existente
-      listener: NativeAdListener(
-        onAdLoaded: (ad) {
-          if (mounted) {
-            setState(() {
-              _isAdLoaded = true;
-              _isAdFailed = false;
-            });
-          }
-        },
-        onAdFailedToLoad: (ad, error) {
-          if (mounted) {
-            setState(() {
-              _isAdFailed = true;
-              _isAdLoaded = false;
-            });
-          }
-          ad.dispose();
-        },
-      ),
-      request: const AdRequest(),
-    );
+    try {
+      _nativeAd = NativeAd(
+        adUnitId: AdHelper.nativeAdUnitId,
+        factoryId: 'listTile', // Usando el factory existente
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            LoggerFactory.info('Grid ad cargado exitosamente');
+            if (mounted) {
+              setState(() {
+                _isAdLoaded = true;
+                _isAdFailed = false;
+              });
+            }
+          },
+          onAdFailedToLoad: (ad, error) {
+            LoggerFactory.error('Error cargando grid ad: $error');
+            if (mounted) {
+              setState(() {
+                _isAdFailed = true;
+                _isAdLoaded = false;
+              });
+            }
+            ad.dispose();
+          },
+        ),
+        request: const AdRequest(),
+      );
 
-    _nativeAd?.load();
+      _nativeAd?.load();
+    } catch (e) {
+      LoggerFactory.error('Excepción cargando grid ad: $e');
+      if (mounted) {
+        setState(() {
+          _isAdFailed = true;
+          _isAdLoaded = false;
+        });
+      }
+    }
   }
 
   @override
@@ -81,6 +103,11 @@ class _GridAdWidgetState extends State<GridAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // En web, usar el widget web-safe
+    if (kIsWeb) {
+      return const WebSafeGridAdWidget();
+    }
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

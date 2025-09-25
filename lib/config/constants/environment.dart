@@ -12,6 +12,36 @@ class Environment {
   static String get traktClientId => ApiKeys.traktClientId;
   static String get traktClientSecret => ApiKeys.traktClientSecret;
 
+  // Configuraciones de AdSense (Web)
+  static String get adsenseClientId =>
+      dotenv.env['ADSENSE_CLIENT_ID'] ?? 'ca-pub-4576016092724628';
+  static String get adsenseBannerSlot =>
+      dotenv.env['ADSENSE_BANNER_SLOT'] ?? '5343145102';
+  static String get adsenseNativeSlot =>
+      dotenv.env['ADSENSE_NATIVE_SLOT'] ?? '2608621817';
+  static String get adsenseFullwidthSlot =>
+      dotenv.env['ADSENSE_FULLWIDTH_SLOT'] ?? '1212328408';
+
+  // Configuraciones de AdMob (Mobile)
+  static String get admobAppId =>
+      dotenv.env['ADMOB_APP_ID'] ?? 'ca-app-pub-4576016092724628~6992270713';
+  static String get admobAndroidBanner =>
+      dotenv.env['ADMOB_ANDROID_BANNER'] ??
+      'ca-app-pub-4576016092724628/2333838380';
+  static String get admobAndroidNative =>
+      dotenv.env['ADMOB_ANDROID_NATIVE'] ??
+      'ca-app-pub-4576016092724628/2417050126';
+  static String get admobIosBanner =>
+      dotenv.env['ADMOB_IOS_BANNER'] ?? 'ca-app-pub-test-banner-ios';
+  static String get admobIosNative =>
+      dotenv.env['ADMOB_IOS_NATIVE'] ?? 'ca-app-pub-test-native-ios';
+
+  // Configuraciones de Supabase
+  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? '';
+  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  static String get supabaseServiceRoleKey =>
+      dotenv.env['SUPABASE_SERVICE_ROLE_KEY'] ?? '';
+
   // Método mejorado de carga que usa la nueva estructura
   static Future<void> load() async {
     try {

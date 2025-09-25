@@ -7,9 +7,11 @@ import 'package:mockito/mockito.dart';
 import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:peliculas/core/sync/sync_coordinator.dart';
 import 'package:peliculas/core/sync/sync_operation.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 import 'package:peliculas/infrastructure/services/connectivity_manager.dart';
 import 'package:peliculas/infrastructure/services/realtime_sync_manager.dart';
 
+import '../helpers/test_setup_helper.dart';
 import 'realtime_sync_performance_test.mocks.dart';
 
 @GenerateMocks([ConnectivityManager, SyncCoordinator])
@@ -41,7 +43,19 @@ void main() {
     const testUserId = 'test-user-123';
     final random = Random();
 
-    setUp(() {
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector to prevent Timer leaks
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      // Reset test mode after all tests
+      ConnectivityDetector.setTestMode(false);
+    });
+
+    setUp(() async {
+      // Initialize test environment first
+      await TestSetupHelper.setupTest();
       mockConnectivityManager = MockConnectivityManager();
       mockSyncCoordinator = MockSyncCoordinator();
       connectionStatusController =

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/logging/base_logger.dart';
@@ -7,6 +8,7 @@ import 'banner_ad_widget.dart';
 import 'full_width_ad_widget.dart';
 import 'grid_ad_widget.dart';
 import 'native_ad_widget.dart';
+import 'web_safe_ad_widgets.dart';
 
 /// Tipos de anuncios controlados
 enum ControlledAdType {
@@ -95,6 +97,21 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
   }
 
   Widget _buildAdWidget() {
+    if (kIsWeb) {
+      // En web, mostrar widgets seguros (vacíos)
+      switch (widget.adType) {
+        case ControlledAdType.banner:
+          return const WebSafeBannerAdWidget();
+        case ControlledAdType.native:
+          return const WebSafeNativeAdWidget();
+        case ControlledAdType.grid:
+          return const SizedBox.shrink();
+        case ControlledAdType.fullWidth:
+          return const WebSafeFullWidthAdWidget();
+      }
+    }
+
+    // En plataformas móviles, mostrar widgets reales de AdMob
     switch (widget.adType) {
       case ControlledAdType.banner:
         return const BannerAdWidget();

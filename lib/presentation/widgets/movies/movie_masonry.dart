@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../admob/grid_ad_widget.dart';
+import '../admob/web_safe_ad_widgets.dart';
 import 'movie_poster_link.dart';
 
 class MovieMasonry extends StatefulWidget {
@@ -69,11 +71,13 @@ class _MovieMasonryState extends State<MovieMasonry> {
         itemBuilder: (context, index) {
           // Verificar si esta posición debe mostrar un anuncio
           if (_shouldShowAd(index)) {
-            return const GridAdWidget(
-              aspectRatio: 0.7,
-              showLabel: true,
-              borderRadius: 12,
-            );
+            return kIsWeb
+                ? const WebSafeGridAdWidget()
+                : const GridAdWidget(
+                    aspectRatio: 0.7,
+                    showLabel: true,
+                    borderRadius: 12,
+                  );
           }
 
           // Calcular el índice real de la película

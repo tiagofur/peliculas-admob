@@ -1,10 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 import 'package:peliculas/services/enhanced_user_profile_service.dart';
 
 /// Test simple para validar los cálculos de estadísticas reales
 void main() {
   group('EnhancedUserProfileService - Real Statistics', () {
     late EnhancedUserProfileService service;
+
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector to prevent Timer leaks
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      ConnectivityDetector.setTestMode(false);
+    });
 
     setUp(() {
       service = EnhancedUserProfileService.instance;

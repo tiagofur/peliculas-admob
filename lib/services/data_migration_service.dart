@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
-import '../../infrastructure/repositories/hybrid_watched_repository.dart';
-import '../../infrastructure/repositories/hybrid_movie_ratings_repository.dart';
 import '../../infrastructure/repositories/hybrid_custom_lists_repository.dart';
+import '../../infrastructure/repositories/hybrid_movie_ratings_repository.dart';
+import '../../infrastructure/repositories/hybrid_watched_repository.dart';
 import '../presentation/providers/hybrid_repositories_provider.dart';
 import '../presentation/providers/movie_ratings_provider.dart';
 
@@ -178,21 +178,77 @@ class DataMigrationService {
   /// Ejecuta sincronización completa después de migración
   Future<void> _performFullSync(String userId) async {
     try {
-      _logger.info('🔄 Ejecutando sincronización completa...');
+      _logger.info(
+          '🔄 Ejecutando sincronización completa para cargar datos de Supabase...');
 
-      // Los repositorios híbridos ya implementan sincronización bidireccional automática con Supabase
-      // La sincronización se activa automáticamente cuando se realizan operaciones como:
-      // - markAsWatched, rateMovie, createCustomList, etc.
-      // - Los datos se sincronizan en tiempo real con Supabase
-      // - Resolución automática de conflictos incluida
+      // 1. Forzar carga de datos desde Supabase hacia local
+      await Future.wait([
+        // Cargar películas vistas desde Supabase
+        _syncWatchedMoviesFromSupabase(userId),
+        // Cargar calificaciones desde Supabase
+        _syncRatingsFromSupabase(userId),
+        // Cargar listas personalizadas desde Supabase
+        _syncCustomListsFromSupabase(userId),
+      ], eagerError: false);
 
       _logger.info(
-          '✅ Sincronización bidireccional automática ya configurada y funcionando');
-      _logger.debug(
-          '📊 Repositorios híbridos con Supabase: Todas las operaciones se sincronizan automáticamente');
+          '✅ Sincronización completa terminada - datos cargados desde Supabase');
     } catch (e) {
       _logger.error('❌ Error en sincronización completa: $e');
-      throw Exception('Error en sincronización completa: $e');
+      // No lanzar excepción para no bloquear el login
+      _logger.warning('⚠️ Login continuará sin sincronización completa');
+    }
+  }
+
+  /// Sincroniza películas vistas desde Supabase al almacenamiento local
+  Future<void> _syncWatchedMoviesFromSupabase(String userId) async {
+    try {
+      _logger.info('📱 Cargando películas vistas desde Supabase...');
+
+      // Forzar recarga desde Supabase usando el método apropiado del repositorio híbrido
+      // Esto debería cargar automáticamente los datos de Supabase al cache local
+      final watchedMovies = await watchedRepository.loadWatchedMovies(
+        limit: 10000, // Cargar un límite alto para obtener todos los datos
+      );
+
+      _logger.info(
+          '✅ ${watchedMovies.length} películas vistas cargadas desde Supabase');
+    } catch (e) {
+      _logger.error('❌ Error cargando películas vistas desde Supabase: $e');
+    }
+  }
+
+  /// Sincroniza calificaciones desde Supabase al almacenamiento local
+  Future<void> _syncRatingsFromSupabase(String userId) async {
+    try {
+      _logger.info('⭐ Cargando calificaciones desde Supabase...');
+
+      // Forzar recarga desde Supabase
+      final ratings = await ratingsRepository.getUserRatings(
+        limit: 10000,
+      );
+
+      _logger
+          .info('✅ ${ratings.length} calificaciones cargadas desde Supabase');
+    } catch (e) {
+      _logger.error('❌ Error cargando calificaciones desde Supabase: $e');
+    }
+  }
+
+  /// Sincroniza listas personalizadas desde Supabase al almacenamiento local
+  Future<void> _syncCustomListsFromSupabase(String userId) async {
+    try {
+      _logger.info('📋 Cargando listas personalizadas desde Supabase...');
+
+      // Forzar recarga desde Supabase
+      final customLists =
+          await customListsRepository.getAllCustomListsWithForcedSync();
+
+      _logger.info(
+          '✅ ${customLists.length} listas personalizadas cargadas desde Supabase');
+    } catch (e) {
+      _logger
+          .error('❌ Error cargando listas personalizadas desde Supabase: $e');
     }
   }
 }

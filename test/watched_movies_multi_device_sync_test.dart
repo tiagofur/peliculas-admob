@@ -5,6 +5,7 @@ import 'package:peliculas/core/sync/watched_sync_manager.dart';
 import 'package:peliculas/domain/entities/movie.dart';
 import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
 import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 import 'package:peliculas/presentation/providers/hybrid_repositories_provider.dart';
 import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,15 @@ void main() {
     late HybridWatchedRepository repoA;
     late HybridWatchedRepository repoB;
     const String testUserId = 'multi_device_user_123';
+
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector to prevent Timer leaks
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      ConnectivityDetector.setTestMode(false);
+    });
 
     setUp(() async {
       // Initialize all test dependencies

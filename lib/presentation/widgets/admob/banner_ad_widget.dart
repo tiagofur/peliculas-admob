@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import '../../../core/logging/logger_factory.dart';
 import '../../../core/monetization/monetization_analytics_service.dart';
+import '../../../widgets/ads/ad_placeholder_widget.dart';
+import 'web_safe_ad_widgets.dart';
 
 class BannerAdWidget extends StatefulWidget {
   const BannerAdWidget({super.key});
@@ -26,80 +29,109 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadBannerAd() {
-    // No cargar anuncios en web
+    // En web, usar el sistema web-safe
     if (kIsWeb) {
+      LoggerFactory.info('Usando AdSense para banner ads en web');
       return;
     }
 
-    _bannerAd = BannerAd(
-      adUnitId: AdHelper.bannerAdUnitId,
-      request: const AdRequest(),
-      size: AdSize.banner,
-      listener: BannerAdListener(
-        onAdLoaded: (_) {
-          setState(() {
-            _isBannerAdReady = true;
-          });
+    // En modo debug, no cargar anuncios reales
+    if (kDebugMode) {
+      LoggerFactory.info(
+          'Modo debug: usando placeholder en lugar de AdMob real');
+      return;
+    }
 
-          // Track successful load
-          final loadTime = DateTime.now().difference(_loadStartTime);
-          _analytics.trackAdLoadTime(
-            adType: 'banner',
-            adUnitId: AdHelper.bannerAdUnitId,
-            loadTime: loadTime,
-            successful: true,
-            placement: 'general',
-          );
+    // Solo cargar AdMob si la plataforma lo soporta
+    if (!AdHelper.isAdMobSupported) {
+      LoggerFactory.warning('AdMob no soportado en esta plataforma');
+      return;
+    }
 
-          // Track impression
-          _analytics.trackAdImpression(
-            adType: 'banner',
-            adUnitId: AdHelper.bannerAdUnitId,
-            placement: 'general',
-          );
-        },
-        onAdFailedToLoad: (ad, err) {
-          _isBannerAdReady = false;
-          ad.dispose();
+    try {
+      _bannerAd = BannerAd(
+        adUnitId: AdHelper.bannerAdUnitId,
+        request: const AdRequest(),
+        size: AdSize.banner,
+        listener: BannerAdListener(
+          onAdLoaded: (_) {
+            LoggerFactory.info('Banner ad cargado exitosamente');
+            setState(() {
+              _isBannerAdReady = true;
+            });
 
-          // Track error
-          final loadTime = DateTime.now().difference(_loadStartTime);
-          _analytics.trackAdLoadTime(
-            adType: 'banner',
-            adUnitId: AdHelper.bannerAdUnitId,
-            loadTime: loadTime,
-            successful: false,
-            placement: 'general',
-          );
+            // Track successful load
+            final loadTime = DateTime.now().difference(_loadStartTime);
+            _analytics.trackAdLoadTime(
+              adType: 'banner',
+              adUnitId: AdHelper.bannerAdUnitId,
+              loadTime: loadTime,
+              successful: true,
+              placement: 'general',
+            );
 
-          _analytics.trackAdLoadError(
-            adType: 'banner',
-            adUnitId: AdHelper.bannerAdUnitId,
-            errorCode: err.code.toString(),
-            errorMessage: err.message,
-            placement: 'general',
-          );
-        },
-        onAdClicked: (_) {
-          // Track click
-          _analytics.trackAdClick(
-            adType: 'banner',
-            adUnitId: AdHelper.bannerAdUnitId,
-            placement: 'general',
-            estimatedRevenue: 0.01, // Estimated revenue per click
-          );
-        },
-      ),
-    );
+            // Track impression
+            _analytics.trackAdImpression(
+              adType: 'banner',
+              adUnitId: AdHelper.bannerAdUnitId,
+              placement: 'general',
+            );
+          },
+          onAdFailedToLoad: (ad, err) {
+            LoggerFactory.error('Error cargando banner ad: $err');
+            _isBannerAdReady = false;
+            ad.dispose();
 
-    _bannerAd?.load();
+            // Track error
+            final loadTime = DateTime.now().difference(_loadStartTime);
+            _analytics.trackAdLoadTime(
+              adType: 'banner',
+              adUnitId: AdHelper.bannerAdUnitId,
+              loadTime: loadTime,
+              successful: false,
+              placement: 'general',
+            );
+
+            _analytics.trackAdLoadError(
+              adType: 'banner',
+              adUnitId: AdHelper.bannerAdUnitId,
+              errorCode: err.code.toString(),
+              errorMessage: err.message,
+              placement: 'general',
+            );
+          },
+          onAdClicked: (_) {
+            LoggerFactory.info('Banner ad clicked');
+            // Track click
+            _analytics.trackAdClick(
+              adType: 'banner',
+              adUnitId: AdHelper.bannerAdUnitId,
+              placement: 'general',
+              estimatedRevenue: 0.01, // Estimated revenue per click
+            );
+          },
+        ),
+      );
+
+      _bannerAd?.load();
+    } catch (e) {
+      LoggerFactory.error('Excepción cargando banner ad: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // No mostrar anuncios en web
+    // En web, usar el widget web-safe
     if (kIsWeb) {
-      return const SizedBox.shrink();
+      return const WebSafeBannerAdWidget();
+    }
+
+    // En móvil modo debug, usar placeholder
+    if (kDebugMode) {
+      return const AdPlaceholderWidget(
+        type: AdPlaceholderType.banner,
+        customText: 'AdMob Banner\n(Debug Mode)\nProducción: ID real',
+      );
     }
 
     final bannerAd = _bannerAd;

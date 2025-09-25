@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,6 +12,7 @@ import '../../providers/recommendations/recommendations_provider.dart'
 import '../../providers/user_stats_provider.dart' as user_stats;
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/admob/web_safe_ad_widgets.dart';
 
 class CombinedStatsView extends ConsumerWidget {
   const CombinedStatsView({super.key});
@@ -135,12 +137,14 @@ class CombinedStatsView extends ConsumerWidget {
 
               // Banner al final de las estadísticas
               const SizedBox(height: 16),
-              const FullWidthAdWidget(
-                height: 120,
-                margin: EdgeInsets.symmetric(horizontal: 0),
-                showLabel: false,
-                borderRadius: 12.0,
-              ),
+              kIsWeb
+                  ? const WebSafeFullWidthAdWidget()
+                  : const FullWidthAdWidget(
+                      height: 120,
+                      margin: EdgeInsets.symmetric(horizontal: 0),
+                      showLabel: false,
+                      borderRadius: 12.0,
+                    ),
               const SizedBox(height: 16),
             ]),
           ),

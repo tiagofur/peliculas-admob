@@ -1,10 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 import 'package:peliculas/presentation/widgets/performance/lazy_optimized_image.dart';
 
+import '../../../helpers/test_setup_helper.dart';
+
 void main() {
+  // ✅ FIXED: Configurar modo test ANTES de cualquier inicialización
+  setUpAll(() {
+    ConnectivityDetector.setTestMode(true);
+  });
+
+  tearDownAll(() {
+    ConnectivityDetector.setTestMode(false);
+  });
+
   group('LazyOptimizedImage', () {
     const testImageUrl = 'https://example.com/test-image.jpg';
+
+    setUp(() async {
+      // ✅ FIXED: Usar TestSetupHelper para setup básico
+      await TestSetupHelper.setupTest();
+    });
+
+    tearDown(() async {
+      // ✅ FIXED: Cleanup después de cada test
+      await TestSetupHelper.tearDownTest();
+    });
 
     group('Basic Functionality', () {
       testWidgets('should render without errors', (WidgetTester tester) async {

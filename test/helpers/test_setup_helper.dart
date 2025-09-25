@@ -83,11 +83,29 @@ class TestSetupHelper {
       _supabaseInitialized = true;
     } catch (e) {
       // If already initialized, that's fine
-      if (e.toString().contains('already initialized')) {
+      if (e.toString().contains('already initialized') ||
+          e.toString().contains('_instance._isInitialized')) {
         _supabaseInitialized = true;
       } else {
         rethrow;
       }
+    }
+  }
+
+  /// Force reinitialize Supabase (for tests that need fresh instance)
+  static Future<void> forceInitializeSupabase() async {
+    try {
+      // Reset the flag and try to initialize
+      _supabaseInitialized = false;
+      await Supabase.initialize(
+        url: 'https://mock-supabase-url.supabase.co',
+        anonKey: 'mock-anon-key-for-testing-purposes-only-not-real',
+        debug: false,
+      );
+      _supabaseInitialized = true;
+    } catch (e) {
+      // If already initialized, that's acceptable
+      _supabaseInitialized = true;
     }
   }
 
@@ -104,8 +122,8 @@ class TestSetupHelper {
     // Initialize Hive with safe registration
     await initializeHiveOnce();
 
-    // Initialize Supabase
-    await initializeSupabase();
+    // Initialize Supabase (force if needed)
+    await forceInitializeSupabase();
   }
 
   /// Cleanup after tests

@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import '../../../core/logging/logger_factory.dart';
+import 'web_safe_ad_widgets.dart';
 
 /// Widget de anuncio que ocupa toda la línea horizontal en listas verticales
 /// Se inserta cada X películas (múltiplo de 3) para mantener el flujo visual
+/// Compatible con web (AdSense) y móvil (AdMob)
 class FullWidthAdWidget extends StatefulWidget {
   const FullWidthAdWidget({
     super.key,
@@ -36,8 +39,15 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
   }
 
   void _loadAd() {
-    // No cargar anuncios en web
+    // En web, usar el sistema web-safe
     if (kIsWeb) {
+      LoggerFactory.info('Usando AdSense para full width ads en web');
+      return;
+    }
+
+    // Solo cargar AdMob si la plataforma lo soporta
+    if (!AdHelper.isAdMobSupported) {
+      LoggerFactory.warning('AdMob no soportado en esta plataforma');
       if (mounted) {
         setState(() {
           _isAdFailed = true;
@@ -47,32 +57,44 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
       return;
     }
 
-    _nativeAd = NativeAd(
-      adUnitId: AdHelper.nativeAdUnitId,
-      factoryId: 'listTile', // Usando el factory existente
-      listener: NativeAdListener(
-        onAdLoaded: (ad) {
-          if (mounted) {
-            setState(() {
-              _isAdLoaded = true;
-              _isAdFailed = false;
-            });
-          }
-        },
-        onAdFailedToLoad: (ad, error) {
-          if (mounted) {
-            setState(() {
-              _isAdFailed = true;
-              _isAdLoaded = false;
-            });
-          }
-          ad.dispose();
-        },
-      ),
-      request: const AdRequest(),
-    );
+    try {
+      _nativeAd = NativeAd(
+        adUnitId: AdHelper.nativeAdUnitId,
+        factoryId: 'listTile', // Usando el factory existente
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            LoggerFactory.info('Full width ad cargado exitosamente');
+            if (mounted) {
+              setState(() {
+                _isAdLoaded = true;
+                _isAdFailed = false;
+              });
+            }
+          },
+          onAdFailedToLoad: (ad, error) {
+            LoggerFactory.error('Error cargando full width ad: $error');
+            if (mounted) {
+              setState(() {
+                _isAdFailed = true;
+                _isAdLoaded = false;
+              });
+            }
+            ad.dispose();
+          },
+        ),
+        request: const AdRequest(),
+      );
 
-    _nativeAd?.load();
+      _nativeAd?.load();
+    } catch (e) {
+      LoggerFactory.error('Excepción cargando full width ad: $e');
+      if (mounted) {
+        setState(() {
+          _isAdFailed = true;
+          _isAdLoaded = false;
+        });
+      }
+    }
   }
 
   @override
@@ -83,6 +105,16 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // En web, usar el widget web-safe
+    if (kIsWeb) {
+      return WebSafeFullWidthAdWidget(
+        height: widget.height,
+        margin: widget.margin,
+        showLabel: widget.showLabel,
+        borderRadius: widget.borderRadius,
+      );
+    }
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

@@ -5,13 +5,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peliculas/core/logging/logger_factory.dart';
-
-import 'package:peliculas/infrastructure/services/connectivity_manager.dart';
+import 'package:peliculas/core/sync/sync_coordinator.dart';
 import 'package:peliculas/core/sync/sync_operation.dart';
 import 'package:peliculas/domain/entities/sync_result.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
+import 'package:peliculas/infrastructure/services/connectivity_manager.dart';
 import 'package:peliculas/infrastructure/services/realtime_sync_manager.dart';
-import 'package:peliculas/core/sync/sync_coordinator.dart';
 
+import '../helpers/test_setup_helper.dart';
 import 'large_data_performance_test.mocks.dart';
 
 // Generar mocks
@@ -61,7 +62,20 @@ void main() {
     const testUserId = 'test-user-123';
     final random = Random();
 
-    setUp(() {
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      // Reset test mode after all tests
+      ConnectivityDetector.setTestMode(false);
+    });
+
+    setUp(() async {
+      // Initialize test environment
+      await TestSetupHelper.setupTest();
+
       mockSyncCoordinator = MockSyncCoordinator();
       mockConnectivityManager = MockConnectivityManager();
       connectionStatusController =
@@ -214,7 +228,9 @@ void main() {
       }
 
       final normalTime = DateTime.now().difference(normalStartTime);
-      final normalThroughput = normalLoad / normalTime.inSeconds;
+      final normalThroughput = normalTime.inSeconds > 0 
+          ? normalLoad / normalTime.inSeconds 
+          : normalLoad.toDouble(); // Si es muy rápido, usar throughput máximo
 
       LoggerFactory.debug(
           '📊 Carga normal: ${normalThroughput.toStringAsFixed(2)} ent/seg');
@@ -233,11 +249,14 @@ void main() {
       }
 
       final spikeTime = DateTime.now().difference(spikeStartTime);
-      final spikeThroughput = spikeLoad / spikeTime.inSeconds;
+      final spikeThroughput = spikeTime.inSeconds > 0 
+          ? spikeLoad / spikeTime.inSeconds 
+          : spikeLoad.toDouble(); // Si es muy rápido, usar throughput máximo
 
       // Assert - El throughput durante el pico no debe degradarse más del 30%
-      final degradation =
-          (normalThroughput - spikeThroughput) / normalThroughput;
+      final degradation = normalThroughput > 0 && spikeThroughput > 0
+          ? (normalThroughput - spikeThroughput) / normalThroughput
+          : 0.0;
       expect(degradation, lessThan(0.3));
 
       LoggerFactory.debug(

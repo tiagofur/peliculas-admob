@@ -9,12 +9,14 @@ import '../../presentation/screens/app_info/help_screen.dart';
 import '../../presentation/screens/app_info/privacy_policy_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
+import '../../presentation/screens/movies/simple_home_screen.dart';
+import '../../presentation/screens/notification_settings_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/ratings/user_ratings_screen.dart';
 import '../../presentation/screens/screens.dart';
-import '../../presentation/screens/notification_settings_screen.dart';
 import '../../presentation/screens/settings_screen.dart';
 import '../../presentation/screens/watchlist_screen.dart';
+import '../../presentation/views/debug_sync_view.dart';
 import '../../presentation/views/list_share_web_view.dart';
 import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
@@ -48,7 +50,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Rutas principales con StatefulShellRoute
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return HomeScreen(navigationShell: navigationShell);
+          return SimpleHomeScreen(navigationShell: navigationShell);
         },
         branches: [
           // Rama para la pantalla de Inicio
@@ -57,7 +59,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/',
                 name: 'home',
-                builder: (context, state) => const HomeView(),
+                builder: (context, state) =>
+                    const HomeView(), // ✅ RESTORED: Full home view functionality
               ),
             ],
           ),
@@ -369,6 +372,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegisterScreen(),
       ),
 
+      // Ruta de debug para desarrollo
+      GoRoute(
+        path: '/debug-sync',
+        name: 'debug-sync',
+        builder: (context, state) => const DebugSyncView(),
+      ),
+
       // Ruta de perfil
       GoRoute(
         path: '/profile',
@@ -501,7 +511,7 @@ final appRouter = GoRouter(
     // Rutas principales con StatefulShellRoute
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
-        return HomeScreen(navigationShell: navigationShell);
+        return SimpleHomeScreen(navigationShell: navigationShell);
       },
       branches: [
         // Rama para la pantalla de Inicio
@@ -510,7 +520,8 @@ final appRouter = GoRouter(
             GoRoute(
               path: '/',
               name: 'home',
-              builder: (context, state) => const HomeView(),
+              builder: (context, state) =>
+                  const HomeView(), // ✅ RESTORED: Full home view functionality
             ),
           ],
         ),

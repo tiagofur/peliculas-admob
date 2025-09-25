@@ -4,6 +4,7 @@ import 'dart:js_interop';
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
 
+import '../../config/constants/environment.dart';
 import '../../core/logging/logger_factory.dart';
 
 // JavaScript interop definitions for AdSense
@@ -30,10 +31,6 @@ class AdSenseService {
   bool _isInitialized = false;
   String? _publisherId;
 
-  // Configuración por defecto
-  static const String _defaultPublisherId =
-      'ca-pub-4576016092724628'; // Publisher ID real de AdSense
-
   // Estado de anuncios
   final Map<String, bool> _activeAds = {};
   int _adCounter = 0;
@@ -48,7 +45,11 @@ class AdSenseService {
     }
 
     try {
-      _publisherId = publisherId ?? _defaultPublisherId;
+      // Usar ID del environment o el pasado como parámetro
+      _publisherId = publisherId ?? Environment.adsenseClientId;
+
+      LoggerFactory.info(
+          'Inicializando AdSense con Publisher ID: $_publisherId');
 
       // Verificar si AdSense ya está cargado
       if (!_isAdSenseLoaded()) {
@@ -246,6 +247,48 @@ class AdSenseService {
     _adCounter = 0;
     _isInitialized = false;
     LoggerFactory.info('AdSenseService disposed');
+  }
+
+  // Métodos helper para crear anuncios con configuración del Environment
+
+  /// Crea un banner con el slot configurado
+  String createConfiguredBannerAd({
+    String width = 'auto',
+    String height = '280',
+    String format = 'auto',
+    bool responsive = true,
+  }) {
+    return createBannerAd(
+      slotId: Environment.adsenseBannerSlot,
+      width: width,
+      height: height,
+      format: format,
+      responsive: responsive,
+    );
+  }
+
+  /// Crea un anuncio nativo con el slot configurado
+  String createConfiguredNativeAd({
+    String format = 'fluid',
+    String layoutKey = '-gw-1+2a-9x+5c',
+  }) {
+    return createNativeAd(
+      slotId: Environment.adsenseNativeSlot,
+      format: format,
+      layoutKey: layoutKey,
+    );
+  }
+
+  /// Crea un anuncio de ancho completo con el slot configurado
+  String createConfiguredFullWidthAd({
+    String format = 'auto',
+    bool responsive = true,
+  }) {
+    return createBannerAd(
+      slotId: Environment.adsenseFullwidthSlot,
+      format: format,
+      responsive: responsive,
+    );
   }
 }
 

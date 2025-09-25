@@ -5,6 +5,7 @@ import 'package:peliculas/core/sync/watched_sync_manager.dart';
 import 'package:peliculas/domain/entities/movie.dart';
 import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
 import 'package:peliculas/infrastructure/repositories/hybrid_watched_repository.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 
 import 'helpers/test_setup_helper.dart';
 
@@ -14,6 +15,15 @@ void main() {
     late HybridWatchedRepository repository;
     late WatchedSyncManager syncManager;
     const String testUserId = 'test_user_123';
+
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector to prevent Timer leaks
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      ConnectivityDetector.setTestMode(false);
+    });
 
     setUp(() async {
       // Initialize all test dependencies

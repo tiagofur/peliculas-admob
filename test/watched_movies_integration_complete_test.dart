@@ -4,6 +4,7 @@ import 'package:peliculas/core/sync/entity_sync_manager.dart';
 import 'package:peliculas/core/sync/watched_sync_manager.dart';
 import 'package:peliculas/domain/entities/movie.dart';
 import 'package:peliculas/domain/entities/syncable_watched_movie.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 import 'package:peliculas/presentation/providers/hybrid_repositories_provider.dart';
 import 'package:peliculas/presentation/providers/watched_movies_provider.dart';
 
@@ -13,6 +14,15 @@ void main() {
   group('Watched Movies Real-time Sync Integration Tests', () {
     late ProviderContainer container;
     const String testUserId = 'integration_test_user';
+
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector to prevent Timer leaks
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      ConnectivityDetector.setTestMode(false);
+    });
 
     setUp(() async {
       await TestSetupHelper.setupTest();

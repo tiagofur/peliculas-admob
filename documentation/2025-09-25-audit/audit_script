@@ -1,0 +1,177 @@
+#!/bin/bash
+# Audit Validation Script
+# Date: 2025-09-25
+# Purpose: Validate and fix issues found in audit
+
+set -e
+
+echo "🔍 Starting Comprehensive Audit Validation..."
+echo "==========================================="
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Counters
+TOTAL_ISSUES=0
+FIXED_ISSUES=0
+
+# 1. Check for deprecated color methods
+echo -e "\n${YELLOW}Checking for deprecated color methods...${NC}"
+DEPRECATED_COUNT=$(grep -r "withOpacity\|withAlpha" lib/ --include="*.dart" | wc -l || echo 0)
+if [ "$DEPRECATED_COUNT" -gt 0 ]; then
+    echo -e "${RED}Found $DEPRECATED_COUNT deprecated color methods${NC}"
+    TOTAL_ISSUES=$((TOTAL_ISSUES + DEPRECATED_COUNT))
+    
+    # Auto-fix if requested
+    if [ "$1" == "--fix" ]; then
+        echo "Fixing deprecated color methods..."
+        find lib/ -name "*.dart" -exec sed -i 's/\.withOpacity(\([^)]*\))/.withValues(alpha: \1)/g' {} \;
+        find lib/ -name "*.dart" -exec sed -i 's/\.withAlpha(\([^)]*\))/.withValues(alpha: \1\/255.0)/g' {} \;
+        FIXED_ISSUES=$((FIXED_ISSUES + DEPRECATED_COUNT))
+    fi
+else
+    echo -e "${GREEN}✓ No deprecated color methods found${NC}"
+fi
+
+# 2. Check for print statements
+echo -e "\n${YELLOW}Checking for print statements...${NC}"
+PRINT_COUNT=$(grep -r "print(" lib/ --include="*.dart" | grep -v "LoggerFactory" | wc -l || echo 0)
+if [ "$PRINT_COUNT" -gt 0 ]; then
+    echo -e "${RED}Found $PRINT_COUNT print statements${NC}"
+    TOTAL_ISSUES=$((TOTAL_ISSUES + PRINT_COUNT))
+    
+    if [ "$1" == "--fix" ]; then
+        echo "Replacing print statements with LoggerFactory..."
+        find lib/ -name "*.dart" -exec sed -i "s/print(/LoggerFactory.debug(/g" {} \;
+        FIXED_ISSUES=$((FIXED_ISSUES + PRINT_COUNT))
+    fi
+else
+    echo -e "${GREEN}✓ No print statements found${NC}"
+fi
+
+# 3. Check for unused imports
+echo -e "\n${YELLOW}Checking for unused imports...${NC}"
+flutter analyze --no-fatal-infos | grep "unused_import" > /tmp/unused_imports.txt || true
+UNUSED_IMPORTS=$(wc -l < /tmp/unused_imports.txt)
+if [ "$UNUSED_IMPORTS" -gt 0 ]; then
+    echo -e "${RED}Found $UNUSED_IMPORTS unused imports${NC}"
+    TOTAL_ISSUES=$((TOTAL_ISSUES + UNUSED_IMPORTS))
+else
+    echo -e "${GREEN}✓ No unused imports found${NC}"
+fi
+
+# 4. Check for TODOs and FIXMEs
+echo -e "\n${YELLOW}Checking for TODOs and FIXMEs...${NC}"
+TODO_COUNT=$(grep -r "TODO\|FIXME\|HACK" lib/ --include="*.dart" | wc -l || echo 0)
+if [ "$TODO_COUNT" -gt 0 ]; then
+    echo -e "${YELLOW}Found $TODO_COUNT TODO/FIXME/HACK comments${NC}"
+    grep -r "TODO\|FIXME\|HACK" lib/ --include="*.dart" | head -5
+    echo "..."
+fi
+
+# 5. Check for legacy folders
+echo -e "\n${YELLOW}Checking for legacy folders...${NC}"
+LEGACY_FOLDERS=("lib/legacy" "lib/old_models" "lib/deprecated")
+for folder in "${LEGACY_FOLDERS[@]}"; do
+    if [ -d "$folder" ]; then
+        echo -e "${RED}Found legacy folder: $folder${NC}"
+        TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+        
+        if [ "$1" == "--fix" ]; then
+            echo "Moving $folder to .deprecated/ for review..."
+            mkdir -p .deprecated
+            mv "$folder" .deprecated/
+            FIXED_ISSUES=$((FIXED_ISSUES + 1))
+        fi
+    fi
+done
+
+# 6. Check for memory leaks (dispose methods)
+echo -e "\n${YELLOW}Checking for potential memory leaks...${NC}"
+STATEFUL_WIDGETS=$(find lib/ -name "*.dart" -exec grep -l "StatefulWidget" {} \;)
+LEAK_COUNT=0
+for file in $STATEFUL_WIDGETS; do
+    if grep -q "StreamSubscription\|AnimationController\|Timer" "$file"; then
+        if ! grep -q "dispose()" "$file"; then
+            echo -e "${RED}Missing dispose() in: $file${NC}"
+            LEAK_COUNT=$((LEAK_COUNT + 1))
+        fi
+    fi
+done
+TOTAL_ISSUES=$((TOTAL_ISSUES + LEAK_COUNT))
+
+# 7. Check bundle size
+echo -e "\n${YELLOW}Analyzing bundle size...${NC}"
+if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+    SIZE=$(du -h build/app/outputs/flutter-apk/app-release.apk | cut -f1)
+    echo "Current APK size: $SIZE"
+    
+    # Check if size is over 15MB
+    SIZE_MB=$(du -m build/app/outputs/flutter-apk/app-release.apk | cut -f1)
+    if [ "$SIZE_MB" -gt 15 ]; then
+        echo -e "${YELLOW}Warning: APK size exceeds 15MB target${NC}"
+    fi
+fi
+
+# 8. Performance metrics
+echo -e "\n${YELLOW}Checking performance metrics...${NC}"
+flutter test test/performance/ --reporter=json > /tmp/perf_results.json 2>/dev/null || true
+if [ -f "/tmp/perf_results.json" ]; then
+    echo -e "${GREEN}✓ Performance tests executed${NC}"
+fi
+
+# 9. Generate report
+echo -e "\n${YELLOW}Generating audit report...${NC}"
+REPORT_DIR="documentation/2025-09-25-audit"
+mkdir -p "$REPORT_DIR"
+
+cat > "$REPORT_DIR/VALIDATION_REPORT.md" << EOF
+# Audit Validation Report
+Date: $(date '+%Y-%m-%d %H:%M:%S')
+
+## Summary
+- Total Issues Found: $TOTAL_ISSUES
+- Issues Fixed: $FIXED_ISSUES
+- Deprecated Color Methods: $DEPRECATED_COUNT
+- Print Statements: $PRINT_COUNT
+- Unused Imports: $UNUSED_IMPORTS
+- TODO/FIXME Comments: $TODO_COUNT
+- Potential Memory Leaks: $LEAK_COUNT
+
+## Recommendations
+1. Run with --fix flag to auto-fix compatible issues
+2. Manually review and fix memory leaks
+3. Clean up TODO/FIXME comments
+4. Remove unused imports with dart fix --apply
+
+## Next Steps
+\`\`\`bash
+# Auto-fix compatible issues
+./scripts/audit_validation.sh --fix
+
+# Apply dart fixes
+dart fix --apply
+
+# Run full test suite
+./scripts/run_comprehensive_tests.sh
+
+# Verify build
+flutter build apk --release
+\`\`\`
+EOF
+
+# Summary
+echo -e "\n==========================================="
+echo -e "${YELLOW}AUDIT VALIDATION COMPLETE${NC}"
+echo -e "Total Issues: ${RED}$TOTAL_ISSUES${NC}"
+if [ "$1" == "--fix" ]; then
+    echo -e "Fixed Issues: ${GREEN}$FIXED_ISSUES${NC}"
+    echo -e "Remaining Issues: ${YELLOW}$((TOTAL_ISSUES - FIXED_ISSUES))${NC}"
+else
+    echo -e "\nRun with ${GREEN}--fix${NC} flag to auto-fix compatible issues:"
+    echo "./scripts/audit_validation.sh --fix"
+fi
+echo -e "\nFull report saved to: ${GREEN}$REPORT_DIR/VALIDATION_REPORT.md${NC}"

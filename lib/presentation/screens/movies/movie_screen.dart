@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,6 +12,7 @@ import '../../providers/storage/direct_watched_provider.dart';
 import '../../providers/storage/direct_watchlist_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/admob/web_safe_ad_widgets.dart';
 import '../../widgets/watchlist/add_to_watchlist_button.dart';
 import '../../widgets/widgets.dart';
 
@@ -103,7 +105,7 @@ class _MovieDetails extends StatelessWidget {
               //* 1. Banner antes de 'Reparto Principal'
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: BannerAdWidget(),
+                child: kIsWeb ? WebSafeBannerAdWidget() : BannerAdWidget(),
               ),
 
               // Reparto Principal
@@ -115,10 +117,12 @@ class _MovieDetails extends StatelessWidget {
               //* 2. Anuncio nativo entre estadísticas y 'Mis Listas'
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
-                child: NativeAdWidget(
-                  height: 100,
-                  showLabel: false,
-                ),
+                child: kIsWeb
+                    ? WebSafeNativeAdWidget()
+                    : NativeAdWidget(
+                        height: 100,
+                        showLabel: false,
+                      ),
               ),
             ],
           ),

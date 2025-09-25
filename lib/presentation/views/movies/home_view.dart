@@ -1,14 +1,14 @@
-import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/logger_factory.dart';
+import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
-import '../../providers/storage/direct_favorites_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
+import '../../widgets/admob/web_safe_ad_widgets.dart';
 import '../../widgets/guest_mode_banner.dart';
 import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
 import '../../widgets/widgets.dart';
@@ -25,82 +25,17 @@ class HomeViewState extends ConsumerState<HomeView>
   @override
   void initState() {
     super.initState();
+    LoggerFactory.info('🏠 HomeView - initState called');
 
-    // ✅ PERFORMANCE OPTIMIZATION: Load progressively instead of all at once
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadDataProgressively();
-      }
-    });
-  }
-
-  /// ✅ PERFORMANCE OPTIMIZATION: Aggressive progressive loading for faster startup
-  Future<void> _loadDataProgressively() async {
-    if (!mounted) return;
-
-    try {
-      // Priority 1: Load essential content IMMEDIATELY (nowPlaying for slideshow)
-      LoggerFactory.info('📱 Loading critical content (nowPlaying)...');
-      final criticalFuture =
-          ref.read(nowPlayingMoviesProvider.notifier).loadNextPage();
-
-      // Start popular load immediately in parallel (no waiting)
-      LoggerFactory.info('📱 Starting popular content load...');
-      final popularFuture =
-          ref.read(popularMoviesProvider.notifier).loadNextPage();
-
-      // Wait only for critical content to show slideshow ASAP
-      await criticalFuture;
-      if (!mounted) return;
-
-      // Minimal delay for UI responsiveness
-      await Future.delayed(const Duration(milliseconds: 50));
-
-      // Wait for popular to complete
-      await popularFuture;
-      if (!mounted) return;
-
-      // Priority 3: Load remaining content in parallel with minimal delay
-      LoggerFactory.info('📱 Loading additional content in parallel...');
-      final additionalContentFutures = <Future>[
-        ref.read(topRatedMoviesProvider.notifier).loadNextPage(),
-        ref.read(upcomingMoviesProvider.notifier).loadNextPage(),
-      ];
-
-      // Priority 4: Start user-specific data loading immediately (don't wait)
-      LoggerFactory.info('📱 Starting user-specific content load...');
-      final userDataFutures = <Future>[
-        ref.read(directFavoriteMoviesProvider.notifier).loadNextPage(),
-        ref.read(paginatedRecommendationsProvider.notifier).loadInitialPage(),
-      ];
-
-      // Execute all remaining operations in parallel
-      await Future.wait([
-        Future.wait(additionalContentFutures),
-        Future.wait(userDataFutures),
-      ]);
-
-      if (!mounted) return;
-      LoggerFactory.info(
-          '✅ Aggressive progressive loading completed successfully');
-    } catch (e) {
-      LoggerFactory.error('❌ Error in progressive loading: $e');
-      // If progressive loading fails, at least load critical content
-      if (mounted) {
-        unawaited(ref.read(nowPlayingMoviesProvider.notifier).loadNextPage());
-        unawaited(ref.read(popularMoviesProvider.notifier).loadNextPage());
-      }
-    }
+    // ✅ SIMPLIFIED: No aggressive loading in initState - let UI show first
+    // Data will be loaded lazily when sections become visible
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    final initialLoading = ref.watch(initialLoadingProvider);
-    LoggerFactory.info('🏠 HomeView - initialLoading: $initialLoading');
-    if (initialLoading) return const FullScreenLoader();
-
+    // ✅ SIMPLIFIED LOADING: Don't block UI with initialLoading
     final slideShowMovies = ref.watch(moviesSlideshowProvider);
     final nowPlayingState = ref.watch(nowPlayingMoviesProvider);
     final popularState = ref.watch(popularMoviesProvider);
@@ -111,6 +46,9 @@ class HomeViewState extends ConsumerState<HomeView>
     final popularMovies = popularState.movies;
     final topRatedMovies = topRatedState.movies;
     final upcomingMovies = upcomingState.movies;
+
+    LoggerFactory.info(
+        '🏠 HomeView - Building UI with ${nowPlayingMovies.length} now playing, ${popularMovies.length} popular movies');
 
     return SafeArea(
       child: CustomScrollView(slivers: [
@@ -124,93 +62,33 @@ class HomeViewState extends ConsumerState<HomeView>
             delegate: SliverChildBuilderDelegate((context, index) {
           return Column(
             children: [
-              // const CustomAppbar(),
-
+              // Show slideshow immediately, even if empty
               MoviesSlideshow(movies: slideShowMovies),
 
               // Banner de modo guest (solo se muestra en modo guest)
               const GuestModeBanner(),
 
               // Banner discreto después del slideshow
-              const BannerAdWidget(),
+              kIsWeb ? const WebSafeBannerAdWidget() : const BannerAdWidget(),
 
-              MovieHorizontalListviewWithAds(
-                  movies: nowPlayingMovies,
-                  sectionId: 'now-playing',
-                  title: 'En cines',
-                  subTitle: 'Lunes 20',
-                  loadNextPage: () => ref
-                      .read(nowPlayingMoviesProvider.notifier)
-                      .loadNextPage()),
+              // ✅ LAZY LOADING: Load data when sections become visible
+              _buildMovieSection(
+                movies: nowPlayingMovies,
+                sectionId: 'now-playing',
+                title: 'En cines',
+                subTitle: 'Lunes 20',
+                provider: nowPlayingMoviesProvider,
+                state: nowPlayingState,
+              ),
 
-              // Mostrar error si existe
-              if (nowPlayingState.state == MoviesState.error)
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error, color: Colors.red.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          nowPlayingState.errorMessage ?? 'Error desconocido',
-                          style: TextStyle(color: Colors.red.shade700),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => ref
-                            .read(nowPlayingMoviesProvider.notifier)
-                            .refresh(),
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                ),
-
-              // Nueva sección de Tendencias
-              MovieHorizontalListviewWithAds(
+              _buildMovieSection(
                 movies: popularMovies,
                 sectionId: 'popular',
                 title: 'Tendencias',
                 subTitle: 'Lo más popular ahora',
-                loadNextPage: () =>
-                    ref.read(popularMoviesProvider.notifier).loadNextPage(),
+                provider: popularMoviesProvider,
+                state: popularState,
               ),
-
-              // Mostrar error si existe
-              if (popularState.state == MoviesState.error)
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error, color: Colors.red.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          popularState.errorMessage ?? 'Error desconocido',
-                          style: TextStyle(color: Colors.red.shade700),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            ref.read(popularMoviesProvider.notifier).refresh(),
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                ),
 
               // Sección de recomendaciones personalizadas
               _buildRecommendationsSection(ref),
@@ -218,67 +96,40 @@ class HomeViewState extends ConsumerState<HomeView>
               // Anuncio nativo adicional entre "Tendencias" y "Próximamente" (MEDIA PRIORIDAD)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8),
-                child: NativeAdWidget(),
+                child: kIsWeb ? WebSafeNativeAdWidget() : NativeAdWidget(),
               ),
 
-              MovieHorizontalListviewWithAds(
+              _buildMovieSection(
                 movies: upcomingMovies,
                 sectionId: 'upcoming',
                 title: 'Próximamente',
                 subTitle: 'En este mes',
-                loadNextPage: () =>
-                    ref.read(upcomingMoviesProvider.notifier).loadNextPage(),
+                provider: upcomingMoviesProvider,
+                state: upcomingState,
               ),
 
-              // Mostrar error si existe
-              if (upcomingState.state == MoviesState.error)
-                Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error, color: Colors.red.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          upcomingState.errorMessage ?? 'Error desconocido',
-                          style: TextStyle(color: Colors.red.shade700),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            ref.read(upcomingMoviesProvider.notifier).refresh(),
-                        child: const Text('Reintentar'),
-                      ),
-                    ],
-                  ),
-                ),
-
-              MovieHorizontalListviewWithAds(
+              _buildMovieSection(
                 movies: topRatedMovies,
                 sectionId: 'top-rated',
                 title: 'Mejor calificadas',
                 subTitle: 'Desde siempre',
-                loadNextPage: () {
-                  ref.read(topRatedMoviesProvider.notifier).loadNextPage();
-                },
+                provider: topRatedMoviesProvider,
+                state: topRatedState,
               ),
 
               // Sección de recomendaciones personalizadas
               _buildRecommendationsSection(ref),
 
               // Banner al final de la página (ALTA PRIORIDAD según documento)
-              const FullWidthAdWidget(
-                height: 100,
-                margin: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                showLabel: true,
-                borderRadius: 12,
-              ),
+              kIsWeb
+                  ? const WebSafeFullWidthAdWidget()
+                  : const FullWidthAdWidget(
+                      height: 100,
+                      margin:
+                          EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                      showLabel: true,
+                      borderRadius: 12,
+                    ),
 
               const SizedBox(height: 20),
             ],
@@ -288,11 +139,76 @@ class HomeViewState extends ConsumerState<HomeView>
     );
   }
 
+  /// ✅ LAZY LOADING: Load data only when section is visible
+  Widget _buildMovieSection({
+    required List<Movie> movies,
+    required String sectionId,
+    required String title,
+    required String subTitle,
+    required NotifierProvider<dynamic, MoviesStateData> provider,
+    required MoviesStateData state,
+  }) {
+    return Column(
+      children: [
+        // Load data when first built
+        Builder(
+          builder: (context) {
+            // Load data lazily when section is first built
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (movies.isEmpty && state.state == MoviesState.initial) {
+                ref.read(provider.notifier).loadNextPage();
+              }
+            });
+
+            return MovieHorizontalListviewWithAds(
+              movies: movies,
+              sectionId: sectionId,
+              title: title,
+              subTitle: subTitle,
+              loadNextPage: () => ref.read(provider.notifier).loadNextPage(),
+            );
+          },
+        ),
+
+        // Mostrar error si existe
+        if (state.state == MoviesState.error)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error, color: Colors.red.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    state.errorMessage ?? 'Error desconocido',
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => ref.read(provider.notifier).refresh(),
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
   @override
   bool get wantKeepAlive => true;
 
   /// Construye la sección de recomendaciones personalizadas
   Widget _buildRecommendationsSection(WidgetRef ref) {
+    // ✅ TEMPORARY: Disable recommendations to avoid potential blocking issues
+    return const SizedBox.shrink();
+
+    /* ORIGINAL CODE - Temporarily disabled
     final recommendationsState = ref.watch(paginatedRecommendationsProvider);
     final recommendations = recommendationsState.movies;
 
@@ -309,5 +225,6 @@ class HomeViewState extends ConsumerState<HomeView>
         ref.read(paginatedRecommendationsProvider.notifier).loadNextPage();
       },
     );
+    */
   }
 }

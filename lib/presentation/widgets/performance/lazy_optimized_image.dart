@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -297,6 +299,7 @@ class VisibilityDetector extends StatefulWidget {
 class _VisibilityDetectorState extends State<VisibilityDetector> {
   final GlobalKey _key = GlobalKey();
   bool _wasVisible = false;
+  Timer? _visibilityTimer;
 
   @override
   void initState() {
@@ -327,9 +330,10 @@ class _VisibilityDetectorState extends State<VisibilityDetector> {
       widget.onVisibilityChanged(VisibilityInfo(visibleFraction));
     }
 
-    // Programar siguiente check
+    // Programar siguiente check con timer cancelable
     if (mounted) {
-      Future.delayed(const Duration(milliseconds: 100), () {
+      _visibilityTimer?.cancel();
+      _visibilityTimer = Timer(const Duration(milliseconds: 100), () {
         _checkVisibility(null);
       });
     }
@@ -345,6 +349,12 @@ class _VisibilityDetectorState extends State<VisibilityDetector> {
     final visibleHeight = (bottom - top).clamp(0.0, size.height);
 
     return visibleWidth * visibleHeight;
+  }
+
+  @override
+  void dispose() {
+    _visibilityTimer?.cancel();
+    super.dispose();
   }
 
   @override

@@ -4,8 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peliculas/core/sync/sync_coordinator.dart';
 import 'package:peliculas/core/sync/sync_operation.dart';
+import 'package:peliculas/infrastructure/services/connectivity_detector.dart';
 import 'package:peliculas/infrastructure/services/connectivity_manager.dart';
 import 'package:peliculas/infrastructure/services/realtime_sync_manager.dart';
+
+import '../helpers/test_setup_helper.dart';
 
 // Mocks
 class MockSyncCoordinator extends Mock implements SyncCoordinator {}
@@ -36,7 +39,19 @@ void main() {
     late MockSyncCoordinator mockSyncCoordinator;
     late MockConnectivityManager mockConnectivityManager;
 
-    setUp(() {
+    setUpAll(() {
+      // Configure test mode for ConnectivityDetector to prevent Timer leaks
+      ConnectivityDetector.setTestMode(true);
+    });
+
+    tearDownAll(() {
+      // Reset test mode after all tests
+      ConnectivityDetector.setTestMode(false);
+    });
+
+    setUp(() async {
+      // Initialize test environment
+      await TestSetupHelper.setupTest();
       mockSyncCoordinator = MockSyncCoordinator();
       mockConnectivityManager = MockConnectivityManager();
 

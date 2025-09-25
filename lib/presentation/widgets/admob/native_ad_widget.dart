@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import '../../../core/logging/logger_factory.dart';
+import 'web_safe_ad_widgets.dart';
 
 class NativeAdWidget extends StatefulWidget {
   const NativeAdWidget({
@@ -33,34 +35,47 @@ class _NativeAdWidgetState extends State<NativeAdWidget> {
   }
 
   void _loadNativeAd() {
+    // En web, usar el sistema web-safe
     if (kIsWeb) {
-      // AdMob no es compatible con web
+      LoggerFactory.info('Usando AdSense para native ads en web');
       return;
     }
 
-    _nativeAd = NativeAd(
-      adUnitId: AdHelper.nativeAdUnitId,
-      factoryId: 'listTile',
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (ad) {
-          setState(() {
-            _nativeAdIsLoaded = true;
-          });
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-        },
-      ),
-    );
-    _nativeAd?.load();
+    // Solo cargar AdMob si la plataforma lo soporta
+    if (!AdHelper.isAdMobSupported) {
+      LoggerFactory.warning('AdMob no soportado en esta plataforma');
+      return;
+    }
+
+    try {
+      _nativeAd = NativeAd(
+        adUnitId: AdHelper.nativeAdUnitId,
+        factoryId: 'listTile',
+        request: const AdRequest(),
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            LoggerFactory.info('Native ad cargado exitosamente');
+            setState(() {
+              _nativeAdIsLoaded = true;
+            });
+          },
+          onAdFailedToLoad: (ad, error) {
+            LoggerFactory.error('Error cargando native ad: $error');
+            ad.dispose();
+          },
+        ),
+      );
+      _nativeAd?.load();
+    } catch (e) {
+      LoggerFactory.error('Excepción cargando native ad: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // En web, usar el widget web-safe
     if (kIsWeb) {
-      // AdMob no es compatible con web
-      return const SizedBox.shrink();
+      return const WebSafeNativeAdWidget();
     }
 
     final nativeAd = _nativeAd;

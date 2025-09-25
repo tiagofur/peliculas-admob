@@ -21,10 +21,20 @@ class ConnectivityDetector {
   static final ConnectivityDetector _instance = ConnectivityDetector._();
   static ConnectivityDetector get instance => _instance;
 
+  // ✅ FIXED: Variable para desactivar tests en testing environment
+  static bool _isTestMode = false;
+  
+  /// Activa o desactiva el modo de testing (sin network calls)
+  static void setTestMode(bool isTestMode) {
+    _isTestMode = isTestMode;
+    LoggerFactory.info('🧪 ConnectivityDetector modo test: $isTestMode');
+  }
+
   // Estado interno
   ConnectivityStatus _currentStatus = ConnectivityStatus.unknown;
   DateTime? _lastCheck;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  Timer? _periodicTimer; // ✅ FIXED: Timer para verificación periódica
 
   // Stream controller para notificar cambios
   final StreamController<ConnectivityStatus> _statusController =
@@ -95,8 +105,8 @@ class ConnectivityDetector {
       },
     );
 
-    // Verificación periódica adicional para Web
-    Timer.periodic(_checkInterval, (_) {
+    // ✅ FIXED: Guardar Timer y cancelar en dispose()
+    _periodicTimer = Timer.periodic(_checkInterval, (_) {
       _performPeriodicCheck();
     });
   }
@@ -155,6 +165,12 @@ class ConnectivityDetector {
 
   /// Prueba la conexión a internet real
   Future<bool> _testInternetConnection() async {
+    // ✅ FIXED: En modo test, siempre retornar true sin network calls
+    if (_isTestMode) {
+      LoggerFactory.info('🧪 [TEST MODE] Skipping network connectivity tests');
+      return true;
+    }
+
     try {
       if (kIsWeb) {
         return await _testWebConnection();
@@ -292,7 +308,13 @@ class ConnectivityDetector {
   void dispose() {
     LoggerFactory.info('🧹 Limpiando ConnectivityDetector...');
 
+    // ✅ FIXED: Cancelar Timer periódico
+    _periodicTimer?.cancel();
+    _periodicTimer = null;
+    
     _connectivitySubscription?.cancel();
+    _connectivitySubscription = null;
+    
     _statusController.close();
 
     LoggerFactory.info('✅ ConnectivityDetector limpiado');

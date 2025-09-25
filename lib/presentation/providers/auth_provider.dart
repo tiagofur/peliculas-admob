@@ -238,6 +238,8 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
     with ErrorHandlingMixin<AsyncValue<void>> {
   @override
   AsyncValue<void> build() {
+    // Configurar callback post-autenticación automáticamente
+    _setupPostAuthCallback();
     return const AsyncValue.data(null);
   }
 
@@ -249,20 +251,50 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
     _onAuthSuccess = onAuthSuccess;
   }
 
+  /// Configura automáticamente el callback post-autenticación para sincronización
+  void _setupPostAuthCallback() {
+    _onAuthSuccess = (user) async {
+      LoggerFactory.info('🔄 Ejecutando sincronización post-autenticación para: ${user.id}');
+      
+      try {
+        // Obtener el servicio de migración
+        final migrationService = ref.read(dataMigrationServiceProvider);
+        
+        // Ejecutar migración y sincronización
+        final result = await migrationService.migrateAndSyncData(user.id);
+        
+        if (result.success) {
+          LoggerFactory.info('✅ Sincronización post-autenticación exitosa: '
+              'Películas: ${result.migratedWatchedMovies}, '
+              'Calificaciones: ${result.migratedRatings}, '
+              'Listas: ${result.migratedCustomLists}');
+        } else {
+          LoggerFactory.error('❌ Error en sincronización post-autenticación: ${result.error}');
+        }
+      } catch (e) {
+        LoggerFactory.error('❌ Fallo crítico en sincronización post-autenticación: $e');
+      }
+    };
+  }
+
   Future<void> signIn({
     required String email,
     required String password,
   }) async {
     await safeUpdateState<void>(
       () async {
-        // Use optimized login flow
-        final success = await _flowOptimizer.optimizeLoginFlow(
-          email: email,
-          password: password,
-        );
+        LoggerFactory.info('🔑 Attempting direct login for: $email');
 
-        if (!success) {
-          throw Exception('Login optimization failed');
+        // Try direct Supabase login first (bypass optimizer temporarily)
+        try {
+          await _authRepository.signInWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+          LoggerFactory.info('✅ Direct login successful');
+        } catch (e) {
+          LoggerFactory.error('❌ Direct login failed: $e');
+          rethrow;
         }
 
         // Ejecutar callback post-autenticación si está disponible
@@ -273,7 +305,7 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
       },
       onSuccess: (_) {
         state = const AsyncValue.data(null);
-        LoggerFactory.info('✅ Sign in successful (optimized flow)');
+        LoggerFactory.info('✅ Sign in successful (direct flow)');
       },
       onError: (userError) {
         state = AsyncValue.error(userError, StackTrace.current);
