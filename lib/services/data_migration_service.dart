@@ -125,10 +125,12 @@ class DataMigrationService {
       _logger.info('📽️ Migrando películas vistas...');
 
       // Los repositorios híbridos ya manejan sincronización automática con Supabase
-      final watchedMovies = await watchedRepository.loadWatchedMovies(limit: 10000);
+      final watchedMovies =
+          await watchedRepository.loadWatchedMovies(limit: 10000);
 
       // Los datos ya están sincronizados automáticamente por el repositorio híbrido
-      _logger.info('✅ ${watchedMovies.length} películas vistas disponibles y sincronizadas');
+      _logger.info(
+          '✅ ${watchedMovies.length} películas vistas disponibles y sincronizadas');
       return watchedMovies.length;
     } catch (e) {
       _logger.error('❌ Error migrando películas vistas: $e');
@@ -145,7 +147,8 @@ class DataMigrationService {
       final ratings = await ratingsRepository.getUserRatings(limit: 10000);
 
       // Los datos ya están sincronizados automáticamente por el repositorio híbrido
-      _logger.info('✅ ${ratings.length} calificaciones disponibles y sincronizadas');
+      _logger.info(
+          '✅ ${ratings.length} calificaciones disponibles y sincronizadas');
       return ratings.length;
     } catch (e) {
       _logger.error('❌ Error migrando calificaciones: $e');
@@ -159,10 +162,12 @@ class DataMigrationService {
       _logger.info('📋 Migrando listas personalizadas...');
 
       // Los repositorios híbridos ya manejan sincronización automática con Supabase
-      final customLists = await customListsRepository.getAllCustomListsWithForcedSync();
+      final customLists =
+          await customListsRepository.getAllCustomListsWithForcedSync();
 
       // Los datos ya están sincronizados automáticamente por el repositorio híbrido
-      _logger.info('✅ ${customLists.length} listas personalizadas disponibles y sincronizadas');
+      _logger.info(
+          '✅ ${customLists.length} listas personalizadas disponibles y sincronizadas');
       return customLists.length;
     } catch (e) {
       _logger.error('❌ Error migrando listas personalizadas: $e');
@@ -181,8 +186,10 @@ class DataMigrationService {
       // - Los datos se sincronizan en tiempo real con Supabase
       // - Resolución automática de conflictos incluida
 
-      _logger.info('✅ Sincronización bidireccional automática ya configurada y funcionando');
-      _logger.debug('📊 Repositorios híbridos con Supabase: Todas las operaciones se sincronizan automáticamente');
+      _logger.info(
+          '✅ Sincronización bidireccional automática ya configurada y funcionando');
+      _logger.debug(
+          '📊 Repositorios híbridos con Supabase: Todas las operaciones se sincronizan automáticamente');
     } catch (e) {
       _logger.error('❌ Error en sincronización completa: $e');
       throw Exception('Error en sincronización completa: $e');
@@ -269,7 +276,8 @@ class MigrationResult {
 final dataMigrationServiceProvider = Provider<DataMigrationService>((ref) {
   final watchedRepository = ref.watch(hybridWatchedRepositoryProvider);
   // Usar el provider existente para ratings
-  final ratingsRepository = ref.watch(movieRatingsRepositoryProvider) as HybridMovieRatingsRepository;
+  final ratingsRepository =
+      ref.watch(movieRatingsRepositoryProvider) as HybridMovieRatingsRepository;
   final customListsRepository = ref.watch(hybridCustomListsRepositoryProvider);
 
   return DataMigrationService(

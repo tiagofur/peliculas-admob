@@ -103,6 +103,13 @@ class MainApp extends ConsumerWidget {
     final localeState = ref.watch(localeNotifierProvider);
     final currentLocale = localeState.locale?.languageCode ?? 'es';
 
+    // Initialize locale provider if needed
+    if (!localeState.isLoading && localeState.locale == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(localeNotifierProvider.notifier).initialize();
+      });
+    }
+
     // Initialize date formatting for the current locale
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
@@ -162,11 +169,9 @@ class MainApp extends ConsumerWidget {
     final router = ref.read(appRouterProvider);
     LoggerFactory.info('✅ Router real cargado exitosamente');
 
-    // Initialize deep link handler for web
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        DeepLinkHandler.initialize(router);
-      });
+    // Initialize deep link handler for web only once
+    if (kIsWeb && !DeepLinkHandler.isInitialized) {
+      DeepLinkHandler.initialize(router);
     }
 
     // Usar MaterialApp regular para web para evitar problemas de compatibilidad

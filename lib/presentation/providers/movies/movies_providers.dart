@@ -1,4 +1,4 @@
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
@@ -40,47 +40,35 @@ class MoviesStateData {
 }
 
 final nowPlayingMoviesProvider =
-    StateNotifierProvider<MoviesNotifier, MoviesStateData>((ref) {
-  final fetchMoreMovies = ref.watch(movieRepositoryProvider).getNowPlaying;
-  return MoviesNotifier(fetchMoreMovies: fetchMoreMovies);
-});
+    NotifierProvider<NowPlayingMoviesNotifier, MoviesStateData>(
+        NowPlayingMoviesNotifier.new);
 
 final popularMoviesProvider =
-    StateNotifierProvider<MoviesNotifier, MoviesStateData>((ref) {
-  final fetchMoreMovies = ref.watch(movieRepositoryProvider).getPopular;
-  return MoviesNotifier(fetchMoreMovies: fetchMoreMovies);
-});
+    NotifierProvider<PopularMoviesNotifier, MoviesStateData>(
+        PopularMoviesNotifier.new);
 
 final upcomingMoviesProvider =
-    StateNotifierProvider<MoviesNotifier, MoviesStateData>((ref) {
-  final fetchMoreMovies = ref.watch(movieRepositoryProvider).getUpcoming;
-  return MoviesNotifier(fetchMoreMovies: fetchMoreMovies);
-});
+    NotifierProvider<UpcomingMoviesNotifier, MoviesStateData>(
+        UpcomingMoviesNotifier.new);
 
 final topRatedMoviesProvider =
-    StateNotifierProvider<MoviesNotifier, MoviesStateData>((ref) {
-  final fetchMoreMovies = ref.watch(movieRepositoryProvider).getTopRated;
-  return MoviesNotifier(fetchMoreMovies: fetchMoreMovies);
-});
+    NotifierProvider<TopRatedMoviesNotifier, MoviesStateData>(
+        TopRatedMoviesNotifier.new);
 
 typedef MovieCallback = Future<List<Movie>> Function({int page});
 
-class MoviesNotifier extends StateNotifier<MoviesStateData> {
-  MoviesNotifier({
-    required this.fetchMoreMovies,
-  }) : super(const MoviesStateData()) {
-    LoggerFactory.debug('MoviesNotifier: MoviesNotifier creado');
-  }
-
+abstract class MoviesNotifier extends Notifier<MoviesStateData> {
   int currentPage = 0;
-  final MovieCallback fetchMoreMovies;
+  MovieCallback? fetchMoreMovies;
   static const int maxRetries = 3;
 
   Future<void> loadNextPage() async {
     LoggerFactory.debug(
         'MoviesNotifier: loadNextPage() llamado - Estado actual: ${state.state}, página: $currentPage');
 
-    if (state.state == MoviesState.loading || state.hasReachedMax) {
+    if (state.state == MoviesState.loading ||
+        state.hasReachedMax ||
+        fetchMoreMovies == null) {
       LoggerFactory.debug(
           'MoviesNotifier: Saltando loadNextPage - loading: ${state.state == MoviesState.loading}, hasReachedMax: ${state.hasReachedMax}');
       return;
@@ -93,7 +81,7 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
     try {
       LoggerFactory.debug(
           'MoviesNotifier: Llamando fetchMoreMovies con página: ${currentPage + 1}');
-      final movies = await fetchMoreMovies(page: currentPage + 1);
+      final movies = await fetchMoreMovies!(page: currentPage + 1);
 
       LoggerFactory.debug(
           'MoviesNotifier: Recibidas ${movies.length} películas de la API');
@@ -154,11 +142,45 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
       );
     }
   }
+}
 
+// Concrete implementations for each movie category
+class NowPlayingMoviesNotifier extends MoviesNotifier {
   @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
+  MoviesStateData build() {
+    final repository = ref.watch(movieRepositoryProvider);
+    fetchMoreMovies = repository.getNowPlaying;
+    LoggerFactory.debug('NowPlayingMoviesNotifier: Notifier created');
+    return const MoviesStateData();
   }
 }
 
+class PopularMoviesNotifier extends MoviesNotifier {
+  @override
+  MoviesStateData build() {
+    final repository = ref.watch(movieRepositoryProvider);
+    fetchMoreMovies = repository.getPopular;
+    LoggerFactory.debug('PopularMoviesNotifier: Notifier created');
+    return const MoviesStateData();
+  }
+}
+
+class UpcomingMoviesNotifier extends MoviesNotifier {
+  @override
+  MoviesStateData build() {
+    final repository = ref.watch(movieRepositoryProvider);
+    fetchMoreMovies = repository.getUpcoming;
+    LoggerFactory.debug('UpcomingMoviesNotifier: Notifier created');
+    return const MoviesStateData();
+  }
+}
+
+class TopRatedMoviesNotifier extends MoviesNotifier {
+  @override
+  MoviesStateData build() {
+    final repository = ref.watch(movieRepositoryProvider);
+    fetchMoreMovies = repository.getTopRated;
+    LoggerFactory.debug('TopRatedMoviesNotifier: Notifier created');
+    return const MoviesStateData();
+  }
+}

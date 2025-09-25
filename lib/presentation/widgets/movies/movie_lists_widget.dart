@@ -50,7 +50,8 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
   Widget _buildContent(BuildContext context, AllListsState allListsState) {
     final allLists = allListsState.allLists;
     final notifier = ref.read(directCustomListsProvider.notifier);
-    final listsContainingMovie = notifier.getListsContainingMovie(widget.movie.id);
+    final listsContainingMovie =
+        notifier.getListsContainingMovie(widget.movie.id);
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 

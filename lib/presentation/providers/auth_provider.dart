@@ -374,40 +374,6 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
   }
 }
 
-/// Factory para crear callback post-autenticación
-PostAuthCallback _createPostAuthCallback(Ref ref) {
-  return (User user) async {
-    try {
-      final logger = LoggerFactory.getLogger('PostAuthCallback');
-      logger.info(
-          'Ejecutando sincronización post-autenticación para: ${user.id}');
-
-      // ✅ IMPLEMENTADO: Migración y sincronización usando servicio dedicado
-      final migrationService = ref.read(dataMigrationServiceProvider);
-
-      // Ejecutar migración en background para no bloquear la UI
-      Future.microtask(() async {
-        try {
-          final result = await migrationService.migrateAndSyncData(user.id);
-
-          if (result.success) {
-            logger.info('✅ Migración completada exitosamente: '
-                '${result.totalMigrated} elementos migrados');
-          } else {
-            logger.error('❌ Error en migración: ${result.error}');
-          }
-        } catch (e) {
-          logger.error('❌ Error ejecutando migración post-auth: $e');
-        }
-      });
-
-      logger.info('✅ Usuario autenticado exitosamente');
-    } catch (e) {
-      LoggerFactory.error('❌ Error en callback post-autenticación: $e');
-    }
-  };
-}
-
 // Provider del notifier de autenticación
 final authNotifierProvider =
     NotifierProvider<AuthNotifier, AsyncValue<void>>(() {

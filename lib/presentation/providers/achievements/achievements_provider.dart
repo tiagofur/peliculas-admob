@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../../domain/entities/entities.dart';
 import '../../../domain/repositories/achievements_repository.dart';
 import '../../../infrastructure/datasources/achievements_shared_preferences_datasource.dart';
@@ -15,9 +14,8 @@ final achievementsRepositoryProvider = Provider<AchievementsRepository>((ref) {
 
 // Provider para todos los logros
 final achievementsProvider =
-    StateNotifierProvider<AchievementsNotifier, AchievementsState>((ref) {
-  final repository = ref.watch(achievementsRepositoryProvider);
-  return AchievementsNotifier(repository);
+    NotifierProvider<AchievementsNotifier, AchievementsState>(() {
+  return AchievementsNotifier();
 });
 
 // Provider para logros desbloqueados
@@ -72,12 +70,15 @@ class AchievementsState {
 }
 
 // Notifier para gestionar los logros
-class AchievementsNotifier extends StateNotifier<AchievementsState> {
-  AchievementsNotifier(this.repository) : super(AchievementsState()) {
+class AchievementsNotifier extends Notifier<AchievementsState> {
+  @override
+  AchievementsState build() {
     _initialize();
+    return AchievementsState();
   }
 
-  final AchievementsRepository repository;
+  AchievementsRepository get repository =>
+      ref.read(achievementsRepositoryProvider);
 
   Future<void> _initialize() async {
     state = state.copyWith(isLoading: true);
@@ -170,9 +171,6 @@ class AchievementsNotifier extends StateNotifier<AchievementsState> {
     }).toList();
   }
 
-  @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
-  }
+  // Note: Notifier doesn't have dispose method in Riverpod 3.0
+  // Resource cleanup is handled automatically
 }

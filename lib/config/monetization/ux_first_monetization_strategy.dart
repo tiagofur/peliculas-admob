@@ -192,11 +192,13 @@ class UXFirstMonetizationStrategy {
     }
   }
 
-  Future<bool> _checkUserRules(UXMonetizationRules rules, AdTypeUX adType) async {
+  Future<bool> _checkUserRules(
+      UXMonetizationRules rules, AdTypeUX adType) async {
     // Verificar período de gracia para nuevos usuarios
     if (rules.newUserGracePeriod != null) {
       if (await _isNewUser() && rules.disableAdsForNewUsers) {
-        LoggerFactory.debug('Anuncio bloqueado: usuario nuevo en período de gracia');
+        LoggerFactory.debug(
+            'Anuncio bloqueado: usuario nuevo en período de gracia');
         return false;
       }
     }
@@ -239,8 +241,10 @@ class UXFirstMonetizationStrategy {
       switch (adType) {
         case AdTypeUX.interstitial:
           // Verificar límites por sesión
-          if (frequencyTracker.interstitialsThisSession >= rules.maxInterstitialsPerSession) {
-            LoggerFactory.debug('Límite de intersticiales por sesión alcanzado');
+          if (frequencyTracker.interstitialsThisSession >=
+              rules.maxInterstitialsPerSession) {
+            LoggerFactory.debug(
+                'Límite de intersticiales por sesión alcanzado');
             return false;
           }
 
@@ -249,7 +253,8 @@ class UXFirstMonetizationStrategy {
           if (lastInterstitial != null) {
             final timeSinceLastAd = now.difference(lastInterstitial);
             if (timeSinceLastAd < rules.minTimeBetweenInterstitials) {
-              LoggerFactory.debug('Tiempo mínimo entre intersticiales no cumplido');
+              LoggerFactory.debug(
+                  'Tiempo mínimo entre intersticiales no cumplido');
               return false;
             }
           }
@@ -285,7 +290,8 @@ class UXFirstMonetizationStrategy {
       }
 
       if (!hasConsent) {
-        LoggerFactory.debug('Anuncio bloqueado por falta de consentimiento de privacidad');
+        LoggerFactory.debug(
+            'Anuncio bloqueado por falta de consentimiento de privacidad');
         return false;
       }
 
@@ -471,7 +477,6 @@ enum AdDecisionResult {
 
 /// Clase para tracking de frecuencia de anuncios
 class _AdFrequencyTracker {
-
   int get interstitialsThisSession {
     // Por ahora devolvemos un valor por defecto hasta implementar tracking completo
     return 0;
@@ -485,8 +490,10 @@ class _AdFrequencyTracker {
   Future<void> recordInterstitialShown() async {
     try {
       final service = UserMonetizationPreferencesService.instance;
-      await service.recordAdInteraction(AdInteractionType.viewed, AdTypeUX.interstitial);
-      LoggerFactory.debug('Intersticial registrado usando servicio de preferencias');
+      await service.recordAdInteraction(
+          AdInteractionType.viewed, AdTypeUX.interstitial);
+      LoggerFactory.debug(
+          'Intersticial registrado usando servicio de preferencias');
     } catch (e) {
       LoggerFactory.error('Error registrando intersticial mostrado: $e');
     }
@@ -494,7 +501,8 @@ class _AdFrequencyTracker {
 
   Future<void> resetSessionCounters() async {
     try {
-      LoggerFactory.debug('Reset de contadores de sesión - usando sistema de preferencias');
+      LoggerFactory.debug(
+          'Reset de contadores de sesión - usando sistema de preferencias');
       // El servicio de preferencias maneja automáticamente las sesiones
     } catch (e) {
       LoggerFactory.error('Error reseteando contadores de sesión: $e');

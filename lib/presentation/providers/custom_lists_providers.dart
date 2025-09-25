@@ -91,10 +91,8 @@ final userListsProvider = StreamProvider<List<CustomList>>((ref) async* {
 
 /// Provider principal para el notifier de listas personalizadas
 final customListsNotifierProvider =
-    StateNotifierProvider<CustomListsNotifier, AsyncValue<List<CustomList>>>(
-        (ref) {
-  return CustomListsNotifier(ref);
-});
+    NotifierProvider<CustomListsNotifier, AsyncValue<List<CustomList>>>(
+        CustomListsNotifier.new);
 
 /// Provider para listas por defecto
 final defaultListsProvider = FutureProvider<List<CustomList>>((ref) async {
@@ -177,21 +175,16 @@ final syncActionsProvider = FutureProvider<SyncActions>((ref) async {
 
 /// Provider para el estado de la UI de listas
 final listsUIStateProvider =
-    StateNotifierProvider<ListsUIStateNotifier, ListsUIState>((ref) {
-  return ListsUIStateNotifier();
-});
+    NotifierProvider<ListsUIStateNotifier, ListsUIState>(
+        ListsUIStateNotifier.new);
 
 /// Provider para filtros de listas
 final listFiltersProvider =
-    StateNotifierProvider<ListFiltersNotifier, ListFilters>((ref) {
-  return ListFiltersNotifier();
-});
+    NotifierProvider<ListFiltersNotifier, ListFilters>(ListFiltersNotifier.new);
 
 /// Provider para el estado de creación/edición de listas
 final listFormProvider =
-    StateNotifierProvider<ListFormNotifier, ListFormState>((ref) {
-  return ListFormNotifier();
-});
+    NotifierProvider<ListFormNotifier, ListFormState>(ListFormNotifier.new);
 
 // ========== CLASES DE ACCIONES ==========
 
@@ -322,20 +315,26 @@ class SyncActions {
 
 // ========== STATE NOTIFIERS ==========
 
-class CustomListsNotifier extends StateNotifier<AsyncValue<List<CustomList>>> {
-  CustomListsNotifier(this._ref) : super(const AsyncValue.loading()) {
-    _initializeAndLoadLists();
-  }
-
-  final Ref _ref;
+class CustomListsNotifier extends Notifier<AsyncValue<List<CustomList>>> {
   ICustomListsRepository? _repository;
   StreamSubscription? _realtimeSubscription;
   bool _isRealtimeEnabled = false;
 
+  @override
+  AsyncValue<List<CustomList>> build() {
+    // Handle cleanup on dispose
+    ref.onDispose(() {
+      _realtimeSubscription?.cancel();
+    });
+
+    _initializeAndLoadLists();
+    return const AsyncValue.loading();
+  }
+
   /// Inicializa el repositorio y carga las listas
   Future<void> _initializeAndLoadLists() async {
     try {
-      _repository = await _ref.read(customListsRepositoryProvider.future);
+      _repository = await ref.read(customListsRepositoryProvider.future);
       await loadUserLists();
     } catch (e, stack) {
       LoggerFactory.error('❌ Error inicializando CustomListsNotifier: $e');
@@ -560,16 +559,13 @@ class CustomListsNotifier extends StateNotifier<AsyncValue<List<CustomList>>> {
     _isRealtimeEnabled = false;
     LoggerFactory.info('✅ CustomLists: Estado limpiado');
   }
-
-  @override
-  void dispose() {
-    _realtimeSubscription?.cancel();
-    super.dispose();
-  }
 }
 
-class ListsUIStateNotifier extends StateNotifier<ListsUIState> {
-  ListsUIStateNotifier() : super(ListsUIState.initial());
+class ListsUIStateNotifier extends Notifier<ListsUIState> {
+  @override
+  ListsUIState build() {
+    return ListsUIState.initial();
+  }
 
   void setLoading(bool loading) {
     state = state.copyWith(isLoading: loading);
@@ -592,8 +588,11 @@ class ListsUIStateNotifier extends StateNotifier<ListsUIState> {
   }
 }
 
-class ListFiltersNotifier extends StateNotifier<ListFilters> {
-  ListFiltersNotifier() : super(ListFilters.initial());
+class ListFiltersNotifier extends Notifier<ListFilters> {
+  @override
+  ListFilters build() {
+    return ListFilters.initial();
+  }
 
   void setSearchQuery(String query) {
     state = state.copyWith(searchQuery: query);
@@ -616,8 +615,11 @@ class ListFiltersNotifier extends StateNotifier<ListFilters> {
   }
 }
 
-class ListFormNotifier extends StateNotifier<ListFormState> {
-  ListFormNotifier() : super(ListFormState.initial());
+class ListFormNotifier extends Notifier<ListFormState> {
+  @override
+  ListFormState build() {
+    return ListFormState.initial();
+  }
 
   void setName(String name) {
     state = state.copyWith(name: name);

@@ -19,7 +19,11 @@
       "Bash(flutter gen-l10n:*)",
       "Bash(move:*)",
       "Bash(dart:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

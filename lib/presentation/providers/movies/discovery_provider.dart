@@ -268,9 +268,28 @@ final discoverySections = Provider<List<DiscoverySection>>((ref) {
 });
 
 // Provider para categorías favoritas del usuario
-final userFavoriteCategoriesProvider = StateProvider<List<String>>((ref) {
-  return [];
-});
+final userFavoriteCategoriesProvider =
+    NotifierProvider<UserFavoriteCategoriesNotifier, List<String>>(
+        UserFavoriteCategoriesNotifier.new);
+
+class UserFavoriteCategoriesNotifier extends Notifier<List<String>> {
+  @override
+  List<String> build() {
+    return [];
+  }
+
+  void updateCategories(List<String> categories) {
+    state = categories;
+  }
+
+  void addCategory(String categoryId) {
+    state = [...state, categoryId];
+  }
+
+  void removeCategory(String categoryId) {
+    state = state.where((id) => id != categoryId).toList();
+  }
+}
 
 // Provider para obtener películas de una categoría específica
 final categoryMoviesProvider =
@@ -281,10 +300,11 @@ final categoryMoviesProvider =
 });
 
 // Provider para gestionar el estado de descubrimiento
-class DiscoveryNotifier
-    extends StateNotifier<AsyncValue<List<DiscoveryCategory>>> {
-  DiscoveryNotifier() : super(const AsyncValue.loading()) {
+class DiscoveryNotifier extends Notifier<AsyncValue<List<DiscoveryCategory>>> {
+  @override
+  AsyncValue<List<DiscoveryCategory>> build() {
     _loadCategories();
+    return const AsyncValue.loading();
   }
 
   void _loadCategories() {
@@ -305,7 +325,6 @@ class DiscoveryNotifier
   }
 }
 
-final discoveryNotifierProvider = StateNotifierProvider<DiscoveryNotifier,
-    AsyncValue<List<DiscoveryCategory>>>((ref) {
-  return DiscoveryNotifier();
-});
+final discoveryNotifierProvider =
+    NotifierProvider<DiscoveryNotifier, AsyncValue<List<DiscoveryCategory>>>(
+        DiscoveryNotifier.new);

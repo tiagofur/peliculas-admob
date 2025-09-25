@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../core/services/sync_performance_metrics.dart';
 import '../../core/sync/conflict_resolution/strategies/conflict_strategy.dart';
 import '../../core/sync/entity_sync_manager.dart';
@@ -150,29 +149,70 @@ enum SyncStatus {
   offline,
 }
 
-class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
-  SyncIntegrationNotifier(
-    this._realtimeSyncManager,
-    this._connectivityManager,
-    this._syncCoordinator,
-    this._performanceMetrics,
-  ) : super(
-          const SyncIntegrationState(
-            isInitialized: false,
-            isConnected: false,
-            globalSyncStatus: SyncStatus.idle,
-            performanceMetrics: <String, dynamic>{},
-            recentHistory: <SyncHistoryEntry>[],
-            currentSettings: SyncSettings(),
-            lastError: null,
-          ),
-        ) {
+class SyncIntegrationNotifier extends Notifier<SyncIntegrationState> {
+  // Add StreamSubscription to track and dispose properly
+  StreamSubscription<ConnectionStatus>? _connectivitySubscription;
+  Timer? _metricsTimer;
+
+  @override
+  SyncIntegrationState build() {
+    // Get dependencies from providers
+    final user = ref.watch(currentUserProvider);
+    final userId = user?.id;
+
+    if (userId == null) {
+      return const SyncIntegrationState(
+        isInitialized: false,
+        isConnected: false,
+        globalSyncStatus: SyncStatus.idle,
+        performanceMetrics: <String, dynamic>{},
+        recentHistory: <SyncHistoryEntry>[],
+        currentSettings: SyncSettings(),
+        lastError: 'User not authenticated',
+      );
+    }
+
+    // Set up disposal callback
+    ref.onDispose(() {
+      _connectivitySubscription?.cancel();
+      _metricsTimer?.cancel();
+      try {
+        _realtimeSyncManager.dispose();
+        _connectivityManager.dispose();
+        _syncCoordinator.dispose();
+      } catch (e) {
+        // Ignore errors in dispose
+      }
+    });
+
     _initialize();
+    return const SyncIntegrationState(
+      isInitialized: false,
+      isConnected: false,
+      globalSyncStatus: SyncStatus.idle,
+      performanceMetrics: <String, dynamic>{},
+      recentHistory: <SyncHistoryEntry>[],
+      currentSettings: SyncSettings(),
+      lastError: null,
+    );
   }
-  final RealtimeSyncManager _realtimeSyncManager;
-  final ConnectivityManager _connectivityManager;
-  final SyncCoordinator _syncCoordinator;
-  final SyncPerformanceMetrics _performanceMetrics;
+
+  // Get dependencies via providers
+  RealtimeSyncManager get _realtimeSyncManager {
+    final user = ref.read(currentUserProvider);
+    return ref.read(realtimeSyncManagerProvider(user?.id ?? 'anonymous'));
+  }
+
+  ConnectivityManager get _connectivityManager =>
+      ref.read(connectivityManagerProvider);
+
+  SyncCoordinator get _syncCoordinator {
+    final user = ref.read(currentUserProvider);
+    return ref.read(syncCoordinatorProvider(user?.id ?? 'anonymous'));
+  }
+
+  SyncPerformanceMetrics get _performanceMetrics =>
+      ref.read(syncPerformanceMetricsProvider);
 
   Future<void> _initialize() async {
     try {
@@ -198,7 +238,8 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
 
   void _setupListeners() {
     // Listen to connectivity changes
-    _connectivityManager.connectionStatus.listen((status) {
+    _connectivitySubscription =
+        _connectivityManager.connectionStatus.listen((status) {
       final isConnected = status == ConnectionStatus.online;
       state = state.copyWith(
         isConnected: isConnected,
@@ -207,12 +248,13 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
     });
 
     // Update performance metrics periodically
-    Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (mounted) {
+    _metricsTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      // Remove mounted check - disposal is handled by ref.onDispose()
+      try {
         state = state.copyWith(
           performanceMetrics: _performanceMetrics.getSnapshot().toJson(),
         );
-      } else {
+      } catch (e) {
         timer.cancel();
       }
     });
@@ -397,45 +439,13 @@ class SyncIntegrationNotifier extends StateNotifier<SyncIntegrationState> {
   bool get hasConflicts => state.globalSyncStatus == SyncStatus.conflicts;
   List<SyncHistoryEntry> get syncHistory => state.recentHistory;
 
-  /// ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    // Limpiar recursos de sync managers
-    try {
-      _realtimeSyncManager.dispose();
-      _connectivityManager.dispose();
-      _syncCoordinator.dispose();
-    } catch (e) {
-      // Ignorar errores en dispose
-    }
-    super.dispose();
-  }
+  // Disposal is handled in build() method via ref.onDispose()
 }
 
 // Provider definitions
 final syncIntegrationProvider =
-    StateNotifierProvider<SyncIntegrationNotifier, SyncIntegrationState>((ref) {
-  // Get user ID from auth provider
-  final user = ref.watch(currentUserProvider);
-  final userId = user?.id;
-
-  if (userId == null) {
-    // Return a disabled sync integration state when no user is authenticated
-    return DisabledSyncIntegrationNotifier();
-  }
-
-  // Get dependencies from other providers
-  final realtimeSyncManager = ref.watch(realtimeSyncManagerProvider(userId));
-  final connectivityManager = ref.watch(connectivityManagerProvider);
-  final syncCoordinator = ref.watch(syncCoordinatorProvider(userId));
-  final performanceMetrics = ref.watch(syncPerformanceMetricsProvider);
-
-  return SyncIntegrationNotifier(
-    realtimeSyncManager,
-    connectivityManager,
-    syncCoordinator,
-    performanceMetrics,
-  );
+    NotifierProvider<SyncIntegrationNotifier, SyncIntegrationState>(() {
+  return SyncIntegrationNotifier();
 });
 
 // Convenience providers for specific UI needs
@@ -481,16 +491,11 @@ final syncPerformanceMetricsProvider = Provider<SyncPerformanceMetrics>((ref) {
 });
 
 /// Notifier deshabilitado para cuando no hay usuario autenticado
-class DisabledSyncIntegrationNotifier extends SyncIntegrationNotifier {
-  DisabledSyncIntegrationNotifier()
-      : super(
-          _createDisabledRealtimeSyncManager(),
-          _createDisabledConnectivityManager(),
-          _createDisabledSyncCoordinator(),
-          _createDisabledPerformanceMetrics(),
-        ) {
-    // Inicializar con estado deshabilitado
-    state = const SyncIntegrationState(
+class DisabledSyncIntegrationNotifier extends Notifier<SyncIntegrationState> {
+  @override
+  SyncIntegrationState build() {
+    // Return disabled state immediately
+    return const SyncIntegrationState(
       isInitialized: false,
       isConnected: false,
       globalSyncStatus: SyncStatus.offline,
@@ -508,45 +513,12 @@ class DisabledSyncIntegrationNotifier extends SyncIntegrationNotifier {
     );
   }
 
-  static RealtimeSyncManager _createDisabledRealtimeSyncManager() {
-    // Crear un manager deshabilitado que no haga nada
-    return RealtimeSyncManager(
-      userId: 'disabled',
-      syncCoordinator: _createDisabledSyncCoordinator(),
-      connectivityManager: _createDisabledConnectivityManager(),
-    );
-  }
-
-  static ConnectivityManager _createDisabledConnectivityManager() {
-    return ConnectivityManager();
-  }
-
-  static SyncCoordinator _createDisabledSyncCoordinator() {
-    return SyncCoordinator(userId: 'disabled');
-  }
-
-  static SyncPerformanceMetrics _createDisabledPerformanceMetrics() {
-    return SyncPerformanceMetrics.instance;
-  }
-
-  Future<void> initialize() async {
-    // No hacer nada cuando está deshabilitado
-    return;
-  }
-
-  Future<void> startSync() async {
-    // No hacer nada cuando está deshabilitado
-    return;
-  }
-
-  Future<void> stopSync() async {
-    // No hacer nada cuando está deshabilitado
-    return;
-  }
-
-  @override
-  Future<void> forceFullResync() async {
-    // No hacer nada cuando está deshabilitado
-    return;
-  }
+  // Disabled methods - no-op implementations
+  Future<void> triggerManualSync() async {}
+  Future<void> enableAutoSync() async {}
+  Future<void> disableAutoSync() async {}
+  Future<void> updateSettings(SyncSettings settings) async {}
+  Future<void> resolveConflict(
+      String conflictId, ConflictResolutionStrategy strategy) async {}
+  void clearError() {}
 }

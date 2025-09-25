@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/syncable_movie_rating.dart';
@@ -70,13 +69,22 @@ class MovieRatingsState {
 }
 
 /// Notifier para el sistema de calificaciones
-class MovieRatingsNotifier extends StateNotifier<MovieRatingsState> {
-  MovieRatingsNotifier(this._repository) : super(const MovieRatingsState()) {
+class MovieRatingsNotifier extends Notifier<MovieRatingsState> {
+  StreamSubscription<List<SyncableMovieRating>>? _ratingsSubscription;
+
+  @override
+  MovieRatingsState build() {
+    // Set up disposal callback
+    ref.onDispose(() {
+      _ratingsSubscription?.cancel();
+    });
+
     _initialize();
+    return const MovieRatingsState();
   }
 
-  final MovieRatingsRepository _repository;
-  StreamSubscription<List<SyncableMovieRating>>? _ratingsSubscription;
+  MovieRatingsRepository get _repository =>
+      ref.read(movieRatingsRepositoryProvider);
 
   /// Inicializa el provider
   Future<void> _initialize() async {
@@ -395,11 +403,7 @@ class MovieRatingsNotifier extends StateNotifier<MovieRatingsState> {
     state = state.copyWith(clearCurrentRating: true);
   }
 
-  @override
-  void dispose() {
-    _ratingsSubscription?.cancel();
-    super.dispose();
-  }
+  // Disposal is handled in build() method via ref.onDispose()
 }
 
 /// Provider para el repositorio de calificaciones
@@ -412,9 +416,8 @@ final movieRatingsRepositoryProvider = Provider<MovieRatingsRepository>((ref) {
 
 /// Provider principal para el estado de calificaciones
 final movieRatingsProvider =
-    StateNotifierProvider<MovieRatingsNotifier, MovieRatingsState>((ref) {
-  final repository = ref.watch(movieRatingsRepositoryProvider);
-  return MovieRatingsNotifier(repository);
+    NotifierProvider<MovieRatingsNotifier, MovieRatingsState>(() {
+  return MovieRatingsNotifier();
 });
 
 /// Provider para obtener una calificación específica

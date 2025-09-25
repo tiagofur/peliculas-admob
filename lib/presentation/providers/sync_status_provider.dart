@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
+import '../../core/utils/server_timestamp_utils.dart';
 import 'auth_provider.dart';
 import 'sync_init_provider.dart';
 
@@ -67,18 +67,28 @@ final syncServiceAccessProvider = Provider<Map<String, dynamic>?>((ref) {
 });
 
 /// Notifier para el estado de sincronización
-class SyncStatusNotifier extends StateNotifier<SyncState> {
-  SyncStatusNotifier(this._ref) : super(const SyncState()) {
-    _initializeListeners();
-  }
-
-  final Ref _ref;
+class SyncStatusNotifier extends Notifier<SyncState> {
   Timer? _statusCheckTimer;
   Timer? _messageDisplayTimer;
 
+  @override
+  SyncState build() {
+    // Set up disposal callback
+    ref.onDispose(() {
+      _statusCheckTimer?.cancel();
+      _messageDisplayTimer?.cancel();
+    });
+
+    _initializeListeners();
+    return const SyncState();
+  }
+
   void _initializeListeners() {
+    // Initialize server timestamp cache for better performance
+    ServerTimestampUtils.updateServerTimestampCache();
+
     // Escuchar cambios de autenticación para actualizar estado
-    _ref.listen<AppState>(appStateProvider, (previous, next) {
+    ref.listen<AppState>(appStateProvider, (previous, next) {
       if (previous?.isAuthenticated != next.isAuthenticated) {
         if (next.isAuthenticated) {
           _updateStatus(SyncStatus.syncing, 'Iniciando sincronización...');
@@ -101,7 +111,7 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
 
   void _checkSyncStatus() {
     try {
-      final appState = _ref.read(appStateProvider);
+      final appState = ref.read(appStateProvider);
 
       // Si no está autenticado, estado idle
       if (!appState.isAuthenticated) {
@@ -130,7 +140,7 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void _updateSyncStatusFromSystemState() {
     try {
       // Obtener información del sync service a través del provider
-      final syncServiceData = _ref.read(syncServiceAccessProvider);
+      final syncServiceData = ref.read(syncServiceAccessProvider);
 
       if (syncServiceData == null) {
         // Si no hay datos disponibles, mantener estado actual o marcar como offline
@@ -169,6 +179,17 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
     }
   }
 
+  /// Get the last sync time using server timestamp when possible
+  DateTime _getLastSyncTime() {
+    try {
+      // Use cached server timestamp for better performance
+      return ServerTimestampUtils.getCachedServerTimestamp();
+    } catch (e) {
+      // Fallback to local time
+      return DateTime.now();
+    }
+  }
+
   /// Actualizar estado de sincronización manualmente
   void _updateStatus(SyncStatus status, String message, {double? progress}) {
     state = state.copyWith(
@@ -176,8 +197,9 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
       message: message,
       progress:
           progress ?? (status == SyncStatus.success ? 1.0 : state.progress),
-      lastSyncTime:
-          status == SyncStatus.success ? DateTime.now() : state.lastSyncTime,
+      lastSyncTime: status == SyncStatus.success
+          ? _getLastSyncTime()
+          : state.lastSyncTime,
       errorMessage: status == SyncStatus.error ? message : null,
     );
 
@@ -190,9 +212,9 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void _scheduleMessageClear() {
     _messageDisplayTimer?.cancel();
     _messageDisplayTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted &&
-          (state.status == SyncStatus.success ||
-              state.status == SyncStatus.error)) {
+      // Remove mounted check - Notifier doesn't have mounted property
+      if (state.status == SyncStatus.success ||
+          state.status == SyncStatus.error) {
         state = state.copyWith(
           status: SyncStatus.idle,
           message: '',
@@ -204,7 +226,7 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
 
   /// Método público para iniciar sincronización manual
   void startManualSync() {
-    final appState = _ref.read(appStateProvider);
+    final appState = ref.read(appStateProvider);
     if (!appState.isAuthenticated) {
       return;
     }
@@ -217,7 +239,7 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
 
   Future<void> _triggerActualSync() async {
     try {
-      final authSyncListener = _ref.read(authSyncListenerProvider);
+      final authSyncListener = ref.read(authSyncListenerProvider);
 
       // Simular progreso inicial
       _updateProgressSteps();
@@ -232,7 +254,8 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
   void _updateProgressSteps() {
     // Simular progreso durante la sincronización
     Timer.periodic(const Duration(milliseconds: 300), (timer) {
-      if (!mounted || state.status != SyncStatus.syncing) {
+      // Remove mounted check - Notifier doesn't have mounted property
+      if (state.status != SyncStatus.syncing) {
         timer.cancel();
         return;
       }
@@ -268,18 +291,12 @@ class SyncStatusNotifier extends StateNotifier<SyncState> {
     _updateStatus(SyncStatus.idle, '');
   }
 
-  @override
-  void dispose() {
-    _statusCheckTimer?.cancel();
-    _messageDisplayTimer?.cancel();
-    super.dispose();
-  }
+  // Disposal is handled in build() method via ref.onDispose()
 }
 
 /// Provider del estado de sincronización
-final syncStatusProvider =
-    StateNotifierProvider<SyncStatusNotifier, SyncState>((ref) {
-  return SyncStatusNotifier(ref);
+final syncStatusProvider = NotifierProvider<SyncStatusNotifier, SyncState>(() {
+  return SyncStatusNotifier();
 });
 
 /// Provider para verificar si hay sincronización activa

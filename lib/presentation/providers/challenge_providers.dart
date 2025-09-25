@@ -32,25 +32,22 @@ final activeChallengesProvider =
   return ActiveChallengesNotifier();
 });
 
-/// StateNotifier provider for completed challenges
+/// Notifier provider for completed challenges
 final completedChallengesProvider =
-    StateNotifierProvider<CompletedChallengesNotifier, List<Challenge>>((ref) {
-  final challengeSystem = ref.watch(challengeSystemProvider);
-  return CompletedChallengesNotifier(challengeSystem);
+    NotifierProvider<CompletedChallengesNotifier, List<Challenge>>(() {
+  return CompletedChallengesNotifier();
 });
 
-/// StateNotifier provider for challenge notifications
-final challengeNotificationsProvider = StateNotifierProvider<
-    ChallengeNotificationsNotifier, List<ChallengeNotification>>((ref) {
-  final notificationService = ref.watch(challengeNotificationServiceProvider);
-  return ChallengeNotificationsNotifier(notificationService);
+/// Notifier provider for challenge notifications
+final challengeNotificationsProvider = NotifierProvider<
+    ChallengeNotificationsNotifier, List<ChallengeNotification>>(() {
+  return ChallengeNotificationsNotifier();
 });
 
-/// StateNotifier provider for user statistics
+/// Notifier provider for user statistics
 final userStatsProvider =
-    StateNotifierProvider<UserStatsNotifier, Map<String, dynamic>>((ref) {
-  final challengeTracker = ref.watch(challengeTrackerProvider);
-  return UserStatsNotifier(challengeTracker);
+    NotifierProvider<UserStatsNotifier, Map<String, dynamic>>(() {
+  return UserStatsNotifier();
 });
 
 /// StateNotifier for managing active challenges
@@ -59,6 +56,12 @@ class ActiveChallengesNotifier extends Notifier<List<Challenge>> {
   List<Challenge> build() {
     final challengeSystem = ref.read(challengeSystemProvider);
     challengeSystem.addListener(_updateState);
+
+    // Register disposal callback to remove listener
+    ref.onDispose(() {
+      challengeSystem.removeListener(_updateState);
+    });
+
     _updateState();
     return [];
   }
@@ -78,33 +81,48 @@ class ActiveChallengesNotifier extends Notifier<List<Challenge>> {
   }
 }
 
-/// StateNotifier for managing completed challenges
-class CompletedChallengesNotifier extends StateNotifier<List<Challenge>> {
-  CompletedChallengesNotifier(this._challengeSystem) : super([]) {
-    _challengeSystem.addListener(_updateState);
+/// Notifier for managing completed challenges
+class CompletedChallengesNotifier extends Notifier<List<Challenge>> {
+  @override
+  List<Challenge> build() {
+    final challengeSystem = ref.read(challengeSystemProvider);
+    challengeSystem.addListener(_updateState);
+
+    // Register disposal callback to remove listener
+    ref.onDispose(() {
+      challengeSystem.removeListener(_updateState);
+    });
+
     _updateState();
+    return [];
   }
-  final ChallengeSystem _challengeSystem;
+
+  ChallengeSystem get _challengeSystem => ref.read(challengeSystemProvider);
 
   void _updateState() {
     state = List.from(_challengeSystem.completedChallenges);
   }
-
-  @override
-  void dispose() {
-    _challengeSystem.removeListener(_updateState);
-    super.dispose();
-  }
 }
 
-/// StateNotifier for managing challenge notifications
+/// Notifier for managing challenge notifications
 class ChallengeNotificationsNotifier
-    extends StateNotifier<List<ChallengeNotification>> {
-  ChallengeNotificationsNotifier(this._notificationService) : super([]) {
-    _notificationService.addListener(_updateState);
+    extends Notifier<List<ChallengeNotification>> {
+  @override
+  List<ChallengeNotification> build() {
+    final notificationService = ref.read(challengeNotificationServiceProvider);
+    notificationService.addListener(_updateState);
+
+    // Register disposal callback to remove listener
+    ref.onDispose(() {
+      notificationService.removeListener(_updateState);
+    });
+
     _updateState();
+    return [];
   }
-  final ChallengeNotificationService _notificationService;
+
+  ChallengeNotificationService get _notificationService =>
+      ref.read(challengeNotificationServiceProvider);
 
   void _updateState() {
     state = List.from(_notificationService.notifications);
@@ -123,21 +141,25 @@ class ChallengeNotificationsNotifier
   }
 
   int get unreadCount => _notificationService.unreadCount;
-
-  @override
-  void dispose() {
-    _notificationService.removeListener(_updateState);
-    super.dispose();
-  }
 }
 
-/// StateNotifier for managing user statistics
-class UserStatsNotifier extends StateNotifier<Map<String, dynamic>> {
-  UserStatsNotifier(this._challengeTracker) : super({}) {
-    _challengeTracker.addListener(_updateState);
+/// Notifier for managing user statistics
+class UserStatsNotifier extends Notifier<Map<String, dynamic>> {
+  @override
+  Map<String, dynamic> build() {
+    final challengeTracker = ref.read(challengeTrackerProvider);
+    challengeTracker.addListener(_updateState);
+
+    // Register disposal callback to remove listener
+    ref.onDispose(() {
+      challengeTracker.removeListener(_updateState);
+    });
+
     _updateState();
+    return {};
   }
-  final ChallengeTracker _challengeTracker;
+
+  ChallengeTracker get _challengeTracker => ref.read(challengeTrackerProvider);
 
   void _updateState() {
     state = Map.from(_challengeTracker.getUserStatistics());
@@ -178,12 +200,6 @@ class UserStatsNotifier extends StateNotifier<Map<String, dynamic>> {
       releaseDate: releaseDate,
     );
   }
-
-  @override
-  void dispose() {
-    _challengeTracker.removeListener(_updateState);
-    super.dispose();
-  }
 }
 
 /// Provider for all user challenges (active + completed)
@@ -202,15 +218,16 @@ final availableChallengesProvider = Provider<List<Challenge>>((ref) {
 
 /// Provider for challenge system service (alias for challengeSystemProvider)
 final challengeSystemServiceProvider =
-    StateNotifierProvider<ChallengeSystemServiceNotifier, ChallengeSystem>(
-        (ref) {
-  final challengeSystem = ref.watch(challengeSystemProvider);
-  return ChallengeSystemServiceNotifier(challengeSystem);
+    NotifierProvider<ChallengeSystemServiceNotifier, ChallengeSystem>(() {
+  return ChallengeSystemServiceNotifier();
 });
 
-/// StateNotifier for challenge system service operations
-class ChallengeSystemServiceNotifier extends StateNotifier<ChallengeSystem> {
-  ChallengeSystemServiceNotifier(super.challengeSystem);
+/// Notifier for challenge system service operations
+class ChallengeSystemServiceNotifier extends Notifier<ChallengeSystem> {
+  @override
+  ChallengeSystem build() {
+    return ref.read(challengeSystemProvider);
+  }
 
   Future<void> generateWeeklyChallenges() async {
     await state.generateNewChallenges();

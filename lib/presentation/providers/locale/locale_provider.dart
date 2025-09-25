@@ -36,8 +36,13 @@ class LocaleNotifier extends Notifier<LocaleState> {
 
   @override
   LocaleState build() {
-    _loadLocale();
+    // Return initial state without loading - let initialization happen later
     return const LocaleState();
+  }
+
+  /// Initialize the locale provider (call this from UI)
+  Future<void> initialize() async {
+    await _loadLocale();
   }
 
   Future<void> _loadLocale() async {

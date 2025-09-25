@@ -32,11 +32,12 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
     if (isLoading || isLastPage) return;
     isLoading = true;
 
-    final movies =
-        await ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
+    await ref.read(directFavoriteMoviesProvider.notifier).loadNextPage();
     isLoading = false;
 
-    if (movies.isEmpty) {
+    // Check if we reached the end by checking the current state
+    final currentMovies = ref.read(directFavoriteMoviesProvider);
+    if (currentMovies.isEmpty) {
       isLastPage = true;
     }
   }

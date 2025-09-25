@@ -10,6 +10,11 @@ class SearchQueryNotifier extends Notifier<String> {
 
   void setQuery(String query) => state = query;
   void clear() => state = '';
+
+  /// Update method for compatibility with existing code
+  void update(String Function(String) updater) {
+    state = updater(state);
+  }
 }
 
 final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(

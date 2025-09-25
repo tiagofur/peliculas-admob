@@ -234,8 +234,19 @@ class EnhancedUserProfileService {
 
           // Convertir número de mes a nombre en español
           const monthNames = [
-            '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            '',
+            'Enero',
+            'Febrero',
+            'Marzo',
+            'Abril',
+            'Mayo',
+            'Junio',
+            'Julio',
+            'Agosto',
+            'Septiembre',
+            'Octubre',
+            'Noviembre',
+            'Diciembre'
           ];
           favoriteMonth = monthNames[favoriteMonthNumber];
         }
@@ -413,10 +424,12 @@ class EnhancedUserProfileService {
       final preferences = await _supabaseRepository.getUserPreferences(userId);
 
       if (preferences != null) {
-        LoggerFactory.debug('✅ Preferencias obtenidas de base de datos para usuario: $userId');
+        LoggerFactory.debug(
+            '✅ Preferencias obtenidas de base de datos para usuario: $userId');
         return preferences;
       } else {
-        LoggerFactory.info('📋 No se encontraron preferencias guardadas, usando configuración por defecto para: $userId');
+        LoggerFactory.info(
+            '📋 No se encontraron preferencias guardadas, usando configuración por defecto para: $userId');
         return UserPreferences.defaultSettings();
       }
     } catch (e) {
@@ -462,9 +475,12 @@ class EnhancedUserProfileService {
         moviesWatchedDelta: 1,
         watchTimeDelta: runtimeMinutes,
         // Agregar preferencias de género y año basado en la película vista
-        genrePreferences: movie.genreIds.isEmpty ? null : {
-          for (String genre in movie.genreIds.take(3)) genre: 1 // Incrementar contador por género
-        },
+        genrePreferences: movie.genreIds.isEmpty
+            ? null
+            : {
+                for (String genre in movie.genreIds.take(3))
+                  genre: 1 // Incrementar contador por género
+              },
         yearPreferences: {
           movie.releaseDate.year: 1 // Incrementar contador por año
         },
@@ -502,7 +518,8 @@ class EnhancedUserProfileService {
       final userRatings = await _getRatingsRepository().getUserRatings();
       double newAverageRating = 0.0;
       if (userRatings.isNotEmpty) {
-        final totalRating = userRatings.fold<double>(0, (sum, r) => sum + r.rating);
+        final totalRating =
+            userRatings.fold<double>(0, (sum, r) => sum + r.rating);
         newAverageRating = totalRating / userRatings.length;
       }
 
@@ -665,7 +682,8 @@ class EnhancedUserProfileService {
   /// Obtiene estadísticas comparativas mejoradas basadas en datos del usuario
   Future<Map<String, dynamic>> getComparativeStats(String userId) async {
     try {
-      LoggerFactory.info('📊 Getting enhanced comparative stats for user: $userId');
+      LoggerFactory.info(
+          '📊 Getting enhanced comparative stats for user: $userId');
 
       // Obtener perfil real del usuario
       final userProfile = await getUserProfile(userId);
@@ -687,14 +705,17 @@ class EnhancedUserProfileService {
       }
 
       // Generar estadísticas comparativas coherentes
-      final avgMoviesWatched = (userMoviesCount * 0.8).round(); // Usuario típicamente ve más
-      final avgRating = userRating > 0 ? (userRating - 0.3).clamp(1.0, 5.0) : 3.5;
+      final avgMoviesWatched =
+          (userMoviesCount * 0.8).round(); // Usuario típicamente ve más
+      final avgRating =
+          userRating > 0 ? (userRating - 0.3).clamp(1.0, 5.0) : 3.5;
 
       // Comparación de géneros basada en preferencias reales
       final genreComparison = <String, Map<String, dynamic>>{};
       for (final entry in stats.genrePreferences.entries) {
         final userValue = entry.value;
-        final avgValue = (userValue * 0.75).round(); // Usuario ve más de sus géneros favoritos
+        final avgValue = (userValue * 0.75)
+            .round(); // Usuario ve más de sus géneros favoritos
         genreComparison[entry.key] = {
           'user': userValue,
           'average': avgValue,
@@ -705,7 +726,9 @@ class EnhancedUserProfileService {
         'userPercentile': percentile,
         'averageMoviesWatched': avgMoviesWatched,
         'averageRating': avgRating.toStringAsFixed(1),
-        'topGenresComparison': genreComparison.isNotEmpty ? genreComparison : _getDefaultGenreComparison(),
+        'topGenresComparison': genreComparison.isNotEmpty
+            ? genreComparison
+            : _getDefaultGenreComparison(),
         'userMoviesWatched': userMoviesCount,
         'userAverageRating': userRating.toStringAsFixed(1),
         'rankingByMoviesWatched': _calculateRanking(userMoviesCount),
@@ -776,9 +799,10 @@ class EnhancedUserProfileService {
       String? favoriteMovie;
       double highestRating = 0;
       if (yearRatings.isNotEmpty) {
-        final bestRated = yearRatings.reduce((a, b) =>
-          a.rating > b.rating ? a : b);
-        favoriteMovie = 'Movie ID: ${bestRated.movieId}'; // En producción, obtener título real
+        final bestRated =
+            yearRatings.reduce((a, b) => a.rating > b.rating ? a : b);
+        favoriteMovie =
+            'Movie ID: ${bestRated.movieId}'; // En producción, obtener título real
         highestRating = bestRated.rating;
       }
 
@@ -786,7 +810,8 @@ class EnhancedUserProfileService {
       final decadeDistribution = <String, int>{};
       for (final entry in yearStats.entries) {
         final decade = '${(entry.key ~/ 10) * 10}s';
-        decadeDistribution[decade] = (decadeDistribution[decade] ?? 0) + entry.value;
+        decadeDistribution[decade] =
+            (decadeDistribution[decade] ?? 0) + entry.value;
       }
 
       // Encontrar género principal
@@ -803,12 +828,17 @@ class EnhancedUserProfileService {
         'totalMinutes': stats.totalWatchTimeMinutes,
         'topGenre': topGenre,
         'favoriteMovie': favoriteMovie ?? 'Sin película favorita registrada',
-        'averageRating': yearRatings.isNotEmpty ?
-          yearRatings.map((r) => r.rating).reduce((a, b) => a + b) / yearRatings.length : 0.0,
+        'averageRating': yearRatings.isNotEmpty
+            ? yearRatings.map((r) => r.rating).reduce((a, b) => a + b) /
+                yearRatings.length
+            : 0.0,
         'totalRatings': yearRatings.length,
         'highestRating': highestRating,
-        'decadeDistribution': decadeDistribution.isNotEmpty ? decadeDistribution : {'Sin datos': 0},
-        'genreDistribution': genreStats.isNotEmpty ? genreStats : {'Sin datos': 0},
+        'decadeDistribution': decadeDistribution.isNotEmpty
+            ? decadeDistribution
+            : {'Sin datos': 0},
+        'genreDistribution':
+            genreStats.isNotEmpty ? genreStats : {'Sin datos': 0},
         'totalWatchTimeHours': (stats.totalWatchTimeMinutes / 60.0).round(),
         'isDataComplete': yearRatings.isNotEmpty && genreStats.isNotEmpty,
         'dataSource': 'real_user_data',

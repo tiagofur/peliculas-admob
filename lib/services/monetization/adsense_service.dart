@@ -78,20 +78,26 @@ class AdSenseService {
   Future<void> _loadAdSenseScript() async {
     final completer = Completer<void>();
 
-    final script = web.document.createElement('script') as web.HTMLScriptElement;
-    script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$_publisherId';
+    final script =
+        web.document.createElement('script') as web.HTMLScriptElement;
+    script.src =
+        'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$_publisherId';
     script.async = true;
     script.crossOrigin = 'anonymous';
 
-    script.addEventListener('load', (web.Event event) {
-      LoggerFactory.info('Script AdSense cargado exitosamente');
-      completer.complete();
-    }.toJS);
+    script.addEventListener(
+        'load',
+        (web.Event event) {
+          LoggerFactory.info('Script AdSense cargado exitosamente');
+          completer.complete();
+        }.toJS);
 
-    script.addEventListener('error', (web.Event event) {
-      LoggerFactory.error('Error cargando script AdSense');
-      completer.completeError('Failed to load AdSense script');
-    }.toJS);
+    script.addEventListener(
+        'error',
+        (web.Event event) {
+          LoggerFactory.error('Error cargando script AdSense');
+          completer.completeError('Failed to load AdSense script');
+        }.toJS);
 
     web.document.head?.appendChild(script);
     return completer.future;

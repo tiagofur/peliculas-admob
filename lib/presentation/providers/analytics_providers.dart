@@ -1,6 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/analytics/analytics_service.dart';
 
@@ -17,7 +16,7 @@ final analyticsDashboardProvider =
 });
 
 /// Provider para el filtro de fecha
-final dateRangeFilterProvider = StateProvider<DateTimeRange?>((ref) => null);
+final dateRangeFilterProvider = Provider<DateTimeRange?>((ref) => null);
 
 /// Provider para el filtro de categoría
-final categoryFilterProvider = StateProvider<String?>((ref) => null);
+final categoryFilterProvider = Provider<String?>((ref) => null);

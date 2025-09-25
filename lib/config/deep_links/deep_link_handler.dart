@@ -9,11 +9,21 @@ class DeepLinkHandler {
   static final _logger = Logger('DeepLinkHandler');
   static const String _appScheme = 'peliculas';
   static final _analytics = AnalyticsService();
+  static bool _initialized = false;
+
+  /// Get the initialization status
+  static bool get isInitialized => _initialized;
 
   /// Initialize deep link handling for the application
   static void initialize(GoRouter router) {
+    if (_initialized) {
+      _logger.info('DeepLinkHandler already initialized, skipping');
+      return;
+    }
+
     if (kIsWeb) {
       _handleWebDeepLinks(router);
+      _initialized = true;
     }
   }
 
@@ -25,8 +35,13 @@ class DeepLinkHandler {
         final currentUrl = Uri.base.toString();
         _logger.info('Current URL: $currentUrl');
 
-        // Parse and handle the URL
-        _parseAndHandleUrl(currentUrl, router);
+        // Only parse URLs that are not the root path to avoid infinite loops
+        final uri = Uri.parse(currentUrl);
+        if (uri.path != '/' && uri.path.isNotEmpty) {
+          _parseAndHandleUrl(currentUrl, router);
+        } else {
+          _logger.info('Skipping root path to avoid infinite loop');
+        }
       }
     } catch (e) {
       _logger.severe('Error handling web deep links: $e');
@@ -40,6 +55,12 @@ class DeepLinkHandler {
       final path = uri.path;
 
       _logger.info('Parsing URL path: $path');
+
+      // Skip processing for root path or empty path
+      if (path == '/' || path.isEmpty) {
+        _logger.info('Skipping root/empty path: $path');
+        return;
+      }
 
       // Handle share URLs - redirect to main app routes
       if (path.contains('/share')) {
@@ -57,6 +78,8 @@ class DeepLinkHandler {
       // Handle recommendation URLs
       else if (path.startsWith('/recommendations/')) {
         _handleRecommendationUrl(path, router);
+      } else {
+        _logger.info('No special handling needed for path: $path');
       }
     } catch (e) {
       _logger.warning('Error parsing URL: $url, error: $e');

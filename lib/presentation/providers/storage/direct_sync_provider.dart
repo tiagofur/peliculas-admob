@@ -14,7 +14,6 @@ abstract class BaseSync {
 }
 
 abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
-
   DirectSyncService({
     required this.onMovieAdded,
     required this.sync,
@@ -158,11 +157,24 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
     return state.values.map((e) => e.movie).toList();
   }
 
+  /// Load next page method for compatibility with pagination patterns
+  Future<void> loadNextPage() async {
+    // For direct services, we typically load all at once
+    // This method is for compatibility with pagination patterns
+    await _loadMoviesFromSupabase();
+  }
+
+  /// Refresh method to reload data
+  Future<void> refresh() async {
+    await _loadMoviesFromSupabase();
+  }
+
   void _setupRealtimeListeners() {
     try {
       LoggerFactory.info('🔴 $logPrefix: Configurando listeners...');
 
-      final channelName = '${tableName}_realtime_${DateTime.now().millisecondsSinceEpoch}';
+      final channelName =
+          '${tableName}_realtime_${DateTime.now().millisecondsSinceEpoch}';
 
       _realtimeChannel =
           Supabase.instance.client.channel(channelName).onPostgresChanges(
@@ -230,7 +242,8 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
 
     if (!state.containsKey(movieId)) {
       state = {...state, movieId: syncableMovie};
-      LoggerFactory.info('➕ $logPrefix: Insertando ${syncableMovie.movie.title}');
+      LoggerFactory.info(
+          '➕ $logPrefix: Insertando ${syncableMovie.movie.title}');
     }
   }
 
@@ -242,11 +255,13 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
 
     if (newRecord['is_deleted'] ?? false) {
       state = Map.from(state)..remove(movieId);
-      LoggerFactory.info('🗑️ $logPrefix: Actualizando como eliminado ${newRecord['movie_title']}');
+      LoggerFactory.info(
+          '🗑️ $logPrefix: Actualizando como eliminado ${newRecord['movie_title']}');
     } else {
       final syncableMovie = _recordToSyncableMovie(newRecord);
       state = {...state, movieId: syncableMovie};
-      LoggerFactory.info('🔄 $logPrefix: Actualizando ${syncableMovie.movie.title}');
+      LoggerFactory.info(
+          '🔄 $logPrefix: Actualizando ${syncableMovie.movie.title}');
     }
   }
 

@@ -20,13 +20,13 @@ class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
   Map<int, Movie> build() {
     // Obtener repositorio inyectado
     _favoritesRepository = ref.watch(favoritesRepositoryProvider);
-    
+
     // Cargar favoritos existentes al inicializar
     _loadExistingFavorites();
-    
+
     // NO configurar auto-refresh automáticamente para evitar bloqueos
     // _setupAutoRefresh(); // Se habilitará manualmente cuando sea necesario
-    
+
     return {};
   }
 
@@ -178,7 +178,8 @@ class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
 }
 
 /// Provider modernizado para películas favoritas
-final favoriteMoviesProvider = NotifierProvider<FavoriteMoviesService, Map<int, Movie>>(
+final favoriteMoviesProvider =
+    NotifierProvider<FavoriteMoviesService, Map<int, Movie>>(
   () => FavoriteMoviesService(),
 );
 

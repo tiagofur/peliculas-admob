@@ -502,7 +502,8 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
 }
 
 /// Provider modernizado para watchlist directa
-final directWatchlistMoviesProvider = NotifierProvider<DirectWatchlistService, Map<int, WatchlistMovie>>(
+final directWatchlistMoviesProvider =
+    NotifierProvider<DirectWatchlistService, Map<int, WatchlistMovie>>(
   () => DirectWatchlistService(),
 );
 

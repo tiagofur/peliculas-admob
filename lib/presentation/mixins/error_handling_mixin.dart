@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../core/error_handling/centralized_error_handler.dart';
 import '../../core/logging/logger_factory.dart';
 
-/// Mixin para agregar manejo centralizado de errores a StateNotifiers
-mixin ErrorHandlingMixin<T> on StateNotifier<T> {
+/// Mixin para agregar manejo centralizado de errores a Notifiers
+mixin ErrorHandlingMixin<T> on Notifier<T> {
   final CentralizedErrorHandler _errorHandler = CentralizedErrorHandler();
 
   /// Procesa un error y devuelve información user-friendly
@@ -21,7 +20,7 @@ mixin ErrorHandlingMixin<T> on StateNotifier<T> {
       stackTrace,
       context: context ?? _getDefaultContext(),
       additionalData: {
-        'state_notifier': runtimeType.toString(),
+        'notifier': runtimeType.toString(),
         'current_state': state.toString(),
       },
       retryCallback: retryCallback,
@@ -165,8 +164,8 @@ class AsyncStateError<T> extends AsyncState<T> {
   final bool canRetry;
 }
 
-/// Mixin para StateNotifiers que usan AsyncState con error handling
-mixin AsyncStateErrorHandling<T> on StateNotifier<AsyncState<T>> {
+/// Mixin para Notifiers que usan AsyncState con error handling
+mixin AsyncStateErrorHandling<T> on Notifier<AsyncState<T>> {
   final CentralizedErrorHandler _errorHandler = CentralizedErrorHandler();
 
   /// Carga datos con manejo automático de estados y errores
@@ -280,4 +279,3 @@ extension AsyncStateExt<T> on AsyncState<T> {
   UserFriendlyError? get errorOrNull =>
       hasError ? (this as AsyncStateError<T>).error : null;
 }
-

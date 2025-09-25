@@ -72,7 +72,8 @@ class MovieRatingAndNotes extends ConsumerWidget {
     );
   }
 
-  Widget _buildNoRatingState(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
+  Widget _buildNoRatingState(
+      BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     return Column(
       children: [
         Container(
@@ -144,7 +145,8 @@ class MovieRatingAndNotes extends ConsumerWidget {
     );
   }
 
-  Widget _buildExistingRating(BuildContext context, WidgetRef ref, rating, AppLocalizations l10n) {
+  Widget _buildExistingRating(
+      BuildContext context, WidgetRef ref, rating, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

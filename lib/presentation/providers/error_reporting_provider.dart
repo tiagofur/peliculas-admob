@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-
 import '../../core/error_reporting/error_metrics_service.dart';
 import '../../core/error_reporting/error_reporting_service.dart';
 import '../../core/logging/logger_factory.dart';
@@ -68,9 +67,9 @@ final errorReportingUserContextProvider = Provider<void>((ref) {
   });
 });
 
-/// Mixin to easily add error reporting to StateNotifiers
-mixin ErrorReportingMixin<T> on StateNotifier<T> {
-  /// Report an error with context about this StateNotifier
+/// Mixin to easily add error reporting to Notifiers
+mixin ErrorReportingMixin<T> on Notifier<T> {
+  /// Report an error with context about this Notifier
   Future<void> reportError(
     dynamic error,
     StackTrace? stackTrace, {
@@ -93,7 +92,7 @@ mixin ErrorReportingMixin<T> on StateNotifier<T> {
     );
   }
 
-  /// Run a function with error reporting for this StateNotifier
+  /// Run a function with error reporting for this Notifier
   Future<R> runWithErrorReporting<R>(
     Future<R> Function() body, {
     String? operationName,
@@ -112,8 +111,8 @@ mixin ErrorReportingMixin<T> on StateNotifier<T> {
   }
 }
 
-/// Mixin to track core flow operations in StateNotifiers
-mixin CoreFlowTrackingMixin<T> on StateNotifier<T> {
+/// Mixin to track core flow operations in Notifiers
+mixin CoreFlowTrackingMixin<T> on Notifier<T> {
   /// Track a core flow operation with automatic error and success tracking
   Future<R> trackCoreFlow<R>(
     String flowName,

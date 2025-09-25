@@ -489,7 +489,8 @@ class _NotificationSettingsScreenState
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Selecciona el horario en el que deseas recibir notificaciones:'),
+                  const Text(
+                      'Selecciona el horario en el que deseas recibir notificaciones:'),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -501,7 +502,8 @@ class _NotificationSettingsScreenState
                             onPressed: () async {
                               final time = await showTimePicker(
                                 context: context,
-                                initialTime: startTime ?? const TimeOfDay(hour: 8, minute: 0),
+                                initialTime: startTime ??
+                                    const TimeOfDay(hour: 8, minute: 0),
                               );
                               if (time != null) {
                                 setState(() => startTime = time);
@@ -518,7 +520,8 @@ class _NotificationSettingsScreenState
                             onPressed: () async {
                               final time = await showTimePicker(
                                 context: context,
-                                initialTime: endTime ?? const TimeOfDay(hour: 22, minute: 0),
+                                initialTime: endTime ??
+                                    const TimeOfDay(hour: 22, minute: 0),
                               );
                               if (time != null) {
                                 setState(() => endTime = time);

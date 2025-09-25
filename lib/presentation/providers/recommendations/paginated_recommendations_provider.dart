@@ -48,7 +48,7 @@ class PaginatedRecommendationsNotifier
 
   @override
   PaginatedRecommendationsState build() {
-    _loadInitialRecommendations();
+    // Return initial state without loading - let the UI trigger loading
     return const PaginatedRecommendationsState();
   }
 
@@ -70,6 +70,11 @@ class PaginatedRecommendationsNotifier
       originalTitle: recommendation.title,
       video: false, // Valor por defecto
     );
+  }
+
+  /// Load initial page method for compatibility with views
+  Future<void> loadInitialPage() async {
+    await _loadInitialRecommendations();
   }
 
   /// Carga las recomendaciones iniciales

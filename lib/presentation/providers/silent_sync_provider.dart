@@ -47,16 +47,23 @@ class SilentSyncState {
 }
 
 /// Notifier para la sincronización silenciosa
-class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
-  SilentSyncNotifier(this._ref) : super(const SilentSyncState()) {
-    _initializeService();
-  }
-
-  final Ref _ref;
+class SilentSyncNotifier extends Notifier<SilentSyncState> {
   final SilentFavoritesSyncService _syncService =
       SilentFavoritesSyncService.instance;
   StreamSubscription<SyncProgressUpdate>? _progressSubscription;
   StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  SilentSyncState build() {
+    // Handle cleanup on dispose
+    ref.onDispose(() {
+      _progressSubscription?.cancel();
+      _authSubscription?.cancel();
+    });
+
+    _initializeService();
+    return const SilentSyncState();
+  }
 
   void _initializeService() {
     // Escuchar progreso de sincronización
@@ -142,7 +149,7 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
   /// Refresca el provider de favoritos para actualizar la UI
   void _refreshFavoritesProvider() {
     try {
-      _ref.read(favoriteMoviesProvider.notifier).refreshFavorites();
+      ref.read(favoriteMoviesProvider.notifier).refreshFavorites();
     } catch (e) {
       LoggerFactory.error('❌ Error refreshing favorites provider: $e');
     }
@@ -160,20 +167,12 @@ class SilentSyncNotifier extends StateNotifier<SilentSyncState> {
   void stopSync() {
     _syncService.stopSync();
   }
-
-  @override
-  void dispose() {
-    _progressSubscription?.cancel();
-    _authSubscription?.cancel();
-    super.dispose();
-  }
 }
 
 /// Provider de la sincronización silenciosa
 final silentSyncProvider =
-    StateNotifierProvider<SilentSyncNotifier, SilentSyncState>((ref) {
-  return SilentSyncNotifier(ref);
-});
+    NotifierProvider<SilentSyncNotifier, SilentSyncState>(
+        SilentSyncNotifier.new);
 
 /// Provider para verificar si hay sincronización activa
 final isSyncActiveProvider = Provider<bool>((ref) {

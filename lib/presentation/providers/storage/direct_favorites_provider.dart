@@ -107,6 +107,13 @@ class DirectFavoritesService extends Notifier<Map<int, SyncableMovie>> {
     return state.values.map((e) => e.movie).toList();
   }
 
+  /// Load next page method for compatibility with views
+  Future<void> loadNextPage() async {
+    // For favorites, we typically load all at once
+    // This method is for compatibility with pagination patterns
+    await _loadMoviesFromSupabase();
+  }
+
   SyncableMovie _recordToSyncableMovie(Map<String, dynamic> record) {
     final movie = Movie(
       id: record['movie_id'] as int,
