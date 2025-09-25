@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/services/post_login_initialization_service.dart';
@@ -37,19 +36,19 @@ class PostLoginInitializationState {
 
 /// Notifier para el servicio de inicialización post-login
 class PostLoginInitializationNotifier
-    extends StateNotifier<PostLoginInitializationState> {
-  PostLoginInitializationNotifier(/* this._ref */)
-      : super(const PostLoginInitializationState()) {
-    _initializeService();
-  }
-
-  // final Ref _ref; // TODO: Fix legacy compatibility
+    extends Notifier<PostLoginInitializationState> {
   final PostLoginInitializationService _service =
       PostLoginInitializationService.instance;
 
+  @override
+  PostLoginInitializationState build() {
+    _initializeService();
+    return const PostLoginInitializationState();
+  }
+
   void _initializeService() {
     try {
-      // _service.initialize(_ref); // TODO: Fix legacy compatibility
+      _service.initialize(ref);
 
       state = state.copyWith(
         isInitialized: true,
@@ -66,7 +65,7 @@ class PostLoginInitializationNotifier
   /// Fuerza la inicialización para un usuario específico
   void forceInitialization(String userId) {
     try {
-      // _service.forceInitialization(userId, _ref); // TODO: Fix legacy compatibility
+      _service.forceInitialization(userId, ref);
 
       state = state.copyWith(
         currentUserId: userId,
@@ -78,24 +77,11 @@ class PostLoginInitializationNotifier
       LoggerFactory.error('❌ Error in forced initialization: $e');
     }
   }
-
-  @override
-  void dispose() {
-    try {
-      _service.dispose();
-      LoggerFactory.info('✅ PostLoginInitializationNotifier disposed');
-    } catch (e) {
-      LoggerFactory.error(
-          '❌ Error disposing PostLoginInitializationNotifier: $e');
-    }
-    super.dispose();
-  }
 }
 
 /// Provider para el servicio de inicialización post-login
-// LEGACY COMPATIBILITY FIXED
-final postLoginInitializationProvider = StateNotifierProvider<
-    PostLoginInitializationNotifier, PostLoginInitializationState>((ref) {
+final postLoginInitializationProvider = NotifierProvider<
+    PostLoginInitializationNotifier, PostLoginInitializationState>(() {
   return PostLoginInitializationNotifier();
 });
 

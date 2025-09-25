@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -13,19 +13,14 @@ abstract class BaseSync {
   Future<void> removeMovie(String userId, int movieId);
 }
 
-abstract class DirectSyncNotifier
-    extends StateNotifier<Map<int, SyncableMovie>> {
-  DirectSyncNotifier({
+abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
+
+  DirectSyncService({
     required this.onMovieAdded,
     required this.sync,
     required this.logPrefix,
     required this.tableName,
-  }) : super({}) {
-    LoggerFactory.info(
-        '🎬 $logPrefix: Constructor llamado, inicialización diferida...');
-    _initializeWithCurrentUser();
-  }
-
+  });
   final Function(Movie movie) onMovieAdded;
   final BaseSync sync;
   final String logPrefix;
@@ -34,6 +29,14 @@ abstract class DirectSyncNotifier
   RealtimeChannel? _realtimeChannel;
   String? _currentUserId;
   bool _isInitialized = false;
+
+  @override
+  Map<int, SyncableMovie> build() {
+    LoggerFactory.info(
+        '🎬 $logPrefix: Constructor llamado, inicialización diferida...');
+    _initializeWithCurrentUser();
+    return {};
+  }
 
   void _initializeWithCurrentUser() {
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -51,11 +54,6 @@ abstract class DirectSyncNotifier
   }
 
   Future<void> _loadMoviesFromSupabase() async {
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 $logPrefix: Provider disposed, ignorando carga inicial');
-      return;
-    }
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
@@ -63,38 +61,43 @@ abstract class DirectSyncNotifier
         _currentUserId = null;
         return;
       }
+
       _currentUserId = currentUser.id;
-      LoggerFactory.info('$logPrefix: Cargando películas desde Supabase...');
+      LoggerFactory.info('$logPrefix: Cargando desde Supabase...');
+
       final moviesData = await sync.getUserMovies(currentUser.id);
+
       final moviesMap = <int, SyncableMovie>{};
       for (final movieData in moviesData) {
-        final syncableMovie = _dataToSyncableMovie(movieData);
+        final syncableMovie = _recordToSyncableMovie(movieData);
         moviesMap[syncableMovie.movie.id] = syncableMovie;
       }
+
       state = moviesMap;
-      LoggerFactory.info('$logPrefix: Cargadas ${moviesMap.length} películas');
+      LoggerFactory.info(
+          '$logPrefix: Cargadas ${moviesMap.length} películas desde Supabase');
     } catch (e) {
-      LoggerFactory.error('$logPrefix: Error cargando: $e');
+      LoggerFactory.error('$logPrefix: Error cargando desde Supabase: $e');
       state = {};
     }
   }
 
   Future<void> toggleMovie(Movie movie) async {
-    if (!mounted) {
-      LoggerFactory.debug('🚫 $logPrefix: Provider disposed, ignorando toggle');
-      return;
-    }
     final isAdded = state[movie.id] != null;
     final currentUser = Supabase.instance.client.auth.currentUser;
 
     LoggerFactory.debug(
         '$logPrefix: Toggle ${movie.id}:${movie.title} (current: $isAdded)');
 
+    // Actualización optimista de la UI
     if (isAdded) {
-      // Optimistic update for removal
       state = Map.from(state)..remove(movie.id);
     } else {
-      // No optimistic update for adding, wait for realtime event
+      final syncableMovie = SyncableMovie(
+        movie: movie,
+        supabaseId: '',
+      );
+      state = {...state, movie.id: syncableMovie};
     }
 
     if (currentUser == null) {
@@ -106,65 +109,74 @@ abstract class DirectSyncNotifier
     try {
       if (isAdded) {
         await sync.removeMovie(currentUser.id, movie.id);
-        LoggerFactory.info('$logPrefix: Película removida: ${movie.title}');
+        LoggerFactory.info('$logPrefix: Removida: ${movie.title}');
       } else {
         await sync.addMovie(currentUser.id, movie);
-        LoggerFactory.info('$logPrefix: Película añadida: ${movie.title}');
+        LoggerFactory.info('$logPrefix: Añadida: ${movie.title}');
         onMovieAdded(movie);
       }
     } catch (e) {
       LoggerFactory.error('$logPrefix: Error en toggle: $e');
+      // Revertir cambio optimista en caso de error
       if (isAdded) {
-        // Revert optimistic update
-        // This part is tricky because we don't have the SyncableMovie object anymore
-        // A full refresh might be needed in case of error
-        refresh();
+        final syncableMovie = SyncableMovie(
+          movie: movie,
+          supabaseId: '',
+        );
+        state = {...state, movie.id: syncableMovie};
       } else {
-        // No need to revert anything since we didn't do an optimistic update
+        state = Map.from(state)..remove(movie.id);
       }
+      LoggerFactory.warning(
+          '$logPrefix: Operación fallida pero estado revertido');
     }
   }
 
-  Future<void> refresh() async {
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 $logPrefix: Provider disposed, ignorando refresh');
+  void enableAfterLogin() {
+    LoggerFactory.info('🔐 $logPrefix: Habilitando después del login...');
+
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser == null) {
+      LoggerFactory.warning(
+          '🔐 $logPrefix: No hay usuario autenticado, omitiendo inicialización');
       return;
     }
-    await _loadMoviesFromSupabase();
+
+    _currentUserId = currentUser.id;
+
+    if (!_isInitialized) {
+      _loadMoviesFromSupabase();
+      _setupRealtimeListeners();
+      _isInitialized = true;
+    } else {
+      LoggerFactory.info('🔐 $logPrefix: Ya inicializado, solo recargando...');
+      _loadMoviesFromSupabase();
+    }
   }
 
-  Future<List<Movie>> loadNextPage() async {
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 $logPrefix: Provider disposed, ignorando loadNextPage');
-      return [];
-    }
-    await _loadMoviesFromSupabase();
+  List<Movie> getMovies() {
     return state.values.map((e) => e.movie).toList();
   }
 
   void _setupRealtimeListeners() {
     try {
-      LoggerFactory.info(
-          '🔊 $logPrefix: Configurando listeners de tiempo real...');
-      final channelName =
-          '${tableName}_realtime_${DateTime.now().millisecondsSinceEpoch}';
-      LoggerFactory.info('🔊 $logPrefix: Creando canal: $channelName');
+      LoggerFactory.info('🔴 $logPrefix: Configurando listeners...');
+
+      final channelName = '${tableName}_realtime_${DateTime.now().millisecondsSinceEpoch}';
 
       _realtimeChannel =
           Supabase.instance.client.channel(channelName).onPostgresChanges(
                 event: PostgresChangeEvent.all,
                 schema: 'public',
                 table: tableName,
-                callback: _handleRealtimeChange,
+                callback: _handleRealtimeEvent,
               );
 
       _realtimeChannel!.subscribe((status, [error]) {
         if (error != null) {
-          LoggerFactory.error('🔊 $logPrefix: Error en canal: $error');
+          LoggerFactory.error('🔴 $logPrefix: Error en canal: $error');
         } else {
-          LoggerFactory.info('🔊 $logPrefix: Estado del canal: $status');
+          LoggerFactory.info('🔴 $logPrefix: Estado del canal: $status');
           if (status == RealtimeSubscribeStatus.subscribed) {
             LoggerFactory.info('✅ $logPrefix: Canal suscrito exitosamente!');
           }
@@ -175,178 +187,108 @@ abstract class DirectSyncNotifier
     }
   }
 
-  void _handleRealtimeChange(PostgresChangePayload payload) {
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 $logPrefix: Provider disposed, ignorando evento real-time');
-      return;
-    }
+  void _handleRealtimeEvent(PostgresChangePayload payload) {
     try {
-      LoggerFactory.info('🔊 $logPrefix: ===== CAMBIO RECIBIDO =====');
-      final data =
-          payload.newRecord.isNotEmpty ? payload.newRecord : payload.oldRecord;
+      LoggerFactory.info('🔴 $logPrefix: Evento: ${payload.eventType}');
+
+      final newRecord = payload.newRecord;
+      final oldRecord = payload.oldRecord;
+      final data = newRecord.isNotEmpty ? newRecord : oldRecord;
+
       final userId = data['user_id'] as String?;
       final movieId = data['movie_id'] as int?;
-      final supabaseId = data['id'] as String?;
 
-      if (userId != _currentUserId) {
+      if (userId != _currentUserId || movieId == null) {
         LoggerFactory.info('🔊 $logPrefix: Cambio de otro usuario, ignorando');
-        return;
-      }
-
-      if (payload.eventType == PostgresChangeEvent.delete) {
-        if (supabaseId != null) {
-          _handleRemoteDeleteBySupabaseId(supabaseId);
-        } else if (movieId != null) {
-          _handleRemoteDelete(movieId);
-        }
-        return;
-      }
-
-      if (movieId == null) {
-        LoggerFactory.error('❌ $logPrefix: movie_id es null, ignorando evento');
         return;
       }
 
       switch (payload.eventType) {
         case PostgresChangeEvent.insert:
-          _handleRemoteInsert(data);
+          _handleInsert(newRecord);
           break;
         case PostgresChangeEvent.update:
-          _handleRemoteUpdate(data);
+          _handleUpdate(newRecord, oldRecord);
           break;
         case PostgresChangeEvent.delete:
-          // Este caso ya se maneja antes del switch
+          _handleDelete(oldRecord);
           break;
         case PostgresChangeEvent.all:
-          // Handle generic event
           break;
       }
     } catch (e) {
-      LoggerFactory.error('❌ $logPrefix: Error procesando cambio: $e');
+      LoggerFactory.error('❌ $logPrefix: Error manejando evento: $e');
     }
   }
 
-  void _handleRemoteInsert(Map<String, dynamic> data) {
-    if (!mounted) return;
-    try {
-      final syncableMovie = _dataToSyncableMovie(data);
-      if (!state.containsKey(syncableMovie.movie.id)) {
-        state = {...state, syncableMovie.movie.id: syncableMovie};
-        LoggerFactory.info(
-            '✅ $logPrefix: Película agregada remotamente: ${syncableMovie.movie.title}');
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ $logPrefix: Error en inserción remota: $e');
+  void _handleInsert(Map<String, dynamic> record) {
+    if (record['user_id'] != _currentUserId) return;
+    if (record['is_deleted'] ?? false) return;
+
+    final syncableMovie = _recordToSyncableMovie(record);
+    final movieId = syncableMovie.movie.id;
+
+    if (!state.containsKey(movieId)) {
+      state = {...state, movieId: syncableMovie};
+      LoggerFactory.info('➕ $logPrefix: Insertando ${syncableMovie.movie.title}');
     }
   }
 
-  void _handleRemoteDelete(int movieId) {
-    if (!mounted) return;
-    try {
-      if (state.containsKey(movieId)) {
-        final movie = state[movieId];
-        state = Map.from(state)..remove(movieId);
-        LoggerFactory.info(
-            '✅ $logPrefix: Película removida remotamente: ${movie?.movie.title}');
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ $logPrefix: Error en eliminación remota: $e');
+  void _handleUpdate(
+      Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
+    if (newRecord['user_id'] != _currentUserId) return;
+
+    final movieId = newRecord['movie_id'] as int;
+
+    if (newRecord['is_deleted'] ?? false) {
+      state = Map.from(state)..remove(movieId);
+      LoggerFactory.info('🗑️ $logPrefix: Actualizando como eliminado ${newRecord['movie_title']}');
+    } else {
+      final syncableMovie = _recordToSyncableMovie(newRecord);
+      state = {...state, movieId: syncableMovie};
+      LoggerFactory.info('🔄 $logPrefix: Actualizando ${syncableMovie.movie.title}');
     }
   }
 
-  void _handleRemoteDeleteBySupabaseId(String supabaseId) {
-    if (!mounted) return;
-    try {
-      int? movieIdToRemove;
-      for (final entry in state.entries) {
-        if (entry.value.supabaseId == supabaseId) {
-          movieIdToRemove = entry.key;
-          break;
-        }
-      }
-      if (movieIdToRemove != null) {
-        _handleRemoteDelete(movieIdToRemove);
-      }
-    } catch (e) {
-      LoggerFactory.error(
-          '❌ $logPrefix: Error en eliminación remota por supabaseId: $e');
+  void _handleDelete(Map<String, dynamic> record) {
+    if (record['user_id'] != _currentUserId) return;
+
+    final movieId = record['movie_id'] as int;
+    if (state.containsKey(movieId)) {
+      final movie = state[movieId];
+      state = Map.from(state)..remove(movieId);
+      LoggerFactory.info('🗑️ $logPrefix: REMOVIDA: ${movie?.movie.title}');
     }
   }
 
-  void _handleRemoteUpdate(Map<String, dynamic> data) {
-    if (!mounted) return;
-    try {
-      final isDeleted = data['is_deleted'] as bool? ?? false;
-      if (isDeleted) {
-        final movieId = data['movie_id'] as int?;
-        if (movieId != null) {
-          _handleRemoteDelete(movieId);
-        }
-      } else {
-        _handleRemoteInsert(data);
-      }
-    } catch (e) {
-      LoggerFactory.error('❌ $logPrefix: Error en actualización remota: $e');
-    }
-  }
+  SyncableMovie _recordToSyncableMovie(Map<String, dynamic> record) {
+    final movie = Movie(
+      id: record['movie_id'] as int,
+      title: record['movie_title'] as String,
+      overview: record['movie_overview'] as String? ?? '',
+      releaseDate: record['movie_release_date'] != null
+          ? DateTime.parse(record['movie_release_date'] as String)
+          : DateTime.now(),
+      adult: false,
+      backdropPath: record['movie_backdrop_path'] as String? ?? '',
+      genreIds: <String>[],
+      originalLanguage: 'en',
+      originalTitle: record['movie_title'] as String,
+      popularity: 0.0,
+      posterPath: record['movie_poster_path'] as String? ?? '',
+      video: false,
+      voteAverage: (record['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
+      voteCount: 0,
+    );
 
-  SyncableMovie _dataToSyncableMovie(Map<String, dynamic> data) {
     return SyncableMovie(
-      supabaseId: data['id'] as String,
-      movie: Movie(
-        id: data['movie_id'] as int,
-        title: data['movie_title'] as String,
-        posterPath: data['movie_poster_path'] as String? ?? '',
-        backdropPath: data['movie_backdrop_path'] as String? ?? '',
-        overview: data['movie_overview'] as String? ?? '',
-        releaseDate: data['movie_release_date'] != null
-            ? (DateTime.tryParse(data['movie_release_date'] as String) ??
-                DateTime.now())
-            : DateTime.now(),
-        voteAverage: (data['movie_vote_average'] as num?)?.toDouble() ?? 0.0,
-        genreIds: (data['genre_ids'] as List<dynamic>?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [],
-        adult: data['adult'] as bool? ?? false,
-        originalLanguage: data['original_language'] as String? ?? '',
-        originalTitle: data['original_title'] as String? ?? '',
-        popularity: (data['popularity'] as num?)?.toDouble() ?? 0.0,
-        video: data['video'] as bool? ?? false,
-        voteCount: data['vote_count'] as int? ?? 0,
-      ),
+      movie: movie,
+      supabaseId: record['id']?.toString() ?? '',
     );
   }
 
-  Future<void> enableAfterLogin() async {
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 $logPrefix: Provider disposed, ignorando enableAfterLogin');
-      return;
-    }
-    LoggerFactory.info('🔐 $logPrefix: Habilitando después del login...');
-    final currentUser = Supabase.instance.client.auth.currentUser;
-    if (currentUser == null) {
-      LoggerFactory.warning(
-          '🔐 $logPrefix: No hay usuario autenticado, omitiendo inicialización');
-      return;
-    }
-    _currentUserId = currentUser.id;
-    if (!_isInitialized) {
-      await _loadMoviesFromSupabase();
-      _setupRealtimeListeners();
-      _isInitialized = true;
-    } else {
-      await _loadMoviesFromSupabase();
-    }
-    LoggerFactory.info('✅ $logPrefix: Habilitado correctamente');
-  }
-
-  @override
   void dispose() {
-    LoggerFactory.info('🔊 $logPrefix: Cerrando listeners de tiempo real...');
+    LoggerFactory.info('🗑️ $logPrefix: Cerrando listeners...');
     _realtimeChannel?.unsubscribe();
-    super.dispose();
   }
 }

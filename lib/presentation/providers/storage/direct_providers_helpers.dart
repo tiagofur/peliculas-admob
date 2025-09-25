@@ -1,13 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
+import 'direct_custom_lists_provider.dart';
 import 'direct_favorites_provider.dart';
+import 'direct_ratings_provider.dart';
 import 'direct_watched_provider.dart';
 import 'direct_watchlist_provider.dart';
-import 'direct_custom_lists_provider.dart';
-import 'direct_ratings_provider.dart';
 
 /// 🔧 Helper providers para mejorar la sincronización entre los direct providers
 
@@ -57,7 +56,7 @@ class DirectProvidersInitialization {
   Future<void> _initializeFavoritesProvider() async {
     try {
       final favoritesNotifier = ref.read(directFavoriteMoviesProvider.notifier);
-      await favoritesNotifier.enableAfterLogin();
+      favoritesNotifier.enableAfterLogin();
       LoggerFactory.debug('✅ Favorites provider inicializado');
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando favorites provider: $e');
@@ -69,7 +68,7 @@ class DirectProvidersInitialization {
   Future<void> _initializeWatchedProvider() async {
     try {
       final watchedNotifier = ref.read(directWatchedMoviesProvider.notifier);
-      await watchedNotifier.enableAfterLogin();
+      watchedNotifier.enableAfterLogin();
       LoggerFactory.debug('✅ Watched provider inicializado');
     } catch (e) {
       LoggerFactory.error('❌ Error inicializando watched provider: $e');
@@ -122,15 +121,8 @@ class DirectProvidersInitialization {
       LoggerFactory.info(
           '🔄 DirectProviders: Refrescando todos los providers...');
 
-      // Ejecutar refreshes que retornan Future<void>
-      await Future.wait<void>([
-        ref.read(directFavoriteMoviesProvider.notifier).refresh(),
-        ref.read(directWatchedMoviesProvider.notifier).refresh(),
-        ref.read(directCustomListsProvider.notifier).refresh(),
-        ref.read(directRatingsProvider.notifier).refresh(),
-      ]);
-
-      // Enable watchlist provider after login
+      // Los providers modernos no tienen métodos refresh específicos
+      // Solo habilitamos el watchlist provider después del login
       ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
 
       LoggerFactory.info('✅ DirectProviders: Refresh completado');
@@ -156,7 +148,17 @@ class DirectProvidersInitialization {
 }
 
 /// Provider para el estado de inicialización
-final directProvidersInitializedProvider = StateProvider<bool>((ref) => false);
+final directProvidersInitializedProvider =
+    NotifierProvider<_DirectProvidersInitializedNotifier, bool>(
+  () => _DirectProvidersInitializedNotifier(),
+);
+
+class _DirectProvidersInitializedNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void setInitialized(bool value) => state = value;
+}
 
 /// Provider que observa cambios de autenticación y maneja la inicialización
 final authStateDirectProvidersProvider = StreamProvider<bool>((ref) {
@@ -172,7 +174,10 @@ final authStateDirectProvidersProvider = StreamProvider<bool>((ref) {
       try {
         final initialization = ref.read(directProvidersInitializationProvider);
         await initialization.initializeAfterLogin();
-        ref.read(directProvidersInitializedProvider.notifier).state = true;
+        // Marcar como inicializado
+        ref
+            .read(directProvidersInitializedProvider.notifier)
+            .setInitialized(true);
         return true;
       } catch (e) {
         LoggerFactory.error('❌ AuthState: Error inicializando providers: $e');
@@ -185,7 +190,9 @@ final authStateDirectProvidersProvider = StreamProvider<bool>((ref) {
 
       final initialization = ref.read(directProvidersInitializationProvider);
       initialization.clearAllProviders();
-      ref.read(directProvidersInitializedProvider.notifier).state = false;
+      ref
+          .read(directProvidersInitializedProvider.notifier)
+          .setInitialized(false);
       return false;
     }
   });

@@ -366,7 +366,7 @@ class CustomDrawer extends ConsumerWidget {
                 size: 20,
               ),
               onPressed: () {
-                final notifier = ref.read(themeNotifierProvider.notifier);
+                final notifier = ref.read(themeNotifierProvider);
                 if (themeState.themeMode == app_theme.ThemeMode.dark) {
                   notifier.setThemeMode(app_theme.ThemeMode.light);
                 } else {

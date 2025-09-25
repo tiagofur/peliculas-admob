@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/auth/auth_flow_optimizer.dart';
 import '../../core/error_handling/centralized_error_handler.dart';
@@ -75,25 +74,25 @@ final isAuthenticatedProvider = Provider<bool>((ref) {
 });
 
 // Provider del estado de la aplicación (guest o authenticated)
-final appStateProvider =
-    StateNotifierProvider<AppStateNotifier, AppState>((ref) {
-  // ✅ FIX: Pasar ref solo al constructor, no almacenarlo
-  return AppStateNotifier(ref);
+final appStateProvider = NotifierProvider<AppStateNotifier, AppState>(() {
+  return AppStateNotifier();
 });
 
 // Notifier para manejar el estado de la aplicación
-class AppStateNotifier extends StateNotifier<AppState> {
-  AppStateNotifier(Ref ref) : super(const AppState(mode: AppMode.guest)) {
-    // ✅ Usar ref localmente sin almacenarlo (evita memory leak)
-    _initializeWithRef(ref);
+class AppStateNotifier extends Notifier<AppState> {
+  @override
+  AppState build() {
     // Initialize flow optimizer for startup optimization
     _initializeFlowOptimizer();
+    // ✅ Usar ref localmente durante initialization
+    _initializeWithRef();
+    return const AppState(mode: AppMode.guest);
   }
 
   final AuthFlowOptimizer _flowOptimizer = AuthFlowOptimizer.instance;
 
-  // ✅ FIX: Método que configura listeners sin almacenar ref
-  void _initializeWithRef(Ref ref) {
+  // ✅ FIX: Método que configura listeners usando ref directamente
+  void _initializeWithRef() {
     // Inicializar con el estado actual de autenticación
     final currentAuthState = ref.read(authStateProvider);
     currentAuthState.when(
@@ -211,13 +210,6 @@ class AppStateNotifier extends StateNotifier<AppState> {
       // Continue normal initialization even if optimizer fails
     }
   }
-
-  // ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    LoggerFactory.info('✅ AppStateNotifier disposed');
-    super.dispose();
-  }
 }
 
 // Provider del perfil del usuario actual
@@ -242,16 +234,20 @@ final currentUserStatsProvider = FutureProvider<UserStats?>((ref) async {
 typedef PostAuthCallback = Future<void> Function(User user);
 
 // Notifier para operaciones de autenticación
-class AuthNotifier extends StateNotifier<AsyncValue<void>>
+class AuthNotifier extends Notifier<AsyncValue<void>>
     with ErrorHandlingMixin<AsyncValue<void>> {
-  AuthNotifier(this._authRepository, {PostAuthCallback? onAuthSuccess})
-      : _onAuthSuccess = onAuthSuccess,
-        _flowOptimizer = AuthFlowOptimizer.instance,
-        super(const AsyncValue.data(null));
+  @override
+  AsyncValue<void> build() {
+    return const AsyncValue.data(null);
+  }
 
-  final AuthRepository _authRepository;
-  final PostAuthCallback? _onAuthSuccess;
-  final AuthFlowOptimizer _flowOptimizer;
+  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
+  PostAuthCallback? _onAuthSuccess;
+  AuthFlowOptimizer get _flowOptimizer => AuthFlowOptimizer.instance;
+
+  void setAuthCallback(PostAuthCallback? onAuthSuccess) {
+    _onAuthSuccess = onAuthSuccess;
+  }
 
   Future<void> signIn({
     required String email,
@@ -414,19 +410,18 @@ PostAuthCallback _createPostAuthCallback(Ref ref) {
 
 // Provider del notifier de autenticación
 final authNotifierProvider =
-    StateNotifierProvider<AuthNotifier, AsyncValue<void>>((ref) {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(
-    authRepository,
-    onAuthSuccess: _createPostAuthCallback(ref),
-  );
+    NotifierProvider<AuthNotifier, AsyncValue<void>>(() {
+  return AuthNotifier();
 });
 
 // Notifier para operaciones de perfil
-class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
-  UserProfileNotifier(this._authRepository)
-      : super(const AsyncValue.data(null));
-  final AuthRepository _authRepository;
+class UserProfileNotifier extends Notifier<AsyncValue<UserProfile?>> {
+  @override
+  AsyncValue<UserProfile?> build() {
+    return const AsyncValue.data(null);
+  }
+
+  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
 
   Future<void> loadProfile(String userId) async {
     state = const AsyncValue.loading();
@@ -475,15 +470,18 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile?>> {
 
 // Provider del notifier de perfil
 final userProfileNotifierProvider =
-    StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>((ref) {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return UserProfileNotifier(authRepository);
+    NotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>(() {
+  return UserProfileNotifier();
 });
 
 // Notifier para operaciones de estadísticas
-class UserStatsNotifier extends StateNotifier<AsyncValue<UserStats?>> {
-  UserStatsNotifier(this._authRepository) : super(const AsyncValue.data(null));
-  final AuthRepository _authRepository;
+class UserStatsNotifier extends Notifier<AsyncValue<UserStats?>> {
+  @override
+  AsyncValue<UserStats?> build() {
+    return const AsyncValue.data(null);
+  }
+
+  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
 
   Future<void> loadStats(String userId) async {
     state = const AsyncValue.loading();
@@ -546,18 +544,10 @@ class UserStatsNotifier extends StateNotifier<AsyncValue<UserStats?>> {
       );
     }
   }
-
-  // ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    LoggerFactory.info('✅ UserStatsNotifier disposed');
-    super.dispose();
-  }
 }
 
 // Provider del notifier de estadísticas
 final userStatsNotifierProvider =
-    StateNotifierProvider<UserStatsNotifier, AsyncValue<UserStats?>>((ref) {
-  final authRepository = ref.watch(authRepositoryProvider);
-  return UserStatsNotifier(authRepository);
+    NotifierProvider<UserStatsNotifier, AsyncValue<UserStats?>>(() {
+  return UserStatsNotifier();
 });

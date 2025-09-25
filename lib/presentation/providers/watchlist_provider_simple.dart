@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/logger_factory.dart';
@@ -34,12 +33,16 @@ class WatchlistStateSimple {
 }
 
 /// Notifier simplificado para watchlist usando SharedPreferences
-class WatchlistNotifierSimple extends StateNotifier<WatchlistStateSimple> {
-  WatchlistNotifierSimple() : super(const WatchlistStateSimple()) {
-    _loadExistingWatchlist();
-  }
+class WatchlistNotifierSimple extends Notifier<WatchlistStateSimple> {
+  WatchlistNotifierSimple();
 
   static const String _watchlistKey = 'watchlist_movies';
+
+  @override
+  WatchlistStateSimple build() {
+    _loadExistingWatchlist();
+    return const WatchlistStateSimple();
+  }
 
   /// Cargar watchlist existente al inicializar el provider
   Future<void> _loadExistingWatchlist() async {
@@ -131,9 +134,9 @@ class WatchlistNotifierSimple extends StateNotifier<WatchlistStateSimple> {
 
 /// Provider simplificado de watchlist
 final watchlistProviderSimple =
-    StateNotifierProvider<WatchlistNotifierSimple, WatchlistStateSimple>((ref) {
-  return WatchlistNotifierSimple();
-});
+    NotifierProvider<WatchlistNotifierSimple, WatchlistStateSimple>(
+  () => WatchlistNotifierSimple(),
+);
 
 /// Provider para verificar si una película específica está en watchlist
 final isMovieInWatchlistProviderSimple =

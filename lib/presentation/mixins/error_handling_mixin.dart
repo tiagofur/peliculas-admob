@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 
 import '../../core/error_handling/centralized_error_handler.dart';
 import '../../core/logging/logger_factory.dart';
@@ -279,3 +280,4 @@ extension AsyncStateExt<T> on AsyncState<T> {
   UserFriendlyError? get errorOrNull =>
       hasError ? (this as AsyncStateError<T>).error : null;
 }
+

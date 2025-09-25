@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/gamification/challenge_notifications.dart';
 import '../../core/gamification/challenge_system.dart';
@@ -29,9 +28,8 @@ final gamificationManagerProvider = Provider<GamificationManager>((ref) {
 
 /// StateNotifier provider for active challenges
 final activeChallengesProvider =
-    StateNotifierProvider<ActiveChallengesNotifier, List<Challenge>>((ref) {
-  final challengeSystem = ref.watch(challengeSystemProvider);
-  return ActiveChallengesNotifier(challengeSystem);
+    NotifierProvider<ActiveChallengesNotifier, List<Challenge>>(() {
+  return ActiveChallengesNotifier();
 });
 
 /// StateNotifier provider for completed challenges
@@ -56,12 +54,16 @@ final userStatsProvider =
 });
 
 /// StateNotifier for managing active challenges
-class ActiveChallengesNotifier extends StateNotifier<List<Challenge>> {
-  ActiveChallengesNotifier(this._challengeSystem) : super([]) {
-    _challengeSystem.addListener(_updateState);
+class ActiveChallengesNotifier extends Notifier<List<Challenge>> {
+  @override
+  List<Challenge> build() {
+    final challengeSystem = ref.read(challengeSystemProvider);
+    challengeSystem.addListener(_updateState);
     _updateState();
+    return [];
   }
-  final ChallengeSystem _challengeSystem;
+
+  ChallengeSystem get _challengeSystem => ref.read(challengeSystemProvider);
 
   void _updateState() {
     state = List.from(_challengeSystem.activeChallenges);
@@ -73,12 +75,6 @@ class ActiveChallengesNotifier extends StateNotifier<List<Challenge>> {
 
   void updateChallengeProgress(String challengeId, int progress) {
     _challengeSystem.updateChallengeProgress(challengeId, progress);
-  }
-
-  @override
-  void dispose() {
-    _challengeSystem.removeListener(_updateState);
-    super.dispose();
   }
 }
 

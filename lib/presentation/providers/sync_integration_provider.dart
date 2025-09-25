@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
+
 
 import '../../core/services/sync_performance_metrics.dart';
 import '../../core/sync/conflict_resolution/strategies/conflict_strategy.dart';

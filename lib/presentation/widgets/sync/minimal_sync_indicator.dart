@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 // Provider temporal para el estado de sincronización
-final syncStatusProvider = StateProvider<bool>((ref) => false);
+final syncStatusProvider = Provider<bool>((ref) => false);
 
 class MinimalSyncIndicator extends ConsumerWidget {
   const MinimalSyncIndicator({super.key});

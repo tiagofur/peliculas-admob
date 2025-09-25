@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
@@ -161,3 +161,4 @@ class MoviesNotifier extends StateNotifier<MoviesStateData> {
     super.dispose();
   }
 }
+

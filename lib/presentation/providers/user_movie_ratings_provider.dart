@@ -1,7 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
-import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user_movie_rating.dart';
 import '../../domain/repositories/user_movie_ratings_repository.dart';
 import '../../infrastructure/repositories/user_movie_ratings_repository_impl.dart';
@@ -21,10 +19,9 @@ final movieRatingProvider =
 
 // Provider para las valoraciones del usuario
 final userRatingsProvider =
-    StateNotifierProvider<UserRatingsNotifier, UserRatingsState>((ref) {
-  final repository = ref.watch(userMovieRatingsRepositoryProvider);
-  return UserRatingsNotifier(repository);
-});
+    NotifierProvider<UserRatingsNotifier, UserRatingsState>(
+  () => UserRatingsNotifier(),
+);
 
 // Provider para estadísticas de valoraciones
 final userRatingStatsProvider =
@@ -81,11 +78,18 @@ class UserRatingsState {
 }
 
 // Notifier para manejar las valoraciones del usuario
-class UserRatingsNotifier extends StateNotifier<UserRatingsState> {
-  UserRatingsNotifier(this._repository) : super(const UserRatingsState());
+class UserRatingsNotifier extends Notifier<UserRatingsState> {
+  UserRatingsNotifier();
 
-  final UserMovieRatingsRepository _repository;
   static const int _pageSize = 20;
+
+  @override
+  UserRatingsState build() {
+    return const UserRatingsState();
+  }
+
+  UserMovieRatingsRepository get _repository =>
+      ref.read(userMovieRatingsRepositoryProvider);
 
   /// Carga las valoraciones del usuario
   Future<void> loadRatings({bool refresh = false}) async {
@@ -201,9 +205,5 @@ class UserRatingsNotifier extends StateNotifier<UserRatingsState> {
   }
 
   /// ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    LoggerFactory.info('✅ UserRatingsNotifier disposed');
-    super.dispose();
-  }
+  // Riverpod 3.0 Notifier no tiene dispose - usar ref.onDispose en build() si necesario
 }

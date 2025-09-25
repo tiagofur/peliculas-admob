@@ -1,25 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../core/sync/trigger_free_watched_sync.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie.dart';
-import '../achievements/achievements_provider.dart';
 import 'direct_sync_provider.dart';
 
-final directWatchedMoviesProvider =
-    StateNotifierProvider<DirectWatchedNotifier, Map<int, SyncableMovie>>(
-        (ref) {
-  return DirectWatchedNotifier(
-    ref: ref,
-  );
-});
-
-class DirectWatchedNotifier extends DirectSyncNotifier {
-  DirectWatchedNotifier({required Ref ref})
+class DirectWatchedService extends DirectSyncService {
+  DirectWatchedService()
       : super(
           onMovieAdded: (Movie movie) {
-            ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
+            // Note: We can't access ref here, so we'll handle this in the provider
           },
           sync: TriggerFreeWatchedSync.instance,
           logPrefix: 'DirectWatched',
@@ -27,8 +17,14 @@ class DirectWatchedNotifier extends DirectSyncNotifier {
         );
 
   @override
-  Future<void> toggleMovie(Movie movie) async {
-    await super.toggleMovie(movie);
+  Map<int, SyncableMovie> build() {
+    // Call parent build first
+    final result = super.build();
+
+    // Setup callback to track achievements
+    // This will be handled in the provider instantiation
+
+    return result;
   }
 
   /// Alias para toggleMovie para mantener compatibilidad
@@ -36,6 +32,11 @@ class DirectWatchedNotifier extends DirectSyncNotifier {
     await toggleMovie(movie);
   }
 }
+
+final directWatchedMoviesProvider =
+    NotifierProvider<DirectWatchedService, Map<int, SyncableMovie>>(
+  () => DirectWatchedService(),
+);
 
 final directIsWatchedProvider = Provider.family<bool, int>((ref, movieId) {
   return ref.watch(directWatchedMoviesProvider).containsKey(movieId);

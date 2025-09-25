@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/entities.dart';
@@ -17,16 +16,8 @@ final isMovieWatchedProvider =
 
 // Provider para la lista de películas vistas
 final watchedMoviesProvider =
-    StateNotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>(
-  (ref) {
-    final repository = ref.watch(hybridWatchedRepositoryProvider);
-    return WatchedMoviesNotifier(
-      repository: repository,
-      onMovieWatched: (Movie movie) async {
-        await ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
-      },
-    );
-  },
+    NotifierProvider<WatchedMoviesNotifier, WatchedMoviesState>(
+  () => WatchedMoviesNotifier(),
 );
 
 // Estado para las películas vistas
@@ -59,19 +50,25 @@ class WatchedMoviesState {
 }
 
 // Notifier para gestionar las películas vistas
-class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
-  WatchedMoviesNotifier({
-    required this.repository,
-    required this.onMovieWatched,
-  }) : super(const WatchedMoviesState());
+class WatchedMoviesNotifier extends Notifier<WatchedMoviesState> {
+  WatchedMoviesNotifier();
+
+  static const int _limit = 20;
+
+  @override
+  WatchedMoviesState build() {
+    return const WatchedMoviesState();
+  }
+
+  HybridWatchedRepository get repository =>
+      ref.read(hybridWatchedRepositoryProvider);
+
+  Future<void> Function(Movie) get onMovieWatched => (movie) =>
+      ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
 
   Future<void> init() async {
     await loadNextPage();
   }
-
-  final HybridWatchedRepository repository;
-  final Future<void> Function(Movie) onMovieWatched;
-  static const int _limit = 20;
 
   Future<void> loadNextPage() async {
     if (state.isLoading || state.isLastPage) return;
@@ -182,6 +179,4 @@ class WatchedMoviesNotifier extends StateNotifier<WatchedMoviesState> {
   Future<void> refresh() async {
     await _reloadMovies();
   }
-
-  // Si necesitas limpiar recursos, hazlo aquí. No llames a super.dispose().
 }

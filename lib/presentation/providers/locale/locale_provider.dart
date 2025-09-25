@@ -1,12 +1,11 @@
 import 'dart:ui';
 
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // Provider for managing the locale state
-final localeNotifierProvider =
-    StateNotifierProvider<LocaleNotifier, LocaleState>(
-  (ref) => LocaleNotifier(),
+final localeNotifierProvider = NotifierProvider<LocaleNotifier, LocaleState>(
+  () => LocaleNotifier(),
 );
 
 // State class for locale
@@ -30,12 +29,16 @@ class LocaleState {
 }
 
 // Notifier for locale state changes
-class LocaleNotifier extends StateNotifier<LocaleState> {
-  LocaleNotifier() : super(const LocaleState()) {
-    _loadLocale();
-  }
+class LocaleNotifier extends Notifier<LocaleState> {
+  LocaleNotifier();
 
   static const String _localeKey = 'app_locale';
+
+  @override
+  LocaleState build() {
+    _loadLocale();
+    return const LocaleState();
+  }
 
   Future<void> _loadLocale() async {
     state = state.copyWith(isLoading: true);
@@ -84,11 +87,4 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
         Locale('es'), // Spanish
         Locale('en'), // English
       ];
-
-  /// ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
-  }
 }

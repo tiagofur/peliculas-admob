@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../delegates/search_movie_delegate.dart';
+import '../../providers/movies/movies_repository_provider.dart';
 import '../../providers/search/search_movies_provider.dart';
 import '../../providers/theme/theme_provider.dart';
-import '../../providers/movies/movies_repository_provider.dart';
 
 class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
   const CustomAppbar({super.key});
@@ -37,7 +37,7 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                 // THEME TOGGLE RESTORED - provider fixed
                 IconButton(
                   onPressed: () {
-                    ref.read(themeNotifierProvider.notifier).toggleDarkMode();
+                    ref.read(themeNotifierProvider).toggleDarkMode();
                   },
                   icon: Icon(isDarkMode
                       ? Icons.light_mode_outlined

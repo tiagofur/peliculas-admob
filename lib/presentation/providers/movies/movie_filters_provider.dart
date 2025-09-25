@@ -1,38 +1,133 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../../domain/entities/entities.dart';
 
 // Provider para el filtro actual
-final movieFilterProvider = StateProvider<MovieFilter>((ref) {
-  return const MovieFilter();
-});
+class MovieFilterNotifier extends Notifier<MovieFilter> {
+  @override
+  MovieFilter build() => const MovieFilter();
+
+  void updateGenres(List<String> genres) {
+    state = state.copyWith(genres: genres);
+  }
+
+  void updateYearRange(int? minYear, int? maxYear) {
+    state = state.copyWith(minYear: minYear, maxYear: maxYear);
+  }
+
+  void updateDurationRange(int? minDuration, int? maxDuration) {
+    state = state.copyWith(minDuration: minDuration, maxDuration: maxDuration);
+  }
+
+  void updateRatingRange(double? minRating, double? maxRating) {
+    state = state.copyWith(minRating: minRating, maxRating: maxRating);
+  }
+
+  void updateSortBy(String? sortBy) {
+    state = state.copyWith(sortBy: sortBy);
+  }
+
+  void resetFilters() {
+    state = const MovieFilter();
+  }
+
+  // Alias para compatibilidad con código existente
+  void clearFilters() {
+    resetFilters();
+  }
+
+  void updateMood(String? mood) {
+    state = state.copyWith(mood: mood);
+  }
+
+  void updateLanguage(String? language) {
+    state = state.copyWith(language: language);
+  }
+
+  void updateIncludeAdult(bool? includeAdult) {
+    state = state.copyWith(includeAdult: includeAdult);
+  }
+
+  void updateMinVoteCount(int? minVoteCount) {
+    state = state.copyWith(minVoteCount: minVoteCount);
+  }
+
+  void updateKeywords(List<String> keywords) {
+    state = state.copyWith(keywords: keywords);
+  }
+
+  void updateCertification(String? certification) {
+    state = state.copyWith(certification: certification);
+  }
+
+  void updateWatchProviders(List<String> watchProviders) {
+    state = state.copyWith(watchProviders: watchProviders);
+  }
+
+  void applyMoodFilter(MoodOption mood) {
+    state = state.copyWith(
+      mood: mood.id,
+      genres: mood.associatedGenres,
+    );
+  }
+
+  void applyQuickFilter({
+    String? type,
+    List<String>? genres,
+    double? minRating,
+    int? minYear,
+    String? sortBy,
+  }) {
+    state = state.copyWith(
+      genres: genres ?? state.genres,
+      minRating: minRating ?? state.minRating,
+      minYear: minYear ?? state.minYear,
+      sortBy: sortBy ?? state.sortBy,
+    );
+  }
+}
+
+final movieFilterProvider = NotifierProvider<MovieFilterNotifier, MovieFilter>(
+  () => MovieFilterNotifier(),
+);
+
+// Alias para compatibilidad con código existente
+final movieFiltersNotifierProvider = movieFilterProvider;
+
+// Alias para compatibilidad con código existente
+typedef MovieFiltersNotifier = MovieFilterNotifier;
 
 // Provider para las opciones de géneros
-final genreOptionsProvider = StateProvider<List<GenreOption>>((ref) {
-  return [
-    const GenreOption(id: '28', name: 'Acción', emoji: '💥'),
-    const GenreOption(id: '12', name: 'Aventura', emoji: '🗺️'),
-    const GenreOption(id: '16', name: 'Animación', emoji: '🎨'),
-    const GenreOption(id: '35', name: 'Comedia', emoji: '😂'),
-    const GenreOption(id: '80', name: 'Crimen', emoji: '🔫'),
-    const GenreOption(id: '99', name: 'Documental', emoji: '📹'),
-    const GenreOption(id: '18', name: 'Drama', emoji: '🎭'),
-    const GenreOption(id: '10751', name: 'Familiar', emoji: '👨‍👩‍👧‍👦'),
-    const GenreOption(id: '14', name: 'Fantasía', emoji: '🧙‍♂️'),
-    const GenreOption(id: '36', name: 'Historia', emoji: '📜'),
-    const GenreOption(id: '27', name: 'Terror', emoji: '👻'),
-    const GenreOption(id: '10402', name: 'Música', emoji: '🎵'),
-    const GenreOption(id: '9648', name: 'Misterio', emoji: '🔍'),
-    const GenreOption(id: '10749', name: 'Romance', emoji: '💕'),
-    const GenreOption(id: '878', name: 'Ciencia Ficción', emoji: '🚀'),
-    const GenreOption(id: '10770', name: 'Película de TV', emoji: '📺'),
-    const GenreOption(id: '53', name: 'Thriller', emoji: '😰'),
-    const GenreOption(id: '10752', name: 'Guerra', emoji: '⚔️'),
-    const GenreOption(id: '37', name: 'Western', emoji: '🤠'),
-  ];
-});
+class GenreOptionsNotifier extends Notifier<List<GenreOption>> {
+  @override
+  List<GenreOption> build() => [
+        const GenreOption(id: '28', name: 'Acción', emoji: '💥'),
+        const GenreOption(id: '12', name: 'Aventura', emoji: '🗺️'),
+        const GenreOption(id: '16', name: 'Animación', emoji: '🎨'),
+        const GenreOption(id: '35', name: 'Comedia', emoji: '😂'),
+        const GenreOption(id: '80', name: 'Crimen', emoji: '🔫'),
+        const GenreOption(id: '99', name: 'Documental', emoji: '📹'),
+        const GenreOption(id: '18', name: 'Drama', emoji: '🎭'),
+        const GenreOption(id: '10751', name: 'Familiar', emoji: '👨‍👩‍👧‍👦'),
+        const GenreOption(id: '14', name: 'Fantasía', emoji: '🧙‍♂️'),
+        const GenreOption(id: '36', name: 'Historia', emoji: '📜'),
+        const GenreOption(id: '27', name: 'Terror', emoji: '👻'),
+        const GenreOption(id: '10402', name: 'Música', emoji: '🎵'),
+        const GenreOption(id: '9648', name: 'Misterio', emoji: '🔍'),
+        const GenreOption(id: '10749', name: 'Romance', emoji: '💕'),
+        const GenreOption(id: '878', name: 'Ciencia Ficción', emoji: '🚀'),
+        const GenreOption(id: '10770', name: 'Película de TV', emoji: '📺'),
+        const GenreOption(id: '53', name: 'Thriller', emoji: '😰'),
+        const GenreOption(id: '10752', name: 'Guerra', emoji: '⚔️'),
+        const GenreOption(id: '37', name: 'Western', emoji: '🤠'),
+      ];
+}
+
+final genreOptionsProvider =
+    NotifierProvider<GenreOptionsNotifier, List<GenreOption>>(
+  () => GenreOptionsNotifier(),
+);
 
 // Provider para las opciones de ordenamiento
 final sortOptionsProvider = Provider<List<SortOption>>((ref) {
@@ -154,106 +249,15 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
   ];
 });
 
-// Provider para gestionar el estado de los filtros
-class MovieFiltersNotifier extends StateNotifier<MovieFilter> {
-  MovieFiltersNotifier() : super(const MovieFilter());
-
-  void updateGenres(List<String> genres) {
-    state = state.copyWith(genres: genres);
-  }
-
-  void updateYearRange(int? minYear, int? maxYear) {
-    state = state.copyWith(minYear: minYear, maxYear: maxYear);
-  }
-
-  void updateDurationRange(int? minDuration, int? maxDuration) {
-    state = state.copyWith(minDuration: minDuration, maxDuration: maxDuration);
-  }
-
-  void updateRatingRange(double? minRating, double? maxRating) {
-    state = state.copyWith(minRating: minRating, maxRating: maxRating);
-  }
-
-  void updateSortBy(String? sortBy) {
-    state = state.copyWith(sortBy: sortBy);
-  }
-
-  void updateMood(String? mood) {
-    state = state.copyWith(mood: mood);
-  }
-
-  void updateLanguage(String? language) {
-    state = state.copyWith(language: language);
-  }
-
-  void updateIncludeAdult(bool? includeAdult) {
-    state = state.copyWith(includeAdult: includeAdult);
-  }
-
-  void updateMinVoteCount(int? minVoteCount) {
-    state = state.copyWith(minVoteCount: minVoteCount);
-  }
-
-  void updateKeywords(List<String> keywords) {
-    state = state.copyWith(keywords: keywords);
-  }
-
-  void updateCertification(String? certification) {
-    state = state.copyWith(certification: certification);
-  }
-
-  void updateWatchProviders(List<String> watchProviders) {
-    state = state.copyWith(watchProviders: watchProviders);
-  }
-
-  void clearFilters() {
-    state = const MovieFilter();
-  }
-
-  void applyMoodFilter(MoodOption mood) {
-    state = state.copyWith(
-      mood: mood.id,
-      genres: mood.associatedGenres,
-    );
-  }
-
-  void applyQuickFilter({
-    String? type,
-    List<String>? genres,
-    double? minRating,
-    int? minYear,
-    String? sortBy,
-  }) {
-    state = state.copyWith(
-      genres: genres ?? state.genres,
-      minRating: minRating ?? state.minRating,
-      minYear: minYear ?? state.minYear,
-      sortBy: sortBy ?? state.sortBy,
-    );
-  }
-
-  /// ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    // Limpiar recursos si es necesario
-    super.dispose();
-  }
-}
-
-final movieFiltersNotifierProvider =
-    StateNotifierProvider<MovieFiltersNotifier, MovieFilter>((ref) {
-  return MovieFiltersNotifier();
-});
-
 // Provider para verificar si hay filtros activos
 final hasActiveFiltersProvider = Provider<bool>((ref) {
-  final filter = ref.watch(movieFiltersNotifierProvider);
+  final filter = ref.watch(movieFilterProvider);
   return !filter.isEmpty;
 });
 
 // Provider para contar filtros activos
 final activeFiltersCountProvider = Provider<int>((ref) {
-  final filter = ref.watch(movieFiltersNotifierProvider);
+  final filter = ref.watch(movieFilterProvider);
   int count = 0;
 
   if (filter.genres.isNotEmpty) count++;

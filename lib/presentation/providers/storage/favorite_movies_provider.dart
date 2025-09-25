@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
-
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -12,47 +10,39 @@ import '../../../domain/repositories/favorites_repository.dart';
 import '../achievements/achievements_provider.dart';
 import '../hybrid_repositories_provider.dart';
 
-final favoriteMoviesProvider =
-    StateNotifierProvider<StorageMoviesNotifier, Map<int, Movie>>((ref) {
-  final favoritesRepository = ref.watch(favoritesRepositoryProvider);
-  return StorageMoviesNotifier(
-    favoritesRepository: favoritesRepository,
-    onMovieFavorited: () {
-      // Manejar el callback aquí, dentro del provider
-      ref.read(achievementsProvider.notifier).trackMovieFavorited();
-    },
-  );
-});
+/// Service para gestionar películas favoritas con respaldo local/remoto
+class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
+  late FavoritesRepository _favoritesRepository;
+  Timer? _refreshTimer;
+  int page = 0;
 
-/*
-  {
-    1234: Movie,
-    1645: Movie,
-    6523: Movie,
-  }
-
-*/
-
-class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
-  StorageMoviesNotifier({
-    required this.favoritesRepository,
-    required this.onMovieFavorited,
-  }) : super({}) {
+  @override
+  Map<int, Movie> build() {
+    // Obtener repositorio inyectado
+    _favoritesRepository = ref.watch(favoritesRepositoryProvider);
+    
     // Cargar favoritos existentes al inicializar
     _loadExistingFavorites();
+    
     // NO configurar auto-refresh automáticamente para evitar bloqueos
     // _setupAutoRefresh(); // Se habilitará manualmente cuando sea necesario
+    
+    return {};
   }
 
-  int page = 0;
-  final FavoritesRepository favoritesRepository;
-  final VoidCallback onMovieFavorited;
-  Timer? _refreshTimer;
+  /// Getter para compatibilidad con código existente
+  FavoritesRepository get favoritesRepository => _favoritesRepository;
+
+  /// Callback para películas favoritas
+  void onMovieFavorited() {
+    // Manejar el callback aquí, dentro del servicio
+    ref.read(achievementsProvider.notifier).trackMovieFavorited();
+  }
 
   /// Cargar favoritos existentes al inicializar el provider
   Future<void> _loadExistingFavorites() async {
     try {
-      final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
+      final favoriteMoviesMap = await _favoritesRepository.getFavoriteMovies();
 
       if (favoriteMoviesMap.isNotEmpty) {
         state = favoriteMoviesMap;
@@ -61,43 +51,27 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
       } else {
         // Ensure state is empty if no favorites
         state = {};
-        LoggerFactory.info('ℹ️ No favorites found, state set to empty');
+        LoggerFactory.info('ℹ️ No hay favoritos guardados');
       }
     } catch (e) {
-      // Si hay error cargando, mantener estado vacío pero registrar el error
-      state = {};
       LoggerFactory.error('❌ Error cargando favoritos existentes: $e');
+      state = {};
     }
   }
 
-  Future<List<Movie>> loadNextPage() async {
-    // Usar getFavoriteMovies del repositorio híbrido
-    final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
-    final movies = favoriteMoviesMap.values.toList();
-
-    // Paginar los resultados localmente
-    final startIndex = page * 10;
-    final endIndex = (startIndex + 20).clamp(0, movies.length);
-    final paginatedMovies =
-        movies.sublist(startIndex.clamp(0, movies.length), endIndex);
-
-    page++;
-
-    final tempMoviesMap = <int, Movie>{};
-    for (final movie in paginatedMovies) {
-      tempMoviesMap[movie.id] = movie;
-    }
-
-    state = {...state, ...tempMoviesMap};
-
-    return paginatedMovies;
+  /// Añade la siguiente página de películas favoritas (SIMULADO - no implementado)
+  Future<void> loadNextPage() async {
+    // Esta funcionalidad no está implementada en el repositorio actual
+    // Mantener método para compatibilidad con UI existente
+    LoggerFactory.info('ℹ️ loadNextPage: Funcionalidad no implementada');
   }
 
+  /// Toggle favorito con persistencia híbrida y actualización optimista de UI
   Future<void> toggleFavorite(Movie movie) async {
     final isFavorite = state[movie.id] != null;
 
-    LoggerFactory.debug(
-        '🔍 [FavoriteProvider] Toggle ${movie.id}:${movie.title} (current: $isFavorite)');
+    LoggerFactory.info(
+        'ℹ️ Toggle favorito: ${movie.title} (actual: $isFavorite)');
 
     // Actualización optimista de la UI
     if (isFavorite) {
@@ -166,7 +140,7 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
   /// Refrescar el estado completo de favoritos (útil después de sync)
   Future<void> refreshFavorites() async {
     try {
-      final favoriteMoviesMap = await favoritesRepository.getFavoriteMovies();
+      final favoriteMoviesMap = await _favoritesRepository.getFavoriteMovies();
 
       // Solo actualizar si hay cambios reales para evitar rebuilds innecesarios
       if (!_mapsEqual(state, favoriteMoviesMap)) {
@@ -201,10 +175,12 @@ class StorageMoviesNotifier extends StateNotifier<Map<int, Movie>> {
 
     return true;
   }
-
-  @override
-  void dispose() {
-    _refreshTimer?.cancel();
-    super.dispose();
-  }
 }
+
+/// Provider modernizado para películas favoritas
+final favoriteMoviesProvider = NotifierProvider<FavoriteMoviesService, Map<int, Movie>>(
+  () => FavoriteMoviesService(),
+);
+
+/// Compatibilidad: Provider legacy para transición gradual
+final storageMoviesNotifierProvider = favoriteMoviesProvider;

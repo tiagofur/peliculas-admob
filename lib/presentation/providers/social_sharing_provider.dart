@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
-import '../../services/social_sharing_service.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/movie_rating.dart';
+import '../../services/social_sharing_service.dart';
 
 /// Provider para el servicio de compartir en redes sociales
 final socialSharingServiceProvider = Provider<SocialSharingService>((ref) {
@@ -12,16 +11,21 @@ final socialSharingServiceProvider = Provider<SocialSharingService>((ref) {
 });
 
 /// Provider para el estado de compartir
-final shareStateProvider =
-    StateNotifierProvider<ShareStateNotifier, ShareState>((ref) {
-  final sharingService = ref.read(socialSharingServiceProvider);
-  return ShareStateNotifier(sharingService);
+final shareStateProvider = NotifierProvider<ShareStateNotifier, ShareState>(() {
+  return ShareStateNotifier();
 });
 
 /// Notificador para el estado de compartir
-class ShareStateNotifier extends StateNotifier<ShareState> {
-  ShareStateNotifier(this._sharingService) : super(const ShareState.idle());
-  final SocialSharingService _sharingService;
+class ShareStateNotifier extends Notifier<ShareState> {
+  ShareStateNotifier();
+
+  @override
+  ShareState build() {
+    return const ShareState.idle();
+  }
+
+  SocialSharingService get _sharingService =>
+      ref.read(socialSharingServiceProvider);
 
   /// Comparte una película
   Future<void> shareMovie({

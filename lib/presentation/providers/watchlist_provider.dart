@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/movie.dart';
@@ -36,10 +35,20 @@ class WatchlistState {
 }
 
 /// Notifier para la gestión de watchlist
-class WatchlistNotifier extends StateNotifier<WatchlistState> {
-  WatchlistNotifier(this._repository) : super(const WatchlistState()) {
-    _initializeWatchlist();
+class WatchlistNotifier extends Notifier<WatchlistState> {
+  WatchlistNotifier() {
+    // Constructor sin parámetros para Riverpod 3.0
   }
+
+  @override
+  WatchlistState build() {
+    // Inicializar dependencias usando ref
+    _initializeWatchlist();
+    return const WatchlistState();
+  }
+
+  HybridWatchlistRepository get _repository =>
+      ref.read(hybridWatchlistRepositoryProvider);
 
   /// Inicializar watchlist cargando todos los datos existentes
   Future<void> _initializeWatchlist() async {
@@ -53,8 +62,6 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
       LoggerFactory.error('❌ Error inicializando watchlist: $e');
     }
   }
-
-  final HybridWatchlistRepository _repository;
 
   /// Cargar watchlist con filtros opcionales
   Future<void> loadWatchlist({
@@ -234,20 +241,14 @@ class WatchlistNotifier extends StateNotifier<WatchlistState> {
     await loadWatchlist(refresh: true);
   }
 
-  /// ✅ FIX: Implementar dispose para limpiar recursos
-  @override
-  void dispose() {
-    LoggerFactory.info('✅ WatchlistNotifier disposed');
-    super.dispose();
-  }
+  /// ✅ FIX: En Riverpod 3.0 Notifier no tiene dispose, usar ref.onDispose en build
+  // No override dispose - no existe en Notifier<T>
 }
 
 /// Provider principal de watchlist
-final watchlistProvider =
-    StateNotifierProvider<WatchlistNotifier, WatchlistState>((ref) {
-  final repository = ref.watch(hybridWatchlistRepositoryProvider);
-  return WatchlistNotifier(repository);
-});
+final watchlistProvider = NotifierProvider<WatchlistNotifier, WatchlistState>(
+  () => WatchlistNotifier(),
+);
 
 /// Provider para verificar si una película específica está en watchlist
 final isMovieInWatchlistProvider =

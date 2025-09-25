@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/gamification/gamification_integration_service.dart';
@@ -33,25 +32,37 @@ class AllListsState {
 }
 
 // Notificador principal para gestionar todas las listas
-class AllListsNotifier extends StateNotifier<AllListsState> {
-  AllListsNotifier(
-    this._repository,
-    this._syncService,
-    this._gamificationService,
-  ) : super(AllListsState(defaultLists: [], customLists: [])) {
+class AllListsNotifier extends Notifier<AllListsState> {
+  AllListsNotifier();
+
+  @override
+  AllListsState build() {
     _loadLists();
+    return AllListsState(defaultLists: [], customLists: []);
   }
 
-  final ICustomListsRepository? _repository;
-  final ListSyncService? _syncService;
-  final GamificationIntegrationService? _gamificationService;
+  ICustomListsRepository get _repository =>
+      ref.watch(customListsRepositoryProvider).when(
+            data: (repo) => repo,
+            loading: () => throw StateError('Repository not loaded'),
+            error: (err, stack) => throw err,
+          );
+
+  ListSyncService get _syncService => ref.watch(listSyncServiceProvider).when(
+        data: (service) => service,
+        loading: () => throw StateError('Sync service not loaded'),
+        error: (err, stack) => throw err,
+      );
+
+  GamificationIntegrationService? get _gamificationService {
+    // TODO: Implement gamification service integration properly
+    return null;
+  }
 
   /// Cargar listas desde el repositorio
   Future<void> _loadLists() async {
-    if (_repository == null) return;
-
     try {
-      final allUserLists = await _repository!.getUserLists();
+      final allUserLists = await _repository.getUserLists();
       final defaultLists =
           allUserLists.where((list) => list.isDefault).toList();
       final customLists =
@@ -103,7 +114,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       state = state.copyWith(customLists: updatedLists);
 
       // Guardar en el repositorio
-      await _repository?.updateList(updatedList);
+      await _repository.updateList(updatedList);
 
       LoggerFactory.info(
           '✅ Lista personalizada actualizada: ${updatedList.name}');
@@ -121,11 +132,6 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
     required String emoji,
     String color = 'blue',
   }) async {
-    if (_repository == null) {
-      LoggerFactory.error('Repository is null, cannot create list');
-      return;
-    }
-
     try {
       final now = DateTime.now();
       const uuid = Uuid();
@@ -149,7 +155,7 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       );
 
       // Guardar en el repositorio
-      await _repository!.createList(newList);
+      await _repository.createList(newList);
 
       // Recargar todas las listas desde el repositorio para asegurar consistencia
       _loadLists();
@@ -215,10 +221,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
       state = state.copyWith(customLists: updatedLists);
 
       // Eliminar del repositorio
-      await _repository?.deleteList(listId);
+      await _repository.deleteList(listId);
 
       // Registrar cambio offline para sincronización
-      await _syncService?.recordOfflineChange(OfflineChange(
+      await _syncService.recordOfflineChange(OfflineChange(
         id: 'delete_${listId}_${DateTime.now().millisecondsSinceEpoch}',
         type: OfflineChangeType.deleteList,
         data: {'id': listId},
@@ -271,10 +277,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
       // Intentar agregar usando el repositorio
       try {
-        await _repository?.addMovieToList(listId, movieId, position: position);
+        await _repository.addMovieToList(listId, movieId, position: position);
       } catch (e) {
         // Si falla, registrar como cambio offline
-        await _syncService?.recordOfflineChange(OfflineChange(
+        await _syncService.recordOfflineChange(OfflineChange(
           id: 'add_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
           type: OfflineChangeType.addMovie,
           data: {
@@ -324,10 +330,10 @@ class AllListsNotifier extends StateNotifier<AllListsState> {
 
       // Intentar remover usando el repositorio
       try {
-        await _repository?.removeMovieFromList(listId, movieId);
+        await _repository.removeMovieFromList(listId, movieId);
       } catch (e) {
         // Si falla, registrar como cambio offline
-        await _syncService?.recordOfflineChange(OfflineChange(
+        await _syncService.recordOfflineChange(OfflineChange(
           id: 'remove_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
           type: OfflineChangeType.removeMovie,
           data: {

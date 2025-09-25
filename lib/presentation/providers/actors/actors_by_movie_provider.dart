@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/legacy.dart';
+
 
 import '../../../domain/entities/actor.dart';
 import 'actors_repository_provider.dart';
@@ -54,3 +54,4 @@ class ActorsByMovieNotifier extends StateNotifier<Map<String, List<Actor>>> {
     super.dispose();
   }
 }
+

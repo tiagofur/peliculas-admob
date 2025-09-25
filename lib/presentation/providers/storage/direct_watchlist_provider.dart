@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
@@ -8,59 +8,46 @@ import '../../../core/sync/trigger_free_watchlist_sync.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/watchlist_movie.dart';
 
-/// Provider directo que evita completamente el repositorio híbrido
+/// Service directo que evita completamente el repositorio híbrido
 /// y solo usa TriggerFreeWatchlistSync para operaciones de Supabase
-final directWatchlistMoviesProvider =
-    StateNotifierProvider<DirectWatchlistNotifier, Map<int, WatchlistMovie>>(
-        (ref) {
-  return DirectWatchlistNotifier(
-    onMovieAddedToWatchlist: (Movie movie) {
-      // Opcional: trackear añadidos a watchlist para achievements
-    },
-  );
-});
-
-class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
-  DirectWatchlistNotifier({
-    required this.onMovieAddedToWatchlist,
-  }) : super({}) {
-    LoggerFactory.info(
-        '📝 DirectWatchlistNotifier: Constructor llamado, inicialización diferida...');
-    // No inicializar inmediatamente - esperar hasta que haya usuario autenticado
-    _initializeWithCurrentUser();
-  }
-
-  final Function(Movie movie) onMovieAddedToWatchlist;
+class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
   final TriggerFreeWatchlistSync _sync = TriggerFreeWatchlistSync.instance;
   RealtimeChannel? _realtimeChannel;
   String? _currentUserId;
   bool _isInitialized = false;
+
+  @override
+  Map<int, WatchlistMovie> build() {
+    LoggerFactory.info(
+        '📝 DirectWatchlistService: Constructor llamado, inicialización diferida...');
+    // No inicializar inmediatamente - esperar hasta que haya usuario autenticado
+    _initializeWithCurrentUser();
+    return {};
+  }
+
+  /// Callback para películas añadidas a watchlist
+  void onMovieAddedToWatchlist(Movie movie) {
+    // Opcional: trackear añadidos a watchlist para achievements
+  }
 
   /// Inicializa con el usuario actual si existe
   void _initializeWithCurrentUser() {
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
       LoggerFactory.info(
-          '📝 DirectWatchlistNotifier: Usuario ya autenticado, inicializando...');
+          '📝 DirectWatchlistService: Usuario ya autenticado, inicializando...');
       _currentUserId = currentUser.id;
       _loadWatchlistFromSupabase();
       _setupRealtimeListeners();
       _isInitialized = true;
     } else {
       LoggerFactory.info(
-          '📝 DirectWatchlistNotifier: Sin usuario, esperando autenticación...');
+          '📝 DirectWatchlistService: Sin usuario, esperando autenticación...');
     }
   }
 
   /// Cargar watchlist directamente desde Supabase
   Future<void> _loadWatchlistFromSupabase() async {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando carga inicial');
-      return;
-    }
-
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
@@ -96,13 +83,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Toggle watchlist usando solo operaciones directas
   Future<void> toggleWatchlist(Movie movie,
       {WatchlistPriority priority = WatchlistPriority.normal}) async {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando toggle');
-      return;
-    }
-
     final isInWatchlist = state[movie.id] != null;
     final currentUser = Supabase.instance.client.auth.currentUser;
 
@@ -156,13 +136,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Cambia la prioridad de una película en la watchlist
   Future<void> changePriority(
       int movieId, WatchlistPriority newPriority) async {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando changePriority');
-      return;
-    }
-
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) return;
 
@@ -248,13 +221,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Maneja eventos de tiempo real
   void _handleRealtimeEvent(PostgresChangePayload payload) {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando evento real-time');
-      return;
-    }
-
     try {
       LoggerFactory.info(
           '🔴 DirectWatchlist: Evento en tiempo real: ${payload.eventType}');
@@ -375,13 +341,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Maneja inserciones de tiempo real
   void _handleInsert(Map<String, dynamic> record) {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando inserción');
-      return;
-    }
-
     if (record['user_id'] != _currentUserId) return;
     if (record['is_deleted'] ?? false) return;
 
@@ -404,13 +363,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   /// Maneja actualizaciones de tiempo real
   void _handleUpdate(
       Map<String, dynamic> newRecord, Map<String, dynamic> oldRecord) {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando actualización');
-      return;
-    }
-
     if (newRecord['user_id'] != _currentUserId) return;
 
     final movieId = newRecord['movie_id'] as int;
@@ -429,13 +381,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Maneja eliminaciones de tiempo real
   void _handleDelete(Map<String, dynamic> record) {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando eliminación');
-      return;
-    }
-
     if (record['user_id'] != _currentUserId) return;
 
     final movieId = record['movie_id'] as int;
@@ -514,13 +459,6 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
 
   /// Habilita el provider después del login
   void enableAfterLogin() {
-    // Verificar si el provider aún está activo
-    if (!mounted) {
-      LoggerFactory.debug(
-          '🚫 DirectWatchlist: Provider disposed, ignorando enableAfterLogin');
-      return;
-    }
-
     LoggerFactory.info('🔐 DirectWatchlist: Habilitando después del login...');
 
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -561,11 +499,12 @@ class DirectWatchlistNotifier extends StateNotifier<Map<int, WatchlistMovie>> {
   List<WatchlistMovie> getMoviesByPriority(WatchlistPriority priority) {
     return state.values.where((movie) => movie.priority == priority).toList();
   }
-
-  @override
-  void dispose() {
-    LoggerFactory.info('🗑️ DirectWatchlist: Cerrando listeners...');
-    _realtimeChannel?.unsubscribe();
-    super.dispose();
-  }
 }
+
+/// Provider modernizado para watchlist directa
+final directWatchlistMoviesProvider = NotifierProvider<DirectWatchlistService, Map<int, WatchlistMovie>>(
+  () => DirectWatchlistService(),
+);
+
+/// Compatibilidad: Provider legacy para transición gradual
+final directWatchlistProvider = directWatchlistMoviesProvider;
