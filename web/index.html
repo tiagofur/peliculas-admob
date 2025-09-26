@@ -99,12 +99,22 @@
     />
 
     <!-- Google AdSense -->
-    <script
-      async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4576016092724628"
-      crossorigin="anonymous"
-    ></script>
-    <meta name="google-adsense-account" content="ca-pub-4576016092724628" />
+    <script>
+      if (window.location.hostname !== "localhost") {
+        // Load AdSense script only on non-localhost environments
+        var adSenseScript = document.createElement('script');
+        adSenseScript.async = true;
+        adSenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4576016092724628';
+        adSenseScript.crossOrigin = 'anonymous';
+        document.head.appendChild(adSenseScript);
+
+        // Add AdSense meta tag
+        var adSenseMeta = document.createElement('meta');
+        adSenseMeta.name = 'google-adsense-account';
+        adSenseMeta.content = 'ca-pub-4576016092724628';
+        document.head.appendChild(adSenseMeta);
+      }
+    </script>
 
     <title id="page-title">
       Películas - Descubre tu próxima película favorita

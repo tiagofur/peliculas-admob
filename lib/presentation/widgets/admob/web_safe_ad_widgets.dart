@@ -25,7 +25,7 @@ class _WebSafeBannerAdWidgetState extends State<WebSafeBannerAdWidget> {
 
   Future<void> _initializeAdSense() async {
     try {
-      await AdSenseService.instance.initialize();
+      await AdSenseService().initialize();
     } catch (e) {
       LoggerFactory.error('Error inicializando AdSense en banner: $e');
     }
@@ -59,7 +59,7 @@ class _AdSenseBannerWidgetState extends State<_AdSenseBannerWidget> {
 
   Future<void> _initializeAdSense() async {
     try {
-      await AdSenseService.instance.initialize();
+      await AdSenseService().initialize();
     } catch (e) {
       LoggerFactory.error('Error inicializando AdSense en banner: $e');
     }
@@ -132,7 +132,7 @@ class _WebSafeNativeAdWidgetState extends State<WebSafeNativeAdWidget> {
 
   Future<void> _initializeAdSense() async {
     try {
-      await AdSenseService.instance.initialize();
+      await AdSenseService().initialize();
     } catch (e) {
       LoggerFactory.error('Error inicializando AdSense en native: $e');
     }
@@ -218,7 +218,7 @@ class _WebSafeFullWidthAdWidgetState extends State<WebSafeFullWidthAdWidget> {
 
   Future<void> _initializeAdSense() async {
     try {
-      await AdSenseService.instance.initialize();
+      await AdSenseService().initialize();
     } catch (e) {
       LoggerFactory.error('Error inicializando AdSense en fullwidth: $e');
     }
@@ -299,7 +299,7 @@ class _WebSafeGridAdWidgetState extends State<WebSafeGridAdWidget> {
 
   Future<void> _initializeAdSense() async {
     try {
-      await AdSenseService.instance.initialize();
+      await AdSenseService().initialize();
     } catch (e) {
       LoggerFactory.error('Error inicializando AdSense en grid: $e');
     }
