@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -363,27 +362,8 @@ class CustomListsNotifier extends Notifier<AsyncValue<List<CustomList>>> {
 
       LoggerFactory.info('🔄 Loading lists for user: ${currentUser.email}');
 
-      // Verificar si las listas por defecto ya están inicializadas para este usuario
-      final prefs = await SharedPreferences.getInstance();
-      final defaultListsInitializedKey =
-          'default_lists_initialized_${currentUser.id}';
-      final areDefaultListsInitialized =
-          prefs.getBool(defaultListsInitializedKey) ?? false;
-
-      if (!areDefaultListsInitialized) {
-        // Solo inicializar si no se han inicializado aún para este usuario
-        try {
-          await _repository!.initializeDefaultLists(currentUser.id);
-          await prefs.setBool(defaultListsInitializedKey, true);
-          LoggerFactory.info(
-              '✅ Default lists initialized for user ${currentUser.id}');
-        } catch (e) {
-          LoggerFactory.warning('⚠️ Could not initialize default lists: $e');
-        }
-      } else {
-        LoggerFactory.info(
-            'ℹ️ Default lists already initialized for user ${currentUser.id}');
-      }
+      LoggerFactory.info(
+          'ℹ️ Listas predeterminadas deshabilitadas: se omite la inicialización');
 
       // Cargar todas las listas del usuario
       final allLists = await _repository!.getUserLists();

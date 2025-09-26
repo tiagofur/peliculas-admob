@@ -147,6 +147,7 @@ Esta aplicación sigue una **arquitectura Clean con Domain-Driven Design**, opti
 - **[Decisiones Arquitectónicas (ADR)](docs/ARCHITECTURE_DECISIONS.md)**: Registro de decisiones clave y trade-offs
 - **[Arquitectura de Backend](docs/BACKEND_ARCHITECTURE.md)**: Supabase, Firebase y APIs externas
 - **[Guía de Contribución](CONTRIBUTING.md)**: Onboarding completo para desarrolladores
+- **[Gestión de listas personalizadas (Opción A)](docs/custom_lists_option_a.md)**: Detalles de la nueva experiencia centrada en listas creadas por la persona usuaria
 
 ## � Sistema de Monetización Adaptativo UX-First
 

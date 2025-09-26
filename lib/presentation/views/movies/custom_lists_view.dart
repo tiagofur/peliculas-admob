@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../domain/entities/entities.dart';
+import '../../../domain/entities/custom_list.dart';
 import '../../../generated/app_localizations.dart';
-import '../../providers/providers.dart';
+import '../../providers/custom_lists_providers.dart';
+import '../../providers/providers.dart'
+    hide customListsRepositoryProvider, defaultListsProvider;
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
@@ -18,30 +20,58 @@ class CustomListsView extends ConsumerStatefulWidget {
   ConsumerState<CustomListsView> createState() => _CustomListsViewState();
 }
 
-class _CustomListsViewState extends ConsumerState<CustomListsView>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _CustomListsViewState extends ConsumerState<CustomListsView> {
+  static const List<_ListSuggestion> _suggestions = [
+    _ListSuggestion(
+      name: 'Noche de Lluvia',
+      description: 'Películas acogedoras para una noche tranquila',
+      emoji: '🌧️',
+      color: Colors.indigo,
+      colorName: 'indigo',
+    ),
+    _ListSuggestion(
+      name: 'En Familia',
+      description: 'Historias para todas las edades',
+      emoji: '👨‍👩‍👧‍👦',
+      color: Colors.orange,
+      colorName: 'orange',
+    ),
+    _ListSuggestion(
+      name: 'Maratón de Fin de Semana',
+      description: 'Sagas y trilogías para ver sin parar',
+      emoji: '🎬',
+      color: Colors.purple,
+      colorName: 'purple',
+    ),
+    _ListSuggestion(
+      name: 'Noche Romántica',
+      description: 'Películas ideales para compartir en pareja',
+      emoji: '💕',
+      color: Colors.pink,
+      colorName: 'pink',
+    ),
+    _ListSuggestion(
+      name: 'Acción Pura',
+      description: 'Adrenalina y explosiones garantizadas',
+      emoji: '🔥',
+      color: Colors.red,
+      colorName: 'red',
+    ),
+    _ListSuggestion(
+      name: 'Joyas Ocultas',
+      description: 'Películas poco conocidas que vale la pena descubrir',
+      emoji: '💎',
+      color: Colors.teal,
+      colorName: 'teal',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final customLists = ref.watch(customListsProvider);
-    final defaultLists = ref.watch(defaultListsProvider);
-    final listStats = ref.watch(listStatsProvider);
-    final colors = Theme.of(context).colorScheme;
-    final textStyles = Theme.of(context).textTheme;
+    final listsAsync = ref.watch(allListsProvider);
+    final stats = ref.watch(listStatsProvider);
     final l10n = AppLocalizations.of(context)!;
+    final colors = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -60,53 +90,32 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
         children: [
           const MinimalSyncIndicator(),
           Expanded(
-            child: Column(
-              children: [
-                // Estadísticas
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _buildStatsHeader(listStats, colors, textStyles),
-                ),
-                // Tabs
-                TabBar(
-                  controller: _tabController,
-                  labelColor: colors.primary,
-                  unselectedLabelColor: colors.onSurface.withValues(alpha: 0.6),
-                  indicatorColor: colors.primary,
-                  tabs: [
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star, size: 16),
-                          const SizedBox(width: 8),
-                          Text('Predefinidas (${defaultLists.length})'),
-                        ],
-                      ),
+            child: listsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => _buildErrorState(context, error, stack),
+              data: (state) {
+                final customLists = [...state.customLists]
+                  ..sort((a, b) => a.name.compareTo(b.name));
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    _invalidateListProviders();
+                    final _ = await ref.refresh(allListsProvider.future);
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
                     ),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.person, size: 16),
-                          const SizedBox(width: 8),
-                          Text('Personalizadas (${customLists.length})'),
-                        ],
-                      ),
+                    children: _buildContentSections(
+                      context,
+                      customLists,
+                      stats,
+                      l10n,
                     ),
-                  ],
-                ),
-                // TabBarView
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildDefaultListsTab(defaultLists),
-                      _buildCustomListsTab(customLists, l10n),
-                    ],
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         ],
@@ -114,8 +123,13 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
     );
   }
 
-  Widget _buildStatsHeader(
-      Map<String, int> stats, ColorScheme colors, TextTheme textStyles) {
+  Widget _buildStatsHeader({
+    required int totalLists,
+    required int activeLists,
+    required int totalMovies,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -129,19 +143,19 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
           _buildStatItem(
             icon: Icons.list_alt,
             label: 'Listas',
-            value: stats['totalLists'].toString(),
+            value: totalLists.toString(),
             color: colors.primary,
           ),
           _buildStatItem(
             icon: Icons.movie,
             label: 'Películas',
-            value: stats['totalMovies'].toString(),
+            value: totalMovies.toString(),
             color: colors.secondary,
           ),
           _buildStatItem(
             icon: Icons.person,
-            label: 'Personalizadas',
-            value: stats['customLists'].toString(),
+            label: 'Activas',
+            value: activeLists.toString(),
             color: colors.tertiary,
           ),
         ],
@@ -178,114 +192,214 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
     );
   }
 
-  Widget _buildDefaultListsTab(List<CustomList> lists) {
-    if (lists.isEmpty) {
-      return const Center(
-        child: Text('No hay listas predefinidas disponibles'),
-      );
-    }
-
-    // Calcular items totales incluyendo anuncios
-    final totalItems = _calculateItemsWithAds(lists.length);
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: totalItems,
-      itemBuilder: (context, index) {
-        // Verificar si debe mostrar anuncio
-        if (_shouldShowAdAtIndex(index, lists.length)) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: NativeAdWidget(
-              height: 120,
-              showLabel: true,
-            ),
-          );
-        }
-
-        // Verificar si es el banner final
-        if (_isFinalBanner(index, lists.length)) {
-          return const Padding(
-            padding: EdgeInsets.only(top: 16.0),
-            child: FullWidthAdWidget(
-              height: 100,
-              showLabel: true,
-              borderRadius: 12,
-            ),
-          );
-        }
-
-        // Calcular índice real de la lista
-        final listIndex = _getRealListIndex(index, lists.length);
-        final list = lists[listIndex];
-        return _buildListCard(list, isDefault: true);
-      },
-    );
+  void _invalidateListProviders() {
+    ref.invalidate(allListsProvider);
+    ref.invalidate(customListsProvider);
+    ref.invalidate(listsProvider);
+    ref.invalidate(listStatsProvider);
+    ref.invalidate(filteredListsProvider);
   }
 
-  Widget _buildCustomListsTab(List<CustomList> lists, AppLocalizations l10n) {
-    if (lists.isEmpty) {
-      return Center(
+  Widget _buildErrorState(
+      BuildContext context, Object error, StackTrace stackTrace) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.playlist_add_outlined,
-                size: 60, color: Theme.of(context).colorScheme.primary),
-            Text(l10n.noCustomLists,
-                style: TextStyle(
-                    fontSize: 30,
-                    color: Theme.of(context).colorScheme.primary)),
-            Text(l10n.noCustomListsMessage,
-                style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: 20),
-            FilledButton.tonal(
-                onPressed: () => _showCreateListDialog(context),
-                child: Text(l10n.startCreating))
+            Icon(Icons.error_outline, size: 48, color: colors.error),
+            const SizedBox(height: 12),
+            Text(
+              'No pudimos cargar tus listas',
+              style: textStyles.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$error',
+              style: textStyles.bodySmall?.copyWith(
+                color: colors.onSurface.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () async {
+                _invalidateListProviders();
+                final _ = await ref.refresh(allListsProvider.future);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+            ),
           ],
         ),
-      );
+      ),
+    );
+  }
+
+  List<Widget> _buildContentSections(
+    BuildContext context,
+    List<CustomList> lists,
+    Map<String, int> stats,
+    AppLocalizations l10n,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+    final int totalMovies = stats['totalMovies'] ??
+        lists.fold<int>(0, (sum, list) => sum + list.movieIds.length);
+    final int activeLists =
+        lists.where((list) => list.movieIds.isNotEmpty).length;
+
+    final sections = <Widget>[
+      _buildStatsHeader(
+        totalLists: lists.length,
+        activeLists: activeLists,
+        totalMovies: totalMovies,
+        colors: colors,
+        textStyles: textStyles,
+      ),
+      const SizedBox(height: 24),
+      _buildSuggestionsSection(context),
+      const SizedBox(height: 24),
+    ];
+
+    if (lists.isEmpty) {
+      sections.add(_buildEmptyState(context, l10n));
+    } else {
+      sections.addAll(_buildCustomListsSection(context, lists));
     }
 
-    // Calcular items totales incluyendo anuncios
+    return sections;
+  }
+
+  Widget _buildSuggestionsSection(BuildContext context) {
+    final textStyles = Theme.of(context).textTheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Ideas rápidas',
+          style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _suggestions.map((suggestion) {
+            return ActionChip(
+              avatar:
+                  Text(suggestion.emoji, style: const TextStyle(fontSize: 18)),
+              label: Text(suggestion.name),
+              backgroundColor: suggestion.color.withValues(alpha: 0.15),
+              onPressed: () => _createListFromSuggestion(context, suggestion),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _createListFromSuggestion(
+    BuildContext context,
+    _ListSuggestion suggestion,
+  ) {
+    return _showCreateListDialog(
+      context,
+      suggestion: suggestion,
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 32),
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.playlist_add_outlined, size: 56, color: colors.primary),
+            const SizedBox(height: 12),
+            Text(
+              l10n.noCustomLists,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.noCustomListsMessage,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurface.withValues(alpha: 0.7),
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: () => _showCreateListDialog(context),
+              child: Text(l10n.startCreating),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildCustomListsSection(
+      BuildContext context, List<CustomList> lists) {
+    final widgets = <Widget>[];
     final totalItems = _calculateItemsWithAds(lists.length);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: totalItems,
-      itemBuilder: (context, index) {
-        // Verificar si debe mostrar anuncio
-        if (_shouldShowAdAtIndex(index, lists.length)) {
-          return const Padding(
+    for (var index = 0; index < totalItems; index++) {
+      if (_shouldShowAdAtIndex(index, lists.length)) {
+        widgets.add(
+          const Padding(
             padding: EdgeInsets.symmetric(vertical: 8.0),
             child: NativeAdWidget(
               height: 120,
               showLabel: true,
             ),
-          );
-        }
+          ),
+        );
+        continue;
+      }
 
-        // Verificar si es el banner final
-        if (_isFinalBanner(index, lists.length)) {
-          return const Padding(
+      if (_isFinalBanner(index, lists.length)) {
+        widgets.add(
+          const Padding(
             padding: EdgeInsets.only(top: 16.0),
             child: FullWidthAdWidget(
               height: 100,
               showLabel: true,
               borderRadius: 12,
             ),
-          );
-        }
+          ),
+        );
+        continue;
+      }
 
-        // Calcular índice real de la lista
-        final listIndex = _getRealListIndex(index, lists.length);
-        final list = lists[listIndex];
-        return _buildListCard(list, isDefault: false);
-      },
-    );
+      final listIndex = _getRealListIndex(index, lists.length);
+      final list = lists[listIndex];
+      widgets.add(_buildListCard(list));
+    }
+
+    return widgets;
   }
 
-  Widget _buildListCard(CustomList list, {required bool isDefault}) {
+  // Legacy tab methods removed in Option A implementation.
+
+  Widget _buildListCard(CustomList list) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     final cardColor = _getColorFromString(list.color);
@@ -331,25 +445,6 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
                             ),
                           ),
                         ),
-                        if (isDefault)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'Predefinida',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: colors.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -391,53 +486,52 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
                   ],
                 ),
               ),
-              // Botón de opciones
-              if (!isDefault)
-                PopupMenuButton<String>(
-                  onSelected: (value) => _handleListAction(value, list),
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit, size: 16),
-                          SizedBox(width: 8),
-                          Text('Editar'),
-                        ],
-                      ),
+              // Botón de opciones (todas las listas son personalizadas)
+              PopupMenuButton<String>(
+                onSelected: (value) => _handleListAction(value, list),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit, size: 16),
+                        SizedBox(width: 8),
+                        Text('Editar'),
+                      ],
                     ),
-                    const PopupMenuItem(
-                      value: 'duplicate',
-                      child: Row(
-                        children: [
-                          Icon(Icons.copy, size: 16),
-                          SizedBox(width: 8),
-                          Text('Duplicar'),
-                        ],
-                      ),
+                  ),
+                  PopupMenuItem(
+                    value: 'duplicate',
+                    child: Row(
+                      children: [
+                        Icon(Icons.copy, size: 16),
+                        SizedBox(width: 8),
+                        Text('Duplicar'),
+                      ],
                     ),
-                    const PopupMenuItem(
-                      value: 'clear',
-                      child: Row(
-                        children: [
-                          Icon(Icons.clear_all, size: 16),
-                          SizedBox(width: 8),
-                          Text('Vaciar'),
-                        ],
-                      ),
+                  ),
+                  PopupMenuItem(
+                    value: 'clear',
+                    child: Row(
+                      children: [
+                        Icon(Icons.clear_all, size: 16),
+                        SizedBox(width: 8),
+                        Text('Vaciar'),
+                      ],
                     ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete, size: 16, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Eliminar', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete, size: 16, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -491,10 +585,13 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
     }
   }
 
-  void _showCreateListDialog(BuildContext context) {
-    showDialog(
+  Future<void> _showCreateListDialog(
+    BuildContext context, {
+    _ListSuggestion? suggestion,
+  }) {
+    return showDialog<void>(
       context: context,
-      builder: (context) => _CreateListDialog(),
+      builder: (context) => _CreateListDialog(suggestion: suggestion),
     );
   }
 
@@ -621,15 +718,19 @@ class _CustomListsViewState extends ConsumerState<CustomListsView>
 }
 
 class _CreateListDialog extends ConsumerStatefulWidget {
+  const _CreateListDialog({this.suggestion});
+
+  final _ListSuggestion? suggestion;
+
   @override
   ConsumerState<_CreateListDialog> createState() => _CreateListDialogState();
 }
 
 class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  String _selectedEmoji = '📝';
-  String _selectedColor = 'blue';
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late String _selectedEmoji;
+  late String _selectedColor;
 
   final List<String> _emojis = [
     '📝',
@@ -662,6 +763,17 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final suggestion = widget.suggestion;
+    _nameController = TextEditingController(text: suggestion?.name ?? '');
+    _descriptionController =
+        TextEditingController(text: suggestion?.description ?? '');
+    _selectedEmoji = suggestion?.emoji ?? '📝';
+    _selectedColor = suggestion?.colorName ?? 'blue';
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
@@ -683,6 +795,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                 hintText: 'Ej: Películas de terror',
               ),
               textCapitalization: TextCapitalization.words,
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -692,6 +805,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                 hintText: 'Describe el propósito de esta lista',
               ),
               maxLines: 2,
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 16),
             // Selector de emoji
@@ -786,8 +900,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         await ref.read(customListsRepositoryProvider.future);
 
                     final now = DateTime.now();
-                    const uuid = Uuid();
-                    final newId = uuid.v4();
+                    final newId = const Uuid().v4();
 
                     final newList = CustomList(
                       id: newId,
@@ -1138,4 +1251,20 @@ class _DuplicateListDialogState extends ConsumerState<_DuplicateListDialog> {
       ],
     );
   }
+}
+
+class _ListSuggestion {
+  const _ListSuggestion({
+    required this.name,
+    required this.description,
+    required this.emoji,
+    required this.color,
+    required this.colorName,
+  });
+
+  final String name;
+  final String description;
+  final String emoji;
+  final Color color;
+  final String colorName;
 }

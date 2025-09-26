@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../core/logging/app_logger.dart';
 import '../../domain/entities/custom_list.dart';
@@ -208,77 +207,15 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
 
   @override
   Future<List<CustomList>> getDefaultLists() async {
-    try {
-      // Validar que el usuario esté autenticado
-      final currentUser = Supabase.instance.client.auth.currentUser;
-      if (currentUser == null) {
-        AppLogger.repo('CustomLists',
-            '❌ Usuario no autenticado para obtener listas por defecto');
-        return [];
-      }
-
-      // Validar que el userId del usuario sea válido
-      final userId = currentUser.id;
-      if (userId.isEmpty) {
-        AppLogger.repo('CustomLists',
-            '❌ ID de usuario vacío o inválido para listas por defecto');
-        return [];
-      }
-
-      if (await hasInternetConnection()) {
-        return await _supabaseDataSource.getDefaultLists(userId);
-      } else {
-        final localLists = await getLocalLists();
-        return localLists.where((list) => list.isDefault).toList();
-      }
-    } catch (e) {
-      AppLogger.repo(
-          'CustomLists', '❌ Error al obtener listas por defecto: $e');
-      return [];
-    }
+    AppLogger.repo('CustomLists',
+        'ℹ️ Solicitud de listas por defecto ignorada: característica deshabilitada');
+    return [];
   }
 
   @override
   Future<void> initializeDefaultLists(String userId) async {
-    try {
-      final defaultConfigs = _getDefaultListConfigs();
-
-      if (await hasInternetConnection()) {
-        await _supabaseDataSource.initializeDefaultLists(
-            userId, defaultConfigs);
-      } else {
-        // Crear listas por defecto localmente con IDs válidos
-        const uuid = Uuid();
-        final defaultLists = defaultConfigs
-            .map((config) => CustomList(
-                  id: uuid.v4(), // Generar UUID válido en lugar de usar localId
-                  name: config.name,
-                  description: config.description,
-                  emoji: config.emoji,
-                  movieIds: [],
-                  createdAt: DateTime.now(),
-                  lastModifiedAt: DateTime.now(),
-                  userId: userId,
-                  isDefault: true,
-                  isPublic: false,
-                  color: config.color,
-                  isDeleted: false,
-                  syncStatus: 'pending',
-                  defaultType: config.defaultType,
-                  colorHex: config.color,
-                ))
-            .toList();
-
-        for (final list in defaultLists) {
-          await _updateLocalList(list);
-        }
-
-        // Guardar operación pendiente
-        await _savePendingOperation('init_defaults', {'userId': userId});
-      }
-    } catch (e) {
-      throw Exception('Error al inicializar listas por defecto: $e');
-    }
+    AppLogger.repo('CustomLists',
+        'ℹ️ Inicialización de listas por defecto omitida para el usuario $userId');
   }
 
   // ========== OPERACIONES DE ELEMENTOS ==========
@@ -708,74 +645,5 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         await initializeDefaultLists(data['userId']);
         break;
     }
-  }
-
-  List<DefaultListConfig> _getDefaultListConfigs() {
-    return [
-      const DefaultListConfig(
-        localId: 'favorites',
-        name: 'Favoritas',
-        description: 'Mis películas favoritas',
-        emoji: '❤️',
-        color: '#FF6B6B',
-        defaultType: 'favorites',
-      ),
-      const DefaultListConfig(
-        localId: 'watchlist',
-        name: 'Por Ver',
-        description: 'Películas que quiero ver',
-        emoji: '📺',
-        color: '#4ECDC4',
-        defaultType: 'watchlist',
-      ),
-      const DefaultListConfig(
-        localId: 'watched',
-        name: 'Vistas',
-        description: 'Películas que ya vi',
-        emoji: '✅',
-        color: '#45B7D1',
-        defaultType: 'watched',
-      ),
-      const DefaultListConfig(
-        localId: 'action',
-        name: 'Acción',
-        description: 'Películas de acción',
-        emoji: '💥',
-        color: '#F39C12',
-        defaultType: 'genre_action',
-      ),
-      const DefaultListConfig(
-        localId: 'comedy',
-        name: 'Comedia',
-        description: 'Películas de comedia',
-        emoji: '😂',
-        color: '#E74C3C',
-        defaultType: 'genre_comedy',
-      ),
-      const DefaultListConfig(
-        localId: 'drama',
-        name: 'Drama',
-        description: 'Películas de drama',
-        emoji: '🎭',
-        color: '#9B59B6',
-        defaultType: 'genre_drama',
-      ),
-      const DefaultListConfig(
-        localId: 'horror',
-        name: 'Terror',
-        description: 'Películas de terror',
-        emoji: '👻',
-        color: '#2C3E50',
-        defaultType: 'genre_horror',
-      ),
-      const DefaultListConfig(
-        localId: 'scifi',
-        name: 'Ciencia Ficción',
-        description: 'Películas de ciencia ficción',
-        emoji: '🚀',
-        color: '#1ABC9C',
-        defaultType: 'genre_scifi',
-      ),
-    ];
   }
 }
