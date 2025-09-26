@@ -240,14 +240,14 @@ class SettingsScreen extends ConsumerWidget {
   Widget _buildLanguageSelector(BuildContext context, WidgetRef ref,
       LocaleState localeState, AppLocalizations l10n) {
     final localeNotifier = ref.read(localeNotifierProvider.notifier);
-    final currentLocale = localeState.locale ??
-        Locale(Localizations.localeOf(context).languageCode);
+    final currentLocale = localeState.locale ?? Localizations.localeOf(context);
+    final currentLocaleKey = _localeKey(currentLocale);
 
     return RadioGroup<String>(
-      groupValue: currentLocale.languageCode,
+      groupValue: currentLocaleKey,
       onChanged: (value) {
         if (value != null) {
-          localeNotifier.setLocale(Locale(value));
+          localeNotifier.setLocale(_localeFromKey(value));
         }
       },
       child: Column(
@@ -260,6 +260,11 @@ class SettingsScreen extends ConsumerWidget {
           RadioListTile<String>(
             value: 'en',
             title: Text(l10n.english),
+            secondary: const Icon(Icons.language),
+          ),
+          RadioListTile<String>(
+            value: 'pt_BR',
+            title: Text(l10n.portugueseBrazil),
             secondary: const Icon(Icons.language),
           ),
         ],
@@ -330,5 +335,22 @@ class SettingsScreen extends ConsumerWidget {
     // Calcular si el color es claro u oscuro para usar el color de contraste apropiado
     final luminance = color.computeLuminance();
     return luminance > 0.5 ? Colors.black : Colors.white;
+  }
+
+  String _localeKey(Locale locale) {
+    if (locale.countryCode != null && locale.countryCode!.isNotEmpty) {
+      return '${locale.languageCode}_${locale.countryCode}';
+    }
+
+    return locale.languageCode;
+  }
+
+  Locale _localeFromKey(String key) {
+    final parts = key.split('_');
+    if (parts.length == 2) {
+      return Locale(parts[0], parts[1]);
+    }
+
+    return Locale(parts[0]);
   }
 }

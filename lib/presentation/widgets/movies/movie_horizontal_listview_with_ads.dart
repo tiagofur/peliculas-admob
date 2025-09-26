@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../domain/entities/movie.dart';
+import '../../../generated/app_localizations.dart';
 import '../../../services/hybrid_image_service.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/storage/direct_watched_provider.dart';
@@ -234,6 +235,7 @@ class _SlideState extends ConsumerState<_Slide>
     final textStyles = Theme.of(context).textTheme;
     final isWatched = ref.watch(directIsWatchedProvider(widget.movie.id));
     final isFavorite = ref.watch(directIsFavoriteProvider(widget.movie.id));
+    final l10n = AppLocalizations.of(context)!;
 
     return AnimatedBuilder(
       animation: _hoverController,
@@ -306,18 +308,18 @@ class _SlideState extends ConsumerState<_Slide>
                                     color: Colors.grey[800],
                                     borderRadius: BorderRadius.circular(20),
                                   ),
-                                  child: const Column(
+                                  child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.movie,
                                         size: 50,
                                         color: Colors.grey,
                                       ),
-                                      SizedBox(height: 8),
+                                      const SizedBox(height: 8),
                                       Text(
-                                        'Imagen no disponible',
-                                        style: TextStyle(
+                                        l10n.imageNotAvailable,
+                                        style: const TextStyle(
                                           color: Colors.grey,
                                           fontSize: 12,
                                         ),

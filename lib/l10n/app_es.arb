@@ -17,17 +17,45 @@
   "selectLanguage": "Seleccionar idioma",
   "spanish": "Español",
   "english": "Inglés",
+  "portugueseBrazil": "Portugués (Brasil)",
   "languageDescription": "Cambia el idioma de la aplicación. La aplicación se reiniciará para aplicar el nuevo idioma.",
   "home": "Inicio",
   "favorites": "Favoritos",
   "watchlist": "Lista de seguimiento",
   "profile": "Perfil",
+  "homeNowPlayingTitle": "En cines",
+  "homeNowPlayingSubtitle": "Lunes 20",
+  "homePopularTitle": "Tendencias",
+  "homePopularSubtitle": "Lo más popular ahora",
+  "homeUpcomingTitle": "Próximamente",
+  "homeUpcomingSubtitle": "En este mes",
+  "homeTopRatedTitle": "Mejor calificadas",
+  "homeTopRatedSubtitle": "Desde siempre",
   "noFavorites": "¡Ohhh no!",
   "noFavoritesMessage": "No tienes películas favoritas",
   "startSearching": "Empieza a buscar",
   "notWatchedYet": "¡Aún no has visto nada!",
   "noWatchedMessage": "No tienes películas marcadas como vistas",
   "startExploring": "Empieza a explorar",
+  "unknownError": "Error desconocido",
+  "retry": "Reintentar",
+  "appBarToggleToLightMode": "Cambiar a modo claro",
+  "appBarToggleToDarkMode": "Cambiar a modo oscuro",
+  "searchMoviesTooltip": "Buscar películas",
+  "guestBannerTitle": "¡Desbloquea más funciones!",
+  "guestBannerSubtitle": "Crea una cuenta gratuita y obtén:",
+  "guestBannerBenefitCloudSyncTitle": "Sincronización en la nube",
+  "guestBannerBenefitCloudSyncDescription": "Tus favoritos y películas vistas en todos tus dispositivos",
+  "guestBannerBenefitSocialTitle": "Funciones sociales",
+  "guestBannerBenefitSocialDescription": "Comparte reseñas y conecta con otros cinéfilos",
+  "guestBannerBenefitStatsTitle": "Estadísticas avanzadas",
+  "guestBannerBenefitStatsDescription": "Análisis detallado de tus hábitos cinematográficos",
+  "guestBannerBenefitBackupTitle": "Respaldo seguro",
+  "guestBannerBenefitBackupDescription": "Nunca pierdas tu historial de películas",
+  "guestBannerCreateAccount": "Crear cuenta",
+  "guestBannerLogin": "Iniciar sesión",
+  "imageNotAvailable": "Imagen no disponible",
+  "connectionError": "Error de conexión",
   "login": "Iniciar sesión",
   "register": "Registrarse",
   "streaming": "Streaming",
@@ -83,5 +111,469 @@
   "noCustomLists": "¡Aún no tienes listas personalizadas!",
   "noCustomListsMessage": "No has creado ninguna lista personalizada de películas",
   "startCreating": "Empieza a crear",
-  "createYourFirstList": "Crea tu primera lista"
+  "createYourFirstList": "Crea tu primera lista",
+  "@createYourFirstList": {
+    "description": "Llamado a la acción para crear la primera lista personalizada"
+  },
+  "watched": "Vistas",
+  "@watched": {
+    "description": "Etiqueta de la pestaña de vistas"
+  },
+  "lists": "Listas",
+  "@lists": {
+    "description": "Etiqueta de la pestaña de listas"
+  },
+  "movies": "Películas",
+  "@movies": {
+    "description": "Etiqueta para cantidades de películas"
+  },
+  "relativeToday": "hoy",
+  "@relativeToday": {
+    "description": "Texto relativo para hoy"
+  },
+  "relativeYesterday": "ayer",
+  "@relativeYesterday": {
+    "description": "Texto relativo para ayer"
+  },
+  "relativeDaysAgo": "{count, plural, one {hace {count} día} other {hace {count} días}}",
+  "@relativeDaysAgo": {
+    "description": "Texto relativo para días atrás",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relativeWeeksAgo": "{count, plural, one {hace {count} semana} other {hace {count} semanas}}",
+  "@relativeWeeksAgo": {
+    "description": "Texto relativo para semanas atrás",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsCreateTooltip": "Crear nueva lista",
+  "@customListsCreateTooltip": {
+    "description": "Tooltip para crear una nueva lista personalizada"
+  },
+  "customListsDefaultTab": "Predefinidas ({count})",
+  "@customListsDefaultTab": {
+    "description": "Título de la pestaña de listas predefinidas con conteo",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsCustomTab": "Personalizadas ({count})",
+  "@customListsCustomTab": {
+    "description": "Título de la pestaña de listas personalizadas con conteo",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsStatsCustom": "Personalizadas",
+  "@customListsStatsCustom": {
+    "description": "Etiqueta para la estadística de listas personalizadas"
+  },
+  "customListsNoDefault": "No hay listas predefinidas disponibles",
+  "@customListsNoDefault": {
+    "description": "Mensaje cuando no hay listas predefinidas"
+  },
+  "customListsDefaultBadge": "Predefinida",
+  "@customListsDefaultBadge": {
+    "description": "Insignia para listas predefinidas"
+  },
+  "customListsMovieCount": "{count, plural, one {{count} película} other {{count} películas}}",
+  "@customListsMovieCount": {
+    "description": "Texto para la cantidad de películas en la tarjeta",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsUpdatedAt": "Actualizada {date}",
+  "@customListsUpdatedAt": {
+    "description": "Etiqueta de última actualización",
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "customListsMenuEdit": "Editar",
+  "@customListsMenuEdit": {
+    "description": "Acción del menú para editar una lista"
+  },
+  "customListsMenuDuplicate": "Duplicar",
+  "@customListsMenuDuplicate": {
+    "description": "Acción del menú para duplicar una lista"
+  },
+  "customListsMenuClear": "Vaciar",
+  "@customListsMenuClear": {
+    "description": "Acción del menú para vaciar una lista"
+  },
+  "customListsMenuDelete": "Eliminar",
+  "@customListsMenuDelete": {
+    "description": "Acción del menú para eliminar una lista"
+  },
+  "customListsClearDialogTitle": "Vaciar lista",
+  "@customListsClearDialogTitle": {
+    "description": "Título del cuadro de diálogo para vaciar lista"
+  },
+  "customListsClearDialogMessage": "¿Estás seguro de que quieres eliminar todas las películas de \"{listName}\"?",
+  "@customListsClearDialogMessage": {
+    "description": "Mensaje del cuadro de diálogo para vaciar lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsClearConfirm": "Vaciar",
+  "@customListsClearConfirm": {
+    "description": "Botón de confirmación para vaciar una lista"
+  },
+  "customListsClearSuccess": "Lista \"{listName}\" vaciada",
+  "@customListsClearSuccess": {
+    "description": "Snackbar al vaciar una lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsClearError": "Error al vaciar la lista: {error}",
+  "@customListsClearError": {
+    "description": "Error al vaciar una lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsDeleteDialogTitle": "Eliminar lista",
+  "@customListsDeleteDialogTitle": {
+    "description": "Título del cuadro de diálogo para eliminar lista"
+  },
+  "customListsDeleteDialogMessage": "¿Estás seguro de que quieres eliminar \"{listName}\"? Esta acción no se puede deshacer.",
+  "@customListsDeleteDialogMessage": {
+    "description": "Mensaje del cuadro de diálogo para eliminar lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDeleteConfirm": "Eliminar",
+  "@customListsDeleteConfirm": {
+    "description": "Botón de confirmación para eliminar lista"
+  },
+  "customListsDeleteSuccess": "Lista \"{listName}\" eliminada",
+  "@customListsDeleteSuccess": {
+    "description": "Snackbar al eliminar una lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDeleteError": "Error al eliminar la lista: {error}",
+  "@customListsDeleteError": {
+    "description": "Error al eliminar una lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsEmptyTitle": "Lista vacía",
+  "@customListsEmptyTitle": {
+    "description": "Título para el estado vacío de una lista"
+  },
+  "customListsEmptyDescription": "Agrega películas a esta lista desde los detalles de cualquier película",
+  "@customListsEmptyDescription": {
+    "description": "Descripción para el estado vacío de una lista"
+  },
+  "customListsExploreButton": "Explorar películas",
+  "@customListsExploreButton": {
+    "description": "Botón para explorar películas desde el estado vacío"
+  },
+  "customListsAddMovieButton": "Agregar película",
+  "@customListsAddMovieButton": {
+    "description": "Etiqueta del botón para agregar película"
+  },
+  "customListsCreateDialogTitle": "Crear nueva lista",
+  "@customListsCreateDialogTitle": {
+    "description": "Título del diálogo para crear lista"
+  },
+  "customListsCreateNameLabel": "Nombre de la lista",
+  "@customListsCreateNameLabel": {
+    "description": "Etiqueta del campo nombre de lista"
+  },
+  "customListsCreateNameHint": "Ej: Películas de terror",
+  "@customListsCreateNameHint": {
+    "description": "Texto de ayuda para el campo nombre"
+  },
+  "customListsCreateDescriptionLabel": "Descripción",
+  "@customListsCreateDescriptionLabel": {
+    "description": "Etiqueta del campo descripción"
+  },
+  "customListsCreateDescriptionHint": "Describe el propósito de esta lista",
+  "@customListsCreateDescriptionHint": {
+    "description": "Texto de ayuda para el campo descripción"
+  },
+  "customListsCreateEmojiLabel": "Emoji",
+  "@customListsCreateEmojiLabel": {
+    "description": "Etiqueta para el selector de emoji"
+  },
+  "customListsCreateColorLabel": "Color",
+  "@customListsCreateColorLabel": {
+    "description": "Etiqueta para el selector de color"
+  },
+  "customListsCreateConfirm": "Crear",
+  "@customListsCreateConfirm": {
+    "description": "Botón de confirmación para crear lista"
+  },
+  "customListsCreateSuccess": "Lista \"{listName}\" creada",
+  "@customListsCreateSuccess": {
+    "description": "Snackbar al crear una lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsCreateError": "Error al crear la lista: {error}",
+  "@customListsCreateError": {
+    "description": "Error al crear una lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsEditDialogTitle": "Editar lista",
+  "@customListsEditDialogTitle": {
+    "description": "Título del diálogo para editar lista"
+  },
+  "customListsEditNameLabel": "Nombre de la lista",
+  "@customListsEditNameLabel": {
+    "description": "Etiqueta del campo nombre en editar"
+  },
+  "customListsEditDescriptionLabel": "Descripción",
+  "@customListsEditDescriptionLabel": {
+    "description": "Etiqueta del campo descripción en editar"
+  },
+  "customListsEditDescriptionOptionalLabel": "Descripción (opcional)",
+  "@customListsEditDescriptionOptionalLabel": {
+    "description": "Etiqueta de descripción opcional en editar"
+  },
+  "customListsEditConfirm": "Guardar",
+  "@customListsEditConfirm": {
+    "description": "Botón de confirmación para editar lista"
+  },
+  "customListsEditSuccess": "Lista \"{listName}\" actualizada",
+  "@customListsEditSuccess": {
+    "description": "Snackbar al actualizar una lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsEditError": "Error al actualizar la lista: {error}",
+  "@customListsEditError": {
+    "description": "Error al actualizar una lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsDuplicateDialogTitle": "Duplicar lista",
+  "@customListsDuplicateDialogTitle": {
+    "description": "Título del diálogo para duplicar lista"
+  },
+  "customListsDuplicateMessage": "Se creará una copia de \"{listName}\" con todas sus películas.",
+  "@customListsDuplicateMessage": {
+    "description": "Mensaje del diálogo para duplicar lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDuplicateNameLabel": "Nombre de la nueva lista",
+  "@customListsDuplicateNameLabel": {
+    "description": "Etiqueta del campo nombre en duplicar"
+  },
+  "customListsDuplicateConfirm": "Duplicar",
+  "@customListsDuplicateConfirm": {
+    "description": "Botón de confirmación para duplicar lista"
+  },
+  "customListsDuplicateSuccess": "Lista \"{listName}\" duplicada",
+  "@customListsDuplicateSuccess": {
+    "description": "Snackbar al duplicar una lista",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDuplicateError": "Error al duplicar la lista: {error}",
+  "@customListsDuplicateError": {
+    "description": "Error al duplicar una lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsShareDefaultDescription": "Una colección de {count} películas seleccionadas",
+  "@customListsShareDefaultDescription": {
+    "description": "Descripción predeterminada al compartir una lista",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsShareError": "Error al compartir la lista: {error}",
+  "@customListsShareError": {
+    "description": "Error al compartir una lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsNotFoundTitle": "Lista no encontrada",
+  "@customListsNotFoundTitle": {
+    "description": "Título cuando una lista no existe"
+  },
+  "customListsNotFoundMessage": "La lista solicitada no existe",
+  "@customListsNotFoundMessage": {
+    "description": "Mensaje cuando una lista no existe"
+  },
+  "customListsNotFoundId": "ID buscado: {id}",
+  "@customListsNotFoundId": {
+    "description": "Mensaje que muestra el ID buscado",
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "back": "Volver",
+  "@back": {
+    "description": "Etiqueta genérica para volver"
+  },
+  "view": "Ver",
+  "@view": {
+    "description": "Acción genérica para ver"
+  },
+  "customListsLoadError": "Error al cargar películas: {error}",
+  "@customListsLoadError": {
+    "description": "Error al cargar películas de la lista",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsAddMovieDialogTitle": "Agregar película",
+  "@customListsAddMovieDialogTitle": {
+    "description": "Título del diálogo para agregar película"
+  },
+  "customListsAddMovieSearchLabel": "Buscar película",
+  "@customListsAddMovieSearchLabel": {
+    "description": "Etiqueta del campo de búsqueda de películas"
+  },
+  "customListsAddMovieSearchHint": "Escribe el nombre de una película",
+  "@customListsAddMovieSearchHint": {
+    "description": "Texto de ayuda para buscar película"
+  },
+  "customListsAddMovieSearchEmpty": "Escribe el nombre de una película para buscar",
+  "@customListsAddMovieSearchEmpty": {
+    "description": "Mensaje cuando no hay resultados de búsqueda"
+  },
+  "customListsAddMovieSearchError": "Error: {error}",
+  "@customListsAddMovieSearchError": {
+    "description": "Mensaje de error al buscar películas",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsAddMovieSuccess": "{title} agregada a la lista",
+  "@customListsAddMovieSuccess": {
+    "description": "Snackbar al agregar una película",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "customListsAddMovieError": "Error al agregar la película: {error}",
+  "@customListsAddMovieError": {
+    "description": "Error al agregar una película",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "watchlistTitle": "Por ver",
+  "@watchlistTitle": {
+    "description": "Etiqueta para la pestaña de lista de seguimiento"
+  },
+  "watchlistPriorityHigh": "Alta prioridad",
+  "@watchlistPriorityHigh": {
+    "description": "Etiqueta para prioridad alta"
+  },
+  "watchlistPriorityNormal": "Prioridad normal",
+  "@watchlistPriorityNormal": {
+    "description": "Etiqueta para prioridad normal"
+  },
+  "watchlistPriorityLow": "Baja prioridad",
+  "@watchlistPriorityLow": {
+    "description": "Etiqueta para prioridad baja"
+  },
+  "watchlistEmptyTitle": "Tu lista de seguimiento está vacía",
+  "@watchlistEmptyTitle": {
+    "description": "Título cuando la watchlist no tiene películas"
+  },
+  "watchlistEmptyFiltered": "No hay películas con {priority}.",
+  "@watchlistEmptyFiltered": {
+    "description": "Mensaje cuando no hay películas con la prioridad seleccionada",
+    "placeholders": {
+      "priority": {}
+    }
+  },
+  "watchlistEmptyDescription": "Agrega películas que quieras ver después",
+  "@watchlistEmptyDescription": {
+    "description": "Descripción del estado vacío de watchlist"
+  },
+  "watchlistExploreButton": "Explorar películas",
+  "@watchlistExploreButton": {
+    "description": "Botón para explorar películas desde watchlist"
+  },
+  "watchlistRemoveDialogTitle": "Quitar de la lista de seguimiento",
+  "@watchlistRemoveDialogTitle": {
+    "description": "Título del diálogo para remover de watchlist"
+  },
+  "watchlistRemoveDialogMessage": "¿Estás seguro de que quieres quitar \"{title}\" de tu lista de seguimiento?",
+  "@watchlistRemoveDialogMessage": {
+    "description": "Mensaje del diálogo para remover de watchlist",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "watchlistRemoveDialogConfirm": "Quitar",
+  "@watchlistRemoveDialogConfirm": {
+    "description": "Botón de confirmación para remover de watchlist"
+  },
+  "watchlistRemoveSuccess": "{title} se quitó de la lista de seguimiento",
+  "@watchlistRemoveSuccess": {
+    "description": "Snackbar al remover una película de watchlist",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "watchlistAddSuccess": "{title} se agregó a la lista de seguimiento con prioridad {priority}",
+  "@watchlistAddSuccess": {
+    "description": "Snackbar al agregar una película a watchlist",
+    "placeholders": {
+      "title": {},
+      "priority": {}
+    }
+  },
+  "watchlistAddedLabel": "Agregada: {date}",
+  "@watchlistAddedLabel": {
+    "description": "Etiqueta que muestra cuándo se agregó la película",
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "watchlistAddDialogTitle": "Agregar a la lista de seguimiento",
+  "@watchlistAddDialogTitle": {
+    "description": "Título del diálogo para agregar a watchlist"
+  },
+  "watchlistAddDialogMovieLabel": "Película: {title}",
+  "@watchlistAddDialogMovieLabel": {
+    "description": "Etiqueta que muestra la película en el diálogo",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "watchlistAddDialogPriorityLabel": "Selecciona la prioridad:",
+  "@watchlistAddDialogPriorityLabel": {
+    "description": "Instrucción para seleccionar la prioridad"
+  },
+  "watchlistAddDialogConfirm": "Agregar",
+  "@watchlistAddDialogConfirm": {
+    "description": "Botón de confirmación para agregar a watchlist"
+  },
+  "statisticsTitle": "Estadísticas",
+  "@statisticsTitle": {
+    "description": "Título para la vista de estadísticas"
+  },
+  "achievements": "Logros",
+  "@achievements": {
+    "description": "Etiqueta de la pestaña de logros"
+  }
 }

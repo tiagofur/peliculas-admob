@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../generated/app_localizations.dart';
 import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
@@ -34,6 +35,8 @@ class HomeViewState extends ConsumerState<HomeView>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    final l10n = AppLocalizations.of(context)!;
 
     // ✅ SIMPLIFIED LOADING: Don't block UI with initialLoading
     final slideShowMovies = ref.watch(moviesSlideshowProvider);
@@ -73,19 +76,21 @@ class HomeViewState extends ConsumerState<HomeView>
 
               // ✅ LAZY LOADING: Load data when sections become visible
               _buildMovieSection(
+                l10n: l10n,
                 movies: nowPlayingMovies,
                 sectionId: 'now-playing',
-                title: 'En cines',
-                subTitle: 'Lunes 20',
+                title: l10n.homeNowPlayingTitle,
+                subTitle: l10n.homeNowPlayingSubtitle,
                 provider: nowPlayingMoviesProvider,
                 state: nowPlayingState,
               ),
 
               _buildMovieSection(
+                l10n: l10n,
                 movies: popularMovies,
                 sectionId: 'popular',
-                title: 'Tendencias',
-                subTitle: 'Lo más popular ahora',
+                title: l10n.homePopularTitle,
+                subTitle: l10n.homePopularSubtitle,
                 provider: popularMoviesProvider,
                 state: popularState,
               ),
@@ -100,19 +105,21 @@ class HomeViewState extends ConsumerState<HomeView>
               ),
 
               _buildMovieSection(
+                l10n: l10n,
                 movies: upcomingMovies,
                 sectionId: 'upcoming',
-                title: 'Próximamente',
-                subTitle: 'En este mes',
+                title: l10n.homeUpcomingTitle,
+                subTitle: l10n.homeUpcomingSubtitle,
                 provider: upcomingMoviesProvider,
                 state: upcomingState,
               ),
 
               _buildMovieSection(
+                l10n: l10n,
                 movies: topRatedMovies,
                 sectionId: 'top-rated',
-                title: 'Mejor calificadas',
-                subTitle: 'Desde siempre',
+                title: l10n.homeTopRatedTitle,
+                subTitle: l10n.homeTopRatedSubtitle,
                 provider: topRatedMoviesProvider,
                 state: topRatedState,
               ),
@@ -141,6 +148,7 @@ class HomeViewState extends ConsumerState<HomeView>
 
   /// ✅ LAZY LOADING: Load data only when section is visible
   Widget _buildMovieSection({
+    required AppLocalizations l10n,
     required List<Movie> movies,
     required String sectionId,
     required String title,
@@ -185,13 +193,13 @@ class HomeViewState extends ConsumerState<HomeView>
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    state.errorMessage ?? 'Error desconocido',
+                    state.errorMessage ?? l10n.unknownError,
                     style: TextStyle(color: Colors.red.shade700),
                   ),
                 ),
                 TextButton(
                   onPressed: () => ref.read(provider.notifier).refresh(),
-                  child: const Text('Reintentar'),
+                  child: Text(l10n.retry),
                 ),
               ],
             ),

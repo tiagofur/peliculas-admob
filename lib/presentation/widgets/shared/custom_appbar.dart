@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../generated/app_localizations.dart';
 import '../../delegates/search_movie_delegate.dart';
 import '../../providers/movies/movies_repository_provider.dart';
 import '../../providers/search/search_movies_provider.dart';
@@ -21,6 +22,7 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
     // LEGACY COMPATIBILITY FIXED - theme provider restored
     final themeState = ref.watch(themeNotifierProvider);
     final isDarkMode = themeState.isDarkMode;
+    final l10n = AppLocalizations.of(context)!;
 
     return SafeArea(
         bottom: false,
@@ -32,7 +34,7 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
               children: [
                 Icon(Icons.movie_outlined, color: colors.primary),
                 const SizedBox(width: 5),
-                Text('Peliculas', style: titleStyle),
+                Text(l10n.appTitle, style: titleStyle),
                 const Spacer(),
                 // THEME TOGGLE RESTORED - provider fixed
                 IconButton(
@@ -43,8 +45,8 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                       ? Icons.light_mode_outlined
                       : Icons.dark_mode_outlined),
                   tooltip: isDarkMode
-                      ? 'Cambiar a modo claro'
-                      : 'Cambiar a modo oscuro',
+                      ? l10n.appBarToggleToLightMode
+                      : l10n.appBarToggleToDarkMode,
                 ),
                 IconButton(
                   onPressed: () {
@@ -67,7 +69,7 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                     });
                   },
                   icon: const Icon(Icons.search),
-                  tooltip: 'Buscar películas',
+                  tooltip: l10n.searchMoviesTooltip,
                 )
               ],
             ),

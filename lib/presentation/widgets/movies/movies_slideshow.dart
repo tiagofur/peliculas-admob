@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../generated/app_localizations.dart';
 import '../../../services/hybrid_image_service.dart';
 
 class MoviesSlideshow extends StatelessWidget {
@@ -45,6 +46,7 @@ class _Slide extends StatelessWidget {
           BoxShadow(
               color: Colors.black45, blurRadius: 10, offset: Offset(0, 10))
         ]);
+    final l10n = AppLocalizations.of(context)!;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 30),
@@ -85,7 +87,7 @@ class _Slide extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Imagen no disponible',
+                    l10n.imageNotAvailable,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -94,7 +96,7 @@ class _Slide extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Error de conexión',
+                    l10n.connectionError,
                     style: TextStyle(
                       color: Colors.grey[700],
                       fontSize: 12,

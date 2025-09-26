@@ -68,6 +68,10 @@
   "@english": {
     "description": "English language option"
   },
+  "portugueseBrazil": "Portuguese (Brazil)",
+  "@portugueseBrazil": {
+    "description": "Portuguese (Brazil) language option"
+  },
   "languageDescription": "Change the app language. The app will restart to apply the new language.",
   "@languageDescription": {
     "description": "Description for language selection"
@@ -87,6 +91,38 @@
   "profile": "Profile",
   "@profile": {
     "description": "Profile screen title"
+  },
+  "homeNowPlayingTitle": "Now in theaters",
+  "@homeNowPlayingTitle": {
+    "description": "Title for the now playing movies section on home"
+  },
+  "homeNowPlayingSubtitle": "Monday 20",
+  "@homeNowPlayingSubtitle": {
+    "description": "Subtitle for the now playing movies section on home"
+  },
+  "homePopularTitle": "Trending",
+  "@homePopularTitle": {
+    "description": "Title for the popular movies section on home"
+  },
+  "homePopularSubtitle": "Top picks right now",
+  "@homePopularSubtitle": {
+    "description": "Subtitle for the popular movies section on home"
+  },
+  "homeUpcomingTitle": "Coming soon",
+  "@homeUpcomingTitle": {
+    "description": "Title for the upcoming movies section on home"
+  },
+  "homeUpcomingSubtitle": "This month",
+  "@homeUpcomingSubtitle": {
+    "description": "Subtitle for the upcoming movies section on home"
+  },
+  "homeTopRatedTitle": "Top rated",
+  "@homeTopRatedTitle": {
+    "description": "Title for the top rated movies section on home"
+  },
+  "homeTopRatedSubtitle": "All-time favorites",
+  "@homeTopRatedSubtitle": {
+    "description": "Subtitle for the top rated movies section on home"
   },
   "noFavorites": "Ohhh no!!",
   "@noFavorites": {
@@ -111,6 +147,82 @@
   "startExploring": "Start exploring",
   "@startExploring": {
     "description": "Button text to start exploring movies"
+  },
+  "unknownError": "Unknown error",
+  "@unknownError": {
+    "description": "Default message for an unknown error"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "Retry button text"
+  },
+  "appBarToggleToLightMode": "Switch to light mode",
+  "@appBarToggleToLightMode": {
+    "description": "Tooltip for toggling to light mode"
+  },
+  "appBarToggleToDarkMode": "Switch to dark mode",
+  "@appBarToggleToDarkMode": {
+    "description": "Tooltip for toggling to dark mode"
+  },
+  "searchMoviesTooltip": "Search movies",
+  "@searchMoviesTooltip": {
+    "description": "Tooltip for the search movies button"
+  },
+  "guestBannerTitle": "Unlock more features!",
+  "@guestBannerTitle": {
+    "description": "Title for the guest mode banner"
+  },
+  "guestBannerSubtitle": "Create a free account and get:",
+  "@guestBannerSubtitle": {
+    "description": "Subtitle describing benefits for creating an account"
+  },
+  "guestBannerBenefitCloudSyncTitle": "Cloud synchronization",
+  "@guestBannerBenefitCloudSyncTitle": {
+    "description": "Title for the cloud sync benefit"
+  },
+  "guestBannerBenefitCloudSyncDescription": "Your favorites and watched movies on all your devices",
+  "@guestBannerBenefitCloudSyncDescription": {
+    "description": "Description for the cloud sync benefit"
+  },
+  "guestBannerBenefitSocialTitle": "Social features",
+  "@guestBannerBenefitSocialTitle": {
+    "description": "Title for the social features benefit"
+  },
+  "guestBannerBenefitSocialDescription": "Share reviews and connect with other movie lovers",
+  "@guestBannerBenefitSocialDescription": {
+    "description": "Description for the social features benefit"
+  },
+  "guestBannerBenefitStatsTitle": "Advanced statistics",
+  "@guestBannerBenefitStatsTitle": {
+    "description": "Title for the advanced statistics benefit"
+  },
+  "guestBannerBenefitStatsDescription": "Detailed insights about your movie habits",
+  "@guestBannerBenefitStatsDescription": {
+    "description": "Description for the advanced statistics benefit"
+  },
+  "guestBannerBenefitBackupTitle": "Secure backup",
+  "@guestBannerBenefitBackupTitle": {
+    "description": "Title for the secure backup benefit"
+  },
+  "guestBannerBenefitBackupDescription": "Never lose your movie history",
+  "@guestBannerBenefitBackupDescription": {
+    "description": "Description for the secure backup benefit"
+  },
+  "guestBannerCreateAccount": "Create account",
+  "@guestBannerCreateAccount": {
+    "description": "Button text to create an account from the guest banner"
+  },
+  "guestBannerLogin": "Log in",
+  "@guestBannerLogin": {
+    "description": "Button text to log in from the guest banner"
+  },
+  "imageNotAvailable": "Image not available",
+  "@imageNotAvailable": {
+    "description": "Message shown when an image fails to load"
+  },
+  "connectionError": "Connection error",
+  "@connectionError": {
+    "description": "Message shown when a connection error occurs"
   },
   "login": "Login",
   "@login": {
@@ -335,5 +447,466 @@
   "createYourFirstList": "Create your first list",
   "@createYourFirstList": {
     "description": "Call to action for creating first custom list"
+  },
+  "watched": "Watched",
+  "@watched": {
+    "description": "Watched tab label"
+  },
+  "lists": "Lists",
+  "@lists": {
+    "description": "Lists tab label"
+  },
+  "movies": "Movies",
+  "@movies": {
+    "description": "Movies label for counts and stats"
+  },
+  "relativeToday": "today",
+  "@relativeToday": {
+    "description": "Relative date label for today"
+  },
+  "relativeYesterday": "yesterday",
+  "@relativeYesterday": {
+    "description": "Relative date label for yesterday"
+  },
+  "relativeDaysAgo": "{count, plural, one {{count} day ago} other {{count} days ago}}",
+  "@relativeDaysAgo": {
+    "description": "Relative date label for days ago",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "relativeWeeksAgo": "{count, plural, one {{count} week ago} other {{count} weeks ago}}",
+  "@relativeWeeksAgo": {
+    "description": "Relative date label for weeks ago",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsCreateTooltip": "Create new list",
+  "@customListsCreateTooltip": {
+    "description": "Tooltip for creating a new custom list"
+  },
+  "customListsDefaultTab": "Default ({count})",
+  "@customListsDefaultTab": {
+    "description": "Title for default lists tab with count",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsCustomTab": "Custom ({count})",
+  "@customListsCustomTab": {
+    "description": "Title for custom lists tab with count",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsStatsCustom": "Custom",
+  "@customListsStatsCustom": {
+    "description": "Label for custom lists statistic"
+  },
+  "customListsNoDefault": "No default lists available",
+  "@customListsNoDefault": {
+    "description": "Message when there are no default lists"
+  },
+  "customListsDefaultBadge": "Default",
+  "@customListsDefaultBadge": {
+    "description": "Badge text for default list"
+  },
+  "customListsMovieCount": "{count, plural, one {{count} movie} other {{count} movies}}",
+  "@customListsMovieCount": {
+    "description": "Movie count label for list cards",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsUpdatedAt": "Updated {date}",
+  "@customListsUpdatedAt": {
+    "description": "Last updated label for lists",
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "customListsMenuEdit": "Edit",
+  "@customListsMenuEdit": {
+    "description": "Menu action to edit a list"
+  },
+  "customListsMenuDuplicate": "Duplicate",
+  "@customListsMenuDuplicate": {
+    "description": "Menu action to duplicate a list"
+  },
+  "customListsMenuClear": "Clear",
+  "@customListsMenuClear": {
+    "description": "Menu action to clear a list"
+  },
+  "customListsMenuDelete": "Delete",
+  "@customListsMenuDelete": {
+    "description": "Menu action to delete a list"
+  },
+  "customListsClearDialogTitle": "Clear list",
+  "@customListsClearDialogTitle": {
+    "description": "Title for confirm clear list dialog"
+  },
+  "customListsClearDialogMessage": "Are you sure you want to remove all movies from \"{listName}\"?",
+  "@customListsClearDialogMessage": {
+    "description": "Message for confirm clear list dialog",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsClearConfirm": "Clear",
+  "@customListsClearConfirm": {
+    "description": "Confirmation button text for clearing a list"
+  },
+  "customListsClearSuccess": "List \"{listName}\" cleared",
+  "@customListsClearSuccess": {
+    "description": "Snackbar shown when list is cleared",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsClearError": "Failed to clear list: {error}",
+  "@customListsClearError": {
+    "description": "Error shown when clearing a list fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsDeleteDialogTitle": "Delete list",
+  "@customListsDeleteDialogTitle": {
+    "description": "Title for confirm delete list dialog"
+  },
+  "customListsDeleteDialogMessage": "Are you sure you want to delete \"{listName}\"? This action can't be undone.",
+  "@customListsDeleteDialogMessage": {
+    "description": "Message for confirm delete list dialog",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDeleteConfirm": "Delete",
+  "@customListsDeleteConfirm": {
+    "description": "Confirmation button text for deleting a list"
+  },
+  "customListsDeleteSuccess": "List \"{listName}\" deleted",
+  "@customListsDeleteSuccess": {
+    "description": "Snackbar shown when a list is deleted",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDeleteError": "Failed to delete list: {error}",
+  "@customListsDeleteError": {
+    "description": "Error shown when deleting a list fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsEmptyTitle": "Empty list",
+  "@customListsEmptyTitle": {
+    "description": "Title for empty custom list state"
+  },
+  "customListsEmptyDescription": "Add movies to this list from any movie details screen",
+  "@customListsEmptyDescription": {
+    "description": "Description for empty custom list state"
+  },
+  "customListsExploreButton": "Explore movies",
+  "@customListsExploreButton": {
+    "description": "Button to explore movies from empty state"
+  },
+  "customListsAddMovieButton": "Add movie",
+  "@customListsAddMovieButton": {
+    "description": "Label for add movie button"
+  },
+  "customListsCreateDialogTitle": "Create new list",
+  "@customListsCreateDialogTitle": {
+    "description": "Title for create list dialog"
+  },
+  "customListsCreateNameLabel": "List name",
+  "@customListsCreateNameLabel": {
+    "description": "Label for list name field"
+  },
+  "customListsCreateNameHint": "E.g. Horror movies",
+  "@customListsCreateNameHint": {
+    "description": "Hint for list name field"
+  },
+  "customListsCreateDescriptionLabel": "Description",
+  "@customListsCreateDescriptionLabel": {
+    "description": "Label for description field"
+  },
+  "customListsCreateDescriptionHint": "Describe the purpose of this list",
+  "@customListsCreateDescriptionHint": {
+    "description": "Hint for description field"
+  },
+  "customListsCreateEmojiLabel": "Emoji",
+  "@customListsCreateEmojiLabel": {
+    "description": "Label for emoji selector"
+  },
+  "customListsCreateColorLabel": "Color",
+  "@customListsCreateColorLabel": {
+    "description": "Label for color selector"
+  },
+  "customListsCreateConfirm": "Create",
+  "@customListsCreateConfirm": {
+    "description": "Confirmation button for creating a list"
+  },
+  "customListsCreateSuccess": "List \"{listName}\" created",
+  "@customListsCreateSuccess": {
+    "description": "Snackbar shown when list is created",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsCreateError": "Failed to create list: {error}",
+  "@customListsCreateError": {
+    "description": "Error shown when creating a list fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsEditDialogTitle": "Edit list",
+  "@customListsEditDialogTitle": {
+    "description": "Title for edit list dialog"
+  },
+  "customListsEditNameLabel": "List name",
+  "@customListsEditNameLabel": {
+    "description": "Label for list name field in edit dialog"
+  },
+  "customListsEditDescriptionLabel": "Description",
+  "@customListsEditDescriptionLabel": {
+    "description": "Label for description field in edit dialog"
+  },
+  "customListsEditDescriptionOptionalLabel": "Description (optional)",
+  "@customListsEditDescriptionOptionalLabel": {
+    "description": "Label for optional description field in edit dialog"
+  },
+  "customListsEditConfirm": "Save",
+  "@customListsEditConfirm": {
+    "description": "Confirmation button for editing a list"
+  },
+  "customListsEditSuccess": "List \"{listName}\" updated",
+  "@customListsEditSuccess": {
+    "description": "Snackbar shown when list is updated",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsEditError": "Failed to update list: {error}",
+  "@customListsEditError": {
+    "description": "Error shown when editing a list fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsDuplicateDialogTitle": "Duplicate list",
+  "@customListsDuplicateDialogTitle": {
+    "description": "Title for duplicate list dialog"
+  },
+  "customListsDuplicateMessage": "A copy of \"{listName}\" with all its movies will be created.",
+  "@customListsDuplicateMessage": {
+    "description": "Message for duplicate list dialog",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDuplicateNameLabel": "New list name",
+  "@customListsDuplicateNameLabel": {
+    "description": "Label for new list name field in duplicate dialog"
+  },
+  "customListsDuplicateConfirm": "Duplicate",
+  "@customListsDuplicateConfirm": {
+    "description": "Confirmation button for duplicating a list"
+  },
+  "customListsDuplicateSuccess": "List \"{listName}\" duplicated",
+  "@customListsDuplicateSuccess": {
+    "description": "Snackbar shown when list is duplicated",
+    "placeholders": {
+      "listName": {}
+    }
+  },
+  "customListsDuplicateError": "Failed to duplicate list: {error}",
+  "@customListsDuplicateError": {
+    "description": "Error shown when duplicating a list fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsShareDefaultDescription": "A curated collection of {count} selected movies",
+  "@customListsShareDefaultDescription": {
+    "description": "Default description when sharing a list",
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "customListsShareError": "Failed to share list: {error}",
+  "@customListsShareError": {
+    "description": "Error shown when sharing a list fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsNotFoundTitle": "List not found",
+  "@customListsNotFoundTitle": {
+    "description": "Title when a list is not found"
+  },
+  "customListsNotFoundMessage": "The requested list doesn't exist",
+  "@customListsNotFoundMessage": {
+    "description": "Message when a list is not found"
+  },
+  "customListsNotFoundId": "Searched ID: {id}",
+  "@customListsNotFoundId": {
+    "description": "Message showing the searched list id",
+    "placeholders": {
+      "id": {}
+    }
+  },
+  "back": "Back",
+  "@back": {
+    "description": "Generic back button label"
+  },
+  "view": "View",
+  "@view": {
+    "description": "Generic view action label"
+  },
+  "customListsLoadError": "Failed to load movies: {error}",
+  "@customListsLoadError": {
+    "description": "Error shown when loading list movies fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsAddMovieDialogTitle": "Add movie",
+  "@customListsAddMovieDialogTitle": {
+    "description": "Title for add movie dialog"
+  },
+  "customListsAddMovieSearchLabel": "Search movie",
+  "@customListsAddMovieSearchLabel": {
+    "description": "Label for movie search field"
+  },
+  "customListsAddMovieSearchHint": "Type a movie name",
+  "@customListsAddMovieSearchHint": {
+    "description": "Hint for movie search field"
+  },
+  "customListsAddMovieSearchEmpty": "Type a movie name to search",
+  "@customListsAddMovieSearchEmpty": {
+    "description": "Message when no search results"
+  },
+  "customListsAddMovieSearchError": "Error: {error}",
+  "@customListsAddMovieSearchError": {
+    "description": "Error message when searching movies fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "customListsAddMovieSuccess": "{title} added to the list",
+  "@customListsAddMovieSuccess": {
+    "description": "Snackbar shown when a movie is added to a list",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "customListsAddMovieError": "Failed to add movie: {error}",
+  "@customListsAddMovieError": {
+    "description": "Error shown when adding a movie fails",
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "watchlistTitle": "Watchlist",
+  "@watchlistTitle": {
+    "description": "Label for the watchlist tab"
+  },
+  "watchlistPriorityHigh": "High priority",
+  "@watchlistPriorityHigh": {
+    "description": "Label for high priority"
+  },
+  "watchlistPriorityNormal": "Normal priority",
+  "@watchlistPriorityNormal": {
+    "description": "Label for normal priority"
+  },
+  "watchlistPriorityLow": "Low priority",
+  "@watchlistPriorityLow": {
+    "description": "Label for low priority"
+  },
+  "watchlistEmptyTitle": "Your watchlist is empty",
+  "@watchlistEmptyTitle": {
+    "description": "Title shown when watchlist has no movies"
+  },
+  "watchlistEmptyFiltered": "No movies with {priority}.",
+  "@watchlistEmptyFiltered": {
+    "description": "Message when no movies match selected priority",
+    "placeholders": {
+      "priority": {}
+    }
+  },
+  "watchlistEmptyDescription": "Add movies you want to watch later",
+  "@watchlistEmptyDescription": {
+    "description": "Description for empty watchlist"
+  },
+  "watchlistExploreButton": "Explore movies",
+  "@watchlistExploreButton": {
+    "description": "Button to explore movies from watchlist empty state"
+  },
+  "watchlistRemoveDialogTitle": "Remove from watchlist",
+  "@watchlistRemoveDialogTitle": {
+    "description": "Title for remove from watchlist dialog"
+  },
+  "watchlistRemoveDialogMessage": "Are you sure you want to remove \"{title}\" from your watchlist?",
+  "@watchlistRemoveDialogMessage": {
+    "description": "Message for remove from watchlist dialog",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "watchlistRemoveDialogConfirm": "Remove",
+  "@watchlistRemoveDialogConfirm": {
+    "description": "Confirmation button for removing from watchlist"
+  },
+  "watchlistRemoveSuccess": "{title} removed from watchlist",
+  "@watchlistRemoveSuccess": {
+    "description": "Snackbar shown when movie removed from watchlist",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "watchlistAddSuccess": "{title} added to watchlist with {priority} priority",
+  "@watchlistAddSuccess": {
+    "description": "Snackbar shown when movie added to watchlist",
+    "placeholders": {
+      "title": {},
+      "priority": {}
+    }
+  },
+  "watchlistAddedLabel": "Added: {date}",
+  "@watchlistAddedLabel": {
+    "description": "Label showing when movie was added to watchlist",
+    "placeholders": {
+      "date": {}
+    }
+  },
+  "watchlistAddDialogTitle": "Add to watchlist",
+  "@watchlistAddDialogTitle": {
+    "description": "Title for add to watchlist dialog"
+  },
+  "watchlistAddDialogMovieLabel": "Movie: {title}",
+  "@watchlistAddDialogMovieLabel": {
+    "description": "Label showing movie name in dialog",
+    "placeholders": {
+      "title": {}
+    }
+  },
+  "watchlistAddDialogPriorityLabel": "Select priority:",
+  "@watchlistAddDialogPriorityLabel": {
+    "description": "Instruction to select a priority"
+  },
+  "watchlistAddDialogConfirm": "Add",
+  "@watchlistAddDialogConfirm": {
+    "description": "Confirmation button for adding to watchlist"
+  },
+  "statisticsTitle": "Statistics",
+  "@statisticsTitle": {
+    "description": "Title for statistics view"
+  },
+  "achievements": "Achievements",
+  "@achievements": {
+    "description": "Achievements tab label"
   }
 }

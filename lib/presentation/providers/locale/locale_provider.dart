@@ -53,7 +53,7 @@ class LocaleNotifier extends Notifier<LocaleState> {
       final localeCode = prefs.getString(_localeKey);
 
       if (localeCode != null) {
-        final locale = Locale(localeCode);
+        final locale = _parseLocale(localeCode);
         state = state.copyWith(locale: locale, isLoading: false);
       } else {
         // No saved locale, use system default
@@ -70,7 +70,7 @@ class LocaleNotifier extends Notifier<LocaleState> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_localeKey, locale.languageCode);
+      await prefs.setString(_localeKey, locale.toLanguageTag());
     } catch (e) {
       // Handle error - could show a snackbar or log
     }
@@ -91,5 +91,17 @@ class LocaleNotifier extends Notifier<LocaleState> {
   List<Locale> get supportedLocales => const [
         Locale('es'), // Spanish
         Locale('en'), // English
+        Locale('pt', 'BR'), // Portuguese (Brazil)
       ];
+
+  Locale _parseLocale(String code) {
+    final normalizedCode = code.replaceAll('-', '_');
+    final parts = normalizedCode.split('_');
+
+    if (parts.length == 2) {
+      return Locale(parts[0], parts[1]);
+    }
+
+    return Locale(parts[0]);
+  }
 }

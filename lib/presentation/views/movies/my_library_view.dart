@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../generated/app_localizations.dart';
+
 class MyLibraryView extends StatefulWidget {
   const MyLibraryView({super.key, required this.navigationShell});
   final StatefulNavigationShell navigationShell;
@@ -49,6 +51,7 @@ class _MyLibraryViewState extends State<MyLibraryView>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -65,7 +68,7 @@ class _MyLibraryViewState extends State<MyLibraryView>
                 backgroundColor: colors.surface,
                 surfaceTintColor: colors.surface,
                 title: Text(
-                  'Mi Biblioteca',
+                  l10n.myLibrary,
                   style: textStyles.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: colors.onSurface,
@@ -75,7 +78,8 @@ class _MyLibraryViewState extends State<MyLibraryView>
                   controller: _tabController,
                   indicatorColor: colors.primary,
                   labelColor: colors.primary,
-                  unselectedLabelColor: colors.onSurface.withAlpha(153),
+                  unselectedLabelColor:
+                      colors.onSurface.withValues(alpha: 153 / 255),
                   labelStyle: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -84,22 +88,22 @@ class _MyLibraryViewState extends State<MyLibraryView>
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
-                  tabs: const [
+                  tabs: [
                     Tab(
-                      icon: Icon(Icons.favorite_outline, size: 20),
-                      text: 'Favoritos',
+                      icon: const Icon(Icons.favorite_outline, size: 20),
+                      text: l10n.favorites,
                     ),
                     Tab(
-                      icon: Icon(Icons.bookmark_outline, size: 20),
-                      text: 'Watchlist',
+                      icon: const Icon(Icons.bookmark_outline, size: 20),
+                      text: l10n.watchlistTitle,
                     ),
                     Tab(
-                      icon: Icon(Icons.visibility_outlined, size: 20),
-                      text: 'Vistas',
+                      icon: const Icon(Icons.visibility_outlined, size: 20),
+                      text: l10n.watched,
                     ),
                     Tab(
-                      icon: Icon(Icons.list_alt, size: 20),
-                      text: 'Listas',
+                      icon: const Icon(Icons.list_alt, size: 20),
+                      text: l10n.lists,
                     ),
                   ],
                 ),

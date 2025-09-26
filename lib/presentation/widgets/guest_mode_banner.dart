@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../generated/app_localizations.dart';
 import '../providers/auth_provider.dart';
 
 // Banner que muestra los beneficios del registro en modo guest
@@ -11,6 +12,7 @@ class GuestModeBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appState = ref.watch(appStateProvider);
+    final l10n = AppLocalizations.of(context)!;
 
     // Solo mostrar en modo guest
     if (appState.mode != AppMode.guest) {
@@ -51,7 +53,7 @@ class GuestModeBanner extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '¡Desbloquea más funciones!',
+                  l10n.guestBannerTitle,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,
@@ -63,7 +65,7 @@ class GuestModeBanner extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Crea una cuenta gratuita y obtén:',
+            l10n.guestBannerSubtitle,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                 ),
@@ -72,29 +74,29 @@ class GuestModeBanner extends ConsumerWidget {
           _buildBenefit(
             context,
             Icons.sync,
-            'Sincronización en la nube',
-            'Tus favoritos y películas vistas en todos tus dispositivos',
+            l10n.guestBannerBenefitCloudSyncTitle,
+            l10n.guestBannerBenefitCloudSyncDescription,
           ),
           const SizedBox(height: 6),
           _buildBenefit(
             context,
             Icons.people,
-            'Funciones sociales',
-            'Comparte reseñas y conecta con otros cinéfilos',
+            l10n.guestBannerBenefitSocialTitle,
+            l10n.guestBannerBenefitSocialDescription,
           ),
           const SizedBox(height: 6),
           _buildBenefit(
             context,
             Icons.analytics,
-            'Estadísticas avanzadas',
-            'Análisis detallado de tus hábitos cinematográficos',
+            l10n.guestBannerBenefitStatsTitle,
+            l10n.guestBannerBenefitStatsDescription,
           ),
           const SizedBox(height: 6),
           _buildBenefit(
             context,
             Icons.backup,
-            'Respaldo seguro',
-            'Nunca pierdas tu historial de películas',
+            l10n.guestBannerBenefitBackupTitle,
+            l10n.guestBannerBenefitBackupDescription,
           ),
           const SizedBox(height: 16),
           Row(
@@ -107,8 +109,8 @@ class GuestModeBanner extends ConsumerWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   ),
-                  child: const Text(
-                    'Crear cuenta',
+                  child: Text(
+                    l10n.guestBannerCreateAccount,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -121,8 +123,8 @@ class GuestModeBanner extends ConsumerWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   ),
-                  child: const Text(
-                    'Iniciar sesión',
+                  child: Text(
+                    l10n.guestBannerLogin,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
