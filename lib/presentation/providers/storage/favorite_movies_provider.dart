@@ -1,14 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/logging/logger_factory.dart';
-import '../../../core/sync/simple_favorites_sync.dart';
 import '../../../domain/entities/movie.dart';
+import '../../../domain/entities/user.dart';
 import '../../../domain/repositories/favorites_repository.dart';
 import '../achievements/achievements_provider.dart';
+import '../auth_provider.dart';
 import '../hybrid_repositories_provider.dart';
+import '../sync_integration_provider.dart';
 
 /// Service para gestionar películas favoritas con respaldo local/remoto
 class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
@@ -23,6 +24,38 @@ class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
 
     // Cargar favoritos existentes al inicializar
     _loadExistingFavorites();
+
+    // Escuchar cambios de autenticación para limpiar o recargar favoritos
+    ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
+      next.when(
+        data: (user) {
+          if (user == null) {
+            LoggerFactory.info(
+                '👋 Usuario no autenticado - limpiando favoritos locales');
+            state = {};
+          } else {
+            LoggerFactory.info('🔐 Usuario autenticado - recargando favoritos');
+            unawaited(_loadExistingFavorites());
+          }
+        },
+        loading: () {},
+        error: (_, __) {
+          // Mantener estado actual en caso de error
+        },
+      );
+    });
+
+    // Refrescar favoritos cuando la sincronización global termine exitosamente
+    ref.listen<SyncIntegrationState>(syncIntegrationProvider, (previous, next) {
+      final wasSynced = previous?.globalSyncStatus == SyncStatus.synced;
+      final isSynced = next.globalSyncStatus == SyncStatus.synced;
+
+      if (!wasSynced && isSynced) {
+        LoggerFactory.info(
+            '🔄 Sync completada - refrescando favoritos locales');
+        unawaited(refreshFavorites());
+      }
+    });
 
     // NO configurar auto-refresh automáticamente para evitar bloqueos
     // _setupAutoRefresh(); // Se habilitará manualmente cuando sea necesario
@@ -81,24 +114,13 @@ class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
     }
 
     try {
-      // SIMPLIFICADO: Solo usar SimpleFavoritesSync directamente
-      final simpleFavoritesSync = SimpleFavoritesSync.instance;
-      final currentUser = Supabase.instance.client.auth.currentUser;
+      await _favoritesRepository.toggleFavorite(movie);
 
-      if (currentUser != null) {
-        if (isFavorite) {
-          // Remover de Supabase
-          await simpleFavoritesSync.removeFavorite(currentUser.id, movie.id);
-          LoggerFactory.info('✅ Favorito removido: ${movie.title}');
-        } else {
-          // Agregar a Supabase
-          await simpleFavoritesSync.addFavorite(currentUser.id, movie);
-          LoggerFactory.info('✅ Favorito añadido: ${movie.title}');
-          // Callback solo si se agregó
-          onMovieFavorited();
-        }
-      } else {
-        LoggerFactory.info('ℹ️ No hay usuario logueado, solo cambio local');
+      // Actualizar el estado con los datos consolidados del repositorio
+      await refreshFavorites();
+
+      if (!isFavorite) {
+        onMovieFavorited();
       }
     } catch (e) {
       LoggerFactory.error('❌ Error en toggle favorito: $e');

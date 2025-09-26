@@ -1,0 +1,13 @@
+{
+  "servers": [
+    {
+      "id": "playwright",
+      "type": "playwright",
+      "options": {
+        "headless": false,
+        "channel": "chrome",
+        "slowMo": 0
+      }
+    }
+  ]
+}

@@ -34,8 +34,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     // Escuchar cambios en el estado de autenticación
     ref.listen<AsyncValue<void>>(authNotifierProvider, (previous, next) {
+      final wasLoading = previous?.isLoading ?? false;
+
       next.when(
         data: (_) {
+          if (!wasLoading) return;
+
           // Login exitoso, navegar al home
           if (context.mounted) {
             context.go('/');
@@ -43,7 +47,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         },
         loading: () {},
         error: (error, _) {
-          // Mostrar error
+          if (!wasLoading) return;
+
+          // Mostrar error sólo si veníamos de un intento de login
           if (context.mounted) {
             if (error is EmailConfirmationRequiredException) {
               _showEmailConfirmationDialog(error.message);

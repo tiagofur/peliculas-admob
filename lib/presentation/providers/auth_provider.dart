@@ -11,6 +11,7 @@ import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
 import '../../services/data_migration_service.dart';
+import '../../services/post_login_service.dart';
 import '../mixins/error_handling_mixin.dart';
 
 // Enum para definir el modo de la aplicación
@@ -254,25 +255,17 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
   /// Configura automáticamente el callback post-autenticación para sincronización
   void _setupPostAuthCallback() {
     _onAuthSuccess = (user) async {
-      LoggerFactory.info('🔄 Ejecutando sincronización post-autenticación para: ${user.id}');
-      
+      LoggerFactory.info(
+          '🔄 Ejecutando sincronización post-autenticación para: ${user.id}');
+
       try {
-        // Obtener el servicio de migración
-        final migrationService = ref.read(dataMigrationServiceProvider);
-        
-        // Ejecutar migración y sincronización
-        final result = await migrationService.migrateAndSyncData(user.id);
-        
-        if (result.success) {
-          LoggerFactory.info('✅ Sincronización post-autenticación exitosa: '
-              'Películas: ${result.migratedWatchedMovies}, '
-              'Calificaciones: ${result.migratedRatings}, '
-              'Listas: ${result.migratedCustomLists}');
-        } else {
-          LoggerFactory.error('❌ Error en sincronización post-autenticación: ${result.error}');
-        }
+        final postLoginService = ref.read(postLoginServiceProvider);
+        await postLoginService.handlePostLogin(user.id);
+        LoggerFactory.info(
+            '✅ PostLoginService completado después de la autenticación');
       } catch (e) {
-        LoggerFactory.error('❌ Fallo crítico en sincronización post-autenticación: $e');
+        LoggerFactory.error(
+            '❌ Fallo crítico en sincronización post-autenticación: $e');
       }
     };
   }
@@ -281,6 +274,7 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
     required String email,
     required String password,
   }) async {
+    state = const AsyncValue.loading();
     await safeUpdateState<void>(
       () async {
         LoggerFactory.info('🔑 Attempting direct login for: $email');
@@ -322,6 +316,7 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
     required String fullName,
     String? avatarUrl,
   }) async {
+    state = const AsyncValue.loading();
     await safeUpdateState<void>(
       () async {
         await _authRepository.signUpWithEmailAndPassword(
@@ -353,6 +348,13 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
+      try {
+        await ref.read(postLoginServiceProvider).handlePostLogout();
+      } catch (cleanupError) {
+        LoggerFactory.warning(
+            '⚠️ Error durante limpieza post-logout: $cleanupError');
+      }
+
       // Use optimized logout flow
       final success = await _flowOptimizer.optimizeLogoutFlow();
       if (success) {

@@ -85,6 +85,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   StatefulShellBranch(
                     routes: [
                       GoRoute(
+                        path: '/my-library/watchlist',
+                        name: 'watchlist',
+                        builder: (context, state) => const WatchlistScreen(),
+                      ),
+                    ],
+                  ),
+                  StatefulShellBranch(
+                    routes: [
+                      GoRoute(
                         path: '/my-library/watched',
                         name: 'watched',
                         builder: (context, state) => const WatchedView(),
@@ -136,20 +145,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       ),
                     ],
                   ),
-                  StatefulShellBranch(
-                    routes: [
-                      GoRoute(
-                        path: '/my-library/watchlist',
-                        name: 'watchlist',
-                        builder: (context, state) => const WatchlistScreen(),
-                      ),
-                    ],
-                  ),
                 ],
               ),
               GoRoute(
                 path: '/my-library',
-                redirect: (_, __) => '/my-library/lists',
+                redirect: (_, __) => '/my-library/watchlist',
               ),
             ],
           ),
@@ -546,6 +546,15 @@ final appRouter = GoRouter(
                 StatefulShellBranch(
                   routes: [
                     GoRoute(
+                      path: '/my-library/watchlist',
+                      name: 'watchlist',
+                      builder: (context, state) => const WatchlistScreen(),
+                    ),
+                  ],
+                ),
+                StatefulShellBranch(
+                  routes: [
+                    GoRoute(
                       path: '/my-library/watched',
                       name: 'watched',
                       builder: (context, state) => const WatchedView(),
@@ -601,7 +610,7 @@ final appRouter = GoRouter(
             ),
             GoRoute(
               path: '/my-library',
-              redirect: (_, __) => '/my-library/lists',
+              redirect: (_, __) => '/my-library/watchlist',
             ),
           ],
         ),

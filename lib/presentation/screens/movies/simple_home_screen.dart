@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../widgets/custom_drawer.dart';
+import '../../widgets/shared/custom_bottom_navigation.dart';
+import '../../widgets/sync/silent_sync_indicator.dart';
+
 class SimpleHomeScreen extends StatelessWidget {
   const SimpleHomeScreen({super.key, required this.navigationShell});
 
@@ -11,30 +15,26 @@ class SimpleHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Películas'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: navigationShell,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: navigationShell.currentIndex,
-        onTap: (index) {
-          navigationShell.goBranch(index);
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Inicio',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_books),
-            label: 'Mi Biblioteca',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Estadísticas',
+      drawer: const CustomDrawer(),
+      body: Stack(
+        children: [
+          navigationShell,
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SilentSyncIndicator(),
           ),
         ],
+      ),
+      bottomNavigationBar: CustomBottomNavigation(
+        currentIndex: navigationShell.currentIndex,
+        onItemTapped: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == 1,
+          );
+        },
       ),
     );
   }

@@ -67,6 +67,34 @@ class AutoDefaultListsService {
       colorHex: '#8B5CF6',
       defaultType: 'trending',
     ),
+    DefaultListConfig.withType(
+      name: 'Acción',
+      description: 'Películas de acción y aventura',
+      emoji: '🎬',
+      colorHex: '#F59E0B',
+      defaultType: 'genre_action',
+    ),
+    DefaultListConfig.withType(
+      name: 'Comedia',
+      description: 'Películas para reír sin parar',
+      emoji: '😂',
+      colorHex: '#EC4899',
+      defaultType: 'genre_comedy',
+    ),
+    DefaultListConfig.withType(
+      name: 'Drama',
+      description: 'Historias emotivas y profundas',
+      emoji: '🎭',
+      colorHex: '#6366F1',
+      defaultType: 'genre_drama',
+    ),
+    DefaultListConfig.withType(
+      name: 'Terror',
+      description: 'Películas de suspenso y terror',
+      emoji: '👻',
+      colorHex: '#64748B',
+      defaultType: 'genre_horror',
+    ),
   ];
 
   /// Verifica y crea las listas predeterminadas si no existen

@@ -133,6 +133,8 @@ material.ThemeMode _convertToFlutterThemeMode(app_theme.ThemeMode themeMode) {
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
+  static bool _splashRemoved = false;
+
   @override
   material.Widget build(material.BuildContext context, WidgetRef ref) {
     LoggerFactory.info('🏁 MainApp: build() method called - START');
@@ -172,28 +174,42 @@ class MainApp extends ConsumerWidget {
           '✅ MainApp: Startup simplificado - providers se cargarán bajo demanda');
     }
 
-    // ✅ Remover el splash screen INMEDIATAMENTE
-    if (!kIsWeb) {
+    // ✅ Remover el splash screen INMEDIATAMENTE en todas las plataformas
+    if (!_splashRemoved) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // Remover splash screen tan pronto como sea posible
+        if (_splashRemoved) {
+          return;
+        }
+
         try {
           LoggerFactory.info('🎬 Removing splash screen immediately');
           FlutterNativeSplash.remove();
+          _splashRemoved = true;
           LoggerFactory.info('✅ Splash screen removed - app UI visible');
         } catch (e) {
           LoggerFactory.error('❌ Error removing splash screen: $e');
-          // Intentar de nuevo después de un delay muy corto
+
           Future.delayed(const Duration(milliseconds: 50), () {
+            if (_splashRemoved) {
+              return;
+            }
             try {
+              LoggerFactory.info('🔁 Retrying splash removal attempt');
               FlutterNativeSplash.remove();
+              _splashRemoved = true;
+              LoggerFactory.info(
+                  '✅ Splash screen removed after retry - app UI visible');
             } catch (e2) {
               LoggerFactory.error('❌ Second attempt failed: $e2');
             }
           });
         }
+
+        if (kIsWeb) {
+          LoggerFactory.info(
+              '🌐 Web platform - splash screen removed for web as well');
+        }
       });
-    } else {
-      LoggerFactory.info('🌐 Web platform - no native splash to remove');
     }
 
     final app_theme.AppTheme appTheme = ref.watch(themeNotifierProvider.select(
