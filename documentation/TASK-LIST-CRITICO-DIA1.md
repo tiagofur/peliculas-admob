@@ -23,6 +23,14 @@
 
 ## 🚨 TASKS CRÍTICAS - PRIORIDAD P0
 
+### 🚦 Estado actual (26/09 09:30)
+
+- `flutter analyze --fatal-infos --fatal-warnings` **fallando** por API incompleta de `AdSenseService` (métodos `canShowBannerAd`, `canShowInterstitialAd`, `showInterstitialAd`, `showRewardedAd`, `getMetrics`, `dispose` y clase `AdSenseReward`).
+- `SimpleHomeView` mantiene `print()` en runtime web (dispara `avoid_print`).
+- Se identificaron ≥15 usos de `withAlpha` en vistas compartidas (`movie_share_web_view.dart`, `list_share_web_view.dart`, `challenge_widgets.dart`, etc.) pendientes de migrar a `withValues()`.
+- `custom_lists_provider.dart` sigue con `TODO` para integrar `GamificationIntegrationService` (el servicio devuelve `null`).
+- Scripts de monetización/ambiente conservan `print`; decidir si se migran a `LoggerFactory` o se excluyen del lint.
+
 ### ✅ TASK P0-001: FIX HOMEVIEW FREEZE (EST: 2h)
 
 **📍 ARCHIVO**: `lib/presentation/screens/home_view.dart`  
@@ -181,6 +189,8 @@ Future<void> resolveConflict(LocalData local, RemoteData remote) async {
 - [ ] **[20min]** Script para detectar deprecated methods
 - [ ] **[20min]** Auto-fix withOpacity → withValues
 - [ ] **[20min]** Auto-fix print → LoggerFactory
+- [ ] **[10min]** Reemplazar `print` de `lib/presentation/views/movies/simple_home_view.dart` por `LoggerFactory.debug`
+- [ ] **[20min]** Migrar usos de `withAlpha` en vistas web (`movie_share_web_view.dart`, `list_share_web_view.dart`, `challenge_widgets.dart`, etc.) a `.withValues(alpha: value / 255)`
 
 **COMANDOS**:
 
@@ -332,6 +342,7 @@ TASK P0-008: Validation             [⬜]
 2. **[AHORA]** Abrir `lib/presentation/screens/home_view.dart`
 3. **[5min]** Leer código actual del initState()
 4. **[25min]** Implementar migración asíncrona
+5. **[25min]** Definir plan para completar la API de `AdSenseService` antes de la build web (o deshabilitar monetización web temporalmente)
 
 ### 📞 COMUNICACIÓN
 

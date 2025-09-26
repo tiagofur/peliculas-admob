@@ -63,7 +63,7 @@ flutter test
 ```
 
 - [ ] Formato de código: ✅ Passed
-- [ ] Static analysis: ✅ No issues found
+- [ ] Static analysis: ✅ No issues found _(actual: ❌ falla en `AdSenseService`/`AdaptiveMonetizationManager`; revisar «⚠️ Hallazgos de la revisión 26/09/2025»)_
 - [ ] Unit tests: ✅ All tests passed
 
 ## 🔧 Configuration Verification
@@ -166,42 +166,42 @@ flutter pub outdated
 
 **Web Browser Testing:**
 
-- Chrome: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
-- Edge: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
-- Firefox: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
+- Chrome: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
+- Edge: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
+- Firefox: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
 
 **Mobile Testing:**
 
-- Android (Physical): [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
-- Android (Emulator): [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
-- iOS: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
+- Android (Physical): [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
+- Android (Emulator): [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
+- iOS: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
 
 **Desktop Testing:**
 
-- Windows: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
-- macOS: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
-- Linux: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: ****\_\_\_\_****
+- Windows: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
+- macOS: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
+- Linux: [ ] ✅ Passed / [ ] ❌ Failed / [ ] ⚠️ Issues: \***\*\_\_\_\_\*\***
 
 ### **Feature Testing Results:**
 
 **Core Movie Features:**
 
-- Movie List Loading: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Movie Search: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Movie Details: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Watchlist Management: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
+- Movie List Loading: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Movie Search: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Movie Details: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Watchlist Management: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
 
 **User Features:**
 
-- Authentication: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Profile Management: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Settings/Preferences: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
+- Authentication: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Profile Management: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Settings/Preferences: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
 
 **Technical Features:**
 
-- Offline Capability: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Data Synchronization: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
-- Error Handling: [ ] ✅ / [ ] ❌ Notes: ****\_\_\_\_****
+- Offline Capability: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Data Synchronization: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
+- Error Handling: [ ] ✅ / [ ] ❌ Notes: \***\*\_\_\_\_\*\***
 
 ## 📝 Final Validation Command
 
@@ -260,6 +260,15 @@ Write-Host "✅ Validation complete! Check all items above." -ForegroundColor Gr
 - ✅ Console limpia sin warnings de fuentes
 - ✅ Sin errores CORS durante desarrollo
 - ✅ App funcionando correctamente en browser
+
+## ⚠️ Hallazgos de la revisión 26/09/2025
+
+- `flutter analyze --fatal-infos --fatal-warnings` reporta 8 errores en `lib/services/monetization/adaptive_monetization_manager.dart` porque la implementación web (`AdSenseService`) no expone los métodos `instance`, `canShowBannerAd`, `canShowInterstitialAd`, `showInterstitialAd`, `showRewardedAd`, `getMetrics`, `dispose` ni la clase `AdSenseReward` requerida por `UnifiedRewardItem`.
+  - 🔧 Acción: añadir los métodos y modelos faltantes (web + stub) o desactivar temporalmente la ruta de monetización web antes de la build de pruebas.
+- `lib/presentation/views/movies/simple_home_view.dart` sigue usando `print(...)`; migrar a `LoggerFactory.debug` o proteger con `kDebugMode` para cumplir con la política anti-`print`.
+- Se identificaron ≥15 usos de `withAlpha` en vistas/webviews (`movie_share_web_view.dart`, `list_share_web_view.dart`, `challenge_widgets.dart`, etc.). Migrar a `.withValues(alpha: value / 255)` y volver a ejecutar los golden tests afectados.
+- `lib/presentation/providers/custom_lists_provider.dart` mantiene un `TODO` para integrar `GamificationIntegrationService`; actualmente el servicio devuelve `null`, por lo que no se registran eventos al eliminar listas personalizadas.
+- Scripts CLI (`scripts/check_env.dart`, `scripts/check_monetization_system.dart`, `scripts/monetization_verification.dart`) conservan `print`/`debugPrint`. Definir si se migran a `LoggerFactory` o si se documenta la excepción.
 
 ---
 
