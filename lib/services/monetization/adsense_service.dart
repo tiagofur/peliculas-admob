@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart';
@@ -9,6 +8,8 @@ import 'package:http/http.dart' as http;
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/monetization/adsense_slots.dart';
+import 'adsense_dom_adapter_stub.dart'
+    if (dart.library.js_interop) 'adsense_dom_adapter_web.dart';
 
 @JS('window.adsbygoogle')
 external JSArray<JSObject>? get adsbygoogle;
@@ -25,6 +26,8 @@ class AdSenseService {
   AdSenseService._internal();
   static final AdSenseService _instance = AdSenseService._internal();
 
+  static const AdSenseDomAdapter _domAdapter = AdSenseDomAdapter();
+
   static AdSenseService get instance => _instance;
 
   String? _publisherId;
@@ -40,7 +43,7 @@ class AdSenseService {
     if (_isInitialized) return;
 
     // Don't initialize AdSense on localhost to avoid 403 errors during development
-    if (kIsWeb && html.window.location.hostname == 'localhost') {
+    if (kIsWeb && _domAdapter.isLocalhost) {
       LoggerFactory.info('AdSense initialization skipped on localhost.');
       _isInitialized =
           true; // Pretend it's initialized to not block other logic
@@ -81,23 +84,21 @@ class AdSenseService {
     if (_scriptInjected || !kIsWeb) return;
 
     const scriptId = 'adsense-script';
-    if (html.document.getElementById(scriptId) != null) {
+    if (_domAdapter.elementExistsById(scriptId)) {
       _scriptInjected = true;
+      LoggerFactory.debug(
+          'AdSense script already present; skipping injection.');
       return;
     }
 
-    final script = html.ScriptElement()
-      ..id = scriptId
-      ..async = true
-      ..src =
-          'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$_publisherId'
-      ..crossOrigin = 'anonymous';
+    await _domAdapter.injectScript(
+      scriptId: scriptId,
+      scriptSrc:
+          'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=$_publisherId',
+      crossOrigin: 'anonymous',
+    );
 
-    html.document.head!.append(script);
     _scriptInjected = true;
-
-    // Wait for the script to load
-    await script.onLoad.first;
     LoggerFactory.info('AdSense script injected and loaded.');
   }
 
@@ -210,7 +211,7 @@ class AdSenseService {
     }
 
     try {
-      if (adsbygoogle != null && html.document.getElementById(adId) != null) {
+      if (adsbygoogle != null && _domAdapter.elementExistsById(adId)) {
         adsbygoogle!.add({}.jsify() as JSObject);
         LoggerFactory.debug('Ad refreshed for adId: $adId');
       }
