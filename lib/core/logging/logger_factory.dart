@@ -95,13 +95,15 @@ class LoggerFactory {
     LogCategory category = LogCategory.general,
     Map<String, dynamic>? data,
     StackTrace? stackTrace,
+    bool reportToService = true,
   }) async {
     final cleanData = _cleanDataMap(data);
     await logger.error(message,
         category: category, data: cleanData, stackTrace: stackTrace);
 
     // Also report to error reporting service if it's a significant error
-    if (category == LogCategory.error || stackTrace != null) {
+    if (reportToService &&
+        (category == LogCategory.error || stackTrace != null)) {
       await ErrorReportingService.instance.reportError(
         message,
         stackTrace,

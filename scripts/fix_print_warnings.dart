@@ -6,8 +6,7 @@
 import 'dart:io';
 
 void main() async {
-  // ignore: avoid_print
-  print('🔄 Suprimiendo warnings de print en scripts...');
+  stdout.writeln('🔄 Suprimiendo warnings de print en scripts...');
 
   final scriptsDir = Directory('scripts');
   final dartFiles = scriptsDir
@@ -16,15 +15,15 @@ void main() async {
       .where((file) => !file.path.contains('fix_print_warnings.dart'))
       .cast<File>();
 
-  int totalIgnores = 0;
+  var totalIgnores = 0;
 
   for (final file in dartFiles) {
     try {
       final lines = await file.readAsLines();
       final newLines = <String>[];
-      int ignoresAdded = 0;
+      var ignoresAdded = 0;
 
-      for (int i = 0; i < lines.length; i++) {
+      for (var i = 0; i < lines.length; i++) {
         final line = lines[i];
         final trimmed = line.trim();
 
@@ -41,18 +40,15 @@ void main() async {
 
       if (ignoresAdded > 0) {
         await file.writeAsString('${newLines.join('\n')}\n');
-        // ignore: avoid_print
-        print('✅ ${file.path}: $ignoresAdded ignore comments added');
+        stdout.writeln('✅ ${file.path}: $ignoresAdded ignore comments added');
         totalIgnores += ignoresAdded;
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('❌ Error processing ${file.path}: $e');
+      stdout.writeln('❌ Error processing ${file.path}: $e');
     }
   }
 
-  // ignore: avoid_print
-  print('✅ Total: $totalIgnores ignore comments added');
-  // ignore: avoid_print
-  print('📋 Los scripts ahora pueden usar print() sin warnings del analyzer');
+  stdout.writeln('✅ Total: $totalIgnores ignore comments added');
+  stdout.writeln(
+      '📋 Los scripts ahora pueden usar print() sin warnings del analyzer');
 }

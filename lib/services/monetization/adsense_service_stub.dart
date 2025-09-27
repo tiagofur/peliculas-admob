@@ -1,23 +1,57 @@
+import 'dart:async';
+
+import '../../core/logging/logger_factory.dart';
+
 /// Stub para AdSenseService en plataformas que no son web
 class AdSenseService {
   static AdSenseService get instance => AdSenseService();
+  static bool _hasWarned = false;
+
+  void _warnOnce() {
+    if (_hasWarned) {
+      return;
+    }
+    _hasWarned = true;
+
+    // TODO(peliculas-admob): Implement AdSense bridge for non-web platforms when supported.
+    unawaited(LoggerFactory.warning(
+      'AdSenseService stub activo: no hay soporte de AdSense en esta plataforma.',
+      data: const {
+        'feature': 'adsense_non_web_stub',
+        'action': 'skip_monetization',
+      },
+    ));
+  }
 
   bool get isInitialized => false;
 
   Future<void> initialize() async {
     // No-op en plataformas no web
+    _warnOnce();
   }
 
-  bool canShowBannerAd() => false;
-  bool canShowInterstitialAd() => false;
+  bool canShowBannerAd() {
+    _warnOnce();
+    return false;
+  }
 
-  Future<bool> showInterstitialAd({String? context}) async => false;
+  bool canShowInterstitialAd() {
+    _warnOnce();
+    return false;
+  }
+
+  Future<bool> showInterstitialAd({String? context}) async {
+    _warnOnce();
+    return false;
+  }
 
   Future<bool> showRewardedAd({
     required Function(AdSenseReward) onRewardEarned,
     String? context,
-  }) async =>
-      false;
+  }) async {
+    _warnOnce();
+    return false;
+  }
 
   AdSenseMetrics getMetrics() => const AdSenseMetrics(
         isInitialized: false,
@@ -30,6 +64,7 @@ class AdSenseService {
 
   Future<void> dispose() async {
     // No-op
+    _warnOnce();
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
+import '../../../core/logging/logger_factory.dart';
 
 /// Widget de anuncio que imita el tamaño y estilo de las tarjetas de películas
 /// para integrarse perfectamente en listas horizontales
@@ -47,32 +48,55 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
       return;
     }
 
-    _nativeAd = NativeAd(
-      adUnitId: AdHelper.nativeAdUnitId,
-      factoryId: 'listTile', // Usando el factory existente
-      listener: NativeAdListener(
-        onAdLoaded: (ad) {
-          if (mounted) {
-            setState(() {
-              _isAdLoaded = true;
-              _isAdFailed = false;
-            });
-          }
-        },
-        onAdFailedToLoad: (ad, error) {
-          if (mounted) {
-            setState(() {
-              _isAdFailed = true;
-              _isAdLoaded = false;
-            });
-          }
-          ad.dispose();
-        },
-      ),
-      request: const AdRequest(),
-    );
+    // Evitar cargar AdMob en plataformas no soportadas (ej. Windows, macOS, Linux)
+    if (!AdHelper.isAdMobSupported) {
+      LoggerFactory.warning('AdMob no soportado en esta plataforma');
+      if (mounted) {
+        setState(() {
+          _isAdFailed = true;
+          _isAdLoaded = false;
+        });
+      }
+      return;
+    }
 
-    _nativeAd?.load();
+    try {
+      _nativeAd = NativeAd(
+        adUnitId: AdHelper.nativeAdUnitId,
+        factoryId: 'listTile', // Usando el factory existente
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            if (mounted) {
+              setState(() {
+                _isAdLoaded = true;
+                _isAdFailed = false;
+              });
+            }
+          },
+          onAdFailedToLoad: (ad, error) {
+            LoggerFactory.error('Error cargando movie card ad: $error');
+            if (mounted) {
+              setState(() {
+                _isAdFailed = true;
+                _isAdLoaded = false;
+              });
+            }
+            ad.dispose();
+          },
+        ),
+        request: const AdRequest(),
+      );
+
+      _nativeAd?.load();
+    } catch (e) {
+      LoggerFactory.error('Excepción inicializando movie card ad: $e');
+      if (mounted) {
+        setState(() {
+          _isAdFailed = true;
+          _isAdLoaded = false;
+        });
+      }
+    }
   }
 
   @override

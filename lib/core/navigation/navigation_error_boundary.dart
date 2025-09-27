@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -27,13 +28,23 @@ class NavigationErrorBoundary extends StatefulWidget {
 class _NavigationErrorBoundaryState extends State<NavigationErrorBoundary> {
   bool _hasError = false;
   FlutterErrorDetails? _errorDetails;
+  FlutterExceptionHandler? _previousErrorHandler;
 
   @override
   void initState() {
     super.initState();
 
     // Override the error handler for this boundary
+    _previousErrorHandler = FlutterError.onError;
     FlutterError.onError = _handleFlutterError;
+  }
+
+  @override
+  void dispose() {
+    if (FlutterError.onError == _handleFlutterError) {
+      FlutterError.onError = _previousErrorHandler;
+    }
+    super.dispose();
   }
 
   void _handleFlutterError(FlutterErrorDetails details) {
@@ -67,8 +78,10 @@ class _NavigationErrorBoundaryState extends State<NavigationErrorBoundary> {
     // Call custom error handler if provided
     widget.onError?.call(details);
 
-    // For non-navigation errors, use default handler
-    if (!isNavigationError) {
+    // Delegate to previous handler so Crashlytics/other handlers continue working
+    if (_previousErrorHandler != null) {
+      _previousErrorHandler!(details);
+    } else if (!isNavigationError) {
       FlutterError.presentError(details);
     }
   }

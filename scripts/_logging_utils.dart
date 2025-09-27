@@ -6,8 +6,7 @@ import 'dart:io';
 
 /// Output informational message to console
 void logInfo(String message) {
-  // ignore: avoid_print
-  print(message);
+  stdout.writeln(message);
 }
 
 /// Output error message to console
@@ -22,6 +21,5 @@ void logWarning(String message) {
 
 /// Output success message to console
 void logSuccess(String message) {
-  // ignore: avoid_print
-  print('✅ $message');
+  stdout.writeln('✅ $message');
 }

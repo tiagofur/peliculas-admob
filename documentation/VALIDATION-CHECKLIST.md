@@ -263,12 +263,26 @@ Write-Host "✅ Validation complete! Check all items above." -ForegroundColor Gr
 
 ## ⚠️ Hallazgos de la revisión 26/09/2025
 
-- `flutter analyze --fatal-infos --fatal-warnings` reporta 8 errores en `lib/services/monetization/adaptive_monetization_manager.dart` porque la implementación web (`AdSenseService`) no expone los métodos `instance`, `canShowBannerAd`, `canShowInterstitialAd`, `showInterstitialAd`, `showRewardedAd`, `getMetrics`, `dispose` ni la clase `AdSenseReward` requerida por `UnifiedRewardItem`.
-  - 🔧 Acción: añadir los métodos y modelos faltantes (web + stub) o desactivar temporalmente la ruta de monetización web antes de la build de pruebas.
+- **✅ Resuelto 27/09/2025:** `flutter analyze --fatal-infos --fatal-warnings` ya no reporta errores en `lib/services/monetization/adaptive_monetization_manager.dart`. Se añadió la superficie de API faltante a `AdSenseService` (web) y se endureció el stub para plataformas no web, eliminando las referencias inválidas.
 - `lib/presentation/views/movies/simple_home_view.dart` sigue usando `print(...)`; migrar a `LoggerFactory.debug` o proteger con `kDebugMode` para cumplir con la política anti-`print`.
 - Se identificaron ≥15 usos de `withAlpha` en vistas/webviews (`movie_share_web_view.dart`, `list_share_web_view.dart`, `challenge_widgets.dart`, etc.). Migrar a `.withValues(alpha: value / 255)` y volver a ejecutar los golden tests afectados.
 - `lib/presentation/providers/custom_lists_provider.dart` mantiene un `TODO` para integrar `GamificationIntegrationService`; actualmente el servicio devuelve `null`, por lo que no se registran eventos al eliminar listas personalizadas.
 - Scripts CLI (`scripts/check_env.dart`, `scripts/check_monetization_system.dart`, `scripts/monetization_verification.dart`) conservan `print`/`debugPrint`. Definir si se migran a `LoggerFactory` o si se documenta la excepción.
+
+## 🆕 Actualización de Estabilización – 27/09/2025
+
+### Cambios clave
+
+- 🔄 **Logging:** Se eliminó la recursión entre `LoggerFactory.error` y `ErrorReportingService.reportError`, añadiendo un flag `reportToService` para cortar loops y mantener la telemetría activa.
+- 🛡️ **Monetización Web:** El stub de `AdSenseService` ahora registra una advertencia única y responde con no-ops seguros; la versión web expone `instance`, `canShow*`, `show*`, `getMetrics`, `dispose`, `AdSenseMetrics` y `AdSenseReward`, etiquetando TODOs para la implementación definitiva.
+- 🔁 **Token Refresh:** `TokenRefreshService` reutiliza un `Timer` centralizado, cancela reintentos previos y previene fugas de temporizadores durante el backoff exponencial.
+- 🧭 **Navegación:** `NavigationErrorBoundary` restaura el `FlutterErrorHandler` previo al desmontarse y reenvía errores para conservar Crashlytics y handlers personalizados.
+- 🖥️ **Compatibilidad Desktop:** Se añadió guardado condicional en widgets AdMob para evitar cargas de `NativeAd` en Windows/Linux/macOS y se corrigieron imports web con `if (dart.library.html)`.
+
+### Resultados de validación
+
+- `dart analyze` ➜ ✅ sin errores nuevos (se mantienen advertencias informativas heredadas sobre `print` y uso de `dart:html`).
+- Builds desktop/web reanudan sin fallar por dependencias web-only.
 
 ---
 

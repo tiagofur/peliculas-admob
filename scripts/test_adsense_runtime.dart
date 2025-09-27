@@ -7,10 +7,8 @@ import 'dart:convert';
 import 'dart:io';
 
 void main() async {
-  // ignore: avoid_print
-  print('🔍 Verificador de AdSense en Tiempo Real');
-  // ignore: avoid_print
-  print('=' * 50);
+  stdout.writeln('🔍 Verificador de AdSense en Tiempo Real');
+  stdout.writeln('=' * 50);
 
   // Verificar que la aplicación esté ejecutándose
   await checkWebServer();
@@ -23,8 +21,7 @@ void main() async {
 }
 
 Future<void> checkWebServer() async {
-  // ignore: avoid_print
-  print('\n📡 Verificando servidor web...');
+  stdout.writeln('\n📡 Verificando servidor web...');
 
   try {
     final client = HttpClient();
@@ -32,45 +29,36 @@ Future<void> checkWebServer() async {
     final response = await request.close();
 
     if (response.statusCode == 200) {
-      // ignore: avoid_print
-      print('✅ Servidor web activo en http://localhost:8080');
+      stdout.writeln('✅ Servidor web activo en http://localhost:8080');
 
       // Leer el contenido HTML
       final html = await response.transform(utf8.decoder).join();
 
       if (html.contains('ca-pub-4576016092724628')) {
-        // ignore: avoid_print
-        print('✅ Publisher ID encontrado en el HTML servido');
+        stdout.writeln('✅ Publisher ID encontrado en el HTML servido');
       } else {
-        // ignore: avoid_print
-        print('⚠️  Publisher ID NO encontrado en el HTML servido');
+        stdout.writeln('⚠️  Publisher ID NO encontrado en el HTML servido');
       }
 
       if (html.contains('pagead/js/adsbygoogle.js')) {
-        // ignore: avoid_print
-        print('✅ Script de AdSense encontrado en el HTML');
+        stdout.writeln('✅ Script de AdSense encontrado en el HTML');
       } else {
-        // ignore: avoid_print
-        print('⚠️  Script de AdSense NO encontrado en el HTML');
+        stdout.writeln('⚠️  Script de AdSense NO encontrado en el HTML');
       }
     } else {
-      // ignore: avoid_print
-      print('❌ Error del servidor: ${response.statusCode}');
+      stdout.writeln('❌ Error del servidor: ${response.statusCode}');
     }
 
     client.close();
   } catch (e) {
-    // ignore: avoid_print
-    print('❌ No se puede conectar al servidor web: $e');
-    // ignore: avoid_print
-    print(
+    stdout.writeln('❌ No se puede conectar al servidor web: $e');
+    stdout.writeln(
         '   Asegúrate de que "flutter run -d chrome --web-port 8080" esté ejecutándose');
   }
 }
 
 Future<void> verifyConfiguration() async {
-  // ignore: avoid_print
-  print('\n🔧 Verificando configuración de archivos...');
+  stdout.writeln('\n🔧 Verificando configuración de archivos...');
 
   // Verificar web/index.html
   final indexFile = File('web/index.html');
@@ -78,23 +66,18 @@ Future<void> verifyConfiguration() async {
     final content = await indexFile.readAsString();
 
     if (content.contains('ca-pub-4576016092724628')) {
-      // ignore: avoid_print
-      print('✅ Publisher ID configurado en web/index.html');
+      stdout.writeln('✅ Publisher ID configurado en web/index.html');
     } else {
-      // ignore: avoid_print
-      print('❌ Publisher ID NO configurado en web/index.html');
+      stdout.writeln('❌ Publisher ID NO configurado en web/index.html');
     }
 
     if (content.contains('pagead/js/adsbygoogle.js')) {
-      // ignore: avoid_print
-      print('✅ Script de AdSense configurado en web/index.html');
+      stdout.writeln('✅ Script de AdSense configurado en web/index.html');
     } else {
-      // ignore: avoid_print
-      print('❌ Script de AdSense NO configurado en web/index.html');
+      stdout.writeln('❌ Script de AdSense NO configurado en web/index.html');
     }
   } else {
-    // ignore: avoid_print
-    print('❌ Archivo web/index.html no encontrado');
+    stdout.writeln('❌ Archivo web/index.html no encontrado');
   }
 
   // Verificar servicio AdSense
@@ -103,96 +86,62 @@ Future<void> verifyConfiguration() async {
     final content = await adsenseFile.readAsString();
 
     if (content.contains('ca-pub-4576016092724628')) {
-      // ignore: avoid_print
-      print('✅ Publisher ID configurado en AdSenseService');
+      stdout.writeln('✅ Publisher ID configurado en AdSenseService');
     } else {
-      // ignore: avoid_print
-      print('❌ Publisher ID NO configurado en AdSenseService');
+      stdout.writeln('❌ Publisher ID NO configurado en AdSenseService');
     }
   } else {
-    // ignore: avoid_print
-    print('❌ AdSenseService no encontrado');
+    stdout.writeln('❌ AdSenseService no encontrado');
   }
 }
 
 void printBrowserInstructions() {
-  // ignore: avoid_print
-  print('\n🌐 Instrucciones para verificar AdSense en el navegador:');
-  // ignore: avoid_print
-  print('=' * 60);
+  stdout.writeln('\n🌐 Instrucciones para verificar AdSense en el navegador:');
+  stdout.writeln('=' * 60);
 
-  // ignore: avoid_print
-  print('\n1. Abre las Herramientas de Desarrollador (F12)');
+  stdout.writeln('\n1. Abre las Herramientas de Desarrollador (F12)');
 
-  // ignore: avoid_print
-  print('\n2. Ve a la pestaña Console y ejecuta este comando:');
-  // ignore: avoid_print
-  print(
+  stdout.writeln('\n2. Ve a la pestaña Console y ejecuta este comando:');
+  stdout.writeln(
       '   console.log("AdSense Script:", document.querySelector(\'script[src*="adsbygoogle"]\'));');
 
-  // ignore: avoid_print
-  print('\n3. Ve a la pestaña Network y filtra por "adsbygoogle":');
-  // ignore: avoid_print
-  print('   - Deberías ver requests a pagead/js/adsbygoogle.js');
-  // ignore: avoid_print
-  print('   - Si hay errores, revisa el status code');
+  stdout.writeln('\n3. Ve a la pestaña Network y filtra por "adsbygoogle":');
+  stdout.writeln('   - Deberías ver requests a pagead/js/adsbygoogle.js');
+  stdout.writeln('   - Si hay errores, revisa el status code');
 
-  // ignore: avoid_print
-  print('\n4. En Console, verifica si AdSense está cargado:');
-  // ignore: avoid_print
-  print(
+  stdout.writeln('\n4. En Console, verifica si AdSense está cargado:');
+  stdout.writeln(
       '   console.log("AdSense loaded:", typeof window.adsbygoogle !== "undefined");');
 
-  // ignore: avoid_print
-  print('\n5. Busca elementos de anuncios en el DOM:');
-  // ignore: avoid_print
-  print(
+  stdout.writeln('\n5. Busca elementos de anuncios en el DOM:');
+  stdout.writeln(
       '   console.log("Ad containers:", document.querySelectorAll(\'.adsbygoogle\'));');
 
-  // ignore: avoid_print
-  print('\n6. Para verificar errores de AdSense:');
-  // ignore: avoid_print
-  print('   window.addEventListener("message", (e) => {');
-  // ignore: avoid_print
-  print('     if (e.data && e.data.type === "adsense") {');
-  // ignore: avoid_print
-  print('       console.log("AdSense message:", e.data);');
-  // ignore: avoid_print
-  print('     }');
-  // ignore: avoid_print
-  print('   });');
+  stdout.writeln('\n6. Para verificar errores de AdSense:');
+  stdout.writeln('   window.addEventListener("message", (e) => {');
+  stdout.writeln('     if (e.data && e.data.type === "adsense") {');
+  stdout.writeln('       console.log("AdSense message:", e.data);');
+  stdout.writeln('     }');
+  stdout.writeln('   });');
 
-  // ignore: avoid_print
-  print('\n📋 Checklist de verificación:');
-  // ignore: avoid_print
-  print('   □ Script de AdSense se carga sin errores (Network tab)');
-  // ignore: avoid_print
-  print('   □ Publisher ID está presente en el HTML');
-  // ignore: avoid_print
-  print('   □ No hay errores de CORS en Console');
-  // ignore: avoid_print
-  print('   □ AdSense está disponible globalmente (window.adsbygoogle)');
-  // ignore: avoid_print
-  print('   □ Los contenedores de anuncios se crean correctamente');
+  stdout.writeln('\n📋 Checklist de verificación:');
+  stdout.writeln('   □ Script de AdSense se carga sin errores (Network tab)');
+  stdout.writeln('   □ Publisher ID está presente en el HTML');
+  stdout.writeln('   □ No hay errores de CORS en Console');
+  stdout
+      .writeln('   □ AdSense está disponible globalmente (window.adsbygoogle)');
+  stdout.writeln('   □ Los contenedores de anuncios se crean correctamente');
 
-  // ignore: avoid_print
-  print('\n🎯 URLs importantes para verificar:');
-  // ignore: avoid_print
-  print('   - Aplicación: http://localhost:8080');
-  // ignore: avoid_print
-  print('   - AdSense Console: https://www.google.com/adsense/');
-  // ignore: avoid_print
-  print(
+  stdout.writeln('\n🎯 URLs importantes para verificar:');
+  stdout.writeln('   - Aplicación: http://localhost:8080');
+  stdout.writeln('   - AdSense Console: https://www.google.com/adsense/');
+  stdout.writeln(
       '   - Test de anuncios: https://www.google.com/adsense/new/u/0/pub-4576016092724628/home');
 
-  // ignore: avoid_print
-  print('\n💡 Troubleshooting:');
-  // ignore: avoid_print
-  print('   - Si no ves anuncios inmediatamente, es normal');
-  // ignore: avoid_print
-  print('   - AdSense puede tardar 24-48h en mostrar anuncios reales');
-  // ignore: avoid_print
-  print('   - Usa modo de prueba durante el desarrollo');
-  // ignore: avoid_print
-  print('   - Verifica que el dominio esté aprobado en AdSense Console');
+  stdout.writeln('\n💡 Troubleshooting:');
+  stdout.writeln('   - Si no ves anuncios inmediatamente, es normal');
+  stdout.writeln('   - AdSense puede tardar 24-48h en mostrar anuncios reales');
+  stdout.writeln('   - Usa modo de prueba durante el desarrollo');
+  stdout
+      .writeln('   - Verifica que el dominio esté aprobado en AdSense Console');
 }

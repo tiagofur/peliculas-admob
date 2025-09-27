@@ -2,22 +2,22 @@ import 'dart:io';
 
 /// Script simple para verificar la configuración del archivo .env
 void main() {
-  print('🔍 Verificando archivo .env...\n');
+  stdout.writeln('🔍 Verificando archivo .env...\n');
 
   final envFile = File('.env');
 
   if (!envFile.existsSync()) {
-    print('❌ Archivo .env no encontrado');
-    print('📁 Buscando archivo en: ${envFile.absolute.path}');
+    stdout.writeln('❌ Archivo .env no encontrado');
+    stdout.writeln('📁 Buscando archivo en: ${envFile.absolute.path}');
     exit(1);
   }
 
-  print('✅ Archivo .env encontrado');
+  stdout.writeln('✅ Archivo .env encontrado');
 
   final content = envFile.readAsStringSync();
   final lines = content.split('\n');
 
-  print('\n📋 Configuraciones encontradas:');
+  stdout.writeln('\n📋 Configuraciones encontradas:');
 
   for (final line in lines) {
     if (line.trim().isEmpty || line.startsWith('#')) continue;
@@ -28,14 +28,14 @@ void main() {
       final value = parts.sublist(1).join('=').trim();
 
       if (value.isNotEmpty) {
-        print('✅ $key: ${maskValue(value)}');
+        stdout.writeln('✅ $key: ${maskValue(value)}');
       } else {
-        print('⚠️ $key: VACÍO');
+        stdout.writeln('⚠️ $key: VACÍO');
       }
     }
   }
 
-  print('\n🎯 Verificaciones específicas:');
+  stdout.writeln('\n🎯 Verificaciones específicas:');
 
   // Verificar configuraciones críticas
   final criticalConfigs = {
@@ -49,7 +49,7 @@ void main() {
     checkConfig(lines, entry.key, entry.value);
   }
 
-  print('\n✅ Verificación completada');
+  stdout.writeln('\n✅ Verificación completada');
 }
 
 void checkConfig(List<String> lines, String key, String expectedPrefix) {
@@ -58,21 +58,22 @@ void checkConfig(List<String> lines, String key, String expectedPrefix) {
       final value = line.substring(key.length + 1).trim();
 
       if (value.isEmpty) {
-        print('❌ $key: NO CONFIGURADO');
+        stdout.writeln('❌ $key: NO CONFIGURADO');
         return;
       }
 
       if (!value.startsWith(expectedPrefix)) {
-        print('⚠️ $key: FORMATO INCORRECTO (esperado: $expectedPrefix...)');
+        stdout.writeln(
+            '⚠️ $key: FORMATO INCORRECTO (esperado: $expectedPrefix...)');
         return;
       }
 
-      print('✅ $key: Correctamente configurado');
+      stdout.writeln('✅ $key: Correctamente configurado');
       return;
     }
   }
 
-  print('❌ $key: NO ENCONTRADO');
+  stdout.writeln('❌ $key: NO ENCONTRADO');
 }
 
 String maskValue(String value) {

@@ -69,6 +69,7 @@ class ErrorReportingService {
               'stack': details.stack.toString(),
             },
             stackTrace: details.stack,
+            reportToService: false,
           );
         };
 
@@ -82,6 +83,7 @@ class ErrorReportingService {
           LoggerFactory.error(
             'Platform Error: $error',
             stackTrace: stack,
+            reportToService: false,
           );
           return true;
         };
@@ -106,7 +108,9 @@ class ErrorReportingService {
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error(
-            '❌ Failed to initialize error reporting service: $e');
+          '❌ Failed to initialize error reporting service: $e',
+          reportToService: false,
+        );
       }
       // Don't throw - error reporting is not critical for app functionality
     }
@@ -128,6 +132,7 @@ class ErrorReportingService {
         reason ?? 'Error reported: $error',
         data: cleanData,
         stackTrace: stackTrace,
+        reportToService: false,
       );
       return;
     }
@@ -156,6 +161,7 @@ class ErrorReportingService {
         reason ?? 'Error reported: $error',
         data: cleanData,
         stackTrace: stackTrace,
+        reportToService: false,
       );
     } catch (e) {
       // Fallback to local logging if Crashlytics fails
@@ -163,6 +169,7 @@ class ErrorReportingService {
         'Failed to report error to Crashlytics: $e. Original error: $error',
         data: cleanData,
         stackTrace: stackTrace,
+        reportToService: false,
       );
     }
   }
@@ -220,7 +227,10 @@ class ErrorReportingService {
     try {
       FirebaseCrashlytics.instance.crash();
     } catch (e) {
-      LoggerFactory.error('Failed to trigger test crash: $e');
+      LoggerFactory.error(
+        'Failed to trigger test crash: $e',
+        reportToService: false,
+      );
     }
   }
 

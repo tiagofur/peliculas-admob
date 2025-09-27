@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/logger_factory.dart';
+
 class SimpleHomeView extends ConsumerWidget {
   const SimpleHomeView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Debug: Print to console instead of using LoggerFactory
-    print('🏠 SimpleHomeView - Building minimal UI for web testing');
+    LoggerFactory.debug(
+      '🏠 SimpleHomeView - Building minimal UI for web testing',
+      data: {'view': 'SimpleHomeView'},
+    );
 
     return Scaffold(
       appBar: AppBar(

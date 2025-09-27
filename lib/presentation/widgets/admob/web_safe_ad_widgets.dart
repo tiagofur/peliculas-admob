@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/logging/logger_factory.dart';
-import '../../../services/monetization/adsense_service.dart';
+import '../../../services/monetization/adsense_service_stub.dart'
+    if (dart.library.html) '../../../services/monetization/adsense_service.dart';
 import '../../../widgets/ads/ad_placeholder_widget.dart';
 
 /// Web-safe wrapper para widgets de AdMob

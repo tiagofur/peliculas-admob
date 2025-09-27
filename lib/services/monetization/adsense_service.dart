@@ -25,6 +25,8 @@ class AdSenseService {
   AdSenseService._internal();
   static final AdSenseService _instance = AdSenseService._internal();
 
+  static AdSenseService get instance => _instance;
+
   String? _publisherId;
   bool _isInitialized = false;
   bool _scriptInjected = false;
@@ -99,31 +101,72 @@ class AdSenseService {
     LoggerFactory.info('AdSense script injected and loaded.');
   }
 
-  /// Pushes an ad to the `adsbygoogle` queue to be processed.
-  void _pushAd(String adId) {
-    if (!isAdSenseReady()) {
-      LoggerFactory.warning('AdSense not ready, cannot push ad for $adId.');
-      return;
-    }
-    try {
-      if (adsbygoogle != null) {
-        LoggerFactory.debug('Pushing ad for adId: $adId');
-        final adConfig = {
-          'google_ad_client': _publisherId,
-          'enable_page_level_ads': true,
-        }.jsify() as JSObject;
-        adsbygoogle!.add(adConfig);
-      }
-    } catch (e) {
-      LoggerFactory.error('Failed to push ad for $adId: $e');
-    }
-  }
-
   /// Returns the AdSense publisher ID.
   String? get publisherId => _publisherId;
 
   /// Returns true if the service has been initialized.
   bool get isInitialized => _isInitialized;
+
+  bool canShowBannerAd() {
+    if (!_isInitialized) {
+      return false;
+    }
+
+    // TODO(peliculas-admob): Refine banner availability checks once AdSense API surface is finalized.
+    return isAdSenseReady();
+  }
+
+  bool canShowInterstitialAd() {
+    if (!_isInitialized) {
+      return false;
+    }
+
+    // TODO(peliculas-admob): Implement interstitial availability checks with official AdSense support.
+    return false;
+  }
+
+  Future<bool> showInterstitialAd({String? context}) async {
+    if (!_isInitialized) {
+      LoggerFactory.warning(
+        'Attempted to show AdSense interstitial before initialization.',
+        data: {'context': context},
+      );
+      return false;
+    }
+
+    // TODO(peliculas-admob): Implement AdSense interstitial rendering once API is available.
+    LoggerFactory.warning(
+      'AdSense interstitials are not yet implemented on web.',
+      data: {
+        'context': context,
+        'feature': 'adsense_interstitial',
+      },
+    );
+    return false;
+  }
+
+  Future<bool> showRewardedAd({
+    required Function(AdSenseReward) onRewardEarned,
+    String? context,
+  }) async {
+    if (!_isInitialized) {
+      LoggerFactory.warning(
+        'Attempted to show AdSense rewarded ad before initialization.',
+        data: {'context': context},
+      );
+      return false;
+    }
+
+    // TODO(peliculas-admob): Wire AdSense rewarded flow when official SDK exposes APIs.
+    LoggerFactory.warning(
+      'AdSense rewarded ads are not yet implemented on web.',
+      data: {
+        'context': context,
+        'feature': 'adsense_rewarded',
+      },
+    );
+    return false;
+  }
 
   /// Generates the HTML for a standard ad unit.
   String getAdHtml(String slotId,
@@ -179,15 +222,26 @@ class AdSenseService {
 
   /// Checks if an ad slot is visible within the viewport.
   bool isSlotVisible(GlobalKey adKey) {
-    if (!_isInitialized || adKey.currentContext == null) return false;
-    final RenderBox? renderBox =
-        adKey.currentContext!.findRenderObject() as RenderBox?;
-    if (renderBox == null) return false;
+    if (!_isInitialized) return false;
+
+    final context = adKey.currentContext;
+    if (context == null) return false;
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null || !renderBox.hasSize) return false;
+
     final position = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
-    final screenHeight = WidgetsBinding.instance.window.physicalSize.height /
-        WidgetsBinding.instance.window.devicePixelRatio;
-    return (position.dy < screenHeight && position.dy + size.height > 0);
+
+    final mediaQuery = MediaQuery.maybeOf(context);
+    final implicitView =
+        WidgetsBinding.instance.platformDispatcher.implicitView;
+    final screenHeight = mediaQuery?.size.height ??
+        (implicitView != null
+            ? implicitView.physicalSize.height / implicitView.devicePixelRatio
+            : double.infinity);
+
+    return position.dy < screenHeight && position.dy + size.height > 0;
   }
 
   /// Resets the initialization state of the service.
@@ -221,6 +275,23 @@ class AdSenseService {
     // Fallback to local config
     return AdSenseSlots.getConfigForType(AdSenseAdType.values
         .firstWhere((e) => e.toString() == 'AdSenseAdType.$adType'));
+  }
+
+  AdSenseMetrics getMetrics() => AdSenseMetrics(
+        isInitialized: _isInitialized,
+        hasActiveBanner: false,
+        hasActiveInterstitial: false,
+        hasActiveRewarded: false,
+        totalAdsCreated: _adLoadFailures.length,
+        activeAdsCount: 0,
+        publisherId: _publisherId,
+      );
+
+  Future<void> dispose() async {
+    // TODO(peliculas-admob): Evaluate removing injected script when disposing.
+    _isInitialized = false;
+    _publisherId = null;
+    _adLoadFailures.clear();
   }
 }
 
@@ -261,4 +332,40 @@ class AdState {
       'isInitialized': isInitialized,
     };
   }
+}
+
+class AdSenseMetrics {
+  const AdSenseMetrics({
+    required this.isInitialized,
+    required this.hasActiveBanner,
+    required this.hasActiveInterstitial,
+    required this.hasActiveRewarded,
+    required this.totalAdsCreated,
+    required this.activeAdsCount,
+    this.impressions = 0,
+    this.clicks = 0,
+    this.estimatedRevenue = 0.0,
+    this.publisherId,
+  });
+
+  final bool isInitialized;
+  final bool hasActiveBanner;
+  final bool hasActiveInterstitial;
+  final bool hasActiveRewarded;
+  final int totalAdsCreated;
+  final int activeAdsCount;
+  final int impressions;
+  final int clicks;
+  final double estimatedRevenue;
+  final String? publisherId;
+}
+
+class AdSenseReward {
+  const AdSenseReward({
+    required this.amount,
+    required this.type,
+  });
+
+  final int amount;
+  final String type;
 }

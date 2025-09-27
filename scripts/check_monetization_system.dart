@@ -5,7 +5,7 @@ import 'dart:io';
 /// Script para verificar que el sistema de monetización esté configurado correctamente
 /// Verifica AdMob para móviles y AdSense para web
 void main() {
-  print('🔍 Verificando sistema de monetización...\n');
+  stdout.writeln('🔍 Verificando sistema de monetización...\n');
 
   var allChecksPass = true;
 
@@ -19,22 +19,22 @@ void main() {
   allChecksPass = checkServices() && allChecksPass;
 
   // Mostrar resultado final
-  print('\n${'=' * 50}');
+  stdout.writeln('\n${'=' * 50}');
   if (allChecksPass) {
-    print('✅ SISTEMA DE MONETIZACIÓN CONFIGURADO CORRECTAMENTE');
-    print('   • AdMob configurado para Android/iOS');
-    print('   • AdSense configurado para Web');
-    print('   • Widgets web-safe implementados');
+    stdout.writeln('✅ SISTEMA DE MONETIZACIÓN CONFIGURADO CORRECTAMENTE');
+    stdout.writeln('   • AdMob configurado para Android/iOS');
+    stdout.writeln('   • AdSense configurado para Web');
+    stdout.writeln('   • Widgets web-safe implementados');
   } else {
-    print('❌ PROBLEMAS DETECTADOS EN EL SISTEMA');
-    print('   • Revisa los errores anteriores');
-    print('   • Asegúrate de seguir las correcciones sugeridas');
+    stdout.writeln('❌ PROBLEMAS DETECTADOS EN EL SISTEMA');
+    stdout.writeln('   • Revisa los errores anteriores');
+    stdout.writeln('   • Asegúrate de seguir las correcciones sugeridas');
   }
-  print('=' * 50);
+  stdout.writeln('=' * 50);
 }
 
 bool checkConfigurationFiles() {
-  print('📋 Verificando archivos de configuración...');
+  stdout.writeln('📋 Verificando archivos de configuración...');
   var passed = true;
 
   final files = [
@@ -45,9 +45,9 @@ bool checkConfigurationFiles() {
 
   for (final file in files) {
     if (File(file).existsSync()) {
-      print('   ✅ $file');
+      stdout.writeln('   ✅ $file');
     } else {
-      print('   ❌ $file - ARCHIVO FALTANTE');
+      stdout.writeln('   ❌ $file - ARCHIVO FALTANTE');
       passed = false;
     }
   }
@@ -56,7 +56,7 @@ bool checkConfigurationFiles() {
 }
 
 bool checkAdWidgets() {
-  print('\n🎨 Verificando widgets de anuncios...');
+  stdout.writeln('\n🎨 Verificando widgets de anuncios...');
   var passed = true;
 
   final widgets = [
@@ -74,13 +74,13 @@ bool checkAdWidgets() {
       if (content.contains('web_safe_ad_widgets.dart') &&
           content.contains('AdHelper.isAdMobSupported') &&
           content.contains('LoggerFactory')) {
-        print('   ✅ $widget - Web-safe implementado');
+        stdout.writeln('   ✅ $widget - Web-safe implementado');
       } else {
-        print('   ⚠️  $widget - Falta implementación web-safe');
+        stdout.writeln('   ⚠️  $widget - Falta implementación web-safe');
         passed = false;
       }
     } else {
-      print('   ❌ $widget - ARCHIVO FALTANTE');
+      stdout.writeln('   ❌ $widget - ARCHIVO FALTANTE');
       passed = false;
     }
   }
@@ -89,7 +89,7 @@ bool checkAdWidgets() {
 }
 
 bool checkServices() {
-  print('\n🔧 Verificando servicios...');
+  stdout.writeln('\n🔧 Verificando servicios...');
   var passed = true;
 
   // Verificar AdHelper
@@ -99,9 +99,9 @@ bool checkServices() {
     if (content.contains('isAdMobSupported') &&
         content.contains('isAdSenseSupported') &&
         !content.contains('throw UnsupportedError')) {
-      print('   ✅ AdHelper - Configurado correctamente');
+      stdout.writeln('   ✅ AdHelper - Configurado correctamente');
     } else {
-      print('   ❌ AdHelper - Problemas de configuración');
+      stdout.writeln('   ❌ AdHelper - Problemas de configuración');
       passed = false;
     }
   }
@@ -111,9 +111,9 @@ bool checkServices() {
   if (adsenseService.existsSync()) {
     final content = adsenseService.readAsStringSync();
     if (content.contains('ca-pub-') && content.contains('dart:js_interop')) {
-      print('   ✅ AdSenseService - Configurado correctamente');
+      stdout.writeln('   ✅ AdSenseService - Configurado correctamente');
     } else {
-      print('   ❌ AdSenseService - Problemas de configuración');
+      stdout.writeln('   ❌ AdSenseService - Problemas de configuración');
       passed = false;
     }
   }

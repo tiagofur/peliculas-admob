@@ -152,6 +152,8 @@ class TokenRefreshService {
       return false;
     }
 
+    _cancelPendingRetry();
+
     final session = _supabase.auth.currentSession;
     if (session == null) {
       LoggerFactory.warning('⚠️ No active session to refresh');
@@ -194,11 +196,7 @@ class TokenRefreshService {
             error:
                 'Retry $_retryAttempt/$_maxRetries in ${retryDelay.inSeconds}s'));
 
-        // Schedule retry
-        Timer(retryDelay, () async {
-          _isRefreshing = false; // Reset flag for retry
-          await forceRefresh(true); // Mark as retry
-        });
+        _scheduleRetry(retryDelay);
 
         return false;
       } else {
@@ -207,11 +205,13 @@ class TokenRefreshService {
         _eventController.add(const SessionInvalidatedEvent());
         LoggerFactory.error(
             '💥 Token refresh failed permanently after $_maxRetries attempts');
+        _cancelPendingRetry();
         return false;
       }
     } finally {
       if (_retryAttempt >= _maxRetries || _retryAttempt == 0) {
         _isRefreshing = false;
+        _cancelPendingRetry();
       }
     }
   }
@@ -311,5 +311,21 @@ class TokenRefreshService {
     _eventController.close();
     _isInitialized = false;
     LoggerFactory.info('🧹 TokenRefreshService disposed');
+  }
+
+  void _scheduleRetry(Duration delay) {
+    _cancelPendingRetry();
+    _refreshTimer = Timer(delay, () async {
+      _refreshTimer = null;
+      _isRefreshing = false;
+      await forceRefresh(true);
+    });
+  }
+
+  void _cancelPendingRetry() {
+    if (_refreshTimer != null) {
+      _refreshTimer!.cancel();
+      _refreshTimer = null;
+    }
   }
 }
