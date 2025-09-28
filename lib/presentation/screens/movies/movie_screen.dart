@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/analytics/analytics_service.dart';
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/share_service.dart';
 import '../../providers/providers.dart';
@@ -263,6 +264,9 @@ class _CustomSliverAppBar extends ConsumerWidget {
         ref.watch(directWatchedMoviesProvider).containsKey(movie.id);
     final size = MediaQuery.of(context).size;
     final scaffoldBackgroundColor = Theme.of(context).scaffoldBackgroundColor;
+    final heroImageUrl = movie.backdropPath.trim().isNotEmpty
+        ? resolveBackdropUrl(movie.backdropPath, size: 'w1280')
+        : resolvePosterUrl(movie.posterPath, size: 'w780');
 
     return SliverAppBar(
       backgroundColor: Colors.black,
@@ -328,11 +332,21 @@ class _CustomSliverAppBar extends ConsumerWidget {
           children: [
             SizedBox.expand(
               child: Image.network(
-                movie.posterPath,
+                heroImageUrl,
                 fit: BoxFit.cover,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress != null) return const SizedBox();
                   return FadeIn(child: child);
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey.shade900,
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      size: 64,
+                      color: Colors.white.withValues(alpha: 0.7),
+                    ),
+                  );
                 },
               ),
             ),
