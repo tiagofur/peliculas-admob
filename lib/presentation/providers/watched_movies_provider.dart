@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
@@ -54,9 +56,24 @@ class WatchedMoviesNotifier extends Notifier<WatchedMoviesState> {
   WatchedMoviesNotifier();
 
   static const int _limit = 20;
+  bool _hasInitialized = false;
 
   @override
   WatchedMoviesState build() {
+    if (!_hasInitialized) {
+      _hasInitialized = true;
+      Future.microtask(() async {
+        try {
+          await init();
+        } catch (error, stackTrace) {
+          LoggerFactory.error(
+            'WatchedMoviesNotifier: Error during auto-initialization: $error',
+            stackTrace: stackTrace,
+          );
+        }
+      });
+    }
+
     return const WatchedMoviesState();
   }
 
@@ -67,6 +84,7 @@ class WatchedMoviesNotifier extends Notifier<WatchedMoviesState> {
       ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
 
   Future<void> init() async {
+    await _ensureSynced();
     await loadNextPage();
   }
 
@@ -172,11 +190,31 @@ class WatchedMoviesNotifier extends Notifier<WatchedMoviesState> {
   }
 
   Future<void> _reloadMovies() async {
+    await _ensureSynced();
     state = const WatchedMoviesState();
     await loadNextPage();
   }
 
   Future<void> refresh() async {
     await _reloadMovies();
+  }
+
+  Future<void> _ensureSynced() async {
+    // Supabase requiere un usuario autenticado; evitar llamadas cuando usamos el usuario anónimo
+    if (repository.userId == 'anonymous_user') {
+      LoggerFactory.debug(
+        'WatchedMoviesProvider: Sync skipped because user is anonymous.',
+      );
+      return;
+    }
+
+    try {
+      await repository.syncWithSupabase();
+    } catch (error, stackTrace) {
+      await LoggerFactory.error(
+        'WatchedMoviesProvider: Error syncing watched movies: $error',
+        stackTrace: stackTrace,
+      );
+    }
   }
 }

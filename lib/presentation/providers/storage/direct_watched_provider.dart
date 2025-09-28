@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/trigger_free_watched_sync.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie.dart';
+import '../watched_movies_provider.dart';
 import 'direct_sync_provider.dart';
 
 class DirectWatchedService extends DirectSyncService {
@@ -29,7 +31,20 @@ class DirectWatchedService extends DirectSyncService {
 
   /// Alias para toggleMovie para mantener compatibilidad
   Future<void> toggleWatched(Movie movie) async {
-    await toggleMovie(movie);
+    await super.toggleMovie(movie);
+
+    if (!ref.mounted) {
+      return;
+    }
+
+    try {
+      await ref.read(watchedMoviesProvider.notifier).refresh();
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'DirectWatched: Failed to refresh watched movies after toggle: $error',
+        stackTrace: stackTrace,
+      );
+    }
   }
 }
 

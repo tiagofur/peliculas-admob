@@ -11,6 +11,7 @@ import '../../../domain/repositories/recommendations_repository.dart';
 import '../../../infrastructure/datasources/recommendations_moviedb_datasource.dart';
 import '../../../infrastructure/repositories/recommendations_repository_impl.dart';
 import '../storage/direct_favorites_provider.dart';
+import '../storage/direct_watched_provider.dart';
 import '../watched_movies_provider.dart';
 
 // Provider del repositorio de recomendaciones
@@ -311,6 +312,11 @@ final recommendationsUserStatsProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
+  final directWatchedMovies = ref.watch(directWatchedMoviesProvider);
+
+  final resolvedWatchedCount = directWatchedMovies.isNotEmpty
+      ? directWatchedMovies.length
+      : watchedMoviesState.movies.length;
 
   // Debug logs para diagnosticar el problema
   AppLogger.provider('RecommendationsUserStatsProvider',
@@ -318,7 +324,9 @@ final recommendationsUserStatsProvider =
   AppLogger.provider('RecommendationsUserStatsProvider',
       '   📋 Favoritas: ${favoriteMovies.length}');
   AppLogger.provider('RecommendationsUserStatsProvider',
-      '   👀 Vistas: ${watchedMoviesState.movies.length}');
+      '   👀 Vistas (directas): ${directWatchedMovies.length}');
+  AppLogger.provider('RecommendationsUserStatsProvider',
+      '   👀 Vistas (híbridas): ${watchedMoviesState.movies.length}');
   AppLogger.provider('RecommendationsUserStatsProvider',
       '   📂 Estado de carga: ${watchedMoviesState.isLoading}');
   AppLogger.provider('RecommendationsUserStatsProvider',
@@ -330,7 +338,7 @@ final recommendationsUserStatsProvider =
       favoriteMovies.values.map((syncable) => syncable.movie).toList();
   final stats = {
     'totalFavorites': favoriteMovies.length,
-    'totalWatched': watchedMoviesState.movies.length,
+    'totalWatched': resolvedWatchedCount,
     'favoriteGenres': _getMostCommonGenres(favoriteMoviesList),
     'averageRating': _getAverageRating(favoriteMoviesList),
   };
@@ -344,20 +352,26 @@ final recommendationsUserStatsProvider =
 final basicUserStatsProvider = Provider<BasicUserStats>((ref) {
   final favoriteMovies = ref.watch(directFavoriteMoviesProvider);
   final watchedMoviesState = ref.watch(watchedMoviesProvider);
+  final directWatchedMovies = ref.watch(directWatchedMoviesProvider);
+
+  final resolvedWatchedCount = directWatchedMovies.isNotEmpty
+      ? directWatchedMovies.length
+      : watchedMoviesState.movies.length;
 
   final favoriteMoviesList =
       favoriteMovies.values.map((syncable) => syncable.movie).toList();
 
   return BasicUserStats(
     totalFavorites: favoriteMovies.length,
-    totalWatched: watchedMoviesState.movies.length,
-    totalMovies:
-        (favoriteMovies.length + watchedMoviesState.movies.length).toInt(),
+    totalWatched: resolvedWatchedCount,
+    totalMovies: favoriteMovies.length + resolvedWatchedCount,
     averageRating: _calculateAverageRating(favoriteMoviesList),
     topGenres: _getTopGenres(favoriteMoviesList, 3)
         .map((id) => _getGenreName(id))
         .toList(),
-    watchingStreak: _calculateWatchingStreak(watchedMoviesState.movies),
+    watchingStreak: watchedMoviesState.movies.isNotEmpty
+        ? _calculateWatchingStreak(watchedMoviesState.movies)
+        : 0,
   );
 });
 
