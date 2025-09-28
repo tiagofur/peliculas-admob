@@ -2,10 +2,10 @@ import 'package:dio/dio.dart';
 
 import '../../config/constants/environment.dart';
 import '../../core/logging/logger_factory.dart';
+import '../../core/utils/tmdb_image_utils.dart';
 
 class TmdbImageService {
   static const String _baseUrl = 'https://api.themoviedb.org/3';
-  static const String _imageBaseUrl = 'https://image.tmdb.org/t/p';
 
   final Dio _dio = Dio();
 
@@ -37,7 +37,10 @@ class TmdbImageService {
       if (response.statusCode == 200) {
         final posterPath = response.data['poster_path'];
         if (posterPath != null) {
-          return '$_imageBaseUrl/$size$posterPath';
+          return resolvePosterUrl(
+            posterPath,
+            size: size,
+          );
         }
       }
     } catch (e) {
@@ -63,7 +66,10 @@ class TmdbImageService {
       if (response.statusCode == 200) {
         final backdropPath = response.data['backdrop_path'];
         if (backdropPath != null) {
-          return '$_imageBaseUrl/$size$backdropPath';
+          return resolveBackdropUrl(
+            backdropPath,
+            size: size,
+          );
         }
       }
     } catch (e) {
@@ -94,10 +100,16 @@ class TmdbImageService {
 
         return MovieImages(
           posterUrl: posterPath != null
-              ? '$_imageBaseUrl/$posterW500$posterPath'
+              ? resolvePosterUrl(
+                  posterPath,
+                  size: posterW500,
+                )
               : null,
           backdropUrl: backdropPath != null
-              ? '$_imageBaseUrl/$backdropW780$backdropPath'
+              ? resolveBackdropUrl(
+                  backdropPath,
+                  size: backdropW780,
+                )
               : null,
         );
       }

@@ -5,6 +5,8 @@ import '../logging/logger_factory.dart';
 /// Utilidad para manejar timestamps del servidor de manera consistente
 class ServerTimestampUtils {
   static final _logger = LoggerFactory.logger;
+  static bool _isRpcAvailable = true;
+  static bool _hasLoggedMissingRpc = false;
 
   /// Obtiene el timestamp actual del servidor de Supabase
   /// Si hay error, fallback a DateTime.now() local pero registra el error
@@ -13,22 +15,41 @@ class ServerTimestampUtils {
       final client = Supabase.instance.client;
 
       // Método 1: Intentar usar función RPC get_server_timestamp
-      try {
-        final response = await client
-            .rpc('get_server_timestamp')
-            .timeout(const Duration(seconds: 3));
+      if (_isRpcAvailable) {
+        try {
+          final response = await client
+              .rpc('get_server_timestamp')
+              .timeout(const Duration(seconds: 3));
 
-        if (response != null) {
-          // La función RPC devuelve un timestamp ISO string
-          if (response is String) {
-            return DateTime.parse(response);
+          if (response != null) {
+            // La función RPC devuelve un timestamp ISO string
+            if (response is String) {
+              return DateTime.parse(response);
+            }
+            // O puede devolver directamente como timestamp
+            return DateTime.parse(response.toString());
           }
-          // O puede devolver directamente como timestamp
-          return DateTime.parse(response.toString());
+        } on PostgrestException catch (rpcError) {
+          if (_isRpcNotFoundError(rpcError)) {
+            _isRpcAvailable = false;
+            if (!_hasLoggedMissingRpc) {
+              _logger.warning(
+                'RPC get_server_timestamp no está configurada en Supabase. Usando fallbacks locales.',
+              );
+              _hasLoggedMissingRpc = true;
+            } else {
+              _logger.debug(
+                  'RPC get_server_timestamp marcada como no disponible: ${rpcError.message}');
+            }
+          } else {
+            _logger
+                .debug('RPC get_server_timestamp falló: ${rpcError.message}');
+          }
+          // Continuar con método alternativo
+        } catch (rpcError) {
+          _logger.debug('RPC get_server_timestamp no disponible: $rpcError');
+          // Continuar con método alternativo
         }
-      } catch (rpcError) {
-        _logger.debug('RPC get_server_timestamp no disponible: $rpcError');
-        // Continuar con método alternativo
       }
 
       // Método 2: Usar consulta SQL directa como fallback
@@ -181,5 +202,23 @@ class ServerTimestampUtils {
     }
 
     throw Exception('No se pudo obtener server timestamp crítico');
+  }
+
+  static bool _isRpcNotFoundError(Object error) {
+    if (error is PostgrestException) {
+      final message = error.message.toLowerCase();
+      final code = error.code?.toLowerCase();
+      final details = error.details?.toString().toLowerCase();
+
+      if ((code != null && code.contains('404')) ||
+          message.contains('404') ||
+          message.contains('not found') ||
+          (details != null && details.contains('not found'))) {
+        return true;
+      }
+    }
+
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('404') || errorString.contains('not found');
   }
 }

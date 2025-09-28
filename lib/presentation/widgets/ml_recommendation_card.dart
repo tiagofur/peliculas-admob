@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/ml/ml_recommendation_service.dart';
 import '../../core/ml/recommendation_feedback_service.dart';
+import '../../core/utils/tmdb_image_utils.dart';
 import '../../domain/entities/recommendation.dart';
 import '../providers/recommendations/recommendations_provider.dart';
 
@@ -53,7 +54,10 @@ class _MLRecommendationCardState extends ConsumerState<MLRecommendationCard> {
                     const BorderRadius.vertical(top: Radius.circular(12)),
                 image: DecorationImage(
                   image: NetworkImage(
-                    'https://image.tmdb.org/t/p/w500${widget.recommendation.posterPath}',
+                    resolvePosterUrl(
+                      widget.recommendation.posterPath,
+                      size: 'w500',
+                    ),
                   ),
                   fit: BoxFit.cover,
                 ),

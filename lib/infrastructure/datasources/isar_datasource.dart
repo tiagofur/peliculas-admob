@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../domain/adapters/legacy_hive_adapters.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
@@ -33,9 +34,7 @@ class HiveDatasource extends LocalStorageDatasource {
       }
 
       // Registrar adaptadores si no están registrados
-      if (!Hive.isAdapterRegistered(0)) {
-        Hive.registerAdapter(MovieAdapter());
-      }
+      ensureMovieAdaptersRegistered();
       if (!Hive.isAdapterRegistered(100)) {
         Hive.registerAdapter(WatchlistPriorityAdapter());
       }

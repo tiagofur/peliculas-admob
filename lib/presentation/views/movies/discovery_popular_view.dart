@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/entities.dart';
 import '../../providers/providers.dart';
-
 import '../../widgets/widgets.dart';
 
 class DiscoveryPopularView extends ConsumerStatefulWidget {
@@ -302,7 +303,10 @@ class _DiscoveryPopularViewState extends ConsumerState<DiscoveryPopularView>
                   borderRadius: BorderRadius.circular(12),
                   child: recommendation.posterPath.isNotEmpty
                       ? Image.network(
-                          'https://image.tmdb.org/t/p/w500${recommendation.posterPath}',
+                          resolvePosterUrl(
+                            recommendation.posterPath,
+                            size: 'w500',
+                          ),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(

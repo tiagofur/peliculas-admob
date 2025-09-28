@@ -1,6 +1,7 @@
 import 'package:hive/hive.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../domain/adapters/legacy_hive_adapters.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
@@ -10,6 +11,7 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
   static const String _boxPrefix = 'movies_cache_';
 
   Future<Box<Movie>> _getBoxForCategory(String category) async {
+    ensureMovieAdaptersRegistered();
     return await Hive.openBox<Movie>('$_boxPrefix$category');
   }
 

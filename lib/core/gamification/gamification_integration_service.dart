@@ -4,11 +4,10 @@ import '../../domain/entities/movie.dart';
 import '../analytics/analytics_service.dart';
 import '../logging/logger_factory.dart';
 import 'gamification_manager.dart';
-import 'models/activity_type.dart';
-
-import 'models/user_progress.dart';
 import 'models/achievement.dart';
+import 'models/activity_type.dart';
 import 'models/challenge.dart';
+import 'models/user_progress.dart';
 
 /// Service that integrates gamification with existing app features
 class GamificationIntegrationService {
@@ -473,12 +472,24 @@ class GamificationIntegrationService {
 
 /// Provider for gamification integration service
 final gamificationIntegrationServiceProvider =
-    Provider<GamificationIntegrationService>((ref) {
+    FutureProvider<GamificationIntegrationService>((ref) async {
   final gamificationManager = GamificationManager();
   final analyticsService = AnalyticsService();
 
-  return GamificationIntegrationService(
+  final service = GamificationIntegrationService(
     gamificationManager: gamificationManager,
     analyticsService: analyticsService,
   );
+
+  try {
+    await service.initialize();
+  } catch (error, stackTrace) {
+    LoggerFactory.error(
+      'Failed to initialize gamification integration service: $error',
+      stackTrace: stackTrace,
+    );
+    rethrow;
+  }
+
+  return service;
 });

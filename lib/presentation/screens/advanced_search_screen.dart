@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/tmdb_image_utils.dart';
 import '../../domain/entities/movie.dart';
 import '../../services/advanced_search_service.dart';
 import '../delegates/advanced_search_movie_delegate.dart';
@@ -371,7 +372,10 @@ class _MovieSearchResult extends StatelessWidget {
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
-                          'https://image.tmdb.org/t/p/w200${movie.posterPath}',
+                          resolvePosterUrl(
+                            movie.posterPath,
+                            size: 'w200',
+                          ),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(Icons.movie, size: 30);

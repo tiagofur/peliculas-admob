@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/deep_links/deep_link_handler.dart';
 import '../core/analytics/analytics_service.dart';
 import '../core/gamification/gamification_integration_service.dart';
+import '../core/utils/tmdb_image_utils.dart';
 import '../domain/entities/movie.dart';
 import '../infrastructure/models/moviedb/movie_moviedb.dart';
 import '../models/shareable_content.dart';
@@ -35,7 +36,7 @@ class ShareService {
       movieDescription: movie.overview,
       movieId: movie.id,
       posterUrl: movie.posterPath.isNotEmpty
-          ? 'https://image.tmdb.org/t/p/w500${movie.posterPath}'
+          ? resolvePosterUrl(movie.posterPath, size: 'w500')
           : null,
       additionalData: {
         'releaseDate': movie.releaseDate.toIso8601String(),
@@ -58,7 +59,7 @@ class ShareService {
       movieDescription: movie.overview,
       movieId: movie.id,
       posterUrl: movie.posterPath.isNotEmpty
-          ? 'https://image.tmdb.org/t/p/w500${movie.posterPath}'
+          ? resolvePosterUrl(movie.posterPath, size: 'w500')
           : null,
       additionalData: {
         'releaseDate': movie.releaseDate?.toIso8601String(),
@@ -361,7 +362,7 @@ class ShareService {
       movieDescription: movie.overview,
       movieId: movie.id,
       posterUrl: movie.posterPath.isNotEmpty
-          ? 'https://image.tmdb.org/t/p/w500${movie.posterPath}'
+          ? resolvePosterUrl(movie.posterPath, size: 'w500')
           : null,
       additionalData: {
         'releaseDate': movie.releaseDate.toIso8601String(),

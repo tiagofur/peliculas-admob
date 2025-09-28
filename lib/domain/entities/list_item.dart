@@ -112,16 +112,23 @@ class ListItem {
 
   /// Convierte a JSON para Supabase (usando snake_case)
   Map<String, dynamic> toSupabaseJson() {
-    return {
-      'id': id,
+    final data = <String, dynamic>{
       'list_id': listId,
       'movie_id': movieId,
       'movie_title': movieTitle,
       'movie_poster_path': moviePosterPath,
       'position': position,
-      'added_at': addedAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'added_at': addedAt.toUtc().toIso8601String(),
+      'updated_at': updatedAt.toUtc().toIso8601String(),
     };
+
+    if (_isValidUuid(id)) {
+      data['id'] = id;
+    }
+
+    data.removeWhere((key, value) => value == null);
+
+    return data;
   }
 
   /// Convierte a JSON local (usando camelCase)
@@ -138,6 +145,14 @@ class ListItem {
       'syncStatus': syncStatus,
       'isDeleted': isDeleted,
     };
+  }
+
+  bool _isValidUuid(String value) {
+    final uuidRegex = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+      caseSensitive: false,
+    );
+    return uuidRegex.hasMatch(value);
   }
 
   @override

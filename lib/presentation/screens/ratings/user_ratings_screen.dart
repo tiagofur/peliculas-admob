@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/user_movie_rating.dart';
 import '../../providers/user_movie_ratings_provider.dart';
 // import '../../widgets/shared/minimal_sync_indicator.dart';
@@ -439,7 +440,10 @@ class _RatingCard extends StatelessWidget {
                   height: 90,
                   child: rating.moviePosterPath != null
                       ? Image.network(
-                          'https://image.tmdb.org/t/p/w500${rating.moviePosterPath}',
+                          resolvePosterUrl(
+                            rating.moviePosterPath,
+                            size: 'w500',
+                          ),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) =>
                               _buildPosterPlaceholder(),

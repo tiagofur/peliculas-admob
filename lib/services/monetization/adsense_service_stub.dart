@@ -1,70 +1,160 @@
 import 'dart:async';
+import 'dart:io';
+
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../core/logging/logger_factory.dart';
+import 'advanced_admob_service.dart';
 
 /// Stub para AdSenseService en plataformas que no son web
+///
+/// Cuando AdSense no está disponible, delegamos la monetización a AdMob siempre
+/// que el SDK nativo esté soportado. Si la plataforma no soporta AdMob todavía
+/// (por ejemplo, escritorio), se mantiene el modo degradado con logs
+/// informativos.
 class AdSenseService {
-  static AdSenseService get instance => AdSenseService();
-  static bool _hasWarned = false;
+  factory AdSenseService() => _instance;
+  AdSenseService._();
+  static final AdSenseService _instance = AdSenseService._();
+  static AdSenseService get instance => _instance;
 
-  void _warnOnce() {
-    if (_hasWarned) {
-      return;
+  final AdvancedAdMobService _admobService = AdvancedAdMobService.instance;
+
+  bool _isInitialized = false;
+  bool _bridgeAnnounced = false;
+
+  Future<void> _logBridgeInfoOnce({required bool success}) async {
+    if (_bridgeAnnounced) return;
+    _bridgeAnnounced = true;
+
+    if (success) {
+      await LoggerFactory.info(
+        'AdSense bridge activo: delegando monetización en AdMob para plataformas no web.',
+        data: {
+          'platform': Platform.operatingSystem,
+          'bridge': 'adsense_to_admob',
+        },
+      );
+    } else {
+      await LoggerFactory.warning(
+        'AdSense bridge no disponible: se mantiene modo degradado sin anuncios.',
+        data: {
+          'platform': Platform.operatingSystem,
+          'bridge': 'adsense_to_admob',
+        },
+      );
     }
-    _hasWarned = true;
-
-    // TODO(peliculas-admob): Implement AdSense bridge for non-web platforms when supported.
-    unawaited(LoggerFactory.warning(
-      'AdSenseService stub activo: no hay soporte de AdSense en esta plataforma.',
-      data: const {
-        'feature': 'adsense_non_web_stub',
-        'action': 'skip_monetization',
-      },
-    ));
   }
 
-  bool get isInitialized => false;
+  bool get isInitialized => _isInitialized;
 
-  Future<void> initialize() async {
-    // No-op en plataformas no web
-    _warnOnce();
+  Future<void> initialize({String? publisherId}) async {
+    if (_isInitialized) {
+      return;
+    }
+
+    try {
+      final success = await _admobService.initialize();
+      if (!success) {
+        await _logBridgeInfoOnce(success: false);
+        return;
+      }
+
+      _isInitialized = true;
+      await _logBridgeInfoOnce(success: true);
+    } catch (error, stackTrace) {
+      await LoggerFactory.error(
+        'Error inicializando bridge AdSense->AdMob: $error',
+        data: {
+          'platform': Platform.operatingSystem,
+          'bridge': 'adsense_to_admob',
+        },
+        stackTrace: stackTrace,
+      );
+      await _logBridgeInfoOnce(success: false);
+    }
   }
 
   bool canShowBannerAd() {
-    _warnOnce();
-    return false;
+    if (!_isInitialized) {
+      return false;
+    }
+
+    return _admobService.hasBannerAd;
   }
 
   bool canShowInterstitialAd() {
-    _warnOnce();
-    return false;
+    if (!_isInitialized) {
+      return false;
+    }
+
+    return _admobService.hasInterstitialAd;
   }
 
   Future<bool> showInterstitialAd({String? context}) async {
-    _warnOnce();
-    return false;
+    if (!_isInitialized) {
+      await LoggerFactory.warning(
+        'AdSense bridge intentó mostrar interstitial sin inicializar.',
+        data: {
+          'platform': Platform.operatingSystem,
+          'bridge': 'adsense_to_admob',
+          'context': context,
+        },
+      );
+      return false;
+    }
+
+    return _admobService.showInterstitialAdSmart(context: context);
   }
 
   Future<bool> showRewardedAd({
     required Function(AdSenseReward) onRewardEarned,
     String? context,
   }) async {
-    _warnOnce();
-    return false;
+    if (!_isInitialized) {
+      await LoggerFactory.warning(
+        'AdSense bridge intentó mostrar rewarded sin inicializar.',
+        data: {
+          'platform': Platform.operatingSystem,
+          'bridge': 'adsense_to_admob',
+          'context': context,
+        },
+      );
+      return false;
+    }
+
+    return _admobService.showRewardedAd(
+      onUserEarnedReward: (RewardItem reward) {
+        onRewardEarned(
+          AdSenseReward(
+            amount: reward.amount.toInt(),
+            type: reward.type,
+          ),
+        );
+      },
+      context: context,
+    );
   }
 
-  AdSenseMetrics getMetrics() => const AdSenseMetrics(
-        isInitialized: false,
-        hasActiveBanner: false,
-        hasActiveInterstitial: false,
-        hasActiveRewarded: false,
-        totalAdsCreated: 0,
-        activeAdsCount: 0,
-      );
+  AdSenseMetrics getMetrics() {
+    final metrics = _admobService.getAdMetrics();
+
+    return AdSenseMetrics(
+      isInitialized: _isInitialized,
+      hasActiveBanner: metrics.hasBannerLoaded,
+      hasActiveInterstitial: metrics.hasInterstitialLoaded,
+      hasActiveRewarded: metrics.hasRewardedLoaded,
+      totalAdsCreated: 0,
+      activeAdsCount: 0,
+    );
+  }
 
   Future<void> dispose() async {
-    // No-op
-    _warnOnce();
+    if (_isInitialized) {
+      _admobService.dispose();
+    }
+    _isInitialized = false;
+    _bridgeAnnounced = false;
   }
 }
 

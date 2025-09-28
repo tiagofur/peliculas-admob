@@ -123,24 +123,32 @@ class CustomList {
 
   /// Convierte a JSON para Supabase (usando snake_case)
   Map<String, dynamic> toSupabaseJson() {
-    final json = {
+    final data = <String, dynamic>{
       'name': name,
       'description': description,
       'emoji': emoji,
       'user_id': userId,
       'is_default': isDefault,
       'is_public': isPublic,
-      'color_hex': colorHex ?? color,
-      'default_type': defaultType,
-      'created_at': createdAt.toIso8601String(),
+      'color': colorHex ?? color,
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'last_modified_at': lastModifiedAt.toUtc().toIso8601String(),
+      'is_deleted': isDeleted,
     };
+
+    if (defaultType != null && defaultType!.isNotEmpty) {
+      data['default_type'] = defaultType;
+    }
 
     // Solo incluir el ID si es un UUID válido (para evitar errores de Supabase)
     if (_isValidUuid(id)) {
-      json['id'] = id;
+      data['id'] = id;
     }
 
-    return json;
+    // Eliminar campos sin valor para evitar errores en PostgREST
+    data.removeWhere((key, value) => value == null);
+
+    return data;
   }
 
   /// Verifica si una cadena es un UUID válido

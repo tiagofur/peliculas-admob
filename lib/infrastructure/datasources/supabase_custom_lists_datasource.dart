@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/custom_list.dart';
 import '../../domain/entities/list_item.dart';
 
@@ -45,11 +46,8 @@ class SupabaseCustomListsDataSource {
   /// Crea una nueva lista personalizada
   Future<CustomList> createList(CustomList list) async {
     try {
-      final response = await _supabase
-          .from('user_lists')
-          .insert(list.toSupabaseJson())
-          .select()
-          .single();
+      final payload = _sanitizePayload(list.toSupabaseJson());
+      final response = await _insertWithFallback(payload);
 
       return CustomList.fromJson(response);
     } catch (e) {
@@ -60,15 +58,10 @@ class SupabaseCustomListsDataSource {
   /// Actualiza una lista existente
   Future<CustomList> updateList(CustomList list) async {
     try {
-      final updateData = list.toSupabaseJson();
-      updateData['updated_at'] = DateTime.now().toIso8601String();
+      final updateData = _sanitizePayload(list.toSupabaseJson()
+        ..['last_modified_at'] = DateTime.now().toUtc().toIso8601String());
 
-      final response = await _supabase
-          .from('user_lists')
-          .update(updateData)
-          .eq('id', list.id)
-          .select()
-          .single();
+      final response = await _updateWithFallback(updateData, list.id);
 
       return CustomList.fromJson(response);
     } catch (e) {
@@ -122,8 +115,9 @@ class SupabaseCustomListsDataSource {
         return;
       }
 
+      final now = DateTime.now().toUtc().toIso8601String();
       final defaultLists = configsToCreate
-          .map((config) => {
+          .map((config) => _sanitizePayload({
                 'id': config.localId,
                 'name': config.name,
                 'description': config.description,
@@ -131,14 +125,14 @@ class SupabaseCustomListsDataSource {
                 'user_id': userId,
                 'is_default': true,
                 'is_public': false,
-                'color_hex': config.color,
+                'color': config.color,
                 'default_type': config.defaultType,
-                'created_at': DateTime.now().toIso8601String(),
-                'updated_at': DateTime.now().toIso8601String(),
-              })
+                'created_at': now,
+                'last_modified_at': now,
+              }))
           .toList();
 
-      await _supabase.from('user_lists').insert(defaultLists);
+      await _insertBatchWithFallback(defaultLists);
     } catch (e) {
       throw Exception('Error al inicializar listas por defecto: $e');
     }
@@ -178,11 +172,8 @@ class SupabaseCustomListsDataSource {
         updatedAt: DateTime.now(),
       );
 
-      final response = await _supabase
-          .from('user_list_items')
-          .insert(listItem.toSupabaseJson())
-          .select()
-          .single();
+      final payload = _sanitizePayload(listItem.toSupabaseJson());
+      final response = await _insertListItemWithFallback(payload);
 
       return ListItem.fromJson(response);
     } catch (e) {
@@ -299,5 +290,253 @@ class SupabaseCustomListsDataSource {
     } catch (e) {
       return false;
     }
+  }
+}
+
+extension on SupabaseCustomListsDataSource {
+  Map<String, dynamic> _sanitizePayload(Map<String, dynamic> payload) {
+    final sanitized = Map<String, dynamic>.from(payload)
+      ..removeWhere((key, value) => value == null);
+
+    // Evitar enviar campos vacíos que pueden no existir en el esquema remoto
+    if (sanitized['default_type'] is String &&
+        (sanitized['default_type'] as String).trim().isEmpty) {
+      sanitized.remove('default_type');
+    }
+
+    return sanitized;
+  }
+
+  Future<Map<String, dynamic>> _insertWithFallback(
+      Map<String, dynamic> payload) async {
+    try {
+      return await _supabase
+          .from('user_lists')
+          .insert(payload)
+          .select()
+          .single();
+    } on PostgrestException catch (error) {
+      await LoggerFactory.warning(
+        'Fallo al insertar lista, reintentando sin columnas no soportadas: ${error.message}',
+      );
+      final retryPayload = _payloadWithoutUnsupportedColumns(payload, error);
+      if (retryPayload.length == payload.length) {
+        rethrow;
+      }
+      return await _supabase
+          .from('user_lists')
+          .insert(retryPayload)
+          .select()
+          .single();
+    }
+  }
+
+  Future<void> _insertBatchWithFallback(
+      List<Map<String, dynamic>> payloads) async {
+    try {
+      await _supabase.from('user_lists').insert(payloads);
+    } on PostgrestException catch (error) {
+      await LoggerFactory.warning(
+        'Fallo al insertar batch de listas, aplicando fallback: ${error.message}',
+      );
+      final retryPayloads = payloads
+          .map((payload) => _payloadWithoutUnsupportedColumns(payload, error))
+          .toList();
+      if (_listsAreIdentical(payloads, retryPayloads)) {
+        rethrow;
+      }
+      await _supabase.from('user_lists').insert(retryPayloads);
+    }
+  }
+
+  Future<Map<String, dynamic>> _updateWithFallback(
+      Map<String, dynamic> payload, String listId) async {
+    try {
+      return await _supabase
+          .from('user_lists')
+          .update(payload)
+          .eq('id', listId)
+          .select()
+          .single();
+    } on PostgrestException catch (error) {
+      await LoggerFactory.warning(
+        'Fallo al actualizar lista $listId, reintentando: ${error.message}',
+      );
+      final retryPayload = _payloadWithoutUnsupportedColumns(payload, error);
+      if (retryPayload.length == payload.length) {
+        rethrow;
+      }
+      return await _supabase
+          .from('user_lists')
+          .update(retryPayload)
+          .eq('id', listId)
+          .select()
+          .single();
+    }
+  }
+
+  Map<String, dynamic> _payloadWithoutUnsupportedColumns(
+    Map<String, dynamic> payload,
+    PostgrestException error,
+  ) {
+    final sanitized = Map<String, dynamic>.from(payload);
+    final message = error.message.toLowerCase();
+    final details = error.details?.toString().toLowerCase() ?? '';
+
+    bool containsKeyword(String keyword) =>
+        message.contains(keyword) || details.contains(keyword);
+
+    if (containsKeyword("'default_type'") || containsKeyword('default_type')) {
+      sanitized.remove('default_type');
+    }
+
+    if (containsKeyword("'color_hex'") || containsKeyword('color_hex')) {
+      sanitized['color'] = sanitized['color_hex'];
+      sanitized.remove('color_hex');
+    }
+
+    if (containsKeyword("'color'") || containsKeyword('color')) {
+      // Fallback a color_hex para compatibilidad con esquemas antiguos
+      if (sanitized.containsKey('color')) {
+        sanitized['color_hex'] = sanitized['color'];
+        sanitized.remove('color');
+      }
+    }
+
+    if (containsKeyword("'last_modified_at'") ||
+        containsKeyword('last_modified_at')) {
+      sanitized.remove('last_modified_at');
+    }
+
+    if (containsKeyword("'is_deleted'") || containsKeyword('is_deleted')) {
+      sanitized.remove('is_deleted');
+    }
+
+    if (containsKeyword("'sync_status'") || containsKeyword('sync_status')) {
+      sanitized.remove('sync_status');
+    }
+
+    if (containsKeyword("'created_at'") || containsKeyword('created_at')) {
+      sanitized.remove('created_at');
+    }
+
+    if (containsKeyword("'emoji'") || containsKeyword('emoji')) {
+      sanitized.remove('emoji');
+    }
+
+    if (containsKeyword("'description'") || containsKeyword('description')) {
+      sanitized.remove('description');
+    }
+
+    if (containsKeyword("'is_public'") || containsKeyword('is_public')) {
+      sanitized.remove('is_public');
+    }
+
+    if (containsKeyword("'is_default'") || containsKeyword('is_default')) {
+      sanitized.remove('is_default');
+    }
+
+    if (containsKeyword("'movie_poster_path'") ||
+        containsKeyword('movie_poster_path')) {
+      sanitized.remove('movie_poster_path');
+    }
+
+    if (containsKeyword("'movie_title'") || containsKeyword('movie_title')) {
+      // Algunos esquemas antiguos usan movie_name
+      sanitized['movie_name'] = sanitized['movie_title'];
+      sanitized.remove('movie_title');
+    }
+
+    if (containsKeyword("'position'") || containsKeyword('position')) {
+      sanitized.remove('position');
+    }
+
+    if (containsKeyword("'added_at'") || containsKeyword('added_at')) {
+      sanitized.remove('added_at');
+    }
+
+    if (containsKeyword("'updated_at'") || containsKeyword('updated_at')) {
+      sanitized.remove('updated_at');
+    }
+
+    if (containsKeyword("'id'") || containsKeyword('id')) {
+      sanitized.remove('id');
+    }
+
+    // Si no se eliminó ninguna columna específica, ejecutar fallback mínimo
+    if (sanitized.length == payload.length) {
+      final optionalColumns = payload.containsKey('movie_id')
+          ? <String>{
+              'movie_title',
+              'movie_poster_path',
+              'position',
+              'added_at',
+              'updated_at',
+            }
+          : <String>{
+              'emoji',
+              'description',
+              'color',
+              'color_hex',
+              'default_type',
+              'last_modified_at',
+              'is_deleted',
+              'sync_status',
+              'created_at',
+              'is_public',
+              'is_default',
+            };
+
+      for (final key in optionalColumns) {
+        sanitized.remove(key);
+      }
+    }
+
+    return sanitized;
+  }
+
+  Future<Map<String, dynamic>> _insertListItemWithFallback(
+      Map<String, dynamic> payload) async {
+    try {
+      return await _supabase
+          .from('user_list_items')
+          .insert(payload)
+          .select()
+          .single();
+    } on PostgrestException catch (error) {
+      await LoggerFactory.warning(
+        'Fallo al insertar elemento de lista, aplicando fallback: ${error.message}',
+      );
+      final retryPayload = _payloadWithoutUnsupportedColumns(payload, error);
+      if (retryPayload.length == payload.length) {
+        rethrow;
+      }
+      return await _supabase
+          .from('user_list_items')
+          .insert(retryPayload)
+          .select()
+          .single();
+    }
+  }
+
+  bool _listsAreIdentical(
+    List<Map<String, dynamic>> original,
+    List<Map<String, dynamic>> transformed,
+  ) {
+    if (original.length != transformed.length) {
+      return false;
+    }
+
+    for (var i = 0; i < original.length; i++) {
+      if (original[i].length != transformed[i].length) {
+        return false;
+      }
+      for (final key in original[i].keys) {
+        if (!transformed[i].containsKey(key)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 }

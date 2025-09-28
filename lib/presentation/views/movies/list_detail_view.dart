@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/logger_factory.dart';
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../services/share_service.dart';
 import '../../providers/custom_lists_provider.dart';
@@ -958,7 +959,10 @@ class _AddMovieDialogState extends ConsumerState<_AddMovieDialog> {
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: Image.network(
-                                  'https://image.tmdb.org/t/p/w92${movie.posterPath}',
+                                  resolvePosterUrl(
+                                    movie.posterPath,
+                                    size: 'w92',
+                                  ),
                                   width: 40,
                                   height: 60,
                                   fit: BoxFit.cover,

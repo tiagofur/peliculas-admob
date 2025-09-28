@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/tmdb_image_utils.dart';
 import '../../domain/entities/enhanced_user_profile.dart';
 import '../../services/enhanced_user_profile_service.dart';
 import '../../services/performance/image_optimization_service.dart';
@@ -406,7 +407,10 @@ class _EnhancedUserProfileScreenState
                     child:
                         ImageOptimizationService.instance.buildOptimizedPoster(
                       imageUrl: movie.posterPath.isNotEmpty
-                          ? 'https://image.tmdb.org/t/p/w154${movie.posterPath}'
+                          ? resolvePosterUrl(
+                              movie.posterPath,
+                              size: 'w154',
+                            )
                           : null,
                       width: 50,
                       height: 75,

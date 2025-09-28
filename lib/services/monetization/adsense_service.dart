@@ -10,6 +10,7 @@ import '../../core/logging/logger_factory.dart';
 import '../../core/monetization/adsense_slots.dart';
 import 'adsense_dom_adapter_stub.dart'
     if (dart.library.js_interop) 'adsense_dom_adapter_web.dart';
+import 'adsense_dom_models.dart';
 
 @JS('window.adsbygoogle')
 external JSArray<JSObject>? get adsbygoogle;
@@ -26,7 +27,8 @@ class AdSenseService {
   AdSenseService._internal();
   static final AdSenseService _instance = AdSenseService._internal();
 
-  static const AdSenseDomAdapter _domAdapter = AdSenseDomAdapter();
+  static AdSenseDomAdapter _domAdapter = const AdSenseDomAdapter();
+  static const String _scriptElementId = 'adsense-script';
 
   static AdSenseService get instance => _instance;
 
@@ -35,6 +37,12 @@ class AdSenseService {
   bool _scriptInjected = false;
   final Map<String, int> _adLoadFailures = {};
   static const int _maxLoadFailures = 3;
+  bool _interstitialReady = false;
+  int _interstitialFailureCount = 0;
+  static const int _interstitialMaxFailures = 3;
+  int _rewardedFailureCount = 0;
+  static const int _rewardedMaxFailures = 3;
+  static JSArray<JSObject>? Function()? _adsbygoogleGetterOverride;
 
   /// Initializes the AdSense service and injects the script if needed.
   ///
@@ -73,7 +81,7 @@ class AdSenseService {
   bool isAdSenseReady() {
     if (!kIsWeb) return false;
     try {
-      return adsbygoogle != null;
+      return _getAdsByGoogleQueue() != null;
     } catch (e) {
       return false;
     }
@@ -83,7 +91,7 @@ class AdSenseService {
   Future<void> _injectAdSenseScript() async {
     if (_scriptInjected || !kIsWeb) return;
 
-    const scriptId = 'adsense-script';
+    const scriptId = _scriptElementId;
     if (_domAdapter.elementExistsById(scriptId)) {
       _scriptInjected = true;
       LoggerFactory.debug(
@@ -113,8 +121,69 @@ class AdSenseService {
       return false;
     }
 
-    // TODO(peliculas-admob): Refine banner availability checks once AdSense API surface is finalized.
+    if (!_hasCommonAdSensePrerequisites('adsense_banner')) {
+      return false;
+    }
+
+    if (_hasReachedFailureThreshold()) {
+      LoggerFactory.warning(
+        'AdSense banner disabled: failure threshold reached.',
+        data: {
+          'feature': 'adsense_banner',
+          'reason': 'max_failures',
+          'failures': Map<String, int>.from(_adLoadFailures),
+        },
+      );
+      return false;
+    }
+
     return isAdSenseReady();
+  }
+
+  bool _hasReachedFailureThreshold() {
+    if (_adLoadFailures.isEmpty) {
+      return false;
+    }
+
+    return _adLoadFailures.values.every(
+      (failureCount) => failureCount >= _maxLoadFailures,
+    );
+  }
+
+  bool _hasCommonAdSensePrerequisites(String feature) {
+    if (_publisherId == null || _publisherId!.isEmpty) {
+      LoggerFactory.debug(
+        'AdSense $feature disabled: missing publisher ID.',
+        data: {
+          'feature': feature,
+          'reason': 'missing_publisher_id',
+        },
+      );
+      return false;
+    }
+
+    final scriptInjected = _scriptInjected &&
+        (!kIsWeb || _domAdapter.elementExistsById(_scriptElementId));
+    if (!scriptInjected) {
+      LoggerFactory.debug(
+        'AdSense $feature disabled: script not injected.',
+        data: {
+          'feature': feature,
+          'reason': 'script_not_injected',
+        },
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _hasReachedInterstitialFailureThreshold() {
+    return _interstitialFailureCount >= _interstitialMaxFailures;
+  }
+
+  bool _hasReachedRewardedFailureThreshold() {
+    return _rewardedFailureCount >= _rewardedMaxFailures;
   }
 
   bool canShowInterstitialAd() {
@@ -122,8 +191,73 @@ class AdSenseService {
       return false;
     }
 
-    // TODO(peliculas-admob): Implement interstitial availability checks with official AdSense support.
-    return false;
+    if (!_hasCommonAdSensePrerequisites('adsense_interstitial')) {
+      return false;
+    }
+
+    if (_hasReachedInterstitialFailureThreshold()) {
+      LoggerFactory.warning(
+        'AdSense interstitial disabled: failure threshold reached.',
+        data: {
+          'feature': 'adsense_interstitial',
+          'reason': 'max_failures',
+          'failures': _interstitialFailureCount,
+        },
+      );
+      return false;
+    }
+
+    if (!_interstitialReady) {
+      LoggerFactory.debug(
+        'AdSense interstitial not ready yet.',
+        data: {
+          'feature': 'adsense_interstitial',
+          'reason': 'not_ready',
+          'failures': _interstitialFailureCount,
+        },
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  void markInterstitialReady() {
+    _interstitialReady = true;
+    _interstitialFailureCount = 0;
+  }
+
+  void markInterstitialFailure({String? reason}) {
+    _interstitialReady = false;
+    if (_interstitialFailureCount < _interstitialMaxFailures) {
+      _interstitialFailureCount++;
+    }
+
+    LoggerFactory.warning(
+      'AdSense interstitial load failure registered.',
+      data: {
+        'feature': 'adsense_interstitial',
+        'reason': reason ?? 'load_failure',
+        'failures': _interstitialFailureCount,
+        'maxFailures': _interstitialMaxFailures,
+      },
+    );
+  }
+
+  void markRewardedFailure({String? reason}) {
+    if (_rewardedFailureCount < _rewardedMaxFailures) {
+      _rewardedFailureCount++;
+    }
+
+    LoggerFactory.warning(
+      'AdSense rewarded load failure registered.',
+      data: {
+        'feature': 'adsense_rewarded',
+        'reason': reason ?? 'load_failure',
+        'failures': _rewardedFailureCount,
+        'maxFailures': _rewardedMaxFailures,
+      },
+    );
   }
 
   Future<bool> showInterstitialAd({String? context}) async {
@@ -135,12 +269,139 @@ class AdSenseService {
       return false;
     }
 
-    // TODO(peliculas-admob): Implement AdSense interstitial rendering once API is available.
+    if (!kIsWeb) {
+      LoggerFactory.warning(
+        'Attempted to show AdSense interstitial on non-web platform.',
+        data: {'context': context},
+      );
+      return false;
+    }
+
+    if (!canShowInterstitialAd()) {
+      LoggerFactory.debug(
+        'AdSense interstitial prerequisites not satisfied.',
+        data: {
+          'context': context,
+          'feature': 'adsense_interstitial',
+          'ready': _interstitialReady,
+          'failures': _interstitialFailureCount,
+        },
+      );
+      return false;
+    }
+
+    const overlayId = 'adsense_interstitial_overlay';
+    final adElementId =
+        'adsense_interstitial_${DateTime.now().millisecondsSinceEpoch}';
+
+    final config = AdSenseSlots.getConfigForType(AdSenseAdType.interstitial);
+    final adHtml = _buildConfiguredAdHtml(
+      elementId: adElementId,
+      config: config,
+    );
+
+    Future<AdSenseOverlayResult> overlayFuture;
+    var interstitialLoaded = false;
+    try {
+      overlayFuture = _domAdapter.mountInterstitialOverlay(
+        overlayId: overlayId,
+        adElementId: adElementId,
+        adHtml: adHtml,
+        closeButtonLabel: 'Close ad',
+        timeout: const Duration(seconds: 12),
+        onLoaded: () {
+          interstitialLoaded = true;
+          LoggerFactory.debug(
+            'AdSense interstitial creative loaded into overlay.',
+            data: {
+              'context': context,
+              'feature': 'adsense_interstitial',
+            },
+          );
+        },
+        onClose: () {
+          LoggerFactory.debug(
+            'AdSense interstitial overlay closed by user.',
+            data: {
+              'context': context,
+              'feature': 'adsense_interstitial',
+              'loaded': interstitialLoaded,
+            },
+          );
+        },
+      );
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Failed to mount AdSense interstitial overlay: $error',
+        data: {
+          'context': context,
+          'feature': 'adsense_interstitial',
+        },
+        stackTrace: stackTrace,
+      );
+      markInterstitialFailure(reason: 'overlay_mount_failure');
+      return false;
+    }
+
+    try {
+      final queue = _getAdsByGoogleQueue();
+      if (queue == null) {
+        LoggerFactory.warning(
+          'AdSense queue not available when attempting interstitial render.',
+          data: {
+            'context': context,
+            'feature': 'adsense_interstitial',
+          },
+        );
+        markInterstitialFailure(reason: 'queue_unavailable');
+        _domAdapter.removeElementById(overlayId);
+        return false;
+      }
+
+      queue.add({}.jsify() as JSObject);
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Failed to request AdSense interstitial rendering: $error',
+        data: {
+          'context': context,
+          'feature': 'adsense_interstitial',
+        },
+        stackTrace: stackTrace,
+      );
+      markInterstitialFailure(reason: 'queue_push_failure');
+      _domAdapter.removeElementById(overlayId);
+      return false;
+    }
+
+    final result = await overlayFuture;
+
+    if (result.isLoaded) {
+      _interstitialReady = false;
+      LoggerFactory.info(
+        'AdSense interstitial completed successfully.',
+        data: {
+          'context': context,
+          'feature': 'adsense_interstitial',
+        },
+      );
+      return true;
+    }
+
+    if (result.isDismissed) {
+      _interstitialReady = false;
+      markInterstitialFailure(reason: 'closed_before_load');
+      return false;
+    }
+
+    final failureReason = result.reason;
+    markInterstitialFailure(reason: failureReason);
     LoggerFactory.warning(
-      'AdSense interstitials are not yet implemented on web.',
+      'AdSense interstitial failed to render.',
       data: {
         'context': context,
         'feature': 'adsense_interstitial',
+        'state': result.state.name,
+        'reason': failureReason,
       },
     );
     return false;
@@ -158,14 +419,153 @@ class AdSenseService {
       return false;
     }
 
-    // TODO(peliculas-admob): Wire AdSense rewarded flow when official SDK exposes APIs.
-    LoggerFactory.warning(
-      'AdSense rewarded ads are not yet implemented on web.',
-      data: {
-        'context': context,
-        'feature': 'adsense_rewarded',
-      },
+    if (!kIsWeb) {
+      LoggerFactory.warning(
+        'Attempted to show AdSense rewarded ad on non-web platform.',
+        data: {'context': context},
+      );
+      return false;
+    }
+
+    if (!_hasCommonAdSensePrerequisites('adsense_rewarded')) {
+      return false;
+    }
+
+    if (_hasReachedRewardedFailureThreshold()) {
+      LoggerFactory.warning(
+        'AdSense rewarded disabled: failure threshold reached.',
+        data: {
+          'feature': 'adsense_rewarded',
+          'reason': 'max_failures',
+          'failures': _rewardedFailureCount,
+        },
+      );
+      return false;
+    }
+
+    final queue = _getAdsByGoogleQueue();
+    if (queue == null) {
+      LoggerFactory.warning(
+        'AdSense queue not available when attempting rewarded render.',
+        data: {
+          'context': context,
+          'feature': 'adsense_rewarded',
+        },
+      );
+      markRewardedFailure(reason: 'queue_unavailable');
+      return false;
+    }
+
+    const overlayId = 'adsense_rewarded_overlay';
+    final adElementId =
+        'adsense_rewarded_${DateTime.now().millisecondsSinceEpoch}';
+
+    final config = AdSenseSlots.getConfigForType(AdSenseAdType.rewarded);
+    final adHtml = _buildConfiguredAdHtml(
+      elementId: adElementId,
+      config: config,
     );
+
+    var rewardLoaded = false;
+    var rewardDelivered = false;
+
+    Future<AdSenseOverlayResult> overlayFuture;
+    try {
+      overlayFuture = _domAdapter.mountRewardedOverlay(
+        overlayId: overlayId,
+        adElementId: adElementId,
+        adHtml: adHtml,
+        closeButtonLabel: 'Claim reward',
+        timeout: const Duration(seconds: 20),
+        onLoaded: () {
+          rewardLoaded = true;
+          LoggerFactory.debug(
+            'AdSense rewarded creative loaded into overlay.',
+            data: {
+              'context': context,
+              'feature': 'adsense_rewarded',
+            },
+          );
+        },
+        onClose: () {
+          if (rewardLoaded && !rewardDelivered) {
+            rewardDelivered = true;
+            const reward = AdSenseReward(amount: 1, type: 'engagement');
+            onRewardEarned(reward);
+            LoggerFactory.info(
+              'AdSense rewarded engagement granted to user.',
+              data: {
+                'context': context,
+                'feature': 'adsense_rewarded',
+                'rewardType': reward.type,
+                'rewardAmount': reward.amount,
+              },
+            );
+          }
+        },
+      );
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Failed to mount AdSense rewarded overlay: $error',
+        data: {
+          'context': context,
+          'feature': 'adsense_rewarded',
+        },
+        stackTrace: stackTrace,
+      );
+      markRewardedFailure(reason: 'overlay_mount_failure');
+      return false;
+    }
+
+    try {
+      queue.add({}.jsify() as JSObject);
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Failed to request AdSense rewarded rendering: $error',
+        data: {
+          'context': context,
+          'feature': 'adsense_rewarded',
+        },
+        stackTrace: stackTrace,
+      );
+      markRewardedFailure(reason: 'queue_push_failure');
+      _domAdapter.removeElementById(overlayId);
+      return false;
+    }
+
+    final result = await overlayFuture;
+
+    if (result.isLoaded) {
+      if (rewardLoaded && !rewardDelivered) {
+        rewardDelivered = true;
+        const reward = AdSenseReward(amount: 1, type: 'engagement');
+        onRewardEarned(reward);
+        LoggerFactory.info(
+          'AdSense rewarded engagement granted (deferred).',
+          data: {
+            'context': context,
+            'feature': 'adsense_rewarded',
+            'rewardType': reward.type,
+            'rewardAmount': reward.amount,
+          },
+        );
+      }
+
+      if (rewardDelivered) {
+        _rewardedFailureCount = 0;
+        return true;
+      }
+
+      markRewardedFailure(reason: 'missing_reward_delivery');
+      return false;
+    }
+
+    if (result.isDismissed) {
+      markRewardedFailure(reason: 'closed_before_load');
+      return false;
+    }
+
+    markRewardedFailure(reason: result.reason);
     return false;
   }
 
@@ -211,8 +611,9 @@ class AdSenseService {
     }
 
     try {
-      if (adsbygoogle != null && _domAdapter.elementExistsById(adId)) {
-        adsbygoogle!.add({}.jsify() as JSObject);
+      final queue = _getAdsByGoogleQueue();
+      if (queue != null && _domAdapter.elementExistsById(adId)) {
+        queue.add({}.jsify() as JSObject);
         LoggerFactory.debug('Ad refreshed for adId: $adId');
       }
     } catch (e) {
@@ -252,7 +653,69 @@ class AdSenseService {
     _scriptInjected = false;
     _publisherId = null;
     _adLoadFailures.clear();
+    _interstitialReady = false;
+    _interstitialFailureCount = 0;
+    _rewardedFailureCount = 0;
+    _cleanupDomArtifacts();
+    _domAdapter = const AdSenseDomAdapter();
+    _adsbygoogleGetterOverride = null;
   }
+
+  @visibleForTesting
+  void debugSetInitializationState({
+    bool? isInitialized,
+    String? publisherId,
+    bool? scriptInjected,
+  }) {
+    if (isInitialized != null) {
+      _isInitialized = isInitialized;
+    }
+    if (publisherId != null) {
+      _publisherId = publisherId;
+    }
+    if (scriptInjected != null) {
+      _scriptInjected = scriptInjected;
+    }
+  }
+
+  @visibleForTesting
+  void debugSetInterstitialState({
+    bool? ready,
+    int? failureCount,
+  }) {
+    if (ready != null) {
+      _interstitialReady = ready;
+    }
+    if (failureCount != null) {
+      _interstitialFailureCount = failureCount;
+    }
+  }
+
+  @visibleForTesting
+  int get debugInterstitialFailureCount => _interstitialFailureCount;
+
+  @visibleForTesting
+  bool get debugInterstitialReady => _interstitialReady;
+
+  @visibleForTesting
+  static void debugOverrideDomAdapter(AdSenseDomAdapter adapter) {
+    _domAdapter = adapter;
+  }
+
+  @visibleForTesting
+  static void debugOverrideAdsByGoogleQueue(
+    JSArray<JSObject>? Function()? override,
+  ) {
+    _adsbygoogleGetterOverride = override;
+  }
+
+  @visibleForTesting
+  void debugSetRewardedFailures(int failureCount) {
+    _rewardedFailureCount = failureCount;
+  }
+
+  @visibleForTesting
+  int get debugRewardedFailureCount => _rewardedFailureCount;
 
   /// Simulates fetching ad configuration from a remote server.
   Future<AdSenseConfig> fetchRemoteAdConfig(String adType) async {
@@ -281,18 +744,62 @@ class AdSenseService {
   AdSenseMetrics getMetrics() => AdSenseMetrics(
         isInitialized: _isInitialized,
         hasActiveBanner: false,
-        hasActiveInterstitial: false,
-        hasActiveRewarded: false,
+        hasActiveInterstitial: _interstitialReady,
+        hasActiveRewarded:
+            !_hasReachedRewardedFailureThreshold() && isAdSenseReady(),
         totalAdsCreated: _adLoadFailures.length,
         activeAdsCount: 0,
         publisherId: _publisherId,
       );
 
+  void _cleanupDomArtifacts() {
+    _domAdapter.removeElementById('adsense_interstitial_overlay');
+    _domAdapter.removeElementById('adsense_rewarded_overlay');
+    if (kIsWeb) {
+      _domAdapter.removeElementById(_scriptElementId);
+    }
+  }
+
   Future<void> dispose() async {
-    // TODO(peliculas-admob): Evaluate removing injected script when disposing.
     _isInitialized = false;
+    _scriptInjected = false;
     _publisherId = null;
     _adLoadFailures.clear();
+    _interstitialReady = false;
+    _interstitialFailureCount = 0;
+    _rewardedFailureCount = 0;
+    _cleanupDomArtifacts();
+    _domAdapter = const AdSenseDomAdapter();
+    _adsbygoogleGetterOverride = null;
+  }
+
+  JSArray<JSObject>? _getAdsByGoogleQueue() {
+    return _adsbygoogleGetterOverride?.call() ?? adsbygoogle;
+  }
+
+  String _buildConfiguredAdHtml({
+    required String elementId,
+    required AdSenseConfig config,
+  }) {
+    final layoutKeyAttr = config.layoutKey != null
+        ? ' data-ad-layout-key="${config.layoutKey}"'
+        : '';
+    final widthAttr =
+        config.width != null ? ' data-ad-width="${config.width}"' : '';
+    final heightAttr =
+        config.height != null ? ' data-ad-height="${config.height}"' : '';
+    final responsiveAttr =
+        config.responsive ? ' data-full-width-responsive="true"' : '';
+
+    return '''
+      <ins class="adsbygoogle"
+           id="$elementId"
+           style="${config.style}"
+           data-ad-client="$_publisherId"
+           data-ad-slot="${config.slot}"
+           data-ad-format="${config.format}"$layoutKeyAttr$widthAttr$heightAttr$responsiveAttr>
+      </ins>
+    ''';
   }
 }
 

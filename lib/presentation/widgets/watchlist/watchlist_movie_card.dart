@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/watchlist_movie.dart';
 
 class WatchlistMovieCard extends StatelessWidget {
@@ -98,8 +99,10 @@ class WatchlistMovieCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: movie.moviePosterPath != null
             ? CachedNetworkImage(
-                imageUrl:
-                    'https://image.tmdb.org/t/p/w500${movie.moviePosterPath}',
+                imageUrl: resolvePosterUrl(
+                  movie.moviePosterPath,
+                  size: 'w500',
+                ),
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[300],

@@ -71,9 +71,12 @@ class AchievementsState {
 
 // Notifier para gestionar los logros
 class AchievementsNotifier extends Notifier<AchievementsState> {
+  bool _hasInitialized = false;
+  bool _isInitializing = false;
+
   @override
   AchievementsState build() {
-    _initialize();
+    Future.microtask(_initialize);
     return AchievementsState();
   }
 
@@ -81,16 +84,24 @@ class AchievementsNotifier extends Notifier<AchievementsState> {
       ref.read(achievementsRepositoryProvider);
 
   Future<void> _initialize() async {
+    if (_hasInitialized || _isInitializing) {
+      return;
+    }
+
+    _isInitializing = true;
     state = state.copyWith(isLoading: true);
 
     try {
       await repository.initializeDefaultAchievements();
       await loadAchievements();
+      _hasInitialized = true;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
+    } finally {
+      _isInitializing = false;
     }
   }
 

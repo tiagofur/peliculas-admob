@@ -51,11 +51,30 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       if (await hasInternetConnection()) {
         AppLogger.repo('CustomLists',
             'Obteniendo listas desde Supabase para usuario: ${currentUser.id}');
-        final lists = await _supabaseDataSource.getUserLists(currentUser.id);
-        await _saveListsLocally(lists);
+        final remoteLists =
+            await _supabaseDataSource.getUserLists(currentUser.id);
+
+        final localLists = await getLocalLists();
+        final pendingLocalLists = localLists.where((localList) {
+          final isPending = localList.syncStatus != 'synced';
+          final existsRemotely =
+              remoteLists.any((remote) => remote.id == localList.id);
+          return isPending && !existsRemotely;
+        }).toList();
+
+        if (pendingLocalLists.isNotEmpty) {
+          AppLogger.repo(
+            'CustomLists',
+            '� Manteniendo ${pendingLocalLists.length} listas locales pendientes en memoria hasta sincronización',
+          );
+        }
+
+        final mergedLists = [...remoteLists, ...pendingLocalLists];
+        await _saveListsLocally(mergedLists);
+
         AppLogger.repo('CustomLists',
-            '📥 ${lists.length} listas obtenidas desde Supabase');
-        return lists;
+            '📥 ${remoteLists.length} listas remotas + ${pendingLocalLists.length} pendientes');
+        return mergedLists;
       } else {
         AppLogger.repo(
             'CustomLists', '📱 Sin conexión, obteniendo listas locales');
@@ -94,6 +113,8 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
 
   @override
   Future<CustomList> createList(CustomList list) async {
+    String? userId;
+    CustomList listWithUserId = list;
     try {
       // Validar que el usuario esté autenticado con validaciones más robustas
       final currentUser = Supabase.instance.client.auth.currentUser;
@@ -104,7 +125,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       }
 
       // Validar que el userId del usuario sea válido con múltiples verificaciones
-      final userId = currentUser.id;
+      userId = currentUser.id;
       if (userId.isEmpty || userId.trim().isEmpty) {
         AppLogger.repo(
             'CustomLists', '❌ ID de usuario inválido - userId: "$userId"');
@@ -146,18 +167,33 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       AppLogger.repo('CustomLists', '🔐 Email del usuario: $currentUser.email');
 
       // Asegurar que la lista tenga el userId correcto
-      final listWithUserId = list.copyWith(userId: userId);
+      listWithUserId = list.copyWith(userId: userId);
+
+      if (!await hasInternetConnection()) {
+        AppLogger.repo('CustomLists',
+            '📴 Sin conexión: guardando lista "${list.name}" en modo offline');
+        return await _storeListOffline(listWithUserId);
+      }
 
       AppLogger.repo(
           'CustomLists', '🌐 Conexión disponible, guardando en Supabase');
-      final createdList = await _supabaseDataSource.createList(listWithUserId);
-      await _updateLocalList(createdList);
-      AppLogger.repo('CustomLists',
-          '✅ Lista creada exitosamente en Supabase y guardada localmente');
-      return createdList;
+      try {
+        final createdList =
+            await _supabaseDataSource.createList(listWithUserId);
+        await _updateLocalList(createdList);
+        AppLogger.repo('CustomLists',
+            '✅ Lista creada exitosamente en Supabase y guardada localmente');
+        return createdList;
+      } on PostgrestException catch (error) {
+        AppLogger.repo('CustomLists',
+            '⚠️ Supabase rechazó la inserción, se registrará para sincronización: ${error.message}');
+        return await _storeListOffline(listWithUserId, error: error);
+      }
     } catch (e) {
       AppLogger.repo('CustomLists', '❌ Error al crear lista: $e');
-      throw Exception('Error al crear lista: $e');
+      final fallbackList =
+          userId == null ? listWithUserId : list.copyWith(userId: userId);
+      return await _storeListOffline(fallbackList, error: e);
     }
   }
 
@@ -612,6 +648,22 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
     } catch (e) {
       // Error al guardar operación pendiente: $e
     }
+  }
+
+  Future<CustomList> _storeListOffline(CustomList list, {Object? error}) async {
+    final pendingList = list.copyWith(syncStatus: 'pending');
+    await _savePendingOperation('create', pendingList.toJson());
+    await _updateLocalList(pendingList);
+
+    if (error != null) {
+      AppLogger.repo(
+          'CustomLists', '📦 Lista guardada offline por error: $error');
+    } else {
+      AppLogger.repo('CustomLists',
+          '📦 Lista guardada offline a la espera de sincronización');
+    }
+
+    return pendingList;
   }
 
   Future<void> _executePendingOperation(Map<String, dynamic> operation) async {

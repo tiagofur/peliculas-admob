@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../domain/adapters/legacy_hive_adapters.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/watched_movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
@@ -106,11 +107,18 @@ class CrossPlatformInitService {
   /// Registrar adaptadores de Hive
   Future<void> _registerHiveAdapters() async {
     try {
-      // Registrar adaptador de Movie si no está registrado
-      if (!Hive.isAdapterRegistered(0)) {
-        Hive.registerAdapter(MovieAdapter());
-        if (kDebugMode) {
+      final wasMovieAdapterRegistered = Hive.isAdapterRegistered(0);
+      final wasLegacyAdapterRegistered = Hive.isAdapterRegistered(32);
+
+      ensureMovieAdaptersRegistered();
+
+      if (kDebugMode) {
+        if (!wasMovieAdapterRegistered && Hive.isAdapterRegistered(0)) {
           LoggerFactory.info('🎬 MovieAdapter registrado (ID: 0)');
+        }
+        if (!wasLegacyAdapterRegistered && Hive.isAdapterRegistered(32)) {
+          LoggerFactory.info(
+              '🕰️ LegacyMovieAdapter32 registrado para compatibilidad (ID: 32)');
         }
       }
 

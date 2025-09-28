@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-
 import 'package:peliculas/core/logging/logger_factory.dart';
 import 'package:peliculas/domain/entities/movie.dart';
-import 'package:peliculas/presentation/widgets/movies/movie_horizontal_listview_with_ads.dart';
-import 'package:peliculas/presentation/widgets/movies/movie_masonry_with_ads.dart';
 import 'package:peliculas/presentation/widgets/admob/full_width_ad_widget.dart';
 import 'package:peliculas/presentation/widgets/admob/grid_ad_widget.dart';
 import 'package:peliculas/presentation/widgets/admob/movie_card_ad_widget.dart';
+import 'package:peliculas/presentation/widgets/movies/movie_horizontal_listview_with_ads.dart';
+import 'package:peliculas/presentation/widgets/movies/movie_masonry_with_ads.dart';
 
 /// Ejemplos de uso de todos los widgets de anuncios
 /// Este archivo demuestra cómo integrar los anuncios en diferentes contextos
@@ -208,8 +207,7 @@ class AdWidgetsExamples extends StatelessWidget {
     return List.generate(count, (index) {
       return Movie(
         adult: false,
-        backdropPath:
-            'https://image.tmdb.org/t/p/w500/sample_backdrop_$index.jpg',
+        backdropPath: '/sample_backdrop_$index.jpg',
         genreIds: ['28', '12', '878'], // Acción, Aventura, Ciencia ficción
         id: index + 1,
         originalLanguage: 'en',
@@ -217,7 +215,7 @@ class AdWidgetsExamples extends StatelessWidget {
         overview:
             'Esta es una película de ejemplo número ${index + 1} para demostrar la integración de anuncios.',
         popularity: 100.0 - index,
-        posterPath: 'https://image.tmdb.org/t/p/w500/sample_poster_$index.jpg',
+        posterPath: '/sample_poster_$index.jpg',
         releaseDate: DateTime.now().subtract(Duration(days: index * 30)),
         title: 'Película de Ejemplo ${index + 1}',
         video: false,
@@ -400,15 +398,14 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
     return List.generate(count, (index) {
       return Movie(
         adult: false,
-        backdropPath:
-            'https://image.tmdb.org/t/p/w500/sample_backdrop_$index.jpg',
+        backdropPath: '/sample_backdrop_$index.jpg',
         genreIds: ['28', '12', '878'],
         id: index + 1,
         originalLanguage: 'en',
         originalTitle: 'Sample Movie ${index + 1}',
         overview: 'Película de ejemplo ${index + 1}',
         popularity: 100.0 - index,
-        posterPath: 'https://image.tmdb.org/t/p/w500/sample_poster_$index.jpg',
+        posterPath: '/sample_poster_$index.jpg',
         releaseDate: DateTime.now().subtract(Duration(days: index * 30)),
         title: 'Película ${index + 1}',
         video: false,

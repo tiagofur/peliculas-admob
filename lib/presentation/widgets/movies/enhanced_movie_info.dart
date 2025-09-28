@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../config/helpers/human_formats.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/streaming/streaming.dart';
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/entities.dart';
 import '../streaming/streaming_availability_indicator.dart';
 import '../watch_providers_widget.dart';
@@ -942,11 +943,16 @@ class _EnhancedCast extends StatelessWidget {
                       CircleAvatar(
                         radius: 35,
                         backgroundColor: colors.surfaceContainerHighest,
-                        backgroundImage: profilePath != null
-                            ? NetworkImage(
-                                'https://image.tmdb.org/t/p/w185$profilePath')
-                            : null,
-                        child: profilePath == null
+                        backgroundImage:
+                            profilePath != null && profilePath.isNotEmpty
+                                ? NetworkImage(
+                                    resolveTmdbImageUrl(
+                                      profilePath,
+                                      size: 'w185',
+                                    ),
+                                  )
+                                : null,
+                        child: profilePath == null || profilePath.isEmpty
                             ? Icon(
                                 Icons.person,
                                 size: 35,

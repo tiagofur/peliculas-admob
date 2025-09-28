@@ -1,3 +1,5 @@
+import '../../core/utils/tmdb_image_utils.dart';
+
 // import 'package:isar/isar.dart';
 
 // part 'person.g.dart';
@@ -80,7 +82,11 @@ class Person {
 
   String get fullProfileUrl {
     if (profilePath == null || (profilePath?.isEmpty ?? true)) return '';
-    return 'https://image.tmdb.org/t/p/w500$profilePath';
+    return resolveTmdbImageUrl(
+      profilePath,
+      size: 'w500',
+      fallback: '',
+    );
   }
 
   String get genderString {

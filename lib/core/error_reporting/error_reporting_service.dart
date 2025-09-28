@@ -9,17 +9,45 @@ import 'error_metrics_service.dart';
 
 /// Utility function to clean null values from data maps to prevent
 /// "Cannot send Null" errors in Flutter debugger and Firebase Crashlytics
-Map<String, dynamic>? _cleanErrorDataMap(Map<String, dynamic>? data) {
+Map<String, dynamic>? _cleanErrorDataMap(Object? data) {
   if (data == null) return null;
 
-  final cleanData = <String, dynamic>{};
-  for (final entry in data.entries) {
-    if (entry.value != null) {
-      cleanData[entry.key] = entry.value;
-    }
+  if (data is Map) {
+    final cleanData = <String, dynamic>{};
+    data.forEach((key, value) {
+      if (value == null) return;
+      final stringKey = key?.toString() ?? 'unknown';
+      cleanData[stringKey] = _stringifyErrorValue(value);
+    });
+    return cleanData.isEmpty ? null : cleanData;
   }
 
-  return cleanData.isEmpty ? null : cleanData;
+  if (data is Iterable) {
+    final nonNullEntries =
+        data.where((element) => element != null).toList(growable: false);
+    if (nonNullEntries.isEmpty) return null;
+    return {
+      'items': nonNullEntries.map(_stringifyErrorValue).toList(growable: false),
+    };
+  }
+
+  return {'value': _stringifyErrorValue(data)};
+}
+
+String _stringifyErrorValue(Object? value) {
+  if (value == null) {
+    return 'null';
+  }
+
+  if (value is num || value is bool || value is String) {
+    return value.toString();
+  }
+
+  if (value is Map || value is Iterable) {
+    return value.toString();
+  }
+
+  return value.toString();
 }
 
 /// Service for handling error reporting using Firebase Crashlytics

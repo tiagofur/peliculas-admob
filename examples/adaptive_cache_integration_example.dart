@@ -2,12 +2,12 @@
 // This file demonstrates how to integrate and use the new adaptive caching features
 
 import 'package:flutter/material.dart';
-
 import 'package:peliculas/core/cache/adaptive_cache_config.dart';
 import 'package:peliculas/core/cache/image_cache_manager.dart';
 import 'package:peliculas/core/cache/image_cache_performance_metrics.dart';
 import 'package:peliculas/core/cache/network_aware_strategy.dart';
 import 'package:peliculas/core/services/logger_factory.dart';
+import 'package:peliculas/core/utils/tmdb_image_utils.dart';
 
 /// Example of how to initialize the adaptive caching system
 class AdaptiveCacheIntegrationExample {
@@ -283,7 +283,10 @@ class HomeScreen extends StatelessWidget {
         ),
         itemCount: 20,
         itemBuilder: (context, index) {
-          final imageUrl = 'https://image.tmdb.org/t/p/w500/example_$index.jpg';
+          final imageUrl = resolvePosterUrl(
+            '/example_$index.jpg',
+            size: 'w500',
+          );
 
           return Card(
             clipBehavior: Clip.antiAlias,

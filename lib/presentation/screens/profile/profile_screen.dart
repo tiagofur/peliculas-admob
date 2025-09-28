@@ -7,6 +7,7 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/analytics/analytics_service.dart';
+import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
@@ -633,7 +634,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: Image.network(
-                      'https://image.tmdb.org/t/p/w92${rating.moviePosterPath}',
+                      resolvePosterUrl(
+                        rating.moviePosterPath,
+                        size: 'w92',
+                      ),
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stack) => Icon(Icons.movie,
                           color: theme.colorScheme.onSurface

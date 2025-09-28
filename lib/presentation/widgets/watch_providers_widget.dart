@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../core/utils/tmdb_image_utils.dart';
 import '../../domain/entities/watch_provider.dart';
 import '../../domain/entities/watch_providers.dart';
 import '../../domain/services/affiliate_service.dart';
@@ -140,7 +141,11 @@ class WatchProvidersWidget extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: Image.network(
-                  'https://image.tmdb.org/t/p/w45${provider.logoPath}',
+                  resolveTmdbImageUrl(
+                    provider.logoPath,
+                    size: 'w45',
+                    fallback: 'https://via.placeholder.com/45x45.png?text=TV',
+                  ),
                   width: 24,
                   height: 24,
                   fit: BoxFit.cover,

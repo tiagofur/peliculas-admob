@@ -35,6 +35,50 @@ class AllListsState {
 class AllListsNotifier extends Notifier<AllListsState> {
   AllListsNotifier();
 
+  Future<GamificationIntegrationService?>? _gamificationServiceFuture;
+
+  Future<GamificationIntegrationService?> _resolveGamificationService() {
+    _gamificationServiceFuture ??= _loadGamificationService();
+    return _gamificationServiceFuture!;
+  }
+
+  Future<GamificationIntegrationService?> _loadGamificationService() async {
+    return ref.read(gamificationIntegrationServiceProvider.future);
+  }
+
+  Future<void> _runGamificationAction(
+    Future<void> Function(GamificationIntegrationService service) action,
+  ) async {
+    GamificationIntegrationService? service;
+    try {
+      service = await _resolveGamificationService();
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Failed to resolve gamification service: $error',
+        stackTrace: stackTrace,
+      );
+      _gamificationServiceFuture = null;
+      return;
+    }
+
+    if (service == null) {
+      LoggerFactory.debug(
+        'Skipping gamification action: service not available',
+      );
+      _gamificationServiceFuture = null;
+      return;
+    }
+
+    try {
+      await action(service);
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Error running gamification action: $error',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
   @override
   AllListsState build() {
     _loadLists();
@@ -53,11 +97,6 @@ class AllListsNotifier extends Notifier<AllListsState> {
         loading: () => throw StateError('Sync service not loaded'),
         error: (err, stack) => throw err,
       );
-
-  GamificationIntegrationService? get _gamificationService {
-    // TODO: Implement gamification service integration properly
-    return null;
-  }
 
   /// Cargar listas desde el repositorio
   Future<void> _loadLists() async {
@@ -161,6 +200,10 @@ class AllListsNotifier extends Notifier<AllListsState> {
       _loadLists();
 
       LoggerFactory.info('Lista "$name" creada exitosamente');
+
+      await _runGamificationAction(
+        (service) => service.trackListCreated(newId, name),
+      );
     } catch (e) {
       LoggerFactory.error('Error creando lista: $e');
       // Revertir cambio optimista si hay error
@@ -214,6 +257,11 @@ class AllListsNotifier extends Notifier<AllListsState> {
   /// Elimina una lista personalizada
   Future<void> deleteCustomList(String listId) async {
     try {
+      final listIndex =
+          state.customLists.indexWhere((list) => list.id == listId);
+      final CustomList? listToDelete =
+          listIndex != -1 ? state.customLists[listIndex] : null;
+
       // Actualización optimista del estado
       final updatedLists =
           state.customLists.where((list) => list.id != listId).toList();
@@ -232,9 +280,11 @@ class AllListsNotifier extends Notifier<AllListsState> {
       ));
 
       // Registrar evento de gamificación
-      final listToDelete =
-          state.customLists.firstWhere((list) => list.id == listId);
-      await _gamificationService?.trackListDeleted(listId, listToDelete.name);
+      if (listToDelete != null) {
+        await _runGamificationAction(
+          (service) => service.trackListDeleted(listId, listToDelete.name),
+        );
+      }
 
       LoggerFactory.info('✅ Lista personalizada eliminada: $listId');
     } catch (e) {
@@ -257,6 +307,9 @@ class AllListsNotifier extends Notifier<AllListsState> {
   Future<void> addMovieToList(String listId, int movieId,
       {int? position}) async {
     try {
+      final existingList = _findListById(listId);
+      final alreadyContains = existingList?.movieIds.contains(movieId) ?? false;
+
       // Actualizar estado optimísticamente
       _updateListInState(listId, (list) {
         final newMovieIds = List<int>.from(list.movieIds);
@@ -293,7 +346,11 @@ class AllListsNotifier extends Notifier<AllListsState> {
       }
 
       // Registrar evento de gamificación
-      await _gamificationService?.trackMovieAddedToList(movieId, listId);
+      if (!alreadyContains) {
+        await _runGamificationAction(
+          (service) => service.trackMovieAddedToList(movieId, listId),
+        );
+      }
     } catch (e) {
       throw Exception('Error adding movie to list: $e');
     }
@@ -314,6 +371,15 @@ class AllListsNotifier extends Notifier<AllListsState> {
       customLists: updatedCustomLists,
       defaultLists: updatedDefaultLists,
     );
+  }
+
+  CustomList? _findListById(String listId) {
+    for (final list in state.allLists) {
+      if (list.id == listId) {
+        return list;
+      }
+    }
+    return null;
   }
 
   // Remover película de lista

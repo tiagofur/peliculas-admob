@@ -26,6 +26,12 @@ class AdSenseSlots {
   /// Anuncio responsive grande para home
   static const String homeHeroSlot = '6789012345';
 
+  /// Interstitial overlay responsive slot
+  static const String interstitialSlot = '7890123456';
+
+  /// Rewarded overlay slot (video reward)
+  static const String rewardedSlot = '8901234567';
+
   /// Obtener slot por tipo de anuncio
   static String getSlotForType(AdSenseAdType type) {
     switch (type) {
@@ -41,6 +47,10 @@ class AdSenseSlots {
         return articleSlot;
       case AdSenseAdType.homeHero:
         return homeHeroSlot;
+      case AdSenseAdType.interstitial:
+        return interstitialSlot;
+      case AdSenseAdType.rewarded:
+        return rewardedSlot;
     }
   }
 
@@ -91,6 +101,26 @@ class AdSenseSlots {
           responsive: true,
           style: 'display:block',
         );
+      case AdSenseAdType.interstitial:
+        return const AdSenseConfig(
+          slot: interstitialSlot,
+          format: 'auto',
+          responsive: true,
+          style: 'display:block;width:100%;height:100%;min-height:320px;',
+          layoutKey: '-gw-1+2a-9x+5c',
+          width: '320',
+          height: '480',
+        );
+      case AdSenseAdType.rewarded:
+        return const AdSenseConfig(
+          slot: rewardedSlot,
+          format: 'rewarded',
+          responsive: true,
+          style: 'display:block;width:100%;height:100%;min-height:360px;',
+          layoutKey: '-gw-1+2a-9x+5c',
+          width: '360',
+          height: '640',
+        );
     }
   }
 }
@@ -103,6 +133,8 @@ enum AdSenseAdType {
   grid,
   article,
   homeHero,
+  interstitial,
+  rewarded,
 }
 
 /// Configuración específica de un anuncio AdSense

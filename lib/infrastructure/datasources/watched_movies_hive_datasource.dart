@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../domain/adapters/legacy_hive_adapters.dart';
 import '../../domain/datasources/watched_movies_datasource.dart';
 import '../../domain/entities/entities.dart';
 
@@ -27,9 +28,7 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
       }
 
       // Registrar adaptadores si no están registrados
-      if (!Hive.isAdapterRegistered(0)) {
-        Hive.registerAdapter(MovieAdapter());
-      }
+      ensureMovieAdaptersRegistered();
       if (!Hive.isAdapterRegistered(1)) {
         Hive.registerAdapter(WatchedMovieAdapter());
       }

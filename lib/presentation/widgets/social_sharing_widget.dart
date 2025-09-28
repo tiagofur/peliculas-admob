@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/tmdb_image_utils.dart';
 import '../../domain/entities/movie.dart';
 import '../../services/social_sharing_service.dart';
 import '../providers/social_sharing_provider.dart';
@@ -309,7 +310,10 @@ class _ShareOptionsBottomSheetState
                                 height: 90,
                                 child: widget.movie.posterPath.isNotEmpty
                                     ? Image.network(
-                                        'https://image.tmdb.org/t/p/w154${widget.movie.posterPath}',
+                                        resolvePosterUrl(
+                                          widget.movie.posterPath,
+                                          size: 'w154',
+                                        ),
                                         fit: BoxFit.cover,
                                         errorBuilder:
                                             (context, error, stackTrace) =>
