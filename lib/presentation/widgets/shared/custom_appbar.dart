@@ -39,7 +39,7 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
                 // THEME TOGGLE RESTORED - provider fixed
                 IconButton(
                   onPressed: () {
-                    ref.read(themeNotifierProvider).toggleDarkMode();
+                    ref.read(themeControllerProvider).toggleDarkMode();
                   },
                   icon: Icon(isDarkMode
                       ? Icons.light_mode_outlined

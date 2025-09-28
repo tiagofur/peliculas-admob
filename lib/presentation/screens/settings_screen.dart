@@ -204,12 +204,12 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildThemeModeSelector(BuildContext context, WidgetRef ref,
-      ThemeService themeService, AppLocalizations l10n) {
+      ThemeState themeState, AppLocalizations l10n) {
     return RadioGroup<app_theme.ThemeMode>(
-      groupValue: themeService.themeMode,
+      groupValue: themeState.themeMode,
       onChanged: (value) {
         if (value != null) {
-          ref.read(themeNotifierProvider).setThemeMode(value);
+          ref.read(themeControllerProvider).setThemeMode(value);
         }
       },
       child: Column(
@@ -273,7 +273,7 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Widget _buildColorSelector(BuildContext context, WidgetRef ref,
-      List<Color> colorList, ThemeService themeService) {
+      List<Color> colorList, ThemeState themeState) {
     return SizedBox(
       height: 80,
       child: ListView.builder(
@@ -281,13 +281,13 @@ class SettingsScreen extends ConsumerWidget {
         itemCount: colorList.length,
         itemBuilder: (context, index) {
           final color = colorList[index];
-          final isSelected = themeService.selectedColor == index;
+          final isSelected = themeState.selectedColor == index;
 
           return Padding(
             padding: const EdgeInsets.only(right: 12.0),
             child: GestureDetector(
               onTap: () {
-                ref.read(themeNotifierProvider).changeColorIndex(index);
+                ref.read(themeControllerProvider).changeColorIndex(index);
               },
               child: Container(
                 width: 60,

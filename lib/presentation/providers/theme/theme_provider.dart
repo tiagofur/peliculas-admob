@@ -44,58 +44,44 @@ class ThemeState {
   int get hashCode => themeMode.hashCode ^ selectedColor.hashCode;
 }
 
-// Simple theme service
-class ThemeService {
-  ThemeService(this.themeRepository);
-  final ThemeRepository themeRepository;
+// Theme notifier handling the state and persistence
+class ThemeNotifier extends Notifier<ThemeState> {
+  late final ThemeRepository _themeRepository;
 
-  ThemeState _state = ThemeState();
-  final List<Function(ThemeState)> _listeners = [];
-
-  ThemeState get state => _state;
-
-  // Compatibility getters
-  ThemeMode get themeMode => _state.themeMode;
-  int get selectedColor => _state.selectedColor;
-  bool get isDarkMode => _state.isDarkMode;
-
-  void addListener(Function(ThemeState) listener) {
-    _listeners.add(listener);
+  @override
+  ThemeState build() {
+    _themeRepository = ref.watch(themeRepositoryProvider);
+    _loadInitialTheme();
+    return ThemeState();
   }
 
-  void removeListener(Function(ThemeState) listener) {
-    _listeners.remove(listener);
+  void _loadInitialTheme() {
+    Future<void>(() async {
+      final (themeMode, selectedColor) = await _themeRepository.getTheme();
+      state = state.copyWith(
+        themeMode: themeMode,
+        selectedColor: selectedColor,
+      );
+    });
   }
 
-  void _notifyListeners() {
-    for (final listener in _listeners) {
-      listener(_state);
-    }
-  }
-
-  Future<void> loadTheme() async {
-    final (themeMode, selectedColor) = await themeRepository.getTheme();
-    _state = _state.copyWith(
-      themeMode: themeMode,
-      selectedColor: selectedColor,
-    );
-    _notifyListeners();
-  }
+  ThemeMode get themeMode => state.themeMode;
+  int get selectedColor => state.selectedColor;
+  bool get isDarkMode => state.isDarkMode;
 
   Future<void> setThemeMode(ThemeMode themeMode) async {
-    _state = _state.copyWith(themeMode: themeMode);
-    await themeRepository.saveTheme(themeMode, _state.selectedColor);
-    _notifyListeners();
+    state = state.copyWith(themeMode: themeMode);
+    await _themeRepository.saveTheme(themeMode, state.selectedColor);
   }
 
   Future<void> toggleDarkMode() async {
     final newMode =
-        _state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+        state.themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     await setThemeMode(newMode);
   }
 
   material.ThemeMode get flutterThemeMode {
-    switch (_state.themeMode) {
+    switch (state.themeMode) {
       case ThemeMode.system:
         return material.ThemeMode.system;
       case ThemeMode.light:
@@ -106,42 +92,19 @@ class ThemeService {
   }
 
   Future<void> changeColorIndex(int colorIndex) async {
-    _state = _state.copyWith(selectedColor: colorIndex);
-    await themeRepository.saveTheme(_state.themeMode, colorIndex);
-    _notifyListeners();
+    state = state.copyWith(selectedColor: colorIndex);
+    await _themeRepository.saveTheme(state.themeMode, colorIndex);
   }
 }
 
-// Provider for theme service
-final themeServiceProvider = Provider<ThemeService>((ref) {
-  final themeRepository = ref.watch(themeRepositoryProvider);
-  final service = ThemeService(themeRepository);
-  service.loadTheme(); // Load initial theme
-  return service;
+final themeNotifierProvider = NotifierProvider<ThemeNotifier, ThemeState>(
+  ThemeNotifier.new,
+);
+
+final themeControllerProvider = Provider<ThemeNotifier>((ref) {
+  return ref.watch(themeNotifierProvider.notifier);
 });
 
-// Provider for theme state
 final themeStateProvider = Provider<ThemeState>((ref) {
-  return ref.watch(themeServiceProvider).state;
-});
-
-// Compatibility provider that mimics old StateNotifierProvider behavior
-class ThemeNotifierProviderRef {
-  const ThemeNotifierProviderRef(this.service);
-  final ThemeService service;
-
-  ThemeService get notifier => service;
-  ThemeService call() => service;
-}
-
-// Provider for theme notifier - returns ThemeService directly for backwards compatibility
-final themeNotifierProvider = Provider<ThemeService>((ref) {
-  return ref.watch(themeServiceProvider);
-});
-
-// Separate provider that provides .notifier access
-final themeNotifierWithNotifierProvider =
-    Provider<ThemeNotifierProviderRef>((ref) {
-  final service = ref.watch(themeServiceProvider);
-  return ThemeNotifierProviderRef(service);
+  return ref.watch(themeNotifierProvider);
 });
