@@ -145,24 +145,27 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       ),
                       SliverPadding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.85,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
+                        sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final achievement = unlockedAchievements[index];
                               final achievementProgress =
                                   progress[achievement.id];
-                              return AchievementCardWidget(
-                                achievement: achievement,
-                                progress: achievementProgress,
-                                onTap: () => _showAchievementDetails(
-                                    context, achievement, achievementProgress),
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: index == unlockedAchievements.length - 1
+                                      ? 0
+                                      : 12,
+                                ),
+                                child: AchievementCardWidget(
+                                  achievement: achievement,
+                                  progress: achievementProgress,
+                                  onTap: () => _showAchievementDetails(
+                                    context,
+                                    achievement,
+                                    achievementProgress,
+                                  ),
+                                ),
                               );
                             },
                             childCount: unlockedAchievements.length,
@@ -181,24 +184,27 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       ),
                       SliverPadding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.85,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
+                        sliver: SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final achievement = lockedAchievements[index];
                               final achievementProgress =
                                   progress[achievement.id];
-                              return AchievementCardWidget(
-                                achievement: achievement,
-                                progress: achievementProgress,
-                                onTap: () => _showAchievementDetails(
-                                    context, achievement, achievementProgress),
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: index == lockedAchievements.length - 1
+                                      ? 0
+                                      : 12,
+                                ),
+                                child: AchievementCardWidget(
+                                  achievement: achievement,
+                                  progress: achievementProgress,
+                                  onTap: () => _showAchievementDetails(
+                                    context,
+                                    achievement,
+                                    achievementProgress,
+                                  ),
+                                ),
                               );
                             },
                             childCount: lockedAchievements.length,

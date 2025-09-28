@@ -50,6 +50,12 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
             ?.getProgressPercentage(widget.achievement.targetValue) ??
         0.0;
 
+    final unlockedDate = widget.progress?.unlockedDate;
+  final currentValue = widget.progress?.currentValue ?? 0;
+    final targetValue = widget.achievement.targetValue;
+  final remainingValue = targetValue - currentValue;
+  final int remaining = remainingValue > 0 ? remainingValue : 0;
+
     return GestureDetector(
       onTapDown: (_) => _animationController.forward(),
       onTapUp: (_) => _animationController.reverse(),
@@ -61,151 +67,159 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
           return Transform.scale(
             scale: _scaleAnimation.value,
             child: Container(
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: isUnlocked
-                    ? theme.colorScheme.primaryContainer.withValues(alpha: 0.1)
+                    ? theme.colorScheme.primaryContainer.withValues(alpha: 0.12)
                     : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
-                border: isUnlocked
-                    ? Border.all(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                        width: 1.5,
-                      )
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: isUnlocked
-                        ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                        : Colors.black.withValues(alpha: 0.05),
-                    blurRadius: isUnlocked ? 12 : 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                border: Border.all(
+                  color: isUnlocked
+                      ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                      : theme.colorScheme.outlineVariant
+                          .withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
-              child: Stack(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Contenido principal
-                  Padding(
-                    padding: const EdgeInsets.all(16),
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: isUnlocked
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      isUnlocked
+                          ? Icons.emoji_events
+                          : Icons.emoji_events_outlined,
+                      color: isUnlocked
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.primary,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Icono principal
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: isUnlocked
-                                ? theme.colorScheme.primary
-                                : theme.colorScheme.outline
-                                    .withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: isUnlocked
-                                ? [
-                                    BoxShadow(
-                                      color: theme.colorScheme.primary
-                                          .withValues(alpha: 0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.achievement.title,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                            if (isUnlocked)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primary
+                                      .withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: theme.colorScheme.primary,
+                                      size: 16,
                                     ),
-                                  ]
-                                : null,
-                          ),
-                          child: Icon(
-                            isUnlocked
-                                ? Icons.emoji_events
-                                : Icons.emoji_events_outlined,
-                            color: isUnlocked
-                                ? theme.colorScheme.onPrimary
-                                : theme.colorScheme.outline,
-                            size: 24,
-                          ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '+${widget.achievement.points}',
+                                      style: theme.textTheme.labelMedium?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
                         ),
-
-                        const SizedBox(height: 16),
-
-                        // Título del logro
-                        Text(
-                          widget.achievement.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: isUnlocked
-                                ? theme.colorScheme.onSurface
-                                : theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // Descripción más sutil
+                        const SizedBox(height: 6),
                         Text(
                           widget.achievement.description,
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.7),
-                            height: 1.3,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
                         ),
-
-                        const Spacer(),
-
-                        // Progreso simplificado
+                        const SizedBox(height: 12),
                         if (!isUnlocked) ...[
-                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
-                                child: Container(
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.outline
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(6),
+                                  child: LinearProgressIndicator(
+                                    minHeight: 8,
+                                    value: progressValue,
+                                    backgroundColor: theme.colorScheme.outline
                                         .withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: FractionallySizedBox(
-                                    alignment: Alignment.centerLeft,
-                                    widthFactor: progressValue,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: theme.colorScheme.primary
-                                            .withValues(alpha: 0.7),
-                                        borderRadius: BorderRadius.circular(3),
-                                      ),
+                                    valueColor: AlwaysStoppedAnimation(
+                                      theme.colorScheme.primary,
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 12),
                               Text(
-                                '${widget.progress?.currentValue ?? 0}/${widget.achievement.targetValue}',
+                                '$currentValue / $targetValue',
                                 style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 6),
+                          Text(
+                            remaining == 0
+                                ? '¡Estás a un paso de lograrlo!'
+                                : 'Te faltan $remaining para alcanzarlo',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.6),
+                              fontStyle: remaining == 0
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                            ),
+                          ),
                         ] else ...[
-                          // Badge de completado
-                          const SizedBox(height: 8),
-                          Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: theme.colorScheme.primary,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
+                              if (unlockedDate != null)
+                                Text(
+                                  'Cumplido el ${_formatDate(unlockedDate)}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                              const SizedBox(height: 4),
                               Text(
-                                '+${widget.achievement.points} puntos',
+                                'Total conseguido: $currentValue / $targetValue',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -214,25 +228,6 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
                       ],
                     ),
                   ),
-
-                  // Sutil indicador de desbloqueo en la esquina
-                  if (isUnlocked)
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.check,
-                          color: theme.colorScheme.onPrimary,
-                          size: 12,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -240,5 +235,9 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
         },
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }
