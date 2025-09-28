@@ -153,7 +153,8 @@ class CrossPlatformInitService {
       if (!Hive.isAdapterRegistered(AchievementCategoryAdapter().typeId)) {
         Hive.registerAdapter(AchievementCategoryAdapter());
         if (kDebugMode) {
-          LoggerFactory.info('🏆 AchievementCategoryAdapter registrado (ID: 3)');
+          LoggerFactory.info(
+              '🏆 AchievementCategoryAdapter registrado (ID: 3)');
         }
       }
 
@@ -188,7 +189,8 @@ class CrossPlatformInitService {
       if (!Hive.isAdapterRegistered(AchievementProgressAdapter().typeId)) {
         Hive.registerAdapter(AchievementProgressAdapter());
         if (kDebugMode) {
-          LoggerFactory.info('📈 AchievementProgressAdapter registrado (ID: 54)');
+          LoggerFactory.info(
+              '📈 AchievementProgressAdapter registrado (ID: 54)');
         }
       }
 

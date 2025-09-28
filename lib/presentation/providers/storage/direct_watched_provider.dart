@@ -42,9 +42,7 @@ class DirectWatchedService extends DirectSyncService {
 
     try {
       if (!wasWatched && state.containsKey(movie.id)) {
-        await ref
-            .read(achievementsProvider.notifier)
-            .trackMovieWatched(movie);
+        await ref.read(achievementsProvider.notifier).trackMovieWatched(movie);
       }
 
       await ref.read(watchedMoviesProvider.notifier).refresh();
