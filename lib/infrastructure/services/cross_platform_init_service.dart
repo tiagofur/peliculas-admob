@@ -3,7 +3,10 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
 import '../../domain/adapters/legacy_hive_adapters.dart';
+import '../../domain/entities/achievement.dart';
+import '../../domain/entities/achievement_progress.dart';
 import '../../domain/entities/movie.dart';
+import '../../domain/entities/user_achievements.dart';
 import '../../domain/entities/watched_movie.dart';
 import '../../domain/entities/watchlist_movie.dart';
 import 'web_safe_storage_service.dart';
@@ -143,6 +146,56 @@ class CrossPlatformInitService {
         Hive.registerAdapter(WatchlistMovieAdapter());
         if (kDebugMode) {
           LoggerFactory.info('📖 WatchlistMovieAdapter registrado (ID: 101)');
+        }
+      }
+
+      // Registrar adaptadores relacionados a logros y gamificación
+      if (!Hive.isAdapterRegistered(AchievementCategoryAdapter().typeId)) {
+        Hive.registerAdapter(AchievementCategoryAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('🏆 AchievementCategoryAdapter registrado (ID: 3)');
+        }
+      }
+
+      if (!Hive.isAdapterRegistered(AchievementAdapter().typeId)) {
+        Hive.registerAdapter(AchievementAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('🏅 AchievementAdapter registrado (ID: 2)');
+        }
+      }
+
+      if (!Hive.isAdapterRegistered(AchievementTypeAdapter().typeId)) {
+        Hive.registerAdapter(AchievementTypeAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('🎯 AchievementTypeAdapter registrado (ID: 51)');
+        }
+      }
+
+      if (!Hive.isAdapterRegistered(AchievementRarityAdapter().typeId)) {
+        Hive.registerAdapter(AchievementRarityAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('💎 AchievementRarityAdapter registrado (ID: 52)');
+        }
+      }
+
+      if (!Hive.isAdapterRegistered(UserAchievementsAdapter().typeId)) {
+        Hive.registerAdapter(UserAchievementsAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('👤 UserAchievementsAdapter registrado (ID: 53)');
+        }
+      }
+
+      if (!Hive.isAdapterRegistered(AchievementProgressAdapter().typeId)) {
+        Hive.registerAdapter(AchievementProgressAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('📈 AchievementProgressAdapter registrado (ID: 54)');
+        }
+      }
+
+      if (!Hive.isAdapterRegistered(ProgressEntryAdapter().typeId)) {
+        Hive.registerAdapter(ProgressEntryAdapter());
+        if (kDebugMode) {
+          LoggerFactory.info('📝 ProgressEntryAdapter registrado (ID: 55)');
         }
       }
     } catch (e) {

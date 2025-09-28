@@ -4,6 +4,7 @@ import '../../../core/logging/logger_factory.dart';
 import '../../../core/sync/trigger_free_watched_sync.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie.dart';
+import '../achievements/achievements_provider.dart';
 import '../watched_movies_provider.dart';
 import 'direct_sync_provider.dart';
 
@@ -31,6 +32,8 @@ class DirectWatchedService extends DirectSyncService {
 
   /// Alias para toggleMovie para mantener compatibilidad
   Future<void> toggleWatched(Movie movie) async {
+    final wasWatched = state.containsKey(movie.id);
+
     await super.toggleMovie(movie);
 
     if (!ref.mounted) {
@@ -38,6 +41,12 @@ class DirectWatchedService extends DirectSyncService {
     }
 
     try {
+      if (!wasWatched && state.containsKey(movie.id)) {
+        await ref
+            .read(achievementsProvider.notifier)
+            .trackMovieWatched(movie);
+      }
+
       await ref.read(watchedMoviesProvider.notifier).refresh();
     } catch (error, stackTrace) {
       LoggerFactory.error(
