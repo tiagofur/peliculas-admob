@@ -1,7 +1,34 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/exceptions/app_exceptions.dart';
+import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/movie.dart';
 import 'movies_repository_provider.dart';
+
+final movieLoadFailuresProvider =
+    NotifierProvider<_MovieIdSetNotifier, Set<String>>(_MovieIdSetNotifier.new);
+
+final movieLoadInProgressProvider =
+    NotifierProvider<_MovieIdSetNotifier, Set<String>>(_MovieIdSetNotifier.new);
+
+class _MovieIdSetNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => <String>{};
+
+  bool contains(String id) => state.contains(id);
+
+  void add(String id) => state = <String>{...state, id};
+
+  void remove(String id) {
+    if (!state.contains(id)) return;
+    final updated = <String>{...state}..remove(id);
+    state = updated;
+  }
+
+  void clear() => state = const <String>{};
+}
 
 // El provider ahora es un AsyncNotifierProvider que maneja un mapa de películas (caché).
 final movieInfoProvider =
@@ -17,21 +44,60 @@ class MovieMapNotifier extends AsyncNotifier<Map<String, Movie>> {
     return {};
   }
 
-  Future<void> loadMovie(String movieId) async {
-    // No hacer nada si ya existe la película en el estado actual.
-    if (state.value?.containsKey(movieId) ?? false) return;
+  Future<void> loadMovie(String movieId, {bool force = false}) async {
+    final failuresNotifier = ref.read(movieLoadFailuresProvider.notifier);
+    final loadingNotifier = ref.read(movieLoadInProgressProvider.notifier);
 
-    // Obtener el estado actual para no perder las películas ya cargadas.
-    final currentMovies = state.value ?? {};
+    if (!force && failuresNotifier.contains(movieId)) {
+      LoggerFactory.debug(
+          '🎬 MovieMapNotifier: omitiendo carga de $movieId por fallo previo');
+      return;
+    }
 
-    // Poner el estado en modo 'loading' pero manteniendo los datos anteriores.
+    if (loadingNotifier.contains(movieId)) {
+      return;
+    }
+
+    if (force) {
+      failuresNotifier.remove(movieId);
+    }
+
+    if (!force && (state.value?.containsKey(movieId) ?? false)) {
+      return;
+    }
+
+    loadingNotifier.add(movieId);
+
+    final currentMovies = Map<String, Movie>.from(state.value ?? {});
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
-      // Obtener la película del repositorio.
-      final movieRepository = ref.read(movieRepositoryProvider);
+
+    final movieRepository = ref.read(movieRepositoryProvider);
+
+    try {
       final movie = await movieRepository.getMovieById(movieId);
-      // Retornar el nuevo mapa con la película añadida.
-      return {...currentMovies, movieId: movie};
-    });
+      failuresNotifier.remove(movieId);
+
+      final updatedMovies = Map<String, Movie>.from(currentMovies)
+        ..[movieId] = movie;
+
+      state = AsyncValue.data(Map<String, Movie>.unmodifiable(updatedMovies));
+    } on MovieException catch (error, stackTrace) {
+      if (error.code == 'MOVIE_NOT_FOUND') {
+        LoggerFactory.warning(
+            '🎬 MovieMapNotifier: Película no encontrada ($movieId). Se omitirá en la UI.');
+        failuresNotifier.add(movieId);
+        state = AsyncValue.data(Map<String, Movie>.unmodifiable(currentMovies));
+      } else {
+        LoggerFactory.error(
+            '❌ MovieMapNotifier: Error específico al cargar película $movieId: ${error.message}');
+        state = AsyncValue.error(error, stackTrace);
+      }
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+          '❌ MovieMapNotifier: Error inesperado al cargar película $movieId: $error');
+      state = AsyncValue.error(error, stackTrace);
+    } finally {
+      loadingNotifier.remove(movieId);
+    }
   }
 }

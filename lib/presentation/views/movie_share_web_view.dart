@@ -34,6 +34,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
   @override
   Widget build(BuildContext context) {
     final movieCacheAsync = ref.watch(movieInfoProvider);
+    final failedMovieIds = ref.watch(movieLoadFailuresProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -72,6 +73,9 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
         data: (movieMap) {
           final movie = movieMap[widget.movieId];
           if (movie == null) {
+            if (failedMovieIds.contains(widget.movieId)) {
+              return _buildMovieUnavailableContent(context);
+            }
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -89,6 +93,56 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
           return _MovieShareViewContent(
               movie: movie, shareableContent: shareableContent);
         },
+      ),
+    );
+  }
+
+  Widget _buildMovieUnavailableContent(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.movie_outlined, size: 64, color: colors.error),
+            const SizedBox(height: 16),
+            Text(
+              'La película ya no está disponible',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Es posible que el enlace haya expirado o que la película haya sido eliminada.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurface.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                FilledButton.tonal(
+                  onPressed: () => ref
+                      .read(movieInfoProvider.notifier)
+                      .loadMovie(widget.movieId, force: true),
+                  child: const Text('Reintentar'),
+                ),
+                OutlinedButton(
+                  onPressed: () => context.go('/'),
+                  child: const Text('Abrir app'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

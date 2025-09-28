@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../core/cache/image_cache_manager.dart';
 import '../core/logging/logger_factory.dart';
+import '../core/utils/tmdb_image_utils.dart';
 
 /// Servicio híbrido para gestión inteligente de imágenes
 class HybridImageService {
@@ -32,27 +33,53 @@ class HybridImageService {
     }
   }
 
+  /// Normaliza rutas relativas (especialmente de TMDB) para asegurar URLs válidas.
+  String normalizeImageUrl(String imageUrl, {String size = 'w500'}) {
+    final trimmed = imageUrl.trim();
+
+    if (trimmed.isEmpty) {
+      return '';
+    }
+
+    if (trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://') ||
+        trimmed.startsWith('data:')) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('//')) {
+      return 'https:$trimmed';
+    }
+
+    return resolveTmdbImageUrl(trimmed, size: size);
+  }
+
   /// Obtiene un ImageProvider optimizado para la URL dada
-  Future<ImageProvider> getOptimizedImageProvider(String imageUrl) async {
+  Future<ImageProvider> getOptimizedImageProvider(
+    String imageUrl, {
+    String size = 'w500',
+  }) async {
     if (!_isInitialized) {
       await initialize();
     }
 
-    if (imageUrl.isEmpty) {
+    final normalizedUrl = normalizeImageUrl(imageUrl, size: size);
+
+    if (normalizedUrl.isEmpty) {
       return const AssetImage('assets/images/no-image.jpg');
     }
 
     try {
       // Intentar obtener de caché
-      final cachedProvider = await _cacheManager.getCachedImage(imageUrl);
+      final cachedProvider = await _cacheManager.getCachedImage(normalizedUrl);
       if (cachedProvider != null) {
         return cachedProvider;
       }
 
       // Fallback a NetworkImage con retry automático
-      return NetworkImageWithRetry(imageUrl);
+      return NetworkImageWithRetry(normalizedUrl);
     } catch (e) {
-      _logger.error('Error obteniendo imagen optimizada $imageUrl: $e');
+      _logger.error('Error obteniendo imagen optimizada $normalizedUrl: $e');
       return const AssetImage('assets/images/no-image.jpg');
     }
   }
@@ -73,9 +100,14 @@ class HybridImageService {
       ...?backdropImages,
     ];
 
-    if (allUrls.isNotEmpty) {
-      _logger.info('Precargando ${allUrls.length} imágenes populares');
-      await _cacheManager.preloadImages(allUrls);
+    final normalizedUrls = allUrls
+        .map((url) => normalizeImageUrl(url))
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    if (normalizedUrls.isNotEmpty) {
+      _logger.info('Precargando ${normalizedUrls.length} imágenes populares');
+      await _cacheManager.preloadImages(normalizedUrls);
     }
   }
 
@@ -86,13 +118,19 @@ class HybridImageService {
     List<String>? actorImages,
   }) async {
     final urls = <String>[
-      if (posterUrl != null && posterUrl.isNotEmpty) posterUrl,
-      if (backdropUrl != null && backdropUrl.isNotEmpty) backdropUrl,
-      ...?actorImages?.where((url) => url.isNotEmpty),
+      if (posterUrl != null && posterUrl.isNotEmpty)
+        normalizeImageUrl(posterUrl),
+      if (backdropUrl != null && backdropUrl.isNotEmpty)
+        normalizeImageUrl(backdropUrl, size: 'w780'),
+      ...?actorImages
+          ?.where((url) => url.isNotEmpty)
+          .map((url) => normalizeImageUrl(url, size: 'w300')),
     ];
 
-    if (urls.isNotEmpty) {
-      await _cacheManager.preloadImages(urls);
+    final filteredUrls = urls.where((url) => url.isNotEmpty).toList();
+
+    if (filteredUrls.isNotEmpty) {
+      await _cacheManager.preloadImages(filteredUrls);
     }
   }
 
@@ -193,6 +231,7 @@ class OptimizedImage extends StatelessWidget {
     this.borderRadius,
     this.enableHeroAnimation = false,
     this.heroTag,
+    this.tmdbSize = 'w500',
   });
   final String imageUrl;
   final double? width;
@@ -203,11 +242,19 @@ class OptimizedImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   final bool enableHeroAnimation;
   final String? heroTag;
+  final String tmdbSize;
 
   @override
   Widget build(BuildContext context) {
+    final normalizedUrl =
+        HybridImageService.instance.normalizeImageUrl(imageUrl, size: tmdbSize);
+
+    if (normalizedUrl.isEmpty) {
+      return errorWidget ?? _buildDefaultErrorWidget();
+    }
+
     Widget imageWidget = CachedNetworkImageWidget(
-      imageUrl: imageUrl,
+      imageUrl: normalizedUrl,
       width: width,
       height: height,
       fit: fit,
@@ -259,8 +306,9 @@ class OptimizedImage extends StatelessWidget {
 /// Extensión para facilitar el uso del servicio
 extension ImageUrlExtension on String {
   /// Convierte una URL en un ImageProvider optimizado
-  Future<ImageProvider> toOptimizedImageProvider() async {
-    return await HybridImageService.instance.getOptimizedImageProvider(this);
+  Future<ImageProvider> toOptimizedImageProvider({String size = 'w500'}) async {
+    return await HybridImageService.instance
+        .getOptimizedImageProvider(this, size: size);
   }
 
   /// Crea un widget OptimizedImage
@@ -273,6 +321,7 @@ extension ImageUrlExtension on String {
     BorderRadius? borderRadius,
     bool enableHeroAnimation = false,
     String? heroTag,
+    String tmdbSize = 'w500',
   }) {
     return OptimizedImage(
       imageUrl: this,
@@ -284,6 +333,7 @@ extension ImageUrlExtension on String {
       borderRadius: borderRadius,
       enableHeroAnimation: enableHeroAnimation,
       heroTag: heroTag,
+      tmdbSize: tmdbSize,
     );
   }
 }
@@ -296,7 +346,10 @@ mixin ImagePreloadMixin<T extends StatefulWidget> on State<T> {
   Future<void> preloadImages(List<String> imageUrls) async {
     for (final url in imageUrls) {
       try {
-        await _cacheManager.getCachedImage(url);
+        final normalizedUrl =
+            HybridImageService.instance.normalizeImageUrl(url);
+        if (normalizedUrl.isEmpty) continue;
+        await _cacheManager.getCachedImage(normalizedUrl);
       } catch (e) {
         // Ignorar errores de precarga
       }
@@ -310,9 +363,17 @@ mixin ImagePreloadMixin<T extends StatefulWidget> on State<T> {
     List<String>? actorImages,
   }) async {
     final urls = <String>[];
-    if (posterUrl != null) urls.add(posterUrl);
-    if (backdropUrl != null) urls.add(backdropUrl);
-    if (actorImages != null) urls.addAll(actorImages);
+    if (posterUrl != null) {
+      urls.add(HybridImageService.instance.normalizeImageUrl(posterUrl));
+    }
+    if (backdropUrl != null) {
+      urls.add(HybridImageService.instance
+          .normalizeImageUrl(backdropUrl, size: 'w780'));
+    }
+    if (actorImages != null) {
+      urls.addAll(actorImages.map((url) =>
+          HybridImageService.instance.normalizeImageUrl(url, size: 'w300')));
+    }
 
     await preloadImages(urls);
   }

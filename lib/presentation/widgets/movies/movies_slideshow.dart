@@ -60,6 +60,7 @@ class _Slide extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             enableHeroAnimation: true,
             heroTag: 'slideshow-${movie.id}',
+            tmdbSize: 'w780',
             placeholder: Container(
               decoration: BoxDecoration(
                 color: Colors.grey[200],

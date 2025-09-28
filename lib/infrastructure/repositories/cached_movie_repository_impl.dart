@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import '../../core/exceptions/app_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/datasources/local_storage_datasource.dart';
 import '../../domain/datasources/movies_datasource.dart';
@@ -171,7 +172,10 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     // 3. Check connectivity
     final hasConnection = await _hasConnectivity();
     if (!hasConnection) {
-      throw Exception('Movie not available offline: $id');
+      throw MovieException(
+        'Movie not available offline: $id',
+        'MOVIE_OFFLINE_UNAVAILABLE',
+      );
     }
 
     // 4. Network call
@@ -196,7 +200,7 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
         return expiredMovie;
       }
 
-      throw Exception('Movie not found: $id');
+      throw MovieException('Movie not found: $id', 'MOVIE_NOT_FOUND');
     }
   }
 

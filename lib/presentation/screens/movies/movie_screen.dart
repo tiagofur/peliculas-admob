@@ -41,6 +41,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
   Widget build(BuildContext context) {
     // Observa el estado del caché de películas completo.
     final moviesCache = ref.watch(movieInfoProvider);
+    final failedMovieIds = ref.watch(movieLoadFailuresProvider);
 
     // Usa .when para manejar los estados del caché (mapa).
     return moviesCache.when(
@@ -57,6 +58,10 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
         // Si la película específica aún no está en el mapa, muestra un loader.
         if (movie == null) {
+          if (failedMovieIds.contains(widget.movieId)) {
+            return _buildUnavailableMovieScaffold();
+          }
+
           return const Scaffold(
               body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
         }
@@ -77,6 +82,60 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildUnavailableMovieScaffold() {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Película no disponible')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.movie_outlined, size: 64, color: colors.error),
+              const SizedBox(height: 16),
+              Text(
+                'No pudimos encontrar esta película',
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Es posible que haya sido eliminada de la fuente original o ya no esté disponible.',
+                style: textStyles.bodySmall?.copyWith(
+                  color: colors.onSurface.withValues(alpha: 0.7),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.tonal(
+                    onPressed: () => ref
+                        .read(movieInfoProvider.notifier)
+                        .loadMovie(widget.movieId, force: true),
+                    child: const Text('Reintentar'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    child: const Text('Volver'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

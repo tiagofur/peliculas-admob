@@ -49,6 +49,7 @@ class ActorsByMovie extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                       enableHeroAnimation: true,
                       heroTag: 'actor-${actor.id}',
+                      tmdbSize: 'w300',
                       placeholder: Container(
                         height: 180,
                         width: 135,

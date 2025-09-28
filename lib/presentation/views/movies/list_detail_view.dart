@@ -113,44 +113,96 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
         ),
       ),
       data: (moviesMap) {
-        // Pre-cargar películas que no están en el mapa
-        for (final movieId in customList.movieIds) {
-          if (moviesMap[movieId.toString()] == null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                ref
-                    .read(movieInfoProvider.notifier)
-                    .loadMovie(movieId.toString());
-              }
-            });
-          }
+        final failedMovieIds = ref.watch(movieLoadFailuresProvider);
+        final loadingMovieIds = ref.watch(movieLoadInProgressProvider);
+
+        final requestedMovieIds =
+            customList.movieIds.map((id) => id.toString()).toList();
+
+        for (final movieId in requestedMovieIds) {
+          if (moviesMap[movieId] != null) continue;
+          if (failedMovieIds.contains(movieId)) continue;
+          if (loadingMovieIds.contains(movieId)) continue;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ref.read(movieInfoProvider.notifier).loadMovie(movieId);
+          });
         }
 
-        final movies = customList.movieIds
-            .map((id) => moviesMap[id.toString()])
-            .where((movie) => movie != null)
-            .cast<Movie>()
+        final movies = requestedMovieIds
+            .map((id) => moviesMap[id])
+            .whereType<Movie>()
             .toList();
+
+        final missingMovieIds = requestedMovieIds
+            .where(failedMovieIds.contains)
+            .map((id) => int.tryParse(id))
+            .whereType<int>()
+            .toList();
+
+        final loadingIdsForList =
+            requestedMovieIds.where(loadingMovieIds.contains).toList();
+
+        final slivers = <Widget>[
+          _buildSliverAppBar(customList, colors, textStyles),
+        ];
+
+        if (missingMovieIds.isNotEmpty) {
+          slivers.add(
+            SliverToBoxAdapter(
+              child: _buildMissingMoviesBanner(
+                colors: colors,
+                textStyles: textStyles,
+                missingCount: missingMovieIds.length,
+                onRemove: () =>
+                    _removeMissingMovies(customList, missingMovieIds),
+                onRetry: () {
+                  for (final id in missingMovieIds) {
+                    ref
+                        .read(movieInfoProvider.notifier)
+                        .loadMovie(id.toString(), force: true);
+                  }
+                },
+              ),
+            ),
+          );
+        }
+
+        if (movies.isNotEmpty) {
+          slivers.add(
+            SliverFillRemaining(
+              child: MasonryWithAds(movies: movies),
+            ),
+          );
+        } else if (loadingIdsForList.isNotEmpty) {
+          slivers.add(
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        } else if (customList.movieIds.isNotEmpty &&
+            missingMovieIds.length == customList.movieIds.length) {
+          slivers.add(
+            SliverFillRemaining(
+              child: _buildMissingMoviesEmptyState(
+                colors,
+                textStyles,
+                missingMovieIds.length,
+              ),
+            ),
+          );
+        } else {
+          slivers.add(
+            SliverFillRemaining(
+              child: _buildEmptyState(colors, textStyles),
+            ),
+          );
+        }
 
         return Scaffold(
           body: CustomScrollView(
-            slivers: [
-              _buildSliverAppBar(customList, colors, textStyles),
-              // Si la lista de películas no está vacía, mostrar la albañilería
-              if (movies.isNotEmpty)
-                SliverFillRemaining(
-                  child: MasonryWithAds(movies: movies),
-                )
-              // Opcional: mostrar un loader si algunas películas aún están cargando
-              else if (movies.length < customList.movieIds.length)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else // Si no hay películas (aún), mostrar el estado vacío
-                SliverFillRemaining(
-                  child: _buildEmptyState(colors, textStyles),
-                ),
-            ],
+            slivers: slivers,
           ),
           floatingActionButton: _buildFloatingActionButton(customList, colors),
         );
@@ -344,6 +396,172 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
         ],
       ),
     );
+  }
+
+  Widget _buildMissingMoviesBanner({
+    required ColorScheme colors,
+    required TextTheme textStyles,
+    required int missingCount,
+    required VoidCallback onRemove,
+    required VoidCallback onRetry,
+  }) {
+    final title = missingCount == 1
+        ? 'Una película ya no está disponible'
+        : '$missingCount películas ya no están disponibles';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.error.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.movie_outlined, color: colors.error),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: textStyles.titleSmall?.copyWith(
+                        color: colors.onErrorContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Es posible que hayan sido eliminadas o no estén disponibles en la API. Puedes reintentar la carga o quitarlas de la lista.',
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.onErrorContainer.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar carga'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: onRemove,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Eliminar de la lista'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: colors.error,
+                  foregroundColor: colors.onError,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMissingMoviesEmptyState(
+    ColorScheme colors,
+    TextTheme textStyles,
+    int missingCount,
+  ) {
+    final title = missingCount == 1
+        ? 'La película guardada ya no está disponible'
+        : 'Las películas guardadas ya no están disponibles';
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.movie_outlined,
+            size: 56,
+            color: colors.onSurface.withValues(alpha: 0.4),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: textStyles.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colors.onSurface,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Puedes eliminar estas referencias o agregar nuevas películas desde la sección de búsqueda.',
+            style: textStyles.bodySmall?.copyWith(
+              color: colors.onSurface.withValues(alpha: 0.7),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () => context.go('/'),
+            icon: const Icon(Icons.search),
+            label: const Text('Buscar nuevas películas'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeMissingMovies(
+    CustomList customList,
+    List<int> missingMovieIds,
+  ) async {
+    if (missingMovieIds.isEmpty) return;
+
+    final notifier = ref.read(directCustomListsProvider.notifier);
+    final failuresNotifier = ref.read(movieLoadFailuresProvider.notifier);
+    final uniqueIds = missingMovieIds.toSet();
+
+    try {
+      for (final movieId in uniqueIds) {
+        await notifier.removeMovieFromList(customList.id, movieId);
+        failuresNotifier.remove(movieId.toString());
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            uniqueIds.length == 1
+                ? 'Se eliminó la película no disponible de la lista.'
+                : 'Se eliminaron ${uniqueIds.length} películas no disponibles.',
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+          '❌ ListDetailView: Error eliminando películas no disponibles: $error');
+      LoggerFactory.error('📍 StackTrace: $stackTrace');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudieron eliminar algunas películas: $error'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   Widget _buildFloatingActionButton(CustomList customList, ColorScheme colors) {

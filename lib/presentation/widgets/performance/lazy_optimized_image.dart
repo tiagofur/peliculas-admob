@@ -25,6 +25,7 @@ class LazyOptimizedImage extends StatefulWidget {
     this.cacheHeight,
     this.loadOnlyWhenVisible = true,
     this.visibilityThreshold = 0.1,
+    this.tmdbSize = 'w500',
   });
 
   final String imageUrl;
@@ -43,6 +44,7 @@ class LazyOptimizedImage extends StatefulWidget {
   final int? cacheHeight;
   final bool loadOnlyWhenVisible;
   final double visibilityThreshold;
+  final String tmdbSize;
 
   @override
   State<LazyOptimizedImage> createState() => _LazyOptimizedImageState();
@@ -116,7 +118,7 @@ class _LazyOptimizedImageState extends State<LazyOptimizedImage>
       _logger.debug('Cargando imagen lazy: ${widget.imageUrl}');
 
       final provider = await HybridImageService.instance
-          .getOptimizedImageProvider(widget.imageUrl);
+          .getOptimizedImageProvider(widget.imageUrl, size: widget.tmdbSize);
 
       if (mounted && widget.imageUrl == _currentImageUrl) {
         setState(() {
@@ -268,7 +270,9 @@ class _LazyOptimizedImageState extends State<LazyOptimizedImage>
 
     if (widget.loadOnlyWhenVisible) {
       return VisibilityDetector(
-        key: Key('lazy_image_${widget.imageUrl}'),
+        key: Key(
+          'lazy_image_${HybridImageService.instance.normalizeImageUrl(widget.imageUrl, size: widget.tmdbSize)}',
+        ),
         onVisibilityChanged: (info) {
           _onVisibilityChanged(
               info.visibleFraction >= widget.visibilityThreshold);
@@ -383,6 +387,7 @@ class PreloadOptimizedImage extends StatefulWidget {
     this.fit = BoxFit.cover,
     this.borderRadius,
     this.preloadDistance = 500.0,
+    this.tmdbSize = 'w500',
   });
 
   final String imageUrl;
@@ -391,6 +396,7 @@ class PreloadOptimizedImage extends StatefulWidget {
   final BoxFit fit;
   final BorderRadius? borderRadius;
   final double preloadDistance;
+  final String tmdbSize;
 
   @override
   State<PreloadOptimizedImage> createState() => _PreloadOptimizedImageState();
@@ -403,7 +409,8 @@ class _PreloadOptimizedImageState extends State<PreloadOptimizedImage> {
     if (!_hasPreloaded && visibleFraction > 0) {
       _hasPreloaded = true;
       // Precargar la imagen
-      HybridImageService.instance.getOptimizedImageProvider(widget.imageUrl);
+      HybridImageService.instance
+          .getOptimizedImageProvider(widget.imageUrl, size: widget.tmdbSize);
     }
   }
 
@@ -419,6 +426,7 @@ class _PreloadOptimizedImageState extends State<PreloadOptimizedImage> {
         fit: widget.fit,
         borderRadius: widget.borderRadius,
         loadOnlyWhenVisible: false, // Ya manejamos la visibilidad aquí
+        tmdbSize: widget.tmdbSize,
       ),
     );
   }
