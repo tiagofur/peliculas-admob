@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../presentation/providers/custom_lists_providers.dart';
 import '../../presentation/providers/storage/direct_custom_lists_provider.dart';
 import '../../presentation/providers/storage/direct_favorites_provider.dart';
 import '../../presentation/providers/storage/direct_watched_provider.dart';
 import '../../presentation/providers/storage/direct_watchlist_provider.dart';
 import '../../presentation/providers/storage/favorite_movies_provider.dart';
 import '../../services/custom_lists_auth_integration.dart';
-import '../../presentation/providers/custom_lists_providers.dart';
 import '../logging/logger_factory.dart';
 import '../sync/silent_favorites_sync_service.dart';
 
