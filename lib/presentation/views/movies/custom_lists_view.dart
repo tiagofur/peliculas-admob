@@ -2,13 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../../domain/entities/custom_list.dart';
 import '../../../generated/app_localizations.dart';
-import '../../providers/custom_lists_providers.dart';
-import '../../providers/providers.dart'
-    hide customListsRepositoryProvider, defaultListsProvider;
+import '../../providers/storage/direct_custom_lists_provider.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
@@ -68,10 +65,14 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
 
   @override
   Widget build(BuildContext context) {
-    final listsAsync = ref.watch(allListsProvider);
-    final stats = ref.watch(listStatsProvider);
+    final listsState = ref.watch(directCustomListsProvider);
+    final notifier = ref.read(directCustomListsProvider.notifier);
     final l10n = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
+
+    final customLists = [
+      ...listsState.getAllListsWithMovies().where((list) => !list.isDefault),
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return Scaffold(
       appBar: AppBar(
@@ -90,36 +91,86 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
         children: [
           const MinimalSyncIndicator(),
           Expanded(
-            child: listsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => _buildErrorState(context, error, stack),
-              data: (state) {
-                final customLists = [...state.customLists]
-                  ..sort((a, b) => a.name.compareTo(b.name));
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    _invalidateListProviders();
-                    final _ = await ref.refresh(allListsProvider.future);
-                  },
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 24,
-                    ),
-                    children: _buildContentSections(
-                      context,
-                      customLists,
-                      stats,
-                      l10n,
-                    ),
-                  ),
-                );
-              },
+            child: RefreshIndicator(
+              onRefresh: () async => notifier.refresh(),
+              child: _buildListsBody(
+                context: context,
+                listsState: listsState,
+                customLists: customLists,
+                l10n: l10n,
+                notifier: notifier,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildListsBody({
+    required BuildContext context,
+    required CustomListsState listsState,
+    required List<CustomList> customLists,
+    required AppLocalizations l10n,
+    required DirectCustomListsNotifier notifier,
+  }) {
+    if (listsState.isLoading && customLists.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(vertical: 120),
+        children: const [
+          Center(child: CircularProgressIndicator()),
+        ],
+      );
+    }
+
+    if (listsState.errorMessage != null && customLists.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        children: [
+          _buildErrorState(
+            context,
+            listsState.errorMessage!,
+            notifier.refresh,
+          ),
+        ],
+      );
+    }
+
+    final sections = _buildContentSections(
+      context,
+      customLists,
+      l10n,
+    );
+
+    final children = <Widget>[];
+
+    if (listsState.errorMessage != null) {
+      children.add(
+        _buildInlineErrorBanner(
+          context,
+          listsState.errorMessage!,
+          notifier.refresh,
+        ),
+      );
+    }
+
+    if (listsState.isLoading && customLists.isNotEmpty) {
+      children.add(
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8.0),
+          child: LinearProgressIndicator(minHeight: 2),
+        ),
+      );
+    }
+
+    children.addAll(sections);
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      children: children,
     );
   }
 
@@ -192,16 +243,11 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
     );
   }
 
-  void _invalidateListProviders() {
-    ref.invalidate(allListsProvider);
-    ref.invalidate(customListsProvider);
-    ref.invalidate(listsProvider);
-    ref.invalidate(listStatsProvider);
-    ref.invalidate(filteredListsProvider);
-  }
-
   Widget _buildErrorState(
-      BuildContext context, Object error, StackTrace stackTrace) {
+    BuildContext context,
+    String message,
+    Future<void> Function() onRetry,
+  ) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -223,7 +269,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
             ),
             const SizedBox(height: 8),
             Text(
-              '$error',
+              message,
               style: textStyles.bodySmall?.copyWith(
                 color: colors.onSurface.withValues(alpha: 0.7),
               ),
@@ -231,10 +277,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () async {
-                _invalidateListProviders();
-                final _ = await ref.refresh(allListsProvider.future);
-              },
+              onPressed: () => onRetry(),
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
             ),
@@ -244,18 +287,54 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
     );
   }
 
+  Widget _buildInlineErrorBanner(
+    BuildContext context,
+    String message,
+    Future<void> Function() onRetry,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.error.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: colors.error),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: textStyles.bodyMedium?.copyWith(
+                color: colors.onErrorContainer,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => onRetry(),
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   List<Widget> _buildContentSections(
     BuildContext context,
     List<CustomList> lists,
-    Map<String, int> stats,
     AppLocalizations l10n,
   ) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
-    final int totalMovies = stats['totalMovies'] ??
+    final totalMovies =
         lists.fold<int>(0, (sum, list) => sum + list.movieIds.length);
-    final int activeLists =
-        lists.where((list) => list.movieIds.isNotEmpty).length;
+    final activeLists = lists.where((list) => list.movieIds.isNotEmpty).length;
 
     final sections = <Widget>[
       _buildStatsHeader(
@@ -639,12 +718,30 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // ref.read(allListsNotifierProvider.notifier).clearList(list.id);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Lista "${list.name}" vaciada')),
-              );
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              final colorScheme = Theme.of(context).colorScheme;
+
+              try {
+                await ref
+                    .read(directCustomListsProvider.notifier)
+                    .clearList(list.id);
+
+                if (!mounted) return;
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Lista "${list.name}" vaciada')),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Error al vaciar la lista: $e'),
+                    backgroundColor: colorScheme.error,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
             child: const Text('Vaciar'),
@@ -667,12 +764,30 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // ref.read(allListsNotifierProvider.notifier).deleteList(list.id);
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Lista "${list.name}" eliminada')),
-              );
+            onPressed: () async {
+              final navigator = Navigator.of(context);
+              final messenger = ScaffoldMessenger.of(context);
+              final colorScheme = Theme.of(context).colorScheme;
+
+              try {
+                await ref
+                    .read(directCustomListsProvider.notifier)
+                    .deleteList(list.id);
+
+                if (!mounted) return;
+                navigator.pop();
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Lista "${list.name}" eliminada')),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Error al eliminar la lista: $e'),
+                    backgroundColor: colorScheme.error,
+                  ),
+                );
+              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Eliminar'),
@@ -894,44 +1009,34 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
           onPressed: _nameController.text.trim().isEmpty
               ? null
               : () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final colorScheme = Theme.of(context).colorScheme;
+                  final name = _nameController.text.trim();
+                  final description = _descriptionController.text.trim();
+
                   try {
-                    // Usar el provider correcto para la creación de listas
-                    final repository =
-                        await ref.read(customListsRepositoryProvider.future);
+                    await ref
+                        .read(directCustomListsProvider.notifier)
+                        .createList(
+                          name: name,
+                          description: description,
+                          emoji: _selectedEmoji,
+                          color: _selectedColor,
+                        );
 
-                    final now = DateTime.now();
-                    final newId = const Uuid().v4();
-
-                    final newList = CustomList(
-                      id: newId,
-                      name: _nameController.text.trim(),
-                      description: _descriptionController.text.trim(),
-                      emoji: _selectedEmoji,
-                      movieIds: [],
-                      createdAt: now,
-                      lastModifiedAt: now,
-                      isDefault: false,
-                      color: _selectedColor,
-                    );
-
-                    // Crear la lista usando el repositorio directamente
-                    await repository.createList(newList);
-
-                    // Invalidar el provider para que se recargue
-                    ref.invalidate(allListsProvider);
-
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text(
-                              'Lista "${_nameController.text.trim()}" creada')),
+                    if (!mounted) return;
+                    navigator.pop();
+                    messenger.showSnackBar(
+                      SnackBar(content: Text('Lista "$name" creada')),
                     );
                   } catch (e) {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (!mounted) return;
+                    messenger.showSnackBar(
                       SnackBar(
-                          content: Text('Error al crear la lista: $e'),
-                          backgroundColor: Theme.of(context).colorScheme.error),
+                        content: Text('Error al crear la lista: $e'),
+                        backgroundColor: colorScheme.error,
+                      ),
                     );
                   }
                 },
@@ -1136,20 +1241,40 @@ class _EditListDialogState extends ConsumerState<_EditListDialog> {
         ElevatedButton(
           onPressed: _nameController.text.trim().isEmpty
               ? null
-              : () {
-                  // ref.read(allListsNotifierProvider.notifier).updateList(
-                  //      widget.list.id,
-                  //      name: _nameController.text.trim(),
-                  //      description: _descriptionController.text.trim(),
-                  //      emoji: _selectedEmoji,
-                  //      color: _selectedColor,
-                  //    );
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'Lista "${_nameController.text.trim()}" actualizada')),
-                  );
+              : () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final colorScheme = Theme.of(context).colorScheme;
+                  final name = _nameController.text.trim();
+                  final description = _descriptionController.text.trim();
+
+                  try {
+                    await ref
+                        .read(directCustomListsProvider.notifier)
+                        .updateList(
+                          widget.list.id,
+                          name: name,
+                          description: description,
+                          emoji: _selectedEmoji,
+                          color: _selectedColor,
+                        );
+
+                    if (!mounted) return;
+                    navigator.pop();
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Lista "$name" actualizada'),
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Error al actualizar la lista: $e'),
+                        backgroundColor: colorScheme.error,
+                      ),
+                    );
+                  }
                 },
           child: const Text('Guardar'),
         ),
@@ -1234,17 +1359,57 @@ class _DuplicateListDialogState extends ConsumerState<_DuplicateListDialog> {
         ElevatedButton(
           onPressed: _nameController.text.trim().isEmpty
               ? null
-              : () {
-                  // ref.read(allListsNotifierProvider.notifier).duplicateList(
-                  //      widget.list.id,
-                  //      _nameController.text.trim(),
-                  //    );
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'Lista "${_nameController.text.trim()}" creada')),
-                  );
+              : () async {
+                  final navigator = Navigator.of(context);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final colorScheme = Theme.of(context).colorScheme;
+                  final newName = _nameController.text.trim();
+                  final notifier = ref.read(directCustomListsProvider.notifier);
+                  final sourceList = notifier.getListWithMovies(widget.list.id);
+
+                  if (sourceList == null) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content:
+                            const Text('No pudimos obtener la lista original'),
+                        backgroundColor: colorScheme.error,
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final newListId = await notifier.createList(
+                      name: newName,
+                      description: sourceList.description,
+                      emoji: sourceList.emoji,
+                      color: sourceList.color,
+                    );
+
+                    if (newListId == null) {
+                      throw Exception('No se pudo crear la lista duplicada');
+                    }
+
+                    for (final movieId in sourceList.movieIds) {
+                      await notifier.addMovieToList(newListId, movieId);
+                    }
+
+                    if (!mounted) return;
+                    navigator.pop();
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Lista "$newName" creada'),
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Error al duplicar la lista: $e'),
+                        backgroundColor: colorScheme.error,
+                      ),
+                    );
+                  }
                 },
           child: const Text('Duplicar'),
         ),

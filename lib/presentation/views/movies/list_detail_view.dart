@@ -24,13 +24,20 @@ class ListDetailView extends ConsumerStatefulWidget {
 class _ListDetailViewState extends ConsumerState<ListDetailView> {
   @override
   Widget build(BuildContext context) {
-    final customList = ref.watch(listByIdProvider(widget.listId));
+    final directListsState = ref.watch(directCustomListsProvider);
+    final directCustomList = directListsState.getListWithMovies(widget.listId);
+    final repositoryCustomList = ref.watch(listByIdProvider(widget.listId));
+    final customList = directCustomList ?? repositoryCustomList;
 
     // Debug: Mostrar qué ID estamos buscando
     LoggerFactory.info(
         'ListDetailView: Buscando lista con ID: ${widget.listId}');
     LoggerFactory.info(
-        'ListDetailView: Lista encontrada: ${customList?.name ?? 'null'}');
+        'ListDetailView: Lista encontrada (direct): ${directCustomList?.name ?? 'null'}');
+    LoggerFactory.info(
+        'ListDetailView: Lista encontrada (repository): ${repositoryCustomList?.name ?? 'null'}');
+    LoggerFactory.info(
+        'ListDetailView: Lista final usada: ${customList?.name ?? 'null'}');
     LoggerFactory.info(
         'ListDetailView: Tipo de customList: ${customList.runtimeType}');
 
@@ -386,26 +393,23 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
 
   void _duplicateList(CustomList customList) async {
     try {
-      // Crear nueva lista con los mismos datos
-      await ref.read(directCustomListsProvider.notifier).createList(
-            name: '${customList.name} (Copia)',
-            description: customList.description.isNotEmpty
-                ? '${customList.description} (Copia)'
-                : 'Copia de ${customList.name}',
-            emoji: customList.emoji,
-            color: customList.color,
-          );
+      final notifier = ref.read(directCustomListsProvider.notifier);
 
-      // Añadir todas las películas de la lista original a la nueva
+      final newListId = await notifier.createList(
+        name: '${customList.name} (Copia)',
+        description: customList.description.isNotEmpty
+            ? '${customList.description} (Copia)'
+            : 'Copia de ${customList.name}',
+        emoji: customList.emoji,
+        color: customList.color,
+      );
+
+      if (newListId == null) {
+        throw Exception('No se pudo crear la lista duplicada');
+      }
+
       for (final movieId in customList.movieIds) {
-        final allLists = ref.read(directCustomListsWithMoviesProvider);
-        if (allLists.isNotEmpty) {
-          final newList = allLists.last; // La lista recién creada
-          await ref.read(directCustomListsProvider.notifier).addMovieToList(
-                newList.id,
-                movieId,
-              );
-        }
+        await notifier.addMovieToList(newListId, movieId);
       }
 
       if (mounted) {
@@ -415,11 +419,7 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
             action: SnackBarAction(
               label: 'Ver',
               onPressed: () {
-                final allLists = ref.read(directCustomListsWithMoviesProvider);
-                if (allLists.isNotEmpty) {
-                  final duplicatedList = allLists.last;
-                  context.push('/lists/${duplicatedList.id}');
-                }
+                context.push('/lists/$newListId');
               },
             ),
           ),

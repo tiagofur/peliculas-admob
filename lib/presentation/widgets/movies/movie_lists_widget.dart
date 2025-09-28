@@ -6,155 +6,114 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/entities.dart';
 import '../../providers/storage/direct_custom_lists_provider.dart';
-import '../../providers/custom_lists_provider.dart';
 
-class MovieListsWidget extends ConsumerStatefulWidget {
+class MovieListsWidget extends ConsumerWidget {
   const MovieListsWidget({super.key, required this.movie});
 
   final Movie movie;
 
   @override
-  ConsumerState<MovieListsWidget> createState() => _MovieListsWidgetState();
-}
-
-class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Usar el provider apropiado para obtener las listas
-    final allListsAsync = ref.watch(allListsProvider);
-
-    return allListsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(
-        child: Text('Error cargando listas: $error'),
-      ),
-      data: (allListsState) => _buildContent(context, allListsState),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, AllListsState allListsState) {
-    final allLists = allListsState.allLists;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final listsState = ref.watch(directCustomListsProvider);
     final notifier = ref.read(directCustomListsProvider.notifier);
-    final listsContainingMovie =
-        notifier.getListsContainingMovie(widget.movie.id);
+
+    final customLists = [
+      ...listsState.getAllListsWithMovies().where((list) => !list.isDefault),
+    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    final movieListIds = customLists
+        .where((list) => list.movieIds.contains(movie.id))
+        .map((list) => list.id)
+        .toSet();
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
-    // Separar listas predeterminadas y personalizadas
-    final defaultLists = allLists.where((list) => list.isDefault).toList();
-    final customLists = allLists.where((list) => !list.isDefault).toList();
-
-    // Calcular altura fija basada en las listas predeterminadas (máximo 8 listas en 4 filas)
-    final defaultListsCount = defaultLists.length;
-    final rowsNeeded = (defaultListsCount / 2).ceil().clamp(1, 4);
-    final fixedHeight = (rowsNeeded * 80.0) +
-        ((rowsNeeded - 1) * 8.0); // altura de card + spacing
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.list_alt, color: colors.primary),
-              const SizedBox(width: 8),
-              Text(
-                'Mis Listas',
-                style: textStyles.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Mis listas',
+              style: textStyles.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colors.onSurface,
               ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: () => _showCreateListDialog(context),
-                icon: const Icon(Icons.add, size: 16),
-                label: const Text('Nueva lista'),
-                style: TextButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8), // Reducido de 12 a 8
-          if (allLists.isEmpty)
-            _buildEmptyState(colors, textStyles)
-          else
-            Column(
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  labelColor: colors.primary,
-                  unselectedLabelColor: colors.onSurface.withValues(alpha: 0.6),
-                  indicatorColor: colors.primary,
-                  tabs: [
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star_outline, size: 16),
-                          const SizedBox(width: 4),
-                          Text('Predeterminadas (${defaultLists.length})'),
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.folder_outlined, size: 16),
-                          const SizedBox(width: 4),
-                          Text('Personalizadas (${customLists.length})'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: fixedHeight,
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      // Pestaña de listas predeterminadas
-                      _buildListsGrid(defaultLists, listsContainingMovie,
-                          colors, textStyles, false // sin scroll
-                          ),
-                      // Pestaña de listas personalizadas
-                      _buildListsGrid(
-                          customLists,
-                          listsContainingMovie,
-                          colors,
-                          textStyles,
-                          customLists.length > 8 // con scroll si hay más de 8
-                          ),
-                    ],
-                  ),
-                ),
-              ],
             ),
-        ],
-      ),
+            const Spacer(),
+            IconButton(
+              onPressed: () => _showCreateListDialog(context),
+              icon: const Icon(Icons.add),
+              tooltip: 'Crear lista',
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (listsState.errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _ErrorBanner(
+              message: listsState.errorMessage!,
+              onRetry: notifier.refresh,
+            ),
+          ),
+        if (listsState.isLoading && customLists.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (customLists.isEmpty)
+          _buildEmptyState(context, colors, textStyles)
+        else
+          _buildListsGrid(
+            context: context,
+            ref: ref,
+            lists: customLists,
+            movieListIds: movieListIds,
+            colors: colors,
+            textStyles: textStyles,
+          ),
+      ],
     );
   }
 
-  Widget _buildEmptyState(ColorScheme colors, TextTheme textStyles) {
+  Widget _buildListsGrid({
+    required BuildContext context,
+    required WidgetRef ref,
+    required List<CustomList> lists,
+    required Set<String> movieListIds,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
+    return GridView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 2.5,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: lists.length,
+      itemBuilder: (context, index) {
+        final list = lists[index];
+        final isInList = movieListIds.contains(list.id);
+        return _buildListCard(
+          context: context,
+          ref: ref,
+          list: list,
+          isInList: isInList,
+          colors: colors,
+          textStyles: textStyles,
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyState(
+      BuildContext context, ColorScheme colors, TextTheme textStyles) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -163,6 +122,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
         border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             Icons.playlist_add,
@@ -178,74 +138,35 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
           ),
           const SizedBox(height: 4),
           Text(
-            'Crea tu primera lista para organizar tus películas',
+            'Crea tu primera lista para organizar tus películas favoritas',
             style: textStyles.bodySmall?.copyWith(
               color: colors.onSurface.withValues(alpha: 0.5),
             ),
             textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: () => _showCreateListDialog(context),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Crear mi primera lista'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildListsGrid(
-      List<CustomList> lists,
-      List<CustomList> listsContainingMovie,
-      ColorScheme colors,
-      TextTheme textStyles,
-      bool enableScroll) {
-    if (lists.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 48,
-              color: colors.onSurface.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No hay listas en esta categoría',
-              style: textStyles.bodyMedium?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final gridView = GridView.builder(
-      shrinkWrap: true,
-      padding: EdgeInsets.zero,
-      physics: enableScroll
-          ? const AlwaysScrollableScrollPhysics()
-          : const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 2.5,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: lists.length,
-      itemBuilder: (context, index) {
-        final list = lists[index];
-        final isInList = listsContainingMovie.any((l) => l.id == list.id);
-        return _buildListCard(list, isInList, colors, textStyles);
-      },
-    );
-
-    return gridView;
-  }
-
-  Widget _buildListCard(CustomList list, bool isInList, ColorScheme colors,
-      TextTheme textStyles) {
+  Widget _buildListCard({
+    required BuildContext context,
+    required WidgetRef ref,
+    required CustomList list,
+    required bool isInList,
+    required ColorScheme colors,
+    required TextTheme textStyles,
+  }) {
     final listColor = _getColorFromString(list.color);
 
     return GestureDetector(
-      onTap: () => _toggleMovieInList(list, isInList),
+      onTap: () => _toggleMovieInList(context, ref, list, isInList),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(12),
@@ -292,35 +213,13 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
               ],
             ),
             const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  '${list.movieIds.length} películas',
-                  style: textStyles.bodySmall?.copyWith(
-                    color: isInList
-                        ? listColor.withValues(alpha: 0.8)
-                        : colors.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                if (list.isDefault) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: colors.primaryContainer,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Por defecto',
-                      style: textStyles.labelSmall?.copyWith(
-                        color: colors.onPrimaryContainer,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+            Text(
+              '${list.movieIds.length} películas',
+              style: textStyles.bodySmall?.copyWith(
+                color: isInList
+                    ? listColor.withValues(alpha: 0.8)
+                    : colors.onSurface.withValues(alpha: 0.6),
+              ),
             ),
           ],
         ),
@@ -328,11 +227,16 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
     );
   }
 
-  void _toggleMovieInList(CustomList list, bool isInList) {
+  void _toggleMovieInList(
+    BuildContext context,
+    WidgetRef ref,
+    CustomList list,
+    bool isInList,
+  ) {
     if (isInList) {
       ref
           .read(directCustomListsProvider.notifier)
-          .removeMovieFromList(list.id, widget.movie.id);
+          .removeMovieFromList(list.id, movie.id);
 
       // Mostrar confirmación de eliminación
       ScaffoldMessenger.of(context).showSnackBar(
@@ -345,7 +249,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
     } else {
       ref
           .read(directCustomListsProvider.notifier)
-          .addMovieToList(list.id, widget.movie.id);
+          .addMovieToList(list.id, movie.id);
 
       // Mostrar confirmación de adición
       ScaffoldMessenger.of(context).showSnackBar(
@@ -373,7 +277,7 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (dialogContext) => _CreateListDialog(movieId: widget.movie.id),
+      builder: (dialogContext) => _CreateListDialog(movieId: movie.id),
     );
   }
 
@@ -420,6 +324,51 @@ class _MovieListsWidgetState extends ConsumerState<MovieListsWidget>
       default:
         return Colors.blue;
     }
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.error.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            color: colors.onErrorContainer.withValues(alpha: 0.9),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: textStyles.bodyMedium?.copyWith(
+                color: colors.onErrorContainer,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => onRetry(),
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -502,7 +451,7 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
     'deep_orange',
     'brown',
     'grey',
-    'blue_grey'
+    'blue_grey',
   ];
 
   @override
@@ -511,7 +460,6 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
 
-    // Listener para habilitar/deshabilitar el botón dinámicamente
     _nameController.addListener(() {
       setState(() {
         _isButtonEnabled = _nameController.text.trim().isNotEmpty;
@@ -538,7 +486,6 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -566,12 +513,10 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                 ],
               ),
             ),
-            // Content
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextField(
@@ -712,7 +657,6 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                 ),
               ),
             ),
-            // Actions
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -737,82 +681,63 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                   FilledButton(
                     onPressed: _isButtonEnabled
                         ? () async {
-                            try {
-                              // Crear la lista usando Direct provider
-                              await ref
-                                  .read(directCustomListsProvider.notifier)
-                                  .createList(
-                                    name: _nameController.text.trim(),
-                                    description:
-                                        _descriptionController.text.trim(),
-                                    emoji: _selectedEmoji,
-                                    color: _selectedColor,
-                                  );
+                            final navigator = Navigator.of(context);
+                            final scaffoldContext = navigator.context;
+                            final messenger =
+                                ScaffoldMessenger.of(scaffoldContext);
+                            final colorScheme = Theme.of(context).colorScheme;
+                            final name = _nameController.text.trim();
+                            final description =
+                                _descriptionController.text.trim();
 
-                              // Esperar un frame para que se actualice el provider
-                              await Future.delayed(
-                                  const Duration(milliseconds: 100));
+                            try {
+                              final notifier =
+                                  ref.read(directCustomListsProvider.notifier);
+
+                              final newListId = await notifier.createList(
+                                name: name,
+                                description: description,
+                                emoji: _selectedEmoji,
+                                color: _selectedColor,
+                              );
+
+                              if (newListId == null) {
+                                throw Exception('No se pudo crear la lista');
+                              }
 
                               if (_addCurrentMovie) {
-                                // Obtener el ID de la lista recién creada y agregar la película
-                                final notifier = ref
-                                    .read(directCustomListsProvider.notifier);
-                                final customLists = notifier.allListsWithMovies
-                                    .where((l) => !l.isDefault)
-                                    .toList();
-                                if (customLists.isNotEmpty) {
-                                  final newList = customLists.last;
-                                  await ref
-                                      .read(directCustomListsProvider.notifier)
-                                      .addMovieToList(
-                                          newList.id, widget.movieId);
-                                }
-                              }
-
-                              if (mounted) {
-                                Navigator.of(context).pop();
-
-                                // Usar el contexto del scaffold padre para mostrar el snackbar
-                                final scaffoldContext =
-                                    Navigator.of(context).context;
-                                if (scaffoldContext.mounted) {
-                                  ScaffoldMessenger.of(scaffoldContext)
-                                      .showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'Lista "${_nameController.text.trim()}" creada'),
-                                      action: SnackBarAction(
-                                        label: 'Ver',
-                                        onPressed: () {
-                                          final notifier = ref.read(
-                                              directCustomListsProvider
-                                                  .notifier);
-                                          final customLists = notifier
-                                              .allListsWithMovies
-                                              .where((l) => !l.isDefault)
-                                              .toList();
-                                          if (customLists.isNotEmpty) {
-                                            final newList = customLists.last;
-                                            GoRouter.of(scaffoldContext)
-                                                .push('/lists/${newList.id}');
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                }
-                              }
-                            } catch (e) {
-                              if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text('Error al crear la lista: $e'),
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.error,
-                                  ),
+                                await notifier.addMovieToList(
+                                  newListId,
+                                  widget.movieId,
                                 );
                               }
+
+                              if (!mounted || !scaffoldContext.mounted) {
+                                return;
+                              }
+
+                              navigator.pop();
+
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Lista "$name" creada'),
+                                  action: SnackBarAction(
+                                    label: 'Ver',
+                                    onPressed: () {
+                                      GoRouter.of(scaffoldContext)
+                                          .push('/lists/$newListId');
+                                    },
+                                  ),
+                                ),
+                              );
+                            } catch (e) {
+                              if (!mounted || !scaffoldContext.mounted) return;
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text('Error al crear la lista: $e'),
+                                  backgroundColor: colorScheme.error,
+                                ),
+                              );
                             }
                           }
                         : null,

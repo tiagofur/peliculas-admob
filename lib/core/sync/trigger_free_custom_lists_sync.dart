@@ -51,6 +51,7 @@ class TriggerFreeCustomListsSync {
           .from('user_list_items')
           .select('movie_id')
           .eq('list_id', listId)
+          .eq('user_id', userId)
           .eq('is_deleted', false)
           .order('added_at', ascending: false);
 
@@ -78,6 +79,8 @@ class TriggerFreeCustomListsSync {
 
       // final now = DateTime.now().toUtc().toIso8601String();
 
+      final now = DateTime.now().toUtc().toIso8601String();
+
       final response = await _supabase
           .from('user_lists')
           .insert({
@@ -85,10 +88,13 @@ class TriggerFreeCustomListsSync {
             'user_id': userId,
             'name': list.name,
             'description': list.description,
+            'emoji': list.emoji,
             'color_hex': _colorNameToHex(list.color),
             'is_public': false,
             'sync_version': 1,
             'is_deleted': false,
+            'created_at': now,
+            'last_modified_at': now,
           })
           .select()
           .single();

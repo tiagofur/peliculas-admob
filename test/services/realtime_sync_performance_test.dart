@@ -74,7 +74,10 @@ void main() {
         type: anyNamed('type'),
         data: anyNamed('data'),
         priority: anyNamed('priority'),
-      )).thenAnswer((_) async {});
+      )).thenAnswer((_) async {
+        // Simula un costo de procesamiento mínimo y estable para evitar variaciones extremas
+        await Future.delayed(const Duration(microseconds: 500));
+      });
 
       realtimeSyncManager = RealtimeSyncManager(
         userId: testUserId,

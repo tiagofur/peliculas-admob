@@ -14,20 +14,41 @@ import '../custom_lists_providers.dart';
 /// Estado para listas con sus películas
 class CustomListsState {
   const CustomListsState({
-    this.lists = const {},
-    this.listItems = const {},
+    required this.lists,
+    required this.listItems,
+    required this.isLoading,
+    this.errorMessage,
+    this.lastSyncedAt,
   });
+
+  factory CustomListsState.initial() {
+    return const CustomListsState(
+      lists: {},
+      listItems: {},
+      isLoading: true,
+    );
+  }
 
   final Map<String, CustomList> lists; // listId -> CustomList
   final Map<String, List<int>> listItems; // listId -> List<movieId>
+  final bool isLoading;
+  final String? errorMessage;
+  final DateTime? lastSyncedAt;
 
   CustomListsState copyWith({
     Map<String, CustomList>? lists,
     Map<String, List<int>>? listItems,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+    DateTime? lastSyncedAt,
   }) {
     return CustomListsState(
       lists: lists ?? this.lists,
       listItems: listItems ?? this.listItems,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
     );
   }
 
@@ -57,12 +78,16 @@ final directCustomListsProvider =
         DirectCustomListsNotifier.new);
 
 class DirectCustomListsNotifier extends Notifier<CustomListsState> {
+  bool _syncInitialized = false;
+  bool _isLoadingFromRemote = false;
+
   @override
   CustomListsState build() {
+    state = CustomListsState.initial();
+    ref.onDispose(_teardownRealtimeListeners);
     _loadListsFromSupabase();
-    _setupRealtimeListeners();
     _initializeSync();
-    return const CustomListsState();
+    return state;
   }
 
   ListSyncService? _syncService;
@@ -72,12 +97,27 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
   String? _currentUserId;
 
   /// Cargar listas directamente desde Supabase
-  Future<void> _loadListsFromSupabase() async {
+  Future<void> _loadListsFromSupabase({bool forceRefresh = false}) async {
+    if (_isLoadingFromRemote && !forceRefresh) {
+      LoggerFactory.debug(
+          'DirectCustomLists: Load already in progress, skipping');
+      return;
+    }
+
+    _isLoadingFromRemote = true;
+    state = state.copyWith(isLoading: true, clearError: true);
+
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        state = const CustomListsState();
+        state = const CustomListsState(
+          lists: {},
+          listItems: {},
+          isLoading: false,
+        );
         _currentUserId = null;
+        _teardownRealtimeListeners();
+        _isLoadingFromRemote = false;
         return;
       }
 
@@ -98,22 +138,39 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
         listItemsMap[list.id] = movieIds;
       }
 
-      state = CustomListsState(
+      state = state.copyWith(
         lists: listsMap,
         listItems: listItemsMap,
+        isLoading: false,
+        clearError: true,
+        lastSyncedAt: DateTime.now(),
       );
 
       LoggerFactory.info(
           'DirectCustomLists: Cargadas ${customLists.length} listas directas');
       LoggerFactory.debug('DirectCustomLists: IDs: ${listsMap.keys.toList()}');
-    } catch (e) {
-      LoggerFactory.error('DirectCustomLists: Error cargando: $e');
-      state = const CustomListsState();
+
+      _setupRealtimeListeners();
+    } catch (e, stackTrace) {
+      LoggerFactory.error('DirectCustomLists: Error cargando: $e',
+          stackTrace: stackTrace);
+      state = state.copyWith(
+        lists: const {},
+        listItems: const {},
+        isLoading: false,
+        errorMessage: 'No pudimos cargar tus listas personalizadas. '
+            'Reintentaremos automáticamente.',
+      );
+    } finally {
+      _isLoadingFromRemote = false;
     }
   }
 
   /// Inicializar sincronización con ListSyncService
-  void _initializeSync() async {
+  Future<void> _initializeSync() async {
+    if (_syncInitialized) {
+      return;
+    }
     try {
       _syncService = await ref.read(listSyncServiceProvider.future);
 
@@ -133,6 +190,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
 
       // Iniciar auto-sync si está habilitado
       _syncService!.startAutoSync();
+      _syncInitialized = true;
     } catch (e) {
       LoggerFactory.error(
           'DirectCustomLists: Error initializing sync service: $e');
@@ -140,7 +198,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
   }
 
   /// Crear nueva lista
-  Future<void> createList({
+  Future<String?> createList({
     required String name,
     String description = '',
     required String emoji,
@@ -149,7 +207,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) {
       LoggerFactory.info('DirectCustomLists: No hay usuario logueado');
-      return;
+      return null;
     }
 
     const uuid = Uuid();
@@ -195,6 +253,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
         LoggerFactory.error(
             '❌ [CREAR LISTA] TriggerFreeCustomListsSync retornó null');
       }
+      return listId;
     } catch (e) {
       LoggerFactory.error(
           '❌ [CREAR LISTA] Error en TriggerFreeCustomListsSync: $e');
@@ -338,6 +397,23 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
       }
 
       rethrow;
+    }
+  }
+
+  /// Vaciar una lista eliminando todas sus películas
+  Future<void> clearList(String listId) async {
+    final currentItems = List<int>.from(state.listItems[listId] ?? []);
+    if (currentItems.isEmpty) {
+      LoggerFactory.debug(
+          'DirectCustomLists: clearList llamado pero la lista ya está vacía');
+      return;
+    }
+
+    LoggerFactory.info(
+        'DirectCustomLists: Limpiando lista $listId con ${currentItems.length} películas');
+
+    for (final movieId in currentItems) {
+      await removeMovieFromList(listId, movieId);
     }
   }
 
@@ -512,37 +588,48 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
 
   /// Configurar listeners de tiempo real
   void _setupRealtimeListeners() {
+    final userId = _currentUserId;
+    if (userId == null) {
+      LoggerFactory.debug(
+          '📡 [REAL-TIME CUSTOM LISTS] Listener setup skipped: no user');
+      return;
+    }
+
+    _teardownRealtimeListeners();
+
     try {
       LoggerFactory.info(
           '📡 [REAL-TIME CUSTOM LISTS] Configurando listeners de tiempo real...');
 
       // Listener para cambios en listas
       _listsChannel = Supabase.instance.client
-          .channel(
-              'custom_lists_realtime_${DateTime.now().millisecondsSinceEpoch}')
+          .channel('custom_lists_realtime_$userId')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_lists',
             callback: _handleListsRealtimeEvent,
-            filter: _currentUserId != null
-                ? PostgresChangeFilter(
-                    type: PostgresChangeFilterType.eq,
-                    column: 'user_id',
-                    value: _currentUserId)
-                : null,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
           )
           .subscribe();
 
       // Listener para cambios en items de listas
       _listItemsChannel = Supabase.instance.client
-          .channel(
-              'list_items_realtime_${DateTime.now().millisecondsSinceEpoch}')
+          .channel('list_items_realtime_$userId')
           .onPostgresChanges(
             event: PostgresChangeEvent.all,
             schema: 'public',
             table: 'user_list_items',
             callback: _handleListItemsRealtimeEvent,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
           )
           .subscribe();
 
@@ -551,6 +638,25 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
     } catch (e) {
       LoggerFactory.error(
           '❌ DirectCustomLists: Error configurando listeners: $e');
+    }
+  }
+
+  void _teardownRealtimeListeners() {
+    try {
+      if (_listsChannel != null) {
+        _listsChannel?.unsubscribe();
+        Supabase.instance.client.removeChannel(_listsChannel!);
+        _listsChannel = null;
+      }
+
+      if (_listItemsChannel != null) {
+        _listItemsChannel?.unsubscribe();
+        Supabase.instance.client.removeChannel(_listItemsChannel!);
+        _listItemsChannel = null;
+      }
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ DirectCustomLists: Error al detener listeners: $e');
     }
   }
 
@@ -677,7 +783,12 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
       // 🔧 FIXED: Validación robusta de datos críticos
       final userId = data['user_id'] as String?;
       final listId = data['list_id'] as String?;
-      final movieId = data['movie_id'] as int?;
+      final dynamic rawMovieId = data['movie_id'];
+      final int? movieId = rawMovieId is int
+          ? rawMovieId
+          : rawMovieId is num
+              ? rawMovieId.toInt()
+              : null;
       final isDeleted = data['is_deleted'] as bool? ?? false;
 
       LoggerFactory.debug('🔍 DirectCustomLists: user_id: ${userId ?? 'NULL'}');
@@ -685,6 +796,12 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
       LoggerFactory.debug(
           '🔍 DirectCustomLists: movie_id: ${movieId ?? 'NULL'}');
       LoggerFactory.debug('🔍 DirectCustomLists: is_deleted: $isDeleted');
+
+      if (userId != null && userId != _currentUserId) {
+        LoggerFactory.debug(
+            '🔴 DirectCustomLists: Evento de items de otro usuario, ignorando');
+        return;
+      }
 
       // 🔧 FIXED: Solo procesar si tenemos esta lista y no es de otro usuario
       final currentState = state;
@@ -1028,8 +1145,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
     }
 
     _currentUserId = currentUser.id;
-    await _loadListsFromSupabase();
-    _setupRealtimeListeners();
+    await _loadListsFromSupabase(forceRefresh: true);
 
     LoggerFactory.info('✅ DirectCustomLists: Listas habilitadas correctamente');
   }
@@ -1262,8 +1378,9 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
 
   void cleanup() {
     LoggerFactory.info('🗑️ DirectCustomLists: Cerrando listeners...');
-    _listsChannel?.unsubscribe();
-    _listItemsChannel?.unsubscribe();
+    _teardownRealtimeListeners();
+    _syncInitialized = false;
+    _syncService = null;
   }
 }
 
