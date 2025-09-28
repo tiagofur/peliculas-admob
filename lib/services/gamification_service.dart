@@ -7,6 +7,7 @@ import '../domain/entities/achievement.dart';
 import '../domain/entities/achievement_progress.dart';
 import '../domain/entities/movie.dart';
 import '../domain/entities/user_achievements.dart';
+import '../infrastructure/services/cross_platform_init_service.dart';
 
 /// Servicio principal para el manejo de gamificación, logros y progreso del usuario
 class GamificationService {
@@ -38,6 +39,9 @@ class GamificationService {
 
     try {
       LoggerFactory.info('Inicializando GamificationService...');
+
+      // Asegurar que Hive y los adaptadores estén listos en todas las plataformas
+      await CrossPlatformInitService.instance.initialize();
 
       _userAchievementsBox =
           await Hive.openBox<UserAchievements>(_userAchievementsBoxName);
