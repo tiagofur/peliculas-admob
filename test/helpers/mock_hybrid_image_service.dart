@@ -21,7 +21,7 @@ class TestImageWidget extends StatelessWidget {
   });
 
   final double? width;
-  final double? height; 
+  final double? height;
   final BoxFit fit;
   final Widget? placeholder;
   final Widget? errorWidget;
@@ -32,14 +32,14 @@ class TestImageWidget extends StatelessWidget {
       width: width,
       height: height,
       color: Colors.grey[300],
-      child: placeholder ?? 
-        Icon(
-          Icons.image,
-          size: (width != null && height != null) 
-            ? (width! * height!).clamp(16, 48) 
-            : 24,
-          color: Colors.grey[600],
-        ),
+      child: placeholder ??
+          Icon(
+            Icons.image,
+            size: (width != null && height != null)
+                ? (width! * height!).clamp(16, 48)
+                : 24,
+            color: Colors.grey[600],
+          ),
     );
   }
 }

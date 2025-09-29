@@ -8,14 +8,14 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/analytics/analytics_service.dart';
 import '../../../core/logging/logger_factory.dart';
-import '../../../core/utils/tmdb_image_utils.dart';
+// import removido: tmdb_image_utils ya no es utilizado en este archivo
 import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/movie_ratings_provider.dart';
-import '../../providers/user_movie_ratings_provider.dart' as ratings;
+// Eliminado provider legacy de valoraciones por no utilizarse
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/ratings/star_rating_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
@@ -88,6 +88,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit),
+              tooltip: 'Editar perfil',
               onPressed: currentUser == null
                   ? null
                   : () => startEditing(
@@ -135,43 +136,46 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               loading: () => currentUser != null
                   ? _buildBasicUserInfo(theme, currentUser)
                   : const Center(child: CircularProgressIndicator()),
-              error: (error, _) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: theme.colorScheme.error,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error al cargar el perfil',
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              error: (error, _) {
+                LoggerFactory.error('Error al cargar el perfil: $error');
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: theme.colorScheme.error,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: () => ref
-                          .read(userProfileNotifierProvider.notifier)
-                          .refreshProfile(),
-                      child: const Text('Reintentar'),
-                    ),
-                    if (currentUser != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error al cargar el perfil',
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.7),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 24),
-                      _buildBasicUserInfo(theme, currentUser),
+                      FilledButton(
+                        onPressed: () => ref
+                            .read(userProfileNotifierProvider.notifier)
+                            .refreshProfile(),
+                        child: const Text('Reintentar'),
+                      ),
+                      if (currentUser != null) ...[
+                        const SizedBox(height: 24),
+                        _buildBasicUserInfo(theme, currentUser),
+                      ],
                     ],
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -183,34 +187,43 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _buildBasicUserInfo(ThemeData theme, User user) {
     final fallbackProfile = _createFallbackProfileFromUser(user);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProfileHeader(theme, fallbackProfile),
-          const SizedBox(height: 24),
-          Text(
-            'Información Básica',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Forzar recarga de perfil y estadísticas
+        await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        ref.invalidate(currentUserStatsProvider);
+        ref.invalidate(recentRatingsProvider);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileHeader(theme, fallbackProfile),
+            const SizedBox(height: 24),
+            Text(
+              'Información Básica',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          _buildInfoTile(
-            theme,
-            'Nombre',
-            fallbackProfile.fullName,
-            Icons.person,
-          ),
-          const SizedBox(height: 12),
-          _buildInfoTile(
-            theme,
-            'Email',
-            user.email,
-            Icons.email,
-          ),
-        ],
+            const SizedBox(height: 12),
+            _buildInfoTile(
+              theme,
+              'Nombre',
+              fallbackProfile.fullName,
+              Icons.person,
+            ),
+            const SizedBox(height: 12),
+            _buildInfoTile(
+              theme,
+              'Email',
+              user.email,
+              Icons.email,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -239,69 +252,81 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _hasRequestedProfileRecovery = false;
     }
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          if (usingFallbackProfile) _buildFallbackNotice(theme),
-          _buildProfileHeader(theme, effectiveProfile),
-          const SizedBox(height: 32),
-          if (stats != null) ...[
-            _buildStatsSection(theme, stats),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        ref.invalidate(currentUserStatsProvider);
+        ref.invalidate(recentRatingsProvider);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            if (usingFallbackProfile) _buildFallbackNotice(theme),
+            _buildProfileHeader(theme, effectiveProfile),
             const SizedBox(height: 32),
-          ] else ...[
-            // Mostrar placeholder de estadísticas mientras cargan
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Estadísticas',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ref.watch(currentUserStatsProvider).when(
-                          data: (_) => const SizedBox(), // Ya manejado arriba
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(),
-                          ),
-                          error: (error, _) => Column(
-                            children: [
-                              Text(
-                                'Error cargando estadísticas',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.error,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: () {
-                                  ref.invalidate(currentUserStatsProvider);
-                                },
-                                child: const Text('Reintentar'),
-                              ),
-                            ],
-                          ),
+            if (stats != null) ...[
+              _buildStatsSection(theme, stats),
+              const SizedBox(height: 32),
+            ] else ...[
+              // Mostrar placeholder de estadísticas mientras cargan
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Estadísticas',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                  ],
+                      ),
+                      const SizedBox(height: 16),
+                      ref.watch(currentUserStatsProvider).when(
+                            data: (_) => const SizedBox(), // Ya manejado arriba
+                            loading: () => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                            error: (error, _) {
+                              LoggerFactory.error(
+                                  'Error cargando estadísticas: $error');
+                              return Column(
+                                children: [
+                                  Text(
+                                    'Error cargando estadísticas',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.error,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      ref.invalidate(currentUserStatsProvider);
+                                    },
+                                    child: const Text('Reintentar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 32),
+            ],
+            _buildRatingsSection(theme),
             const SizedBox(height: 32),
+            if (_isEditing)
+              _buildEditForm(theme, effectiveProfile)
+            else
+              _buildProfileInfo(theme, effectiveProfile),
+            const SizedBox(height: 32),
+            _buildActionButtons(theme),
           ],
-          _buildRatingsSection(theme),
-          const SizedBox(height: 32),
-          if (_isEditing)
-            _buildEditForm(theme, effectiveProfile)
-          else
-            _buildProfileInfo(theme, effectiveProfile),
-          const SizedBox(height: 32),
-          _buildActionButtons(theme),
-        ],
+        ),
       ),
     );
   }
@@ -430,6 +455,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       color: theme.colorScheme.onPrimary,
                       size: 20,
                     ),
+                    tooltip: 'Cambiar avatar',
                     onPressed: selectImage,
                     constraints: const BoxConstraints(
                       minWidth: 36,
@@ -456,83 +482,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildStatsSection(ThemeData theme, UserStats stats) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Estadísticas',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatItem(
-                    theme,
-                    'Películas Vistas',
-                    stats.moviesWatched.toString(),
-                    Icons.movie,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    theme,
-                    'Favoritas',
-                    stats.favoritesCount.toString(),
-                    Icons.favorite,
-                  ),
-                ),
-                Expanded(
-                  child: _buildStatItem(
-                    theme,
-                    'Listas',
-                    stats.listsCount.toString(),
-                    Icons.list,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-      ThemeData theme, String label, String value, IconData icon) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          color: theme.colorScheme.primary,
-          size: 32,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-          textAlign: TextAlign.center,
-        ),
       ],
     );
   }
@@ -654,44 +603,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Icons.update,
         ),
       ],
-    );
-  }
-
-  Widget _buildInfoTile(
-      ThemeData theme, String label, String value, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: theme.colorScheme.onSurface,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -818,74 +729,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     );
                   },
                 ),
-                //                     'Aún no has valorado ninguna película',
-                //                     style: theme.textTheme.bodyMedium?.copyWith(
-                //                       color: theme.colorScheme.onSurface
-                //                           .withValues(alpha: 0.6),
-                //                     ),
-                //                     textAlign: TextAlign.center,
-                //                   ),
-                //                 ],
-                //               );
-                //             }
-
-                //             return Column(
-                //               children: [
-                //                 Text(
-                //                   'Valoraciones Recientes',
-                //                   style: theme.textTheme.bodyLarge?.copyWith(
-                //                     fontWeight: FontWeight.w600,
-                //                   ),
-                //                 ),
-                //                 const SizedBox(height: 12),
-                //                 ...ratings.take(3).map((rating) => Padding(
-                //                       padding: const EdgeInsets.only(bottom: 8),
-                //                       child: _buildRatingItem(theme, rating),
-                //                     )),
-                //                 if (ratings.length > 3)
-                //                   TextButton(
-                //                     onPressed: () => showAllRatings(context),
-                //                     child: const Text(
-                //                         'Ver todas mis valoraciones'),
-                //                   ),
-                //               ],
-                //             );
-                //           },
-                //           loading: () => const CircularProgressIndicator(),
-                //           error: (error, stack) => Text(
-                //             'Error al cargar valoraciones',
-                //             style: theme.textTheme.bodySmall?.copyWith(
-                //               color: Colors.red,
-                //             ),
-                //           ),
-                //         ),
-                //       ],
-                //     );
-                //   },
-                // ),
-
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.star_border,
-                        size: 48,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Función de valoraciones temporalmente deshabilitada',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
+                // (Se eliminó el contenedor temporal deshabilitado para valoraciones)
               ],
             ),
           ),
@@ -894,71 +738,119 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildRatingItem(ThemeData theme, dynamic rating) {
+  // Eliminado _buildRatingItem legacy no utilizado
+
+  // Tile compacto para información de perfil
+  Widget _buildInfoTile(
+    ThemeData theme,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(8),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.12),
+        ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Poster pequeño (si está disponible)
-          Container(
-            width: 40,
-            height: 60,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              color: theme.colorScheme.surface,
-            ),
-            child: rating.moviePosterPath?.isNotEmpty == true
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      resolvePosterUrl(
-                        rating.moviePosterPath,
-                        size: 'w92',
-                      ),
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stack) => Icon(Icons.movie,
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.5)),
-                    ),
-                  )
-                : Icon(Icons.movie,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
-          ),
+          Icon(icon, color: theme.colorScheme.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  rating.movieTitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    ...List.generate(
-                        5,
-                        (index) => Icon(
-                              index < rating.rating
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              size: 16,
-                              color: Colors.amber,
-                            )),
-                  ],
+                Text(
+                  value,
+                  style: theme.textTheme.bodyLarge,
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Sección de estadísticas del usuario
+  Widget _buildStatsSection(ThemeData theme, UserStats stats) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.insights, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Estadísticas',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    theme,
+                    'Vistas',
+                    stats.moviesWatched.toString(),
+                    Icons.remove_red_eye,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    theme,
+                    'Favoritos',
+                    stats.favoritesCount.toString(),
+                    Icons.favorite,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    theme,
+                    'Listas',
+                    stats.listsCount.toString(),
+                    Icons.list_alt,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    theme,
+                    'Actividad',
+                    formatDate(stats.lastActivity),
+                    Icons.update,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1083,6 +975,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
         }
       } catch (e) {
+        LoggerFactory.error('Error al actualizar perfil: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1193,98 +1086,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
 
-  void showAllRatings(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        maxChildSize: 0.9,
-        minChildSize: 0.5,
-        expand: false,
-        builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.star, color: Colors.amber),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Todas mis valoraciones',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1),
-                Expanded(
-                  child: Consumer(
-                    builder: (context, ref, child) {
-                      final userRatingsState =
-                          ref.watch(ratings.userRatingsProvider);
-                      final allRatings = userRatingsState.ratings;
-
-                      if (userRatingsState.isLoading && allRatings.isEmpty) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-
-                      if (userRatingsState.error != null) {
-                        return Center(
-                          child: Text(
-                            'Error al cargar valoraciones: ${userRatingsState.error}',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        );
-                      }
-
-                      if (allRatings.isEmpty) {
-                        return const Center(
-                          child: Text('No tienes valoraciones aún'),
-                        );
-                      }
-
-                      return ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: allRatings.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _buildRatingItem(
-                                Theme.of(context), allRatings[index]),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+  // Se eliminó el bottom sheet legacy para mostrar todas las valoraciones,
+  // ahora delegamos a una pantalla dedicada mediante _showAllRatings.
 
   /// Builds the rating statistics section
   Widget _buildRatingStats(ThemeData theme, Map<String, dynamic> stats) {
@@ -1305,7 +1108,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const Icon(Icons.star, color: Colors.amber, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Your Ratings',
+                'Tus valoraciones',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -1327,7 +1130,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Expanded(
                 child: _buildStatCard(
                   theme,
-                  'Average',
+                  'Promedio',
                   '${stats['averageRating']}/10',
                   Icons.star_half,
                 ),
@@ -1340,7 +1143,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Expanded(
                 child: _buildStatCard(
                   theme,
-                  'With Reviews',
+                  'Con reseña',
                   stats['ratingsWithReview'].toString(),
                   Icons.rate_review,
                 ),
@@ -1349,7 +1152,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               Expanded(
                 child: _buildStatCard(
                   theme,
-                  'Recent',
+                  'Recientes',
                   stats['recentRatingsCount'].toString(),
                   Icons.schedule,
                 ),
@@ -1409,7 +1212,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const Icon(Icons.history, color: Colors.green, size: 20),
               const SizedBox(width: 8),
               Text(
-                'Recent Ratings',
+                'Valoraciones recientes',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -1448,7 +1251,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => _showAllRatings(context),
-            child: const Text('View All Ratings'),
+            child: const Text('Ver todas las valoraciones'),
           ),
         ],
       ),

@@ -228,8 +228,8 @@ void main() {
       }
 
       final normalTime = DateTime.now().difference(normalStartTime);
-      final normalThroughput = normalTime.inSeconds > 0 
-          ? normalLoad / normalTime.inSeconds 
+      final normalThroughput = normalTime.inSeconds > 0
+          ? normalLoad / normalTime.inSeconds
           : normalLoad.toDouble(); // Si es muy rápido, usar throughput máximo
 
       LoggerFactory.debug(
@@ -249,8 +249,8 @@ void main() {
       }
 
       final spikeTime = DateTime.now().difference(spikeStartTime);
-      final spikeThroughput = spikeTime.inSeconds > 0 
-          ? spikeLoad / spikeTime.inSeconds 
+      final spikeThroughput = spikeTime.inSeconds > 0
+          ? spikeLoad / spikeTime.inSeconds
           : spikeLoad.toDouble(); // Si es muy rápido, usar throughput máximo
 
       // Assert - El throughput durante el pico no debe degradarse más del 30%

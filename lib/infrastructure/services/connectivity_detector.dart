@@ -23,7 +23,7 @@ class ConnectivityDetector {
 
   // ✅ FIXED: Variable para desactivar tests en testing environment
   static bool _isTestMode = false;
-  
+
   /// Activa o desactiva el modo de testing (sin network calls)
   static void setTestMode(bool isTestMode) {
     _isTestMode = isTestMode;
@@ -311,10 +311,10 @@ class ConnectivityDetector {
     // ✅ FIXED: Cancelar Timer periódico
     _periodicTimer?.cancel();
     _periodicTimer = null;
-    
+
     _connectivitySubscription?.cancel();
     _connectivitySubscription = null;
-    
+
     _statusController.close();
 
     LoggerFactory.info('✅ ConnectivityDetector limpiado');

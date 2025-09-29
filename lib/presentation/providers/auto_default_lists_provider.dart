@@ -61,7 +61,8 @@ class AutoDefaultListsService {
       LoggerFactory.info(
           'ℹ️ Listas predeterminadas deshabilitadas - nada por crear para ${currentUser.email}');
     } on TimeoutException catch (e) {
-      LoggerFactory.error('⏰ Timeout en verificación de listas predeterminadas: $e');
+      LoggerFactory.error(
+          '⏰ Timeout en verificación de listas predeterminadas: $e');
     } catch (e, stack) {
       LoggerFactory.error('❌ Error al verificar listas predeterminadas: $e');
       LoggerFactory.error('Stack: $stack');
