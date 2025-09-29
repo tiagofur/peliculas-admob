@@ -34,6 +34,13 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+def defaultKeystorePath = 'C:/src/peliculas.jks'
+def resolvedKeystorePath = keystoreProperties['storeFile'] ?: defaultKeystorePath
+def keystoreFile = file(resolvedKeystorePath)
+def keyAliasValue = keystoreProperties['keyAlias'] ?: System.getenv('PELIS_KEY_ALIAS')
+def keyPasswordValue = keystoreProperties['keyPassword'] ?: System.getenv('PELIS_KEY_PASSWORD')
+def storePasswordValue = keystoreProperties['storePassword'] ?: System.getenv('PELIS_STORE_PASSWORD')
+
 android {
     namespace "mx.creapolis.peliculas"
     compileSdkVersion flutter.compileSdkVersion
@@ -86,20 +93,22 @@ android {
     }
 
     signingConfigs {
-       release {
-           if (keystorePropertiesFile.exists()) {
-               keyAlias keystoreProperties['keyAlias']
-               keyPassword keystoreProperties['keyPassword']
-               storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
-               storePassword keystoreProperties['storePassword']
-           }
-       }
-   }
+        release {
+            if (keystoreFile.exists() && keyAliasValue && keyPasswordValue && storePasswordValue) {
+                keyAlias keyAliasValue
+                keyPassword keyPasswordValue
+                storeFile keystoreFile
+                storePassword storePasswordValue
+            }
+        }
+    }
 
     buildTypes {
         release {
             // Use release signing if keystore exists, otherwise use debug
-            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+        signingConfig keystoreFile.exists() && keyAliasValue && keyPasswordValue && storePasswordValue
+            ? signingConfigs.release
+            : signingConfigs.debug
             
             // Optimizaciones para release
             minifyEnabled true

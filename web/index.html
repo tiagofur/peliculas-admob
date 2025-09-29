@@ -100,20 +100,38 @@
 
     <!-- Google AdSense -->
     <script>
-      if (window.location.hostname !== "localhost") {
-        // Load AdSense script only on non-localhost environments
-        var adSenseScript = document.createElement('script');
-        adSenseScript.async = true;
-        adSenseScript.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4576016092724628';
-        adSenseScript.crossOrigin = 'anonymous';
-        document.head.appendChild(adSenseScript);
+      (function loadAdSense() {
+        if (window.location.hostname === "localhost") {
+          return; // avoid loading ads in local development
+        }
 
-        // Add AdSense meta tag
-        var adSenseMeta = document.createElement('meta');
-        adSenseMeta.name = 'google-adsense-account';
-        adSenseMeta.content = 'ca-pub-4576016092724628';
-        document.head.appendChild(adSenseMeta);
-      }
+        var adClient = "ca-pub-4576016092724628";
+
+        // Ensure we only inject the AdSense script once
+        if (
+          !document.querySelector('script[data-ad-client="' + adClient + '"]')
+        ) {
+          var adSenseScript = document.createElement("script");
+          adSenseScript.async = true;
+          adSenseScript.src =
+            "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" +
+            adClient;
+          adSenseScript.setAttribute("data-ad-client", adClient);
+          adSenseScript.crossOrigin = "anonymous";
+          document.head.appendChild(adSenseScript);
+        }
+
+        // Add required AdSense meta tag if not already present
+        if (!document.querySelector('meta[name="google-adsense-account"]')) {
+          var adSenseMeta = document.createElement("meta");
+          adSenseMeta.name = "google-adsense-account";
+          adSenseMeta.content = adClient;
+          document.head.appendChild(adSenseMeta);
+        }
+
+        // Initialize the ads queue if needed
+        window.adsbygoogle = window.adsbygoogle || [];
+      })();
     </script>
 
     <title id="page-title">

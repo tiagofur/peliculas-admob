@@ -7,8 +7,10 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/analytics/analytics_service.dart';
+import '../../../core/logging/logger_factory.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/syncable_movie_rating.dart';
+import '../../../domain/entities/user.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
 import '../../providers/auth_provider.dart';
@@ -34,6 +36,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
   final AnalyticsService _analyticsService = AnalyticsService();
+  bool _hasRequestedProfileRecovery = false;
 
   @override
   void initState() {
@@ -43,6 +46,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
         'timestamp': DateTime.now().toIso8601String(),
       });
+
+      // Forzar carga de datos si hay un usuario autenticado
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser != null) {
+        // Refrescar perfil de usuario si no se ha cargado
+        final profileState = ref.read(userProfileNotifierProvider);
+        if (profileState.value == null && !profileState.isLoading) {
+          ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        }
+
+        // Cargar estadísticas si no están disponibles
+        ref.invalidate(currentUserStatsProvider);
+      }
     });
   }
 
@@ -57,9 +73,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userProfile = ref.watch(currentUserProfileProvider);
+    final userProfile = ref.watch(userProfileNotifierProvider);
     final userStats = ref.watch(currentUserStatsProvider);
     final authNotifier = ref.watch(authNotifierProvider);
+    // Consider both profile updates and auth updates as a saving state
+    final isSaving = userProfile.isLoading || authNotifier.isLoading;
+    final currentUser = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -69,7 +88,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           if (!_isEditing)
             IconButton(
               icon: const Icon(Icons.edit),
-              onPressed: () => startEditing(userProfile.value),
+              onPressed: currentUser == null
+                  ? null
+                  : () => startEditing(
+                        userProfile.value ??
+                            _createFallbackProfileFromUser(currentUser),
+                        isFallback: userProfile.value == null,
+                      ),
             )
           else
             Row(
@@ -81,8 +106,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: authNotifier.isLoading ? null : saveProfile,
-                  child: authNotifier.isLoading
+                  onPressed: isSaving ? null : saveProfile,
+                  child: isSaving
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -100,9 +125,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const MinimalSyncIndicator(),
           Expanded(
             child: userProfile.when(
-              data: (profile) =>
-                  _buildProfileContent(theme, profile, userStats.value),
-              loading: () => const Center(child: CircularProgressIndicator()),
+              data: (profile) => _buildProfileContent(
+                theme,
+                ref,
+                currentUser,
+                profile,
+                userStats.value,
+              ),
+              loading: () => currentUser != null
+                  ? _buildBasicUserInfo(theme, currentUser)
+                  : const Center(child: CircularProgressIndicator()),
               error: (error, _) => Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -128,9 +160,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: () => ref.refresh(currentUserProfileProvider),
+                      onPressed: () => ref
+                          .read(userProfileNotifierProvider.notifier)
+                          .refreshProfile(),
                       child: const Text('Reintentar'),
                     ),
+                    if (currentUser != null) ...[
+                      const SizedBox(height: 24),
+                      _buildBasicUserInfo(theme, currentUser),
+                    ],
                   ],
                 ),
               ),
@@ -141,41 +179,221 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  // Muestra información básica (nombre y correo) incluso si el perfil está cargando o falló
+  Widget _buildBasicUserInfo(ThemeData theme, User user) {
+    final fallbackProfile = _createFallbackProfileFromUser(user);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildProfileHeader(theme, fallbackProfile),
+          const SizedBox(height: 24),
+          Text(
+            'Información Básica',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildInfoTile(
+            theme,
+            'Nombre',
+            fallbackProfile.fullName,
+            Icons.person,
+          ),
+          const SizedBox(height: 12),
+          _buildInfoTile(
+            theme,
+            'Email',
+            user.email,
+            Icons.email,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProfileContent(
-      ThemeData theme, UserProfile? profile, UserStats? stats) {
-    if (profile == null) {
-      return const Center(child: Text('No se pudo cargar el perfil'));
+    ThemeData theme,
+    WidgetRef ref,
+    User? currentUser,
+    UserProfile? profile,
+    UserStats? stats,
+  ) {
+    if (currentUser == null) {
+      return _buildGuestPlaceholder(theme);
+    }
+
+    final usingFallbackProfile = profile == null;
+    final effectiveProfile =
+        profile ?? _createFallbackProfileFromUser(currentUser);
+
+    if (usingFallbackProfile && !_hasRequestedProfileRecovery) {
+      _hasRequestedProfileRecovery = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+      });
+    } else if (!usingFallbackProfile && _hasRequestedProfileRecovery) {
+      _hasRequestedProfileRecovery = false;
     }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Avatar y información básica
-          _buildProfileHeader(theme, profile),
+          if (usingFallbackProfile) _buildFallbackNotice(theme),
+          _buildProfileHeader(theme, effectiveProfile),
           const SizedBox(height: 32),
-
-          // Estadísticas
           if (stats != null) ...[
             _buildStatsSection(theme, stats),
             const SizedBox(height: 32),
+          ] else ...[
+            // Mostrar placeholder de estadísticas mientras cargan
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Estadísticas',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ref.watch(currentUserStatsProvider).when(
+                          data: (_) => const SizedBox(), // Ya manejado arriba
+                          loading: () => const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                          error: (error, _) => Column(
+                            children: [
+                              Text(
+                                'Error cargando estadísticas',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.error,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: () {
+                                  ref.invalidate(currentUserStatsProvider);
+                                },
+                                child: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
           ],
-
-          // Valoraciones recientes
           _buildRatingsSection(theme),
           const SizedBox(height: 32),
-
-          // Formulario de edición o información
           if (_isEditing)
-            _buildEditForm(theme, profile)
+            _buildEditForm(theme, effectiveProfile)
           else
-            _buildProfileInfo(theme, profile),
-
+            _buildProfileInfo(theme, effectiveProfile),
           const SizedBox(height: 32),
-
-          // Botones de acción
           _buildActionButtons(theme),
         ],
+      ),
+    );
+  }
+
+  UserProfile _createFallbackProfileFromUser(User user) {
+    final fallbackName = () {
+      if (user.fullName != null && user.fullName!.trim().isNotEmpty) {
+        return user.fullName!.trim();
+      }
+      final emailParts = user.email.split('@');
+      return emailParts.isNotEmpty && emailParts.first.isNotEmpty
+          ? emailParts.first
+          : 'Usuario';
+    }();
+
+    return UserProfile(
+      id: user.id,
+      userId: user.id,
+      fullName: fallbackName,
+      bio: null,
+      avatarUrl: user.avatarUrl,
+      createdAt: user.createdAt,
+      updatedAt: user.lastSignInAt ?? user.createdAt,
+    );
+  }
+
+  Widget _buildFallbackNotice(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.sync,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Estamos sincronizando tu perfil completo. Puedes actualizar tus datos y se guardarán en cuanto termine la sincronización.',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGuestPlaceholder(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.lock_outline,
+              size: 72,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Inicia sesión para ver tu perfil',
+              style: theme.textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Crea una cuenta o accede con tus credenciales para sincronizar tu información en todos tus dispositivos.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => context.go('/login'),
+              icon: const Icon(Icons.login),
+              label: const Text('Iniciar sesión'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => context.go('/register'),
+              child: const Text('Crear cuenta gratuita'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -518,20 +736,83 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                     return Column(
                       children: [
-                        // User rating statistics
+                        // User rating statistics - verificar si hay datos
                         if (ratingStats != null &&
-                            ratingStats['totalRatings'] > 0)
+                            ratingStats.isNotEmpty &&
+                            (ratingStats['totalRatings'] ?? 0) > 0) ...[
                           _buildRatingStats(theme, ratingStats),
-                        const SizedBox(height: 16),
-                        // Recent ratings
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Recent ratings - manejar diferentes estados
                         recentRatingsAsync.when(
-                          data: (recentRatings) => recentRatings.isNotEmpty
-                              ? _buildRecentRatings(theme, recentRatings)
-                              : const SizedBox.shrink(),
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(),
+                          data: (recentRatings) {
+                            if (recentRatings.isNotEmpty) {
+                              return _buildRecentRatings(theme, recentRatings);
+                            } else {
+                              // Mostrar mensaje cuando no hay valoraciones
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.star_border,
+                                      size: 48,
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Aún no has valorado ninguna película',
+                                      style:
+                                          theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurface
+                                            .withValues(alpha: 0.6),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+                          },
+                          loading: () => Container(
+                            padding: const EdgeInsets.all(16),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
                           ),
-                          error: (error, stack) => const SizedBox.shrink(),
+                          error: (error, stack) {
+                            LoggerFactory.error(
+                                'Error cargando valoraciones: $error');
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 48,
+                                    color: theme.colorScheme.error,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Error al cargar valoraciones',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      color: theme.colorScheme.error,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      ref.invalidate(recentRatingsProvider);
+                                    },
+                                    child: const Text('Reintentar'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                       ],
                     );
@@ -702,24 +983,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void startEditing(UserProfile? profile) {
-    if (profile != null) {
-      final currentUser = ref.read(authStateProvider).value;
-      setState(() {
-        _isEditing = true;
-        _fullNameController.text = profile.fullName;
-        _bioController.text = profile.bio ?? '';
-        _emailController.text = currentUser?.email ?? '';
-        _selectedImage = null;
-      });
+  void startEditing(UserProfile profile, {bool isFallback = false}) {
+    // Read the current authenticated user directly to avoid nulls from AsyncValue
+    final currentUser = ref.read(currentUserProvider);
 
-      // Rastrear inicio de edición del perfil
-      _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
-        'timestamp': DateTime.now().toIso8601String(),
-        'has_bio': profile.bio != null,
-        'has_avatar': profile.avatarUrl != null,
-      });
+    if (isFallback) {
+      ref.read(userProfileNotifierProvider.notifier).refreshProfile();
     }
+
+    setState(() {
+      _isEditing = true;
+      _fullNameController.text = profile.fullName;
+      _bioController.text = profile.bio ?? '';
+      _emailController.text = currentUser?.email ?? '';
+      _selectedImage = null;
+    });
+
+    // Rastrear inicio de edición del perfil
+    _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+      'timestamp': DateTime.now().toIso8601String(),
+      'has_bio': profile.bio != null,
+      'has_avatar': profile.avatarUrl != null,
+      'is_fallback_profile': isFallback,
+    });
   }
 
   void cancelEditing() {
@@ -735,7 +1021,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> saveProfile() async {
     if (_formKey.currentState?.validate() ?? false) {
       try {
-        final currentUser = ref.read(authStateProvider).value;
+        // Use the derived current user to ensure we have the latest value
+        final currentUser = ref.read(currentUserProvider);
         if (currentUser != null) {
           String? avatarUrl;
 
@@ -751,13 +1038,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           // Actualizar perfil en la tabla user_profiles
           await ref.read(userProfileNotifierProvider.notifier).updateProfile(
-                userId: currentUser.id,
                 fullName: _fullNameController.text.trim(),
                 bio: _bioController.text.trim().isEmpty
                     ? null
                     : _bioController.text.trim(),
                 avatarUrl: avatarUrl,
               );
+
+          await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
 
           // Actualizar email si ha cambiado
           if (_emailController.text.trim() != currentUser.email) {
@@ -768,6 +1056,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
 
         if (mounted) {
+          // Capture change flags BEFORE clearing state
+          final bool avatarChanged = _selectedImage != null;
+          final bool emailChanged =
+              _emailController.text.trim() != currentUser?.email;
+
           setState(() {
             _isEditing = false;
             _selectedImage = null;
@@ -777,9 +1070,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
             'timestamp': DateTime.now().toIso8601String(),
             'has_bio': _bioController.text.trim().isNotEmpty,
-            'has_avatar_change': _selectedImage != null,
-            'has_email_change':
-                _emailController.text.trim() != currentUser?.email,
+            'has_avatar_change': avatarChanged,
+            'has_email_change': emailChanged,
             'name_length': _fullNameController.text.trim().length,
           });
 

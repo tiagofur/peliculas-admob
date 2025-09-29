@@ -51,10 +51,10 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
         0.0;
 
     final unlockedDate = widget.progress?.unlockedDate;
-  final currentValue = widget.progress?.currentValue ?? 0;
+    final currentValue = widget.progress?.currentValue ?? 0;
     final targetValue = widget.achievement.targetValue;
-  final remainingValue = targetValue - currentValue;
-  final int remaining = remainingValue > 0 ? remainingValue : 0;
+    final remainingValue = targetValue - currentValue;
+    final int remaining = remainingValue > 0 ? remainingValue : 0;
 
     return GestureDetector(
       onTapDown: (_) => _animationController.forward(),
@@ -76,8 +76,7 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
                 border: Border.all(
                   color: isUnlocked
                       ? theme.colorScheme.primary.withValues(alpha: 0.35)
-                      : theme.colorScheme.outlineVariant
-                          .withValues(alpha: 0.3),
+                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -142,7 +141,8 @@ class _AchievementCardWidgetState extends State<AchievementCardWidget>
                                     const SizedBox(width: 6),
                                     Text(
                                       '+${widget.achievement.points}',
-                                      style: theme.textTheme.labelMedium?.copyWith(
+                                      style:
+                                          theme.textTheme.labelMedium?.copyWith(
                                         color: theme.colorScheme.primary,
                                         fontWeight: FontWeight.w600,
                                       ),

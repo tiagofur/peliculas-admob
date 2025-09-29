@@ -213,15 +213,6 @@ class AppStateNotifier extends Notifier<AppState> {
   }
 }
 
-// Provider del perfil del usuario actual
-final currentUserProfileProvider = FutureProvider<UserProfile?>((ref) async {
-  final user = ref.watch(currentUserProvider);
-  if (user == null) return null;
-
-  final authRepository = ref.watch(authRepositoryProvider);
-  return await authRepository.getUserProfile(user.id);
-});
-
 // Provider de las estadísticas del usuario actual
 final currentUserStatsProvider = FutureProvider<UserStats?>((ref) async {
   final user = ref.watch(currentUserProvider);
@@ -415,62 +406,73 @@ final authNotifierProvider =
 });
 
 // Notifier para operaciones de perfil
-class UserProfileNotifier extends Notifier<AsyncValue<UserProfile?>> {
-  @override
-  AsyncValue<UserProfile?> build() {
-    return const AsyncValue.data(null);
-  }
-
+class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
   AuthRepository get _authRepository => ref.read(authRepositoryProvider);
 
-  Future<void> loadProfile(String userId) async {
-    state = const AsyncValue.loading();
+  @override
+  Future<UserProfile?> build() async {
+    final user = ref.watch(currentUserProvider);
+    if (user == null) {
+      return null;
+    }
+
     try {
-      final profile = await _authRepository.getUserProfile(userId);
-      state = AsyncValue.data(profile);
+      return await _authRepository.getUserProfile(user.id);
     } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
+      LoggerFactory.error('❌ Error cargando perfil para ${user.id}: $e');
+      Error.throwWithStackTrace(e, stackTrace);
     }
   }
 
+  Future<void> refreshProfile() async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      state = const AsyncValue.data(null);
+      return;
+    }
+
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      return await _authRepository.getUserProfile(user.id);
+    });
+  }
+
   Future<void> updateProfile({
-    required String userId,
     String? fullName,
     String? bio,
     String? avatarUrl,
   }) async {
+    final user = ref.read(currentUserProvider);
+    if (user == null) {
+      throw Exception(
+          'No hay un usuario autenticado para actualizar el perfil');
+    }
+
     state = const AsyncValue.loading();
-    try {
-      final updatedProfile = await _authRepository.updateUserProfile(
-        userId: userId,
+    state = await AsyncValue.guard(() async {
+      return await _authRepository.updateUserProfile(
+        userId: user.id,
         fullName: fullName,
         bio: bio,
         avatarUrl: avatarUrl,
       );
-      state = AsyncValue.data(updatedProfile);
-    } catch (e, stackTrace) {
-      state = AsyncValue.error(e, stackTrace);
-    }
+    });
   }
 
   Future<String> uploadAvatar({
     required String userId,
     required String filePath,
   }) async {
-    try {
-      return await _authRepository.uploadAvatar(
-        userId: userId,
-        filePath: filePath,
-      );
-    } catch (e) {
-      rethrow;
-    }
+    return _authRepository.uploadAvatar(
+      userId: userId,
+      filePath: filePath,
+    );
   }
 }
 
 // Provider del notifier de perfil
 final userProfileNotifierProvider =
-    NotifierProvider<UserProfileNotifier, AsyncValue<UserProfile?>>(() {
+    AsyncNotifierProvider<UserProfileNotifier, UserProfile?>(() {
   return UserProfileNotifier();
 });
 

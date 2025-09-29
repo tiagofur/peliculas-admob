@@ -153,9 +153,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                   progress[achievement.id];
                               return Padding(
                                 padding: EdgeInsets.only(
-                                  bottom: index == unlockedAchievements.length - 1
-                                      ? 0
-                                      : 12,
+                                  bottom:
+                                      index == unlockedAchievements.length - 1
+                                          ? 0
+                                          : 12,
                                 ),
                                 child: AchievementCardWidget(
                                   achievement: achievement,

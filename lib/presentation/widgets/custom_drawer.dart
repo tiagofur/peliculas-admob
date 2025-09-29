@@ -55,7 +55,7 @@ class CustomDrawer extends ConsumerWidget {
   Widget _buildAuthenticatedHeader(
       BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
     final user = ref.watch(currentUserProvider);
-    final userProfileAsync = ref.watch(currentUserProfileProvider);
+    final userProfileAsync = ref.watch(userProfileNotifierProvider);
 
     return DrawerHeader(
       decoration: BoxDecoration(
@@ -79,7 +79,7 @@ class CustomDrawer extends ConsumerWidget {
                   size: 64,
                   onTap: () {
                     Navigator.of(context).pop();
-                    context.push('/profile');
+                    context.go('/profile');
                   },
                 ),
                 const SizedBox(width: 16),
@@ -279,7 +279,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Mi Perfil'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/profile');
+          context.go('/profile');
         },
       ),
       ListTile(

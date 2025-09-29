@@ -75,6 +75,8 @@ class AdSenseService {
     }
   }
 
+  bool isAdSenseReady() => false;
+
   bool canShowBannerAd() {
     if (!_isInitialized) {
       return false;

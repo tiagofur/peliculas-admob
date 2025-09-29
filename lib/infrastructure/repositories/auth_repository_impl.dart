@@ -261,10 +261,19 @@ class AuthRepositoryImpl implements AuthRepository {
           .eq('user_id', userId)
           .maybeSingle();
 
-      if (response == null) return null;
+      if (response != null) {
+        return UserProfileModel.fromJson(response);
+      }
 
-      return UserProfileModel.fromJson(response);
+      LoggerFactory.warning(
+        '🔍 No se encontró user_profiles para $userId, creando registro por defecto',
+      );
+
+      return await _ensureDefaultUserProfile(userId);
     } catch (e) {
+      LoggerFactory.error(
+        '❌ Error al obtener perfil de usuario $userId: $e',
+      );
       throw Exception('Error al obtener perfil de usuario');
     }
   }
@@ -286,14 +295,64 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final response = await _supabase
           .from('user_profiles')
-          .update(updateData)
-          .eq('user_id', userId)
+          .upsert(
+            {
+              'user_id': userId,
+              ...updateData,
+            },
+            onConflict: 'user_id',
+          )
           .select()
           .single();
 
       return UserProfileModel.fromJson(response);
     } catch (e) {
       throw Exception('Error al actualizar perfil');
+    }
+  }
+
+  Future<UserProfile?> _ensureDefaultUserProfile(String userId) async {
+    try {
+      final supabaseUser = _supabase.auth.currentUser;
+      final metadata = supabaseUser?.userMetadata ?? <String, dynamic>{};
+
+      final resolvedFullName = (() {
+        final rawFullName = metadata['full_name'];
+        if (rawFullName is String && rawFullName.trim().isNotEmpty) {
+          return rawFullName.trim();
+        }
+        final email = supabaseUser?.email;
+        if (email != null && email.contains('@')) {
+          return email.split('@').first;
+        }
+        return 'Usuario';
+      })();
+
+      final profileModel = UserProfileModel.create(
+        userId: userId,
+        fullName: resolvedFullName,
+        avatarUrl: metadata['avatar_url'] as String?,
+      );
+
+      final insertedProfile = await _supabase
+          .from('user_profiles')
+          .upsert(
+            profileModel.toInsertJson(),
+            onConflict: 'user_id',
+          )
+          .select()
+          .single();
+
+      LoggerFactory.info(
+        '✅ Registro user_profiles creado/recuperado automáticamente para $userId',
+      );
+
+      return UserProfileModel.fromJson(insertedProfile);
+    } catch (e) {
+      LoggerFactory.error(
+        '❌ No se pudo crear el perfil por defecto para $userId: $e',
+      );
+      rethrow;
     }
   }
 

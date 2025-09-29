@@ -189,6 +189,283 @@ class _WebSafeNativeAdWidgetState extends State<WebSafeNativeAdWidget> {
   }
 }
 
+class WebSafeMovieCardAdWidget extends StatefulWidget {
+  const WebSafeMovieCardAdWidget({
+    super.key,
+    required this.width,
+    required this.height,
+    required this.borderRadius,
+    this.showLabel = true,
+  });
+
+  final double width;
+  final double height;
+  final double borderRadius;
+  final bool showLabel;
+
+  @override
+  State<WebSafeMovieCardAdWidget> createState() =>
+      _WebSafeMovieCardAdWidgetState();
+}
+
+class _WebSafeMovieCardAdWidgetState extends State<WebSafeMovieCardAdWidget> {
+  bool _initializationAttempted = false;
+  bool _adsenseReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      _initializeAdSense();
+    }
+  }
+
+  Future<void> _initializeAdSense() async {
+    try {
+      await AdSenseService().initialize();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _initializationAttempted = true;
+        _adsenseReady = AdSenseService().isAdSenseReady();
+      });
+    } catch (error, stackTrace) {
+      LoggerFactory.error(
+        'Error inicializando AdSense en movie card: $error',
+        stackTrace: stackTrace,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _initializationAttempted = true;
+        _adsenseReady = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textStyles = Theme.of(context).textTheme;
+
+    return Container(
+      width: widget.width,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              color: colors.surfaceContainerHighest,
+              border: Border.all(
+                color: colors.outline.withValues(alpha: 0.2),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(widget.borderRadius),
+              child: _buildContent(colors, textStyles),
+            ),
+          ),
+          if (widget.showLabel) ...[
+            const SizedBox(height: 5),
+            SizedBox(
+              width: widget.width,
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.ads_click,
+                    size: 12,
+                    color: colors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Anuncio',
+                      style: textStyles.bodySmall?.copyWith(
+                        color: colors.onSurface.withValues(alpha: 0.6),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(ColorScheme colors, TextTheme textStyles) {
+    if (!kIsWeb) {
+      return const SizedBox.shrink();
+    }
+
+    if (kDebugMode) {
+      return AdPlaceholderWidget(
+        type: AdPlaceholderType.native,
+        width: widget.width,
+        height: widget.height,
+        customText: 'AdSense Movie Card\n(Debug Mode)',
+      );
+    }
+
+    if (_adsenseReady) {
+      return _buildReadyState(colors, textStyles);
+    }
+
+    if (!_initializationAttempted) {
+      return _buildLoadingState(colors);
+    }
+
+    return _buildSoftFallback(colors, textStyles);
+  }
+
+  Widget _buildLoadingState(ColorScheme colors) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.surfaceContainerHigh,
+            colors.surfaceContainerLowest,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Cargando ventana publicitaria...',
+              style: TextStyle(
+                fontSize: 10,
+                color: colors.onSurface.withValues(alpha: 0.65),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadyState(ColorScheme colors, TextTheme textStyles) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.primary.withValues(alpha: 0.12),
+            colors.primaryContainer.withValues(alpha: 0.18),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.auto_graph,
+              color: colors.primary.withValues(alpha: 0.9),
+              size: 28,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Publicidad personalizada',
+              style: textStyles.bodySmall?.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface.withValues(alpha: 0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Gracias por apoyar la app',
+              style: textStyles.bodySmall?.copyWith(
+                fontSize: 10,
+                color: colors.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSoftFallback(ColorScheme colors, TextTheme textStyles) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            colors.surfaceContainerHigh,
+            colors.surfaceContainerLow,
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.hourglass_top,
+              size: 24,
+              color: colors.onSurface.withValues(alpha: 0.45),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Espacio publicitario listo',
+              style: textStyles.bodySmall?.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface.withValues(alpha: 0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Estamos conectando con AdSense',
+              style: textStyles.bodySmall?.copyWith(
+                fontSize: 9,
+                color: colors.onSurface.withValues(alpha: 0.55),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class WebSafeFullWidthAdWidget extends StatefulWidget {
   const WebSafeFullWidthAdWidget({
     super.key,

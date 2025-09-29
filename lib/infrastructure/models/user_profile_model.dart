@@ -1,4 +1,23 @@
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user_profile.dart';
+
+DateTime _parseDate(dynamic value, String fieldName, String userId) {
+  if (value is DateTime) {
+    return value;
+  }
+
+  if (value is String && value.isNotEmpty) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) {
+      return parsed;
+    }
+  }
+
+  LoggerFactory.warning(
+    'UserProfileModel: invalid "$fieldName" for user $userId, using DateTime.now()',
+  );
+  return DateTime.now();
+}
 
 class UserProfileModel extends UserProfile {
   const UserProfileModel({
@@ -30,14 +49,36 @@ class UserProfileModel extends UserProfile {
   }
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) {
+    final dynamicId = json['id'];
+    final userId = (json['user_id'] ?? '').toString();
+
+    if (userId.isEmpty) {
+      LoggerFactory.error(
+        'UserProfileModel: received profile without user_id. Raw payload: $json',
+      );
+    }
+
+    final rawFullName = json['full_name'];
+    final fullName = rawFullName == null
+        ? 'Usuario'
+        : rawFullName.toString().trim().isEmpty
+            ? 'Usuario'
+            : rawFullName.toString().trim();
+
+    if (rawFullName == null || rawFullName.toString().trim().isEmpty) {
+      LoggerFactory.warning(
+        'UserProfileModel: missing full_name for user $userId, applying fallback.',
+      );
+    }
+
     return UserProfileModel(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      fullName: json['full_name'] as String,
+      id: dynamicId == null ? '' : dynamicId.toString(),
+      userId: userId,
+      fullName: fullName,
       bio: json['bio'] as String?,
       avatarUrl: json['avatar_url'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: _parseDate(json['created_at'], 'created_at', userId),
+      updatedAt: _parseDate(json['updated_at'], 'updated_at', userId),
     );
   }
 

@@ -1,4 +1,23 @@
+import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user_stats.dart';
+
+DateTime _parseStatsDate(dynamic value, String fieldName, String userId) {
+  if (value is DateTime) {
+    return value;
+  }
+
+  if (value is String && value.isNotEmpty) {
+    final parsed = DateTime.tryParse(value);
+    if (parsed != null) {
+      return parsed;
+    }
+  }
+
+  LoggerFactory.warning(
+    'UserStatsModel: invalid "$fieldName" for user $userId, using DateTime.now()',
+  );
+  return DateTime.now();
+}
 
 class UserStatsModel extends UserStats {
   const UserStatsModel({
@@ -32,15 +51,25 @@ class UserStatsModel extends UserStats {
   }
 
   factory UserStatsModel.fromJson(Map<String, dynamic> json) {
+    final dynamicId = json['id'];
+    final userId = (json['user_id'] ?? '').toString();
+
+    if (userId.isEmpty) {
+      LoggerFactory.error(
+        'UserStatsModel: received stats without user_id. Raw payload: $json',
+      );
+    }
+
     return UserStatsModel(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: dynamicId == null ? '' : dynamicId.toString(),
+      userId: userId,
       moviesWatched: json['movies_watched'] as int? ?? 0,
       favoritesCount: json['favorites_count'] as int? ?? 0,
       listsCount: json['lists_count'] as int? ?? 0,
-      lastActivity: DateTime.parse(json['last_activity'] as String),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      lastActivity:
+          _parseStatsDate(json['last_activity'], 'last_activity', userId),
+      createdAt: _parseStatsDate(json['created_at'], 'created_at', userId),
+      updatedAt: _parseStatsDate(json['updated_at'], 'updated_at', userId),
     );
   }
 
