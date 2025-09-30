@@ -5,7 +5,7 @@ import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../providers/movie_ratings_provider.dart';
 import 'rating_dialog.dart';
-import 'star_rating_widget.dart';
+import 'rating_slider_widget.dart';
 
 /// Widget para mostrar y manejar la calificación de una película
 class MovieRatingWidget extends ConsumerWidget {
@@ -103,24 +103,10 @@ class MovieRatingWidget extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                StarRatingWidget(
-                  rating: rating.rating,
-                  size: size,
-                  readonly: true,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${rating.rating.toStringAsFixed(1)}/5',
-                  style: TextStyle(
-                    fontSize: size * 0.8,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-              ],
+            CompactRatingDisplay(
+              rating: rating.rating,
+              size: size,
+              showLabel: true,
             ),
             if (showReview && rating.hasReview) ...[
               const SizedBox(height: 4),
@@ -176,13 +162,15 @@ class CompactMovieRatingWidget extends ConsumerWidget {
         child: const CircularProgressIndicator(strokeWidth: 2),
       ),
       error: (error, _) => const SizedBox.shrink(),
-      data: (rating) => rating != null
-          ? StarRatingWidget(
-              rating: rating.rating,
-              size: size,
-              readonly: true,
-            )
-          : const SizedBox.shrink(),
+      data: (rating) {
+        if (rating == null) return const SizedBox.shrink();
+
+        return CompactRatingDisplay(
+          rating: rating.rating,
+          size: size,
+          showLabel: false,
+        );
+      },
     );
   }
 }
@@ -232,7 +220,7 @@ class UserRatingStatsWidget extends ConsumerWidget {
             _buildStatRow(
               context,
               'Average Rating',
-              '${stats['averageRating']}/5.0',
+              '${stats['averageRating']}/10.0',
               Icons.star_half,
             ),
             _buildStatRow(
@@ -317,10 +305,10 @@ class RecentRatingsWidget extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             ...limitedRatings.map((rating) => ListTile(
-                  leading: StarRatingWidget(
+                  leading: CompactRatingDisplay(
                     rating: rating.rating,
                     size: 16,
-                    readonly: true,
+                    showLabel: false,
                   ),
                   title: Text(rating.movieTitle),
                   subtitle: rating.hasReview
@@ -333,7 +321,7 @@ class RecentRatingsWidget extends ConsumerWidget {
                         )
                       : null,
                   trailing: Text(
-                    '${rating.rating}/5',
+                    '${rating.rating.toStringAsFixed(1)}/10',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   dense: true,

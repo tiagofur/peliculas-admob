@@ -14,6 +14,7 @@ import '../../providers/storage/direct_watchlist_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/admob/web_safe_ad_widgets.dart';
+import '../../widgets/movies/movie_rating_and_notes.dart';
 import '../../widgets/watchlist/add_to_watchlist_button.dart';
 import '../../widgets/widgets.dart';
 

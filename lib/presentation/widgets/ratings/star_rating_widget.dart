@@ -67,7 +67,11 @@ class _StarRatingWidgetState extends State<StarRatingWidget> {
               : (details) {
                   if (!widget.allowHalfRating) return;
 
-                  final RenderBox box = context.findRenderObject() as RenderBox;
+                  // ✅ WEB FIX: Safe casting for Flutter Web compatibility
+                  final renderObject = context.findRenderObject();
+                  if (renderObject is! RenderBox) return;
+
+                  final box = renderObject;
                   final localPosition =
                       box.globalToLocal(details.globalPosition);
                   final starWidth = widget.size;

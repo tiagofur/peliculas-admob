@@ -629,11 +629,13 @@ class AdSenseService {
     final context = adKey.currentContext;
     if (context == null) return false;
 
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.hasSize) return false;
+    // ✅ WEB FIX: Safe casting for Flutter Web compatibility
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) return false;
+    if (!renderObject.hasSize) return false;
 
-    final position = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
+    final position = renderObject.localToGlobal(Offset.zero);
+    final size = renderObject.size;
 
     final mediaQuery = MediaQuery.maybeOf(context);
     final implicitView =

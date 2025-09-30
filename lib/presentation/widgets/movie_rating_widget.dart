@@ -9,7 +9,7 @@ import '../../domain/entities/movie_rating.dart';
 import '../../services/movie_rating_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/movie_ratings_provider.dart';
-import 'ratings/star_rating_widget.dart';
+import 'ratings/rating_slider_widget.dart';
 
 /// Widget para calificar y reseñar una película
 class MovieRatingWidget extends ConsumerStatefulWidget {
@@ -166,18 +166,16 @@ class _MovieRatingWidgetState extends ConsumerState<MovieRatingWidget> {
 
             const SizedBox(height: 16),
 
-            // Star rating
-            StarRatingWidget(
+            // Rating slider
+            RatingSlider(
               rating: _currentRating,
-              onRatingChanged: (rating) {
+              onChanged: (rating) {
                 setState(() {
                   _currentRating = rating;
                   _errorMessage = null;
                 });
               },
-              size: 32,
-              color: Colors.amber,
-              allowHalfRating: true,
+              compact: MediaQuery.of(context).size.width < 400,
             ),
 
             const SizedBox(height: 8),
@@ -185,7 +183,7 @@ class _MovieRatingWidgetState extends ConsumerState<MovieRatingWidget> {
             // Rating text
             if (_currentRating > 0) ...[
               Text(
-                '${_currentRating.toStringAsFixed(1)} de 5 estrellas',
+                '${_currentRating.toStringAsFixed(1)}/10',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.grey.shade600,
                 ),
@@ -634,20 +632,9 @@ class _ReviewItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        StarRatingWidget(
-                          rating: rating.rating,
-                          size: 16,
-                          color: Colors.amber,
-                          readonly: true,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${rating.rating.toStringAsFixed(1)}/5',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
+                    CompactRatingDisplay(
+                      rating: rating.rating,
+                      size: 16,
                     ),
                     Text(
                       'Usuario ${rating.userId.substring(0, 8)}...',

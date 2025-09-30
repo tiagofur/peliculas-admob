@@ -18,11 +18,11 @@ class HybridMovieRatingsRepository
     required super.userId,
     EntitySyncManager<SyncableMovieRating>? syncManager,
     super.syncCoordinator,
-  })  : _localDatasource = MovieRatingsHiveDatasource(),
-        super(
-          entityType: 'movie_rating',
-          syncManager: syncManager ?? RatingsSyncManager(userId: userId),
-        );
+  }) : _localDatasource = MovieRatingsHiveDatasource(),
+       super(
+         entityType: 'movie_rating',
+         syncManager: syncManager ?? RatingsSyncManager(userId: userId),
+       );
 
   final MovieRatingsHiveDatasource _localDatasource;
 
@@ -45,7 +45,8 @@ class HybridMovieRatingsRepository
   Future<void> initializeLocal() async {
     // La inicialización de Hive es manejada por el datasource
     LoggerFactory.info(
-        '✅ HybridMovieRatingsRepository local storage initialized');
+      '✅ HybridMovieRatingsRepository local storage initialized',
+    );
   }
 
   @override
@@ -81,7 +82,8 @@ class HybridMovieRatingsRepository
         LoggerFactory.debug('🗑️ Removed movie rating from local storage: $id');
       } else {
         LoggerFactory.warning(
-            '⚠️ Movie rating not found locally for removal: $id');
+          '⚠️ Movie rating not found locally for removal: $id',
+        );
       }
     } catch (e) {
       LoggerFactory.error('❌ Failed to remove movie rating locally: $e');
@@ -105,7 +107,8 @@ class HybridMovieRatingsRepository
       return model;
     } else {
       throw ArgumentError(
-          'Model must be a SyncableMovieRating, got ${model.runtimeType}');
+        'Model must be a SyncableMovieRating, got ${model.runtimeType}',
+      );
     }
   }
 
@@ -122,13 +125,23 @@ class HybridMovieRatingsRepository
     List<String> tags = const [],
   }) async {
     try {
+      // ✅ CRITICAL: Validar rating ANTES de crear la entidad
+      // Escala 1.0-10.0 directa (sin conversión de estrellas)
+      final validatedRating = rating.clamp(1.0, 10.0);
+
+      if (rating != validatedRating) {
+        LoggerFactory.warning(
+          '⚠️ Rating clamped from $rating to $validatedRating for movie ${movie.id}',
+        );
+      }
+
       // Verificar si ya existe una calificación para esta película
       final existingRating = await getUserRating(movie.id);
       if (existingRating != null) {
         // Actualizar calificación existente
         await updateRating(
           movieId: movie.id,
-          rating: rating,
+          rating: validatedRating, // ✅ Usar rating validado
           review: review,
           isPublic: isPublic,
           tags: tags,
@@ -139,14 +152,14 @@ class HybridMovieRatingsRepository
       final movieRating = SyncableMovieRating.fromMovie(
         userId: userId,
         movie: movie,
-        rating: rating,
+        rating: validatedRating, // ✅ Usar rating validado
         review: review,
         isPublic: isPublic,
         tags: tags,
       );
 
       await add(movieRating);
-      LoggerFactory.info('⭐ Rated movie: ${movie.id} ($rating/10)');
+      LoggerFactory.info('⭐ Rated movie: ${movie.id} ($validatedRating/10)');
     } catch (e) {
       LoggerFactory.error('❌ Failed to rate movie: $e');
       rethrow;
@@ -162,13 +175,22 @@ class HybridMovieRatingsRepository
     List<String>? tags,
   }) async {
     try {
+      // ✅ CRITICAL: Validar rating antes de actualizar
+      final validatedRating = rating.clamp(1.0, 10.0);
+
+      if (rating != validatedRating) {
+        LoggerFactory.warning(
+          '⚠️ Rating clamped from $rating to $validatedRating for movie $movieId',
+        );
+      }
+
       final existingRating = await getUserRating(movieId);
       if (existingRating == null) {
         throw Exception('Movie $movieId is not rated yet');
       }
 
       final updatedRating = existingRating.copyWithData(
-        rating: rating,
+        rating: validatedRating, // ✅ Usar rating validado
         review: review,
         isPublic: isPublic ?? existingRating.isPublic,
         tags: tags ?? existingRating.tags,
@@ -177,7 +199,9 @@ class HybridMovieRatingsRepository
       );
 
       await update(updatedRating);
-      LoggerFactory.info('📝 Updated movie rating: $movieId');
+      LoggerFactory.info(
+        '📝 Updated movie rating: $movieId ($validatedRating/10)',
+      );
     } catch (e) {
       LoggerFactory.error('❌ Failed to update movie rating: $e');
       rethrow;
@@ -301,8 +325,9 @@ class HybridMovieRatingsRepository
     int offset = 0,
   }) async {
     try {
-      final ratings =
-          await getUserRatings(limit: 1000); // Obtener más para filtrar
+      final ratings = await getUserRatings(
+        limit: 1000,
+      ); // Obtener más para filtrar
       final publicRatings = ratings.where((r) => r.isPublic).toList();
 
       final startIndex = offset;
@@ -384,8 +409,9 @@ class HybridMovieRatingsRepository
       final allRatings = await getUserRatings(limit: 1000);
       final cutoffDate = DateTime.now().subtract(Duration(days: days));
 
-      final recentRatings =
-          allRatings.where((r) => r.ratedAt.isAfter(cutoffDate)).toList();
+      final recentRatings = allRatings
+          .where((r) => r.ratedAt.isAfter(cutoffDate))
+          .toList();
 
       // Ordenar por fecha más reciente primero
       recentRatings.sort((a, b) => b.ratedAt.compareTo(a.ratedAt));

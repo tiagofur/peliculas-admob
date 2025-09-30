@@ -317,11 +317,13 @@ class _VisibilityDetectorState extends State<VisibilityDetector> {
     final context = _key.currentContext;
     if (context == null) return;
 
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || !renderBox.attached) return;
+    // ✅ WEB FIX: Safe casting for Flutter Web compatibility
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox) return;
+    if (!renderObject.attached) return;
 
-    final position = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
+    final position = renderObject.localToGlobal(Offset.zero);
+    final size = renderObject.size;
     final screenSize = MediaQuery.of(context).size;
 
     final visibleArea = _calculateVisibleArea(position, size, screenSize);

@@ -69,7 +69,6 @@ class MovieMapNotifier extends AsyncNotifier<Map<String, Movie>> {
     loadingNotifier.add(movieId);
 
     final currentMovies = Map<String, Movie>.from(state.value ?? {});
-    state = const AsyncLoading();
 
     final movieRepository = ref.read(movieRepositoryProvider);
 

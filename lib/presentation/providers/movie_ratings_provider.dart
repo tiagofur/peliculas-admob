@@ -9,6 +9,7 @@ import '../../domain/entities/syncable_movie_rating.dart';
 import '../../domain/repositories/movie_ratings_repository.dart';
 import '../../infrastructure/repositories/hybrid_movie_ratings_repository.dart';
 import 'auth_provider.dart';
+import 'sync_integration_provider.dart';
 
 /// Estado para el sistema de calificaciones
 @immutable
@@ -203,6 +204,9 @@ class MovieRatingsNotifier extends Notifier<MovieRatingsState> {
         tags: tags,
       );
 
+      // Invalidate the specific movie rating provider to force a refresh
+      ref.invalidate(movieRatingProvider(movie.id));
+
       // Recargar calificaciones y estadísticas
       await Future.wait([
         loadUserRatings(refresh: true),
@@ -241,6 +245,9 @@ class MovieRatingsNotifier extends Notifier<MovieRatingsState> {
         tags: tags,
       );
 
+      // Invalidate the specific movie rating provider to force a refresh
+      ref.invalidate(movieRatingProvider(movieId));
+
       // Recargar calificaciones y estadísticas
       await Future.wait([
         loadUserRatings(refresh: true),
@@ -266,6 +273,9 @@ class MovieRatingsNotifier extends Notifier<MovieRatingsState> {
       state = state.copyWith(isLoading: true);
 
       await _repository.removeRating(movieId);
+
+      // Invalidate the specific movie rating provider to force a refresh
+      ref.invalidate(movieRatingProvider(movieId));
 
       // Recargar calificaciones y estadísticas
       await Future.wait([
@@ -416,8 +426,12 @@ class MovieRatingsNotifier extends Notifier<MovieRatingsState> {
 final movieRatingsRepositoryProvider = Provider<MovieRatingsRepository>((ref) {
   final user = ref.watch(currentUserProvider);
   final userId = user?.id ?? 'anonymous';
+  final syncCoordinator = ref.watch(syncCoordinatorProvider(userId));
 
-  return HybridMovieRatingsRepository(userId: userId);
+  return HybridMovieRatingsRepository(
+    userId: userId,
+    syncCoordinator: syncCoordinator,
+  );
 });
 
 /// Provider principal para el estado de calificaciones
@@ -427,16 +441,35 @@ final movieRatingsProvider =
 });
 
 /// Provider para obtener una calificación específica
+/// Obtiene los datos directamente del repositorio para evitar dependencias circulares
+/// CRITICAL: Uses ref.read() instead of ref.watch() to prevent CircularDependencyError
 final movieRatingProvider =
     FutureProvider.family<SyncableMovieRating?, int>((ref, movieId) async {
-  final notifier = ref.watch(movieRatingsProvider.notifier);
-  return await notifier.getUserRating(movieId);
+  try {
+    // Primero verificar en el estado del provider principal
+    // ✅ FIXED: Using ref.read() instead of ref.watch() to avoid circular dependency
+    final state = ref.read(movieRatingsProvider);
+    final existingRating =
+        state.userRatings.where((r) => r.movieId == movieId).firstOrNull;
+
+    if (existingRating != null) {
+      return existingRating;
+    }
+
+    // Si no está en el estado, buscar directamente en el repositorio
+    // para evitar dependencia circular con el notifier
+    final repository = ref.read(movieRatingsRepositoryProvider);
+    return await repository.getUserRating(movieId);
+  } catch (e) {
+    LoggerFactory.error('❌ Failed to get movie rating in provider: $e');
+    return null;
+  }
 });
 
 /// Provider para verificar si una película está calificada
 final isMovieRatedProvider =
     FutureProvider.family<bool, int>((ref, movieId) async {
-  final notifier = ref.watch(movieRatingsProvider.notifier);
+  final notifier = ref.read(movieRatingsProvider.notifier);
   return await notifier.hasUserRatedMovie(movieId);
 });
 
@@ -449,20 +482,20 @@ final userRatingStatsProvider = Provider<Map<String, dynamic>?>((ref) {
 /// Provider para calificaciones recientes
 final recentRatingsProvider =
     FutureProvider<List<SyncableMovieRating>>((ref) async {
-  final notifier = ref.watch(movieRatingsProvider.notifier);
+  final notifier = ref.read(movieRatingsProvider.notifier);
   return await notifier.getRecentRatings(days: 30);
 });
 
 /// Provider para calificaciones con reseña
 final ratingsWithReviewsProvider =
     FutureProvider<List<SyncableMovieRating>>((ref) async {
-  final notifier = ref.watch(movieRatingsProvider.notifier);
+  final notifier = ref.read(movieRatingsProvider.notifier);
   return await notifier.getRatingsWithReviews();
 });
 
 /// Provider para obtener resumen de calificaciones de una película
 final movieRatingSummaryProvider =
     FutureProvider.family<Map<String, dynamic>?, int>((ref, movieId) async {
-  final notifier = ref.watch(movieRatingsProvider.notifier);
+  final notifier = ref.read(movieRatingsProvider.notifier);
   return await notifier.getMovieRatingSummary(movieId);
 });

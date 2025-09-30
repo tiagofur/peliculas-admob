@@ -244,8 +244,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     UserSessionState sessionState,
     UserStats? stats,
   ) {
-    // Mostrar loading mientras se inicializa la sesión
-    if (sessionState.isLoading && sessionState.user == null) {
+    final isCurrentUserProfile = widget.userId == null;
+
+    // Condición de carga mejorada:
+    // 1. Muestra el loader si la sesión se está inicializando (user == null).
+    // 2. Muestra el loader si estamos viendo el perfil propio (isCurrentUserProfile)
+    //    y el perfil aún no se ha cargado (profile == null), incluso si ya hay un
+    //    objeto `user` disponible. Esto cubre el caso de refresco inicial.
+    if (sessionState.isLoading &&
+        (sessionState.user == null ||
+            (isCurrentUserProfile && sessionState.profile == null))) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

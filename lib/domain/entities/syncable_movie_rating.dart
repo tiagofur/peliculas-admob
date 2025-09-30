@@ -1,3 +1,4 @@
+import '../../core/logging/logger_factory.dart';
 import '../../core/sync/sync_utilities.dart';
 import 'movie.dart';
 import 'syncable_entity.dart';
@@ -63,35 +64,108 @@ class SyncableMovieRating extends SyncableEntity {
 
   /// Factory constructor desde JSON
   factory SyncableMovieRating.fromJson(Map<String, dynamic> json) {
+    T? read<T>(List<String> keys) {
+      for (final key in keys) {
+        if (json.containsKey(key) && json[key] != null) {
+          return json[key] as T;
+        }
+      }
+      return null;
+    }
+
+    DateTime? parseDate(List<String> keys) {
+      final value = read<dynamic>(keys);
+      if (value == null) return null;
+      if (value is DateTime) return value.toUtc();
+      if (value is String && value.isNotEmpty) {
+        return DateTime.parse(value);
+      }
+      return null;
+    }
+
+    double? parseDouble(List<String> keys) {
+      final value = read<dynamic>(keys);
+      if (value == null) return null;
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        return double.tryParse(value);
+      }
+      return null;
+    }
+
+    int? parseInt(List<String> keys) {
+      final value = read<dynamic>(keys);
+      if (value == null) return null;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      if (value is String) {
+        return int.tryParse(value);
+      }
+      return null;
+    }
+
+    List<String> parseStringList(List<String> keys) {
+      final value = read<dynamic>(keys);
+      if (value == null) return [];
+
+      if (value is List) {
+        return value
+            .where((element) => element != null)
+            .map((element) => element.toString())
+            .toList();
+      }
+
+      if (value is String && value.isNotEmpty) {
+        return value.split(',').map((tag) => tag.trim()).toList();
+      }
+
+      return [];
+    }
+
+    String? readString(List<String> keys) {
+      final value = read<dynamic>(keys);
+      if (value == null) return null;
+      return value.toString();
+    }
+
+    bool? readBool(List<String> keys) {
+      final value = read<dynamic>(keys);
+      if (value == null) return null;
+      if (value is bool) return value;
+      if (value is String) {
+        final normalized = value.toLowerCase();
+        if (normalized == 'true' || normalized == '1') return true;
+        if (normalized == 'false' || normalized == '0') return false;
+      }
+      if (value is num) {
+        return value != 0;
+      }
+      return null;
+    }
+
     return SyncableMovieRating(
-      id: json['id'] as String? ??
+      id: readString(['id']) ??
           'unknown_${DateTime.now().millisecondsSinceEpoch}',
-      userId: json['user_id'] as String? ?? 'unknown_user',
-      movieId: json['movie_id'] as int? ?? 0,
-      movieTitle: json['movie_title'] as String? ?? 'Unknown Movie',
-      moviePosterPath: json['movie_poster_path'] as String?,
-      movieBackdropPath: json['movie_backdrop_path'] as String?,
-      movieOverview: json['movie_overview'] as String?,
-      movieReleaseDate: json['movie_release_date'] != null
-          ? DateTime.parse(json['movie_release_date'] as String)
-          : null,
-      movieVoteAverage: json['movie_vote_average']?.toDouble(),
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      review: json['review'] as String?,
-      ratedAt: json['rated_at'] != null
-          ? DateTime.parse(json['rated_at'] as String)
-          : DateTime.now(),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
-          : DateTime.now(),
-      lastModifiedAt: json['last_modified_at'] != null
-          ? DateTime.parse(json['last_modified_at'] as String)
-          : DateTime.now(),
-      isDeleted: json['is_deleted'] as bool? ?? false,
-      syncVersion: json['sync_version'] as int? ?? 0,
-      deviceId: json['device_id'] as String?,
-      isPublic: json['is_public'] as bool? ?? false,
-      tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
+      userId: readString(['user_id', 'userId']) ?? 'unknown_user',
+      movieId: parseInt(['movie_id', 'movieId']) ?? 0,
+      movieTitle: readString(['movie_title', 'movieTitle']) ?? 'Unknown Movie',
+      moviePosterPath: readString(['movie_poster_path', 'moviePosterPath']),
+      movieBackdropPath:
+          readString(['movie_backdrop_path', 'movieBackdropPath']),
+      movieOverview: readString(['movie_overview', 'movieOverview']),
+      movieReleaseDate: parseDate(['movie_release_date', 'movieReleaseDate']),
+      movieVoteAverage: parseDouble(['movie_vote_average', 'movieVoteAverage']),
+      rating: parseDouble(['rating']) ?? 0.0,
+      review: readString(['review']),
+      ratedAt: parseDate(['rated_at', 'ratedAt']) ?? DateTime.now(),
+      createdAt: parseDate(['created_at', 'createdAt']) ?? DateTime.now(),
+      lastModifiedAt:
+          parseDate(['last_modified_at', 'lastModifiedAt']) ?? DateTime.now(),
+      isDeleted: readBool(['is_deleted', 'isDeleted']) ?? false,
+      syncVersion: parseInt(['sync_version', 'syncVersion']) ?? 0,
+      deviceId: readString(['device_id', 'deviceId']),
+      isPublic: readBool(['is_public', 'isPublic']) ?? false,
+      tags: parseStringList(['tags']),
     );
   }
 
@@ -164,6 +238,17 @@ class SyncableMovieRating extends SyncableEntity {
 
   @override
   Map<String, dynamic> toSupabaseJson() {
+    // ✅ CRITICAL: Validar rating para prevenir numeric field overflow
+    // Database: DECIMAL(3,1) solo acepta 1.0-10.0
+    final validatedRating = rating.clamp(1.0, 10.0);
+
+    if (rating != validatedRating) {
+      // Log warning si el valor fue ajustado
+      LoggerFactory.warning(
+        '⚠️ Rating clamped from $rating to $validatedRating for movie $movieId',
+      );
+    }
+
     return {
       'id': id,
       'user_id': userId,
@@ -174,7 +259,7 @@ class SyncableMovieRating extends SyncableEntity {
       'movie_overview': movieOverview,
       'movie_release_date': movieReleaseDate?.toIso8601String(),
       'movie_vote_average': movieVoteAverage,
-      'rating': rating,
+      'rating': validatedRating, // ✅ Usar rating validado
       'review': review,
       'rated_at': ratedAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
@@ -252,7 +337,8 @@ class SyncableMovieRating extends SyncableEntity {
   SyncableEntity mergeWith(SyncableEntity other) {
     if (other is! SyncableMovieRating) {
       throw ArgumentError(
-          'Cannot merge SyncableMovieRating with ${other.runtimeType}');
+        'Cannot merge SyncableMovieRating with ${other.runtimeType}',
+      );
     }
 
     // Usar la versión más reciente como base

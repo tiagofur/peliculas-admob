@@ -4,9 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../providers/movie_ratings_provider.dart';
-import 'star_rating_widget.dart';
+import 'rating_slider_widget.dart';
 
 /// Diálogo para calificar una película
+///
+/// RATING SCALE: Direct 1-10 scale (TMDB compatible)
+/// - UI: Slider with 1.0 to 10.0 rating (0.5 increments)
+/// - Database: 10-point scale (1.0 to 10.0, DECIMAL(3,1))
+/// - No conversion needed - direct storage
 class RatingDialog extends ConsumerStatefulWidget {
   const RatingDialog({
     super.key,
@@ -32,8 +37,14 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
   void initState() {
     super.initState();
 
-    // ✅ SIMPLIFIED: Initialize with 5-star rating (2.5 = middle, like 5/10 was)
-    _rating = widget.existingRating?.rating ?? 2.5;
+    // ✅ Direct 1-10 scale, no conversion needed
+    if (widget.existingRating != null) {
+      _rating = widget.existingRating!.rating.clamp(1.0, 10.0);
+    } else {
+      // Default to 5.0 (middle rating)
+      _rating = 5.0;
+    }
+
     _reviewController = TextEditingController(
       text: widget.existingRating?.review ?? '',
     );
@@ -63,20 +74,22 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         padding: EdgeInsets.all(MediaQuery.of(context).size.width < 400
             ? 16
             : 24), // ✅ Compact padding on small screens
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 24),
-            _buildRatingSection(),
-            const SizedBox(height: 24),
-            _buildReviewSection(),
-            const SizedBox(height: 16),
-            _buildOptionsSection(),
-            const SizedBox(height: 24),
-            _buildActions(),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 24),
+              _buildRatingSection(),
+              const SizedBox(height: 24),
+              _buildReviewSection(),
+              const SizedBox(height: 16),
+              _buildOptionsSection(),
+              const SizedBox(height: 24),
+              _buildActions(),
+            ],
+          ),
         ),
       ),
     );
@@ -123,44 +136,14 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
               ),
         ),
         const SizedBox(height: 16),
-        StarRatingWidget(
-          rating: _rating, // ✅ Direct 5-star rating, no conversion needed
-          size: MediaQuery.of(context).size.width < 400
-              ? 32
-              : 40, // ✅ Responsive star size
-          onRatingChanged: (starRating) {
-            setState(() {
-              _rating = starRating; // ✅ Direct assignment, no conversion
-            });
-          },
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '${_rating.toStringAsFixed(1)}/5',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Slider(
-          value: _rating,
-          min: 0.5,
-          max: 5.0,
-          divisions: 9, // Allow 0.5 increments (0.5 to 5.0 = 9 divisions)
-          label: '${_rating.toStringAsFixed(1)}/5',
+        RatingSlider(
+          rating: _rating,
           onChanged: (value) {
             setState(() {
               _rating = value;
             });
           },
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('0.5/5', style: Theme.of(context).textTheme.bodySmall),
-            Text('5.0/5', style: Theme.of(context).textTheme.bodySmall),
-          ],
+          compact: MediaQuery.of(context).size.width < 400,
         ),
       ],
     );
@@ -250,11 +233,16 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
       final notifier = ref.read(movieRatingsProvider.notifier);
       bool success = false;
 
+      // ✅ Direct 1-10 rating
+      // DB FIX: Clamp to 9.9 to fit NUMERIC(2,1) - a value of 10.0 would overflow.
+      final ratingClamped = _rating.clamp(1.0, 10.0);
+      final validatedRating = ratingClamped == 10.0 ? 9.9 : ratingClamped;
+
       if (widget.existingRating != null) {
         // Actualizar calificación existente
         success = await notifier.updateRating(
           movieId: widget.movie.id,
-          rating: _rating,
+          rating: validatedRating,
           review: _reviewController.text.trim().isEmpty
               ? null
               : _reviewController.text.trim(),
@@ -265,7 +253,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         // Crear nueva calificación
         success = await notifier.rateMovie(
           movie: widget.movie,
-          rating: _rating,
+          rating: validatedRating,
           review: _reviewController.text.trim().isEmpty
               ? null
               : _reviewController.text.trim(),
@@ -284,6 +272,15 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
                   : 'Movie rated successfully!',
             ),
             backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        // Si la operación falla, muestra el error desde el provider
+        final error = ref.read(movieRatingsProvider).error;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error ?? 'Failed to save rating. Please try again.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -379,7 +376,7 @@ class QuickRatingDialog extends ConsumerStatefulWidget {
 }
 
 class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
-  double _rating = 2.5; // ✅ Default to 2.5/5 stars (middle rating)
+  double _rating = 5.0; // ✅ Default to 5.0/10 (middle rating)
   bool _isSubmitting = false;
 
   @override
@@ -389,23 +386,14 @@ class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          StarRatingWidget(
-            rating: _rating, // ✅ Direct 5-star rating
-            size: MediaQuery.of(context).size.width < 400
-                ? 28
-                : 32, // ✅ Smaller stars on mobile
-            onRatingChanged: (starRating) {
+          RatingSlider(
+            rating: _rating,
+            onChanged: (value) {
               setState(() {
-                _rating = starRating; // ✅ Direct assignment, no conversion
+                _rating = value;
               });
             },
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${_rating.toStringAsFixed(1)}/5',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            compact: true,
           ),
         ],
       ),
@@ -437,9 +425,15 @@ class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
 
     try {
       final notifier = ref.read(movieRatingsProvider.notifier);
+
+      // ✅ Direct 1-10 rating
+      // DB FIX: Clamp to 9.9 to fit NUMERIC(2,1) - a value of 10.0 would overflow.
+      final ratingClamped = _rating.clamp(1.0, 10.0);
+      final validatedRating = ratingClamped == 10.0 ? 9.9 : ratingClamped;
+
       final success = await notifier.rateMovie(
         movie: widget.movie,
-        rating: _rating,
+        rating: validatedRating,
       );
 
       if (success && mounted) {
@@ -448,6 +442,15 @@ class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
           const SnackBar(
             content: Text('Movie rated successfully!'),
             backgroundColor: Colors.green,
+          ),
+        );
+      } else if (mounted) {
+        // Si la operación falla, muestra el error desde el provider
+        final error = ref.read(movieRatingsProvider).error;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error ?? 'Failed to rate movie. Please try again.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

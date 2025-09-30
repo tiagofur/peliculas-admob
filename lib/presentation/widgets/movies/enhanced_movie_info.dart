@@ -701,6 +701,8 @@ class _TechnicalDetails extends StatelessWidget {
     LoggerFactory.debug('  ⏰ Runtime: ${movie.runtime}');
     LoggerFactory.debug('  🌟 Popularity: ${movie.popularity}');
     LoggerFactory.debug('  🎭 IMDb ID: ${movie.imdbId}');
+    LoggerFactory.debug('  📊 Vote Average: ${movie.voteAverage}');
+    LoggerFactory.debug('  🗳️ Vote Count: ${movie.voteCount}');
     LoggerFactory.debug(
         '  🏭 Production Companies: ${movie.productionCompanies}');
 
@@ -726,10 +728,71 @@ class _TechnicalDetails extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          // Runtime and Status row (most common data)
+          Row(
+            children: [
+              if (movie.runtime != null && (movie.runtime ?? 0) > 0)
+                Expanded(
+                  child: _DetailItem(
+                    label: 'Duración',
+                    value: '${movie.runtime} min',
+                    icon: Icons.access_time,
+                  ),
+                ),
+              if (movie.status != null && movie.status!.isNotEmpty)
+                Expanded(
+                  child: _DetailItem(
+                    label: 'Estado',
+                    value: movie.status ?? '',
+                    icon: Icons.info,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Vote Average and Vote Count
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'Calificación',
+                  value: '${movie.voteAverage.toStringAsFixed(1)}/10',
+                  icon: Icons.star,
+                ),
+              ),
+              Expanded(
+                child: _DetailItem(
+                  label: 'Votos',
+                  value: HumanFormats.number(movie.voteCount.toDouble()),
+                  icon: Icons.how_to_vote,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Popularity and IMDb ID
+          Row(
+            children: [
+              Expanded(
+                child: _DetailItem(
+                  label: 'Popularidad',
+                  value: movie.popularity.toStringAsFixed(1),
+                  icon: Icons.trending_up,
+                ),
+              ),
+              if (movie.imdbId != null && movie.imdbId!.isNotEmpty)
+                Expanded(
+                  child: _DetailItem(
+                    label: 'IMDb ID',
+                    value: movie.imdbId ?? '',
+                    icon: Icons.movie,
+                  ),
+                ),
+            ],
+          ),
+          // Budget and Revenue (if available)
           if (movie.budget != null && (movie.budget ?? 0) > 0) ...[
-            // DEBUG
-            Text('DEBUG: Mostrando presupuesto: ${movie.budget}',
-                style: const TextStyle(fontSize: 10, color: Colors.red)),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -746,33 +809,12 @@ class _TechnicalDetails extends StatelessWidget {
                       label: 'Ingresos',
                       value:
                           '\$${HumanFormats.number((movie.revenue ?? 0).toDouble())}',
-                      icon: Icons.trending_up,
+                      icon: Icons.show_chart,
                     ),
                   ),
               ],
             ),
           ],
-          if (movie.budget != null && (movie.budget ?? 0) > 0)
-            const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _DetailItem(
-                  label: 'Popularidad',
-                  value: movie.popularity.toStringAsFixed(1),
-                  icon: Icons.trending_up,
-                ),
-              ),
-              if (movie.imdbId != null)
-                Expanded(
-                  child: _DetailItem(
-                    label: 'IMDb ID',
-                    value: movie.imdbId ?? '',
-                    icon: Icons.movie,
-                  ),
-                ),
-            ],
-          ),
           if (movie.productionCompanies != null &&
               (movie.productionCompanies?.isNotEmpty ?? false))
             Column(

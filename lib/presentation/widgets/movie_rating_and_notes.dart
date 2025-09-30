@@ -44,7 +44,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
 
   Future<void> _loadExistingRating() async {
     final existingRating =
-        await ref.read(movieRatingProvider(widget.movie.id).future);
+        await ref.read(userMovieRatingProvider(widget.movie.id).future);
     if (existingRating != null && mounted) {
       setState(() {
         _currentRating = existingRating.rating;
@@ -92,7 +92,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
       );
 
       // Invalidar el provider específico para actualizar la UI
-      ref.invalidate(movieRatingProvider(widget.movie.id));
+      ref.invalidate(userMovieRatingProvider(widget.movie.id));
 
       widget.onRatingChanged?.call();
 
@@ -133,7 +133,7 @@ class _MovieRatingAndNotesState extends ConsumerState<MovieRatingAndNotes> {
           .deleteRating(widget.movie.id);
 
       // Invalidar el provider específico para actualizar la UI
-      ref.invalidate(movieRatingProvider(widget.movie.id));
+      ref.invalidate(userMovieRatingProvider(widget.movie.id));
 
       widget.onRatingChanged?.call();
 
@@ -373,7 +373,7 @@ class MovieRatingDisplayCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ratingAsync = ref.watch(movieRatingProvider(movieId));
+    final ratingAsync = ref.watch(userMovieRatingProvider(movieId));
     final theme = Theme.of(context);
 
     return ratingAsync.when(

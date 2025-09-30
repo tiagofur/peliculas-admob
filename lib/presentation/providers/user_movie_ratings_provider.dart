@@ -11,7 +11,7 @@ final userMovieRatingsRepositoryProvider =
 });
 
 // Provider para obtener la valoración de una película específica
-final movieRatingProvider =
+final userMovieRatingProvider =
     FutureProvider.family<UserMovieRating?, int>((ref, movieId) async {
   final repository = ref.watch(userMovieRatingsRepositoryProvider);
   return repository.getUserRating(movieId);
