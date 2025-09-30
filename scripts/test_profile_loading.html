@@ -237,24 +237,63 @@
           // Dar tiempo a que la app cargue
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
-          // Buscar cliente Supabase en la ventana de la app
-          const appWindow = window.opener || window;
-          const supabase = appWindow.supabaseClient || appWindow._supabase;
+          // Buscar cliente Supabase de múltiples formas
+          let supabase = null;
+
+          // Método 1: Desde window.opener (si se abrió desde la app)
+          if (window.opener) {
+            supabase = window.opener.supabaseClient || window.opener._supabase;
+          }
+
+          // Método 2: Desde parent window (si está en iframe)
+          if (!supabase && window.parent !== window) {
+            supabase = window.parent.supabaseClient || window.parent._supabase;
+          }
+
+          // Método 3: Buscar en todas las ventanas abiertas
+          if (!supabase) {
+            try {
+              // Intentar acceder a otras ventanas (solo funciona si son del mismo origen)
+              const frames = window.frames;
+              for (let i = 0; i < frames.length; i++) {
+                try {
+                  if (frames[i].supabaseClient || frames[i]._supabase) {
+                    supabase = frames[i].supabaseClient || frames[i]._supabase;
+                    break;
+                  }
+                } catch (e) {
+                  // Ignorar errores de CORS
+                }
+              }
+            } catch (e) {
+              // Ignorar errores
+            }
+          }
 
           if (!supabase) {
             updateStep(1, "error");
             addLog(
               `
                         <h4>❌ No se encontró el cliente Supabase</h4>
-                        <p><strong>Instrucciones:</strong></p>
-                        <ol>
-                            <li>Asegúrate de que la app esté corriendo en <code>http://localhost:3000</code></li>
-                            <li>Abre la app primero</li>
-                            <li>Haz login</li>
-                            <li>Luego ejecuta este test</li>
-                        </ol>
-                        <p><strong>Alternativa:</strong> Abre este archivo DESDE la app:</p>
-                        <pre>window.open('file:///c:/Users/tfurt/source/repos/peliculas-admob-clean/scripts/test_profile_loading.html')</pre>
+                        <p><strong>⚠️ IMPORTANTE: Este HTML debe abrirse DESDE la app</strong></p>
+                        
+                        <h3>📝 Instrucciones paso a paso:</h3>
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                            <ol style="line-height: 2;">
+                                <li><strong>Abre tu app en Chrome:</strong> <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                                <li><strong>Haz login</strong> con tiagofur@gmail.com</li>
+                                <li><strong>Ve a la página de perfil</strong> (donde ves los errores)</li>
+                                <li><strong>Presiona F12</strong> para abrir DevTools</li>
+                                <li><strong>Ve a la pestaña Console</strong></li>
+                                <li><strong>Copia y pega esto</strong> (Ctrl+V):</li>
+                            </ol>
+                            <pre style="background: #2d2d2d; color: #0f0; padding: 15px; border-radius: 8px; font-size: 14px;">window.open('file:///c:/Users/tfurt/source/repos/peliculas-admob-clean/scripts/test_profile_loading.html')</pre>
+                            <p style="margin-top: 15px;"><strong>Si sigue sin dejar pegar:</strong></p>
+                            <ol style="line-height: 2;">
+                                <li>Escribe: <code>allow pasting</code> y presiona Enter</li>
+                                <li>Luego pega el comando de arriba</li>
+                            </ol>
+                        </div>
                     `,
               "error"
             );
