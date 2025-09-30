@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart'; // Agregado para kIsWeb y Uint8List
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +20,6 @@ import '../../providers/auth_provider.dart' hide currentUserProvider;
 import '../../providers/movie_ratings_provider.dart';
 import '../../providers/user_profile/user_profile_providers.dart';
 import '../../providers/user_session_provider.dart';
-// Eliminado provider legacy de valoraciones por no utilizarse
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/ratings/star_rating_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
@@ -42,9 +42,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _usernameController = TextEditingController();
   bool _isEditing = false;
   File? _selectedImage;
+  Uint8List? _selectedImageBytes; // Para Web
   final ImagePicker _imagePicker = ImagePicker();
   final AnalyticsService _analyticsService = AnalyticsService();
-  bool _hasRequestedProfileRecovery = false;
   bool _isCheckingUsername = false;
   String? _usernameError;
   String? _initialUsername;
@@ -52,8 +52,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _emailNotifications = true;
   bool _pushNotifications = true;
   bool _profilePublic = true;
-  UserProfile? _lastResolvedProfile;
-  ProviderSubscription<UserProfileAlert?>? _alertSubscription;
 
   @override
   void initState() {
@@ -66,21 +64,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       _loadProfileData();
     });
-
-    _alertSubscription = ref.listenManual<UserProfileAlert?>(
-      userProfileAlertProvider,
-      (previous, next) {
-        if (next != null && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next.message),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-          ref.read(userProfileAlertProvider.notifier).clear();
-        }
-      },
-    );
   }
 
   /// Carga los datos del perfil desde el userId de la URL o del usuario autenticado
@@ -101,18 +84,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             '🔄 Cargando perfil del usuario autenticado: ${currentUser.id}');
 
         // Refrescar perfil de usuario si no se ha cargado
-        final profileState = ref.read(userProfileNotifierProvider);
-        if (profileState.value == null && !profileState.isLoading) {
-          ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        final sessionState = ref.read(userSessionProvider);
+        if (sessionState.profile == null && !sessionState.isLoading) {
+          ref.read(userSessionProvider.notifier).refreshProfile();
         }
 
         // Cargar estadísticas si no están disponibles
         ref.invalidate(currentUserStatsProvider);
       } else {
         // Caso 3: No hay usuario autenticado ni userId en URL
-        LoggerFactory.warning('⚠️ No hay usuario autenticado ni userId en URL');
-        _showErrorAndRedirect(
-            'No se pudo cargar el perfil. Por favor inicia sesión.');
+        // ⚠️ NO redirigir inmediatamente - el provider puede estar inicializándose
+        // La UI mostrará el estado de carga apropiado
+        LoggerFactory.info('⏳ Esperando inicialización de usuario...');
+
+        // Intentar refrescar la sesión por si el usuario ya está autenticado
+        // pero el provider aún no ha completado la inicialización
+        ref.read(userSessionProvider.notifier).refreshProfile();
       }
     } catch (e) {
       LoggerFactory.error('❌ Error al cargar datos del perfil: $e');
@@ -129,9 +116,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
       if (currentUser != null && currentUser.id == userId) {
         // Es el mismo usuario, cargar normalmente
-        final profileState = ref.read(userProfileNotifierProvider);
-        if (profileState.value == null && !profileState.isLoading) {
-          ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        final sessionState = ref.read(userSessionProvider);
+        if (sessionState.profile == null && !sessionState.isLoading) {
+          ref.read(userSessionProvider.notifier).refreshProfile();
         }
         ref.invalidate(currentUserStatsProvider);
       } else {
@@ -170,7 +157,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   void dispose() {
-    _alertSubscription?.close();
     _usernameDebounce?.cancel();
     _usernameController.dispose();
     _fullNameController.dispose();
@@ -182,21 +168,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final userProfile = ref.watch(userProfileNotifierProvider);
+    final sessionState = ref.watch(userSessionProvider);
     final userStats = ref.watch(currentUserStatsProvider);
     final authNotifier = ref.watch(authNotifierProvider);
     // Consider both profile updates and auth updates as a saving state
-    final isSaving = userProfile.isLoading || authNotifier.isLoading;
-    final currentUser = ref.watch(currentUserProvider);
+    final isSaving = sessionState.isLoading || authNotifier.isLoading;
+    final currentUser = sessionState.user;
+    final profile = sessionState.profile;
 
     LoggerFactory.info(
-        'ProfileScreen.build: user=${currentUser?.id ?? 'null'}, profile=${userProfile.value?.id ?? 'null'}, isLoading=${userProfile.isLoading}');
-
-    if (currentUser == null && _lastResolvedProfile != null) {
-      _lastResolvedProfile = null;
-      LoggerFactory.info(
-          'ProfileScreen.build: Cleared last resolved profile due to no current user');
-    }
+        'ProfileScreen.build: user=${currentUser?.id ?? 'null'}, profile=${profile?.id ?? 'null'}, isLoading=${sessionState.isLoading}');
 
     return Scaffold(
       appBar: AppBar(
@@ -209,11 +190,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               tooltip: 'Editar perfil',
               onPressed: currentUser == null
                   ? null
-                  : () => startEditing(
-                        userProfile.value ??
+                  : () {
+                      final sessionState = ref.read(userSessionProvider);
+                      startEditing(
+                        sessionState.profile ??
                             _createFallbackProfileFromUser(currentUser),
-                        isFallback: userProfile.value == null,
-                      ),
+                        isFallback: sessionState.profile == null,
+                      );
+                    },
             )
           else
             Row(
@@ -243,36 +227,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         children: [
           const MinimalSyncIndicator(),
           Expanded(
-            child: userProfile.when(
-              data: (profile) {
-                _lastResolvedProfile = profile ?? _lastResolvedProfile;
-                final resolvedProfile = profile ?? _lastResolvedProfile;
-                return _buildProfileContent(
-                  theme,
-                  ref,
-                  currentUser,
-                  resolvedProfile,
-                  userStats.value,
-                );
-              },
-              loading: () => currentUser != null
-                  ? _buildBasicUserInfo(theme, currentUser)
-                  : const Center(child: CircularProgressIndicator()),
-              error: (error, _) {
-                LoggerFactory.warning('Perfil en estado de error: $error');
-                final resolvedProfile =
-                    _lastResolvedProfile ?? userProfile.value;
-                if (currentUser == null) {
-                  return _buildGuestPlaceholder(theme);
-                }
-                return _buildProfileContent(
-                  theme,
-                  ref,
-                  currentUser,
-                  resolvedProfile,
-                  userStats.value,
-                );
-              },
+            child: _buildContent(
+              theme,
+              sessionState,
+              userStats.value,
             ),
           ),
         ],
@@ -280,78 +238,59 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  // Muestra información básica (nombre y correo) incluso si el perfil está cargando o falló
-  Widget _buildBasicUserInfo(ThemeData theme, User user) {
-    final fallbackProfile = _createFallbackProfileFromUser(user);
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Forzar recarga de perfil y estadísticas
-        await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
-        ref.invalidate(currentUserStatsProvider);
-        ref.invalidate(recentRatingsProvider);
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+  /// Construye el contenido principal basado en el estado de la sesión
+  Widget _buildContent(
+    ThemeData theme,
+    UserSessionState sessionState,
+    UserStats? stats,
+  ) {
+    // Mostrar loading mientras se inicializa la sesión
+    if (sessionState.isLoading && sessionState.user == null) {
+      return Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildProfileHeader(theme, fallbackProfile),
-            const SizedBox(height: 24),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
             Text(
-              'Información Básica',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+              'Cargando perfil...',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
               ),
-            ),
-            const SizedBox(height: 12),
-            _buildInfoTile(
-              theme,
-              'Nombre',
-              fallbackProfile.fullName,
-              Icons.person,
-            ),
-            const SizedBox(height: 12),
-            _buildInfoTile(
-              theme,
-              'Email',
-              user.email,
-              Icons.email,
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    // Usuario no autenticado (después de que terminó de cargar)
+    if (!sessionState.isAuthenticated || sessionState.user == null) {
+      return _buildGuestPlaceholder(theme);
+    }
+
+    // Usuario autenticado - mostrar perfil
+    return _buildProfileContent(
+      theme,
+      ref,
+      sessionState.user!,
+      sessionState.profile,
+      stats,
     );
   }
 
   Widget _buildProfileContent(
     ThemeData theme,
     WidgetRef ref,
-    User? currentUser,
+    User currentUser,
     UserProfile? profile,
     UserStats? stats,
   ) {
-    if (currentUser == null) {
-      return _buildGuestPlaceholder(theme);
-    }
-
-    final usingFallbackProfile = profile == null;
     final effectiveProfile =
         profile ?? _createFallbackProfileFromUser(currentUser);
 
-    if (usingFallbackProfile && !_hasRequestedProfileRecovery) {
-      _hasRequestedProfileRecovery = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(userProfileNotifierProvider.notifier).refreshProfile();
-      });
-    } else if (!usingFallbackProfile && _hasRequestedProfileRecovery) {
-      _hasRequestedProfileRecovery = false;
-    }
-
     return RefreshIndicator(
       onRefresh: () async {
-        await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        await ref.read(userSessionProvider.notifier).refreshProfile();
         ref.invalidate(currentUserStatsProvider);
         ref.invalidate(recentRatingsProvider);
       },
@@ -368,7 +307,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           final actionsPanel = _buildActionButtons(theme);
 
           final headerSection = <Widget>[
-            if (usingFallbackProfile) _buildFallbackNotice(theme),
             _buildProfileHeader(theme, effectiveProfile),
             const SizedBox(height: 24),
           ];
@@ -421,7 +359,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           );
 
           final layoutKey = ValueKey(
-            '${isWide}_${_isEditing}_${usingFallbackProfile}_${stats != null}',
+            '${isWide}_${_isEditing}_${profile != null}_${stats != null}',
           );
 
           return SingleChildScrollView(
@@ -582,33 +520,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildFallbackNotice(ThemeData theme) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.sync,
-            color: theme.colorScheme.primary,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Estamos sincronizando tu perfil completo. Puedes actualizar tus datos y se guardarán en cuanto termine la sincronización.',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildGuestPlaceholder(ThemeData theme) {
     return Center(
       child: Padding(
@@ -709,6 +620,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 avatarUrl: profile.avatarUrl,
                 avatarHash: profile.avatarHash,
                 selectedImage: _selectedImage,
+                selectedImageBytes: _selectedImageBytes,
                 size: 128,
                 onTap: _isEditing ? selectImage : null,
                 showEditIcon: _isEditing,
@@ -1491,7 +1403,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final currentUser = ref.read(currentUserProvider);
 
     if (isFallback) {
-      ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+      ref.read(userSessionProvider.notifier).refreshProfile();
     }
 
     setState(() {
@@ -1506,6 +1418,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _bioController.text = profile.bio ?? '';
       _emailController.text = currentUser?.email ?? '';
       _selectedImage = null;
+      _selectedImageBytes = null;
       final preferences = profile.preferences;
       _emailNotifications = preferences['email_notifications'] ?? true;
       _pushNotifications = preferences['push_notifications'] ?? true;
@@ -1530,6 +1443,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       _isCheckingUsername = false;
       _initialUsername = null;
       _selectedImage = null;
+      _selectedImageBytes = null;
       _fullNameController.clear();
       _bioController.clear();
       _emailController.clear();
@@ -1570,11 +1484,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _usernameController.text.trim().toLowerCase();
 
           // Si hay una imagen seleccionada, subirla primero
-          if (_selectedImage != null) {
-            final bytes = await _selectedImage!.readAsBytes();
-            final pathSegments = _selectedImage!.path.split('.');
-            final extension =
-                pathSegments.length > 1 ? pathSegments.last : null;
+          if (_selectedImage != null || _selectedImageBytes != null) {
+            late Uint8List bytes;
+            String? extension;
+
+            if (kIsWeb && _selectedImageBytes != null) {
+              // En Web, usar los bytes directamente
+              bytes = _selectedImageBytes!;
+              extension = 'jpg'; // Default extension para Web
+            } else if (_selectedImage != null) {
+              // En otras plataformas, leer desde File
+              bytes = await _selectedImage!.readAsBytes();
+              final pathSegments = _selectedImage!.path.split('.');
+              extension = pathSegments.length > 1 ? pathSegments.last : null;
+            } else {
+              throw Exception('No image available');
+            }
+
             avatarUrl = await ref
                 .read(userProfileNotifierProvider.notifier)
                 .uploadAvatar(
@@ -1583,13 +1509,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 );
           }
 
-          // Actualizar perfil en la tabla user_profiles
-          await ref
-              .read(userProfileNotifierProvider.notifier)
-              .updateProfileFields(
+          // Actualizar perfil usando userSessionProvider
+          await ref.read(userSessionProvider.notifier).updateProfile(
             fullName: _fullNameController.text.trim(),
+            // Pasar username: null significa "no cambiar"
+            // Pasar username: '' significa "limpiar el username"
+            // Pasar username: 'valor' significa "actualizar con este valor"
             username: normalizedUsername,
-            clearUsername: normalizedUsername.isEmpty,
             bio: _bioController.text.trim().isEmpty
                 ? null
                 : _bioController.text.trim(),
@@ -1601,7 +1527,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           );
 
-          await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+          // El userSessionProvider ya se actualiza automáticamente con el tiempo real
 
           // Actualizar email si ha cambiado
           if (_emailController.text.trim() != currentUser.email) {
@@ -1613,13 +1539,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
         if (mounted) {
           // Capture change flags BEFORE clearing state
-          final bool avatarChanged = _selectedImage != null;
+          final bool avatarChanged =
+              _selectedImage != null || _selectedImageBytes != null;
           final bool emailChanged =
               _emailController.text.trim() != currentUser?.email;
 
           setState(() {
             _isEditing = false;
             _selectedImage = null;
+            _selectedImageBytes = null;
           });
 
           // Rastrear guardado exitoso del perfil
@@ -1658,6 +1586,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Future<void> selectImage() async {
+    // Capturar theme antes de operaciones async
+    final theme = Theme.of(context);
+
     final XFile? image = await _imagePicker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 512,
@@ -1665,7 +1596,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       imageQuality: 80,
     );
 
-    if (image != null) {
+    if (image != null && mounted) {
+      // WORKAROUND: En Web, skip cropping debido a incompatibilidad con image_cropper_for_web v6.1.0
+      // TODO: Actualizar a image_cropper v11.x para habilitar cropping en Web
+      if (kIsWeb) {
+        LoggerFactory.info('Web platform: skipping image cropper (workaround)');
+
+        // Mostrar mensaje informativo al usuario
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Imagen seleccionada sin recorte. Para recortar imágenes, usa la app móvil.',
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: theme.colorScheme.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+
+        // En Web, leer los bytes de la imagen
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _selectedImageBytes = bytes;
+          _selectedImage = null; // Clear File reference en Web
+        });
+
+        // Rastrear selección de imagen de avatar
+        _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+          'timestamp': DateTime.now().toIso8601String(),
+          'source': 'gallery',
+          'platform': 'web',
+          'cropped': false,
+        });
+
+        return;
+      }
+
+      // En móvil/desktop: usar cropper normalmente
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: image.path,
         aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
@@ -1675,8 +1652,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         uiSettings: [
           AndroidUiSettings(
             toolbarTitle: 'Recortar Avatar',
-            toolbarColor: Theme.of(context).colorScheme.primary,
-            toolbarWidgetColor: Theme.of(context).colorScheme.onPrimary,
+            toolbarColor: theme.colorScheme.primary,
+            toolbarWidgetColor: theme.colorScheme.onPrimary,
             initAspectRatio: CropAspectRatioPreset.square,
             lockAspectRatio: true,
           ),
@@ -1688,7 +1665,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       );
 
-      if (croppedFile != null) {
+      if (croppedFile != null && mounted) {
         setState(() {
           _selectedImage = File(croppedFile.path);
         });
@@ -1697,6 +1674,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
           'timestamp': DateTime.now().toIso8601String(),
           'source': 'gallery',
+          'platform': kIsWeb ? 'web' : 'mobile',
+          'cropped': true,
         });
       }
     }

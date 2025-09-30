@@ -325,11 +325,17 @@ class UserSessionNotifier extends Notifier<UserSessionState> {
       LoggerFactory.info(
           '💾 UserSessionNotifier: Actualizando perfil para ${user.id}');
 
+      // Determinar si se debe limpiar el username
+      // Si username es null, no cambiar el username actual
+      // Si username es '', limpiar el username
+      final shouldClearUsername = username != null && username.isEmpty;
+
       // Actualizar en Supabase usando el método del repositorio
       final updatedProfile = await _profileRepository.updateProfile(
         userId: user.id,
         fullName: fullName,
-        username: username,
+        username: username != null && username.isNotEmpty ? username : null,
+        clearUsername: shouldClearUsername,
         bio: bio,
         avatarUrl: avatarUrl,
         avatarHash: avatarHash,

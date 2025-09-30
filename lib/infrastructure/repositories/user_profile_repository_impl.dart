@@ -212,11 +212,30 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         updatePayload[_columnLastActiveDate] = DateTime.now().toIso8601String();
       }
 
-      final response = await _supabase
+      // Verificar si el perfil ya existe
+      final existingProfile = await _supabase
           .from('user_profiles')
-          .upsert(updatePayload, onConflict: 'user_id')
-          .select()
-          .single();
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      dynamic response;
+      if (existingProfile != null) {
+        // Perfil existe, hacer UPDATE
+        response = await _supabase
+            .from('user_profiles')
+            .update(updatePayload)
+            .eq('user_id', userId)
+            .select()
+            .single();
+      } else {
+        // Perfil no existe, hacer INSERT
+        response = await _supabase
+            .from('user_profiles')
+            .insert(updatePayload)
+            .select()
+            .single();
+      }
 
       return UserProfileModel.fromJson(response);
     } catch (error, stackTrace) {
@@ -459,11 +478,30 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         }
       }
 
-      final response = await _supabase
+      // Verificar si el perfil ya existe
+      final existingProfile = await _supabase
           .from('user_profiles')
-          .upsert(payload, onConflict: 'user_id')
-          .select()
-          .single();
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      dynamic response;
+      if (existingProfile != null) {
+        // Perfil existe, hacer UPDATE
+        response = await _supabase
+            .from('user_profiles')
+            .update(payload)
+            .eq('user_id', userId)
+            .select()
+            .single();
+      } else {
+        // Perfil no existe, hacer INSERT
+        response = await _supabase
+            .from('user_profiles')
+            .insert(payload)
+            .select()
+            .single();
+      }
 
       return UserProfileModel.fromJson(response);
     } catch (error, stackTrace) {

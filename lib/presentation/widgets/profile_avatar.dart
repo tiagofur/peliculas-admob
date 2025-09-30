@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart'; // Para kIsWeb y Uint8List
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -10,6 +11,7 @@ class ProfileAvatar extends StatelessWidget {
     this.avatarUrl,
     this.avatarHash,
     this.selectedImage,
+    this.selectedImageBytes,
     this.size = 120,
     this.onTap,
     this.showEditIcon = false,
@@ -18,6 +20,7 @@ class ProfileAvatar extends StatelessWidget {
   final String? avatarUrl;
   final String? avatarHash;
   final File? selectedImage;
+  final Uint8List? selectedImageBytes;
   final double size;
   final VoidCallback? onTap;
   final bool showEditIcon;
@@ -97,7 +100,20 @@ class ProfileAvatar extends StatelessWidget {
 
   Widget _buildAvatarContent(ThemeData theme) {
     // Si hay una imagen seleccionada localmente, mostrarla
-    if (selectedImage != null) {
+    // En Web, usar bytes; en otras plataformas, usar File
+    if (kIsWeb && selectedImageBytes != null) {
+      return Image.memory(
+        selectedImageBytes!,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildDefaultAvatar(theme);
+        },
+      );
+    }
+
+    if (!kIsWeb && selectedImage != null) {
       return Image.file(
         selectedImage!,
         width: size,

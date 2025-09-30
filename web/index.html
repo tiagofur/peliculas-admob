@@ -98,6 +98,31 @@
       rel="stylesheet"
     />
 
+    <!-- Image Cropper for Web - Croppie -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.css"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/croppie/2.6.5/croppie.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- Verificar que Croppie se cargó correctamente -->
+    <script>
+      window.addEventListener("DOMContentLoaded", function () {
+        if (typeof Croppie !== "undefined") {
+          console.log("✅ Croppie loaded successfully!");
+          console.log("Croppie version:", Croppie);
+          // Crear alias para compatibilidad
+          window.Cropper = window.Croppie;
+        } else {
+          console.error("❌ Croppie failed to load from CDN");
+        }
+      });
+    </script>
+
     <!-- Google AdSense -->
     <script>
       (function loadAdSense() {
