@@ -1,13 +1,15 @@
 #!/usr/bin/env dart
 
 import 'dart:io';
+
+import 'package:peliculas/core/services/logger_factory.dart';
 import 'package:supabase/supabase.dart';
 
 Future<void> main() async {
   // Load environment variables
   final envFile = File('.env');
   if (!envFile.existsSync()) {
-    print('❌ No se encontró el archivo .env');
+    LoggerFactory.info('❌ No se encontró el archivo .env');
     exit(1);
   }
 
@@ -25,47 +27,48 @@ Future<void> main() async {
   }
 
   if (supabaseUrl == null || supabaseKey == null) {
-    print('❌ No se encontraron las credenciales de Supabase en .env');
+    LoggerFactory.info(
+        '❌ No se encontraron las credenciales de Supabase en .env');
     exit(1);
   }
 
-  print('🔗 Conectando a Supabase...');
-  print('URL: $supabaseUrl');
+  LoggerFactory.info('🔗 Conectando a Supabase...');
+  LoggerFactory.info('URL: $supabaseUrl');
 
   try {
     final supabase = SupabaseClient(supabaseUrl, supabaseKey);
 
     // Check if user_profiles table exists and its structure
-    print('\n📋 Verificando estructura de user_profiles...');
+    LoggerFactory.info('\n📋 Verificando estructura de user_profiles...');
 
     final response = await supabase.rpc('get_table_columns',
         params: {'table_name': 'user_profiles'}).catchError((_) => null);
 
     if (response == null) {
       // Fallback: try to query the table directly
-      print('🔍 Intentando consulta directa...');
+      LoggerFactory.info('🔍 Intentando consulta directa...');
       try {
         final testQuery =
             await supabase.from('user_profiles').select('*').limit(1);
-        print('✅ Tabla user_profiles existe y es accesible');
-        print(
+        LoggerFactory.info('✅ Tabla user_profiles existe y es accesible');
+        LoggerFactory.info(
             'Columnas detectadas en la respuesta: ${testQuery.isNotEmpty ? testQuery.first.keys.toList() : 'Tabla vacía'}');
       } catch (e) {
-        print('❌ Error accediendo a user_profiles: $e');
+        LoggerFactory.info('❌ Error accediendo a user_profiles: $e');
       }
     } else {
-      print('✅ Estructura obtenida: $response');
+      LoggerFactory.info('✅ Estructura obtenida: $response');
     }
 
     // Test basic authentication flow
-    print('\n🔐 Verificando autenticación actual...');
+    LoggerFactory.info('\n🔐 Verificando autenticación actual...');
     final user = supabase.auth.currentUser;
     if (user != null) {
-      print('✅ Usuario autenticado: ${user.id}');
-      print('Email: ${user.email}');
+      LoggerFactory.info('✅ Usuario autenticado: ${user.id}');
+      LoggerFactory.info('Email: ${user.email}');
 
       // Try to get user profile
-      print('\n👤 Intentando obtener perfil de usuario...');
+      LoggerFactory.info('\n👤 Intentando obtener perfil de usuario...');
       try {
         final profile = await supabase
             .from('user_profiles')
@@ -74,37 +77,37 @@ Future<void> main() async {
             .maybeSingle();
 
         if (profile != null) {
-          print('✅ Perfil encontrado:');
+          LoggerFactory.info('✅ Perfil encontrado:');
           profile.forEach((key, value) {
-            print('  $key: $value');
+            LoggerFactory.info('  $key: $value');
           });
         } else {
-          print('⚠️ No se encontró perfil para el usuario actual');
+          LoggerFactory.info('⚠️ No se encontró perfil para el usuario actual');
         }
       } catch (e) {
-        print('❌ Error obteniendo perfil: $e');
+        LoggerFactory.info('❌ Error obteniendo perfil: $e');
       }
     } else {
-      print('ℹ️ No hay usuario autenticado actualmente');
+      LoggerFactory.info('ℹ️ No hay usuario autenticado actualmente');
     }
 
     // Test storage bucket
-    print('\n📁 Verificando bucket de avatares...');
+    LoggerFactory.info('\n📁 Verificando bucket de avatares...');
     try {
       final buckets = await supabase.storage.listBuckets();
       final avatarBucket = buckets.firstWhere(
         (bucket) => bucket.name == 'avatars',
         orElse: () => throw 'No found',
       );
-      print('✅ Bucket avatars encontrado: ${avatarBucket.name}');
-      print('Público: ${avatarBucket.public}');
+      LoggerFactory.info('✅ Bucket avatars encontrado: ${avatarBucket.name}');
+      LoggerFactory.info('Público: ${avatarBucket.public}');
     } catch (e) {
-      print('❌ Error con bucket avatars: $e');
+      LoggerFactory.info('❌ Error con bucket avatars: $e');
     }
 
-    print('\n✅ Verificación completada');
+    LoggerFactory.info('\n✅ Verificación completada');
   } catch (e) {
-    print('❌ Error conectando a Supabase: $e');
+    LoggerFactory.info('❌ Error conectando a Supabase: $e');
     exit(1);
   }
 }

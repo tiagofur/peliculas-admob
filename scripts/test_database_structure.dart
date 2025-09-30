@@ -2,13 +2,14 @@
 
 import 'dart:io';
 
+import 'package:peliculas/core/services/logger_factory.dart';
 import 'package:supabase/supabase.dart';
 
 Future<void> main() async {
   // Load environment variables
   final envFile = File('.env');
   if (!envFile.existsSync()) {
-    print('❌ No se encontró el archivo .env');
+    LoggerFactory.info('❌ No se encontró el archivo .env');
     exit(1);
   }
 
@@ -26,43 +27,46 @@ Future<void> main() async {
   }
 
   if (supabaseUrl == null || supabaseKey == null) {
-    print('❌ No se encontraron las credenciales de Supabase en .env');
+    LoggerFactory.info(
+        '❌ No se encontraron las credenciales de Supabase en .env');
     exit(1);
   }
 
   final supabase = SupabaseClient(supabaseUrl, supabaseKey);
 
-  print('🔍 Verificando estructura de user_profiles...');
+  LoggerFactory.info('🔍 Verificando estructura de user_profiles...');
 
   try {
     // First check if we can query the table structure
     final testQuery = await supabase.from('user_profiles').select('*').limit(5);
 
-    print('✅ Tabla user_profiles accesible');
+    LoggerFactory.info('✅ Tabla user_profiles accesible');
 
     if (testQuery.isNotEmpty) {
-      print('Usuarios existentes encontrados: ${testQuery.length}');
-      print('Columnas disponibles: ${testQuery.first.keys.toList()}');
+      LoggerFactory.info(
+          'Usuarios existentes encontrados: ${testQuery.length}');
+      LoggerFactory.info(
+          'Columnas disponibles: ${testQuery.first.keys.toList()}');
 
       // Show a sample profile
       final sampleProfile = testQuery.first;
-      print('\nEjemplo de perfil:');
+      LoggerFactory.info('\nEjemplo de perfil:');
       sampleProfile.forEach((key, value) {
         if (value is String && value.length > 50) {
-          print('  $key: ${value.substring(0, 47)}...');
+          LoggerFactory.info('  $key: ${value.substring(0, 47)}...');
         } else {
-          print('  $key: $value');
+          LoggerFactory.info('  $key: $value');
         }
       });
     } else {
-      print('No hay usuarios en la tabla user_profiles');
+      LoggerFactory.info('No hay usuarios en la tabla user_profiles');
     }
   } catch (e) {
-    print('❌ Error accediendo a user_profiles: $e');
+    LoggerFactory.info('❌ Error accediendo a user_profiles: $e');
   }
 
   // Test creating a simple profile manually
-  print('\n🧪 Probando inserción manual de perfil...');
+  LoggerFactory.info('\n🧪 Probando inserción manual de perfil...');
 
   try {
     final testUserId = 'test-user-${DateTime.now().millisecondsSinceEpoch}';
@@ -92,20 +96,20 @@ Future<void> main() async {
         .select()
         .single();
 
-    print('✅ Perfil de prueba creado exitosamente:');
+    LoggerFactory.info('✅ Perfil de prueba creado exitosamente:');
     insertResult.forEach((key, value) {
-      print('  $key: $value');
+      LoggerFactory.info('  $key: $value');
     });
 
     // Clean up - delete the test profile
     await supabase.from('user_profiles').delete().eq('user_id', testUserId);
-    print('✅ Perfil de prueba eliminado');
+    LoggerFactory.info('✅ Perfil de prueba eliminado');
   } catch (e) {
-    print('❌ Error creando perfil de prueba: $e');
+    LoggerFactory.info('❌ Error creando perfil de prueba: $e');
   }
 
   // Test username uniqueness
-  print('\n🔍 Probando verificación de username...');
+  LoggerFactory.info('\n🔍 Probando verificación de username...');
 
   try {
     const testUsername = 'test_unique_username';
@@ -116,14 +120,14 @@ Future<void> main() async {
         .maybeSingle();
 
     if (existingUsername == null) {
-      print('✅ Username "$testUsername" está disponible');
+      LoggerFactory.info('✅ Username "$testUsername" está disponible');
     } else {
-      print(
+      LoggerFactory.info(
           '⚠️ Username "$testUsername" ya está en uso por: ${existingUsername['user_id']}');
     }
   } catch (e) {
-    print('❌ Error verificando username: $e');
+    LoggerFactory.info('❌ Error verificando username: $e');
   }
 
-  print('\n✅ Verificación de base de datos completada');
+  LoggerFactory.info('\n✅ Verificación de base de datos completada');
 }

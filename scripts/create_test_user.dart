@@ -1,13 +1,15 @@
 #!/usr/bin/env dart
 
 import 'dart:io';
+
+import 'package:peliculas/core/services/logger_factory.dart';
 import 'package:supabase/supabase.dart';
 
 Future<void> main() async {
   // Load environment variables
   final envFile = File('.env');
   if (!envFile.existsSync()) {
-    print('❌ No se encontró el archivo .env');
+    LoggerFactory.info('❌ No se encontró el archivo .env');
     exit(1);
   }
 
@@ -25,13 +27,14 @@ Future<void> main() async {
   }
 
   if (supabaseUrl == null || supabaseKey == null) {
-    print('❌ No se encontraron las credenciales de Supabase en .env');
+    LoggerFactory.info(
+        '❌ No se encontraron las credenciales de Supabase en .env');
     exit(1);
   }
 
   final supabase = SupabaseClient(supabaseUrl, supabaseKey);
 
-  print('🔐 Realizando login de prueba...');
+  LoggerFactory.info('🔐 Realizando login de prueba...');
 
   // Create a test user or login with existing one
   const testEmail = 'testuser@peliculas.app';
@@ -45,9 +48,10 @@ Future<void> main() async {
     );
 
     if (response.user != null) {
-      print('✅ Login exitoso con usuario existente: ${response.user!.id}');
+      LoggerFactory.info(
+          '✅ Login exitoso con usuario existente: ${response.user!.id}');
     } else {
-      print('⚠️ Login falló, intentando crear usuario...');
+      LoggerFactory.info('⚠️ Login falló, intentando crear usuario...');
       final signUpResponse = await supabase.auth.signUp(
         email: testEmail,
         password: testPassword,
@@ -58,18 +62,19 @@ Future<void> main() async {
       );
 
       if (signUpResponse.user != null) {
-        print('✅ Usuario creado exitosamente: ${signUpResponse.user!.id}');
+        LoggerFactory.info(
+            '✅ Usuario creado exitosamente: ${signUpResponse.user!.id}');
       } else {
-        print('❌ Error creando usuario');
+        LoggerFactory.info('❌ Error creando usuario');
         return;
       }
     }
   } catch (e) {
-    print('❌ Error en autenticación: $e');
+    LoggerFactory.info('❌ Error en autenticación: $e');
 
     // Try to create user if sign in failed
     try {
-      print('⚠️ Intentando crear usuario nuevo...');
+      LoggerFactory.info('⚠️ Intentando crear usuario nuevo...');
       final signUpResponse = await supabase.auth.signUp(
         email: testEmail,
         password: testPassword,
@@ -80,13 +85,14 @@ Future<void> main() async {
       );
 
       if (signUpResponse.user != null) {
-        print('✅ Usuario creado exitosamente: ${signUpResponse.user!.id}');
+        LoggerFactory.info(
+            '✅ Usuario creado exitosamente: ${signUpResponse.user!.id}');
       } else {
-        print('❌ Error creando usuario');
+        LoggerFactory.info('❌ Error creando usuario');
         return;
       }
     } catch (signUpError) {
-      print('❌ Error creando usuario: $signUpError');
+      LoggerFactory.info('❌ Error creando usuario: $signUpError');
       return;
     }
   }
@@ -96,13 +102,13 @@ Future<void> main() async {
 
   final user = supabase.auth.currentUser;
   if (user != null) {
-    print('✅ Usuario autenticado: ${user.id}');
-    print('Email: ${user.email}');
-    print('Created at: ${user.createdAt}');
-    print('Metadata: ${user.userMetadata}');
+    LoggerFactory.info('✅ Usuario autenticado: ${user.id}');
+    LoggerFactory.info('Email: ${user.email}');
+    LoggerFactory.info('Created at: ${user.createdAt}');
+    LoggerFactory.info('Metadata: ${user.userMetadata}');
 
     // Try to get or create user profile
-    print('\n👤 Verificando perfil de usuario...');
+    LoggerFactory.info('\n👤 Verificando perfil de usuario...');
     try {
       var profile = await supabase
           .from('user_profiles')
@@ -111,7 +117,7 @@ Future<void> main() async {
           .maybeSingle();
 
       if (profile == null) {
-        print('⚠️ Perfil no existe, creando uno...');
+        LoggerFactory.info('⚠️ Perfil no existe, creando uno...');
 
         final newProfile = {
           'user_id': user.id,
@@ -142,9 +148,9 @@ Future<void> main() async {
               .select()
               .single();
 
-          print('✅ Perfil creado exitosamente');
+          LoggerFactory.info('✅ Perfil creado exitosamente');
         } catch (insertError) {
-          print('❌ Error insertando perfil: $insertError');
+          LoggerFactory.info('❌ Error insertando perfil: $insertError');
           // Try to get profile again in case it was created by triggers
           profile = await supabase
               .from('user_profiles')
@@ -153,25 +159,26 @@ Future<void> main() async {
               .maybeSingle();
 
           if (profile != null) {
-            print('✅ Perfil encontrado después del error (creado por trigger)');
+            LoggerFactory.info(
+                '✅ Perfil encontrado después del error (creado por trigger)');
           }
         }
       } else {
-        print('✅ Perfil encontrado');
+        LoggerFactory.info('✅ Perfil encontrado');
       }
 
       if (profile != null) {
-        print('Datos del perfil:');
+        LoggerFactory.info('Datos del perfil:');
         profile.forEach((key, value) {
-          print('  $key: $value');
+          LoggerFactory.info('  $key: $value');
         });
       }
     } catch (e) {
-      print('❌ Error manejando perfil: $e');
+      LoggerFactory.info('❌ Error manejando perfil: $e');
     }
 
     // Test some provider operations that might be failing
-    print('\n🧪 Probando operaciones típicas...');
+    LoggerFactory.info('\n🧪 Probando operaciones típicas...');
 
     // Update profile
     try {
@@ -180,9 +187,9 @@ Future<void> main() async {
         'updated_at': now,
         'last_synced_at': now,
       }).eq('user_id', user.id);
-      print('✅ Actualización de perfil exitosa');
+      LoggerFactory.info('✅ Actualización de perfil exitosa');
     } catch (e) {
-      print('❌ Error actualizando perfil: $e');
+      LoggerFactory.info('❌ Error actualizando perfil: $e');
     }
 
     // Test username availability
@@ -195,19 +202,19 @@ Future<void> main() async {
           .maybeSingle();
 
       if (existingUsername == null) {
-        print('✅ Username "$testUsername" está disponible');
+        LoggerFactory.info('✅ Username "$testUsername" está disponible');
       } else {
-        print('⚠️ Username "$testUsername" ya está en uso');
+        LoggerFactory.info('⚠️ Username "$testUsername" ya está en uso');
       }
     } catch (e) {
-      print('❌ Error verificando username: $e');
+      LoggerFactory.info('❌ Error verificando username: $e');
     }
 
-    print(
+    LoggerFactory.info(
         '\n🎉 Todo funcionando correctamente. Ahora puedes usar este usuario para probar:');
-    print('Email: $testEmail');
-    print('Password: $testPassword');
+    LoggerFactory.info('Email: $testEmail');
+    LoggerFactory.info('Password: $testPassword');
   } else {
-    print('❌ No se pudo autenticar usuario');
+    LoggerFactory.info('❌ No se pudo autenticar usuario');
   }
 }
