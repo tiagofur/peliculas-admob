@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_flow_optimizer.dart';
@@ -80,75 +81,68 @@ final appStateProvider = NotifierProvider<AppStateNotifier, AppState>(() {
 
 // Notifier para manejar el estado de la aplicación
 class AppStateNotifier extends Notifier<AppState> {
+  StreamSubscription<User?>? _authSubscription;
+  bool _initialized = false;
+
   @override
   AppState build() {
     // Initialize flow optimizer for startup optimization
     _initializeFlowOptimizer();
-    // ✅ Usar ref localmente durante initialization
-    _initializeWithRef();
+
+    // ✅ SOLO inicializar UNA VEZ
+    if (!_initialized) {
+      _initialized = true;
+      // ✅ Usar addPostFrameCallback para configurar listener DESPUÉS del build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _setupAuthListener();
+        _detectLocalDataOnStartup();
+      });
+    }
+
+    // Cleanup cuando el notifier sea disposed
+    ref.onDispose(() {
+      _authSubscription?.cancel();
+      _initialized = false;
+    });
+
     return const AppState(mode: AppMode.guest);
   }
 
   final AuthFlowOptimizer _flowOptimizer = AuthFlowOptimizer.instance;
 
-  // ✅ FIX: Método que configura listeners usando ref directamente
-  void _initializeWithRef() {
-    // Inicializar con el estado actual de autenticación
-    final currentAuthState = ref.read(authStateProvider);
-    currentAuthState.when(
-      data: (user) {
-        if (user != null) {
-          // Usuario ya autenticado al inicializar
-          state = state.copyWith(
-            mode: AppMode.authenticated,
-            user: user,
-          );
-        }
-        // Si user es null, mantener el estado guest inicial
-      },
-      loading: () {
-        // Mantener estado guest mientras carga
-      },
-      error: (_, __) {
-        // Mantener estado guest en caso de error
-      },
-    );
+  // ✅ FIX: Configurar listener directo al stream de auth
+  void _setupAuthListener() {
+    final authRepository = ref.read(authRepositoryProvider);
 
-    // ✅ Escuchar cambios sin almacenar ref
-    ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
-      next.when(
-        data: (user) {
-          if (user != null) {
-            // Usuario autenticado
-            state = state.copyWith(
-              mode: AppMode.authenticated,
-              user: user,
-            );
-          } else {
-            // Usuario no autenticado, modo guest
-            state = state.copyWith(
-              mode: AppMode.guest,
-              user: null,
-            );
-            // Detectar datos locales cuando no hay usuario autenticado
-            _detectLocalDataOnStartup(ref);
-          }
-        },
-        loading: () {},
-        error: (_, __) {
-          // En caso de error, mantener modo guest
-          state = state.copyWith(
-            mode: AppMode.guest,
-            user: null,
-          );
-          // También detectar datos locales en caso de error
-          _detectLocalDataOnStartup(ref);
-        },
+    // Cancelar suscripción previa si existe
+    _authSubscription?.cancel();
+
+    // Suscribirse a cambios de autenticación
+    _authSubscription = authRepository.authStateChanges.listen((user) {
+      if (user != null) {
+        // Usuario autenticado - actualizar estado
+        LoggerFactory.info(
+            '🔐 AppStateNotifier: Usuario autenticado: ${user.id}');
+        state = state.copyWith(
+          mode: AppMode.authenticated,
+          user: user,
+        );
+      } else {
+        // Usuario deslogueado - cambiar a guest
+        LoggerFactory.info('👤 AppStateNotifier: Usuario en modo guest');
+        state = state.copyWith(
+          mode: AppMode.guest,
+          user: null,
+        );
+      }
+    }, onError: (error) {
+      // En caso de error, mantener modo guest
+      LoggerFactory.error('❌ AppStateNotifier: Error en autenticación: $error');
+      state = state.copyWith(
+        mode: AppMode.guest,
+        user: null,
       );
     });
-
-    // Detectar datos locales en el startup inicial
-    _detectLocalDataOnStartup(ref);
   }
 
   // Método para cambiar a modo guest manualmente
@@ -165,7 +159,7 @@ class AppStateNotifier extends Notifier<AppState> {
   }
 
   // ✅ IMPLEMENTADO: Método que detecta datos locales usando servicio dedicado
-  void _detectLocalDataOnStartup(Ref ref) {
+  void _detectLocalDataOnStartup() {
     // Ejecutar en background para no bloquear la UI
     Future.microtask(() async {
       try {

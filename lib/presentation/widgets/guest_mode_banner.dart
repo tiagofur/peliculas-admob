@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../generated/app_localizations.dart';
-import '../providers/auth_provider.dart';
+import '../providers/user_session_provider.dart';
 
 // Banner que muestra los beneficios del registro en modo guest
 class GuestModeBanner extends ConsumerWidget {
@@ -11,11 +11,11 @@ class GuestModeBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final appState = ref.watch(appStateProvider);
+    final sessionState = ref.watch(userSessionProvider);
     final l10n = AppLocalizations.of(context)!;
 
-    // Solo mostrar en modo guest
-    if (appState.mode != AppMode.guest) {
+    // Solo mostrar en modo guest (no autenticado)
+    if (sessionState.isAuthenticated) {
       return const SizedBox.shrink();
     }
 

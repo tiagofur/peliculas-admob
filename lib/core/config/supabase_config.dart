@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../config/api_keys.dart';
 
 class SupabaseConfig {
@@ -10,6 +11,10 @@ class SupabaseConfig {
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
       debug: true, // Activar debug para diagnosticar problemas de cache
+      // ✅ CRÍTICO: Configurar authOptions para persistir sesión
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce, // Más seguro con PKCE
+      ),
       realtimeClientOptions: const RealtimeClientOptions(
         eventsPerSecond: 10,
         logLevel: RealtimeLogLevel.info,

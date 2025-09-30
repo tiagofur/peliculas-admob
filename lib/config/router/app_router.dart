@@ -22,8 +22,8 @@ import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
 import '../../presentation/views/views.dart';
 import '../../presentation/widgets/shared/page_transitions.dart';
-import '../../widgets/user_profile_debug_widget.dart';
 import '../../widgets/quick_login_widget.dart';
+import '../../widgets/user_profile_debug_widget.dart';
 
 // Global navigator key para navegación desde notificaciones
 final GlobalKey<NavigatorState> globalNavigatorKey =
@@ -381,10 +381,37 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const DebugSyncView(),
       ),
 
-      // Ruta de perfil
+      // Ruta de perfil con userId opcional en URL
+      GoRoute(
+        path: '/profile/:userId',
+        name: 'profile',
+        pageBuilder: (context, state) {
+          final userId = state.pathParameters['userId'];
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: ProfileScreen(userId: userId),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+              );
+            },
+          );
+        },
+      ),
+      // Ruta alternativa sin userId (redirige al perfil actual)
       GoRoute(
         path: '/profile',
-        name: 'profile',
+        redirect: (context, state) {
+          // Se manejará en ProfileScreen para usar el usuario autenticado
+          return null;
+        },
         pageBuilder: (context, state) {
           return CustomTransitionPage(
             key: state.pageKey,
@@ -776,10 +803,27 @@ final appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
 
-    // Ruta de perfil
+    // Ruta de perfil con userId opcional en URL
+    GoRoute(
+      path: '/profile/:userId',
+      name: 'profile_with_id',
+      pageBuilder: (context, state) {
+        final userId = state.pathParameters['userId'];
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: ProfileScreen(userId: userId),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return CinematicPageTransitions.slideUpTransition(
+              page: child,
+              duration: const Duration(milliseconds: 500),
+            ).transitionsBuilder(context, animation, secondaryAnimation, child);
+          },
+        );
+      },
+    ),
+    // Ruta alternativa sin userId (usa el usuario autenticado)
     GoRoute(
       path: '/profile',
-      name: 'profile',
       pageBuilder: (context, state) {
         return CustomTransitionPage(
           key: state.pageKey,

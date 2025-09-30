@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../domain/entities/user.dart';
 import '../providers/auth_provider.dart';
-import '../providers/user_profile/user_profile_providers.dart';
+import '../providers/user_session_provider.dart';
 import '../views/debug/lists_debug_view.dart';
 import 'profile_avatar.dart';
 
@@ -15,18 +16,17 @@ class CustomDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isAuthenticated = ref.watch(isAuthenticatedProvider);
-    final currentUser = ref.watch(currentUserProvider);
+    final sessionState = ref.watch(userSessionProvider);
 
     LoggerFactory.info(
-        'CustomDrawer.build: isAuthenticated=$isAuthenticated, user=${currentUser?.id ?? 'null'}');
+        'CustomDrawer.build: isAuthenticated=${sessionState.isAuthenticated}, userId=${sessionState.userId ?? 'null'}');
 
     return Drawer(
       child: Column(
         children: [
           // Header dinámico
-          if (isAuthenticated)
-            _buildAuthenticatedHeader(context, ref, colorScheme)
+          if (sessionState.isAuthenticated)
+            _buildAuthenticatedHeader(context, ref, colorScheme, sessionState)
           else
             _buildGuestHeader(context, colorScheme),
 
@@ -38,7 +38,7 @@ class CustomDrawer extends ConsumerWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                if (isAuthenticated)
+                if (sessionState.isAuthenticated)
                   ..._buildAuthenticatedMenuItems(context, ref)
                 else
                   ..._buildGuestMenuItems(context),
@@ -48,7 +48,7 @@ class CustomDrawer extends ConsumerWidget {
                 // Menu items comunes
                 ..._buildCommonMenuItems(context),
 
-                if (isAuthenticated)
+                if (sessionState.isAuthenticated)
                   ..._buildAuthenticatedActions(context, ref),
               ],
             ),
@@ -59,14 +59,16 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   Widget _buildAuthenticatedHeader(
-      BuildContext context, WidgetRef ref, ColorScheme colorScheme) {
-    final user = ref.watch(currentUserProvider);
-    final userProfileAsync = ref.watch(userProfileNotifierProvider);
+    BuildContext context,
+    WidgetRef ref,
+    ColorScheme colorScheme,
+    UserSessionState sessionState,
+  ) {
+    final profile = sessionState.profile;
+    final user = sessionState.user!;
 
-    // Safely check if user exists before proceeding
-    if (user == null) {
-      return _buildGuestHeader(context, colorScheme);
-    }
+    LoggerFactory.info(
+        '✅ CustomDrawer: Construyendo header autenticado para user: ${user.id}, hasProfile: ${profile != null}');
 
     return DrawerHeader(
       decoration: BoxDecoration(
@@ -79,152 +81,132 @@ class CustomDrawer extends ConsumerWidget {
           ],
         ),
       ),
-      child: userProfileAsync.when(
-        data: (profile) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: sessionState.isLoading
+          ? _buildLoadingHeader(context, colorScheme, user)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ProfileAvatar(
-                  avatarUrl: profile?.avatarUrl,
-                  avatarHash: profile?.avatarHash,
-                  size: 64,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    context.go('/profile');
-                  },
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile?.fullName ?? user.fullName ?? 'Usuario',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                Row(
+                  children: [
+                    ProfileAvatar(
+                      avatarUrl: profile?.avatarUrl,
+                      avatarHash: profile?.avatarHash,
+                      size: 64,
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        context.go('/profile');
+                      },
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile?.fullName ?? user.fullName ?? 'Usuario',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
                                   color: colorScheme.onPrimaryContainer,
                                   fontWeight: FontWeight.w600,
                                 ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (profile?.hasUsername ?? false) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          '@${profile!.username}',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (profile?.hasUsername ?? false) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              '@${profile!.username}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: colorScheme.onPrimaryContainer
                                         .withValues(alpha: 0.7),
                                   ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email ?? '',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.8),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                          ],
+                          const SizedBox(height: 4),
+                          Text(
+                            user.email,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onPrimaryContainer
+                                          .withValues(alpha: 0.8),
+                                    ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            if (profile?.bio != null && profile?.bio?.isNotEmpty == true)
-              Text(
-                profile?.bio ?? '',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color:
-                          colorScheme.onPrimaryContainer.withValues(alpha: 0.9),
                     ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                  ],
+                ),
+                const Spacer(),
+                if (profile?.bio != null && profile?.bio?.isNotEmpty == true)
+                  Text(
+                    profile?.bio ?? '',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.9),
+                        ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildLoadingHeader(
+    BuildContext context,
+    ColorScheme colorScheme,
+    User user,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const ProfileAvatar(
+              avatarUrl: null,
+              size: 64,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.fullName ?? 'Usuario',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user.email,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.8),
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  const SizedBox(
+                    height: 12,
+                    width: 12,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ],
               ),
-          ],
-        ),
-        loading: () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const ProfileAvatar(
-                  avatarUrl: null,
-                  size: 64,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.fullName ?? 'Usuario',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email ?? '',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.8),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ),
           ],
         ),
-        error: (error, stack) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const ProfileAvatar(
-                  avatarUrl: null,
-                  size: 64,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.fullName ?? 'Usuario',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: colorScheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email ?? '',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.8),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 
@@ -286,7 +268,7 @@ class CustomDrawer extends ConsumerWidget {
             child: FilledButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                context.push('/login');
+                context.go('/login');
               },
               child: const Text('Iniciar Sesión'),
             ),
@@ -312,7 +294,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Mis Favoritos'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/my-library/favorites');
+          context.go('/my-library/favorites');
         },
       ),
       ListTile(
@@ -320,7 +302,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Mis Listas'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/my-library/lists');
+          context.go('/my-library/lists');
         },
       ),
     ];
@@ -333,7 +315,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Iniciar Sesión'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/login');
+          context.go('/login');
         },
       ),
       ListTile(
@@ -341,7 +323,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Crear Cuenta'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/register');
+          context.go('/register');
         },
       ),
     ];
@@ -354,7 +336,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Configuración'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/settings');
+          context.go('/settings');
         },
       ),
 
@@ -363,7 +345,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Ayuda'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/help');
+          context.go('/help');
         },
       ),
       ListTile(
@@ -371,7 +353,7 @@ class CustomDrawer extends ConsumerWidget {
         title: const Text('Acerca de'),
         onTap: () {
           Navigator.of(context).pop();
-          context.push('/about');
+          context.go('/about');
         },
       ),
 

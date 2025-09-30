@@ -15,16 +15,20 @@ import '../../../domain/entities/syncable_movie_rating.dart';
 import '../../../domain/entities/user.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
-import '../../providers/auth_provider.dart';
+import '../../providers/auth_provider.dart' hide currentUserProvider;
 import '../../providers/movie_ratings_provider.dart';
 import '../../providers/user_profile/user_profile_providers.dart';
+import '../../providers/user_session_provider.dart';
 // Eliminado provider legacy de valoraciones por no utilizarse
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/ratings/star_rating_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, this.userId});
+
+  /// ID del usuario a mostrar. Si es null, muestra el perfil del usuario autenticado.
+  final String? userId;
 
   @override
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
@@ -60,18 +64,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         'timestamp': DateTime.now().toIso8601String(),
       });
 
-      // Forzar carga de datos si hay un usuario autenticado
-      final currentUser = ref.read(currentUserProvider);
-      if (currentUser != null) {
-        // Refrescar perfil de usuario si no se ha cargado
-        final profileState = ref.read(userProfileNotifierProvider);
-        if (profileState.value == null && !profileState.isLoading) {
-          ref.read(userProfileNotifierProvider.notifier).refreshProfile();
-        }
-
-        // Cargar estadísticas si no están disponibles
-        ref.invalidate(currentUserStatsProvider);
-      }
+      _loadProfileData();
     });
 
     _alertSubscription = ref.listenManual<UserProfileAlert?>(
@@ -88,6 +81,91 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         }
       },
     );
+  }
+
+  /// Carga los datos del perfil desde el userId de la URL o del usuario autenticado
+  void _loadProfileData() {
+    try {
+      final targetUserId = widget.userId;
+      final currentUser = ref.read(currentUserProvider);
+
+      if (targetUserId != null && targetUserId.isNotEmpty) {
+        // Caso 1: Se especificó un userId en la URL
+        LoggerFactory.info('🔄 Cargando perfil desde URL: $targetUserId');
+
+        // Verificar si el usuario existe
+        _loadProfileFromUserId(targetUserId);
+      } else if (currentUser != null) {
+        // Caso 2: No hay userId en URL, usar el usuario autenticado
+        LoggerFactory.info(
+            '🔄 Cargando perfil del usuario autenticado: ${currentUser.id}');
+
+        // Refrescar perfil de usuario si no se ha cargado
+        final profileState = ref.read(userProfileNotifierProvider);
+        if (profileState.value == null && !profileState.isLoading) {
+          ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        }
+
+        // Cargar estadísticas si no están disponibles
+        ref.invalidate(currentUserStatsProvider);
+      } else {
+        // Caso 3: No hay usuario autenticado ni userId en URL
+        LoggerFactory.warning('⚠️ No hay usuario autenticado ni userId en URL');
+        _showErrorAndRedirect(
+            'No se pudo cargar el perfil. Por favor inicia sesión.');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error al cargar datos del perfil: $e');
+      _showErrorAndRedirect('Error al cargar el perfil del usuario');
+    }
+  }
+
+  /// Carga el perfil de un usuario específico por su ID
+  Future<void> _loadProfileFromUserId(String userId) async {
+    try {
+      // Aquí puedes implementar la lógica para cargar el perfil desde Supabase
+      // Por ahora, verificamos si el usuario autenticado coincide
+      final currentUser = ref.read(currentUserProvider);
+
+      if (currentUser != null && currentUser.id == userId) {
+        // Es el mismo usuario, cargar normalmente
+        final profileState = ref.read(userProfileNotifierProvider);
+        if (profileState.value == null && !profileState.isLoading) {
+          ref.read(userProfileNotifierProvider.notifier).refreshProfile();
+        }
+        ref.invalidate(currentUserStatsProvider);
+      } else {
+        // Es un usuario diferente o no hay usuario autenticado
+        // TODO: Implementar carga de perfil público de otros usuarios
+        LoggerFactory.warning(
+            '⚠️ Visualización de perfiles de otros usuarios no implementada aún');
+        _showErrorAndRedirect('No tienes permiso para ver este perfil');
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error al cargar perfil del usuario $userId: $e');
+      _showErrorAndRedirect('No se encontró el perfil del usuario');
+    }
+  }
+
+  /// Muestra un error y redirige a la home
+  void _showErrorAndRedirect(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Redirigir a home después de mostrar el error
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          context.go('/');
+        }
+      });
+    }
   }
 
   @override
