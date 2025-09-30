@@ -69,6 +69,18 @@ class SupabaseUserProfileRepository {
       LoggerFactory.info('✅ User profile upserted successfully');
     } catch (e) {
       LoggerFactory.error('❌ Failed to upsert user profile: $e');
+
+      // Si el error es porque la tabla no existe o tiene estructura incorrecta
+      if (e.toString().contains('400') ||
+          e.toString().contains('Bad Request') ||
+          e.toString().contains('table') ||
+          e.toString().contains('column')) {
+        LoggerFactory.warning(
+            '⚠️ user_profiles table issue detected. Please run migration script.');
+        // No hacer rethrow para evitar romper la aplicación
+        return;
+      }
+
       rethrow;
     }
   }

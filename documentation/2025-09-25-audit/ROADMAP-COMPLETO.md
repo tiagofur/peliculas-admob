@@ -318,6 +318,31 @@ _Implementación de estándares y features completas_
   - _Estimación_: 1h
   - _Events_: User behavior, performance metrics
 
+### 🟡 P2 - USER PROFILE EXPERIENCE (EST: 10h)
+
+**Objetivo**: Consolidar el nuevo sistema de perfiles sobre Supabase con experiencia de usuario consistente.
+
+**Tasks**:
+
+- [x] **[P2-022]** Normalizar usernames y display names (dominio/infrastructura/presentación)
+  - _Entregables_: `user_profile_model.dart`, `auth_repository_impl.dart`, `profile_screen.dart`
+- [x] **[P2-023]** Propagar `avatar_hash` y ajustar caché
+  - _Entregables_: `image_cache_manager.dart`, `profile_avatar.dart`
+- [x] **[P2-024]** Renovar UI de perfil y drawer con `@username`
+  - _Entregables_: `custom_drawer.dart`, `profile_screen.dart`
+- [x] **[P2-025]** Generar migración Supabase para username/avatar_hash
+  - _Entregables_: `supabase/migrations/20250929_add_profile_username_avatar_hash.sql`
+- [ ] **[P2-026]** Aplicar migración en Supabase y validar RLS
+  - _Tareas_: Ejecutar script, revisar tabla `user_profiles`
+- [x] **[P2-027]** Extraer repositorio/casos de uso dedicados a perfiles
+  - _Tareas_: Implementar `UserProfileRepository`, use cases y providers _(completado: repositorio Supabase dedicado, casos de uso, y `UserProfileNotifier` migrado)_
+- [ ] **[P2-028]** Completar flujo de edición (username, bio, avatar upload)
+  - _Tareas_: Crear `EditProfilePage`, validar disponibilidad de username en UI
+  - _Progreso_: Perfil existente ahora admite edición inline (nombre, bio, avatar) con validación de username; pendiente decidir si se requiere pantalla dedicada y pruebas UX
+- [ ] **[P2-029]** Expandir cobertura de tests (unitarios, integración, golden)
+  - _Tareas_: Repositorio, providers, golden de perfil y drawer
+  - _Progreso_: Nuevas pruebas unitarias para `UserProfileNotifier`; faltan casos para repositorio Supabase, flujos de integración y goldens UI
+
 **📋 CHECKPOINTS FASE 3**:
 
 - [ ] ✅ Test coverage >90%
@@ -325,6 +350,7 @@ _Implementación de estándares y features completas_
 - [ ] ✅ Advanced features working
 - [ ] ✅ Background sync functional
 - [ ] ✅ Analytics tracking
+- [ ] ✅ User profile revamp completado (Supabase + UI + pruebas)
 
 ---
 

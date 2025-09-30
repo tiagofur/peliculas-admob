@@ -22,6 +22,8 @@ import '../../presentation/views/movie_share_web_view.dart';
 import '../../presentation/views/recommendation_share_web_view.dart';
 import '../../presentation/views/views.dart';
 import '../../presentation/widgets/shared/page_transitions.dart';
+import '../../widgets/user_profile_debug_widget.dart';
+import '../../widgets/quick_login_widget.dart';
 
 // Global navigator key para navegación desde notificaciones
 final GlobalKey<NavigatorState> globalNavigatorKey =
@@ -401,6 +403,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             },
           );
         },
+      ),
+
+      // Ruta de debug para perfil de usuario
+      GoRoute(
+        path: '/debug/profile',
+        name: 'debug_profile',
+        builder: (context, state) => const UserProfileDebugWidget(),
+      ),
+
+      // Ruta de login rápido para testing
+      GoRoute(
+        path: '/debug/login',
+        name: 'quick_login',
+        builder: (context, state) => const QuickLoginWidget(),
       ),
 
       // Ruta de configuración

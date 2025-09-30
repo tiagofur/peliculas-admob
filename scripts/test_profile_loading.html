@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test de Carga de Perfil</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      }
+      h1 {
+        color: #667eea;
+        margin-top: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .section {
+        margin: 25px 0;
+        padding: 20px;
+        border-radius: 8px;
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+      }
+      .success {
+        background: #d4edda;
+        border-left-color: #28a745;
+        color: #155724;
+      }
+      .error {
+        background: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+      }
+      .warning {
+        background: #fff3cd;
+        border-left-color: #ffc107;
+        color: #856404;
+      }
+      .info {
+        background: #d1ecf1;
+        border-left-color: #17a2b8;
+        color: #0c5460;
+      }
+      .icon {
+        font-size: 24px;
+        margin-right: 8px;
+      }
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+      button:active {
+        transform: translateY(0);
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .log-entry {
+        margin: 8px 0;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      th {
+        background: #667eea;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid #dee2e6;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover {
+        background: #f8f9fa;
+      }
+      .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #667eea;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      .step-indicator {
+        display: flex;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      .step {
+        flex: 1;
+        padding: 10px;
+        background: #e9ecef;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+      .step.active {
+        background: #667eea;
+        color: white;
+        transform: scale(1.05);
+      }
+      .step.completed {
+        background: #28a745;
+        color: white;
+      }
+      pre {
+        background: #2d2d2d;
+        color: #f8f8f2;
+        padding: 15px;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-size: 13px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 0 4px;
+      }
+      .badge-success {
+        background: #28a745;
+        color: white;
+      }
+      .badge-error {
+        background: #dc3545;
+        color: white;
+      }
+      .badge-warning {
+        background: #ffc107;
+        color: #000;
+      }
+      .badge-info {
+        background: #17a2b8;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>
+        <span class="icon">🧪</span>
+        Test de Carga de Perfil - Supabase
+      </h1>
+
+      <div class="step-indicator">
+        <div class="step" id="step1">1. Conexión</div>
+        <div class="step" id="step2">2. Autenticación</div>
+        <div class="step" id="step3">3. Perfil BD</div>
+        <div class="step" id="step4">4. Avatar</div>
+      </div>
+
+      <button id="testBtn" onclick="runTest()">
+        🚀 Ejecutar Test Completo
+      </button>
+
+      <div id="results"></div>
+    </div>
+
+    <script>
+      let currentStep = 0;
+
+      function updateStep(stepNum, status = "active") {
+        const step = document.getElementById(`step${stepNum}`);
+        if (step) {
+          step.classList.remove("active", "completed");
+          step.classList.add(status);
+        }
+      }
+
+      function addLog(message, type = "info") {
+        const results = document.getElementById("results");
+        const section = document.createElement("div");
+        section.className = `section ${type}`;
+        section.innerHTML = message;
+        results.appendChild(section);
+      }
+
+      async function runTest() {
+        const results = document.getElementById("results");
+        const btn = document.getElementById("testBtn");
+
+        results.innerHTML = "";
+        btn.disabled = true;
+        btn.textContent = "⏳ Ejecutando tests...";
+
+        try {
+          // PASO 1: Verificar Supabase
+          updateStep(1, "active");
+          addLog(
+            '<h3><span class="icon">📡</span> Paso 1: Verificando conexión a Supabase</h3>',
+            "info"
+          );
+
+          // Dar tiempo a que la app cargue
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Buscar cliente Supabase en la ventana de la app
+          const appWindow = window.opener || window;
+          const supabase = appWindow.supabaseClient || appWindow._supabase;
+
+          if (!supabase) {
+            updateStep(1, "error");
+            addLog(
+              `
+                        <h4>❌ No se encontró el cliente Supabase</h4>
+                        <p><strong>Instrucciones:</strong></p>
+                        <ol>
+                            <li>Asegúrate de que la app esté corriendo en <code>http://localhost:3000</code></li>
+                            <li>Abre la app primero</li>
+                            <li>Haz login</li>
+                            <li>Luego ejecuta este test</li>
+                        </ol>
+                        <p><strong>Alternativa:</strong> Abre este archivo DESDE la app:</p>
+                        <pre>window.open('file:///c:/Users/tfurt/source/repos/peliculas-admob-clean/scripts/test_profile_loading.html')</pre>
+                    `,
+              "error"
+            );
+            btn.disabled = false;
+            btn.textContent = "🔄 Reintentar Test";
+            return;
+          }
+
+          updateStep(1, "completed");
+          addLog(
+            "<p>✅ <strong>Cliente Supabase encontrado</strong></p>",
+            "success"
+          );
+
+          // PASO 2: Verificar autenticación
+          updateStep(2, "active");
+          addLog(
+            '<h3><span class="icon">🔐</span> Paso 2: Verificando autenticación</h3>',
+            "info"
+          );
+
+          const {
+            data: { user },
+            error: userError,
+          } = await supabase.auth.getUser();
+
+          if (!user) {
+            updateStep(2, "error");
+            addLog(
+              `
+                        <h4>❌ No hay usuario autenticado</h4>
+                        <p><strong>Solución:</strong></p>
+                        <ol>
+                            <li>Ve a <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                            <li>Haz login con tu cuenta</li>
+                            <li>Vuelve aquí y ejecuta el test de nuevo</li>
+                        </ol>
+                    `,
+              "error"
+            );
+            btn.disabled = false;
+            btn.textContent = "🔄 Reintentar Test";
+            return;
+          }
+
+          updateStep(2, "completed");
+          addLog(
+            `
+                    <div>
+                        <p>✅ <strong>Usuario autenticado correctamente</strong></p>
+                        <table>
+                            <tr><th>Campo</th><th>Valor</th></tr>
+                            <tr><td><strong>User ID</strong></td><td><code>${
+                              user.id
+                            }</code></td></tr>
+                            <tr><td><strong>Email</strong></td><td>${
+                              user.email
+                            }</td></tr>
+                            <tr><td><strong>Proveedor</strong></td><td><span class="badge badge-info">${
+                              user.app_metadata?.provider || "email"
+                            }</span></td></tr>
+                        </table>
+                    </div>
+                `,
+            "success"
+          );
+
+          // PASO 3: Verificar perfil en BD
+          updateStep(3, "active");
+          addLog(
+            '<h3><span class="icon">🔍</span> Paso 3: Consultando perfil en user_profiles</h3>',
+            "info"
+          );
+
+          const { data: profile, error: profileError } = await supabase
+            .from("user_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            updateStep(3, "error");
+            addLog(
+              `
+                        <h4>❌ Error consultando perfil</h4>
+                        <pre>${JSON.stringify(profileError, null, 2)}</pre>
+                        <p><strong>Posibles causas:</strong></p>
+                        <ul>
+                            <li>La tabla <code>user_profiles</code> no existe</li>
+                            <li>RLS (Row Level Security) está bloqueando el acceso</li>
+                            <li>Columnas incorrectas en la query</li>
+                        </ul>
+                        <p><strong>Solución:</strong> Verificar que ejecutaste <code>fix_user_profiles_simple.sql</code></p>
+                    `,
+              "error"
+            );
+            btn.disabled = false;
+            btn.textContent = "🔄 Reintentar Test";
+            return;
+          }
+
+          if (!profile) {
+            updateStep(3, "error");
+            addLog(
+              `
+                        <h4>⚠️ No se encontró perfil en la base de datos</h4>
+                        <p><strong>Esto puede ser normal si es la primera vez.</strong></p>
+                        <p>La aplicación debería crear un perfil automáticamente cuando:</p>
+                        <ol>
+                            <li>Visites la página de perfil</li>
+                            <li>El código <code>_ensureDefaultProfile()</code> se ejecute</li>
+                        </ol>
+                        <p><strong>Próximo paso:</strong></p>
+                        <ol>
+                            <li>Ir a <a href="http://localhost:3000/#/profile" target="_blank">http://localhost:3000/#/profile</a></li>
+                            <li>Abrir DevTools (F12) y ver Console</li>
+                            <li>Buscar log: "UserProfileRepositoryImpl: Creating default profile"</li>
+                            <li>Ejecutar este test de nuevo</li>
+                        </ol>
+                    `,
+              "warning"
+            );
+            btn.disabled = false;
+            btn.textContent = "🔄 Reintentar Test";
+            return;
+          }
+
+          updateStep(3, "completed");
+
+          // Mostrar datos del perfil
+          const profileTable = `
+                    <div>
+                        <p>✅ <strong>Perfil encontrado en la base de datos</strong> <span class="badge badge-success">OK</span></p>
+                        <table>
+                            <tr><th>Campo</th><th>Valor</th><th>Estado</th></tr>
+                            <tr>
+                                <td><strong>ID</strong></td>
+                                <td><code>${profile.id}</code></td>
+                                <td><span class="badge badge-success">✓</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>User ID</strong></td>
+                                <td><code>${profile.user_id}</code></td>
+                                <td><span class="badge badge-success">✓</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Display Name</strong></td>
+                                <td>${
+                                  profile.display_name || "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.display_name
+                                    ? "badge-success"
+                                    : "badge-warning"
+                                }">${
+            profile.display_name ? "✓" : "⚠"
+          }</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Full Name</strong></td>
+                                <td>${profile.full_name || "<em>null</em>"}</td>
+                                <td><span class="badge ${
+                                  profile.full_name
+                                    ? "badge-success"
+                                    : "badge-warning"
+                                }">${profile.full_name ? "✓" : "⚠"}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Username</strong></td>
+                                <td>${profile.username || "<em>null</em>"}</td>
+                                <td><span class="badge ${
+                                  profile.username
+                                    ? "badge-success"
+                                    : "badge-info"
+                                }">${
+            profile.username ? "✓" : "Opcional"
+          }</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bio</strong></td>
+                                <td>${
+                                  profile.bio
+                                    ? profile.bio.length > 50
+                                      ? profile.bio.substring(0, 50) + "..."
+                                      : profile.bio
+                                    : "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.bio ? "badge-success" : "badge-info"
+                                }">${profile.bio ? "✓" : "Opcional"}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Avatar URL</strong></td>
+                                <td>${
+                                  profile.avatar_url
+                                    ? "✓ Configurado"
+                                    : "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.avatar_url
+                                    ? "badge-success"
+                                    : "badge-info"
+                                }">${
+            profile.avatar_url ? "✓" : "Opcional"
+          }</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Avatar Hash</strong></td>
+                                <td>${
+                                  profile.avatar_hash || "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.avatar_hash
+                                    ? "badge-success"
+                                    : "badge-info"
+                                }">${
+            profile.avatar_hash ? "✓" : "Opcional"
+          }</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Stats</strong></td>
+                                <td>${
+                                  profile.stats
+                                    ? "✓ Configurado"
+                                    : "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.stats ? "badge-success" : "badge-info"
+                                }">${
+            profile.stats ? "✓" : "Opcional"
+          }</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Preferences</strong></td>
+                                <td>${
+                                  profile.preferences
+                                    ? "✓ Configurado"
+                                    : "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.preferences
+                                    ? "badge-success"
+                                    : "badge-info"
+                                }">${
+            profile.preferences ? "✓" : "Opcional"
+          }</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Created At</strong></td>
+                                <td>${new Date(
+                                  profile.created_at
+                                ).toLocaleString("es-ES")}</td>
+                                <td><span class="badge badge-success">✓</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Updated At</strong></td>
+                                <td>${
+                                  profile.updated_at
+                                    ? new Date(
+                                        profile.updated_at
+                                      ).toLocaleString("es-ES")
+                                    : "<em>null</em>"
+                                }</td>
+                                <td><span class="badge ${
+                                  profile.updated_at
+                                    ? "badge-success"
+                                    : "badge-info"
+                                }">${
+            profile.updated_at ? "✓" : "Opcional"
+          }</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                `;
+          addLog(profileTable, "success");
+
+          // PASO 4: Verificar avatar
+          updateStep(4, "active");
+          if (profile.avatar_url) {
+            addLog(
+              '<h3><span class="icon">🖼️</span> Paso 4: Verificando carga de avatar</h3>',
+              "info"
+            );
+
+            const cacheKey = `${profile.avatar_url}_${
+              profile.avatar_hash || "no-hash"
+            }`;
+
+            addLog(
+              `
+                        <div>
+                            <p><strong>Configuración del avatar:</strong></p>
+                            <table>
+                                <tr><th>Campo</th><th>Valor</th></tr>
+                                <tr><td><strong>URL</strong></td><td><a href="${
+                                  profile.avatar_url
+                                }" target="_blank">${
+                profile.avatar_url
+              }</a></td></tr>
+                                <tr><td><strong>Hash</strong></td><td><code>${
+                                  profile.avatar_hash || "NO HASH"
+                                }</code></td></tr>
+                                <tr><td><strong>Cache Key</strong></td><td><code>${cacheKey}</code></td></tr>
+                            </table>
+                        </div>
+                    `,
+              "info"
+            );
+
+            // Intentar cargar el avatar
+            try {
+              const img = await new Promise((resolve, reject) => {
+                const image = new Image();
+                image.crossOrigin = "anonymous";
+                image.onload = () => resolve(image);
+                image.onerror = reject;
+                image.src = profile.avatar_url;
+              });
+
+              updateStep(4, "completed");
+              addLog(
+                `
+                            <div>
+                                <h4>✅ Avatar cargado correctamente</h4>
+                                <p><strong>Información de la imagen:</strong></p>
+                                <table>
+                                    <tr><th>Propiedad</th><th>Valor</th></tr>
+                                    <tr><td><strong>Dimensiones</strong></td><td>${img.width} x ${img.height} px</td></tr>
+                                    <tr><td><strong>Estado</strong></td><td><span class="badge badge-success">Cargada</span></td></tr>
+                                </table>
+                                <p><strong>Vista previa:</strong></p>
+                                <img src="${profile.avatar_url}" alt="Avatar" class="avatar-preview">
+                            </div>
+                        `,
+                "success"
+              );
+            } catch (error) {
+              updateStep(4, "error");
+              addLog(
+                `
+                            <h4>❌ Error al cargar el avatar</h4>
+                            <pre>${error.toString()}</pre>
+                            <p><strong>Posibles causas:</strong></p>
+                            <ul>
+                                <li>El bucket <code>avatars</code> no es público</li>
+                                <li>Falta política de Storage en Supabase</li>
+                                <li>La URL es incorrecta o el archivo fue eliminado</li>
+                                <li>CORS no está configurado</li>
+                            </ul>
+                            <p><strong>Solución:</strong></p>
+                            <pre>-- Ejecutar en Supabase SQL Editor
+CREATE POLICY "Avatar images are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars');</pre>
+                        `,
+                "error"
+              );
+            }
+          } else {
+            updateStep(4, "completed");
+            addLog(
+              `
+                        <h3><span class="icon">🖼️</span> Paso 4: Avatar</h3>
+                        <p>ℹ️ <strong>Usuario no tiene avatar configurado</strong></p>
+                        <p>La aplicación mostrará un avatar por defecto (gradiente con icono de persona).</p>
+                        <p><strong>Para probar la carga de avatares:</strong></p>
+                        <ol>
+                            <li>Ir a <a href="http://localhost:3000/#/profile" target="_blank">Perfil</a></li>
+                            <li>Click en "Editar"</li>
+                            <li>Click en el avatar para subir una imagen</li>
+                            <li>Guardar cambios</li>
+                            <li>Ejecutar este test de nuevo</li>
+                        </ol>
+                    `,
+              "info"
+            );
+          }
+
+          // Resumen final
+          addLog(
+            `
+                    <h2>🎉 Test Completado Exitosamente</h2>
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="color: white; margin-top: 0;">✅ Todo Funciona Correctamente</h3>
+                        <ul style="line-height: 1.8;">
+                            <li>✓ Conexión a Supabase establecida</li>
+                            <li>✓ Usuario autenticado: <strong>${
+                              user.email
+                            }</strong></li>
+                            <li>✓ Perfil cargado desde base de datos</li>
+                            <li>✓ ${
+                              profile.avatar_url
+                                ? "Avatar cargado correctamente"
+                                : "Sin avatar (normal)"
+                            }</li>
+                        </ul>
+                    </div>
+                    <h3>📋 Próximos Pasos:</h3>
+                    <ol>
+                        <li><strong>Probar en la app:</strong> Ir a <a href="http://localhost:3000/#/profile" target="_blank">http://localhost:3000/#/profile</a></li>
+                        <li><strong>Verificar que todo se muestra correctamente</strong></li>
+                        <li><strong>Probar edición:</strong>
+                            <ul>
+                                <li>Click en "Editar"</li>
+                                <li>Cambiar nombre, bio, etc.</li>
+                                <li>Guardar cambios</li>
+                                <li>Verificar que persiste al refrescar</li>
+                            </ul>
+                        </li>
+                        <li><strong>Probar avatar:</strong>
+                            <ul>
+                                <li>Subir una imagen</li>
+                                <li>Verificar que se muestra inmediatamente</li>
+                                <li>Refrescar página y verificar cache</li>
+                            </ul>
+                        </li>
+                    </ol>
+                `,
+            "success"
+          );
+        } catch (error) {
+          addLog(
+            `
+                    <h4>❌ Error inesperado</h4>
+                    <pre>${error.toString()}\n\n${error.stack || ""}</pre>
+                    <p><strong>Por favor reporta este error con:</strong></p>
+                    <ul>
+                        <li>El mensaje de error completo</li>
+                        <li>Los pasos que seguiste</li>
+                        <li>Tu configuración de Supabase</li>
+                    </ul>
+                `,
+            "error"
+          );
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "🔄 Ejecutar Test de Nuevo";
+        }
+      }
+    </script>
+  </body>
+</html>

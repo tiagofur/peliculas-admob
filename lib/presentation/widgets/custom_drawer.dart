@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/logging/logger_factory.dart';
 import '../providers/auth_provider.dart';
+import '../providers/user_profile/user_profile_providers.dart';
 import '../views/debug/lists_debug_view.dart';
 import 'profile_avatar.dart';
 
@@ -14,6 +16,10 @@ class CustomDrawer extends ConsumerWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    final currentUser = ref.watch(currentUserProvider);
+
+    LoggerFactory.info(
+        'CustomDrawer.build: isAuthenticated=$isAuthenticated, user=${currentUser?.id ?? 'null'}');
 
     return Drawer(
       child: Column(
@@ -57,6 +63,11 @@ class CustomDrawer extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final userProfileAsync = ref.watch(userProfileNotifierProvider);
 
+    // Safely check if user exists before proceeding
+    if (user == null) {
+      return _buildGuestHeader(context, colorScheme);
+    }
+
     return DrawerHeader(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -76,6 +87,7 @@ class CustomDrawer extends ConsumerWidget {
               children: [
                 ProfileAvatar(
                   avatarUrl: profile?.avatarUrl,
+                  avatarHash: profile?.avatarHash,
                   size: 64,
                   onTap: () {
                     Navigator.of(context).pop();
@@ -88,7 +100,7 @@ class CustomDrawer extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        profile?.fullName ?? user?.fullName ?? 'Usuario',
+                        profile?.fullName ?? user.fullName ?? 'Usuario',
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: colorScheme.onPrimaryContainer,
@@ -97,9 +109,22 @@ class CustomDrawer extends ConsumerWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (profile?.hasUsername ?? false) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '@${profile!.username}',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onPrimaryContainer
+                                        .withValues(alpha: 0.7),
+                                  ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Text(
-                        user?.email ?? '',
+                        user.email ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: colorScheme.onPrimaryContainer
                                   .withValues(alpha: 0.8),
@@ -140,7 +165,7 @@ class CustomDrawer extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user?.fullName ?? 'Usuario',
+                        user.fullName ?? 'Usuario',
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: colorScheme.onPrimaryContainer,
@@ -149,7 +174,7 @@ class CustomDrawer extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        user?.email ?? '',
+                        user.email ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: colorScheme.onPrimaryContainer
                                   .withValues(alpha: 0.8),
@@ -177,7 +202,7 @@ class CustomDrawer extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user?.fullName ?? 'Usuario',
+                        user.fullName ?? 'Usuario',
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: colorScheme.onPrimaryContainer,
@@ -186,7 +211,7 @@ class CustomDrawer extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        user?.email ?? '',
+                        user.email ?? '',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: colorScheme.onPrimaryContainer
                                   .withValues(alpha: 0.8),

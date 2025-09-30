@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/utils/server_timestamp_utils.dart';
 import 'auth_provider.dart';
 import 'sync_init_provider.dart';
 
@@ -85,7 +84,8 @@ class SyncStatusNotifier extends Notifier<SyncState> {
 
   void _initializeListeners() {
     // Initialize server timestamp cache for better performance
-    ServerTimestampUtils.updateServerTimestampCache();
+    // Commented out to avoid 404 error until RPC function is created in Supabase
+    // ServerTimestampUtils.updateServerTimestampCache();
 
     // Escuchar cambios de autenticación para actualizar estado
     ref.listen<AppState>(appStateProvider, (previous, next) {
@@ -182,8 +182,9 @@ class SyncStatusNotifier extends Notifier<SyncState> {
   /// Get the last sync time using server timestamp when possible
   DateTime _getLastSyncTime() {
     try {
-      // Use cached server timestamp for better performance
-      return ServerTimestampUtils.getCachedServerTimestamp();
+      // Use local time temporarily until RPC function is created in Supabase
+      // return ServerTimestampUtils.getCachedServerTimestamp();
+      return DateTime.now();
     } catch (e) {
       // Fallback to local time
       return DateTime.now();

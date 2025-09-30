@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -15,6 +17,7 @@ import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/movie_ratings_provider.dart';
+import '../../providers/user_profile/user_profile_providers.dart';
 // Eliminado provider legacy de valoraciones por no utilizarse
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/ratings/star_rating_widget.dart';
@@ -32,11 +35,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   final _fullNameController = TextEditingController();
   final _bioController = TextEditingController();
   final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   bool _isEditing = false;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
   final AnalyticsService _analyticsService = AnalyticsService();
   bool _hasRequestedProfileRecovery = false;
+  bool _isCheckingUsername = false;
+  String? _usernameError;
+  String? _initialUsername;
+  Timer? _usernameDebounce;
+  bool _emailNotifications = true;
+  bool _pushNotifications = true;
+  bool _profilePublic = true;
+  UserProfile? _lastResolvedProfile;
+  ProviderSubscription<UserProfileAlert?>? _alertSubscription;
 
   @override
   void initState() {
@@ -60,10 +73,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ref.invalidate(currentUserStatsProvider);
       }
     });
+
+    _alertSubscription = ref.listenManual<UserProfileAlert?>(
+      userProfileAlertProvider,
+      (previous, next) {
+        if (next != null && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.message),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          ref.read(userProfileAlertProvider.notifier).clear();
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
+    _alertSubscription?.close();
+    _usernameDebounce?.cancel();
+    _usernameController.dispose();
     _fullNameController.dispose();
     _bioController.dispose();
     _emailController.dispose();
@@ -79,6 +110,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // Consider both profile updates and auth updates as a saving state
     final isSaving = userProfile.isLoading || authNotifier.isLoading;
     final currentUser = ref.watch(currentUserProvider);
+
+    LoggerFactory.info(
+        'ProfileScreen.build: user=${currentUser?.id ?? 'null'}, profile=${userProfile.value?.id ?? 'null'}, isLoading=${userProfile.isLoading}');
+
+    if (currentUser == null && _lastResolvedProfile != null) {
+      _lastResolvedProfile = null;
+      LoggerFactory.info(
+          'ProfileScreen.build: Cleared last resolved profile due to no current user');
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -126,54 +166,33 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const MinimalSyncIndicator(),
           Expanded(
             child: userProfile.when(
-              data: (profile) => _buildProfileContent(
-                theme,
-                ref,
-                currentUser,
-                profile,
-                userStats.value,
-              ),
+              data: (profile) {
+                _lastResolvedProfile = profile ?? _lastResolvedProfile;
+                final resolvedProfile = profile ?? _lastResolvedProfile;
+                return _buildProfileContent(
+                  theme,
+                  ref,
+                  currentUser,
+                  resolvedProfile,
+                  userStats.value,
+                );
+              },
               loading: () => currentUser != null
                   ? _buildBasicUserInfo(theme, currentUser)
                   : const Center(child: CircularProgressIndicator()),
               error: (error, _) {
-                LoggerFactory.error('Error al cargar el perfil: $error');
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: theme.colorScheme.error,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error al cargar el perfil',
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.toString(),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: () => ref
-                            .read(userProfileNotifierProvider.notifier)
-                            .refreshProfile(),
-                        child: const Text('Reintentar'),
-                      ),
-                      if (currentUser != null) ...[
-                        const SizedBox(height: 24),
-                        _buildBasicUserInfo(theme, currentUser),
-                      ],
-                    ],
-                  ),
+                LoggerFactory.warning('Perfil en estado de error: $error');
+                final resolvedProfile =
+                    _lastResolvedProfile ?? userProfile.value;
+                if (currentUser == null) {
+                  return _buildGuestPlaceholder(theme);
+                }
+                return _buildProfileContent(
+                  theme,
+                  ref,
+                  currentUser,
+                  resolvedProfile,
+                  userStats.value,
                 );
               },
             ),
@@ -258,73 +277,205 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ref.invalidate(currentUserStatsProvider);
         ref.invalidate(recentRatingsProvider);
       },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth >= 960;
+          final horizontalPadding = isWide ? 32.0 : 16.0;
+
+          final statsPanel = _buildStatsPanel(theme, stats, ref);
+          final detailsPanel = _isEditing
+              ? _buildEditFormCard(theme, effectiveProfile)
+              : _buildProfileInfoCard(theme, effectiveProfile);
+          final ratingsPanel = _buildRatingsSection(theme);
+          final actionsPanel = _buildActionButtons(theme);
+
+          final headerSection = <Widget>[
             if (usingFallbackProfile) _buildFallbackNotice(theme),
             _buildProfileHeader(theme, effectiveProfile),
-            const SizedBox(height: 32),
-            if (stats != null) ...[
-              _buildStatsSection(theme, stats),
-              const SizedBox(height: 32),
-            ] else ...[
-              // Mostrar placeholder de estadísticas mientras cargan
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Estadísticas',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ref.watch(currentUserStatsProvider).when(
-                            data: (_) => const SizedBox(), // Ya manejado arriba
-                            loading: () => const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                            error: (error, _) {
-                              LoggerFactory.error(
-                                  'Error cargando estadísticas: $error');
-                              return Column(
-                                children: [
-                                  Text(
-                                    'Error cargando estadísticas',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.error,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextButton(
-                                    onPressed: () {
-                                      ref.invalidate(currentUserStatsProvider);
-                                    },
-                                    child: const Text('Reintentar'),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                    ],
+            const SizedBox(height: 24),
+          ];
+
+          final wideLayout = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...headerSection,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        detailsPanel,
+                        const SizedBox(height: 24),
+                        actionsPanel,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        statsPanel,
+                        const SizedBox(height: 24),
+                        ratingsPanel,
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+
+          final narrowLayout = Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...headerSection,
+              statsPanel,
+              const SizedBox(height: 24),
+              ratingsPanel,
+              const SizedBox(height: 24),
+              detailsPanel,
+              const SizedBox(height: 24),
+              actionsPanel,
+            ],
+          );
+
+          final layoutKey = ValueKey(
+            '${isWide}_${_isEditing}_${usingFallbackProfile}_${stats != null}',
+          );
+
+          return SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: 24,
+            ),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 960),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 320),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: KeyedSubtree(
+                    key: layoutKey,
+                    child: isWide ? wideLayout : narrowLayout,
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
-            ],
-            _buildRatingsSection(theme),
-            const SizedBox(height: 32),
-            if (_isEditing)
-              _buildEditForm(theme, effectiveProfile)
-            else
-              _buildProfileInfo(theme, effectiveProfile),
-            const SizedBox(height: 32),
-            _buildActionButtons(theme),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildEditFormCard(ThemeData theme, UserProfile profile) {
+    return Card(
+      elevation: 2,
+      clipBehavior: Clip.antiAlias,
+      surfaceTintColor: theme.colorScheme.surfaceTint,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: _buildEditForm(theme, profile),
+      ),
+    );
+  }
+
+  Widget _buildProfileInfoCard(ThemeData theme, UserProfile profile) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: _buildProfileInfo(theme, profile),
+      ),
+    );
+  }
+
+  Widget _buildStatsPanel(
+    ThemeData theme,
+    UserStats? stats,
+    WidgetRef ref,
+  ) {
+    if (stats != null) {
+      return _buildStatsSection(theme, stats);
+    }
+
+    final statsState = ref.watch(currentUserStatsProvider);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.insights,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Estadísticas',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            statsState.when(
+              data: (_) => Column(
+                children: [
+                  Icon(
+                    Icons.movie_creation_outlined,
+                    size: 40,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.25),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Tus estadísticas aparecerán aquí en cuanto registres actividad reciente.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              loading: () => const SizedBox(
+                height: 72,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (error, _) {
+                LoggerFactory.error('Error cargando estadísticas: $error');
+                return Column(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      color: theme.colorScheme.error,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Error al cargar estadísticas',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: () {
+                        ref.invalidate(currentUserStatsProvider);
+                      },
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -424,65 +575,199 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildProfileHeader(ThemeData theme, UserProfile profile) {
-    return Column(
-      children: [
-        Stack(
-          children: [
-            ProfileAvatar(
-              avatarUrl: profile.avatarUrl,
-              selectedImage: _selectedImage,
-              size: 120,
-              onTap: _isEditing ? selectImage : null,
-              showEditIcon: _isEditing,
-              heroTag: 'profile_avatar',
-            ),
-            if (_isEditing)
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: theme.colorScheme.surface,
-                      width: 2,
+    final moviesWatched =
+        (profile.stats['movies_watched'] as num?)?.toInt() ?? 0;
+    final favoritesCount =
+        (profile.stats['favorites_count'] as num?)?.toInt() ?? 0;
+    final listsCount = (profile.stats['lists_count'] as num?)?.toInt() ?? 0;
+    final isPublic = profile.preferences['profile_public'] ?? true;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withValues(alpha: 0.16),
+            theme.colorScheme.secondary.withValues(alpha: 0.12),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.shadowColor.withValues(alpha: 0.08),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 138,
+                height: 138,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.18),
+                      blurRadius: 24,
+                      offset: const Offset(0, 16),
                     ),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.camera_alt,
-                      color: theme.colorScheme.onPrimary,
-                      size: 20,
+                  ],
+                ),
+              ),
+              ProfileAvatar(
+                avatarUrl: profile.avatarUrl,
+                avatarHash: profile.avatarHash,
+                selectedImage: _selectedImage,
+                size: 128,
+                onTap: _isEditing ? selectImage : null,
+                showEditIcon: _isEditing,
+                heroTag: 'profile_avatar',
+              ),
+              if (_isEditing)
+                Positioned(
+                  bottom: -4,
+                  right: -4,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: theme.colorScheme.surface,
+                        width: 3,
+                      ),
                     ),
-                    tooltip: 'Cambiar avatar',
-                    onPressed: selectImage,
-                    constraints: const BoxConstraints(
-                      minWidth: 36,
-                      minHeight: 36,
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.photo_camera_outlined,
+                        color: theme.colorScheme.onPrimary,
+                        size: 20,
+                      ),
+                      tooltip: 'Cambiar avatar',
+                      onPressed: selectImage,
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
                     ),
                   ),
                 ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Text(
+              profile.fullName,
+              key: ValueKey(profile.fullName),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.4,
               ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          if (profile.hasUsername) ...[
+            const SizedBox(height: 6),
+            Text(
+              '@${profile.username}',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                letterSpacing: 0.2,
+              ),
+            ),
           ],
-        ),
-        const SizedBox(height: 16),
-        if (!_isEditing) ...[
-          Text(
-            profile.fullName,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
           const SizedBox(height: 8),
-          Text(
-            'Miembro desde ${formatDate(profile.createdAt)}',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.calendar_month,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Miembro desde ${formatDate(profile.createdAt)}',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+                ),
+              ),
+            ],
           ),
+          if (!_isEditing && profile.hasBio) ...[
+            const SizedBox(height: 14),
+            Text(
+              profile.bio!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          const SizedBox(height: 18),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              _buildHeaderChip(
+                theme,
+                Icons.local_movies_outlined,
+                '$moviesWatched vistos',
+              ),
+              if (favoritesCount > 0)
+                _buildHeaderChip(
+                  theme,
+                  Icons.favorite_outline,
+                  '$favoritesCount favoritos',
+                ),
+              if (listsCount > 0)
+                _buildHeaderChip(
+                  theme,
+                  Icons.list_alt_outlined,
+                  '$listsCount listas',
+                ),
+              _buildHeaderChip(
+                theme,
+                isPublic ? Icons.public : Icons.lock_outline,
+                isPublic ? 'Perfil público' : 'Perfil privado',
+              ),
+            ],
+          ),
+          if (_isEditing) ...[
+            const SizedBox(height: 16),
+            Chip(
+              avatar: Icon(
+                Icons.edit_outlined,
+                size: 18,
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+              label: const Text('Editando perfil'),
+              labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSecondaryContainer,
+                fontWeight: FontWeight.w600,
+              ),
+              backgroundColor: theme.colorScheme.secondaryContainer,
+              visualDensity: VisualDensity.compact,
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -497,6 +782,55 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _usernameController,
+            decoration: InputDecoration(
+              labelText: 'Nombre de usuario',
+              hintText: 'usuario_cinefilo',
+              prefixText: '@',
+              prefixIcon: const Icon(Icons.alternate_email),
+              helperText:
+                  'Entre 3 y 20 caracteres, solo minúsculas, números y guion bajo',
+              suffixIcon: _buildUsernameStatusIcon(),
+              errorText: _usernameError,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: theme.colorScheme.primary),
+              ),
+            ),
+            textInputAction: TextInputAction.next,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
+              LengthLimitingTextInputFormatter(20),
+            ],
+            onChanged: _onUsernameChanged,
+            validator: (value) {
+              final trimmed = value?.trim() ?? '';
+              if (trimmed.isEmpty) {
+                return null;
+              }
+              if (trimmed.length < 3) {
+                return 'El usuario debe tener al menos 3 caracteres';
+              }
+              if (trimmed.length > 20) {
+                return 'El usuario debe tener máximo 20 caracteres';
+              }
+              if (!RegExp(r'^[a-z0-9_]+$').hasMatch(trimmed)) {
+                return 'Solo se permiten minúsculas, números y guion bajo';
+              }
+              return null;
+            },
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -544,7 +878,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           TextFormField(
             controller: _bioController,
             maxLines: 3,
-            maxLength: 150,
+            maxLength: 500,
             decoration: InputDecoration(
               labelText: 'Biografía (opcional)',
               hintText: 'Cuéntanos un poco sobre ti...',
@@ -553,7 +887,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
+            onChanged: (_) => setState(() {}),
           ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${_bioController.text.length}/500',
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildPreferencesEditor(theme),
         ],
       ),
     );
@@ -572,6 +916,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 16),
+        if (profile.hasUsername) ...[
+          _buildInfoTile(
+            theme,
+            'Usuario',
+            '@${profile.username}',
+            Icons.alternate_email,
+          ),
+          const SizedBox(height: 12),
+        ],
         _buildInfoTile(
           theme,
           'Nombre',
@@ -602,6 +955,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           formatDate(profile.updatedAt),
           Icons.update,
         ),
+        const SizedBox(height: 12),
+        _buildPreferencesInfo(theme, profile.preferences),
       ],
     );
   }
@@ -785,6 +1140,155 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildPreferencesInfo(
+    ThemeData theme,
+    Map<String, bool> preferences,
+  ) {
+    final items = [
+      (
+        icon: Icons.email_outlined,
+        label: 'Notificaciones por email',
+        enabled: preferences['email_notifications'] ?? true,
+      ),
+      (
+        icon: Icons.notifications_active_outlined,
+        label: 'Notificaciones push',
+        enabled: preferences['push_notifications'] ?? true,
+      ),
+      (
+        icon: Icons.public,
+        label: 'Perfil público',
+        enabled: preferences['profile_public'] ?? true,
+      ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.settings_suggest_outlined,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Preferencias',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...items.map(
+            (item) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Icon(
+                    item.icon,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  Icon(
+                    item.enabled ? Icons.check_circle : Icons.highlight_off,
+                    color: item.enabled
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.error,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreferencesEditor(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.settings_suggest_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Preferencias',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: _emailNotifications,
+              onChanged: (value) {
+                setState(() {
+                  _emailNotifications = value;
+                });
+              },
+              title: const Text('Recibir notificaciones por email'),
+              subtitle: const Text(
+                  'Noticias, recordatorios y actualizaciones importantes'),
+            ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: _pushNotifications,
+              onChanged: (value) {
+                setState(() {
+                  _pushNotifications = value;
+                });
+              },
+              title: const Text('Notificaciones push'),
+              subtitle: const Text(
+                  'Alertas instantáneas sobre actividad en tu cuenta'),
+            ),
+            SwitchListTile.adaptive(
+              contentPadding: EdgeInsets.zero,
+              value: _profilePublic,
+              onChanged: (value) {
+                setState(() {
+                  _profilePublic = value;
+                });
+              },
+              title: const Text('Hacer mi perfil público'),
+              subtitle: const Text(
+                  'Permite que otros usuarios vean tus listas y actividad'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // Sección de estadísticas del usuario
   Widget _buildStatsSection(ThemeData theme, UserStats stats) {
     return Card(
@@ -856,22 +1360,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   Widget _buildActionButtons(ThemeData theme) {
-    return Column(
-      children: [
-        // Botón de cerrar sesión
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: showLogoutDialog,
-            icon: const Icon(Icons.logout),
-            label: const Text('Cerrar Sesión'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.error,
-              side: BorderSide(color: theme.colorScheme.error),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Cuenta y seguridad',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'Gestiona tu sesión activa y tus preferencias de privacidad.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: showLogoutDialog,
+                icon: const Icon(Icons.logout),
+                label: const Text('Cerrar sesión'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                  foregroundColor: theme.colorScheme.onError,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -885,10 +1418,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     setState(() {
       _isEditing = true;
+      _usernameDebounce?.cancel();
+      final normalizedUsername = profile.username?.toLowerCase();
+      _usernameController.text = normalizedUsername ?? '';
+      _initialUsername = normalizedUsername;
+      _usernameError = null;
+      _isCheckingUsername = false;
       _fullNameController.text = profile.fullName;
       _bioController.text = profile.bio ?? '';
       _emailController.text = currentUser?.email ?? '';
       _selectedImage = null;
+      final preferences = profile.preferences;
+      _emailNotifications = preferences['email_notifications'] ?? true;
+      _pushNotifications = preferences['push_notifications'] ?? true;
+      _profilePublic = preferences['profile_public'] ?? true;
     });
 
     // Rastrear inicio de edición del perfil
@@ -903,39 +1446,82 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void cancelEditing() {
     setState(() {
       _isEditing = false;
+      _usernameDebounce?.cancel();
+      _usernameController.clear();
+      _usernameError = null;
+      _isCheckingUsername = false;
+      _initialUsername = null;
       _selectedImage = null;
       _fullNameController.clear();
       _bioController.clear();
       _emailController.clear();
+      _emailNotifications = true;
+      _pushNotifications = true;
+      _profilePublic = true;
     });
   }
 
   Future<void> saveProfile() async {
     if (_formKey.currentState?.validate() ?? false) {
+      if (_isCheckingUsername) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Espera a que finalice la verificación del nombre de usuario',
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (_usernameError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_usernameError!),
+          ),
+        );
+        return;
+      }
+
       try {
         // Use the derived current user to ensure we have the latest value
         final currentUser = ref.read(currentUserProvider);
         if (currentUser != null) {
           String? avatarUrl;
+          final normalizedUsername =
+              _usernameController.text.trim().toLowerCase();
 
           // Si hay una imagen seleccionada, subirla primero
           if (_selectedImage != null) {
+            final bytes = await _selectedImage!.readAsBytes();
+            final pathSegments = _selectedImage!.path.split('.');
+            final extension =
+                pathSegments.length > 1 ? pathSegments.last : null;
             avatarUrl = await ref
                 .read(userProfileNotifierProvider.notifier)
                 .uploadAvatar(
-                  userId: currentUser.id,
-                  filePath: _selectedImage?.path ?? '',
+                  bytes,
+                  fileExtension: extension,
                 );
           }
 
           // Actualizar perfil en la tabla user_profiles
-          await ref.read(userProfileNotifierProvider.notifier).updateProfile(
-                fullName: _fullNameController.text.trim(),
-                bio: _bioController.text.trim().isEmpty
-                    ? null
-                    : _bioController.text.trim(),
-                avatarUrl: avatarUrl,
-              );
+          await ref
+              .read(userProfileNotifierProvider.notifier)
+              .updateProfileFields(
+            fullName: _fullNameController.text.trim(),
+            username: normalizedUsername,
+            clearUsername: normalizedUsername.isEmpty,
+            bio: _bioController.text.trim().isEmpty
+                ? null
+                : _bioController.text.trim(),
+            avatarUrl: avatarUrl,
+            preferences: {
+              'email_notifications': _emailNotifications,
+              'push_notifications': _pushNotifications,
+              'profile_public': _profilePublic,
+            },
+          );
 
           await ref.read(userProfileNotifierProvider.notifier).refreshProfile();
 
@@ -964,7 +1550,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             'has_bio': _bioController.text.trim().isNotEmpty,
             'has_avatar_change': avatarChanged,
             'has_email_change': emailChanged,
+            'has_username': _usernameController.text.trim().isNotEmpty,
             'name_length': _fullNameController.text.trim().length,
+            'email_notifications': _emailNotifications,
+            'push_notifications': _pushNotifications,
+            'profile_public': _profilePublic,
           });
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1061,6 +1651,114 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               backgroundColor: Theme.of(context).colorScheme.error,
             ),
             child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onUsernameChanged(String value) {
+    final trimmed = value.trim();
+    final normalized = trimmed.toLowerCase();
+    _usernameDebounce?.cancel();
+
+    setState(() {
+      _usernameError = null;
+      _isCheckingUsername = false;
+    });
+
+    if (normalized.isEmpty) {
+      return;
+    }
+
+    if (value != normalized) {
+      final position = normalized.length;
+      _usernameController.value = TextEditingValue(
+        text: normalized,
+        selection: TextSelection.collapsed(offset: position),
+      );
+    }
+
+    if (_initialUsername != null && normalized == _initialUsername) {
+      return;
+    }
+
+    if (normalized.length < 3) {
+      return;
+    }
+
+    _usernameDebounce = Timer(const Duration(milliseconds: 400), () {
+      unawaited(_checkUsernameAvailability(normalized));
+    });
+  }
+
+  Future<void> _checkUsernameAvailability(String username) async {
+    setState(() {
+      _isCheckingUsername = true;
+      _usernameError = null;
+    });
+
+    try {
+      final notifier = ref.read(userProfileNotifierProvider.notifier);
+      final normalized = username.toLowerCase();
+      final isAvailable = await notifier.isUsernameAvailable(normalized);
+      if (!mounted) return;
+      setState(() {
+        _isCheckingUsername = false;
+        _usernameError =
+            isAvailable ? null : 'Este nombre de usuario ya está en uso';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isCheckingUsername = false;
+        _usernameError = 'No se pudo verificar el nombre de usuario';
+      });
+    }
+  }
+
+  Widget? _buildUsernameStatusIcon() {
+    final trimmed = _usernameController.text.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    if (_isCheckingUsername) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: Padding(
+          padding: EdgeInsets.all(4),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    if (_usernameError != null) {
+      return const Icon(Icons.error_outline, color: Colors.redAccent);
+    }
+    return const Icon(Icons.check_circle, color: Colors.green);
+  }
+
+  Widget _buildHeaderChip(ThemeData theme, IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+            ),
           ),
         ],
       ),

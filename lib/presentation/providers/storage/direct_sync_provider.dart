@@ -75,9 +75,31 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
       state = moviesMap;
       LoggerFactory.info(
           '$logPrefix: Cargadas ${moviesMap.length} películas desde Supabase');
+
+      // Si no se cargaron películas, hacer un intento adicional después de un delay
+      if (moviesMap.isEmpty && _currentUserId != null) {
+        LoggerFactory.info(
+            '$logPrefix: Sin películas cargadas, reintentando en 2 segundos...');
+        Future.delayed(const Duration(seconds: 2), () {
+          if (_currentUserId != null) {
+            _loadMoviesFromSupabase();
+          }
+        });
+      }
     } catch (e) {
       LoggerFactory.error('$logPrefix: Error cargando desde Supabase: $e');
       state = {};
+
+      // En caso de error, reintentar después de un delay
+      if (_currentUserId != null) {
+        LoggerFactory.info(
+            '$logPrefix: Reintentando carga después de error en 3 segundos...');
+        Future.delayed(const Duration(seconds: 3), () {
+          if (_currentUserId != null) {
+            _loadMoviesFromSupabase();
+          }
+        });
+      }
     }
   }
 

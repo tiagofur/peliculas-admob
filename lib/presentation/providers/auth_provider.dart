@@ -6,7 +6,6 @@ import '../../core/auth/auth_flow_optimizer.dart';
 import '../../core/error_handling/centralized_error_handler.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/user.dart';
-import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../infrastructure/repositories/auth_repository_impl.dart';
@@ -406,76 +405,6 @@ final authNotifierProvider =
 });
 
 // Notifier para operaciones de perfil
-class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
-  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
-
-  @override
-  Future<UserProfile?> build() async {
-    final user = ref.watch(currentUserProvider);
-    if (user == null) {
-      return null;
-    }
-
-    try {
-      return await _authRepository.getUserProfile(user.id);
-    } catch (e, stackTrace) {
-      LoggerFactory.error('❌ Error cargando perfil para ${user.id}: $e');
-      Error.throwWithStackTrace(e, stackTrace);
-    }
-  }
-
-  Future<void> refreshProfile() async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) {
-      state = const AsyncValue.data(null);
-      return;
-    }
-
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      return await _authRepository.getUserProfile(user.id);
-    });
-  }
-
-  Future<void> updateProfile({
-    String? fullName,
-    String? bio,
-    String? avatarUrl,
-  }) async {
-    final user = ref.read(currentUserProvider);
-    if (user == null) {
-      throw Exception(
-          'No hay un usuario autenticado para actualizar el perfil');
-    }
-
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      return await _authRepository.updateUserProfile(
-        userId: user.id,
-        fullName: fullName,
-        bio: bio,
-        avatarUrl: avatarUrl,
-      );
-    });
-  }
-
-  Future<String> uploadAvatar({
-    required String userId,
-    required String filePath,
-  }) async {
-    return _authRepository.uploadAvatar(
-      userId: userId,
-      filePath: filePath,
-    );
-  }
-}
-
-// Provider del notifier de perfil
-final userProfileNotifierProvider =
-    AsyncNotifierProvider<UserProfileNotifier, UserProfile?>(() {
-  return UserProfileNotifier();
-});
-
 // Notifier para operaciones de estadísticas
 class UserStatsNotifier extends Notifier<AsyncValue<UserStats?>> {
   @override

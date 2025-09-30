@@ -200,24 +200,42 @@ class ImageCacheManager {
       _memoryCacheSize = 0;
 
       // Limpiar caché en disco
-      if (_cacheDirectory != null &&
-          (await _cacheDirectory?.exists() ?? false)) {
+      if (_cacheDirectory != null) {
         final cacheDir = _cacheDirectory;
-        if (cacheDir == null) return;
-        await for (final file in cacheDir.list()) {
-          if (file is File) {
-            try {
-              await file.delete();
-            } catch (e) {
-              _logger.warning('No se pudo eliminar archivo: ${file.path}');
-            }
-          }
+        if (cacheDir != null && await cacheDir.exists()) {
+          await cacheDir.delete(recursive: true);
+          await cacheDir.create(recursive: true);
         }
       }
 
-      _logger.info('Caché limpiado completamente');
+      _logger.info('🧹 Caché de imágenes limpiado completamente');
     } catch (e) {
-      _logger.error('Error limpiando caché: $e');
+      _logger.error('❌ Error limpiando caché de imágenes: $e');
+    }
+  }
+
+  /// Elimina una URL específica del caché (memoria y disco)
+  Future<void> evictUrl(String url) async {
+    try {
+      if (url.isEmpty) return;
+
+      final cacheKey = _generateCacheKey(url);
+
+      _removeFromMemoryCache(cacheKey);
+
+      final cacheDir = _cacheDirectory;
+      if (cacheDir != null) {
+        final file = File('${cacheDir.path}/$cacheKey');
+        if (await file.exists()) {
+          await file.delete();
+        }
+      }
+
+      _failedUrls.remove(url);
+
+      _logger.debug('🗑️ URL eliminada del caché: $url');
+    } catch (e) {
+      _logger.error('❌ Error eliminando URL del caché: $e');
     }
   }
 

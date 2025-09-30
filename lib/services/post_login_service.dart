@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/logging/logger_factory.dart';
+import '../core/services/post_login_initialization_service.dart';
 import '../presentation/providers/auto_default_lists_provider.dart';
 import '../presentation/providers/storage/favorite_movies_provider.dart';
 import '../presentation/providers/sync_integration_provider.dart';
@@ -32,6 +33,7 @@ class PostLoginService {
       await _migrateLocalData(userId);
       await _initializeSync();
       await _refreshFavorites();
+      await _initializeDirectProviders(userId);
 
       LoggerFactory.info('✅ PostLoginService completado para usuario $userId');
     } catch (e, stack) {
@@ -97,6 +99,20 @@ class PostLoginService {
     } catch (e) {
       LoggerFactory.error(
           '❌ Error refrescando favoritos después del login: $e');
+    }
+  }
+
+  Future<void> _initializeDirectProviders(String userId) async {
+    try {
+      LoggerFactory.info(
+          '🔄 Inicializando providers directos para datos de usuario');
+
+      // Forzar inicialización de providers directos para cargar datos inmediatamente
+      PostLoginInitializationService.instance.forceInitialization(userId, ref);
+
+      LoggerFactory.info('✅ Providers directos inicializados correctamente');
+    } catch (e) {
+      LoggerFactory.error('❌ Error inicializando providers directos: $e');
     }
   }
 }

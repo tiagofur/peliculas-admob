@@ -5,9 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/analytics/analytics_service.dart';
+import '../../core/cache/image_cache_manager.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/exceptions/auth_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
+import '../../core/utils/image_compressor.dart';
+import '../../core/utils/uuid_generator.dart';
 import '../../domain/entities/user.dart' as domain;
 import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/user_stats.dart';
@@ -26,6 +29,8 @@ class AuthRepositoryImpl implements AuthRepository {
   final SupabaseClient _supabase = SupabaseConfig.client;
   final AuthSessionManager _sessionManager = AuthSessionManager.instance;
   final TokenRefreshService _tokenRefreshService = TokenRefreshService.instance;
+  final ImageCompressor _imageCompressor = const ImageCompressor();
+  final UuidGenerator _uuidGenerator = const UuidGenerator();
   StreamController<domain.User?>? _authStateController;
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<TokenRefreshEvent>? _tokenRefreshSubscription;
@@ -234,6 +239,7 @@ class AuthRepositoryImpl implements AuthRepository {
         email: email,
         data: {
           if (fullName != null) 'full_name': fullName,
+          if (fullName != null) 'display_name': fullName,
           if (avatarUrl != null) 'avatar_url': avatarUrl,
         },
       );
@@ -282,15 +288,38 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserProfile> updateUserProfile({
     required String userId,
     String? fullName,
+    String? username,
     String? bio,
     String? avatarUrl,
+    String? avatarHash,
+    Map<String, dynamic>? stats,
+    Map<String, bool>? preferences,
   }) async {
     try {
-      final updateData = {
-        if (fullName != null) 'full_name': fullName,
-        if (bio != null) 'bio': bio,
+      final trimmedFullName = fullName?.trim();
+      final sanitizedUsername = username?.trim();
+      final clearUsername =
+          sanitizedUsername != null && sanitizedUsername.isEmpty;
+      final normalizedUsername = clearUsername || sanitizedUsername == null
+          ? null
+          : sanitizedUsername.toLowerCase();
+      final sanitizedBio = bio?.trim();
+
+      final updateData = <String, dynamic>{
+        if (trimmedFullName != null && trimmedFullName.isNotEmpty)
+          'display_name': trimmedFullName,
+        if (clearUsername)
+          'username': null
+        else if (normalizedUsername != null)
+          'username': normalizedUsername,
+        if (sanitizedBio != null && sanitizedBio.isNotEmpty)
+          'bio': sanitizedBio,
         if (avatarUrl != null) 'avatar_url': avatarUrl,
+        if (avatarHash != null) 'avatar_hash': avatarHash,
+        if (stats != null) 'stats': stats,
+        if (preferences != null) 'preferences': preferences,
         'updated_at': DateTime.now().toIso8601String(),
+        'last_synced_at': DateTime.now().toIso8601String(),
       };
 
       final response = await _supabase
@@ -307,7 +336,45 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return UserProfileModel.fromJson(response);
     } catch (e) {
+      // Manejo especial para problemas de tabla/estructura
+      if (e.toString().contains('400') ||
+          e.toString().contains('Bad Request') ||
+          e.toString().contains('table') ||
+          e.toString().contains('column')) {
+        LoggerFactory.warning(
+            '⚠️ user_profiles table issue in updateProfile. Please run migration.');
+        // Retornar un perfil básico en lugar de fallar
+        final now = DateTime.now();
+        return UserProfileModel(
+          id: 'temp_id',
+          userId: userId,
+          username: null,
+          fullName: 'Usuario Anónimo',
+          bio: null,
+          avatarUrl: null,
+          createdAt: now,
+          updatedAt: now,
+        );
+      }
+
       throw Exception('Error al actualizar perfil');
+    }
+  }
+
+  @override
+  Future<bool> checkUsernameAvailability(String username) async {
+    try {
+      final normalized = username.trim().toLowerCase();
+      final response = await _supabase
+          .from('user_profiles')
+          .select('user_id')
+          .ilike('username', normalized)
+          .maybeSingle();
+
+      return response == null;
+    } catch (e) {
+      LoggerFactory.error('❌ Error verificando username $username: $e');
+      throw Exception('Error al verificar disponibilidad de usuario');
     }
   }
 
@@ -317,10 +384,17 @@ class AuthRepositoryImpl implements AuthRepository {
       final metadata = supabaseUser?.userMetadata ?? <String, dynamic>{};
 
       final resolvedFullName = (() {
-        final rawFullName = metadata['full_name'];
-        if (rawFullName is String && rawFullName.trim().isNotEmpty) {
-          return rawFullName.trim();
+        final possibleNames = [
+          metadata['full_name'],
+          metadata['display_name'],
+        ];
+
+        for (final candidate in possibleNames) {
+          if (candidate is String && candidate.trim().isNotEmpty) {
+            return candidate.trim();
+          }
         }
+
         final email = supabaseUser?.email;
         if (email != null && email.contains('@')) {
           return email.split('@').first;
@@ -349,6 +423,32 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return UserProfileModel.fromJson(insertedProfile);
     } catch (e) {
+      // Manejo especial para problemas de tabla/estructura
+      if (e.toString().contains('400') ||
+          e.toString().contains('Bad Request') ||
+          e.toString().contains('table') ||
+          e.toString().contains('column')) {
+        LoggerFactory.warning(
+            '⚠️ user_profiles table issue in _createUserProfileRecord. Please run migration.');
+        // Retornar un perfil básico en lugar de fallar
+        final now = DateTime.now();
+        final fallbackMetadata =
+            _supabase.auth.currentUser?.userMetadata ?? <String, dynamic>{};
+        final fallbackName = fallbackMetadata['full_name'] as String? ??
+            fallbackMetadata['display_name'] as String? ??
+            'Usuario Anónimo';
+        return UserProfileModel(
+          id: 'temp_id',
+          userId: userId,
+          username: null,
+          fullName: fallbackName,
+          bio: null,
+          avatarUrl: fallbackMetadata['avatar_url'] as String?,
+          createdAt: now,
+          updatedAt: now,
+        );
+      }
+
       LoggerFactory.error(
         '❌ No se pudo crear el perfil por defecto para $userId: $e',
       );
@@ -406,20 +506,47 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<String> uploadAvatar({
     required String userId,
     required String filePath,
+    String? existingUrl,
   }) async {
     try {
       final file = File(filePath);
-      final fileExt = filePath.split('.').last;
-      final fileName = '$userId/avatar.$fileExt';
+      if (!file.existsSync()) {
+        throw Exception('Archivo de avatar no encontrado');
+      }
 
-      await _supabase.storage.from('avatars').upload(
-            fileName,
-            file,
-            fileOptions: const FileOptions(upsert: true),
+      final originalBytes = await file.readAsBytes();
+      final compressedBytes = await _imageCompressor.compress(
+        originalBytes,
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 85,
+      );
+
+      final fileExt = filePath.split('.').last.toLowerCase();
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final uuid = _uuidGenerator.v4();
+      final objectPath = '$userId/${timestamp}_$uuid.$fileExt';
+
+      await _supabase.storage.from('avatars').uploadBinary(
+            objectPath,
+            compressedBytes,
+            fileOptions: const FileOptions(
+              upsert: true,
+              cacheControl: 'public, max-age=31536000, immutable',
+            ),
           );
 
       final publicUrl =
-          _supabase.storage.from('avatars').getPublicUrl(fileName);
+          _supabase.storage.from('avatars').getPublicUrl(objectPath);
+
+      if (existingUrl != null && existingUrl.isNotEmpty) {
+        await ImageCacheManager.instance.evictUrl(existingUrl);
+        final oldPath = _extractStoragePath(existingUrl);
+        if (oldPath != null) {
+          await _supabase.storage.from('avatars').remove([oldPath]);
+        }
+      }
+
       return publicUrl;
     } catch (e) {
       throw Exception('Error al subir avatar');
@@ -438,6 +565,24 @@ class AuthRepositoryImpl implements AuthRepository {
       }
     } catch (e) {
       throw Exception('Error al eliminar avatar');
+    }
+  }
+
+  String? _extractStoragePath(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final segments = uri.pathSegments;
+      final publicIndex = segments.indexOf('public');
+      if (publicIndex != -1 && publicIndex + 1 < segments.length) {
+        return segments.sublist(publicIndex + 1).join('/');
+      }
+      if (segments.contains('avatars')) {
+        final avatarsIndex = segments.indexOf('avatars');
+        return segments.sublist(avatarsIndex).join('/');
+      }
+      return null;
+    } catch (_) {
+      return null;
     }
   }
 

@@ -39,9 +39,15 @@ abstract class AuthRepository {
   Future<UserProfile> updateUserProfile({
     required String userId,
     String? fullName,
+    String? username,
     String? bio,
     String? avatarUrl,
+    String? avatarHash,
+    Map<String, dynamic>? stats,
+    Map<String, bool>? preferences,
   });
+
+  Future<bool> checkUsernameAvailability(String username);
 
   // Operaciones de estadísticas
   Future<UserStats?> getUserStats(String userId);
@@ -57,6 +63,7 @@ abstract class AuthRepository {
   Future<String> uploadAvatar({
     required String userId,
     required String filePath,
+    String? existingUrl,
   });
 
   Future<void> deleteAvatar(String userId);

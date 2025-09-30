@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ProfileAvatar extends StatelessWidget {
   const ProfileAvatar({
     super.key,
     this.avatarUrl,
+    this.avatarHash,
     this.selectedImage,
     this.size = 120,
     this.onTap,
@@ -14,6 +16,7 @@ class ProfileAvatar extends StatelessWidget {
     this.heroTag,
   });
   final String? avatarUrl;
+  final String? avatarHash;
   final File? selectedImage;
   final double size;
   final VoidCallback? onTap;
@@ -113,16 +116,19 @@ class ProfileAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
+        cacheKey: _buildCacheKey(),
+        fadeInDuration: const Duration(milliseconds: 150),
+        fadeOutDuration: const Duration(milliseconds: 150),
         placeholder: (context, url) => Container(
           color: theme.colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: SizedBox(
-              width: size * 0.3,
-              height: size * 0.3,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: theme.colorScheme.primary,
-              ),
+          child: Shimmer.fromColors(
+            baseColor:
+                theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
+            highlightColor: theme.colorScheme.surface.withValues(alpha: 0.3),
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: theme.colorScheme.surface,
             ),
           ),
         ),
@@ -157,6 +163,16 @@ class ProfileAvatar extends StatelessWidget {
       ),
     );
   }
+
+  String? _buildCacheKey() {
+    if (avatarUrl == null) {
+      return null;
+    }
+    if (avatarHash == null || avatarHash!.isEmpty) {
+      return avatarUrl;
+    }
+    return '${avatarUrl}_$avatarHash';
+  }
 }
 
 // Widget auxiliar para avatares pequeños en listas
@@ -164,10 +180,12 @@ class SmallProfileAvatar extends StatelessWidget {
   const SmallProfileAvatar({
     super.key,
     this.avatarUrl,
+    this.avatarHash,
     this.size = 40,
     this.heroTag,
   });
   final String? avatarUrl;
+  final String? avatarHash;
   final double size;
   final String? heroTag;
 
@@ -175,6 +193,7 @@ class SmallProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     return ProfileAvatar(
       avatarUrl: avatarUrl,
+      avatarHash: avatarHash,
       size: size,
       heroTag: heroTag,
     );
@@ -186,12 +205,14 @@ class UserAvatarWithInfo extends StatelessWidget {
   const UserAvatarWithInfo({
     super.key,
     this.avatarUrl,
+    this.avatarHash,
     required this.fullName,
     this.subtitle,
     this.avatarSize = 50,
     this.onTap,
   });
   final String? avatarUrl;
+  final String? avatarHash;
   final String fullName;
   final String? subtitle;
   final double avatarSize;
@@ -210,6 +231,7 @@ class UserAvatarWithInfo extends StatelessWidget {
           children: [
             ProfileAvatar(
               avatarUrl: avatarUrl,
+              avatarHash: avatarHash,
               size: avatarSize,
             ),
             const SizedBox(width: 12),

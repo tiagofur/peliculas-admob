@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/logging/logger_factory.dart';
 import '../../../generated/app_localizations.dart';
 import '../../providers/storage/direct_watched_provider.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -30,6 +31,10 @@ class WatchedViewState extends ConsumerState<WatchedView>
     final watchedMovies =
         watchedMoviesMap.values.map((syncable) => syncable.movie).toList();
     final l10n = AppLocalizations.of(context)!;
+
+    // Debug log para verificar si se están cargando las películas
+    LoggerFactory.debug(
+        'WatchedView: ${watchedMovies.length} películas vistas cargadas');
 
     if (watchedMovies.isEmpty) {
       final colors = Theme.of(context).colorScheme;

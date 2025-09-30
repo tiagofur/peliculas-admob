@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -79,8 +80,13 @@ class MovieRatingsNotifier extends Notifier<MovieRatingsState> {
       _ratingsSubscription?.cancel();
     });
 
-    _initialize();
-    return const MovieRatingsState();
+    // Ensure state is initialized before any async work runs
+    state = const MovieRatingsState();
+
+    // Kick off initialization without blocking the initial build
+    Future.microtask(_initialize);
+
+    return state;
   }
 
   MovieRatingsRepository get _repository =>

@@ -57,7 +57,7 @@ void main() {
           // Attempt to insert invalid profile data
           await supabase.from('user_profiles').insert({
             'user_id': supabase.auth.currentUser!.id,
-            'full_name': 'A', // Too short - should fail
+            'display_name': 'A', // Too short - should fail
           });
 
           fail('Should have thrown validation error for short name');
@@ -69,7 +69,7 @@ void main() {
           // Attempt to insert valid profile data
           await supabase.from('user_profiles').upsert({
             'user_id': supabase.auth.currentUser!.id,
-            'full_name': 'Valid Test Name',
+            'display_name': 'Valid Test Name',
             'bio': 'This is a valid bio for testing',
           });
 
