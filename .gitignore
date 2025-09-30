@@ -35,6 +35,11 @@ flutter.tar.xz
 
 # Web related
 
+# Dart compilation outputs (should never be committed)
+*.js.map
+out.js
+out.js.deps
+
 # Symbolication related
 app.*.symbols
 
