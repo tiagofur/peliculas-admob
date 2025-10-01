@@ -12,6 +12,7 @@
 **Archivo:** `lib/presentation/providers/list_items_provider.dart`
 
 Providers creados:
+
 - ✅ `listItemsProvider` - Stream reactivo de películas en una lista
 - ✅ `listMovieCountProvider` - Contador optimizado (sin cargar todos los items)
 - ✅ `isMovieInListProvider` - Verificación rápida de pertenencia
@@ -20,6 +21,7 @@ Providers creados:
 - ✅ `listItemByIdProvider` - Acceso directo a item específico
 
 **Beneficios:**
+
 - 🚀 Actualización automática con Supabase Realtime
 - ⚡ Performance mejorado (lazy loading, contadores optimizados)
 - 🔄 Reactivo y type-safe
@@ -32,12 +34,14 @@ Providers creados:
 **Archivo:** `lib/domain/entities/custom_list.dart`
 
 Cambios:
+
 - ✅ Campo `movieIds` marcado como `@Deprecated`
 - ✅ Documentación inline completa con ejemplos
 - ✅ Agregado getter helper `movieCount` (también deprecated)
 - ✅ Warnings claros para desarrolladores
 
 **Timeline de Eliminación:**
+
 - 🟡 **Octubre 2025**: Deprecated (advertencias)
 - 🔴 **Noviembre 2025**: Eliminación completa
 
@@ -46,6 +50,7 @@ Cambios:
 ### 3. 📚 Documentación Creada
 
 #### LISTS_MIGRATION_GUIDE.md
+
 - ✅ 7 casos de uso comunes documentados
 - ✅ Ejemplos de código antes/después
 - ✅ Guía de testing
@@ -53,11 +58,13 @@ Cambios:
 - ✅ Timeline de deprecación
 
 #### LISTS_REFACTOR_CHANGELOG.md
+
 - ✅ Tracking detallado de cambios
 - ✅ Breaking changes documentados
 - ✅ Métricas de éxito definidas
 
 #### DOCUMENTATION_INDEX.md
+
 - ✅ Actualizado con nueva documentación
 - ✅ Enlaces a guías de migración
 
@@ -66,17 +73,20 @@ Cambios:
 ## 📊 Métricas
 
 ### Archivos Creados
+
 - 📄 `list_items_provider.dart` - 108 líneas
 - 📄 `LISTS_MIGRATION_GUIDE.md` - Guía completa
 - 📄 `LISTS_DOCUMENTATION_UPDATE_SUMMARY.md` - Resumen
 
 ### Archivos Modificados
+
 - ✏️ `custom_list.dart` - Deprecación de movieIds
 - ✏️ `custom_lists_providers.dart` - Export nuevo provider
 - ✏️ `LISTS_REFACTOR_CHANGELOG.md` - Progreso
 - ✏️ `DOCUMENTATION_INDEX.md` - Enlaces
 
 ### Líneas de Código
+
 - **Nuevas**: ~400 líneas (providers + docs)
 - **Modificadas**: ~50 líneas
 - **Eliminadas**: 0 (aún no, por estrategia incremental)
@@ -109,16 +119,19 @@ Cambios:
 **Archivos a actualizar:**
 
 1. **Providers** (~15 archivos):
+
    - `custom_lists_provider.dart` - Métodos de add/remove/reorder
    - `custom_lists_providers.dart` - Filtros y ordenamientos
    - Otros providers que usen `movieIds`
 
 2. **UI Components** (~10 archivos):
+
    - Screens de listas
    - Widgets de contadores
    - Dialogs de selección
 
 3. **Services** (~5 archivos):
+
    - `list_sync_service.dart` - Merge de listas
    - `sync_performance_optimizer.dart` - Optimizaciones
 
@@ -160,6 +173,7 @@ Cambios:
 - [ ] Golden tests si hay cambios visuales
 
 ### Cobertura Esperada
+
 - **Objetivo**: >85%
 - **Actual**: TBD (después de migration)
 
@@ -168,17 +182,20 @@ Cambios:
 ## 🚀 Impacto Esperado
 
 ### Performance
+
 - ⚡ **30-50% más rápido** en carga de listas (solo metadata)
 - ⚡ **70% reducción** en llamadas innecesarias a TMDB
 - ⚡ **Realtime updates** < 100ms
 
 ### Developer Experience
+
 - 📚 Guías de migración claras
 - 🔧 Warnings útiles en tiempo de desarrollo
 - 🎯 Type-safe providers
 - 📦 Reutilizable y mantenible
 
 ### User Experience
+
 - 🔄 UI siempre actualizada (realtime)
 - ⚡ Carga más rápida
 - 🎨 Animaciones más suaves
@@ -193,6 +210,7 @@ Cambios:
 En **Noviembre 2025**, el código que use directamente `movieIds` **DEJARÁ DE COMPILAR**.
 
 Todos los desarrolladores deben:
+
 1. Leer `LISTS_MIGRATION_GUIDE.md`
 2. Actualizar su código antes de Noviembre
 3. Ejecutar tests para validar cambios
@@ -200,6 +218,7 @@ Todos los desarrolladores deben:
 ### 🆘 Soporte
 
 Si tienes problemas con la migración:
+
 - Consulta `LISTS_MIGRATION_GUIDE.md`
 - Revisa ejemplos en `list_items_provider.dart`
 - Crea issue en GitHub con tag `migration`

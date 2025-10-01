@@ -12,6 +12,7 @@
 #### 1. **PROBLEMA CRÍTICO: Modelo de Datos Inconsistente**
 
 ##### En el Código (Entidad CustomList)
+
 ```dart
 // lib/domain/entities/custom_list.dart
 class CustomList {
@@ -23,6 +24,7 @@ class CustomList {
 ```
 
 ##### En la Base de Datos
+
 ```sql
 -- Supabase tiene DOS tablas:
 -- 1. user_lists (sin columna movieIds)
@@ -40,12 +42,14 @@ class CustomList {
 #### 3. **Operaciones CRUD Incompletas**
 
 ##### Para LISTAS (`user_lists`):
+
 - ✅ CREATE: Funciona básicamente
 - ⚠️ READ: Funciona pero sin películas asociadas
 - ⚠️ UPDATE: Funciona pero pierde películas
 - ⚠️ DELETE: Funciona pero no limpia `user_list_items`
 
 ##### Para PELÍCULAS EN LISTAS (`user_list_items`):
+
 - ⚠️ ADD: Existe la función pero no actualiza el estado local
 - ⚠️ REMOVE: Existe la función pero no actualiza el estado local
 - ❌ REORDER: Función existe pero no se usa correctamente
@@ -81,6 +85,7 @@ await _saveListsLocally(lists);
 ### Tablas en Supabase
 
 #### Tabla: `user_lists`
+
 ```sql
 CREATE TABLE user_lists (
     id UUID PRIMARY KEY,
@@ -95,6 +100,7 @@ CREATE TABLE user_lists (
 ```
 
 #### Tabla: `user_list_items`
+
 ```sql
 CREATE TABLE user_list_items (
     id UUID PRIMARY KEY,
@@ -111,6 +117,7 @@ CREATE TABLE user_list_items (
 ### Entidades en Dart
 
 #### ✅ Bien Diseñadas
+
 ```dart
 // lib/domain/entities/list_item.dart
 class ListItem {
@@ -125,6 +132,7 @@ class ListItem {
 ```
 
 #### ❌ Mal Diseñadas
+
 ```dart
 // lib/domain/entities/custom_list.dart
 class CustomList {
@@ -143,6 +151,7 @@ class CustomList {
 #### Opción A: Eliminar `movieIds` de `CustomList` (RECOMENDADO)
 
 **Ventajas:**
+
 - Refleja correctamente la estructura de Supabase
 - Separación clara de responsabilidades
 - Facilita sync realtime
@@ -151,6 +160,7 @@ class CustomList {
 **Cambios Necesarios:**
 
 1. **Modificar `CustomList`**
+
 ```dart
 class CustomList {
   CustomList({
@@ -162,13 +172,14 @@ class CustomList {
     required this.createdAt,
     // ... resto de campos
   });
-  
+
   // Agregar método helper para obtener películas
   // pero NO almacenar el array
 }
 ```
 
 2. **Crear Provider Separado para Películas de Lista**
+
 ```dart
 // lib/presentation/providers/list_items_provider.dart
 final listItemsProvider = StreamProvider.family<List<ListItem>, String>(
@@ -184,6 +195,7 @@ final listItemsProvider = StreamProvider.family<List<ListItem>, String>(
 ```
 
 3. **Actualizar UI para usar ambos providers**
+
 ```dart
 // En MovieListDetailScreen
 final list = ref.watch(listByIdProvider(listId));
@@ -195,6 +207,7 @@ final items = ref.watch(listItemsProvider(listId));
 **Solo si:** Necesitas offline-first absoluto y aceptas complejidad adicional.
 
 **Requeriría:**
+
 - Sync bidireccional complejo
 - Manejo de conflictos avanzado
 - Más propenso a errores
@@ -231,7 +244,7 @@ Future<void> deleteList(String listId);
 
 /// ADD: Agregar película a lista
 Future<ListItem> addMovieToList(
-  String listId, 
+  String listId,
   int movieId, {
   int? position,
   String? movieTitle,
@@ -243,8 +256,8 @@ Future<void> removeMovieFromList(String listId, int movieId);
 
 /// REORDER: Cambiar posición de película
 Future<void> updateMoviePosition(
-  String listId, 
-  String itemId, 
+  String listId,
+  String itemId,
   int newPosition,
 );
 
@@ -319,7 +332,7 @@ class SupabaseCustomListsDataSource {
 final allListsProvider = StreamProvider<AllListsState>((ref) async* {
   final repository = await ref.watch(customListsRepositoryProvider.future);
   final userId = Supabase.instance.client.auth.currentUser?.id;
-  
+
   if (userId == null) {
     yield AllListsState(defaultLists: [], customLists: []);
     return;
@@ -329,7 +342,7 @@ final allListsProvider = StreamProvider<AllListsState>((ref) async* {
   await for (final lists in repository.watchUserLists()) {
     final defaultLists = lists.where((list) => list.isDefault).toList();
     final customLists = lists.where((list) => !list.isDefault).toList();
-    
+
     yield AllListsState(
       defaultLists: defaultLists,
       customLists: customLists,
@@ -380,7 +393,7 @@ class ListSyncService {
 
   /// NUEVO: Registrar reorden de películas
   Future<void> recordMovieReorder(
-    String listId, 
+    String listId,
     List<ListItem> items,
   ) async {
     await recordOfflineChange(OfflineChange(
@@ -514,21 +527,21 @@ class AllListsNotifier extends Notifier<AllListsState> {
 
   // AGREGAR métodos que usan repository
   Future<void> addMovieToListAsync(
-    String listId, 
+    String listId,
     int movieId, {
     String? movieTitle,
     String? posterPath,
   }) async {
     try {
       await _repository.addMovieToList(
-        listId, 
+        listId,
         movieId,
         movieTitle: movieTitle,
         posterPath: posterPath,
       );
-      
+
       // No actualizar estado local, el stream lo hará automáticamente
-      
+
       await _runGamificationAction(
         (service) => service.trackMovieAddedToList(movieId, listId),
       );
@@ -539,7 +552,7 @@ class AllListsNotifier extends Notifier<AllListsState> {
   }
 
   Future<void> removeMovieFromListAsync(
-    String listId, 
+    String listId,
     int movieId,
   ) async {
     try {
@@ -552,7 +565,7 @@ class AllListsNotifier extends Notifier<AllListsState> {
   }
 
   Future<void> reorderMoviesAsync(
-    String listId, 
+    String listId,
     List<ListItem> newOrder,
   ) async {
     try {
@@ -579,7 +592,7 @@ class AllListsNotifier extends Notifier<AllListsState> {
    ↓
 3. Notifier: Calls repository.createList(newList)
    ↓
-4. Repository: 
+4. Repository:
    - Si online: dataSource.createList() → Supabase INSERT
    - Si offline: Save to SharedPreferences + Queue operation
    ↓
@@ -665,18 +678,23 @@ class AllListsNotifier extends Notifier<AllListsState> {
 ## ⚠️ Problemas que se Resolverán
 
 ### ✅ Problema 1: movieIds Desincronizado
+
 **Solución:** Eliminar `movieIds` de `CustomList`, usar `listItemsProvider` separado
 
 ### ✅ Problema 2: Sin Sync Realtime
+
 **Solución:** Cambiar de `FutureProvider` a `StreamProvider`, integrar streams de Supabase
 
 ### ✅ Problema 3: CRUD Incompleto
+
 **Solución:** Implementar todas las operaciones en repository y dataSource
 
 ### ✅ Problema 4: Offline No Funciona Bien
+
 **Solución:** Queue priorizado + sincronización ordenada
 
 ### ✅ Problema 5: UI No Actualiza Automáticamente
+
 **Solución:** Usar `StreamProvider` que se actualiza automáticamente con realtime
 
 ---
@@ -798,7 +816,7 @@ Después de implementar este plan:
 ✅ Offline-first con queue priorizado  
 ✅ UI se actualiza automáticamente sin refreshes manuales  
 ✅ Modelo de datos consistente entre local y remoto  
-✅ Tests completos para garantizar estabilidad  
+✅ Tests completos para garantizar estabilidad
 
 ---
 

@@ -16,6 +16,7 @@ El campo `movieIds` en `CustomList` está siendo **deprecado** y será eliminado
 ## 🎯 Nueva Arquitectura
 
 ### Antes (Deprecated)
+
 ```dart
 // ❌ Forma antigua - NO USAR
 class CustomList {
@@ -29,6 +30,7 @@ final hasMovie = list.movieIds.contains(movieId);
 ```
 
 ### Después (Recomendado)
+
 ```dart
 // ✅ Nueva forma - USAR ESTO
 import 'package:peliculas_admob/presentation/providers/list_items_provider.dart';
@@ -60,11 +62,13 @@ final listIds = ref.watch(movieListsProvider(movieId));
 ### 1. Mostrar Contador de Películas
 
 #### ❌ Antes:
+
 ```dart
 Text('${list.movieIds.length} películas')
 ```
 
 #### ✅ Después:
+
 ```dart
 Consumer(
   builder: (context, ref, child) {
@@ -79,11 +83,13 @@ Consumer(
 ### 2. Verificar si Película está en Lista
 
 #### ❌ Antes:
+
 ```dart
 final isInList = list.movieIds.contains(movieId);
 ```
 
 #### ✅ Después:
+
 ```dart
 final isInList = ref.watch(isMovieInListProvider(
   (movieId: movieId, listId: list.id),
@@ -95,6 +101,7 @@ final isInList = ref.watch(isMovieInListProvider(
 ### 3. Mostrar Lista de Películas
 
 #### ❌ Antes:
+
 ```dart
 ListView.builder(
   itemCount: list.movieIds.length,
@@ -107,11 +114,12 @@ ListView.builder(
 ```
 
 #### ✅ Después:
+
 ```dart
 Consumer(
   builder: (context, ref, child) {
     final itemsAsync = ref.watch(listItemsProvider(list.id));
-    
+
     return itemsAsync.when(
       data: (items) => ListView.builder(
         itemCount: items.length,
@@ -138,19 +146,21 @@ Consumer(
 ### 4. Agregar Película a Lista
 
 #### ❌ Antes:
+
 ```dart
 // Actualización optimista del estado local
 ref.read(allListsNotifierProvider.notifier).addMovieToList(
-  listId, 
+  listId,
   movieId,
 );
 ```
 
 #### ✅ Después:
+
 ```dart
 // El provider actualiza automáticamente con realtime
 await ref.read(allListsNotifierProvider.notifier).addMovieToListAsync(
-  listId, 
+  listId,
   movieId,
   movieTitle: movie.title,
   posterPath: movie.posterPath,
@@ -164,6 +174,7 @@ await ref.read(allListsNotifierProvider.notifier).addMovieToListAsync(
 ### 5. Reordenar Películas
 
 #### ❌ Antes:
+
 ```dart
 // Actualización local del array
 ref.read(allListsNotifierProvider.notifier).reorderMoviesInList(
@@ -174,6 +185,7 @@ ref.read(allListsNotifierProvider.notifier).reorderMoviesInList(
 ```
 
 #### ✅ Después:
+
 ```dart
 // Obtener items actuales
 final itemsAsync = ref.watch(listItemsProvider(listId));
@@ -196,11 +208,13 @@ await ref.read(allListsNotifierProvider.notifier).reorderMoviesAsync(
 ### 6. Filtrar Listas Vacías
 
 #### ❌ Antes:
+
 ```dart
 final nonEmptyLists = allLists.where((list) => list.movieIds.isNotEmpty).toList();
 ```
 
 #### ✅ Después:
+
 ```dart
 final nonEmptyLists = allLists.where((list) {
   final count = ref.watch(listMovieCountProvider(list.id));
@@ -213,12 +227,14 @@ final nonEmptyLists = allLists.where((list) {
 ### 7. Ordenar por Cantidad de Películas
 
 #### ❌ Antes:
+
 ```dart
 final sorted = [...allLists]
   ..sort((a, b) => b.movieIds.length.compareTo(a.movieIds.length));
 ```
 
 #### ✅ Después:
+
 ```dart
 final sorted = [...allLists]..sort((a, b) {
   final countA = ref.watch(listMovieCountProvider(a.id));
@@ -234,6 +250,7 @@ final sorted = [...allLists]..sort((a, b) {
 ### En AllListsNotifier
 
 #### ❌ Métodos a Deprecar:
+
 ```dart
 // NO USAR - Serán eliminados
 void toggleMovieInList(String listId, int movieId) { ... }
@@ -242,22 +259,23 @@ void clearList(String listId) { ... }
 ```
 
 #### ✅ Nuevos Métodos Async:
+
 ```dart
 // USAR ESTOS
 Future<void> addMovieToListAsync(
-  String listId, 
+  String listId,
   int movieId, {
   String? movieTitle,
   String? posterPath,
 }) async { ... }
 
 Future<void> removeMovieFromListAsync(
-  String listId, 
+  String listId,
   int movieId,
 ) async { ... }
 
 Future<void> reorderMoviesAsync(
-  String listId, 
+  String listId,
   List<ListItem> newOrder,
 ) async { ... }
 ```
@@ -293,6 +311,7 @@ final count = ref.watch(listMovieCountProvider(listId));
 ### Actualizar Tests
 
 #### ❌ Antes:
+
 ```dart
 test('should add movie to list', () {
   // ...
@@ -301,6 +320,7 @@ test('should add movie to list', () {
 ```
 
 #### ✅ Después:
+
 ```dart
 test('should add movie to list', () async {
   // ...
@@ -314,11 +334,13 @@ test('should add movie to list', () async {
 ## ⏰ Timeline de Deprecación
 
 ### Octubre 2025 (ACTUAL)
+
 - ✅ `movieIds` marcado como `@Deprecated`
 - ✅ Nuevos providers creados
 - ⚠️ Warnings de deprecación en código que use `movieIds`
 
 ### Noviembre 2025 (Próximo mes)
+
 - 🔴 `movieIds` será **ELIMINADO**
 - 🔴 Código que use `movieIds` **NO COMPILARÁ**
 
@@ -327,13 +349,16 @@ test('should add movie to list', () async {
 ## 🆘 Ayuda y Soporte
 
 ### Documentación Relacionada
+
 - [LISTS_LOGIC_ANALYSIS_AND_PLAN.md](LISTS_LOGIC_ANALYSIS_AND_PLAN.md) - Plan completo
 - [LISTS_REFACTOR_CHANGELOG.md](LISTS_REFACTOR_CHANGELOG.md) - Changelog
 
 ### Ejemplos Completos
+
 Ver: `lib/presentation/providers/list_items_provider.dart`
 
 ### ¿Dudas?
+
 Crear issue en GitHub con etiqueta `migration` o consultar con el equipo.
 
 ---
