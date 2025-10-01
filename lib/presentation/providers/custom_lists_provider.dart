@@ -137,7 +137,9 @@ class AllListsNotifier extends Notifier<AllListsState> {
       final listIndex = currentLists.indexWhere((list) => list.id == listId);
 
       if (listIndex == -1) {
-        throw Exception('Lista no encontrada: $listId');
+        LoggerFactory.warning(
+            '⚠️ customListsProvider.updateListAsync: lista $listId no encontrada en estado, se omite actualización');
+        return;
       }
 
       final currentList = currentLists[listIndex];
@@ -359,6 +361,15 @@ class AllListsNotifier extends Notifier<AllListsState> {
   // Helper method to update list in state
   void _updateListInState(
       String listId, CustomList Function(CustomList) updater) {
+    final existsInCustom = state.customLists.any((list) => list.id == listId);
+    final existsInDefault = state.defaultLists.any((list) => list.id == listId);
+
+    if (!existsInCustom && !existsInDefault) {
+      LoggerFactory.warning(
+          '⚠️ customListsProvider: se intentó actualizar la lista $listId que no está en el estado actual');
+      return;
+    }
+
     final updatedCustomLists = state.customLists.map((list) {
       return list.id == listId ? updater(list) : list;
     }).toList();
@@ -420,7 +431,13 @@ class AllListsNotifier extends Notifier<AllListsState> {
   // Alternar película en una lista (añadir si no está, remover si está)
   void toggleMovieInList(String listId, int movieId) {
     final allLists = state.allLists;
-    final list = allLists.firstWhere((l) => l.id == listId);
+    final listMatches = allLists.where((l) => l.id == listId);
+    if (listMatches.isEmpty) {
+      LoggerFactory.warning(
+          '⚠️ customListsProvider.toggleMovieInList: lista $listId no encontrada, se omite la operación');
+      return;
+    }
+    final list = listMatches.first;
     if (list.movieIds.contains(movieId)) {
       removeMovieFromList(listId, movieId);
     } else {

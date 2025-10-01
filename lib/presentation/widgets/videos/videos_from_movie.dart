@@ -11,6 +11,7 @@ import '../../../domain/entities/video.dart';
 import '../../providers/movies/movies_repository_provider.dart';
 import '../../services/pip_service.dart';
 import '../shared/cinema_mode.dart';
+import 'youtube_thumbnail.dart';
 
 final videosFromMovieProvider =
     FutureProvider.family<List<Video>, int>((ref, int movieId) {
@@ -388,31 +389,31 @@ class _WebYouTubePlayer extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          // Thumbnail con overlay de play
           GestureDetector(
             onTap: _openYouTubeVideo,
-            child: Container(
+            child: SizedBox(
               height: 200,
               width: double.infinity,
-              decoration: BoxDecoration(
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: NetworkImage(
-                      'https://img.youtube.com/vi/$youtubeId/maxresdefault.jpg'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.black.withValues(alpha: 0.3),
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.play_circle_outline,
-                    color: Colors.white,
-                    size: 64,
-                  ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    YouTubeThumbnail(
+                      youtubeId: youtubeId,
+                      fit: BoxFit.cover,
+                    ),
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.3),
+                    ),
+                    const Center(
+                      child: Icon(
+                        Icons.play_circle_outline,
+                        color: Colors.white,
+                        size: 64,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

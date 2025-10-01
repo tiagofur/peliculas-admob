@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/app_logger.dart';
+import '../../core/sync/sync_utilities.dart';
 import '../../domain/entities/custom_list.dart';
 import '../../domain/entities/list_item.dart';
 import '../../domain/repositories/i_custom_lists_repository.dart';
@@ -168,6 +169,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
 
       // Asegurar que la lista tenga el userId correcto
       listWithUserId = list.copyWith(userId: userId);
+      listWithUserId = _ensureListHasValidId(listWithUserId);
 
       if (!await hasInternetConnection()) {
         AppLogger.repo('CustomLists',
@@ -191,8 +193,7 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
       }
     } catch (e) {
       AppLogger.repo('CustomLists', '❌ Error al crear lista: $e');
-      final fallbackList =
-          userId == null ? listWithUserId : list.copyWith(userId: userId);
+      final fallbackList = listWithUserId;
       return await _storeListOffline(fallbackList, error: e);
     }
   }
@@ -651,7 +652,11 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
   }
 
   Future<CustomList> _storeListOffline(CustomList list, {Object? error}) async {
-    final pendingList = list.copyWith(syncStatus: 'pending');
+    final ensuredList = _ensureListHasValidId(list);
+    final pendingList = ensuredList.copyWith(
+      syncStatus: 'pending',
+      lastModifiedAt: DateTime.now(),
+    );
     await _savePendingOperation('create', pendingList.toJson());
     await _updateLocalList(pendingList);
 
@@ -697,5 +702,14 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
         await initializeDefaultLists(data['userId']);
         break;
     }
+  }
+
+  CustomList _ensureListHasValidId(CustomList list) {
+    if (SyncUtilities.isValidUuid(list.id)) {
+      return list;
+    }
+
+    final generatedId = SyncUtilities.generateUuid();
+    return list.copyWith(id: generatedId);
   }
 }

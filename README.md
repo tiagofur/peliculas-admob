@@ -148,6 +148,7 @@ Esta aplicación sigue una **arquitectura Clean con Domain-Driven Design**, opti
 - **[Arquitectura de Backend](docs/BACKEND_ARCHITECTURE.md)**: Supabase, Firebase y APIs externas
 - **[Guía de Contribución](CONTRIBUTING.md)**: Onboarding completo para desarrolladores
 - **[Gestión de listas personalizadas (Opción A)](docs/custom_lists_option_a.md)**: Detalles de la nueva experiencia centrada en listas creadas por la persona usuaria
+- **[Análisis y Plan de Listas](docs/LISTS_LOGIC_ANALYSIS_AND_PLAN.md)**: 🆕 **ACTIVO** - Análisis completo y plan de refactorización de la lógica de listas (Octubre 2025)
 
 ## � Sistema de Monetización Adaptativo UX-First
 
@@ -483,6 +484,7 @@ flutter run
 - **[CONTRIBUTING.md](CONTRIBUTING.md)**: Guía completa para desarrolladores
 - **[docs/ARCHITECTURE_DECISIONS.md](docs/ARCHITECTURE_DECISIONS.md)**: ADR con decisiones técnicas clave
 - **[docs/BACKEND_ARCHITECTURE.md](docs/BACKEND_ARCHITECTURE.md)**: Arquitectura de backend detallada
+- **[docs/LISTS_LOGIC_ANALYSIS_AND_PLAN.md](docs/LISTS_LOGIC_ANALYSIS_AND_PLAN.md)**: 🆕 Análisis y plan de refactorización de listas personalizadas
 - **[docs/](docs/)**: Documentación técnica especializada
 
 ### 🔧 Frameworks y Librerías

@@ -17,8 +17,9 @@ class CustomList {
     this.isDeleted = false,
     this.syncStatus = 'synced',
     this.defaultType,
-    this.colorHex,
-  }) : lastModifiedAt = lastModifiedAt ?? updatedAt ?? DateTime.now();
+    String? colorHex,
+  })  : colorHex = _resolveColorHex(colorName: color, explicitHex: colorHex),
+        lastModifiedAt = lastModifiedAt ?? updatedAt ?? DateTime.now();
 
   factory CustomList.fromJson(Map<String, dynamic> json) {
     return CustomList(
@@ -53,7 +54,34 @@ class CustomList {
   final String name;
   final String description;
   final String emoji;
+
+  /// **DEPRECATED**: Este campo será eliminado en versiones futuras.
+  ///
+  /// **Razón**: El modelo de datos está siendo refactorizado para usar una
+  /// tabla relacional separada (`user_list_items`) que refleja correctamente
+  /// la estructura de la base de datos.
+  ///
+  /// **Alternativa**: Usa `listItemsProvider(listId)` para obtener las películas
+  /// de una lista en tiempo real.
+  ///
+  /// ```dart
+  /// // ❌ Forma antigua (deprecated)
+  /// final movieIds = list.movieIds;
+  ///
+  /// // ✅ Forma nueva (recomendada)
+  /// final items = ref.watch(listItemsProvider(listId));
+  /// ```
+  ///
+  /// Ver: `lib/presentation/providers/list_items_provider.dart`
+  ///
+  /// **Fecha de deprecación**: Octubre 2025
+  /// **Eliminación planeada**: Noviembre 2025
+  @Deprecated(
+    'Usa listItemsProvider(listId) en lugar de acceder directamente a movieIds. '
+    'Este campo será eliminado en la próxima versión mayor.',
+  )
   final List<int> movieIds;
+
   final DateTime createdAt;
   final DateTime lastModifiedAt;
   final String? userId;
@@ -97,7 +125,7 @@ class CustomList {
       isDeleted: isDeleted ?? this.isDeleted,
       syncStatus: syncStatus ?? this.syncStatus,
       defaultType: defaultType ?? this.defaultType,
-      colorHex: colorHex ?? this.colorHex,
+      colorHex: colorHex ?? (color != null ? null : this.colorHex),
     );
   }
 
@@ -131,7 +159,7 @@ class CustomList {
       'is_default': isDefault,
       'is_public': isPublic,
       // Usar color_hex (nombre correcto de columna en DB)
-      'color_hex': colorHex ?? color,
+      'color_hex': _resolveColorHex(colorName: color, explicitHex: colorHex),
       'is_deleted': isDeleted,
       // NO enviar created_at y last_modified_at en INSERT/UPDATE
       // Supabase los genera automáticamente con DEFAULT NOW()
@@ -159,6 +187,67 @@ class CustomList {
       caseSensitive: false,
     );
     return uuidRegex.hasMatch(value);
+  }
+
+  static const String _defaultColorHex = '#2196F3';
+
+  static const Map<String, String> _colorNameToHexMap = {
+    'red': '#F44336',
+    'pink': '#E91E63',
+    'purple': '#9C27B0',
+    'deep_purple': '#673AB7',
+    'indigo': '#3F51B5',
+    'blue': '#2196F3',
+    'light_blue': '#03A9F4',
+    'cyan': '#00BCD4',
+    'teal': '#009688',
+    'green': '#4CAF50',
+    'light_green': '#8BC34A',
+    'lime': '#CDDC39',
+    'yellow': '#FFEB3B',
+    'amber': '#FFC107',
+    'orange': '#FF9800',
+    'deep_orange': '#FF5722',
+    'brown': '#795548',
+    'grey': '#9E9E9E',
+    'gray': '#9E9E9E',
+    'blue_grey': '#607D8B',
+    'blue_gray': '#607D8B',
+  };
+
+  static String _resolveColorHex({
+    required String colorName,
+    String? explicitHex,
+  }) {
+    if (explicitHex != null && explicitHex.trim().isNotEmpty) {
+      if (_looksLikeHex(explicitHex)) {
+        return _normalizeHex(explicitHex);
+      }
+    }
+
+    if (_looksLikeHex(colorName)) {
+      return _normalizeHex(colorName);
+    }
+
+    final mappedHex = _colorNameToHexMap[colorName.toLowerCase()];
+    if (mappedHex != null) {
+      return mappedHex;
+    }
+
+    return _defaultColorHex;
+  }
+
+  static bool _looksLikeHex(String value) {
+    final trimmed = value.trim();
+    final hexOnly = trimmed.startsWith('#') ? trimmed.substring(1) : trimmed;
+    final hexRegex = RegExp(r'^[0-9a-fA-F]{6}$');
+    return hexRegex.hasMatch(hexOnly);
+  }
+
+  static String _normalizeHex(String value) {
+    final trimmed = value.trim();
+    final hexOnly = trimmed.startsWith('#') ? trimmed.substring(1) : trimmed;
+    return '#${hexOnly.toUpperCase()}';
   }
 
   @override
@@ -201,6 +290,18 @@ class CustomList {
         defaultType,
         colorHex,
       );
+
+  /// Helper para obtener el conteo de películas.
+  ///
+  /// **NOTA**: Este método retorna `movieIds.length` por compatibilidad,
+  /// pero será deprecado.
+  ///
+  /// **Recomendado**: Usa `listMovieCountProvider(listId)` en su lugar:
+  /// ```dart
+  /// final count = ref.watch(listMovieCountProvider(listId));
+  /// ```
+  @Deprecated('Usa listMovieCountProvider(listId) en lugar de este getter')
+  int get movieCount => movieIds.length;
 
   @override
   String toString() {

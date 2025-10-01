@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/supabase_config.dart';
 import '../../core/logging/logger_factory.dart';
+import '../../core/sync/sync_utilities.dart';
 import '../../domain/entities/custom_list.dart';
 import '../../domain/entities/list_item.dart';
 import '../../domain/repositories/i_custom_lists_repository.dart';
@@ -16,6 +17,9 @@ import '../../infrastructure/datasources/supabase_custom_lists_datasource.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../services/list_sync_service.dart';
 import '../../services/lists_migration_service.dart';
+
+// Export list items provider
+export 'list_items_provider.dart';
 
 // ========== PROVIDERS DE DEPENDENCIAS ==========
 
@@ -200,8 +204,10 @@ class ListActions {
     bool isDefault = false,
     String? defaultType,
   }) async {
+    final generatedId = SyncUtilities.generateUuid();
+    final now = DateTime.now();
     final newList = CustomList(
-      id: '', // Se generará en el servidor
+      id: generatedId,
       name: name,
       description: description ?? '',
       emoji: emoji ?? '📝',
@@ -211,8 +217,8 @@ class ListActions {
       defaultType: defaultType,
       userId:
           null, // Se obtendrá del contexto de autenticación en el repository
-      createdAt: DateTime.now(),
-      lastModifiedAt: DateTime.now(),
+      createdAt: now,
+      lastModifiedAt: now,
       syncStatus: 'syncing',
     );
 
@@ -266,18 +272,22 @@ class ListActions {
       }
 
       // Crear nueva lista duplicada
+      final generatedId = SyncUtilities.generateUuid();
+      final now = DateTime.now();
       final duplicatedList = originalList.copyWith(
-        id: null, // Nuevo ID será generado
+        id: generatedId,
         name: newName,
-        createdAt: DateTime.now(),
-        lastModifiedAt: DateTime.now(),
+        movieIds: List<int>.from(originalList.movieIds),
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: false,
         syncStatus: 'pending',
       );
 
-      await _repository.createList(duplicatedList);
+      final createdList = await _repository.createList(duplicatedList);
       LoggerFactory.info('✅ Lista duplicada exitosamente: "$newName"');
 
-      return duplicatedList;
+      return createdList;
     } catch (e) {
       LoggerFactory.error('❌ Error duplicando lista $listId: $e');
       rethrow;
