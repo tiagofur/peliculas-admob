@@ -231,8 +231,24 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
 
       final userId = data['user_id'] as String?;
       final movieId = data['movie_id'] as int?;
+      final supabaseId = (data['id'] ?? data['supabase_id'])?.toString();
+
+      if (payload.eventType == PostgresChangeEvent.delete) {
+        final resolvedMovieId =
+            movieId ?? _findMovieIdFromSupabaseId(supabaseId);
+
+        if (resolvedMovieId == null) {
+          LoggerFactory.warning(
+              '🔊 $logPrefix: Evento delete sin movieId ni supabaseId conocido, ignorando');
+          return;
+        }
+
+        _handleDelete(oldRecord, resolvedMovieId, supabaseId);
+        return;
+      }
 
       if (userId != _currentUserId || movieId == null) {
+        // Para insert/update mantenemos validación estricta
         LoggerFactory.info('🔊 $logPrefix: Cambio de otro usuario, ignorando');
         return;
       }
@@ -244,10 +260,9 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
         case PostgresChangeEvent.update:
           _handleUpdate(newRecord, oldRecord);
           break;
-        case PostgresChangeEvent.delete:
-          _handleDelete(oldRecord);
-          break;
         case PostgresChangeEvent.all:
+          break;
+        case PostgresChangeEvent.delete:
           break;
       }
     } catch (e) {
@@ -262,8 +277,14 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
     final syncableMovie = _recordToSyncableMovie(record);
     final movieId = syncableMovie.movie.id;
 
-    if (!state.containsKey(movieId)) {
-      state = {...state, movieId: syncableMovie};
+    final hadMovie = state.containsKey(movieId);
+
+    state = {...state, movieId: syncableMovie};
+
+    if (hadMovie) {
+      LoggerFactory.info(
+          '🔄 $logPrefix: Insert reemplazó optimista ${syncableMovie.movie.title}');
+    } else {
       LoggerFactory.info(
           '➕ $logPrefix: Insertando ${syncableMovie.movie.title}');
     }
@@ -287,15 +308,43 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
     }
   }
 
-  void _handleDelete(Map<String, dynamic> record) {
-    if (record['user_id'] != _currentUserId) return;
+  void _handleDelete(
+    Map<String, dynamic> record,
+    int movieId,
+    String? supabaseId,
+  ) {
+    if (!state.containsKey(movieId)) {
+      final fallbackMovieId = _findMovieIdFromSupabaseId(supabaseId);
 
-    final movieId = record['movie_id'] as int;
-    if (state.containsKey(movieId)) {
-      final movie = state[movieId];
-      state = Map.from(state)..remove(movieId);
-      LoggerFactory.info('🗑️ $logPrefix: REMOVIDA: ${movie?.movie.title}');
+      if (fallbackMovieId != null && state.containsKey(fallbackMovieId)) {
+        final movie = state[fallbackMovieId];
+        state = Map.from(state)..remove(fallbackMovieId);
+        LoggerFactory.info(
+            '🗑️ $logPrefix: REMOVIDA (fallback): ${movie?.movie.title}');
+      } else {
+        LoggerFactory.info(
+            '🔊 $logPrefix: Delete recibido pero película ya no está en estado');
+      }
+      return;
     }
+
+    final movie = state[movieId];
+    state = Map.from(state)..remove(movieId);
+    LoggerFactory.info('🗑️ $logPrefix: REMOVIDA: ${movie?.movie.title}');
+  }
+
+  int? _findMovieIdFromSupabaseId(String? supabaseId) {
+    if (supabaseId == null || supabaseId.isEmpty) {
+      return null;
+    }
+
+    for (final entry in state.entries) {
+      if (entry.value.supabaseId == supabaseId) {
+        return entry.key;
+      }
+    }
+
+    return null;
   }
 
   SyncableMovie _recordToSyncableMovie(Map<String, dynamic> record) {

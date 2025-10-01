@@ -205,8 +205,7 @@ final movieInAnyListProvider =
   final isWatched = ref.watch(directIsWatchedProvider(movieId));
   final isInWatchlist = ref.watch(directWatchlistMoviesProvider
       .select((state) => state.containsKey(movieId)));
-  final isRated = ref.watch(
-      directRatingsProvider.select((state) => state.isMovieRated(movieId)));
+  final isRated = ref.watch(directIsRatedProvider(movieId));
 
   return MovieListStatus(
     isFavorite: isFavorite,

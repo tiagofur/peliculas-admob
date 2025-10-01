@@ -93,7 +93,7 @@ class SyncPerformanceOptimizer {
 
       // Consulta optimizada con índices
       var remoteQuery =
-          _supabase.from('user_watched_movies').select().eq('user_id', userId);
+          _supabase.from('user_watched').select().eq('user_id', userId);
 
       if (lastSync != null) {
         remoteQuery =
@@ -348,7 +348,7 @@ class SyncPerformanceOptimizer {
           .toList();
 
       await _supabase
-          .from('user_watched_movies')
+          .from('user_watched')
           .upsert(data, onConflict: 'user_id,movie_id');
 
       result.processedItems += batch.length;

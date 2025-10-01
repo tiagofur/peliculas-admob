@@ -130,10 +130,11 @@ class CustomList {
       'user_id': userId,
       'is_default': isDefault,
       'is_public': isPublic,
-      'color': colorHex ?? color,
-      'created_at': createdAt.toUtc().toIso8601String(),
-      'last_modified_at': lastModifiedAt.toUtc().toIso8601String(),
+      // Usar color_hex (nombre correcto de columna en DB)
+      'color_hex': colorHex ?? color,
       'is_deleted': isDeleted,
+      // NO enviar created_at y last_modified_at en INSERT/UPDATE
+      // Supabase los genera automáticamente con DEFAULT NOW()
     };
 
     if (defaultType != null && defaultType!.isNotEmpty) {

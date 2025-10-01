@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../generated/app_localizations.dart';
-import '../../providers/movie_ratings_provider.dart';
+import '../../providers/unified_ratings_provider.dart';
 import '../ratings/movie_rating_widget.dart';
 import '../ratings/rating_dialog.dart';
 
@@ -19,11 +18,8 @@ class MovieRatingAndNotes extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ratingAsync = ref.watch(movieRatingProvider(movie.id));
+    final rating = ref.watch(movieRatingProvider(movie.id));
     final l10n = AppLocalizations.of(context)!;
-
-    // Debug: Log what we're watching
-    // LoggerFactory.debug('📊 Watching rating for movie: ${movie.id}');
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -51,60 +47,10 @@ class MovieRatingAndNotes extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ratingAsync.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-            error: (error, stackTrace) {
-              LoggerFactory.error('❌ Error loading rating: $error');
-              return Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Theme.of(context).colorScheme.error,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Error loading rating. Tap to retry.',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onErrorContainer,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        ref.invalidate(movieRatingProvider(movie.id));
-                      },
-                      icon: const Icon(Icons.refresh, size: 20),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              );
-            },
-            data: (rating) {
-              if (rating == null) {
-                // No hay calificación - mostrar botón para calificar
-                return _buildNoRatingState(context, ref, l10n);
-              } else {
-                // Hay calificación - mostrar calificación existente
-                return _buildExistingRating(context, ref, rating, l10n);
-              }
-            },
-          ),
+          if (rating == null)
+            _buildNoRatingState(context, ref, l10n)
+          else
+            _buildExistingRating(context, ref, rating, l10n),
         ],
       ),
     );
@@ -349,10 +295,10 @@ class MovieRatingAndNotes extends ConsumerWidget {
     );
 
     if (confirmed ?? false) {
-      final notifier = ref.read(movieRatingsProvider.notifier);
-      final success = await notifier.removeRating(movie.id);
+      final notifier = ref.read(unifiedRatingsProvider.notifier);
+      await notifier.deleteRating(movie.id);
 
-      if (success && context.mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(l10n.ratingDeletedSuccessfully),

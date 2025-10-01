@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie_rating.dart';
-import '../../providers/movie_ratings_provider.dart';
+import '../../providers/unified_ratings_provider.dart';
 import 'rating_dialog.dart';
 import 'rating_slider_widget.dart';
 
@@ -24,17 +24,8 @@ class MovieRatingWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ratingAsync = ref.watch(movieRatingProvider(movie.id));
-
-    return ratingAsync.when(
-      loading: () => const CircularProgressIndicator(),
-      error: (error, _) => Icon(
-        Icons.error,
-        color: Colors.red,
-        size: size,
-      ),
-      data: (rating) => _buildRatingWidget(context, ref, rating),
-    );
+    final rating = ref.watch(movieRatingProvider(movie.id));
+    return _buildRatingWidget(context, ref, rating);
   }
 
   Widget _buildRatingWidget(
@@ -153,24 +144,14 @@ class CompactMovieRatingWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ratingAsync = ref.watch(movieRatingProvider(movie.id));
+    final rating = ref.watch(movieRatingProvider(movie.id));
 
-    return ratingAsync.when(
-      loading: () => SizedBox(
-        width: size,
-        height: size,
-        child: const CircularProgressIndicator(strokeWidth: 2),
-      ),
-      error: (error, _) => const SizedBox.shrink(),
-      data: (rating) {
-        if (rating == null) return const SizedBox.shrink();
+    if (rating == null) return const SizedBox.shrink();
 
-        return CompactRatingDisplay(
-          rating: rating.rating,
-          size: size,
-          showLabel: false,
-        );
-      },
+    return CompactRatingDisplay(
+      rating: rating.rating,
+      size: size,
+      showLabel: false,
     );
   }
 }
@@ -181,7 +162,7 @@ class UserRatingStatsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final stats = ref.watch(userRatingStatsProvider);
+    final stats = ref.watch(ratingsStatsProvider);
 
     if (stats == null) {
       return const Card(
@@ -282,53 +263,47 @@ class RecentRatingsWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final recentRatingsAsync = ref.watch(recentRatingsProvider);
+    final ratings = ref.watch(recentRatingsProvider);
 
-    return recentRatingsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Text('Error: $error'),
-      data: (ratings) {
-        if (ratings.isEmpty) {
-          return const Text('No recent ratings');
-        }
+    if (ratings.isEmpty) {
+      return const Text('No recent ratings');
+    }
 
-        final limitedRatings = ratings.take(limit).toList();
+    final limitedRatings = ratings.take(limit).toList();
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Recent Ratings',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            ...limitedRatings.map((rating) => ListTile(
-                  leading: CompactRatingDisplay(
-                    rating: rating.rating,
-                    size: 16,
-                    showLabel: false,
-                  ),
-                  title: Text(rating.movieTitle),
-                  subtitle: rating.hasReview
-                      ? Text(
-                          rating.review!.length > 50
-                              ? '${rating.review!.substring(0, 50)}...'
-                              : rating.review!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                      : null,
-                  trailing: Text(
-                    '${rating.rating.toStringAsFixed(1)}/10',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  dense: true,
-                )),
-          ],
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Recent Ratings',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 8),
+        ...limitedRatings.map((rating) => ListTile(
+              leading: CompactRatingDisplay(
+                rating: rating.rating,
+                size: 16,
+                showLabel: false,
+              ),
+              title: Text(rating.movieTitle),
+              subtitle: rating.hasReview
+                  ? Text(
+                      rating.review!.length > 50
+                          ? '${rating.review!.substring(0, 50)}...'
+                          : rating.review!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : null,
+              trailing: Text(
+                '${rating.rating.toStringAsFixed(1)}/10',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              dense: true,
+            )),
+      ],
     );
   }
 }

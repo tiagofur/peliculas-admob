@@ -9,7 +9,10 @@ import '../../presentation/providers/storage/direct_favorites_provider.dart';
 import '../../presentation/providers/storage/direct_watched_provider.dart';
 import '../../presentation/providers/storage/direct_watchlist_provider.dart';
 import '../../presentation/providers/storage/favorite_movies_provider.dart';
+import '../../presentation/providers/unified_ratings_provider.dart';
+import '../../presentation/providers/unified_sync_provider.dart';
 import '../../services/custom_lists_auth_integration.dart';
+import '../../services/unified_rating_service.dart';
 import '../logging/logger_factory.dart';
 import '../sync/silent_favorites_sync_service.dart';
 
@@ -74,8 +77,29 @@ class PostLoginInitializationService {
     LoggerFactory.info(
         '🚀 Starting NON-BLOCKING post-login initialization for user: $userId');
 
-    // SOLO habilitar servicios, NO hacer sync automática para evitar bloqueos
+    // ✅ PASO 1: Habilitar sistema unificado de Favorites (PRIORIDAD)
+    Timer(const Duration(milliseconds: 50), () {
+      try {
+        ref.read(unifiedFavoritesProvider.notifier).enableAfterLogin();
+        LoggerFactory.info(
+            '✅ UnifiedFavorites habilitado para sync tiempo real');
+      } catch (e) {
+        LoggerFactory.error('❌ Error habilitando UnifiedFavorites: $e');
+      }
+    });
+
+    // ✅ PASO 2: Habilitar sistema unificado de Watched (PRIORIDAD)
     Timer(const Duration(milliseconds: 100), () {
+      try {
+        ref.read(unifiedWatchedProvider.notifier).enableAfterLogin();
+        LoggerFactory.info('✅ UnifiedWatched habilitado para sync tiempo real');
+      } catch (e) {
+        LoggerFactory.error('❌ Error habilitando UnifiedWatched: $e');
+      }
+    });
+
+    // PASO 3: Habilitar auto-refresh (compatibilidad con código existente)
+    Timer(const Duration(milliseconds: 150), () {
       try {
         ref.read(favoriteMoviesProvider.notifier).enableAutoRefresh();
         LoggerFactory.info('✅ Auto-refresh habilitado (no bloqueante)');
@@ -84,10 +108,9 @@ class PostLoginInitializationService {
       }
     });
 
-    // Inicializar DirectFavoritesProvider para activar listeners de tiempo real
+    // PASO 4: Inicializar DirectFavoritesProvider (solo para compatibilidad legacy)
     Timer(const Duration(milliseconds: 200), () {
       try {
-        // Solo acceder al provider para que se inicialice y configure los listeners
         ref.read(directFavoriteMoviesProvider.notifier).enableAfterLogin();
         LoggerFactory.info(
             '✅ DirectFavorites listeners habilitados para sync tiempo real');
@@ -97,10 +120,9 @@ class PostLoginInitializationService {
       }
     });
 
-    // Inicializar DirectWatchedProvider para activar listeners de tiempo real
-    Timer(const Duration(milliseconds: 300), () {
+    // PASO 5: Inicializar DirectWatchedProvider (solo para compatibilidad legacy)
+    Timer(const Duration(milliseconds: 250), () {
       try {
-        // Solo acceder al provider para que se inicialice y configure los listeners
         ref.read(directWatchedMoviesProvider.notifier).enableAfterLogin();
         LoggerFactory.info(
             '✅ DirectWatched listeners habilitados para sync tiempo real');
@@ -109,8 +131,8 @@ class PostLoginInitializationService {
       }
     });
 
-    // Inicializar DirectWatchlistProvider para activar listeners de tiempo real
-    Timer(const Duration(milliseconds: 400), () {
+    // PASO 6: Inicializar DirectWatchlistProvider para activar listeners de tiempo real
+    Timer(const Duration(milliseconds: 300), () {
       try {
         // Solo acceder al provider para que se inicialice y configure los listeners
         ref.read(directWatchlistMoviesProvider.notifier).enableAfterLogin();
@@ -122,8 +144,20 @@ class PostLoginInitializationService {
       }
     });
 
-    // Inicializar DirectCustomListsProvider para activar listeners de tiempo real
-    Timer(const Duration(milliseconds: 500), () {
+    // PASO 7: Inicializar sistema de ratings unificado para activar listeners de tiempo real
+    Timer(const Duration(milliseconds: 350), () {
+      try {
+        // Inicializar el servicio unificado de ratings
+        ref.read(unifiedRatingsProvider.notifier).refresh();
+        LoggerFactory.info(
+            '✅ UnifiedRatings initialized para sync tiempo real');
+      } catch (e) {
+        LoggerFactory.error('❌ Error inicializando UnifiedRatings: $e');
+      }
+    });
+
+    // PASO 8: Inicializar DirectCustomListsProvider para activar listeners de tiempo real
+    Timer(const Duration(milliseconds: 400), () {
       try {
         // Solo acceder al provider para que se inicialice y configure los listeners
         ref.read(directCustomListsProvider.notifier).enableAfterLogin();
@@ -237,6 +271,14 @@ class PostLoginInitializationService {
 
       // Detener sincronización silenciosa
       SilentFavoritesSyncService.instance.stopSync();
+
+      // Limpiar sistema de ratings unificado
+      try {
+        UnifiedRatingService.instance.dispose();
+        LoggerFactory.info('✅ UnifiedRatings cleaned up');
+      } catch (e) {
+        LoggerFactory.error('❌ Error cleaning up UnifiedRatings: $e');
+      }
 
       // Limpiar servicios de listas personalizadas
       try {

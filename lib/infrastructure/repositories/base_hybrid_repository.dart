@@ -411,46 +411,127 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   void _setupRealtimeSubscription() {
     if (userId == 'anonymous_user') return;
 
-    _realtimeChannel = Supabase.instance.client
-        .channel('public:$tableName:user_id=eq.$userId');
-    _realtimeChannel!
-        .onPostgresChanges(
-          event: PostgresChangeEvent.all,
-          schema: 'public',
-          table: tableName,
-          callback: (payload) {
-            _handleRealtimePayload(payload);
-          },
-        )
-        .subscribe();
-    LoggerFactory.info('⚡️ Realtime subscription setup for $tableName');
+    try {
+      // Crear canal único para este tipo de entidad y usuario
+      _realtimeChannel =
+          Supabase.instance.client.channel('$entityType-$userId');
+
+      // Configurar escucha con filtro correcto por user_id
+      _realtimeChannel!
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: tableName,
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (payload) {
+              _handleRealtimePayload(payload);
+            },
+          )
+          .subscribe();
+
+      LoggerFactory.info(
+          '⚡️ Realtime subscription setup for $tableName (user: $userId, channel: $entityType-$userId)');
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ Failed to setup realtime subscription for $tableName: $e');
+    }
   }
 
-  void _handleRealtimePayload(PostgresChangePayload payload) {
+  void _handleRealtimePayload(PostgresChangePayload payload) async {
     final eventType = payload.eventType;
     LoggerFactory.info(
-        'Realtime event: $eventType, data: ${payload.oldRecord}');
+        '⚡️ Realtime event received for $entityType: $eventType');
 
-    switch (eventType) {
-      case PostgresChangeEvent.insert:
-      case PostgresChangeEvent.update:
-        final entity = deserializeFromRemote(payload.newRecord);
-        saveToLocal(entity);
-        _emitEvent(RepositoryEventType.itemUpdated, 'Realtime item updated',
-            entity: entity);
-        break;
-      case PostgresChangeEvent.delete:
-        final movieId = payload.oldRecord['movie_id']?.toString();
-        if (movieId != null) {
-          removeFromLocal(movieId);
-          _emitEvent(RepositoryEventType.itemRemoved, 'Realtime item removed',
-              entityId: movieId);
-        }
-        break;
-      case PostgresChangeEvent.all:
-        // Handle other event types or ignore
-        LoggerFactory.debug('Unhandled realtime event type: $eventType');
-        break;
+    try {
+      switch (eventType) {
+        case PostgresChangeEvent.insert:
+          LoggerFactory.info(
+              '📦 INSERT payload newRecord: ${payload.newRecord}');
+          try {
+            final entity = deserializeFromRemote(payload.newRecord);
+            LoggerFactory.info(
+                '🔄 Deserialized entity: ${entity.id}, movieId: ${(entity as dynamic).movieId}');
+
+            await saveToLocal(entity);
+            _emitEvent(RepositoryEventType.itemAdded, 'Realtime item added',
+                entity: entity);
+            LoggerFactory.info(
+                '✅ Realtime INSERT processed successfully: ${entity.id}');
+          } catch (e, st) {
+            LoggerFactory.error('❌ Failed to process INSERT: $e');
+            LoggerFactory.error('Stack: $st');
+          }
+          break;
+
+        case PostgresChangeEvent.update:
+          LoggerFactory.info(
+              '📦 UPDATE payload newRecord: ${payload.newRecord}');
+          try {
+            final entity = deserializeFromRemote(payload.newRecord);
+            await saveToLocal(entity);
+            _emitEvent(RepositoryEventType.itemUpdated, 'Realtime item updated',
+                entity: entity);
+            LoggerFactory.info('✅ Realtime UPDATE processed: ${entity.id}');
+          } catch (e, st) {
+            LoggerFactory.error('❌ Failed to process UPDATE: $e');
+            LoggerFactory.error('Stack: $st');
+          }
+          break;
+
+        case PostgresChangeEvent.delete:
+          LoggerFactory.info(
+              '📦 DELETE payload oldRecord: ${payload.oldRecord}');
+
+          // Estrategia mejorada para DELETE:
+          // 1. Intentar obtener movie_id directamente (más común)
+          // 2. Si no existe, intentar id
+          final movieId = payload.oldRecord['movie_id'];
+          final entityId = payload.oldRecord['id'];
+
+          LoggerFactory.info(
+              '🔍 DELETE IDs found - movie_id: $movieId, id: $entityId');
+
+          String? idToRemove;
+          if (movieId != null) {
+            idToRemove = movieId.toString();
+          } else if (entityId != null) {
+            idToRemove = entityId.toString();
+          }
+
+          if (idToRemove != null) {
+            LoggerFactory.info('🗑️ Attempting to remove with ID: $idToRemove');
+            try {
+              await removeFromLocal(idToRemove);
+              _emitEvent(
+                  RepositoryEventType.itemRemoved, 'Realtime item removed',
+                  entityId: idToRemove);
+              LoggerFactory.info(
+                  '✅ Realtime DELETE processed successfully: $idToRemove');
+            } catch (e, st) {
+              LoggerFactory.error('❌ Failed to remove from local: $e');
+              LoggerFactory.error('Stack: $st');
+            }
+          } else {
+            LoggerFactory.warning(
+                '⚠️ Cannot process DELETE - missing both movie_id and id in oldRecord');
+            LoggerFactory.warning('⚠️ Full oldRecord: ${payload.oldRecord}');
+          }
+          break;
+
+        case PostgresChangeEvent.all:
+          LoggerFactory.debug('ℹ️ Received "all" event type - ignoring');
+          break;
+      }
+    } catch (e, stackTrace) {
+      LoggerFactory.error(
+          '❌ Error handling realtime payload for $entityType: $e');
+      LoggerFactory.error('Stack trace: $stackTrace');
+      LoggerFactory.error(
+          'Full payload - event: ${payload.eventType}, oldRecord: ${payload.oldRecord}, newRecord: ${payload.newRecord}');
     }
   }
 

@@ -60,7 +60,7 @@ class DatabaseVerificationService {
         'is_deleted',
         'last_modified_at'
       ],
-      'user_watched_movies': [
+      'user_watched': [
         'id',
         'user_id',
         'movie_id',
@@ -197,7 +197,7 @@ class DatabaseVerificationService {
       final tables = [
         'user_favorites',
         'user_watchlist',
-        'user_watched_movies',
+        'user_watched',
         'user_lists'
       ];
 

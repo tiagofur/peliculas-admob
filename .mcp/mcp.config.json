@@ -8,6 +8,25 @@
         "channel": "chrome",
         "slowMo": 0
       }
+    },
+    {
+      "id": "supabase",
+      "type": "command",
+      "options": {
+        "command": "cmd",
+        "args": [
+          "/c",
+          "npx",
+          "-y",
+          "@supabase/mcp-server-supabase@latest",
+          "--read-only",
+          "--project-ref=fyzujpifkzftweynrudh",
+          "--features=database,docs,development"
+        ],
+        "env": {
+          "SUPABASE_ACCESS_TOKEN": "${env:SUPABASE_ACCESS_TOKEN}"
+        }
+      }
     }
   ]
 }

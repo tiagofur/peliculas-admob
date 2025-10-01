@@ -22,9 +22,7 @@ class TriggerFreeRatingsSync {
       final response = await _supabase
           .from('user_movie_ratings')
           .select('*')
-          .eq('user_id', userId)
-          .eq('is_deleted', false)
-          .order('created_at', ascending: false);
+          .eq('user_id', userId);
 
       final List<dynamic> data = response as List<dynamic>;
       final ratingsData = data.cast<Map<String, dynamic>>();
@@ -54,7 +52,6 @@ class TriggerFreeRatingsSync {
           .select('*')
           .eq('user_id', userId)
           .eq('movie_id', movieId)
-          .eq('is_deleted', false)
           .maybeSingle();
 
       if (response != null) {
@@ -99,7 +96,6 @@ class TriggerFreeRatingsSync {
         'rating': rating,
         'review': review,
         'last_modified_at': now,
-        'is_deleted': false,
         'sync_version': 1,
       };
 
@@ -209,7 +205,6 @@ class TriggerFreeRatingsSync {
           .select('id')
           .eq('user_id', userId)
           .eq('movie_id', movieId)
-          .eq('is_deleted', false)
           .limit(1);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -291,9 +286,7 @@ class TriggerFreeRatingsSync {
           .from('user_movie_ratings')
           .select('*')
           .eq('user_id', userId)
-          .eq('is_deleted', false)
-          .ilike('movie_title', '%$query%')
-          .order('created_at', ascending: false);
+          .ilike('movie_title', '%$query%');
 
       final List<dynamic> data = response as List<dynamic>;
       final ratingsData = data.cast<Map<String, dynamic>>();
@@ -318,8 +311,6 @@ class TriggerFreeRatingsSync {
           .from('user_movie_ratings')
           .select('*')
           .eq('user_id', userId)
-          .eq('is_deleted', false)
-          .order('created_at', ascending: false)
           .limit(limit);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -346,9 +337,6 @@ class TriggerFreeRatingsSync {
           .from('user_movie_ratings')
           .select('*')
           .eq('user_id', userId)
-          .eq('is_deleted', false)
-          .order('rating', ascending: false)
-          .order('created_at', ascending: false)
           .limit(limit);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -386,7 +374,6 @@ class TriggerFreeRatingsSync {
       'review': review,
       'created_at': now,
       'last_modified_at': now,
-      'is_deleted': false,
       'sync_version': 1,
     };
 
@@ -418,17 +405,91 @@ class TriggerFreeRatingsSync {
     }
   }
 
-  /// Test básico de conectividad
+  /// Stream de cambios en tiempo real para todas las calificaciones del usuario
+  Stream<List<UserMovieRating>> watchUserRatings(String userId) {
+    try {
+      LoggerFactory.info(
+          '👀 [TriggerFreeRatings] Configurando stream en tiempo real para usuario: $userId');
+
+      return _supabase
+          .from('user_movie_ratings')
+          .stream(primaryKey: ['id'])
+          .map((data) {
+            // Filtrar en el lado de la aplicación ya que stream no soporta .eq()
+            final filtered = data
+                .where((item) => item['user_id'] == userId)
+                .toList();
+
+            LoggerFactory.debug(
+                '🔄 [TriggerFreeRatings] Real-time update recibido: ${filtered.length} ratings');
+            return filtered
+                .map((item) => UserMovieRating.fromJson(item))
+                .toList();
+          });
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ [TriggerFreeRatings] Error configurando stream: $e');
+      return Stream.value([]);
+    }
+  }
+
+  /// Stream de cambios en tiempo real para una calificación específica
+  Stream<UserMovieRating?> watchMovieRating(String userId, int movieId) {
+    try {
+      LoggerFactory.debug(
+          '👀 [TriggerFreeRatings] Configurando stream para movie: $movieId');
+
+      return _supabase
+          .from('user_movie_ratings')
+          .stream(primaryKey: ['id'])
+          .map((data) {
+            // Filtrar en el lado de la aplicación
+            final filtered = data
+                .where((item) =>
+                    item['user_id'] == userId &&
+                    item['movie_id'] == movieId)
+                .toList();
+
+            if (filtered.isEmpty) {
+              LoggerFactory.debug(
+                  '📭 [TriggerFreeRatings] No rating para movie $movieId');
+              return null;
+            }
+            LoggerFactory.debug(
+                '🔄 [TriggerFreeRatings] Rating actualizado para movie $movieId');
+            return UserMovieRating.fromJson(filtered.first);
+          });
+    } catch (e) {
+      LoggerFactory.error(
+          '❌ [TriggerFreeRatings] Error configurando stream para movie: $e');
+      return Stream.value(null);
+    }
+  }
+
+  /// Test básico de conectividad y datos
   Future<bool> testConnection() async {
     try {
       LoggerFactory.info('🔗 [TriggerFreeRatings] Probando conexión...');
 
-      await _supabase.from('user_movie_ratings').select('count').limit(1);
+      // Query super simple sin filtros
+      final response = await _supabase
+          .from('user_movie_ratings')
+          .select('id, user_id, movie_title, rating')
+          .limit(5);
+
+      final List<dynamic> data = response as List<dynamic>;
 
       LoggerFactory.info('✅ [TriggerFreeRatings] Conexión exitosa');
+      LoggerFactory.info('📊 [TriggerFreeRatings] Total ratings en tabla: ${data.length}');
+
+      for (final item in data) {
+        LoggerFactory.info('  📌 Rating: ${item['movie_title']} - ${item['rating']}/10 (user: ${item['user_id']})');
+      }
+
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       LoggerFactory.error('❌ [TriggerFreeRatings] Error de conexión: $e');
+      LoggerFactory.error('Stack trace: $stackTrace');
       return false;
     }
   }

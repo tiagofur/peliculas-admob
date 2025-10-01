@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/syncable_movie_rating.dart';
-import '../../providers/movie_ratings_provider.dart';
+import '../../providers/unified_ratings_provider.dart';
 import 'rating_slider_widget.dart';
 
 /// Diálogo para calificar una película
@@ -230,19 +230,14 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
     });
 
     try {
-      final notifier = ref.read(movieRatingsProvider.notifier);
-      bool success = false;
+      final notifier = ref.read(unifiedRatingsProvider.notifier);
 
-      // ✅ Direct 1-10 rating
-      // DB FIX: Clamp to 9.9 to fit NUMERIC(2,1) - a value of 10.0 would overflow.
-      final ratingClamped = _rating.clamp(1.0, 10.0);
-      final validatedRating = ratingClamped == 10.0 ? 9.9 : ratingClamped;
-
+      // ✅ Direct 1-10 rating - no need to clamp, service handles it
       if (widget.existingRating != null) {
         // Actualizar calificación existente
-        success = await notifier.updateRating(
+        await notifier.updateRating(
           movieId: widget.movie.id,
-          rating: validatedRating,
+          rating: _rating,
           review: _reviewController.text.trim().isEmpty
               ? null
               : _reviewController.text.trim(),
@@ -251,9 +246,9 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         );
       } else {
         // Crear nueva calificación
-        success = await notifier.rateMovie(
+        await notifier.rateMovie(
           movie: widget.movie,
-          rating: validatedRating,
+          rating: _rating,
           review: _reviewController.text.trim().isEmpty
               ? null
               : _reviewController.text.trim(),
@@ -262,7 +257,7 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
         );
       }
 
-      if (success && mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -274,22 +269,15 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
             backgroundColor: Colors.green,
           ),
         );
-      } else if (mounted) {
+      }
+    } catch (e) {
+      if (mounted) {
         // Si la operación falla, muestra el error desde el provider
-        final error = ref.read(movieRatingsProvider).error;
+        final error = ref.read(unifiedRatingsProvider).error;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error ?? 'Failed to save rating. Please try again.'),
             backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to save rating: $e'),
-            backgroundColor: Colors.red,
           ),
         );
       }
@@ -331,10 +319,10 @@ class _RatingDialogState extends ConsumerState<RatingDialog> {
     });
 
     try {
-      final notifier = ref.read(movieRatingsProvider.notifier);
-      final success = await notifier.removeRating(widget.movie.id);
+      final notifier = ref.read(unifiedRatingsProvider.notifier);
+      await notifier.deleteRating(widget.movie.id);
 
-      if (success && mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -424,19 +412,15 @@ class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
     });
 
     try {
-      final notifier = ref.read(movieRatingsProvider.notifier);
+      final notifier = ref.read(unifiedRatingsProvider.notifier);
 
-      // ✅ Direct 1-10 rating
-      // DB FIX: Clamp to 9.9 to fit NUMERIC(2,1) - a value of 10.0 would overflow.
-      final ratingClamped = _rating.clamp(1.0, 10.0);
-      final validatedRating = ratingClamped == 10.0 ? 9.9 : ratingClamped;
-
-      final success = await notifier.rateMovie(
+      // ✅ Direct 1-10 rating - no need to clamp, service handles it
+      await notifier.rateMovie(
         movie: widget.movie,
-        rating: validatedRating,
+        rating: _rating,
       );
 
-      if (success && mounted) {
+      if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -444,21 +428,14 @@ class _QuickRatingDialogState extends ConsumerState<QuickRatingDialog> {
             backgroundColor: Colors.green,
           ),
         );
-      } else if (mounted) {
-        // Si la operación falla, muestra el error desde el provider
-        final error = ref.read(movieRatingsProvider).error;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error ?? 'Failed to rate movie. Please try again.'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {
+        // Si la operación falla, muestra el error desde el provider
+        final error = ref.read(unifiedRatingsProvider).error;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to rate movie: $e'),
+            content: Text(error ?? 'Failed to rate movie: $e'),
             backgroundColor: Colors.red,
           ),
         );

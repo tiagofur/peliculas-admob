@@ -61,7 +61,7 @@ class RealtimeSyncManager {
   static const Map<String, int> _tableBatchSizes = {
     'user_watchlist': 20,
     'user_favorites': 15,
-    'user_watched_movies': 25,
+    'user_watched': 25,
     'user_lists': 10,
     'user_list_items': 30,
   };
@@ -69,7 +69,7 @@ class RealtimeSyncManager {
   static const Map<String, Duration> _tableThrottleDelays = {
     'user_watchlist': Duration(milliseconds: 250),
     'user_favorites': Duration(milliseconds: 200),
-    'user_watched_movies': Duration(milliseconds: 400),
+    'user_watched': Duration(milliseconds: 400),
     'user_lists': Duration(milliseconds: 300),
     'user_list_items': Duration(milliseconds: 150),
   };
@@ -251,7 +251,7 @@ class RealtimeSyncManager {
     final tables = [
       'user_favorites',
       'user_watchlist',
-      'user_watched_movies',
+      'user_watched',
       'user_custom_lists'
     ];
 
@@ -835,7 +835,7 @@ class RealtimeSyncManager {
         return 'favorite';
       case 'user_watchlist':
         return 'watchlist';
-      case 'user_watched_movies':
+      case 'user_watched':
         return 'watched_movie';
       case 'user_custom_lists':
         return 'custom_list';

@@ -22,7 +22,7 @@ class WatchedSyncManager extends EntitySyncManager<SyncableWatchedMovie> {
       WatchedMoviesHiveDatasource();
 
   final SupabaseClient _supabase;
-  static const String _tableName = 'user_watched_movies';
+  static const String _tableName = 'user_watched';
 
   /// Getter para acceder al almacenamiento local de Hive
   Box get _localStorage => Hive.box('watched_movies');

@@ -23,7 +23,7 @@ class TriggerFreeWatchedSync implements BaseSync {
           '📥 [TriggerFree] Obteniendo películas vistas: $userId');
 
       final response = await _supabase
-          .from('user_watched_movies')
+          .from('user_watched')
           .select('*')
           .eq('user_id', userId)
           .order('watched_at', ascending: false);
@@ -52,7 +52,7 @@ class TriggerFreeWatchedSync implements BaseSync {
       final now = DateTime.now().toUtc().toIso8601String();
 
       // Usar upsert directo para evitar problemas con RPC (igual que favoritos)
-      await _supabase.from('user_watched_movies').upsert({
+      await _supabase.from('user_watched').upsert({
         'user_id': userId,
         'movie_id': movie.id,
         'movie_title': movie.title,
@@ -92,7 +92,7 @@ class TriggerFreeWatchedSync implements BaseSync {
 
       // DELETE no debería activar triggers UPDATE (igual que favoritos)
       await _supabase
-          .from('user_watched_movies')
+          .from('user_watched')
           .delete()
           .eq('user_id', userId)
           .eq('movie_id', movieId);
@@ -125,13 +125,13 @@ class TriggerFreeWatchedSync implements BaseSync {
 
     try {
       // Intentar INSERT primero
-      await _supabase.from('user_watched_movies').insert(watchedData);
+      await _supabase.from('user_watched').insert(watchedData);
     } catch (e) {
       if (e.toString().contains('duplicate') ||
           e.toString().contains('unique')) {
         // Si ya existe, hacer DELETE + INSERT
         await removeMovie(userId, movie.id);
-        await _supabase.from('user_watched_movies').insert(watchedData);
+        await _supabase.from('user_watched').insert(watchedData);
       } else {
         rethrow;
       }
@@ -142,9 +142,10 @@ class TriggerFreeWatchedSync implements BaseSync {
   Future<bool> isMovieWatched(String userId, int movieId) async {
     try {
       final response = await _supabase
-          .from('user_watched_movies')
+          .from('user_watched')
           .select('id')
           .eq('user_id', userId)
+          .eq('movie_id', movieId)
           .maybeSingle();
 
       return response != null;
@@ -160,7 +161,7 @@ class TriggerFreeWatchedSync implements BaseSync {
     try {
       LoggerFactory.info('🔗 [TriggerFree] Probando conexión...');
 
-      await _supabase.from('user_watched_movies').select('count').limit(1);
+      await _supabase.from('user_watched').select('count').limit(1);
 
       LoggerFactory.info('✅ [TriggerFree] Conexión exitosa');
       return true;

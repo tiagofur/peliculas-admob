@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../../core/logging/logger_factory.dart';
 import '../../core/sync/entity_sync_manager.dart';
+import '../../core/sync/unified_watched_sync.dart';
 import '../../core/sync/watched_sync_manager.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/syncable_watched_movie.dart';
@@ -11,7 +12,7 @@ import '../datasources/watched_movies_hive_datasource.dart';
 import 'base_hybrid_repository.dart';
 
 /// Repositorio híbrido para películas vistas que combina almacenamiento local y remoto
-/// con sincronización automática usando el sistema de sync de Fase 3
+/// con sincronización automática usando el sistema unificado
 class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     implements WatchedMoviesRepository {
   HybridWatchedRepository({
@@ -19,19 +20,21 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
     EntitySyncManager<SyncableWatchedMovie>? syncManager,
     super.syncCoordinator,
   })  : _localDatasource = WatchedMoviesHiveDatasource(),
+        _unifiedSync = UnifiedWatchedSync.instance,
         super(
           entityType: 'watched_movie',
           syncManager: syncManager ?? WatchedSyncManager(userId: userId),
         );
 
   final WatchedMoviesHiveDatasource _localDatasource;
+  final UnifiedWatchedSync _unifiedSync;
 
   // =============================================
   // IMPLEMENTACIÓN DE MÉTODOS ABSTRACTOS
   // =============================================
 
   @override
-  String get tableName => 'user_watched_movies';
+  String get tableName => 'user_watched';
 
   @override
   SyncableWatchedMovie deserializeFromRemote(Map<String, dynamic> data) {
@@ -158,21 +161,33 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
   @override
   Future<void> markAsWatched(Movie movie) async {
     try {
-      final existing = await isMovieWatched(movie.id);
-      if (existing) {
+      // ✅ USAR EL SISTEMA UNIFICADO
+      final isCurrentlyWatched = await isMovieWatched(movie.id);
+
+      if (isCurrentlyWatched) {
         LoggerFactory.info('ℹ️ Movie ${movie.id} is already marked as watched');
         return;
       }
 
-      final watchedMovie = SyncableWatchedMovie.fromMovie(
-        userId: userId,
-        movie: movie,
-      );
+      LoggerFactory.info(
+          '🔄 HybridWatched: Marcando ${movie.title} como vista');
 
-      await add(watchedMovie);
-      LoggerFactory.info('✅ Marked movie as watched: ${movie.id}');
-    } catch (e) {
-      LoggerFactory.error('❌ Failed to mark movie as watched: $e');
+      // Actualizar local primero (optimistic update)
+      await _localDatasource.markAsWatched(movie);
+
+      // Sincronizar con Supabase usando el sistema unificado
+      await _unifiedSync.addOrUpdateItem(userId, movie, {
+        'watched_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+      LoggerFactory.info(
+          '✅ HybridWatched: Marcado exitosamente ${movie.title}');
+    } catch (e, stackTrace) {
+      LoggerFactory.error('❌ HybridWatched: Error marcando como vista: $e');
+      LoggerFactory.error('Stack trace: $stackTrace');
+
+      // Revertir cambio local en caso de error
+      await _localDatasource.removeFromWatched(movie.id);
       rethrow;
     }
   }
@@ -180,15 +195,26 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
   @override
   Future<void> removeFromWatched(int movieId) async {
     try {
+      // ✅ USAR EL SISTEMA UNIFICADO
       final watchedMovie = await getWatchedMovieByMovieId(movieId);
-      if (watchedMovie != null) {
-        await remove(watchedMovie.id);
-        LoggerFactory.info('🗑️ Unmarked movie as watched: $movieId');
-      } else {
+      if (watchedMovie == null) {
         LoggerFactory.info('ℹ️ Movie $movieId was not marked as watched');
+        return;
       }
-    } catch (e) {
-      LoggerFactory.error('❌ Failed to unmark movie as watched: $e');
+
+      LoggerFactory.info('� HybridWatched: Removiendo película $movieId');
+
+      // Actualizar local primero (optimistic update)
+      await _localDatasource.removeFromWatched(movieId);
+
+      // Sincronizar con Supabase usando el sistema unificado
+      await _unifiedSync.removeItem(userId, movieId);
+
+      LoggerFactory.info(
+          '✅ HybridWatched: Película $movieId removida exitosamente');
+    } catch (e, stackTrace) {
+      LoggerFactory.error('❌ HybridWatched: Error removiendo película: $e');
+      LoggerFactory.error('Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -211,16 +237,78 @@ class HybridWatchedRepository extends BaseHybridRepository<SyncableWatchedMovie>
         throw Exception('Movie $movieId is not marked as watched');
       }
 
-      final updatedMovie = watchedMovie.copyWithData(
-        personalRating: rating,
-        personalNotes: review,
-        lastModifiedAt: DateTime.now(),
-      );
+      LoggerFactory.info('📝 HybridWatched: Actualizando película $movieId');
 
-      await update(updatedMovie);
-      LoggerFactory.info('📝 Updated watched movie: $movieId');
-    } catch (e) {
-      LoggerFactory.error('❌ Failed to update watched movie: $e');
+      final movie = watchedMovie.toMovie();
+
+      // Sincronizar con Supabase usando el sistema unificado
+      await _unifiedSync.addOrUpdateItem(userId, movie, {
+        'personal_rating': rating,
+        'personal_notes': review,
+        'watched_at': watchedMovie.watchedDate.toIso8601String(),
+      });
+
+      LoggerFactory.info('✅ HybridWatched: Película $movieId actualizada');
+    } catch (e, stackTrace) {
+      LoggerFactory.error('❌ HybridWatched: Error actualizando película: $e');
+      LoggerFactory.error('Stack trace: $stackTrace');
+      rethrow;
+    }
+  }
+
+  /// Sincronización completa con Supabase
+  Future<void> syncWithRemote() async {
+    try {
+      LoggerFactory.info('🔄 HybridWatched: Iniciando sync con Supabase...');
+
+      // ✅ USAR EL SISTEMA UNIFICADO PARA SINCRONIZAR
+      final remoteData = await _unifiedSync.getUserItems(userId);
+      final localWatchedMovies =
+          await _localDatasource.loadWatchedMovies(limit: 1000, offset: 0);
+
+      // Crear mapas para comparación rápida
+      final remoteIds = remoteData.map((d) => d['movie_id'] as int).toSet();
+      final localIds = localWatchedMovies.map((w) => w.movie.id).toSet();
+
+      LoggerFactory.info(
+          '� HybridWatched: Local=${localIds.length}, Remote=${remoteIds.length}');
+
+      // Agregar películas remotas que no están localmente
+      int addedCount = 0;
+      for (final data in remoteData) {
+        final movieId = data['movie_id'] as int;
+        if (!localIds.contains(movieId)) {
+          final watched = _unifiedSync.supabaseDataToEntity(data);
+          await _localDatasource.markAsWatched(watched.toMovie());
+          addedCount++;
+        }
+      }
+
+      // Subir películas locales que no están en remoto
+      final toUpload = localWatchedMovies
+          .where((w) => !remoteIds.contains(w.movie.id))
+          .map((w) => w.movie)
+          .toList();
+      if (toUpload.isNotEmpty) {
+        LoggerFactory.info(
+            '📤 HybridWatched: Subiendo ${toUpload.length} películas locales');
+        await _unifiedSync.batchSync(userId, toUpload);
+      }
+
+      // Eliminar locales que no están en remoto
+      int removedCount = 0;
+      for (final movieId in localIds) {
+        if (!remoteIds.contains(movieId)) {
+          await _localDatasource.removeFromWatched(movieId);
+          removedCount++;
+        }
+      }
+
+      LoggerFactory.info(
+          '✅ HybridWatched: Sync completado (agregados: $addedCount, eliminados: $removedCount, subidos: ${toUpload.length})');
+    } catch (e, stackTrace) {
+      LoggerFactory.error('❌ HybridWatched: Error en sync: $e');
+      LoggerFactory.error('Stack trace: $stackTrace');
       rethrow;
     }
   }

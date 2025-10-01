@@ -16,7 +16,7 @@ class DirectWatchedService extends DirectSyncService {
           },
           sync: TriggerFreeWatchedSync.instance,
           logPrefix: 'DirectWatched',
-          tableName: 'user_watched_movies',
+          tableName: 'user_watched',
         );
 
   @override

@@ -405,7 +405,7 @@ class RealtimeDataValidator {
     );
 
     // Esquema para user_watched_movies
-    _tableSchemas['user_watched_movies'] = const TableSchema(
+    _tableSchemas['user_watched'] = const TableSchema(
       requiredFields: ['id', 'user_id', 'movie_id'],
       fieldTypes: {
         'id': FieldType.string,
