@@ -721,30 +721,63 @@ class _FullCastList extends StatelessWidget {
     // Debug: Log credits data
     if (kDebugMode) {
       print('🎬 DEBUG - Elenco Completo:');
-      print('  movie.credits: ${movie.credits}');
-      print('  movie.credits type: ${movie.credits?.runtimeType}');
+      print('  movie.id: ${movie.id}');
+      print('  movie.title: ${movie.title}');
+      print('  movie.credits == null: ${movie.credits == null}');
+
       if (movie.credits != null) {
-        print('  movie.credits keys: ${movie.credits!.keys}');
-        print('  movie.credits[\'cast\']: ${movie.credits!['cast']}');
-        print(
-            '  movie.credits[\'cast\'] type: ${movie.credits!['cast']?.runtimeType}');
-        if (movie.credits!['cast'] is List) {
-          print('  cast length: ${(movie.credits!['cast'] as List).length}');
+        print('  movie.credits type: ${movie.credits.runtimeType}');
+        print('  movie.credits keys: ${movie.credits!.keys.toList()}');
+        print('  movie.credits.length: ${movie.credits!.length}');
+
+        // Check each key
+        for (var key in movie.credits!.keys) {
+          print('  Key "$key": ${movie.credits![key]?.runtimeType}');
+        }
+
+        // Try accessing 'cast'
+        print('  Accessing movie.credits[\'cast\']:');
+        final castData = movie.credits!['cast'];
+        print('    Result: ${castData?.runtimeType}');
+        print('    Is null: ${castData == null}');
+        print('    Is List: ${castData is List}');
+
+        if (castData is List) {
+          print('    List length: ${castData.length}');
+          if (castData.isNotEmpty) {
+            print('    First item: ${castData.first}');
+          }
         }
       }
     }
 
     // Show cast only if available from API
-    if (movie.credits == null ||
-        movie.credits?['cast'] == null ||
-        ((movie.credits?['cast'] as List?) ?? []).isEmpty) {
+    if (movie.credits == null) {
       if (kDebugMode) {
-        print('❌ No hay cast disponible - returning empty widget');
+        print('❌ movie.credits is NULL - returning empty widget');
+      }
+      return const SizedBox.shrink();
+    }
+
+    if (movie.credits?['cast'] == null) {
+      if (kDebugMode) {
+        print('❌ movie.credits[\'cast\'] is NULL - returning empty widget');
       }
       return const SizedBox.shrink();
     }
 
     final castList = (movie.credits?['cast'] as List?) ?? [];
+
+    if (castList.isEmpty) {
+      if (kDebugMode) {
+        print('❌ castList is EMPTY - returning empty widget');
+      }
+      return const SizedBox.shrink();
+    }
+
+    if (kDebugMode) {
+      print('✅ Cast list valid! Rendering ${castList.length} actors');
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
