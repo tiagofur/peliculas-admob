@@ -15,6 +15,7 @@ import '../../domain/repositories/i_custom_lists_repository.dart';
 import '../../infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import '../../infrastructure/datasources/supabase_custom_lists_datasource.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
+import '../../services/default_lists_manager.dart';
 import '../../services/list_sync_service.dart';
 import '../../services/lists_migration_service.dart';
 
@@ -77,6 +78,15 @@ final listsMigrationServiceProvider =
     localDatasource,
     repository,
   );
+});
+
+/// Provider para el gestor de listas predefinidas
+final defaultListsManagerProvider =
+    FutureProvider<DefaultListsManager>((ref) async {
+  final repository = await ref.watch(customListsRepositoryProvider.future);
+  final prefs = await ref.watch(sharedPreferencesProvider.future);
+
+  return DefaultListsManager(repository, prefs);
 });
 
 // ========== PROVIDERS DE ESTADO ==========

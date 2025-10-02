@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../presentation/providers/auto_default_lists_provider.dart';
 import '../../presentation/providers/custom_lists_providers.dart';
 import '../../presentation/providers/storage/direct_custom_lists_provider.dart';
 import '../../presentation/providers/storage/direct_favorites_provider.dart';
@@ -196,6 +197,18 @@ class PostLoginInitializationService {
       }
     });
 
+    // Inicializar listas predefinidas (con caché para rendimiento)
+    Timer(const Duration(milliseconds: 500), () {
+      try {
+        // Usar ref.read en lugar de ref.watch para evitar listeners innecesarios
+        ref.read(autoDefaultListsProvider).ensureDefaultListsExist();
+        LoggerFactory.info(
+            '✅ Listas predefinidas verificadas para sync tiempo real');
+      } catch (e) {
+        LoggerFactory.error('❌ Error inicializando listas predefinidas: $e');
+      }
+    });
+
     // Ejecutar migración de listas si es necesario
     Timer(const Duration(milliseconds: 700), () {
       _executeMigrationIfNeeded(userId, ref);
@@ -232,10 +245,13 @@ class PostLoginInitializationService {
         LoggerFactory.info(
             '📋 Plan de migración: ${migrationPlan.totalEstimatedTime}ms estimados');
 
+        // ✅ DESHABILITADO: Las listas por defecto ahora se manejan con DefaultListsManager
         // Migrar listas por defecto
         if (migrationPlan.defaultListsToCreate.isNotEmpty) {
-          await migrationService.migrateDefaultLists(userId);
-          LoggerFactory.info('✅ Listas por defecto migradas');
+          LoggerFactory.info(
+              'ℹ️ Omitiendo migración de listas por defecto - usando DefaultListsManager');
+          // await migrationService.migrateDefaultLists(userId);
+          // LoggerFactory.info('✅ Listas por defecto migradas');
         }
 
         // Migrar listas personalizadas

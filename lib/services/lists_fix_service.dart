@@ -266,6 +266,21 @@ class ListsFixService {
                     foregroundColor: Colors.white,
                   ),
                 ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    onMessage('🧹 Limpiando duplicados...');
+                    final autoService = ref.read(autoDefaultListsProvider);
+                    final result =
+                        await autoService.cleanAndRecreateDefaultLists();
+                    onMessage(result);
+                  },
+                  icon: const Icon(Icons.cleaning_services, size: 16),
+                  label: const Text('Limpiar Duplicados'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade600,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ],
             ),
           ],

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/logging/logger_factory.dart';
 import 'auth_provider.dart';
+import 'custom_lists_providers.dart';
 
 /// Provider que maneja la creación automática de listas predeterminadas
 final autoDefaultListsProvider = Provider<AutoDefaultListsService>((ref) {
@@ -59,7 +60,20 @@ class AutoDefaultListsService {
       }
 
       LoggerFactory.info(
-          'ℹ️ Listas predeterminadas deshabilitadas - nada por crear para ${currentUser.email}');
+          '🎬 Verificando listas predeterminadas para ${currentUser.email}...');
+
+      // Obtener el DefaultListsManager del provider
+      final defaultListsManager = await ref
+          .read(defaultListsManagerProvider.future)
+          .timeout(const Duration(seconds: 10));
+
+      // Inicializar listas predeterminadas (con caché integrado para rendimiento)
+      await defaultListsManager
+          .initializeDefaultLists(userId: currentUser.id)
+          .timeout(const Duration(seconds: 15));
+
+      LoggerFactory.info(
+          '✅ Listas predeterminadas verificadas exitosamente para ${currentUser.email}');
     } on TimeoutException catch (e) {
       LoggerFactory.error(
           '⏰ Timeout en verificación de listas predeterminadas: $e');
@@ -73,7 +87,32 @@ class AutoDefaultListsService {
 
   /// Fuerza la verificación y creación de listas (para usar manualmente)
   Future<String> forceCheckAndCreateLists() async {
-    await ensureDefaultListsExist();
-    return 'ℹ️ Las listas predeterminadas están deshabilitadas; no se realizaron cambios';
+    try {
+      await ensureDefaultListsExist();
+      return '✅ Verificación de listas predeterminadas completada';
+    } catch (e) {
+      return '❌ Error en verificación: $e';
+    }
+  }
+
+  /// Limpia y recrea todas las listas predefinidas para resolver duplicados
+  Future<String> cleanAndRecreateDefaultLists() async {
+    try {
+      LoggerFactory.info('🧹 Limpiando listas predefinidas duplicadas...');
+
+      final defaultListsManager = await ref
+          .read(defaultListsManagerProvider.future)
+          .timeout(const Duration(seconds: 10));
+
+      await defaultListsManager
+          .cleanAndRecreateDefaultLists()
+          .timeout(const Duration(seconds: 30));
+
+      LoggerFactory.info('✅ Listas predefinidas limpiadas y recreadas');
+      return '✅ Listas predefinidas limpiadas y recreadas correctamente';
+    } catch (e) {
+      LoggerFactory.error('❌ Error limpiando listas predefinidas: $e');
+      return '❌ Error limpiando listas: $e';
+    }
   }
 }

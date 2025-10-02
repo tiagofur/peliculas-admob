@@ -18,6 +18,7 @@ class DefaultListsManager {
   // Claves para SharedPreferences
   static const String _defaultListsInitializedKey = 'default_lists_initialized';
   static const String _defaultListsVersionKey = 'default_lists_version';
+  static const String _initializedUsersKey = 'default_lists_initialized_users';
 
   // Versión actual de las listas por defecto
   static const int _currentDefaultListsVersion = 1;
@@ -33,21 +34,28 @@ class DefaultListsManager {
     bool force = false,
   }) async {
     try {
+      // Obtener el usuario actual
+      final String? effectiveUserId =
+          userId ?? Supabase.instance.client.auth.currentUser?.id;
+
+      if (effectiveUserId == null) {
+        return; // No hay usuario autenticado
+      }
+
+      // Verificar si este usuario ya tiene las listas inicializadas
+      final initializedUsers = _prefs.getStringList(_initializedUsersKey) ?? [];
+      final userAlreadyInitialized = initializedUsers.contains(effectiveUserId);
+
       final isInitialized =
           _prefs.getBool(_defaultListsInitializedKey) ?? false;
       final currentVersion = _prefs.getInt(_defaultListsVersionKey) ?? 0;
 
       if (force ||
           !isInitialized ||
+          !userAlreadyInitialized ||
           currentVersion < _currentDefaultListsVersion) {
-        // Obtener el usuario actual
-        final String? effectiveUserId =
-            userId ?? Supabase.instance.client.auth.currentUser?.id;
-
-        if (effectiveUserId != null) {
-          await _createDefaultLists(effectiveUserId);
-          await _markAsInitialized();
-        }
+        await _createDefaultLists(effectiveUserId);
+        await _markAsInitialized(effectiveUserId);
       }
     } catch (e) {
       // Error al inicializar listas por defecto: $e
@@ -65,6 +73,50 @@ class DefaultListsManager {
     return _prefs.getInt(_defaultListsVersionKey) ?? 0;
   }
 
+  /// Limpia el cache de inicialización (útil para testing o reinicialización)
+  Future<void> clearInitializationCache() async {
+    await _prefs.remove(_defaultListsInitializedKey);
+    await _prefs.remove(_defaultListsVersionKey);
+    await _prefs.remove(_initializedUsersKey);
+  }
+
+  /// Limpia y recrea todas las listas predefinidas (para resolver duplicados)
+  Future<void> cleanAndRecreateDefaultLists({String? userId}) async {
+    try {
+      final String? effectiveUserId =
+          userId ?? Supabase.instance.client.auth.currentUser?.id;
+
+      if (effectiveUserId == null) {
+        return;
+      }
+
+      // Obtener todas las listas del usuario
+      final allUserLists = await _repository.getUserLists();
+
+      // Eliminar TODAS las listas predefinidas existentes (para limpiar duplicados)
+      final defaultLists =
+          allUserLists.where((list) => list.isDefault == true).toList();
+
+      for (final list in defaultLists) {
+        try {
+          await _repository.deleteList(list.id);
+        } catch (e) {
+          // Continuar aunque falle eliminar una lista individual
+        }
+      }
+
+      // Limpiar cache para forzar recreación
+      await clearInitializationCache();
+
+      // Recrear listas con configuración correcta
+      await _createDefaultLists(effectiveUserId);
+      await _markAsInitialized(effectiveUserId);
+    } catch (e) {
+      // Error al limpiar y recrear listas: $e
+      rethrow;
+    }
+  }
+
   // ========== CREACIÓN DE LISTAS POR DEFECTO ==========
 
   /// Crea todas las listas por defecto del sistema
@@ -73,10 +125,12 @@ class DefaultListsManager {
 
     for (final config in defaultListsConfig) {
       try {
-        // Verificar si la lista ya existe para este usuario específico
-        final existingLists = await _repository.getDefaultLists();
-        final exists = existingLists.any((list) =>
-            list.defaultType == config.defaultType && list.userId == userId);
+        // Verificar si la lista ya existe usando getUserLists() y filtrando por defaultType
+        final allUserLists = await _repository.getUserLists();
+        final exists = allUserLists.any((list) =>
+            list.defaultType == config.defaultType &&
+            list.isDefault == true &&
+            list.userId == userId);
 
         if (!exists) {
           final defaultList = _createDefaultListFromConfig(config, userId);
@@ -117,65 +171,65 @@ class DefaultListsManager {
         localId: 'quiero-ver',
         name: 'Quiero Ver',
         description: 'Películas que quiero ver próximamente',
-        emoji: '🍿',
-        color: '#3B82F6',
+        emoji: '🎬', // Más icónico para "quiero ver"
+        color: '#3B82F6', // Azul vibrante
         defaultType: 'watchlist',
       ),
       const DefaultListConfig(
         localId: 'para-el-fin-de-semana',
         name: 'Para el Fin de Semana',
         description: 'Películas perfectas para relajarse',
-        emoji: '🛋️',
-        color: '#10B981',
+        emoji: '🛋️', // Perfecto para relajarse
+        color: '#059669', // Verde más saturado
         defaultType: 'weekend',
       ),
       const DefaultListConfig(
         localId: 'noche-de-citas',
         name: 'Noche de Citas',
         description: 'Películas románticas para ver en pareja',
-        emoji: '💕',
-        color: '#EF4444',
+        emoji: '💕', // Romántico
+        color: '#E11D48', // Rosa/rojo más vibrante
         defaultType: 'date-night',
       ),
       const DefaultListConfig(
         localId: 'con-amigos',
         name: 'Con Amigos',
         description: 'Películas divertidas para ver en grupo',
-        emoji: '👥',
-        color: '#F59E0B',
+        emoji: '🎉', // Más festivo que 👥
+        color: '#F59E0B', // Naranja alegre
         defaultType: 'with-friends',
       ),
       const DefaultListConfig(
         localId: 'clasicos-pendientes',
         name: 'Clásicos Pendientes',
         description: 'Películas clásicas que debo ver',
-        emoji: '🎭',
-        color: '#8B5CF6',
+        emoji: '🏆', // Más elegante que 🎭
+        color: '#7C3AED', // Morado más intenso
         defaultType: 'classics',
       ),
       const DefaultListConfig(
         localId: 'accion-y-aventura',
         name: 'Acción y Aventura',
         description: 'Para cuando quiero adrenalina',
-        emoji: '💥',
-        color: '#D97706',
+        emoji: '⚡', // Más dinámico que 💥
+        color: '#DC2626', // Rojo intenso para acción
         defaultType: 'action',
       ),
       const DefaultListConfig(
         localId: 'documentales',
         name: 'Documentales',
         description: 'Para aprender algo nuevo',
-        emoji: '📚',
-        color: '#06B6D4',
+        emoji: '🧠', // Más cerebral que 📚
+        color: '#0891B2', // Azul turquesa
         defaultType: 'documentaries',
       ),
       const DefaultListConfig(
-        localId: 'cuando-llueve',
-        name: 'Cuando Llueve',
-        description: 'Películas perfectas para días lluviosos',
-        emoji: '🌧️',
-        color: '#64748B',
-        defaultType: 'rainy-day',
+        localId: 'cine-internacional',
+        name: 'Cine Internacional',
+        description: 'Joyas del cine mundial y películas en otros idiomas',
+        emoji: '🌍', // Más global y atractivo
+        color: '#8B5A2B', // Marrón cálido/dorado
+        defaultType: 'international',
       ),
     ];
   }
@@ -201,15 +255,18 @@ class DefaultListsManager {
 
   /// Obtiene todas las listas por defecto del usuario
   Future<List<CustomList>> getUserDefaultLists() async {
-    return await _repository.getDefaultLists();
+    // En lugar de usar getDefaultLists() (que está deshabilitado),
+    // obtenemos todas las listas del usuario y filtramos las predefinidas
+    final allUserLists = await _repository.getUserLists();
+    return allUserLists.where((list) => list.isDefault == true).toList();
   }
 
   /// Obtiene una lista por defecto específica por tipo
   Future<CustomList?> getDefaultListByType(String defaultType) async {
-    final defaultLists = await getUserDefaultLists();
+    final allUserLists = await _repository.getUserLists();
     try {
-      return defaultLists.firstWhere(
-        (list) => list.defaultType == defaultType,
+      return allUserLists.firstWhere(
+        (list) => list.defaultType == defaultType && list.isDefault == true,
       );
     } catch (e) {
       return null;
@@ -219,8 +276,8 @@ class DefaultListsManager {
   /// Verifica si una lista por defecto existe
   Future<bool> defaultListExists(String defaultType) async {
     try {
-      await getDefaultListByType(defaultType);
-      return true;
+      final list = await getDefaultListByType(defaultType);
+      return list != null;
     } catch (e) {
       return false;
     }
@@ -382,10 +439,17 @@ class DefaultListsManager {
     return _getRecommendedMovieIds();
   }
 
-  /// Marca las listas por defecto como inicializadas
-  Future<void> _markAsInitialized() async {
+  /// Marca las listas por defecto como inicializadas para un usuario específico
+  Future<void> _markAsInitialized(String userId) async {
     await _prefs.setBool(_defaultListsInitializedKey, true);
     await _prefs.setInt(_defaultListsVersionKey, _currentDefaultListsVersion);
+
+    // Agregar el usuario a la lista de usuarios inicializados
+    final initializedUsers = _prefs.getStringList(_initializedUsersKey) ?? [];
+    if (!initializedUsers.contains(userId)) {
+      initializedUsers.add(userId);
+      await _prefs.setStringList(_initializedUsersKey, initializedUsers);
+    }
   }
 
   /// Permite al usuario personalizar las listas por defecto

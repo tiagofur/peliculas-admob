@@ -18,51 +18,21 @@ class CustomListsView extends ConsumerStatefulWidget {
   ConsumerState<CustomListsView> createState() => _CustomListsViewState();
 }
 
-class _CustomListsViewState extends ConsumerState<CustomListsView> {
-  static const List<_ListSuggestion> _suggestions = [
-    _ListSuggestion(
-      name: 'Noche de Lluvia',
-      description: 'Películas acogedoras para una noche tranquila',
-      emoji: '🌧️',
-      color: Colors.indigo,
-      colorName: 'indigo',
-    ),
-    _ListSuggestion(
-      name: 'En Familia',
-      description: 'Historias para todas las edades',
-      emoji: '👨‍👩‍👧‍👦',
-      color: Colors.orange,
-      colorName: 'orange',
-    ),
-    _ListSuggestion(
-      name: 'Maratón de Fin de Semana',
-      description: 'Sagas y trilogías para ver sin parar',
-      emoji: '🎬',
-      color: Colors.purple,
-      colorName: 'purple',
-    ),
-    _ListSuggestion(
-      name: 'Noche Romántica',
-      description: 'Películas ideales para compartir en pareja',
-      emoji: '💕',
-      color: Colors.pink,
-      colorName: 'pink',
-    ),
-    _ListSuggestion(
-      name: 'Acción Pura',
-      description: 'Adrenalina y explosiones garantizadas',
-      emoji: '🔥',
-      color: Colors.red,
-      colorName: 'red',
-    ),
-    _ListSuggestion(
-      name: 'Joyas Ocultas',
-      description: 'Películas poco conocidas que vale la pena descubrir',
-      emoji: '💎',
-      color: Colors.teal,
-      colorName: 'teal',
-    ),
-  ];
+class _CustomListsViewState extends ConsumerState<CustomListsView>
+    with TickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,15 +41,19 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
     final l10n = AppLocalizations.of(context)!;
     final colors = Theme.of(context).colorScheme;
 
-    final customLists = [
-      ...listsState.getAllListsWithMovies().where((list) => !list.isDefault),
-    ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    // Separar listas predefinidas y personalizadas
+    final allLists = listsState.getAllListsWithMovies();
+    final defaultLists = allLists.where((list) => list.isDefault).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final customLists = allLists.where((list) => !list.isDefault).toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: colors.surface,
         foregroundColor: colors.onSurface,
         elevation: 0,
+        title: const Text('Mis Listas'),
         actions: [
           IconButton(
             onPressed: () => _showCreateListDialog(context),
@@ -87,20 +61,52 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
             tooltip: 'Crear nueva lista',
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(
+              icon: Icon(Icons.star),
+              text: 'Predefinidas',
+            ),
+            Tab(
+              icon: Icon(Icons.folder),
+              text: 'Personalizadas',
+            ),
+          ],
+        ),
       ),
       body: Column(
         children: [
           const MinimalSyncIndicator(),
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async => notifier.refresh(),
-              child: _buildListsBody(
-                context: context,
-                listsState: listsState,
-                customLists: customLists,
-                l10n: l10n,
-                notifier: notifier,
-              ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Tab 1: Listas Predefinidas
+                RefreshIndicator(
+                  onRefresh: () async => notifier.refresh(),
+                  child: _buildListsTab(
+                    context: context,
+                    listsState: listsState,
+                    lists: defaultLists,
+                    l10n: l10n,
+                    notifier: notifier,
+                    isDefaultTab: true,
+                  ),
+                ),
+                // Tab 2: Listas Personalizadas
+                RefreshIndicator(
+                  onRefresh: () async => notifier.refresh(),
+                  child: _buildListsTab(
+                    context: context,
+                    listsState: listsState,
+                    lists: customLists,
+                    l10n: l10n,
+                    notifier: notifier,
+                    isDefaultTab: false,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -108,14 +114,15 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
     );
   }
 
-  Widget _buildListsBody({
+  Widget _buildListsTab({
     required BuildContext context,
     required CustomListsState listsState,
-    required List<CustomList> customLists,
+    required List<CustomList> lists,
     required AppLocalizations l10n,
     required DirectCustomListsNotifier notifier,
+    required bool isDefaultTab,
   }) {
-    if (listsState.isLoading && customLists.isEmpty) {
+    if (listsState.isLoading && lists.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(vertical: 120),
@@ -125,7 +132,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
       );
     }
 
-    if (listsState.errorMessage != null && customLists.isEmpty) {
+    if (listsState.errorMessage != null && lists.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -141,8 +148,9 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
 
     final sections = _buildContentSections(
       context,
-      customLists,
+      lists,
       l10n,
+      isDefaultTab: isDefaultTab,
     );
 
     final children = <Widget>[];
@@ -157,7 +165,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
       );
     }
 
-    if (listsState.isLoading && customLists.isNotEmpty) {
+    if (listsState.isLoading && lists.isNotEmpty) {
       children.add(
         const Padding(
           padding: EdgeInsets.only(bottom: 8.0),
@@ -329,8 +337,9 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
   List<Widget> _buildContentSections(
     BuildContext context,
     List<CustomList> lists,
-    AppLocalizations l10n,
-  ) {
+    AppLocalizations l10n, {
+    required bool isDefaultTab,
+  }) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
     // Use totalMoviesInListsProvider for global count
@@ -349,12 +358,11 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
         textStyles: textStyles,
       ),
       const SizedBox(height: 24),
-      _buildSuggestionsSection(context),
-      const SizedBox(height: 24),
+      // ✅ Eliminado: _buildSuggestionsSection - Ya tenemos listas predefinidas
     ];
 
     if (lists.isEmpty) {
-      sections.add(_buildEmptyState(context, l10n));
+      sections.add(_buildEmptyState(context, l10n, isDefaultTab: isDefaultTab));
     } else {
       sections.addAll(_buildCustomListsSection(context, lists));
     }
@@ -362,47 +370,50 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
     return sections;
   }
 
-  Widget _buildSuggestionsSection(BuildContext context) {
-    final textStyles = Theme.of(context).textTheme;
+  // ✅ Eliminado: _buildSuggestionsSection y _createListFromSuggestion
+  // Ya no necesitamos sugerencias porque tenemos listas predefinidas
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Ideas rápidas',
-          style: textStyles.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _suggestions.map((suggestion) {
-            return ActionChip(
-              avatar:
-                  Text(suggestion.emoji, style: const TextStyle(fontSize: 18)),
-              label: Text(suggestion.name),
-              backgroundColor: suggestion.color.withValues(alpha: 0.15),
-              onPressed: () => _createListFromSuggestion(context, suggestion),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _createListFromSuggestion(
+  Widget _buildEmptyState(
     BuildContext context,
-    _ListSuggestion suggestion,
-  ) {
-    return _showCreateListDialog(
-      context,
-      suggestion: suggestion,
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, AppLocalizations l10n) {
+    AppLocalizations l10n, {
+    required bool isDefaultTab,
+  }) {
     final colors = Theme.of(context).colorScheme;
 
+    if (isDefaultTab) {
+      // Estado vacío para listas predefinidas
+      return Card(
+        margin: const EdgeInsets.symmetric(vertical: 32),
+        elevation: 0,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.star_outline, size: 56, color: colors.primary),
+              const SizedBox(height: 12),
+              Text(
+                'No hay listas predefinidas disponibles',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Las listas predefinidas aparecerán aquí cuando estén configuradas.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurface.withValues(alpha: 0.7),
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Estado vacío para listas personalizadas
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 32),
       elevation: 0,
@@ -674,13 +685,10 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
     }
   }
 
-  Future<void> _showCreateListDialog(
-    BuildContext context, {
-    _ListSuggestion? suggestion,
-  }) {
+  Future<void> _showCreateListDialog(BuildContext context) {
     return showDialog<void>(
       context: context,
-      builder: (context) => _CreateListDialog(suggestion: suggestion),
+      builder: (context) => const _CreateListDialog(),
     );
   }
 
@@ -843,9 +851,7 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
 }
 
 class _CreateListDialog extends ConsumerStatefulWidget {
-  const _CreateListDialog({this.suggestion});
-
-  final _ListSuggestion? suggestion;
+  const _CreateListDialog();
 
   @override
   ConsumerState<_CreateListDialog> createState() => _CreateListDialogState();
@@ -890,12 +896,10 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
   @override
   void initState() {
     super.initState();
-    final suggestion = widget.suggestion;
-    _nameController = TextEditingController(text: suggestion?.name ?? '');
-    _descriptionController =
-        TextEditingController(text: suggestion?.description ?? '');
-    _selectedEmoji = suggestion?.emoji ?? '📝';
-    _selectedColor = suggestion?.colorName ?? 'blue';
+    _nameController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _selectedEmoji = '📝';
+    _selectedColor = 'blue';
   }
 
   @override
@@ -1429,20 +1433,4 @@ class _DuplicateListDialogState extends ConsumerState<_DuplicateListDialog> {
       ],
     );
   }
-}
-
-class _ListSuggestion {
-  const _ListSuggestion({
-    required this.name,
-    required this.description,
-    required this.emoji,
-    required this.color,
-    required this.colorName,
-  });
-
-  final String name;
-  final String description;
-  final String emoji;
-  final Color color;
-  final String colorName;
 }
