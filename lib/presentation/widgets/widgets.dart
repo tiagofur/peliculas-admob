@@ -20,6 +20,8 @@ export 'shared/custom_bottom_navigation.dart';
 export 'shared/full_screen_loader.dart';
 export 'shared/cinema_mode.dart';
 export 'shared/page_transitions.dart';
+export 'shared/elegant_loading_screen.dart';
+export 'shared/loading_indicator.dart';
 export 'star_rating_widgets.dart';
 
 export 'videos/videos_from_movie.dart';

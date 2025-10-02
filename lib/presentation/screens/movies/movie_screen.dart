@@ -47,8 +47,8 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
     // Usa .when para manejar los estados del caché (mapa).
     return moviesCache.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      loading: () => const ElegantLoadingScreen(
+        message: 'Cargando película...',
       ),
       error: (error, stackTrace) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
@@ -65,7 +65,8 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
           }
 
           return const Scaffold(
-              body: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+            body: MovieDetailLoadingPlaceholder(),
+          );
         }
 
         // Si la película existe, construye la UI.

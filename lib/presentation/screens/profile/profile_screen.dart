@@ -23,6 +23,7 @@ import '../../providers/user_session_provider.dart';
 import '../../widgets/profile_avatar.dart';
 import '../../widgets/ratings/star_rating_widget.dart';
 import '../../widgets/sync/minimal_sync_indicator.dart';
+import '../../widgets/widgets.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key, this.userId});
@@ -280,21 +281,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     if (sessionState.isLoading &&
         (sessionState.user == null ||
             (isCurrentUserProfile && sessionState.profile == null))) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text(
-              'Cargando perfil...',
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ),
-      );
+      return const ProfileLoadingPlaceholder();
     }
 
     // Usuario no autenticado (después de que terminó de cargar)
