@@ -160,7 +160,12 @@ class _MovieDetails extends StatelessWidget {
               // Información básica, sinopsis, detalles técnicos, etc.
               _MovieInfoBeforeCast(movie: movie),
 
+              // Géneros de la película - Movido aquí arriba
+              const SizedBox(height: 16),
+              _Genres(movie: movie),
+
               // User rating section
+              const SizedBox(height: 16),
               MovieRatingAndNotes(movie: movie),
 
               //* 1. Banner antes de 'Reparto Principal'
@@ -171,6 +176,10 @@ class _MovieDetails extends StatelessWidget {
 
               // Reparto Principal
               _CastSection(movie: movie),
+
+              // Crew (Director, Writer, etc.)
+              const SizedBox(height: 16),
+              _CrewSection(movie: movie),
 
               // Estadísticas
               _StatsSection(movie: movie),
@@ -191,9 +200,6 @@ class _MovieDetails extends StatelessWidget {
 
         //* Listas personalizadas
         MovieListsWidget(movie: movie),
-
-        //* Generos de la película
-        _Genres(movie: movie),
 
         //* Videos de la película (si tiene)
         VideosFromMovie(movieId: movie.id),
@@ -223,25 +229,231 @@ class _Genres extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: SizedBox(
-        width: double.infinity,
-        child: Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          alignment: WrapAlignment.center,
-          children: [
-            ...movie.genreIds.map((gender) => Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  child: Chip(
-                    label: Text(gender),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20)),
-                  ),
-                ))
-          ],
-        ),
+    final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+
+    if (movie.genreIds.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.category, color: colors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Géneros',
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: movie.genreIds.map((genre) {
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colors.primary.withValues(alpha: 0.7),
+                      colors.primary.withValues(alpha: 0.9),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.primary.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  genre,
+                  style: textStyles.bodyMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CrewSection extends StatelessWidget {
+  const _CrewSection({required this.movie});
+
+  final Movie movie;
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+
+    // Get crew from credits
+    if (movie.credits == null || movie.credits?['crew'] == null) {
+      return const SizedBox.shrink();
+    }
+
+    final crew = movie.credits?['crew'] as List?;
+    if (crew == null || crew.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Extract key crew members
+    final director = crew.firstWhere(
+      (member) => member['job'] == 'Director',
+      orElse: () => null,
+    );
+
+    final writer = crew.firstWhere(
+      (member) =>
+          member['job'] == 'Screenplay' ||
+          member['job'] == 'Writer' ||
+          member['department'] == 'Writing',
+      orElse: () => null,
+    );
+
+    final producer = crew.firstWhere(
+      (member) => member['job'] == 'Producer',
+      orElse: () => null,
+    );
+
+    final composer = crew.firstWhere(
+      (member) => member['job'] == 'Original Music Composer',
+      orElse: () => null,
+    );
+
+    // Si no hay ningún miembro clave, no mostrar la sección
+    if (director == null &&
+        writer == null &&
+        producer == null &&
+        composer == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.movie_creation, color: colors.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Equipo Creativo',
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (director != null)
+            _CrewMember(
+              role: 'Director',
+              name: director['name'] ?? '',
+              icon: Icons.videocam,
+            ),
+          if (writer != null) ...[
+            const SizedBox(height: 8),
+            _CrewMember(
+              role: 'Guionista',
+              name: writer['name'] ?? '',
+              icon: Icons.create,
+            ),
+          ],
+          if (producer != null) ...[
+            const SizedBox(height: 8),
+            _CrewMember(
+              role: 'Productor',
+              name: producer['name'] ?? '',
+              icon: Icons.business_center,
+            ),
+          ],
+          if (composer != null) ...[
+            const SizedBox(height: 8),
+            _CrewMember(
+              role: 'Compositor',
+              name: composer['name'] ?? '',
+              icon: Icons.music_note,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CrewMember extends StatelessWidget {
+  const _CrewMember({
+    required this.role,
+    required this.name,
+    required this.icon,
+  });
+
+  final String role;
+  final String name;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: colors.primary),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                role,
+                style: textStyles.bodySmall?.copyWith(
+                  color: colors.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              Text(
+                name,
+                style: textStyles.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

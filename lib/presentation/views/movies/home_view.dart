@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../generated/app_localizations.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/providers.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
@@ -211,28 +212,137 @@ class HomeViewState extends ConsumerState<HomeView>
   @override
   bool get wantKeepAlive => true;
 
-  /// Construye la sección de recomendaciones personalizadas
+  /// Construye la sección de recomendaciones personalizadas con ML
   Widget _buildRecommendationsSection(WidgetRef ref) {
-    // ✅ TEMPORARY: Disable recommendations to avoid potential blocking issues
-    return const SizedBox.shrink();
+    // Verificar si el usuario está autenticado
+    final isAuthenticated = ref.watch(isAuthenticatedProvider);
 
-    /* ORIGINAL CODE - Temporarily disabled
-    final recommendationsState = ref.watch(paginatedRecommendationsProvider);
-    final recommendations = recommendationsState.movies;
-
-    if (recommendations.isEmpty) {
+    // Solo mostrar recomendaciones si el usuario está autenticado
+    if (!isAuthenticated) {
       return const SizedBox.shrink();
     }
 
-    return MovieHorizontalListviewWithAds(
-      movies: recommendations,
-      sectionId: 'recommendations',
-      title: 'Recomendaciones para ti',
-      subTitle: 'Basadas en tus gustos',
-      loadNextPage: () {
-        ref.read(paginatedRecommendationsProvider.notifier).loadNextPage();
+    // Watch ML recommendations
+    final mlRecommendations = ref.watch(personalizedRecommendationsProvider);
+
+    return mlRecommendations.when(
+      data: (recommendations) {
+        if (recommendations.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        // Convertir Recommendations a Movies
+        final movies = recommendations.map((rec) {
+          return Movie(
+            id: rec.movieId,
+            title: rec.title,
+            overview: rec.reason,
+            posterPath: rec.posterPath,
+            backdropPath: '',
+            releaseDate: DateTime.now(),
+            genreIds: rec.tags,
+            voteAverage: rec.score * 10,
+            voteCount: 0,
+            popularity: rec.score * 100,
+            adult: false,
+            originalLanguage: 'en',
+            originalTitle: rec.title,
+            video: false,
+          );
+        }).toList();
+
+        return Column(
+          children: [
+            const SizedBox(height: 8),
+            // Contenedor con diseño especial para destacar las recomendaciones ML
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Theme.of(ref.context).colorScheme.primary.withValues(alpha: 0.1),
+                    Theme.of(ref.context).colorScheme.secondary.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(ref.context).colorScheme.primary.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    color: Theme.of(ref.context).colorScheme.primary,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '🎯 Recomendaciones con IA',
+                          style: Theme.of(ref.context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(ref.context).colorScheme.primary,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Seleccionadas especialmente para ti',
+                          style: Theme.of(ref.context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(ref.context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.7),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            MovieHorizontalListviewWithAds(
+              movies: movies,
+              sectionId: 'ml-recommendations',
+              title: '',
+              subTitle: '',
+              loadNextPage: () {
+                // ML recommendations are loaded all at once
+              },
+            ),
+          ],
+        );
+      },
+      loading: () => Container(
+        height: 280,
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: Theme.of(ref.context).colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '🤖 Generando recomendaciones personalizadas...',
+                style: Theme.of(ref.context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(ref.context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      error: (error, stack) {
+        // No mostrar error, simplemente ocultar la sección
+        return const SizedBox.shrink();
       },
     );
-    */
   }
 }
