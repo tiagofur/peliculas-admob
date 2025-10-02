@@ -34,7 +34,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+class _ProfileScreenState extends ConsumerState<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _bioController = TextEditingController();
@@ -52,10 +53,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   bool _emailNotifications = true;
   bool _pushNotifications = true;
   bool _profilePublic = true;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+
     // Rastrear visualización del perfil
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
@@ -163,6 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _usernameDebounce?.cancel();
     _usernameController.dispose();
     _fullNameController.dispose();
@@ -190,7 +195,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Mi Perfil'),
         centerTitle: true,
         actions: [
-          if (!_isEditing)
+          if (!_isEditing && currentUser != null)
             IconButton(
               icon: const Icon(Icons.edit),
               tooltip: 'Editar perfil',
@@ -205,7 +210,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       );
                     },
             )
-          else
+          else if (_isEditing)
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -228,6 +233,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ],
             ),
         ],
+        bottom: currentUser != null && !_isEditing
+            ? TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(
+                    icon: Icon(Icons.person_outline),
+                    text: 'Perfil',
+                  ),
+                  Tab(
+                    icon: Icon(Icons.star_outline),
+                    text: 'Valoraciones',
+                  ),
+                ],
+              )
+            : null,
       ),
       body: Column(
         children: [
@@ -302,105 +322,95 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final effectiveProfile =
         profile ?? _createFallbackProfileFromUser(currentUser);
 
+    // Si está editando, mostrar formulario completo sin tabs
+    if (_isEditing) {
+      return RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(userSessionProvider.notifier).refreshProfile();
+          ref.invalidate(currentUserStatsProvider);
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildProfileHeader(theme, effectiveProfile),
+              const SizedBox(height: 24),
+              _buildEditFormCard(theme, effectiveProfile),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Vista normal con tabs
     return RefreshIndicator(
       onRefresh: () async {
         await ref.read(userSessionProvider.notifier).refreshProfile();
         ref.invalidate(currentUserStatsProvider);
         ref.invalidate(recentRatingsProvider);
       },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth >= 960;
-          final horizontalPadding = isWide ? 32.0 : 16.0;
+      child: Column(
+        children: [
+          // Header del perfil (siempre visible)
+          SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: _buildProfileHeader(theme, effectiveProfile),
+          ),
+          const SizedBox(height: 16),
 
-          final statsPanel = _buildStatsPanel(theme, stats, ref);
-          final detailsPanel = _isEditing
-              ? _buildEditFormCard(theme, effectiveProfile)
-              : _buildProfileInfoCard(theme, effectiveProfile);
-          final ratingsPanel = _buildRatingsSection(theme);
-          final actionsPanel = _buildActionButtons(theme);
+          // TabBarView con las dos secciones
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Tab 1: Información del Perfil
+                _buildProfileTab(theme, effectiveProfile, stats, ref),
 
-          final headerSection = <Widget>[
-            _buildProfileHeader(theme, effectiveProfile),
-            const SizedBox(height: 24),
-          ];
-
-          final wideLayout = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...headerSection,
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        detailsPanel,
-                        const SizedBox(height: 24),
-                        actionsPanel,
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        statsPanel,
-                        const SizedBox(height: 24),
-                        ratingsPanel,
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          );
-
-          final narrowLayout = Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...headerSection,
-              statsPanel,
-              const SizedBox(height: 24),
-              ratingsPanel,
-              const SizedBox(height: 24),
-              detailsPanel,
-              const SizedBox(height: 24),
-              actionsPanel,
-            ],
-          );
-
-          final layoutKey = ValueKey(
-            '${isWide}_${_isEditing}_${profile != null}_${stats != null}',
-          );
-
-          return SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: 24,
+                // Tab 2: Valoraciones
+                _buildRatingsTab(theme),
+              ],
             ),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 960),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 320),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  child: KeyedSubtree(
-                    key: layoutKey,
-                    child: isWide ? wideLayout : narrowLayout,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+          ),
+        ],
       ),
     );
+  }
+
+  /// Tab de información del perfil
+  Widget _buildProfileTab(
+    ThemeData theme,
+    UserProfile profile,
+    UserStats? stats,
+    WidgetRef ref,
+  ) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Información personal
+          _buildProfileInfoCard(theme, profile),
+          const SizedBox(height: 16),
+
+          // Estadísticas
+          if (stats != null) ...[
+            _buildStatsSection(theme, stats),
+            const SizedBox(height: 16),
+          ],
+
+          // Botones de acción
+          _buildActionButtons(theme),
+        ],
+      ),
+    );
+  }
+
+  /// Tab de valoraciones con filtros y búsqueda
+  Widget _buildRatingsTab(ThemeData theme) {
+    return _buildFullRatingsSection(theme);
   }
 
   Widget _buildEditFormCard(ThemeData theme, UserProfile profile) {
@@ -961,6 +971,243 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         _buildPreferencesInfo(theme, profile.preferences),
+      ],
+    );
+  }
+
+  /// Sección completa de valoraciones con filtros y búsqueda (para tab)
+  Widget _buildFullRatingsSection(ThemeData theme) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final currentUser = ref.watch(currentUserProvider);
+
+        if (currentUser == null) {
+          return const SizedBox.shrink();
+        }
+
+        final recentRatingsAsync = ref.watch(recentRatingsProvider);
+        final ratingStats = ref.watch(userRatingStatsProvider);
+
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Estadísticas de valoraciones
+              if (ratingStats != null &&
+                  ratingStats.isNotEmpty &&
+                  (ratingStats['totalRatings'] ?? 0) > 0) ...[
+                _buildRatingStats(theme, ratingStats),
+                const SizedBox(height: 16),
+              ],
+
+              // Lista de valoraciones
+              recentRatingsAsync.when(
+                data: (ratings) {
+                  if (ratings.isEmpty) {
+                    return _buildEmptyRatingsState(theme);
+                  }
+                  return _buildRatingsListWithSearch(theme, ratings);
+                },
+                loading: () => const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+                error: (error, stack) {
+                  LoggerFactory.error('Error cargando valoraciones: $error');
+                  return _buildRatingsErrorState(theme, ref);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyRatingsState(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.star_border,
+              size: 64,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aún no has valorado ninguna película',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Explora películas y comienza a agregar tus valoraciones',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingsErrorState(ThemeData theme, WidgetRef ref) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error al cargar valoraciones',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                ref.invalidate(recentRatingsProvider);
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingsListWithSearch(
+    ThemeData theme,
+    List<SyncableMovieRating> ratings,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header con contador
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.movie, color: theme.colorScheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Todas tus valoraciones',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${ratings.length} ${ratings.length == 1 ? 'película' : 'películas'} valoradas',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Lista de valoraciones
+        ...ratings.map((rating) {
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(12),
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    '${rating.rating}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              title: Text(
+                rating.movieTitle,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 4),
+                  SimpleStarRating(
+                    rating: rating.rating / 2,
+                    size: 14,
+                    showRating: false,
+                  ),
+                  if (rating.review != null && rating.review!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      rating.review!,
+                      style: theme.textTheme.bodySmall,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    formatDate(rating.ratedAt),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ],
+              ),
+              trailing: IconButton(
+                icon: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: theme.colorScheme.primary,
+                ),
+                onPressed: () {
+                  context.go('/movie/${rating.movieId}');
+                },
+              ),
+            ),
+          );
+        }),
       ],
     );
   }
