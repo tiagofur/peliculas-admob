@@ -93,17 +93,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ref.invalidate(currentUserStatsProvider);
       } else {
         // Caso 3: No hay usuario autenticado ni userId en URL
-        // ⚠️ NO redirigir inmediatamente - el provider puede estar inicializándose
+        // ⚠️ Esperar un momento para que el provider se inicialice
         // La UI mostrará el estado de carga apropiado
         LoggerFactory.info('⏳ Esperando inicialización de usuario...');
 
         // Intentar refrescar la sesión por si el usuario ya está autenticado
         // pero el provider aún no ha completado la inicialización
-        ref.read(userSessionProvider.notifier).refreshProfile();
+        // NO mostrar error, solo dar tiempo para que cargue
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ref.read(userSessionProvider.notifier).refreshProfile();
+          }
+        });
       }
     } catch (e) {
       LoggerFactory.error('❌ Error al cargar datos del perfil: $e');
-      _showErrorAndRedirect('Error al cargar el perfil del usuario');
+      // No redirigir automáticamente, solo loggear el error
+      LoggerFactory.warning('⚠️ No se redirigirá automáticamente');
     }
   }
 
