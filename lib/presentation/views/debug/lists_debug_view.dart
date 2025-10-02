@@ -42,6 +42,95 @@ class _ListsDebugViewState extends ConsumerState<ListsDebugView> {
 
             const SizedBox(height: 20),
 
+            // Herramientas de personalización mejoradas
+            Card(
+              color: Colors.purple.shade50,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.palette, color: Colors.purple),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Personalización Avanzada',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Herramientas para personalizar y reparar listas predefinidas:',
+                      style: TextStyle(color: Colors.purple.shade700),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            _showMessage(
+                                '🧹 Limpiando duplicados inteligentemente...',
+                                isError: false);
+                            try {
+                              final customization =
+                                  ref.read(defaultListsCustomizationProvider);
+                              await customization
+                                  .cleanDuplicatesPreservingCustomizations();
+                              _showMessage(
+                                  '✅ Duplicados eliminados preservando personalizaciones',
+                                  isError: false);
+                            } catch (e) {
+                              _showMessage('❌ Error limpiando duplicados: $e');
+                            }
+                          },
+                          icon: const Icon(Icons.auto_awesome, size: 16),
+                          label: const Text('Limpiar Inteligente'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () async {
+                            _showMessage(
+                                '🔄 Habilitando funcionalidad completa...',
+                                isError: false);
+                            try {
+                              // Forzar invalidación completa
+                              ref.invalidate(userListsProvider);
+                              ref.invalidate(customListsNotifierProvider);
+                              ref.invalidate(defaultListsManagerProvider);
+                              _showMessage(
+                                  '✅ Funcionalidad restaurada - recarga la pantalla',
+                                  isError: false);
+                            } catch (e) {
+                              _showMessage('❌ Error: $e');
+                            }
+                          },
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('Restaurar Función'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             // Estado de las listas
             Card(
               child: Padding(
@@ -82,8 +171,27 @@ class _ListsDebugViewState extends ConsumerState<ListsDebugView> {
                             ...defaultLists.map((list) => Padding(
                                   padding:
                                       const EdgeInsets.only(left: 16, top: 4),
-                                  child: Text(
-                                      '${list.emoji} ${list.name} (${list.movieIds.length} películas)'),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text('${list.emoji} ${list.name}'),
+                                      Text(
+                                          '  Tipo: ${list.defaultType ?? "sin tipo"}',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey)),
+                                      Text(
+                                          '  Color: ${list.colorHex ?? "sin color"}',
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey)),
+                                      Text('  ID: ${list.id}',
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey)),
+                                    ],
+                                  ),
                                 )),
                             if (customLists.isNotEmpty) ...[
                               const SizedBox(height: 12),
@@ -93,8 +201,22 @@ class _ListsDebugViewState extends ConsumerState<ListsDebugView> {
                               ...customLists.map((list) => Padding(
                                     padding:
                                         const EdgeInsets.only(left: 16, top: 4),
-                                    child: Text(
-                                        '${list.emoji} ${list.name} (${list.movieIds.length} películas)'),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text('${list.emoji} ${list.name}'),
+                                        Text(
+                                            '  Color: ${list.colorHex ?? "sin color"}',
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey)),
+                                        Text('  ID: ${list.id}',
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey)),
+                                      ],
+                                    ),
                                   )),
                             ],
                           ],

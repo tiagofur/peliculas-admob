@@ -244,15 +244,89 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
 
   @override
   Future<List<CustomList>> getDefaultLists() async {
-    AppLogger.repo('CustomLists',
-        'ℹ️ Solicitud de listas por defecto ignorada: característica deshabilitada');
-    return [];
+    AppLogger.repo('CustomLists', '📋 Obteniendo listas por defecto...');
+
+    try {
+      // Validar usuario autenticado
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        AppLogger.repo('CustomLists', '❌ Usuario no autenticado');
+        return [];
+      }
+
+      if (await hasInternetConnection()) {
+        return await _supabaseDataSource.getDefaultLists(currentUser.id);
+      } else {
+        // Obtener todas las listas locales y filtrar las predefinidas
+        final localLists = await getLocalLists();
+        return localLists.where((list) => list.isDefault == true).toList();
+      }
+    } catch (e) {
+      AppLogger.repo(
+          'CustomLists', '❌ Error obteniendo listas por defecto: $e');
+      return [];
+    }
   }
 
   @override
   Future<void> initializeDefaultLists(String userId) async {
     AppLogger.repo('CustomLists',
-        'ℹ️ Inicialización de listas por defecto omitida para el usuario $userId');
+        '🚀 Inicializando listas por defecto para usuario $userId');
+
+    try {
+      // Obtener configuraciones de listas por defecto
+      final defaultConfigs = _getDefaultListsConfigurations();
+
+      if (await hasInternetConnection()) {
+        await _supabaseDataSource.initializeDefaultLists(
+            userId, defaultConfigs);
+      } else {
+        AppLogger.repo(
+            'CustomLists', 'ℹ️ Sin conexión - inicialización diferida');
+      }
+    } catch (e) {
+      AppLogger.repo(
+          'CustomLists', '❌ Error inicializando listas por defecto: $e');
+      rethrow;
+    }
+  }
+
+  /// Configuraciones de listas por defecto del sistema
+  List<DefaultListConfig> _getDefaultListsConfigurations() {
+    return [
+      const DefaultListConfig(
+        localId: 'quiero-ver',
+        name: 'Quiero Ver',
+        description: 'Películas que quiero ver próximamente',
+        emoji: '🍿',
+        color: '#3B82F6',
+        defaultType: 'watchlist',
+      ),
+      const DefaultListConfig(
+        localId: 'mis-favoritas',
+        name: 'Mis Favoritas',
+        description: 'Películas que más me han gustado',
+        emoji: '❤️',
+        color: '#EF4444',
+        defaultType: 'favorites',
+      ),
+      const DefaultListConfig(
+        localId: 'vistas',
+        name: 'Ya Vistas',
+        description: 'Películas que ya he visto',
+        emoji: '✅',
+        color: '#10B981',
+        defaultType: 'watched',
+      ),
+      const DefaultListConfig(
+        localId: 'recomendadas',
+        name: 'Recomendadas',
+        description: 'Películas recomendadas para mí',
+        emoji: '🎯',
+        color: '#8B5CF6',
+        defaultType: 'recommended',
+      ),
+    ];
   }
 
   // ========== OPERACIONES DE ELEMENTOS ==========

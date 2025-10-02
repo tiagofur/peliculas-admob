@@ -72,6 +72,10 @@ class SupabaseCustomListsDataSource {
   /// Elimina una lista (hard delete)
   Future<void> deleteList(String listId) async {
     try {
+      // Primero eliminar todos los items de la lista
+      await _supabase.from('user_list_items').delete().eq('list_id', listId);
+
+      // Luego eliminar la lista misma
       await _supabase.from('user_lists').delete().eq('id', listId);
     } catch (e) {
       throw Exception('Error al eliminar lista: $e');

@@ -81,6 +81,7 @@ class DefaultListsManager {
   }
 
   /// Limpia y recrea todas las listas predefinidas (para resolver duplicados)
+  /// PRESERVA las personalizaciones del usuario cuando sea posible
   Future<void> cleanAndRecreateDefaultLists({String? userId}) async {
     try {
       final String? effectiveUserId =
@@ -93,22 +94,49 @@ class DefaultListsManager {
       // Obtener todas las listas del usuario
       final allUserLists = await _repository.getUserLists();
 
-      // Eliminar TODAS las listas predefinidas existentes (para limpiar duplicados)
-      final defaultLists =
-          allUserLists.where((list) => list.isDefault == true).toList();
-
-      for (final list in defaultLists) {
-        try {
-          await _repository.deleteList(list.id);
-        } catch (e) {
-          // Continuar aunque falle eliminar una lista individual
+      // Identificar listas predefinidas y agrupar por defaultType
+      final defaultListsByType = <String, List<CustomList>>{};
+      for (final list in allUserLists.where((l) => l.isDefault == true)) {
+        if (list.defaultType != null && list.defaultType!.isNotEmpty) {
+          defaultListsByType.putIfAbsent(list.defaultType!, () => []).add(list);
         }
       }
 
-      // Limpiar cache para forzar recreación
-      await clearInitializationCache();
+      // Para cada tipo, conservar solo UNA lista (la más reciente o personalizada)
+      for (final entry in defaultListsByType.entries) {
+        final defaultType = entry.key;
+        final lists = entry.value;
 
-      // Recrear listas con configuración correcta
+        if (lists.length > 1) {
+          // Hay duplicados - conservar la mejor opción
+          CustomList? listToKeep;
+
+          // Preferir lista personalizada si existe
+          final customizedList = lists
+              .where((l) => isDefaultListCustomized(defaultType))
+              .firstOrNull;
+          if (customizedList != null) {
+            listToKeep = customizedList;
+          } else {
+            // Conservar la más reciente
+            lists.sort((a, b) => b.lastModifiedAt.compareTo(a.lastModifiedAt));
+            listToKeep = lists.first;
+          }
+
+          // Eliminar las demás
+          for (final list in lists) {
+            if (list.id != listToKeep.id) {
+              try {
+                await _repository.deleteList(list.id);
+              } catch (e) {
+                // Continuar aunque falle eliminar una lista individual
+              }
+            }
+          }
+        }
+      }
+
+      // Crear listas faltantes (sin sobrescribir las existentes)
       await _createDefaultLists(effectiveUserId);
       await _markAsInitialized(effectiveUserId);
     } catch (e) {
@@ -127,17 +155,31 @@ class DefaultListsManager {
       try {
         // Verificar si la lista ya existe usando getUserLists() y filtrando por defaultType
         final allUserLists = await _repository.getUserLists();
-        final exists = allUserLists.any((list) =>
-            list.defaultType == config.defaultType &&
-            list.isDefault == true &&
-            list.userId == userId);
+        final existingList = allUserLists
+            .where((list) =>
+                list.defaultType == config.defaultType &&
+                list.isDefault == true &&
+                list.userId == userId)
+            .firstOrNull;
 
-        if (!exists) {
+        if (existingList == null) {
+          // La lista no existe, crearla con la configuración por defecto
           final defaultList = _createDefaultListFromConfig(config, userId);
           await _repository.createList(defaultList);
+        } else {
+          // La lista ya existe - NO sobrescribir personalizaciones del usuario
+          // Solo verificar que tenga los campos requeridos
+          if (existingList.defaultType != config.defaultType) {
+            // Corregir defaultType si está mal
+            final correctedList = existingList.copyWith(
+              defaultType: config.defaultType,
+              lastModifiedAt: DateTime.now(),
+            );
+            await _repository.updateList(correctedList);
+          }
         }
       } catch (e) {
-        // Error al crear lista por defecto ${config.name}: $e
+        // Error al crear/verificar lista por defecto ${config.name}: $e
       }
     }
   }
@@ -463,18 +505,80 @@ class DefaultListsManager {
     try {
       final list = await getDefaultListByType(defaultType);
       if (list != null) {
+        // Solo actualizar campos que se proporcionaron (no nulos)
         final updatedList = list.copyWith(
           name: name ?? list.name,
           description: description ?? list.description,
           emoji: emoji ?? list.emoji,
           colorHex: colorHex ?? list.colorHex,
           lastModifiedAt: DateTime.now(),
+          syncStatus: 'pending', // Marcar para sincronización
         );
 
         await _repository.updateList(updatedList);
+
+        // Opcional: Marcar en caché que esta lista ha sido personalizada
+        await _markListAsCustomized(defaultType);
+      } else {
+        throw Exception(
+            'Lista predefinida con tipo "$defaultType" no encontrada');
       }
     } catch (e) {
       // Error al personalizar lista por defecto $defaultType: $e
+      rethrow;
+    }
+  }
+
+  /// Marca una lista como personalizada por el usuario
+  Future<void> _markListAsCustomized(String defaultType) async {
+    final customizedTypes =
+        _prefs.getStringList('customized_default_lists') ?? [];
+    if (!customizedTypes.contains(defaultType)) {
+      customizedTypes.add(defaultType);
+      await _prefs.setStringList('customized_default_lists', customizedTypes);
+    }
+  }
+
+  /// Verifica si una lista predefinida ha sido personalizada
+  bool isDefaultListCustomized(String defaultType) {
+    final customizedTypes =
+        _prefs.getStringList('customized_default_lists') ?? [];
+    return customizedTypes.contains(defaultType);
+  }
+
+  /// Resetea una lista predefinida a su configuración original
+  Future<void> resetDefaultListToOriginal(String defaultType) async {
+    try {
+      final originalConfig = _getDefaultListsConfiguration()
+          .where((config) => config.defaultType == defaultType)
+          .firstOrNull;
+
+      if (originalConfig == null) {
+        throw Exception(
+            'Configuración original para tipo "$defaultType" no encontrada');
+      }
+
+      final existingList = await getDefaultListByType(defaultType);
+      if (existingList != null) {
+        final resetList = existingList.copyWith(
+          name: originalConfig.name,
+          description: originalConfig.description,
+          emoji: originalConfig.emoji,
+          colorHex: originalConfig.color,
+          lastModifiedAt: DateTime.now(),
+          syncStatus: 'pending',
+        );
+
+        await _repository.updateList(resetList);
+
+        // Remover de la lista de personalizadas
+        final customizedTypes =
+            _prefs.getStringList('customized_default_lists') ?? [];
+        customizedTypes.remove(defaultType);
+        await _prefs.setStringList('customized_default_lists', customizedTypes);
+      }
+    } catch (e) {
+      // Error al resetear lista predefinida $defaultType: $e
       rethrow;
     }
   }

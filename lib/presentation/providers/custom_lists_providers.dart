@@ -89,6 +89,12 @@ final defaultListsManagerProvider =
   return DefaultListsManager(repository, prefs);
 });
 
+/// Provider para las acciones de personalización de listas predefinidas
+final defaultListsCustomizationProvider =
+    Provider<DefaultListsCustomization>((ref) {
+  return DefaultListsCustomization(ref);
+});
+
 // ========== PROVIDERS DE ESTADO ==========
 
 /// Provider para listas del usuario actual
@@ -886,3 +892,60 @@ final filteredListsProvider = Provider<AsyncValue<List<CustomList>>>((ref) {
     error: (error, stack) => AsyncValue.error(error, stack),
   );
 });
+
+// ========== CLASES DE ACCIONES PARA LISTAS PREDEFINIDAS ==========
+
+/// Servicio para personalización de listas predefinidas
+class DefaultListsCustomization {
+  DefaultListsCustomization(this._ref);
+
+  final Ref _ref;
+
+  /// Personaliza una lista predefinida
+  Future<void> customizeDefaultList({
+    required String defaultType,
+    String? name,
+    String? description,
+    String? emoji,
+    String? colorHex,
+  }) async {
+    final manager = await _ref.read(defaultListsManagerProvider.future);
+    await manager.customizeDefaultList(
+      defaultType: defaultType,
+      name: name,
+      description: description,
+      emoji: emoji,
+      colorHex: colorHex,
+    );
+
+    // Invalidar providers para actualizar UI
+    _ref.invalidate(userListsProvider);
+    _ref.invalidate(customListsNotifierProvider);
+  }
+
+  /// Resetea una lista predefinida a su configuración original
+  Future<void> resetDefaultList(String defaultType) async {
+    final manager = await _ref.read(defaultListsManagerProvider.future);
+    await manager.resetDefaultListToOriginal(defaultType);
+
+    // Invalidar providers para actualizar UI
+    _ref.invalidate(userListsProvider);
+    _ref.invalidate(customListsNotifierProvider);
+  }
+
+  /// Verifica si una lista ha sido personalizada
+  Future<bool> isListCustomized(String defaultType) async {
+    final manager = await _ref.read(defaultListsManagerProvider.future);
+    return manager.isDefaultListCustomized(defaultType);
+  }
+
+  /// Limpia duplicados preservando personalizaciones
+  Future<void> cleanDuplicatesPreservingCustomizations() async {
+    final manager = await _ref.read(defaultListsManagerProvider.future);
+    await manager.cleanAndRecreateDefaultLists();
+
+    // Invalidar providers para actualizar UI
+    _ref.invalidate(userListsProvider);
+    _ref.invalidate(customListsNotifierProvider);
+  }
+}
