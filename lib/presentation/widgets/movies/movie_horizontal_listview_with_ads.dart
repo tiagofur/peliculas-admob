@@ -285,7 +285,7 @@ class _SlideState extends ConsumerState<_Slide>
                                 borderRadius: BorderRadius.circular(20),
                                 enableHeroAnimation: true,
                                 heroTag:
-                                    'horizontal-ads-${widget.sectionId}-${widget.movie.id}-${widget.index}',
+                                    'horizontal-ads-${widget.sectionId}-${widget.movie.id}',
                                 placeholder: Container(
                                   height: 220,
                                   width: 150,

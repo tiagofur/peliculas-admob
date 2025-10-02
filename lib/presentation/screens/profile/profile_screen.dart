@@ -192,64 +192,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         'ProfileScreen.build: user=${currentUser?.id ?? 'null'}, profile=${profile?.id ?? 'null'}, isLoading=${sessionState.isLoading}');
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Perfil'),
-        centerTitle: true,
-        actions: [
-          if (!_isEditing && currentUser != null)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: 'Editar perfil',
-              onPressed: currentUser == null
-                  ? null
-                  : () {
-                      final sessionState = ref.read(userSessionProvider);
-                      startEditing(
-                        sessionState.profile ??
-                            _createFallbackProfileFromUser(currentUser),
-                        isFallback: sessionState.profile == null,
-                      );
-                    },
-            )
-          else if (_isEditing)
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(
-                  onPressed: cancelEditing,
-                  child: const Text('Cancelar'),
-                ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: isSaving ? null : saveProfile,
-                  child: isSaving
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Guardar'),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-        ],
-        bottom: currentUser != null && !_isEditing
-            ? TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(
-                    icon: Icon(Icons.person_outline),
-                    text: 'Perfil',
-                  ),
-                  Tab(
-                    icon: Icon(Icons.star_outline),
-                    text: 'Valoraciones',
-                  ),
-                ],
-              )
-            : null,
-      ),
       body: Column(
         children: [
           const MinimalSyncIndicator(),
@@ -258,6 +200,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               theme,
               sessionState,
               userStats.value,
+              isSaving,
             ),
           ),
         ],
@@ -270,6 +213,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     ThemeData theme,
     UserSessionState sessionState,
     UserStats? stats,
+    bool isSaving,
   ) {
     final isCurrentUserProfile = widget.userId == null;
 
@@ -296,6 +240,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
       sessionState.user!,
       sessionState.profile,
       stats,
+      isSaving,
     );
   }
 
@@ -305,67 +250,161 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     User currentUser,
     UserProfile? profile,
     UserStats? stats,
+    bool isSaving,
   ) {
     final effectiveProfile =
         profile ?? _createFallbackProfileFromUser(currentUser);
 
     // Si está editando, mostrar formulario completo sin tabs
     if (_isEditing) {
-      return RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(userSessionProvider.notifier).refreshProfile();
-          ref.invalidate(currentUserStatsProvider);
+      return NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              title: const Text('Mi Perfil'),
+              centerTitle: true,
+              pinned: true,
+              floating: false,
+              actions: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextButton(
+                      onPressed: cancelEditing,
+                      child: const Text('Cancelar'),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: isSaving ? null : saveProfile,
+                      child: isSaving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Guardar'),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ),
+              ],
+            ),
+          ];
         },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildProfileHeader(theme, effectiveProfile),
-              const SizedBox(height: 24),
-              _buildEditFormCard(theme, effectiveProfile),
-            ],
+        body: RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(userSessionProvider.notifier).refreshProfile();
+            ref.invalidate(currentUserStatsProvider);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildProfileHeader(theme, effectiveProfile),
+                const SizedBox(height: 24),
+                _buildEditFormCard(theme, effectiveProfile),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    // Vista normal con tabs
-    return RefreshIndicator(
-      onRefresh: () async {
-        await ref.read(userSessionProvider.notifier).refreshProfile();
-        ref.invalidate(currentUserStatsProvider);
-        ref.invalidate(recentRatingsProvider);
-      },
-      child: Column(
-        children: [
-          // Header del perfil (siempre visible)
-          SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            child: _buildProfileHeader(theme, effectiveProfile),
-          ),
-          const SizedBox(height: 16),
-
-          // TabBarView con las dos secciones
-          Expanded(
-            child: TabBarView(
+    // Vista normal con tabs - usando NestedScrollView
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverAppBar(
+            title: const Text('Mi Perfil'),
+            centerTitle: true,
+            pinned: true,
+            floating: false,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                tooltip: 'Editar perfil',
+                onPressed: () {
+                  final sessionState = ref.read(userSessionProvider);
+                  startEditing(
+                    sessionState.profile ??
+                        _createFallbackProfileFromUser(currentUser),
+                    isFallback: sessionState.profile == null,
+                  );
+                },
+              ),
+            ],
+            bottom: TabBar(
               controller: _tabController,
-              children: [
-                // Tab 1: Información del Perfil
-                _buildProfileTab(theme, effectiveProfile, stats, ref),
-
-                // Tab 2: Valoraciones
-                _buildRatingsTab(theme),
+              tabs: const [
+                Tab(
+                  icon: Icon(Icons.person_outline),
+                  text: 'Perfil',
+                ),
+                Tab(
+                  icon: Icon(Icons.star_outline),
+                  text: 'Valoraciones',
+                ),
               ],
             ),
           ),
+        ];
+      },
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(userSessionProvider.notifier).refreshProfile();
+          ref.invalidate(currentUserStatsProvider);
+          ref.invalidate(recentRatingsProvider);
+        },
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            // Tab 1: Información del Perfil (con header incluido)
+            _buildProfileTabWithHeader(theme, effectiveProfile, stats, ref),
+
+            // Tab 2: Valoraciones (sin header)
+            _buildRatingsTab(theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Tab de información del perfil CON header del avatar
+  Widget _buildProfileTabWithHeader(
+    ThemeData theme,
+    UserProfile profile,
+    UserStats? stats,
+    WidgetRef ref,
+  ) {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header con avatar (solo en esta tab)
+          _buildProfileHeader(theme, profile),
+          const SizedBox(height: 24),
+
+          // Información personal
+          _buildProfileInfoCard(theme, profile),
+          const SizedBox(height: 16),
+
+          // Estadísticas
+          if (stats != null) ...[
+            _buildStatsSection(theme, stats),
+            const SizedBox(height: 16),
+          ],
+
+          // Botones de acción
+          _buildActionButtons(theme),
         ],
       ),
     );
   }
 
-  /// Tab de información del perfil
+  /// Tab de información del perfil (sin header - legacy, ya no se usa)
   Widget _buildProfileTab(
     ThemeData theme,
     UserProfile profile,
