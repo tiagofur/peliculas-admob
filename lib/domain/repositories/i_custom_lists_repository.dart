@@ -44,6 +44,12 @@ abstract class ICustomListsRepository {
   /// Verifica si una película está en una lista específica
   Future<bool> isMovieInList(String listId, int movieId);
 
+  /// Duplica una lista con todas sus películas
+  Future<CustomList> duplicateList(String listId, String newName);
+
+  /// Elimina todas las películas de una lista
+  Future<void> clearListMovies(String listId);
+
   // ========== SINCRONIZACIÓN ==========
 
   /// Stream para escuchar cambios en las listas del usuario

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/custom_list.dart';
 import '../../../generated/app_localizations.dart';
+import '../../providers/list_items_provider.dart';
 import '../../providers/storage/direct_custom_lists_provider.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -332,9 +333,12 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
   ) {
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
-    final totalMovies =
-        lists.fold<int>(0, (sum, list) => sum + list.movieIds.length);
-    final activeLists = lists.where((list) => list.movieIds.isNotEmpty).length;
+    // Use totalMoviesInListsProvider for global count
+    final totalMovies = ref.watch(totalMoviesInListsProvider);
+    // Count active lists using listMovieCountProvider for each list
+    final activeLists = lists
+        .where((list) => ref.read(listMovieCountProvider(list.id)) > 0)
+        .length;
 
     final sections = <Widget>[
       _buildStatsHeader(
@@ -544,13 +548,19 @@ class _CustomListsViewState extends ConsumerState<CustomListsView> {
                           color: cardColor,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          '${list.movieIds.length} películas',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: cardColor,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final count =
+                                ref.watch(listMovieCountProvider(list.id));
+                            return Text(
+                              '$count películas',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: cardColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            );
+                          },
                         ),
                         const Spacer(),
                         Text(
@@ -1390,8 +1400,11 @@ class _DuplicateListDialogState extends ConsumerState<_DuplicateListDialog> {
                       throw Exception('No se pudo crear la lista duplicada');
                     }
 
-                    for (final movieId in sourceList.movieIds) {
-                      await notifier.addMovieToList(newListId, movieId);
+                    // Get list items from provider
+                    final listItems =
+                        await ref.read(listItemsProvider(sourceList.id).future);
+                    for (final item in listItems) {
+                      await notifier.addMovieToList(newListId, item.movieId);
                     }
 
                     if (!mounted) return;

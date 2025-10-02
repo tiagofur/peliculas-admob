@@ -212,16 +212,18 @@ class ListSyncService {
   }
 
   /// Fusiona dos listas en conflicto
+  /// MIGRADO: Ya no manipula movieIds directamente, usa repository
   Future<CustomList> _mergeConflictedLists(
       CustomList local, CustomList remote) async {
-    // Estrategia de fusión: combinar elementos únicos, usar datos más recientes
-    final mergedMovieIds =
-        <int>{...local.movieIds, ...remote.movieIds}.toList();
+    // Estrategia de fusión: Los items ya están en la tabla list_items
+    // Solo necesitamos decidir qué metadatos usar
+    // La fusión de items se hace a nivel de base de datos
 
-    final mergedList = local.lastModifiedAt.isAfter(remote.lastModifiedAt)
-        ? local.copyWith(movieIds: mergedMovieIds)
-        : remote.copyWith(movieIds: mergedMovieIds);
+    final mergedList =
+        local.lastModifiedAt.isAfter(remote.lastModifiedAt) ? local : remote;
 
+    // NOTE: Los items se fusionan automáticamente en la base de datos
+    // mediante las constraints UNIQUE en list_items
     return mergedList;
   }
 
@@ -326,27 +328,20 @@ class ListSyncService {
     _syncStatusController.add(status);
   }
 
+  /// MIGRADO: Detecta conflictos sin comparar movieIds directamente
   bool _hasConflict(CustomList local, CustomList remote) {
     return local.lastModifiedAt != remote.lastModifiedAt &&
-        (local.name != remote.name ||
-            local.description != remote.description ||
-            !_listsEqual(local.movieIds, remote.movieIds));
+        (local.name != remote.name || local.description != remote.description);
+    // NOTE: Los conflictos de contenido (películas) se manejan
+    // automáticamente en la base de datos mediante list_items
   }
 
-  bool _listsEqual(List<int> list1, List<int> list2) {
-    if (list1.length != list2.length) return false;
-    for (int i = 0; i < list1.length; i++) {
-      if (list1[i] != list2[i]) return false;
-    }
-    return true;
-  }
-
+  /// MIGRADO: Determina tipo de conflicto sin acceder a movieIds
   ConflictType _determineConflictType(CustomList local, CustomList remote) {
     if (local.name != remote.name || local.description != remote.description) {
       return ConflictType.metadata;
-    } else if (!_listsEqual(local.movieIds, remote.movieIds)) {
-      return ConflictType.content;
     }
+    // NOTE: Los conflictos de contenido se detectan a nivel de BD
     return ConflictType.timestamp;
   }
 

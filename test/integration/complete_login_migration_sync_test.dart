@@ -30,7 +30,6 @@ void main() {
   group('Prueba de Integración: PostLoginInitializationService', () {
     late MockICustomListsRepository mockRepository;
     late MockListSyncService mockSyncService;
-    late MockSupabaseClient mockSupabaseClient;
     late MockCustomListsSharedPreferencesDatasource
         mockCustomListsSharedPreferencesDatasource;
     late ProviderContainer container;
@@ -44,7 +43,6 @@ void main() {
       // Inicializar mocks
       mockRepository = MockICustomListsRepository();
       mockSyncService = MockListSyncService();
-      mockSupabaseClient = MockSupabaseClient();
       mockCustomListsSharedPreferencesDatasource =
           MockCustomListsSharedPreferencesDatasource();
 
@@ -55,7 +53,7 @@ void main() {
       migrationService = ListsMigrationService(
         await SharedPreferences.getInstance(),
         mockCustomListsSharedPreferencesDatasource,
-        mockSupabaseClient,
+        mockRepository,
       );
 
       // Obtener instancia singleton de PostLoginInitializationService

@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:peliculas/domain/entities/custom_list.dart';
-import 'package:peliculas/services/lists_migration_service.dart';
-import 'package:peliculas/infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import 'package:peliculas/domain/repositories/i_custom_lists_repository.dart';
+import 'package:peliculas/infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import 'package:peliculas/services/default_lists_manager.dart';
+import 'package:peliculas/services/lists_migration_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -51,7 +51,7 @@ void main() {
       migrationService = ListsMigrationService(
         mockPrefs,
         mockLocalDataSource,
-        mockSupabaseClient,
+        mockRepository,
       );
     });
 

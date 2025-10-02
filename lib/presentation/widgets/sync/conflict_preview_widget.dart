@@ -6,6 +6,7 @@ import '../../../domain/entities/syncable_custom_list.dart';
 import '../../../domain/entities/syncable_entity.dart';
 import '../../../domain/entities/syncable_watched_movie.dart';
 import '../../../domain/entities/syncable_watchlist_item.dart';
+import '../../providers/list_items_provider.dart';
 
 /// Widget que muestra una vista previa de los cambios en conflicto
 class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
@@ -58,7 +59,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
               ],
             ),
             SizedBox(height: compact ? 8 : 12),
-            _buildPreviewContent(context),
+            _buildPreviewContent(context, ref),
           ],
         ),
       ),
@@ -114,23 +115,23 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
     );
   }
 
-  Widget _buildPreviewContent(BuildContext context) {
+  Widget _buildPreviewContent(BuildContext context, WidgetRef ref) {
     switch (selectedStrategy) {
       case ConflictStrategy.localWins:
         return _buildSingleVersionPreview(
-            context, conflict.localEntity, 'Versión Local', true);
+            context, conflict.localEntity, 'Versión Local', true, ref);
       case ConflictStrategy.remoteWins:
         return _buildSingleVersionPreview(
-            context, conflict.remoteEntity, 'Versión Remota', false);
+            context, conflict.remoteEntity, 'Versión Remota', false, ref);
       case ConflictStrategy.merge:
         return _buildMergePreview(context);
       case ConflictStrategy.userChoice:
-        return _buildComparisonPreview(context);
+        return _buildComparisonPreview(context, ref);
     }
   }
 
-  Widget _buildSingleVersionPreview(
-      BuildContext context, T entity, String title, bool isLocal) {
+  Widget _buildSingleVersionPreview(BuildContext context, T entity,
+      String title, bool isLocal, WidgetRef ref) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
@@ -166,7 +167,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
                   .withValues(alpha: 0.3),
             ),
           ),
-          child: _buildEntityDetails(context, entity),
+          child: _buildEntityDetails(context, entity, ref),
         ),
       ],
     );
@@ -224,7 +225,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
     );
   }
 
-  Widget _buildComparisonPreview(BuildContext context) {
+  Widget _buildComparisonPreview(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
     return Column(
@@ -240,7 +241,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
         if (compact)
           _buildCompactComparison(context)
         else
-          _buildDetailedComparison(context),
+          _buildDetailedComparison(context, ref),
       ],
     );
   }
@@ -323,14 +324,14 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
     );
   }
 
-  Widget _buildDetailedComparison(BuildContext context) {
+  Widget _buildDetailedComparison(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
         _buildSingleVersionPreview(
-            context, conflict.localEntity, 'Versión Local', true),
+            context, conflict.localEntity, 'Versión Local', true, ref),
         const SizedBox(height: 12),
         _buildSingleVersionPreview(
-            context, conflict.remoteEntity, 'Versión Remota', false),
+            context, conflict.remoteEntity, 'Versión Remota', false, ref),
         if (showDifferences) ...[
           const SizedBox(height: 12),
           _buildDifferencesSection(context),
@@ -438,14 +439,14 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
     );
   }
 
-  Widget _buildEntityDetails(BuildContext context, T entity) {
+  Widget _buildEntityDetails(BuildContext context, T entity, WidgetRef ref) {
     // Implementación específica por tipo de entidad
     if (entity is SyncableWatchedMovie) {
       return _buildWatchedMovieDetails(context, entity);
     } else if (entity is SyncableWatchlistItem) {
       return _buildWatchlistItemDetails(context, entity);
     } else if (entity is SyncableCustomList) {
-      return _buildCustomListDetails(context, entity);
+      return _buildCustomListDetails(context, entity, ref);
     }
 
     return _buildGenericEntityDetails(context, entity);
@@ -519,7 +520,10 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
   }
 
   Widget _buildCustomListDetails(
-      BuildContext context, SyncableCustomList list) {
+      BuildContext context, SyncableCustomList list, WidgetRef ref) {
+    // Obtener conteo de películas desde el provider
+    final movieCount = ref.watch(listMovieCountProvider(list.id));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -527,8 +531,7 @@ class ConflictPreviewWidget<T extends SyncableEntity> extends ConsumerWidget {
         if (list.description != null && list.description!.isNotEmpty)
           _buildDetailRow(context, 'Descripción', list.description!,
               maxLines: 2),
-        _buildDetailRow(
-            context, 'Películas', '${list.movieIds.length} elementos'),
+        _buildDetailRow(context, 'Películas', '$movieCount elementos'),
         _buildDetailRow(context, 'Creado', _formatDate(list.createdAt)),
         _buildDetailRow(
             context, 'Modificado', _formatDate(list.lastModifiedAt)),

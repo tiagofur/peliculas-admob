@@ -712,4 +712,58 @@ class CustomListsRepositoryImpl implements ICustomListsRepository {
     final generatedId = SyncUtilities.generateUuid();
     return list.copyWith(id: generatedId);
   }
+
+  // ========== OPERACIONES AVANZADAS ==========
+
+  @override
+  Future<CustomList> duplicateList(String listId, String newName) async {
+    try {
+      final currentUser = Supabase.instance.client.auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      if (await hasInternetConnection()) {
+        final duplicatedList = await _supabaseDataSource.duplicateList(
+            listId, newName, currentUser.id);
+
+        AppLogger.repo('CustomLists', '✅ Lista duplicada: $newName');
+        return duplicatedList;
+      } else {
+        // Offline: Guardar operación pendiente
+        await _savePendingOperation('duplicate', {
+          'listId': listId,
+          'newName': newName,
+        });
+
+        // Por ahora, lanzar error ya que es complejo manejar duplicación offline
+        throw Exception('No se puede duplicar lista sin conexión');
+      }
+    } catch (e) {
+      AppLogger.repo('CustomLists', '❌ Error al duplicar lista: $e');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> clearListMovies(String listId) async {
+    try {
+      if (await hasInternetConnection()) {
+        await _supabaseDataSource.clearListMovies(listId);
+
+        AppLogger.repo('CustomLists', '✅ Lista limpiada: $listId');
+      } else {
+        // Offline: Guardar operación pendiente
+        await _savePendingOperation('clear_movies', {
+          'listId': listId,
+        });
+
+        AppLogger.repo('CustomLists',
+            '📦 Operación de limpieza guardada offline para lista: $listId');
+      }
+    } catch (e) {
+      AppLogger.repo('CustomLists', '❌ Error al limpiar lista: $e');
+      rethrow;
+    }
+  }
 }

@@ -43,7 +43,7 @@ void main() {
       migrationService = ListsMigrationService(
         prefs,
         mockLocalDataSource,
-        mockSupabaseClient,
+        mockRepository,
       );
       rollbackService = MigrationRollbackService(
         prefs,

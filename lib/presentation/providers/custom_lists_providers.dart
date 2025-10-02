@@ -70,12 +70,12 @@ final listsMigrationServiceProvider =
   final prefs = await ref.watch(sharedPreferencesProvider.future);
   final localDatasource =
       await ref.watch(customListsSharedPreferencesDatasourceProvider.future);
-  final supabaseClient = SupabaseConfig.client;
+  final repository = await ref.watch(customListsRepositoryProvider.future);
 
   return ListsMigrationService(
     prefs,
     localDatasource,
-    supabaseClient,
+    repository,
   );
 });
 

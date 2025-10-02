@@ -88,7 +88,8 @@ class DirectRatingsService extends Notifier<Map<int, SyncableMovieRating>> {
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
-        LoggerFactory.info('⚠️ DirectRatings: No user logged in, clearing state');
+        LoggerFactory.info(
+            '⚠️ DirectRatings: No user logged in, clearing state');
         state = {};
         return;
       }

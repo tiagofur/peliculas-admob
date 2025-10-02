@@ -7,6 +7,7 @@ import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../services/share_service.dart';
 import '../../providers/custom_lists_provider.dart';
+import '../../providers/list_items_provider.dart'; // MIGRACIÓN: Nuevo provider basado en streams
 import '../../providers/movies/movie_info_provider.dart';
 import '../../providers/search/search_movies_provider.dart';
 import '../../providers/storage/direct_custom_lists_provider.dart';
@@ -76,7 +77,9 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
     final textStyles = Theme.of(context).textTheme;
     final moviesCacheAsync = ref.watch(movieInfoProvider);
 
-    if (customList.movieIds.isEmpty) {
+    // MIGRADO: Usar listMovieCountProvider en lugar de movieIds.isEmpty
+    final movieCount = ref.watch(listMovieCountProvider(customList.id));
+    if (movieCount == 0) {
       return Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -90,8 +93,10 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
       );
     }
 
-    // Usar .when para manejar los estados del caché de películas
-    return moviesCacheAsync.when(
+    // MIGRADO: Primero obtener items de la lista usando listItemsProvider
+    final listItemsAsync = ref.watch(listItemsProvider(customList.id));
+
+    return listItemsAsync.when(
       loading: () => Scaffold(
         body: CustomScrollView(
           slivers: [
@@ -101,110 +106,140 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
             ),
           ],
         ),
+        floatingActionButton: _buildFloatingActionButton(customList, colors),
       ),
       error: (err, stack) => Scaffold(
         body: CustomScrollView(
           slivers: [
             _buildSliverAppBar(customList, colors, textStyles),
             SliverFillRemaining(
-              child: Center(child: Text('Error al cargar películas: $err')),
+              child: Center(child: Text('Error al cargar items: $err')),
             ),
           ],
         ),
+        floatingActionButton: _buildFloatingActionButton(customList, colors),
       ),
-      data: (moviesMap) {
-        final failedMovieIds = ref.watch(movieLoadFailuresProvider);
-        final loadingMovieIds = ref.watch(movieLoadInProgressProvider);
-
-        final requestedMovieIds =
-            customList.movieIds.map((id) => id.toString()).toList();
-
-        for (final movieId in requestedMovieIds) {
-          if (moviesMap[movieId] != null) continue;
-          if (failedMovieIds.contains(movieId)) continue;
-          if (loadingMovieIds.contains(movieId)) continue;
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            ref.read(movieInfoProvider.notifier).loadMovie(movieId);
-          });
-        }
-
-        final movies = requestedMovieIds
-            .map((id) => moviesMap[id])
-            .whereType<Movie>()
-            .toList();
-
-        final missingMovieIds = requestedMovieIds
-            .where(failedMovieIds.contains)
-            .map((id) => int.tryParse(id))
-            .whereType<int>()
-            .toList();
-
-        final loadingIdsForList =
-            requestedMovieIds.where(loadingMovieIds.contains).toList();
-
-        final slivers = <Widget>[
-          _buildSliverAppBar(customList, colors, textStyles),
-        ];
-
-        if (missingMovieIds.isNotEmpty) {
-          slivers.add(
-            SliverToBoxAdapter(
-              child: _buildMissingMoviesBanner(
-                colors: colors,
-                textStyles: textStyles,
-                missingCount: missingMovieIds.length,
-                onRemove: () =>
-                    _removeMissingMovies(customList, missingMovieIds),
-                onRetry: () {
-                  for (final id in missingMovieIds) {
-                    ref
-                        .read(movieInfoProvider.notifier)
-                        .loadMovie(id.toString(), force: true);
-                  }
-                },
-              ),
+      data: (listItems) {
+        // Ahora usar .when para el caché de películas
+        return moviesCacheAsync.when(
+          loading: () => Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(customList, colors, textStyles),
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              ],
             ),
-          );
-        }
-
-        if (movies.isNotEmpty) {
-          slivers.add(
-            SliverFillRemaining(
-              child: MasonryWithAds(movies: movies),
-            ),
-          );
-        } else if (loadingIdsForList.isNotEmpty) {
-          slivers.add(
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        } else if (customList.movieIds.isNotEmpty &&
-            missingMovieIds.length == customList.movieIds.length) {
-          slivers.add(
-            SliverFillRemaining(
-              child: _buildMissingMoviesEmptyState(
-                colors,
-                textStyles,
-                missingMovieIds.length,
-              ),
-            ),
-          );
-        } else {
-          slivers.add(
-            SliverFillRemaining(
-              child: _buildEmptyState(colors, textStyles),
-            ),
-          );
-        }
-
-        return Scaffold(
-          body: CustomScrollView(
-            slivers: slivers,
           ),
-          floatingActionButton: _buildFloatingActionButton(customList, colors),
+          error: (err, stack) => Scaffold(
+            body: CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(customList, colors, textStyles),
+                SliverFillRemaining(
+                  child: Center(child: Text('Error al cargar películas: $err')),
+                ),
+              ],
+            ),
+          ),
+          data: (moviesMap) {
+            final failedMovieIds = ref.watch(movieLoadFailuresProvider);
+            final loadingMovieIds = ref.watch(movieLoadInProgressProvider);
+
+            // MIGRADO: Extraer IDs de los ListItems
+            final requestedMovieIds =
+                listItems.map((item) => item.movieId.toString()).toList();
+
+            for (final movieId in requestedMovieIds) {
+              if (moviesMap[movieId] != null) continue;
+              if (failedMovieIds.contains(movieId)) continue;
+              if (loadingMovieIds.contains(movieId)) continue;
+
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                ref.read(movieInfoProvider.notifier).loadMovie(movieId);
+              });
+            }
+
+            final movies = requestedMovieIds
+                .map((id) => moviesMap[id])
+                .whereType<Movie>()
+                .toList();
+
+            final missingMovieIds = requestedMovieIds
+                .where(failedMovieIds.contains)
+                .map((id) => int.tryParse(id))
+                .whereType<int>()
+                .toList();
+
+            final loadingIdsForList =
+                requestedMovieIds.where(loadingMovieIds.contains).toList();
+
+            final slivers = <Widget>[
+              _buildSliverAppBar(customList, colors, textStyles),
+            ];
+
+            if (missingMovieIds.isNotEmpty) {
+              slivers.add(
+                SliverToBoxAdapter(
+                  child: _buildMissingMoviesBanner(
+                    colors: colors,
+                    textStyles: textStyles,
+                    missingCount: missingMovieIds.length,
+                    onRemove: () =>
+                        _removeMissingMovies(customList, missingMovieIds),
+                    onRetry: () {
+                      for (final id in missingMovieIds) {
+                        ref
+                            .read(movieInfoProvider.notifier)
+                            .loadMovie(id.toString(), force: true);
+                      }
+                    },
+                  ),
+                ),
+              );
+            }
+
+            if (movies.isNotEmpty) {
+              slivers.add(
+                SliverFillRemaining(
+                  child: MasonryWithAds(movies: movies),
+                ),
+              );
+            } else if (loadingIdsForList.isNotEmpty) {
+              slivers.add(
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            } else if (listItems.isNotEmpty &&
+                missingMovieIds.length == listItems.length) {
+              // MIGRADO: Comparar con listItems.length en lugar de movieIds.length
+              slivers.add(
+                SliverFillRemaining(
+                  child: _buildMissingMoviesEmptyState(
+                    colors,
+                    textStyles,
+                    missingMovieIds.length,
+                  ),
+                ),
+              );
+            } else {
+              slivers.add(
+                SliverFillRemaining(
+                  child: _buildEmptyState(colors, textStyles),
+                ),
+              );
+            }
+
+            return Scaffold(
+              body: CustomScrollView(
+                slivers: slivers,
+              ),
+              floatingActionButton:
+                  _buildFloatingActionButton(customList, colors),
+            );
+          },
         );
       },
     );
@@ -289,13 +324,20 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
                                   .withValues(alpha: 51), // 0.2 * 255 ≈ 51
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Text(
-                              '${customList.movieIds.length} películas',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Consumer(
+                              builder: (context, ref, _) {
+                                // MIGRADO: Usar listMovieCountProvider
+                                final count = ref.watch(
+                                    listMovieCountProvider(customList.id));
+                                return Text(
+                                  '$count películas',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -626,8 +668,10 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
         throw Exception('No se pudo crear la lista duplicada');
       }
 
-      for (final movieId in customList.movieIds) {
-        await notifier.addMovieToList(newListId, movieId);
+      // Get current list items from provider
+      final listItems = await ref.read(listItemsProvider(customList.id).future);
+      for (final item in listItems) {
+        await notifier.addMovieToList(newListId, item.movieId);
       }
 
       if (mounted) {
@@ -657,14 +701,16 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
 
   void _shareList(CustomList customList) async {
     try {
+      // Get movie count from provider
+      final movieCount = ref.read(listMovieCountProvider(customList.id));
       await ShareService.shareMovieList(
         context: context,
         listId: customList.id.toString(),
         listName: customList.name,
         listDescription: customList.description.isNotEmpty
             ? customList.description
-            : 'Una colección de ${customList.movieIds.length} películas seleccionadas',
-        movieCount: customList.movieIds.length,
+            : 'Una colección de $movieCount películas seleccionadas',
+        movieCount: movieCount,
       );
     } catch (e) {
       if (mounted) {
@@ -693,13 +739,16 @@ class _ListDetailViewState extends ConsumerState<ListDetailView> {
           FilledButton(
             onPressed: () async {
               try {
+                // Get current list items from provider
+                final listItems =
+                    await ref.read(listItemsProvider(customList.id).future);
                 // Remover todas las películas de la lista
-                for (final movieId in customList.movieIds) {
+                for (final item in listItems) {
                   await ref
                       .read(directCustomListsProvider.notifier)
                       .removeMovieFromList(
                         customList.id,
-                        movieId,
+                        item.movieId,
                       );
                 }
                 Navigator.of(context).pop();

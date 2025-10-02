@@ -18,11 +18,11 @@ class HybridMovieRatingsRepository
     required super.userId,
     EntitySyncManager<SyncableMovieRating>? syncManager,
     super.syncCoordinator,
-  }) : _localDatasource = MovieRatingsHiveDatasource(),
-       super(
-         entityType: 'movie_rating',
-         syncManager: syncManager ?? RatingsSyncManager(userId: userId),
-       );
+  })  : _localDatasource = MovieRatingsHiveDatasource(),
+        super(
+          entityType: 'movie_rating',
+          syncManager: syncManager ?? RatingsSyncManager(userId: userId),
+        );
 
   final MovieRatingsHiveDatasource _localDatasource;
 
@@ -409,9 +409,8 @@ class HybridMovieRatingsRepository
       final allRatings = await getUserRatings(limit: 1000);
       final cutoffDate = DateTime.now().subtract(Duration(days: days));
 
-      final recentRatings = allRatings
-          .where((r) => r.ratedAt.isAfter(cutoffDate))
-          .toList();
+      final recentRatings =
+          allRatings.where((r) => r.ratedAt.isAfter(cutoffDate)).toList();
 
       // Ordenar por fecha más reciente primero
       recentRatings.sort((a, b) => b.ratedAt.compareTo(a.ratedAt));

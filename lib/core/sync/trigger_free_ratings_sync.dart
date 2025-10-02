@@ -413,19 +413,15 @@ class TriggerFreeRatingsSync {
 
       return _supabase
           .from('user_movie_ratings')
-          .stream(primaryKey: ['id'])
-          .map((data) {
-            // Filtrar en el lado de la aplicación ya que stream no soporta .eq()
-            final filtered = data
-                .where((item) => item['user_id'] == userId)
-                .toList();
+          .stream(primaryKey: ['id']).map((data) {
+        // Filtrar en el lado de la aplicación ya que stream no soporta .eq()
+        final filtered =
+            data.where((item) => item['user_id'] == userId).toList();
 
-            LoggerFactory.debug(
-                '🔄 [TriggerFreeRatings] Real-time update recibido: ${filtered.length} ratings');
-            return filtered
-                .map((item) => UserMovieRating.fromJson(item))
-                .toList();
-          });
+        LoggerFactory.debug(
+            '🔄 [TriggerFreeRatings] Real-time update recibido: ${filtered.length} ratings');
+        return filtered.map((item) => UserMovieRating.fromJson(item)).toList();
+      });
     } catch (e) {
       LoggerFactory.error(
           '❌ [TriggerFreeRatings] Error configurando stream: $e');
@@ -441,24 +437,22 @@ class TriggerFreeRatingsSync {
 
       return _supabase
           .from('user_movie_ratings')
-          .stream(primaryKey: ['id'])
-          .map((data) {
-            // Filtrar en el lado de la aplicación
-            final filtered = data
-                .where((item) =>
-                    item['user_id'] == userId &&
-                    item['movie_id'] == movieId)
-                .toList();
+          .stream(primaryKey: ['id']).map((data) {
+        // Filtrar en el lado de la aplicación
+        final filtered = data
+            .where((item) =>
+                item['user_id'] == userId && item['movie_id'] == movieId)
+            .toList();
 
-            if (filtered.isEmpty) {
-              LoggerFactory.debug(
-                  '📭 [TriggerFreeRatings] No rating para movie $movieId');
-              return null;
-            }
-            LoggerFactory.debug(
-                '🔄 [TriggerFreeRatings] Rating actualizado para movie $movieId');
-            return UserMovieRating.fromJson(filtered.first);
-          });
+        if (filtered.isEmpty) {
+          LoggerFactory.debug(
+              '📭 [TriggerFreeRatings] No rating para movie $movieId');
+          return null;
+        }
+        LoggerFactory.debug(
+            '🔄 [TriggerFreeRatings] Rating actualizado para movie $movieId');
+        return UserMovieRating.fromJson(filtered.first);
+      });
     } catch (e) {
       LoggerFactory.error(
           '❌ [TriggerFreeRatings] Error configurando stream para movie: $e');
@@ -480,10 +474,12 @@ class TriggerFreeRatingsSync {
       final List<dynamic> data = response as List<dynamic>;
 
       LoggerFactory.info('✅ [TriggerFreeRatings] Conexión exitosa');
-      LoggerFactory.info('📊 [TriggerFreeRatings] Total ratings en tabla: ${data.length}');
+      LoggerFactory.info(
+          '📊 [TriggerFreeRatings] Total ratings en tabla: ${data.length}');
 
       for (final item in data) {
-        LoggerFactory.info('  📌 Rating: ${item['movie_title']} - ${item['rating']}/10 (user: ${item['user_id']})');
+        LoggerFactory.info(
+            '  📌 Rating: ${item['movie_title']} - ${item['rating']}/10 (user: ${item['user_id']})');
       }
 
       return true;

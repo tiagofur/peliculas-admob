@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/gamification/gamification_integration_service.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/custom_list.dart';
+import '../../domain/entities/list_item.dart';
 import '../../domain/repositories/i_custom_lists_repository.dart';
 import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../services/list_sync_service.dart';
@@ -305,35 +306,26 @@ class AllListsNotifier extends Notifier<AllListsState> {
     _saveLists();
   }
 
-  // Agregar película a lista
+  /// Agregar película a lista
+  ///
+  /// MIGRADO: Ya no manipula movieIds directamente.
+  /// Usa el repository y confía en los streams para actualizar UI.
   Future<void> addMovieToList(String listId, int movieId,
       {int? position}) async {
     try {
-      final existingList = _findListById(listId);
-      final alreadyContains = existingList?.movieIds.contains(movieId) ?? false;
+      // Verificar si ya existe antes de agregar (para gamificación)
+      final wasAlreadyInList = await _repository.isMovieInList(listId, movieId);
 
-      // Actualizar estado optimísticamente
-      _updateListInState(listId, (list) {
-        final newMovieIds = List<int>.from(list.movieIds);
-        if (!newMovieIds.contains(movieId)) {
-          if (position != null &&
-              position >= 0 &&
-              position <= newMovieIds.length) {
-            newMovieIds.insert(position, movieId);
-          } else {
-            newMovieIds.add(movieId);
-          }
-        }
-        return list.copyWith(
-          movieIds: newMovieIds,
-          lastModifiedAt: DateTime.now(),
-        );
-      });
-
-      // Intentar agregar usando el repositorio
+      // Agregar usando el repositorio
+      // Los streams de listItemsProvider actualizarán la UI automáticamente
       try {
         await _repository.addMovieToList(listId, movieId, position: position);
+
+        LoggerFactory.info('✅ Película $movieId agregada a lista $listId');
       } catch (e) {
+        LoggerFactory.warning(
+            '⚠️ Error al agregar película, registrando como cambio offline: $e');
+
         // Si falla, registrar como cambio offline
         await _syncService.recordOfflineChange(OfflineChange(
           id: 'add_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
@@ -347,68 +339,34 @@ class AllListsNotifier extends Notifier<AllListsState> {
         ));
       }
 
-      // Registrar evento de gamificación
-      if (!alreadyContains) {
+      // Registrar evento de gamificación solo si es nueva
+      if (!wasAlreadyInList) {
         await _runGamificationAction(
           (service) => service.trackMovieAddedToList(movieId, listId),
         );
       }
     } catch (e) {
-      throw Exception('Error adding movie to list: $e');
+      LoggerFactory.error('❌ Error al agregar película a lista: $e');
+      rethrow;
     }
   }
 
-  // Helper method to update list in state
-  void _updateListInState(
-      String listId, CustomList Function(CustomList) updater) {
-    final existsInCustom = state.customLists.any((list) => list.id == listId);
-    final existsInDefault = state.defaultLists.any((list) => list.id == listId);
-
-    if (!existsInCustom && !existsInDefault) {
-      LoggerFactory.warning(
-          '⚠️ customListsProvider: se intentó actualizar la lista $listId que no está en el estado actual');
-      return;
-    }
-
-    final updatedCustomLists = state.customLists.map((list) {
-      return list.id == listId ? updater(list) : list;
-    }).toList();
-
-    final updatedDefaultLists = state.defaultLists.map((list) {
-      return list.id == listId ? updater(list) : list;
-    }).toList();
-
-    state = state.copyWith(
-      customLists: updatedCustomLists,
-      defaultLists: updatedDefaultLists,
-    );
-  }
-
-  CustomList? _findListById(String listId) {
-    for (final list in state.allLists) {
-      if (list.id == listId) {
-        return list;
-      }
-    }
-    return null;
-  }
-
-  // Remover película de lista
+  /// Remover película de lista
+  ///
+  /// MIGRADO: Ya no manipula movieIds directamente.
+  /// Usa el repository y confía en los streams para actualizar UI.
   Future<void> removeMovieFromList(String listId, int movieId) async {
     try {
-      // Actualizar estado optimísticamente
-      _updateListInState(listId, (list) {
-        final newMovieIds = List<int>.from(list.movieIds)..remove(movieId);
-        return list.copyWith(
-          movieIds: newMovieIds,
-          lastModifiedAt: DateTime.now(),
-        );
-      });
-
-      // Intentar remover usando el repositorio
+      // Remover usando el repositorio
+      // Los streams de listItemsProvider actualizarán la UI automáticamente
       try {
         await _repository.removeMovieFromList(listId, movieId);
+
+        LoggerFactory.info('✅ Película $movieId removida de lista $listId');
       } catch (e) {
+        LoggerFactory.warning(
+            '⚠️ Error al remover película, registrando como cambio offline: $e');
+
         // Si falla, registrar como cambio offline
         await _syncService.recordOfflineChange(OfflineChange(
           id: 'remove_movie_${listId}_${movieId}_${DateTime.now().millisecondsSinceEpoch}',
@@ -421,120 +379,98 @@ class AllListsNotifier extends Notifier<AllListsState> {
         ));
       }
 
-      // Registrar evento de gamificación
       // Note: No specific tracking for movie removal in current gamification system
     } catch (e) {
-      throw Exception('Error removing movie from list: $e');
+      LoggerFactory.error('❌ Error al remover película de lista: $e');
+      rethrow;
     }
   }
 
-  // Alternar película en una lista (añadir si no está, remover si está)
-  void toggleMovieInList(String listId, int movieId) {
-    final allLists = state.allLists;
-    final listMatches = allLists.where((l) => l.id == listId);
-    if (listMatches.isEmpty) {
-      LoggerFactory.warning(
-          '⚠️ customListsProvider.toggleMovieInList: lista $listId no encontrada, se omite la operación');
-      return;
+  /// Alternar película en una lista (añadir si no está, remover si está)
+  ///
+  /// MIGRADO: Usa el repository directamente en lugar de acceder a movieIds.
+  Future<void> toggleMovieInList(String listId, int movieId) async {
+    try {
+      // Verificar si la película ya está en la lista usando el repository
+      final isInList = await _repository.isMovieInList(listId, movieId);
+
+      if (isInList) {
+        await removeMovieFromList(listId, movieId);
+      } else {
+        await addMovieToList(listId, movieId);
+      }
+    } catch (e) {
+      LoggerFactory.error('❌ Error al alternar película en lista: $e');
+      rethrow;
     }
-    final list = listMatches.first;
-    if (list.movieIds.contains(movieId)) {
-      removeMovieFromList(listId, movieId);
-    } else {
-      addMovieToList(listId, movieId);
+  }
+
+  /// Reordenar películas en una lista
+  ///
+  /// MIGRADO: Usa el repository para reordenar items.
+  /// Los streams actualizarán la UI automáticamente.
+  Future<void> reorderMoviesInList(
+      String listId, int oldIndex, int newIndex) async {
+    try {
+      // Obtener items actuales de la lista
+      final items = await _repository.getListItems(listId);
+
+      // Reordenar
+      final reorderedItems = List<ListItem>.from(items);
+      final item = reorderedItems.removeAt(oldIndex);
+      reorderedItems.insert(newIndex, item);
+
+      // Actualizar posiciones
+      for (var i = 0; i < reorderedItems.length; i++) {
+        reorderedItems[i] = reorderedItems[i].copyWith(position: i);
+      }
+
+      // Guardar en repository
+      await _repository.reorderListItems(listId, reorderedItems);
+
+      LoggerFactory.info('✅ Películas reordenadas en lista $listId');
+    } catch (e) {
+      LoggerFactory.error('❌ Error al reordenar películas: $e');
+      rethrow;
     }
   }
 
-  // Reordenar películas en una lista
-  void reorderMoviesInList(String listId, int oldIndex, int newIndex) {
-    final updatedCustomLists = state.customLists.map((list) {
-      if (list.id == listId) {
-        final movieIds = [...list.movieIds];
-        final movieId = movieIds.removeAt(oldIndex);
-        movieIds.insert(newIndex, movieId);
+  /// Duplicar una lista
+  ///
+  /// MIGRADO: Usa el repository para duplicar lista con sus películas.
+  Future<void> duplicateList(String listId, String newName) async {
+    try {
+      // Duplicar usando el repository (incluye las películas)
+      final duplicatedList = await _repository.duplicateList(listId, newName);
 
-        return list.copyWith(
-          movieIds: movieIds,
-          lastModifiedAt: DateTime.now(),
-        );
-      }
-      return list;
-    }).toList();
+      // Recargar listas para reflejar el cambio
+      await _loadLists();
 
-    final updatedDefaultLists = state.defaultLists.map((list) {
-      if (list.id == listId) {
-        final movieIds = [...list.movieIds];
-        final movieId = movieIds.removeAt(oldIndex);
-        movieIds.insert(newIndex, movieId);
+      LoggerFactory.info('✅ Lista duplicada: $newName');
 
-        return list.copyWith(
-          movieIds: movieIds,
-          lastModifiedAt: DateTime.now(),
-        );
-      }
-      return list;
-    }).toList();
-
-    state = state.copyWith(
-      customLists: updatedCustomLists,
-      defaultLists: updatedDefaultLists,
-    );
-    _saveLists();
+      await _runGamificationAction(
+        (service) => service.trackListCreated(duplicatedList.id, newName),
+      );
+    } catch (e) {
+      LoggerFactory.error('❌ Error al duplicar lista: $e');
+      rethrow;
+    }
   }
 
-  // Duplicar una lista
-  void duplicateList(String listId, String newName) {
-    final allLists = state.allLists;
-    final originalList = allLists.firstWhere((l) => l.id == listId);
-    final now = DateTime.now();
-    const uuid = Uuid();
-    final newId = uuid.v4();
+  /// Limpiar todas las películas de una lista
+  ///
+  /// MIGRADO: Usa el repository para eliminar todos los items.
+  /// Los streams actualizarán la UI automáticamente.
+  Future<void> clearList(String listId) async {
+    try {
+      // Limpiar usando el repository
+      await _repository.clearListMovies(listId);
 
-    final duplicatedList = CustomList(
-      id: newId,
-      name: newName,
-      description: '${originalList.description} (Copia)',
-      emoji: originalList.emoji,
-      movieIds: [...originalList.movieIds],
-      createdAt: now,
-      lastModifiedAt: now,
-      isDefault: false,
-      color: originalList.color,
-    );
-
-    state = state.copyWith(
-      customLists: [...state.customLists, duplicatedList],
-    );
-    _saveLists();
-  }
-
-  // Limpiar todas las películas de una lista
-  void clearList(String listId) {
-    final updatedCustomLists = state.customLists.map((list) {
-      if (list.id == listId) {
-        return list.copyWith(
-          movieIds: [],
-          lastModifiedAt: DateTime.now(),
-        );
-      }
-      return list;
-    }).toList();
-
-    final updatedDefaultLists = state.defaultLists.map((list) {
-      if (list.id == listId) {
-        return list.copyWith(
-          movieIds: [],
-          lastModifiedAt: DateTime.now(),
-        );
-      }
-      return list;
-    }).toList();
-
-    state = state.copyWith(
-      customLists: updatedCustomLists,
-      defaultLists: updatedDefaultLists,
-    );
-    _saveLists();
+      LoggerFactory.info('✅ Lista limpiada: $listId');
+    } catch (e) {
+      LoggerFactory.error('❌ Error al limpiar lista: $e');
+      rethrow;
+    }
   }
 }
 
@@ -630,25 +566,35 @@ final listByIdProvider = Provider.family<CustomList?, String>((ref, listId) {
 });
 
 // Provider para verificar si una película está en una lista específica
-final isMovieInListProvider =
+@Deprecated(
+    'Usa el nuevo isMovieInListProvider de list_items_provider.dart que usa streams. '
+    'Este provider será eliminado en la próxima versión mayor. '
+    'Ejemplo: ref.watch(isMovieInListProvider(listId: listId, movieId: movieId))')
+final isMovieInListProviderOld =
     Provider.family<bool, ({int movieId, String listId})>((ref, params) {
   final list = ref.watch(listByIdProvider(params.listId));
   return list?.movieIds.contains(params.movieId) ?? false;
 });
 
 // Provider para obtener las listas que contienen una película específica
-final movieListsProvider =
+@Deprecated(
+    'Usa el nuevo movieListsProvider de list_items_provider.dart que usa streams. '
+    'Este provider será eliminado en la próxima versión mayor. '
+    'Ejemplo: ref.watch(movieListsProvider(movieId))')
+final movieListsProviderOld =
     Provider.family<List<CustomList>, int>((ref, movieId) {
   final allLists = ref.watch(listsProvider);
   return allLists.where((list) => list.movieIds.contains(movieId)).toList();
 });
 
 // Provider para estadísticas de listas
+// MIGRADO PARCIAL: Usa totalMoviesInListsProvider para contar películas
 final listStatsProvider = Provider<Map<String, int>>((ref) {
   final allLists = ref.watch(listsProvider);
 
   int totalLists = allLists.length;
-  int totalMovies = allLists.fold(0, (sum, list) => sum + list.movieIds.length);
+  // NUEVO: Usar provider basado en streams para contar películas
+  int totalMovies = ref.watch(totalMoviesInListsProvider);
   int customLists = allLists.where((list) => !list.isDefault).length;
   int defaultLists = allLists.where((list) => list.isDefault).length;
 

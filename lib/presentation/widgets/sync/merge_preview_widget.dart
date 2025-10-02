@@ -7,6 +7,7 @@ import '../../../domain/entities/syncable_custom_list.dart';
 import '../../../domain/entities/syncable_entity.dart';
 import '../../../domain/entities/syncable_watched_movie.dart';
 import '../../../domain/entities/syncable_watchlist_item.dart';
+import '../../providers/list_items_provider.dart';
 
 /// Widget que muestra una vista previa específica para fusión de datos
 class MergePreviewWidget<T extends SyncableEntity>
@@ -539,13 +540,16 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
 
   Widget _buildCustomListDetails(
       BuildContext context, SyncableCustomList list) {
+    // Obtener conteo de películas desde el provider
+    final movieCount = ref.watch(listMovieCountProvider(list.id));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildDetailRow('Nombre', list.name),
         if (list.description != null && list.description!.isNotEmpty)
           _buildDetailRow('Descripción', list.description!, maxLines: 2),
-        _buildDetailRow('Películas', '${list.movieIds.length} elementos'),
+        _buildDetailRow('Películas', '$movieCount elementos'),
       ],
     );
   }
@@ -703,6 +707,10 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
     final local = widget.conflict.localEntity as SyncableCustomList;
     final remote = widget.conflict.remoteEntity as SyncableCustomList;
 
+    // Obtener conteos desde provider
+    final localMovieCount = ref.watch(listMovieCountProvider(local.id));
+    final remoteMovieCount = ref.watch(listMovieCountProvider(remote.id));
+
     return [
       MergeableField(
         name: 'name',
@@ -723,9 +731,10 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
       MergeableField(
         name: 'movieIds',
         displayName: 'Películas',
-        localValue: '${local.movieIds.length} elementos',
-        remoteValue: '${remote.movieIds.length} elementos',
-        hasConflict: !_listsEqual(local.movieIds, remote.movieIds),
+        localValue: '$localMovieCount elementos',
+        remoteValue: '$remoteMovieCount elementos',
+        // Los conflictos de contenido se resuelven automáticamente en la DB
+        hasConflict: localMovieCount != remoteMovieCount,
         recommendedStrategy: MergeFieldStrategy.union,
       ),
     ];
@@ -827,14 +836,6 @@ class _MergePreviewWidgetState<T extends SyncableEntity>
       case MergeFieldStrategy.intersection:
         return 'Intersección';
     }
-  }
-
-  bool _listsEqual<E>(List<E> list1, List<E> list2) {
-    if (list1.length != list2.length) return false;
-    for (int i = 0; i < list1.length; i++) {
-      if (list1[i] != list2[i]) return false;
-    }
-    return true;
   }
 
   String _formatDate(DateTime date) {

@@ -25,7 +25,13 @@ class DefaultListsManager {
   // ========== INICIALIZACIÓN ==========
 
   /// Inicializa las listas por defecto si es necesario
-  Future<void> initializeDefaultLists({bool force = false}) async {
+  ///
+  /// [userId] - ID del usuario. Si no se proporciona, se obtiene de Supabase.instance
+  /// [force] - Fuerza la inicialización aunque ya estén inicializadas
+  Future<void> initializeDefaultLists({
+    String? userId,
+    bool force = false,
+  }) async {
     try {
       final isInitialized =
           _prefs.getBool(_defaultListsInitializedKey) ?? false;
@@ -34,10 +40,12 @@ class DefaultListsManager {
       if (force ||
           !isInitialized ||
           currentVersion < _currentDefaultListsVersion) {
-        // Obtener el usuario actual para crear listas con el userId correcto
-        final currentUser = Supabase.instance.client.auth.currentUser;
-        if (currentUser != null) {
-          await _createDefaultLists(currentUser.id);
+        // Obtener el usuario actual
+        final String? effectiveUserId =
+            userId ?? Supabase.instance.client.auth.currentUser?.id;
+
+        if (effectiveUserId != null) {
+          await _createDefaultLists(effectiveUserId);
           await _markAsInitialized();
         }
       }
@@ -81,6 +89,7 @@ class DefaultListsManager {
   }
 
   /// Crea una lista por defecto a partir de su configuración
+  /// MIGRADO: movieIds deprecated, items van en list_items table
   CustomList _createDefaultListFromConfig(
       DefaultListConfig config, String userId) {
     return CustomList(
@@ -89,7 +98,7 @@ class DefaultListsManager {
       description: config.description,
       emoji: config.emoji,
       colorHex: config.color,
-      movieIds: [],
+      movieIds: [], // Deprecated - items en list_items table
       isDefault: true,
       defaultType: config.defaultType,
       userId: userId,
@@ -226,12 +235,13 @@ class DefaultListsManager {
       final existingList = await getDefaultListByType(defaultType);
       if (existingList != null) {
         // Actualizar la lista existente
+        // MIGRADO: No modificamos movieIds, se vaciarán desde repository
+        await _repository.clearListMovies(existingList.id);
         final resetList = existingList.copyWith(
           name: config.name,
           description: config.description,
           emoji: config.emoji,
           colorHex: config.color,
-          movieIds: [],
           lastModifiedAt: DateTime.now(),
         );
 
@@ -255,6 +265,7 @@ class DefaultListsManager {
   }
 
   /// Actualiza la lista de tendencias
+  /// MIGRADO: Usa repository methods en lugar de movieIds array
   Future<void> _updateTrendingList() async {
     try {
       final trendingList = await getDefaultListByType('trending');
@@ -263,11 +274,17 @@ class DefaultListsManager {
         // Por ahora, usamos una lista estática
         final trendingMovieIds = await _fetchTrendingMovieIds();
 
+        // MIGRADO: Limpiar y repoblar usando repository
+        await _repository.clearListMovies(trendingList.id);
+        for (int i = 0; i < trendingMovieIds.length; i++) {
+          await _repository.addMovieToList(trendingList.id, trendingMovieIds[i],
+              position: i);
+        }
+
+        // Actualizar timestamp
         final updatedList = trendingList.copyWith(
-          movieIds: trendingMovieIds,
           lastModifiedAt: DateTime.now(),
         );
-
         await _repository.updateList(updatedList);
       }
     } catch (e) {
@@ -276,6 +293,7 @@ class DefaultListsManager {
   }
 
   /// Actualiza la lista de vistas recientemente
+  /// MIGRADO: Usa repository methods en lugar de movieIds array
   Future<void> _updateRecentlyWatchedList() async {
     try {
       final recentlyWatchedList =
@@ -284,11 +302,18 @@ class DefaultListsManager {
         // Obtener películas vistas recientemente del historial del usuario
         final recentMovieIds = await _getRecentlyWatchedMovieIds();
 
+        // MIGRADO: Limpiar y repoblar usando repository
+        await _repository.clearListMovies(recentlyWatchedList.id);
+        for (int i = 0; i < recentMovieIds.length; i++) {
+          await _repository.addMovieToList(
+              recentlyWatchedList.id, recentMovieIds[i],
+              position: i);
+        }
+
+        // Actualizar timestamp
         final updatedList = recentlyWatchedList.copyWith(
-          movieIds: recentMovieIds,
           lastModifiedAt: DateTime.now(),
         );
-
         await _repository.updateList(updatedList);
       }
     } catch (e) {
@@ -297,6 +322,7 @@ class DefaultListsManager {
   }
 
   /// Actualiza la lista de recomendaciones
+  /// MIGRADO: Usa repository methods en lugar de movieIds array
   Future<void> _updateRecommendationsList() async {
     try {
       final recommendationsList = await getDefaultListByType('recommendations');
@@ -304,11 +330,18 @@ class DefaultListsManager {
         // Generar recomendaciones basadas en el historial del usuario
         final recommendedMovieIds = await _generateRecommendations();
 
+        // MIGRADO: Limpiar y repoblar usando repository
+        await _repository.clearListMovies(recommendationsList.id);
+        for (int i = 0; i < recommendedMovieIds.length; i++) {
+          await _repository.addMovieToList(
+              recommendationsList.id, recommendedMovieIds[i],
+              position: i);
+        }
+
+        // Actualizar timestamp
         final updatedList = recommendationsList.copyWith(
-          movieIds: recommendedMovieIds,
           lastModifiedAt: DateTime.now(),
         );
-
         await _repository.updateList(updatedList);
       }
     } catch (e) {
@@ -388,8 +421,12 @@ class DefaultListsManager {
       final defaultLists = await getUserDefaultLists();
 
       int totalLists = defaultLists.length;
-      int totalMovies =
-          defaultLists.fold(0, (sum, list) => sum + list.movieIds.length);
+      // MIGRADO: Contar movies desde repository en lugar de movieIds array
+      int totalMovies = 0;
+      for (final list in defaultLists) {
+        final items = await _repository.getListItems(list.id);
+        totalMovies += items.length;
+      }
       int editableLists = 0;
       int dynamicLists = 0;
 

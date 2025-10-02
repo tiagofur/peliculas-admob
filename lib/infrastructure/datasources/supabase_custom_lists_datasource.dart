@@ -291,6 +291,71 @@ class SupabaseCustomListsDataSource {
       return false;
     }
   }
+
+  // ========== OPERACIONES AVANZADAS ==========
+
+  /// Duplica una lista con todas sus películas
+  Future<CustomList> duplicateList(
+      String listId, String newName, String userId) async {
+    try {
+      // 1. Obtener lista original
+      final originalList = await getListById(listId);
+      if (originalList == null) {
+        throw Exception('Lista original no encontrada');
+      }
+
+      // 2. Crear nueva lista
+      final now = DateTime.now().toUtc();
+      final newList = CustomList(
+        id: '', // Será generado por Supabase
+        name: newName,
+        description: '${originalList.description} (Copia)',
+        emoji: originalList.emoji,
+        movieIds: [], // Deprecated, no se usa
+        createdAt: now,
+        lastModifiedAt: now,
+        isDefault: false,
+        color: originalList.color,
+      );
+
+      final createdList = await createList(newList);
+
+      // 3. Obtener items de la lista original
+      final originalItems = await getListItems(listId);
+
+      // 4. Copiar items a la nueva lista
+      if (originalItems.isNotEmpty) {
+        final itemsToInsert = originalItems.map((item) {
+          return {
+            'list_id': createdList.id,
+            'movie_id': item.movieId,
+            'position': item.position,
+            'added_at': now.toIso8601String(),
+          };
+        }).toList();
+
+        await _supabase.from('user_list_items').insert(itemsToInsert);
+      }
+
+      LoggerFactory.info(
+          '✅ Lista duplicada: ${originalList.name} → $newName (${originalItems.length} películas)');
+
+      return createdList;
+    } catch (e) {
+      throw Exception('Error al duplicar lista: $e');
+    }
+  }
+
+  /// Elimina todas las películas de una lista
+  Future<void> clearListMovies(String listId) async {
+    try {
+      await _supabase.from('user_list_items').delete().eq('list_id', listId);
+
+      LoggerFactory.info('✅ Películas eliminadas de lista $listId');
+    } catch (e) {
+      throw Exception('Error al limpiar lista: $e');
+    }
+  }
 }
 
 extension on SupabaseCustomListsDataSource {

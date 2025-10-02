@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/entities.dart';
+import '../../providers/list_items_provider.dart';
 import '../../providers/storage/direct_custom_lists_provider.dart';
 
 class MovieListsWidget extends ConsumerWidget {
@@ -21,8 +22,10 @@ class MovieListsWidget extends ConsumerWidget {
       ...listsState.getAllListsWithMovies().where((list) => !list.isDefault),
     ]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
 
+    // Use isMovieInListProvider to check membership
     final movieListIds = customLists
-        .where((list) => list.movieIds.contains(movie.id))
+        .where((list) => ref
+            .watch(isMovieInListProvider((movieId: movie.id, listId: list.id))))
         .map((list) => list.id)
         .toSet();
 
@@ -213,13 +216,18 @@ class MovieListsWidget extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(
-              '${list.movieIds.length} películas',
-              style: textStyles.bodySmall?.copyWith(
-                color: isInList
-                    ? listColor.withValues(alpha: 0.8)
-                    : colors.onSurface.withValues(alpha: 0.6),
-              ),
+            Consumer(
+              builder: (context, ref, _) {
+                final count = ref.watch(listMovieCountProvider(list.id));
+                return Text(
+                  '$count películas',
+                  style: textStyles.bodySmall?.copyWith(
+                    color: isInList
+                        ? listColor.withValues(alpha: 0.8)
+                        : colors.onSurface.withValues(alpha: 0.6),
+                  ),
+                );
+              },
             ),
           ],
         ),

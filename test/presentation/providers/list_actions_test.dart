@@ -128,6 +128,16 @@ class _FakeCustomListsRepository implements ICustomListsRepository {
   Future<void> syncLists() {
     throw UnimplementedError();
   }
+
+  @override
+  Future<CustomList> duplicateList(String listId, String newName) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> clearListMovies(String listId) {
+    throw UnimplementedError();
+  }
 }
 
 void main() {

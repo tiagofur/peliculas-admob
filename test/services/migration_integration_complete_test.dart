@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:peliculas/domain/entities/custom_list.dart';
+import 'package:peliculas/domain/entities/list_item.dart';
 import 'package:peliculas/domain/repositories/i_custom_lists_repository.dart';
 import 'package:peliculas/infrastructure/datasources/custom_lists_shared_preferences_datasource.dart';
 import 'package:peliculas/services/default_lists_manager.dart';
@@ -55,6 +56,24 @@ void main() {
       when(mockAuthClient.currentUser).thenReturn(mockUser);
       when(mockUser.id).thenReturn('test-user-id');
 
+      // Mock repository methods commonly used
+      when(mockRepository.getUserLists())
+          .thenAnswer((_) async => <CustomList>[]);
+      when(mockRepository.getDefaultLists())
+          .thenAnswer((_) async => <CustomList>[]);
+      when(mockRepository.getListById(any)).thenAnswer((_) async => null);
+      when(mockRepository.addMovieToList(any, any,
+              position: anyNamed('position')))
+          .thenAnswer((_) async => ListItem(
+                id: 'test-item-id',
+                listId: 'test-list-id',
+                movieId: 123,
+                movieTitle: 'Test Movie',
+                position: 0,
+                addedAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              ));
+
       // Note: Supabase mocks are simplified - focusing on repository layer testing
 
       // Configure default mock behaviors to avoid null returns
@@ -64,7 +83,7 @@ void main() {
         description: 'Dummy description',
         emoji: '📝',
         colorHex: '#000000',
-        movieIds: [],
+        movieIds: [], // Siempre vacío en sistema nuevo
         createdAt: DateTime.now(),
         lastModifiedAt: DateTime.now(),
         isDefault: false,
@@ -78,7 +97,7 @@ void main() {
       migrationService = ListsMigrationService(
         mockPrefs,
         mockLocalDataSource,
-        mockSupabaseClient,
+        mockRepository,
       );
 
       rollbackService = MigrationRollbackService(
@@ -142,8 +161,8 @@ void main() {
         return inputList.copyWith(id: 'new-id-${inputList.name}');
       });
 
-      // Act
-      await defaultListsManager.initializeDefaultLists();
+      // Act - Pasar userId explícitamente para evitar acceso a Supabase.instance
+      await defaultListsManager.initializeDefaultLists(userId: 'test-user-id');
 
       // Assert
       verify(mockRepository.createList(any))
@@ -160,7 +179,7 @@ void main() {
                 description: list.description,
                 emoji: list.emoji,
                 colorHex: list.colorHex,
-                movieIds: list.movieIds,
+                movieIds: [], // En sistema nuevo, movieIds está vacío
                 createdAt: list.createdAt,
                 lastModifiedAt: DateTime.now(),
                 isDefault: list.isDefault,
@@ -189,14 +208,17 @@ void main() {
 
       for (int i = 0; i < testLists.length; i++) {
         expect(remoteLists[i].name, equals(testLists[i].name));
-        expect(remoteLists[i].movieIds.length,
-            equals(testLists[i].movieIds.length));
+        expect(remoteLists[i].description, equals(testLists[i].description));
+        // NOTA: No comparamos movieIds porque en sistema nuevo está vacío
+        // Los items se verificarían a través de getListItems() si fuera necesario
       }
     });
   });
 }
 
 List<CustomList> _generateTestLists() {
+  // NOTA: En tests de migración, movieIds aún contiene datos legacy
+  // que se migrarán a user_list_items durante el proceso
   return [
     CustomList(
       id: 'local-1',
@@ -204,7 +226,7 @@ List<CustomList> _generateTestLists() {
       description: 'Mis películas de acción preferidas',
       emoji: '💥',
       colorHex: '#FF5722',
-      movieIds: [550, 155, 13],
+      movieIds: [550, 155, 13], // Legacy data para migración
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
       lastModifiedAt: DateTime.now().subtract(const Duration(days: 5)),
       isDefault: false,
@@ -216,7 +238,7 @@ List<CustomList> _generateTestLists() {
       description: 'Las mejores comedias de todos los tiempos',
       emoji: '😂',
       colorHex: '#4CAF50',
-      movieIds: [105, 274, 680],
+      movieIds: [105, 274, 680], // Legacy data para migración
       createdAt: DateTime.now().subtract(const Duration(days: 20)),
       lastModifiedAt: DateTime.now().subtract(const Duration(days: 2)),
       isDefault: false,
@@ -228,7 +250,7 @@ List<CustomList> _generateTestLists() {
       description: 'Explorando el futuro a través del cine',
       emoji: '🚀',
       colorHex: '#2196F3',
-      movieIds: [62, 424, 27205],
+      movieIds: [62, 424, 27205], // Legacy data para migración
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
       lastModifiedAt: DateTime.now().subtract(const Duration(days: 1)),
       isDefault: false,

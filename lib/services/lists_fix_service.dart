@@ -42,9 +42,9 @@ class ListsFixService {
       LoggerFactory.info(
           '📋 Listas por defecto encontradas: ${defaultLists.length}');
 
+      // MIGRADO: Mostrar info sin acceder a movieIds deprecated
       for (final list in defaultLists) {
-        LoggerFactory.info(
-            '  - ${list.name} (${list.emoji}) - ${list.movieIds.length} películas');
+        LoggerFactory.info('  - ${list.name} (${list.emoji}) - ${list.id}');
       }
 
       // 5. Obtener todas las listas del usuario con timeout
