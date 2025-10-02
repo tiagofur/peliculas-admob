@@ -1,7 +1,7 @@
-# Script para aplicar el fix de Realtime a Supabase
-# Este script ejecuta la migración 20251001_fix_realtime_publications.sql
+# Script para aplicar el fix de Realtime Sync para Listas Personalizadas
+# Este script ejecuta la migración 20250101_fix_realtime_sync_user_list_items.sql
 
-Write-Host "🔧 Aplicando fix de Realtime Publications en Supabase..." -ForegroundColor Cyan
+Write-Host "🔧 Aplicando fix de Realtime Sync para Listas Personalizadas..." -ForegroundColor Cyan
 Write-Host ""
 
 # Verificar que existe el archivo .env
@@ -36,7 +36,7 @@ Write-Host "   URL: $env:SUPABASE_URL" -ForegroundColor Gray
 Write-Host ""
 
 # Leer el archivo SQL
-$sqlFile = "supabase\migrations\20251001_fix_realtime_publications.sql"
+$sqlFile = "supabase\migrations\20250101_fix_realtime_sync_user_list_items.sql"
 if (-Not (Test-Path $sqlFile)) {
     Write-Host "❌ Error: No se encontró el archivo de migración: $sqlFile" -ForegroundColor Red
     exit 1
@@ -62,7 +62,7 @@ Write-Host $sqlContent -ForegroundColor Yellow
 Write-Host "----------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "  6. Ejecuta la query (Run)" -ForegroundColor Gray
-Write-Host "  7. Verifica que veas el mensaje: '✅ Publication supabase_realtime created successfully'" -ForegroundColor Gray
+Write-Host "  7. Verifica que veas el mensaje: '✅ All user_list_items have user_id populated'" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "OPCIÓN 2 - Supabase CLI:" -ForegroundColor White
@@ -71,14 +71,15 @@ Write-Host "  supabase db push" -ForegroundColor Yellow
 Write-Host ""
 
 Write-Host "OPCIÓN 3 - Verificar estado actual:" -ForegroundColor White
-Write-Host "  Para ver qué tablas tienen Realtime habilitado:" -ForegroundColor Gray
-Write-Host "  SELECT * FROM pg_publication_tables WHERE pubname = 'supabase_realtime';" -ForegroundColor Yellow
+Write-Host "  Para verificar que la columna user_id existe:" -ForegroundColor Gray
+Write-Host "  SELECT column_name FROM information_schema.columns WHERE table_name = 'user_list_items' AND column_name = 'user_id';" -ForegroundColor Yellow
 Write-Host ""
 
 Write-Host "⚡ Después de aplicar la migración:" -ForegroundColor Cyan
-Write-Host "  1. Las calificaciones se sincronizarán en tiempo real" -ForegroundColor Gray
-Write-Host "  2. Los favoritos, watchlist, y watched seguirán funcionando" -ForegroundColor Gray
-Write-Host "  3. No necesitas reiniciar la app" -ForegroundColor Gray
+Write-Host "  1. Las listas personalizadas se sincronizarán en tiempo real" -ForegroundColor Gray
+Write-Host "  2. Los cambios en las listas se reflejarán instantáneamente entre apps" -ForegroundColor Gray
+Write-Host "  3. La eliminación y creación de listas funcionará correctamente" -ForegroundColor Gray
+Write-Host "  4. No necesitas reiniciar la app" -ForegroundColor Gray
 Write-Host ""
 
 # Copiar SQL al portapapeles si es posible

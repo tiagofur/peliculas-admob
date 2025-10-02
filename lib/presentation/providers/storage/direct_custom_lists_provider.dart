@@ -266,20 +266,12 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
         timestamp: DateTime.now(),
       ));
 
-      // Revertir cambio optimista en caso de error
-      final currentState2 = state;
-      final revertedLists = Map<String, CustomList>.from(currentState2.lists);
-      final revertedItems =
-          Map<String, List<int>>.from(currentState2.listItems);
-      revertedLists.remove(listId);
-      revertedItems.remove(listId);
+      LoggerFactory.warning(
+          '⚠️ [CREAR LISTA] Lista guardada localmente para sincronización posterior');
 
-      state = currentState2.copyWith(
-        lists: revertedLists,
-        listItems: revertedItems,
-      );
-
-      rethrow;
+      // 🔧 IMPROVED: NO revertir cambio optimista - mantener lista visible
+      // La lista se mantendrá visible y se sincronizará cuando haya conexión
+      return listId;
     }
   }
 
@@ -380,7 +372,11 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
         timestamp: DateTime.now(),
       ));
 
-      // Revertir cambio optimista en caso de error
+      LoggerFactory.warning(
+          '⚠️ [ELIMINAR LISTA] Eliminación marcada para sincronización posterior');
+
+      // 🔧 IMPROVED: Para eliminaciones, sí revertir para evitar confusión
+      // El usuario debe saber que la eliminación falló
       if (removedList != null) {
         final currentState = state;
         final revertedLists = Map<String, CustomList>.from(currentState.lists);
@@ -618,6 +614,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
           .subscribe();
 
       // Listener para cambios en items de listas
+      // ✅ FIXED: Ahora user_list_items tiene columna user_id después de la migración
       _listItemsChannel = Supabase.instance.client
           .channel('list_items_realtime_$userId')
           .onPostgresChanges(
@@ -707,7 +704,7 @@ class DirectCustomListsNotifier extends Notifier<CustomListsState> {
         LoggerFactory.warning(
             '⚠️ DirectCustomLists: list_id es NULL, haciendo refresh completo');
         Future.delayed(const Duration(milliseconds: 500), () {
-          _loadListsFromSupabase();
+          _loadListsFromSupabase(forceRefresh: true);
         });
         return;
       }

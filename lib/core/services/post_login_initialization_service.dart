@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../presentation/providers/auto_default_lists_provider.dart';
@@ -197,6 +198,11 @@ class PostLoginInitializationService {
       }
     });
 
+    // Limpiar duplicados de listas predefinidas (one-time, solo primera vez)
+    Timer(const Duration(milliseconds: 400), () async {
+      await _cleanDuplicateDefaultListsOnce(ref);
+    });
+
     // Inicializar listas predefinidas (con caché para rendimiento)
     Timer(const Duration(milliseconds: 500), () {
       try {
@@ -217,6 +223,34 @@ class PostLoginInitializationService {
     // NO inicializar sync automática - será manual cuando el usuario interactúe
     LoggerFactory.info(
         'ℹ️ Sync será iniciada manualmente cuando el usuario use favoritos');
+  }
+
+  /// Limpia duplicados de listas predefinidas (ejecuta solo una vez)
+  Future<void> _cleanDuplicateDefaultListsOnce(Ref ref) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cleanedKey = 'default_lists_cleaned_v2_${DateTime.now().year}';
+      final alreadyCleaned = prefs.getBool(cleanedKey) ?? false;
+
+      if (alreadyCleaned) {
+        LoggerFactory.debug(
+            '✅ Listas predefinidas ya fueron limpiadas anteriormente');
+        return;
+      }
+
+      LoggerFactory.info('🧹 Limpiando duplicados de listas predefinidas...');
+
+      final defaultListsManager =
+          await ref.read(defaultListsManagerProvider.future);
+      await defaultListsManager.cleanAndRecreateDefaultLists();
+
+      await prefs.setBool(cleanedKey, true);
+      LoggerFactory.info(
+          '✅ Duplicados de listas predefinidas eliminados exitosamente');
+    } catch (e) {
+      LoggerFactory.error('❌ Error limpiando duplicados de listas: $e');
+      // No bloquear la inicialización por este error
+    }
   }
 
   /// Ejecuta la migración de listas si es necesario

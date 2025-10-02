@@ -129,7 +129,8 @@ class SupabaseCustomListsDataSource {
                 'user_id': userId,
                 'is_default': true,
                 'is_public': false,
-                'color': config.color,
+                'color_hex':
+                    config.color, // FIX: Usar color_hex en vez de color
                 'default_type': config.defaultType,
                 'created_at': now,
                 'last_modified_at': now,
