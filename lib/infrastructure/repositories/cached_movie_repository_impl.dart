@@ -153,54 +153,58 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
     final movieIdInt = int.tryParse(id) ?? 0;
     final cacheKey = 'movie_$id';
 
-    // 1. Check memory cache
+    // 1. Check memory cache (with credits)
     final memoryCached = _getFromMemoryCache(cacheKey);
-    if (memoryCached != null && memoryCached.isNotEmpty) {
+    if (memoryCached != null &&
+        memoryCached.isNotEmpty &&
+        memoryCached.first.credits != null) {
       LoggerFactory.info(
-          '📱 Movie from memory cache: ${memoryCached.first.title}');
+          '📱 Movie from memory cache (with credits): ${memoryCached.first.title}');
       return memoryCached.first;
     }
 
-    // 2. Check offline cache
-    final cachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
-    if (cachedMovie != null) {
-      LoggerFactory.info('📱 Movie from offline cache: ${cachedMovie.title}');
-      _saveToMemoryCache(cacheKey, [cachedMovie]);
-      return cachedMovie;
-    }
-
-    // 3. Check connectivity
+    // 2. Check connectivity
     final hasConnection = await _hasConnectivity();
-    if (!hasConnection) {
+
+    if (hasConnection) {
+      // 3. Network call (preferred when online - includes credits)
+      try {
+        LoggerFactory.info('🌐 Fetching movie from network: $id');
+        final movie = await _networkDatasource.getMovieById(id);
+
+        // Save to both caches (basic data only - credits not persisted in Hive)
+        _saveToMemoryCache(cacheKey, [movie]);
+        await _localDatasource.cacheMovie(movie);
+
+        LoggerFactory.info(
+            '✅ Fetched and cached movie: ${movie.title} (credits: ${movie.credits != null})');
+        return movie;
+      } catch (e) {
+        LoggerFactory.error('❌ Network error for movie $id: $e');
+
+        // Fallback to offline cache if network fails
+        final cachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
+        if (cachedMovie != null) {
+          LoggerFactory.info(
+              '📱 Fallback to offline cache: ${cachedMovie.title} (without credits)');
+          return cachedMovie;
+        }
+
+        throw MovieException('Movie not found: $id', 'MOVIE_NOT_FOUND');
+      }
+    } else {
+      // 4. Offline mode - use cache
+      final cachedMovie = await _localDatasource.getCachedMovie(movieIdInt);
+      if (cachedMovie != null) {
+        LoggerFactory.info(
+            '📱 Movie from offline cache: ${cachedMovie.title} (without credits - offline)');
+        return cachedMovie;
+      }
+
       throw MovieException(
         'Movie not available offline: $id',
         'MOVIE_OFFLINE_UNAVAILABLE',
       );
-    }
-
-    // 4. Network call
-    try {
-      LoggerFactory.info('🌐 Fetching movie from network: $id');
-      final movie = await _networkDatasource.getMovieById(id);
-
-      // Save to both caches
-      _saveToMemoryCache(cacheKey, [movie]);
-      await _localDatasource.cacheMovie(movie);
-
-      LoggerFactory.info('✅ Fetched and cached movie: ${movie.title}');
-      return movie;
-    } catch (e) {
-      LoggerFactory.error('❌ Network error for movie $id: $e');
-
-      // Last resort: try cached again (maybe it was there but expired)
-      final expiredMovie = await _localDatasource.getCachedMovie(movieIdInt);
-      if (expiredMovie != null) {
-        LoggerFactory.info(
-            '📱 Using expired cache for movie: ${expiredMovie.title}');
-        return expiredMovie;
-      }
-
-      throw MovieException('Movie not found: $id', 'MOVIE_NOT_FOUND');
     }
   }
 

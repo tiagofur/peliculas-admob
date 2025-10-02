@@ -126,8 +126,43 @@ class MoviedbDatasource extends MoviesDatasource {
       if (response.statusCode != 200) {
         throw Exception('Película con id: $id no encontrada');
       }
+
+      // Debug: Log credits data from API
+      if (kDebugMode) {
+        print('🎬 API Response for movie $id:');
+        print('  Has credits: ${response.data['credits'] != null}');
+        if (response.data['credits'] != null) {
+          print(
+              '  Credits cast length: ${response.data['credits']['cast']?.length ?? 0}');
+          print(
+              '  Credits crew length: ${response.data['credits']['crew']?.length ?? 0}');
+        }
+      }
+
       final movieDetails = MovieDetails.fromJson(response.data);
+
+      // Debug: Log movieDetails credits
+      if (kDebugMode) {
+        print('🎬 MovieDetails after fromJson:');
+        print('  movieDetails.credits: ${movieDetails.credits}');
+        print(
+            '  movieDetails.credits?.cast.length: ${movieDetails.credits?.cast.length}');
+      }
+
       final Movie movie = MovieMapper.movieDetailsToEntity(movieDetails);
+
+      // Debug: Log final movie credits
+      if (kDebugMode) {
+        print('🎬 Movie after mapper:');
+        print('  movie.credits: ${movie.credits}');
+        print('  movie.credits type: ${movie.credits?.runtimeType}');
+        if (movie.credits != null) {
+          print('  movie.credits keys: ${movie.credits!.keys}');
+          print(
+              '  movie.credits[\'cast\'] length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+        }
+      }
+
       return movie;
     } on DioException catch (e) {
       if (e.response?.statusCode == 404) {
