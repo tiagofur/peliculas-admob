@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../config/helpers/human_formats.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/movie.dart';
@@ -193,23 +194,34 @@ class _MovieDetails extends StatelessWidget {
               const SizedBox(height: 16),
               MovieRatingAndNotes(movie: movie),
 
-              //* 1. Banner antes de 'Reparto Principal'
+              //* 1. Banner antes de 'Elenco Completo'
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
                 child: kIsWeb ? WebSafeBannerAdWidget() : BannerAdWidget(),
               ),
+            ],
+          ),
+        ),
 
-              // Reparto Principal
+        //* Elenco Completo - NUEVO
+        _FullCastList(movie: movie),
+
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Reparto Principal (sección reducida)
               _CastSection(movie: movie),
 
               // Crew (Director, Writer, etc.)
               const SizedBox(height: 16),
               _CrewSection(movie: movie),
 
-              // Estadísticas
-              _StatsSection(movie: movie),
+              // Detalles Técnicos + Estadísticas UNIFICADOS - NUEVO
+              const SizedBox(height: 16),
+              _TechnicalAndStatsSection(movie: movie),
 
-              //* 2. Anuncio nativo entre estadísticas y 'Mis Listas'
+              //* 2. Anuncio nativo después de info técnica
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
                 child: kIsWeb
@@ -232,13 +244,15 @@ class _MovieDetails extends StatelessWidget {
         //* 3. Anuncio nativo antes de 'Recomendaciones'
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12.0),
-          child: NativeAdWidget(
-            height: 100,
-            showLabel: false,
-          ),
+          child: kIsWeb
+              ? WebSafeNativeAdWidget()
+              : NativeAdWidget(
+                  height: 100,
+                  showLabel: false,
+                ),
         ),
 
-        //* Películas similares (Recomendaciones)
+        //* Películas similares (Recomendaciones con anuncios)
         SimilarMovies(movieId: movie.id),
       ],
     );
@@ -286,9 +300,13 @@ class _Genres extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: movie.genreIds.map((genre) {
+            children: movie.genreIds.map((genreIdStr) {
+              final genreId = int.tryParse(genreIdStr) ?? 0;
+              final genreName = _getGenreName(genreId);
+
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -306,7 +324,7 @@ class _Genres extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  genre,
+                  genreName,
                   style: textStyles.bodyMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -669,14 +687,394 @@ class _CastSection extends StatelessWidget {
   }
 }
 
-class _StatsSection extends StatelessWidget {
-  const _StatsSection({required this.movie});
+// Helper function to convert genre IDs to names
+String _getGenreName(int genreId) {
+  const genreMap = {
+    28: 'Acción',
+    12: 'Aventura',
+    16: 'Animación',
+    35: 'Comedia',
+    80: 'Crimen',
+    99: 'Documental',
+    18: 'Drama',
+    10751: 'Familiar',
+    14: 'Fantasía',
+    36: 'Historia',
+    27: 'Terror',
+    10402: 'Música',
+    9648: 'Misterio',
+    10749: 'Romance',
+    878: 'Ciencia Ficción',
+    10770: 'Película de TV',
+    53: 'Thriller',
+    10752: 'Guerra',
+    37: 'Western',
+  };
+
+  return genreMap[genreId] ?? 'Desconocido';
+}
+
+// Widget para mostrar el elenco completo
+class _FullCastList extends StatelessWidget {
+  const _FullCastList({required this.movie});
 
   final Movie movie;
 
   @override
   Widget build(BuildContext context) {
-    return MovieStatsSection(movie: movie);
+    final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+
+    // Show cast only if available from API
+    if (movie.credits == null ||
+        movie.credits?['cast'] == null ||
+        ((movie.credits?['cast'] as List?) ?? []).isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final castList = (movie.credits?['cast'] as List?) ?? [];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Icon(Icons.groups, color: colors.primary, size: 28),
+                const SizedBox(width: 8),
+                Text(
+                  'Elenco Completo',
+                  style: textStyles.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${castList.length}',
+                    style: textStyles.bodySmall?.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 200,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: castList.length,
+              itemBuilder: (context, index) {
+                final actor = castList[index] as Map<String, dynamic>;
+                final profilePath = actor['profile_path'] as String?;
+                final name = actor['name'] as String? ?? 'Actor desconocido';
+                final character = actor['character'] as String?;
+
+                return Container(
+                  width: 120,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          child: profilePath != null && profilePath.isNotEmpty
+                              ? Image.network(
+                                  resolveBackdropUrl(profilePath, size: 'w185'),
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Container(
+                                    width: 120,
+                                    height: 120,
+                                    color: colors.surfaceContainerHighest,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 50,
+                                      color: colors.onSurface
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: 120,
+                                  height: 120,
+                                  color: colors.surfaceContainerHighest,
+                                  child: Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color:
+                                        colors.onSurface.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  name,
+                                  style: textStyles.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (character != null &&
+                                    character.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    character,
+                                    style: textStyles.bodySmall?.copyWith(
+                                      color: colors.onSurface
+                                          .withValues(alpha: 0.6),
+                                      fontSize: 10,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget unificado para Detalles Técnicos + Estadísticas
+class _TechnicalAndStatsSection extends StatelessWidget {
+  const _TechnicalAndStatsSection({required this.movie});
+
+  final Movie movie;
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.primaryContainer.withValues(alpha: 0.3),
+            colors.secondaryContainer.withValues(alpha: 0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colors.primary.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colors.primary.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.analytics, color: colors.primary, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Información Técnica y Estadísticas',
+                style: textStyles.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Grid de stats
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.5,
+            children: [
+              if (movie.runtime != null && (movie.runtime ?? 0) > 0)
+                _StatBox(
+                  icon: Icons.access_time,
+                  title: 'Duración',
+                  value: '${movie.runtime} min',
+                  color: Colors.blue,
+                ),
+              _StatBox(
+                icon: Icons.calendar_today,
+                title: 'Año',
+                value: movie.releaseDate.year.toString(),
+                color: Colors.green,
+              ),
+              _StatBox(
+                icon: Icons.star,
+                title: 'Calificación',
+                value: '${movie.voteAverage.toStringAsFixed(1)}/10',
+                color: _getRatingColor(movie.voteAverage),
+              ),
+              _StatBox(
+                icon: Icons.how_to_vote,
+                title: 'Votos',
+                value: HumanFormats.number(movie.voteCount.toDouble()),
+                color: Colors.purple,
+              ),
+              _StatBox(
+                icon: Icons.trending_up,
+                title: 'Popularidad',
+                value: movie.popularity.toStringAsFixed(0),
+                color: Colors.orange,
+              ),
+              if (movie.imdbId != null && movie.imdbId!.isNotEmpty)
+                _StatBox(
+                  icon: Icons.movie,
+                  title: 'IMDb ID',
+                  value: movie.imdbId!,
+                  color: Colors.amber,
+                  isSmallText: true,
+                ),
+              if (movie.budget != null && (movie.budget ?? 0) > 0)
+                _StatBox(
+                  icon: Icons.attach_money,
+                  title: 'Presupuesto',
+                  value:
+                      '\$${HumanFormats.number((movie.budget ?? 0).toDouble())}',
+                  color: Colors.teal,
+                  isSmallText: true,
+                ),
+              if (movie.revenue != null && (movie.revenue ?? 0) > 0)
+                _StatBox(
+                  icon: Icons.show_chart,
+                  title: 'Ingresos',
+                  value:
+                      '\$${HumanFormats.number((movie.revenue ?? 0).toDouble())}',
+                  color: Colors.lightGreen,
+                  isSmallText: true,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getRatingColor(double rating) {
+    if (rating >= 8.0) return Colors.green;
+    if (rating >= 7.0) return Colors.lightGreen;
+    if (rating >= 6.0) return Colors.orange;
+    if (rating >= 5.0) return Colors.deepOrange;
+    return Colors.red;
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  const _StatBox({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.color,
+    this.isSmallText = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final Color color;
+  final bool isSmallText;
+
+  @override
+  Widget build(BuildContext context) {
+    final textStyles = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: textStyles.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+              fontSize: isSmallText ? 12 : null,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: textStyles.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              fontSize: 11,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 }
 
