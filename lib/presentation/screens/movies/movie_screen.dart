@@ -718,10 +718,29 @@ class _FullCastList extends StatelessWidget {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
+    // Debug: Log credits data
+    if (kDebugMode) {
+      print('🎬 DEBUG - Elenco Completo:');
+      print('  movie.credits: ${movie.credits}');
+      print('  movie.credits type: ${movie.credits?.runtimeType}');
+      if (movie.credits != null) {
+        print('  movie.credits keys: ${movie.credits!.keys}');
+        print('  movie.credits[\'cast\']: ${movie.credits!['cast']}');
+        print(
+            '  movie.credits[\'cast\'] type: ${movie.credits!['cast']?.runtimeType}');
+        if (movie.credits!['cast'] is List) {
+          print('  cast length: ${(movie.credits!['cast'] as List).length}');
+        }
+      }
+    }
+
     // Show cast only if available from API
     if (movie.credits == null ||
         movie.credits?['cast'] == null ||
         ((movie.credits?['cast'] as List?) ?? []).isEmpty) {
+      if (kDebugMode) {
+        print('❌ No hay cast disponible - returning empty widget');
+      }
       return const SizedBox.shrink();
     }
 
