@@ -175,47 +175,23 @@
         console.log("Full URL:", fullUrl);
 
         // Check if this is a share URL
+        // NOTA: Ya no redirigimos automáticamente - dejamos que Flutter maneje la ruta
+        // La vista MovieShareWebView se encargará de mostrar la UI de compartir
         if (path.includes("/share")) {
-          console.log("Share URL detected, attempting to open app...");
+          console.log("Share URL detected - Flutter will handle the route");
 
-          // Extract the content path (movie, list, recommendation)
-          let deepLinkPath = path.replace("/share", "");
-
-          // Create deep link URL
-          const deepLink = "peliculas://" + deepLinkPath.substring(1); // Remove leading slash
-
-          console.log("Generated deep link:", deepLink);
-
-          // Create a temporary link element
-          const tempLink = document.createElement("a");
-          tempLink.href = deepLink;
-          tempLink.style.display = "none";
-          document.body.appendChild(tempLink);
-
-          // Try to open the app
-          try {
-            tempLink.click();
-            console.log("Deep link clicked");
-          } catch (e) {
-            console.log("Error clicking deep link:", e);
-          } finally {
-            document.body.removeChild(tempLink);
-          }
-
-          // Fallback: redirect to main app route after a delay
-          setTimeout(function () {
-            // If we're still on the share page, redirect to the main app route
-            if (window.location.pathname === path) {
-              console.log("Redirecting to main app route:", deepLinkPath);
-              window.location.href = deepLinkPath || "/";
-            }
-          }, 2000);
+          // Solo loguear para analytics, pero NO redirigir
+          // El usuario verá la pantalla de share bonita que diseñamos
         }
 
         // Update meta tags for movie sharing if this is a movie page
-        if (path.startsWith("/movie/") && !path.includes("/share")) {
-          const movieId = path.split("/")[2];
-          if (movieId) {
+        if (path.startsWith("/movie/")) {
+          // Extract movie ID (works for both /movie/123 and /movie/123/share)
+          const pathParts = path.split("/");
+          const movieId = pathParts[2]; // pathParts: ['', 'movie', '123', 'share'?]
+
+          if (movieId && movieId !== 'share') {
+            console.log("Updating meta tags for movie ID:", movieId);
             updateMovieMetaTags(movieId);
           }
         }

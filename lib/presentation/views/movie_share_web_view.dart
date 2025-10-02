@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/analytics/analytics_service.dart';
 import '../../domain/entities/movie.dart';
 import '../../models/shareable_content.dart';
 import '../../services/share_service.dart';
@@ -22,12 +23,41 @@ class MovieShareWebView extends ConsumerStatefulWidget {
 }
 
 class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
+  int _retryCount = 0;
+  static const int _maxRetries = 3;
+
   @override
   void initState() {
     super.initState();
     // Se retrasa la llamada para evitar modificar el provider durante el build.
-    Future(() {
-      ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
+    _loadMovieWithRetry();
+  }
+
+  Future<void> _loadMovieWithRetry() async {
+    await Future(() async {
+      try {
+        await ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
+
+        // Track que alguien accedió a la URL de compartir
+        await AnalyticsService().trackEvent(
+          AnalyticsEventType.movieShare,
+          {
+            'movie_id': widget.movieId,
+            'action': 'share_link_accessed',
+            'source': 'web_share_url',
+            'retry_count': _retryCount,
+          },
+        );
+      } catch (e) {
+        if (_retryCount < _maxRetries && mounted) {
+          _retryCount++;
+          // Esperar un poco antes de reintentar (exponential backoff)
+          await Future.delayed(Duration(seconds: _retryCount));
+          if (mounted) {
+            _loadMovieWithRetry();
+          }
+        }
+      }
     });
   }
 
@@ -106,10 +136,10 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.movie_outlined, size: 64, color: colors.error),
+            Icon(Icons.cloud_off_outlined, size: 64, color: colors.error),
             const SizedBox(height: 16),
             Text(
-              'La película ya no está disponible',
+              'No pudimos cargar la película',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -117,7 +147,7 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Es posible que el enlace haya expirado o que la película haya sido eliminada.',
+              'Verifica tu conexión a internet. Si el problema persiste, es posible que la película ya no esté disponible.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onSurface.withValues(alpha: 0.7),
               ),
@@ -129,10 +159,16 @@ class _MovieShareWebViewState extends ConsumerState<MovieShareWebView> {
               runSpacing: 12,
               alignment: WrapAlignment.center,
               children: [
-                FilledButton.tonal(
-                  onPressed: () => ref
-                      .read(movieInfoProvider.notifier)
-                      .loadMovie(widget.movieId, force: true),
+                FilledButton(
+                  onPressed: () {
+                    // Limpiar el fallo y reintentar
+                    ref
+                        .read(movieLoadFailuresProvider.notifier)
+                        .remove(widget.movieId);
+                    ref
+                        .read(movieInfoProvider.notifier)
+                        .loadMovie(widget.movieId, force: true);
+                  },
                   child: const Text('Reintentar'),
                 ),
                 OutlinedButton(
@@ -167,6 +203,16 @@ class _MovieShareViewContent extends StatelessWidget {
   }
 
   Future<void> _openInApp() async {
+    // Track intento de abrir en la app
+    await AnalyticsService().trackEvent(
+      AnalyticsEventType.userEngagement,
+      {
+        'movie_id': movie.id,
+        'action': 'open_in_app_clicked',
+        'source': 'web_share_view',
+      },
+    );
+
     final deepLink = ShareService.generateMovieAppDeepLink(movie.id);
     final uri = Uri.parse(deepLink);
 
@@ -182,6 +228,16 @@ class _MovieShareViewContent extends StatelessWidget {
   }
 
   Future<void> _shareMovie(BuildContext context) async {
+    // Track intento de re-compartir desde la vista de share
+    await AnalyticsService().trackEvent(
+      AnalyticsEventType.movieShare,
+      {
+        'movie_id': movie.id,
+        'action': 'reshare_from_share_view',
+        'source': 'web_share_view',
+      },
+    );
+
     ShareService.shareMovie(context: context, movie: movie);
   }
 
