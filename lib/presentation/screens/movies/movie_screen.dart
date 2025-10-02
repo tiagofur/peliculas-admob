@@ -194,22 +194,12 @@ class _MovieDetails extends StatelessWidget {
               const SizedBox(height: 16),
               MovieRatingAndNotes(movie: movie),
 
-              //* 1. Banner antes de 'Elenco Completo'
+              //* 1. Banner antes de 'Reparto Principal'
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12.0),
                 child: kIsWeb ? WebSafeBannerAdWidget() : BannerAdWidget(),
               ),
-            ],
-          ),
-        ),
 
-        //* Elenco Completo - NUEVO
-        _FullCastList(movie: movie),
-
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
               // Reparto Principal (sección reducida)
               _CastSection(movie: movie),
 
@@ -241,7 +231,7 @@ class _MovieDetails extends StatelessWidget {
         //* Videos de la película (si tiene)
         VideosFromMovie(movieId: movie.id),
 
-        //* 3. Anuncio nativo antes de 'Recomendaciones'
+        //* 3. Anuncio nativo antes de 'Elenco Completo'
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 12.0),
           child: kIsWeb
@@ -251,6 +241,9 @@ class _MovieDetails extends StatelessWidget {
                   showLabel: false,
                 ),
         ),
+
+        //* Elenco Completo - Justo arriba de Recomendaciones
+        _FullCastList(movie: movie),
 
         //* Películas similares (Recomendaciones con anuncios)
         SimilarMovies(movieId: movie.id),
