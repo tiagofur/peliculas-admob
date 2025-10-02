@@ -30,12 +30,30 @@ class MovieScreen extends ConsumerStatefulWidget {
 }
 
 class MovieScreenState extends ConsumerState<MovieScreen> {
+  int _retryCount = 0;
+  static const int _maxRetries = 2;
+
   @override
   void initState() {
     super.initState();
     // Se retrasa la llamada para evitar modificar el provider durante el build.
-    Future(() {
-      ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
+    _loadMovieWithRetry();
+  }
+
+  Future<void> _loadMovieWithRetry() async {
+    await Future(() async {
+      try {
+        await ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
+      } catch (e) {
+        if (_retryCount < _maxRetries && mounted) {
+          _retryCount++;
+          // Esperar un poco antes de reintentar (exponential backoff)
+          await Future.delayed(Duration(seconds: _retryCount));
+          if (mounted) {
+            _loadMovieWithRetry();
+          }
+        }
+      }
     });
   }
 
@@ -93,17 +111,17 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
     final textStyles = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Película no disponible')),
+      appBar: AppBar(title: const Text('Error al cargar película')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.movie_outlined, size: 64, color: colors.error),
+              Icon(Icons.cloud_off_outlined, size: 64, color: colors.error),
               const SizedBox(height: 16),
               Text(
-                'No pudimos encontrar esta película',
+                'No pudimos cargar los detalles',
                 style: textStyles.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -111,7 +129,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Es posible que haya sido eliminada de la fuente original o ya no esté disponible.',
+                'Verifica tu conexión a internet e intenta de nuevo. Si el problema persiste, es posible que la película ya no esté disponible.',
                 style: textStyles.bodySmall?.copyWith(
                   color: colors.onSurface.withValues(alpha: 0.7),
                 ),
@@ -123,10 +141,16 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
                 runSpacing: 12,
                 alignment: WrapAlignment.center,
                 children: [
-                  FilledButton.tonal(
-                    onPressed: () => ref
-                        .read(movieInfoProvider.notifier)
-                        .loadMovie(widget.movieId, force: true),
+                  FilledButton(
+                    onPressed: () {
+                      // Limpiar el fallo y reintentar con force
+                      ref
+                          .read(movieLoadFailuresProvider.notifier)
+                          .remove(widget.movieId);
+                      ref
+                          .read(movieInfoProvider.notifier)
+                          .loadMovie(widget.movieId, force: true);
+                    },
                     child: const Text('Reintentar'),
                   ),
                   OutlinedButton(

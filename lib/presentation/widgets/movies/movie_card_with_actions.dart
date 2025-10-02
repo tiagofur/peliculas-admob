@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../domain/entities/movie.dart';
 import '../../../services/hybrid_image_service.dart';
+import '../../providers/movies/movie_info_provider.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/storage/direct_watched_provider.dart';
 import '../streaming/streaming_availability_indicator.dart';
@@ -32,6 +33,12 @@ class MovieCardWithActions extends ConsumerWidget {
           // Imagen principal
           GestureDetector(
             onTap: () {
+              // Pre-cargar la película en el caché antes de navegar
+              // Esto asegura que los datos básicos estén disponibles inmediatamente
+              ref
+                  .read(movieInfoProvider.notifier)
+                  .loadMovie(movie.id.toString());
+
               if (kIsWeb) {
                 context.go('/movie/${movie.id}');
               } else {
