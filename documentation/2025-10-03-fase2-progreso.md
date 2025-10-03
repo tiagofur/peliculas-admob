@@ -155,16 +155,19 @@ Implementación de skeleton loaders con efecto shimmer para mejorar percepción 
 ### Componentes Creados
 
 **Widgets**:
+
 - `MovieCardSkeleton` - Tarjeta individual de película
 - `MovieHorizontalListSkeleton` - Lista horizontal
 - `MovieGridSkeleton` - Grid de búsqueda/categorías
 - `MovieDetailsSkeleton` - Pantalla completa de detalles
 
 **Integraciones**:
+
 - `home_view.dart` - 4 secciones (Now Playing, Popular, Top Rated, Upcoming)
 - `movie_screen.dart` - Detalles de película
 
 **Tests**:
+
 - 9 golden tests (light/dark theme para cada componente)
 
 ### Documentación

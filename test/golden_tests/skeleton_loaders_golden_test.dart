@@ -7,6 +7,7 @@
 ///
 /// **To update goldens**: `flutter test test/golden_tests/ --update-goldens`
 /// **To run tests**: `flutter test test/golden_tests/`
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -96,8 +97,7 @@ void main() {
       );
     });
 
-    testWidgets('MovieGridSkeleton - Light Theme',
-        (WidgetTester tester) async {
+    testWidgets('MovieGridSkeleton - Light Theme', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.light(),
@@ -116,8 +116,7 @@ void main() {
       );
     });
 
-    testWidgets('MovieGridSkeleton - Dark Theme',
-        (WidgetTester tester) async {
+    testWidgets('MovieGridSkeleton - Dark Theme', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.dark(),

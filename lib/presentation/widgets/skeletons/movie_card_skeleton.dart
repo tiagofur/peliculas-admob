@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Task 2.5: Skeleton loader for movie cards
-/// 
+///
 /// Provides a shimmer effect placeholder while movie data is loading.
 /// Used in horizontal lists, grids, and search results.
-/// 
+///
 /// **Features**:
 /// - Shimmer animation effect
 /// - Matches MovieCard dimensions
@@ -24,7 +24,7 @@ class MovieCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       width: width,
       height: height,
@@ -94,7 +94,7 @@ class MovieCardSkeleton extends StatelessWidget {
 }
 
 /// Horizontal list of movie card skeletons
-/// 
+///
 /// Used to show loading state in horizontal scrolling lists.
 class MovieHorizontalListSkeleton extends StatelessWidget {
   const MovieHorizontalListSkeleton({
@@ -121,7 +121,7 @@ class MovieHorizontalListSkeleton extends StatelessWidget {
 }
 
 /// Grid of movie card skeletons
-/// 
+///
 /// Used for search results and category browsing loading states.
 class MovieGridSkeleton extends StatelessWidget {
   const MovieGridSkeleton({

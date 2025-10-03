@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 /// Task 2.5: Skeleton loader for movie details screen
-/// 
+///
 /// Provides a shimmer effect placeholder while movie details are loading.
 /// Matches the layout of the MovieScreen to provide visual continuity.
-/// 
+///
 /// **Features**:
 /// - Shimmer animation effect
 /// - Matches MovieScreen layout structure
@@ -18,14 +18,14 @@ class MovieDetailsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final size = MediaQuery.of(context).size;
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Backdrop/Poster skeleton
           _buildBackdropSkeleton(isDark, size),
-          
+
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -34,23 +34,23 @@ class MovieDetailsSkeleton extends StatelessWidget {
                 // Title skeleton
                 _buildTitleSkeleton(isDark),
                 const SizedBox(height: 16),
-                
+
                 // Info row (rating, year, duration)
                 _buildInfoRowSkeleton(isDark),
                 const SizedBox(height: 16),
-                
+
                 // Genres skeleton
                 _buildGenresSkeleton(isDark),
                 const SizedBox(height: 24),
-                
+
                 // Overview section
                 _buildOverviewSkeleton(isDark),
                 const SizedBox(height: 24),
-                
+
                 // Cast section
                 _buildCastSkeleton(isDark),
                 const SizedBox(height: 24),
-                
+
                 // Similar movies section
                 _buildSimilarMoviesSkeleton(isDark),
               ],
@@ -231,7 +231,8 @@ class MovieDetailsSkeleton extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 12.0),
                 child: Shimmer.fromColors(
                   baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                  highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                  highlightColor:
+                      isDark ? Colors.grey[700]! : Colors.grey[100]!,
                   child: Column(
                     children: [
                       Container(
@@ -290,7 +291,8 @@ class MovieDetailsSkeleton extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 12.0),
                 child: Shimmer.fromColors(
                   baseColor: isDark ? Colors.grey[800]! : Colors.grey[300]!,
-                  highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
+                  highlightColor:
+                      isDark ? Colors.grey[700]! : Colors.grey[100]!,
                   child: Container(
                     width: 120,
                     height: 180,
