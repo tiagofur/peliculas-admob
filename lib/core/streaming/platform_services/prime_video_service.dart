@@ -6,9 +6,9 @@ import 'package:http/http.dart' as http;
 import '../../../domain/entities/movie.dart';
 import '../../../domain/entities/streaming_availability.dart';
 import '../../../domain/entities/streaming_platform.dart';
-import '../streaming_api_config.dart';
-import '../real_availability_service.dart';
 import '../../analytics/analytics_service.dart';
+import '../real_availability_service.dart';
+import '../streaming_api_config.dart';
 import 'platform_services.dart'; // For StreamingPlatformServiceInterface
 
 /// Amazon Prime Video streaming service implementation

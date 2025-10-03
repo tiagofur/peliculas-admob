@@ -507,8 +507,7 @@ class MLRecommendationService {
 
     // Score basado en géneros
     final moodGenres = List<int>.from(moodCharacteristics['genres'] ?? []);
-    final genreMatch =
-        movie.genreIds.any((id) => moodGenres.contains(id));
+    final genreMatch = movie.genreIds.any((id) => moodGenres.contains(id));
     if (genreMatch) score += 0.6;
 
     // Score basado en rating mínimo
@@ -548,9 +547,8 @@ class MLRecommendationService {
 
     // Bonus por diversidad si el usuario es diverso
     if (behaviorAnalysis.diversityScore > 0.6) {
-      final isNewGenre = !favoriteMovies.any((fav) => fav.genreIds.any(
-          (favId) => movie.genreIds.any((movieId) =>
-              favId == movieId)));
+      final isNewGenre = !favoriteMovies.any((fav) => fav.genreIds
+          .any((favId) => movie.genreIds.any((movieId) => favId == movieId)));
       if (isNewGenre) score += 0.2;
     }
 

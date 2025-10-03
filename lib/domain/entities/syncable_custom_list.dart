@@ -66,6 +66,7 @@ class SyncableCustomList extends SyncableEntity {
       name: customList.name,
       description: customList.description,
       emoji: customList.emoji,
+      // ignore: deprecated_member_use_from_same_package
       movieIds: customList.movieIds,
       createdAt: customList.createdAt,
       lastModifiedAt: customList.lastModifiedAt,

@@ -463,8 +463,7 @@ class UserBehaviorAnalyzer {
     // Analizar favoritos
     for (final movie in favorites) {
       for (final entry in moodGenres.entries) {
-        if (movie.genreIds
-            .any((id) => entry.value.contains(id))) {
+        if (movie.genreIds.any((id) => entry.value.contains(id))) {
           moodCounts[entry.key] =
               (moodCounts[entry.key] ?? 0) + 2; // Peso doble
         }
@@ -474,8 +473,7 @@ class UserBehaviorAnalyzer {
     // Analizar películas vistas
     for (final movie in watched) {
       for (final entry in moodGenres.entries) {
-        if (movie.genreIds
-            .any((id) => entry.value.contains(id))) {
+        if (movie.genreIds.any((id) => entry.value.contains(id))) {
           moodCounts[entry.key] = (moodCounts[entry.key] ?? 0) + 1;
         }
       }

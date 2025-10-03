@@ -115,7 +115,10 @@ class CustomList {
       name: name ?? this.name,
       description: description ?? this.description,
       emoji: emoji ?? this.emoji,
-      movieIds: movieIds ?? this.movieIds,
+      // ignore: deprecated_member_use_from_same_package
+      movieIds: movieIds ??
+          // ignore: deprecated_member_use_from_same_package
+          this.movieIds,
       createdAt: createdAt ?? this.createdAt,
       lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
       userId: userId ?? this.userId,
@@ -135,6 +138,7 @@ class CustomList {
       'name': name,
       'description': description,
       'emoji': emoji,
+      // ignore: deprecated_member_use_from_same_package
       'movieIds': movieIds,
       'createdAt': createdAt.toIso8601String(),
       'lastModifiedAt': lastModifiedAt.toIso8601String(),
@@ -258,8 +262,12 @@ class CustomList {
         other.name == name &&
         other.description == description &&
         other.emoji == emoji &&
+        // ignore: deprecated_member_use_from_same_package
         listEquals(
-            other.movieIds, movieIds) && // Use listEquals for List comparison
+            // ignore: deprecated_member_use_from_same_package
+            other.movieIds,
+            // ignore: deprecated_member_use_from_same_package
+            movieIds) && // Use listEquals for List comparison
         other.createdAt == createdAt &&
         other.lastModifiedAt == lastModifiedAt &&
         other.userId == userId &&
@@ -278,6 +286,7 @@ class CustomList {
         name,
         description,
         emoji,
+        // ignore: deprecated_member_use_from_same_package
         Object.hashAll(movieIds),
         createdAt,
         lastModifiedAt,
@@ -301,10 +310,12 @@ class CustomList {
   /// final count = ref.watch(listMovieCountProvider(listId));
   /// ```
   @Deprecated('Usa listMovieCountProvider(listId) en lugar de este getter')
+  // ignore: deprecated_member_use_from_same_package
   int get movieCount => movieIds.length;
 
   @override
   String toString() {
+    // ignore: deprecated_member_use_from_same_package
     return 'CustomList(id: $id, name: $name, movieCount: ${movieIds.length})';
   }
 }

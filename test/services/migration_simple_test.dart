@@ -57,6 +57,7 @@ void main() {
       // Assert
       expect(customList.id, equals('test-id'));
       expect(customList.name, equals('Test List'));
+      // ignore: deprecated_member_use_from_same_package
       expect(customList.movieIds.length, equals(2));
       expect(customList.isDefault, isFalse);
     });

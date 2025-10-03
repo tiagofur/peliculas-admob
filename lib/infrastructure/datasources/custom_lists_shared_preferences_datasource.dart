@@ -1,5 +1,7 @@
 import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../domain/entities/custom_list.dart';
 
 abstract class CustomListsDatasource {
@@ -95,6 +97,7 @@ class CustomListsSharedPreferencesDatasource extends CustomListsDatasource {
       'name': list.name,
       'description': list.description,
       'emoji': list.emoji,
+      // ignore: deprecated_member_use_from_same_package
       'movieIds': list.movieIds,
       'createdAt': list.createdAt.toIso8601String(),
       'lastModifiedAt': list.lastModifiedAt.toIso8601String(),

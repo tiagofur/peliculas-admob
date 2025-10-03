@@ -308,7 +308,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
       for (final genre in movie.genreIds) {
         final genreKey = genre.toString();
         genreCount[genreKey] = (genreCount[genreKey] ?? 0) + 1;
-        genreRating[genreKey] = (genreRating[genreKey] ?? 0) + movie.voteAverage;
+        genreRating[genreKey] =
+            (genreRating[genreKey] ?? 0) + movie.voteAverage;
       }
       languages.add(movie.originalLanguage);
       totalRating += movie.voteAverage;

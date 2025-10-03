@@ -18,6 +18,7 @@ import '../../infrastructure/repositories/custom_lists_repository_impl.dart';
 import '../../services/default_lists_manager.dart';
 import '../../services/list_sync_service.dart';
 import '../../services/lists_migration_service.dart';
+import 'list_items_provider.dart';
 
 // Export list items provider
 export 'list_items_provider.dart';
@@ -287,21 +288,33 @@ class ListActions {
         throw Exception('Lista $listId no encontrada');
       }
 
-      // Crear nueva lista duplicada
+      // Crear nueva lista duplicada (sin películas inicialmente)
       final generatedId = SyncUtilities.generateUuid();
       final now = DateTime.now();
       final duplicatedList = originalList.copyWith(
         id: generatedId,
         name: newName,
-        movieIds: List<int>.from(originalList.movieIds),
+        movieIds: [], // Inicialmente vacía, copiaremos items después
         createdAt: now,
         lastModifiedAt: now,
         isDefault: false,
         syncStatus: 'pending',
       );
 
+      // Crear la lista vacía primero
       final createdList = await _repository.createList(duplicatedList);
-      LoggerFactory.info('✅ Lista duplicada exitosamente: "$newName"');
+
+      // Copiar los items de la lista original usando el sistema de items
+      final items = await _repository.getListItems(listId);
+      for (final item in items) {
+        await _repository.addMovieToList(
+          createdList.id,
+          item.movieId,
+          position: item.position,
+        );
+      }
+
+      LoggerFactory.info('✅ Lista duplicada exitosamente: "$newName" con ${items.length} películas');
 
       return createdList;
     } catch (e) {
@@ -817,11 +830,30 @@ enum ListSortOrder {
 
 // ========== PROVIDERS COMPUTADOS ==========
 
+/// Provider auxiliar que crea un mapa de listId -> movieCount
+/// Usado para filtrar y ordenar listas sin acceder a movieIds deprecated
+final listMovieCountsMapProvider = Provider<Map<String, int>>((ref) {
+  final listsAsync = ref.watch(userListsProvider);
+  return listsAsync.when(
+    data: (lists) {
+      final countsMap = <String, int>{};
+      for (final list in lists) {
+        final count = ref.watch(listMovieCountProvider(list.id));
+        countsMap[list.id] = count;
+      }
+      return countsMap;
+    },
+    loading: () => {},
+    error: (_, __) => {},
+  );
+});
+
 /// Provider que filtra y ordena las listas según los filtros activos
 final filteredListsProvider = Provider<AsyncValue<List<CustomList>>>((ref) {
   final listsAsync = ref.watch(userListsProvider);
   final filters = ref.watch(listFiltersProvider);
   final uiState = ref.watch(listsUIStateProvider);
+  final countsMap = ref.watch(listMovieCountsMapProvider);
 
   return listsAsync.when(
     data: (lists) {
@@ -840,9 +872,12 @@ final filteredListsProvider = Provider<AsyncValue<List<CustomList>>>((ref) {
           return false;
         }
 
-        // Filtro por listas vacías
-        if (!filters.showEmptyLists && list.movieIds.isEmpty) {
-          return false;
+        // Filtro por listas vacías - usar el count del mapa
+        if (!filters.showEmptyLists) {
+          final count = countsMap[list.id] ?? 0;
+          if (count == 0) {
+            return false;
+          }
         }
 
         // Filtro por estado de sincronización
@@ -877,12 +912,20 @@ final filteredListsProvider = Provider<AsyncValue<List<CustomList>>>((ref) {
               .sort((a, b) => b.lastModifiedAt.compareTo(a.lastModifiedAt));
           break;
         case ListSortOrder.movieCountAsc:
-          filteredLists
-              .sort((a, b) => a.movieIds.length.compareTo(b.movieIds.length));
+          // Usar counts del mapa en lugar de movieIds.length
+          filteredLists.sort((a, b) {
+            final countA = countsMap[a.id] ?? 0;
+            final countB = countsMap[b.id] ?? 0;
+            return countA.compareTo(countB);
+          });
           break;
         case ListSortOrder.movieCountDesc:
-          filteredLists
-              .sort((a, b) => b.movieIds.length.compareTo(a.movieIds.length));
+          // Usar counts del mapa en lugar de movieIds.length
+          filteredLists.sort((a, b) {
+            final countA = countsMap[a.id] ?? 0;
+            final countB = countsMap[b.id] ?? 0;
+            return countB.compareTo(countA);
+          });
           break;
       }
 

@@ -179,6 +179,7 @@ void main() {
       expect(SyncUtilities.isValidUuid(duplicated.id), isTrue);
       expect(duplicated.id, isNot(originalList.id));
       expect(duplicated.name, 'Duplicated');
+      // ignore: deprecated_member_use_from_same_package
       expect(duplicated.movieIds, originalList.movieIds);
     });
   });

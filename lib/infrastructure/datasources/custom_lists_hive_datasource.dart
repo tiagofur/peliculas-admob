@@ -55,6 +55,7 @@ class CustomListsHiveDataSource {
       await box.put(list.id, listData);
 
       // Guardar los movie IDs por separado
+      // ignore: deprecated_member_use_from_same_package
       await itemsBox.put(list.id, list.movieIds);
 
       LoggerFactory.debug('CustomListsHive: Lista cached: ${list.name}');
@@ -78,6 +79,7 @@ class CustomListsHiveDataSource {
         final listData = list.toJson();
         listData.remove('movieIds');
         await box.put(list.id, listData);
+        // ignore: deprecated_member_use_from_same_package
         await itemsBox.put(list.id, list.movieIds);
       }
 

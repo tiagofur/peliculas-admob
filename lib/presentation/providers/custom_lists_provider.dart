@@ -499,12 +499,6 @@ final allListsProvider = FutureProvider<AllListsState>((ref) async {
     LoggerFactory.info(
         'AllListsProvider: ${defaultLists.length} listas por defecto, ${customLists.length} listas personalizadas');
 
-    // Calcular total de películas para debug
-    final totalMovies =
-        allUserLists.fold(0, (sum, list) => sum + list.movieIds.length);
-    LoggerFactory.info(
-        'AllListsProvider: Total de películas en todas las listas: $totalMovies');
-
     return AllListsState(
       defaultLists: defaultLists,
       customLists: customLists,
@@ -573,6 +567,7 @@ final listByIdProvider = Provider.family<CustomList?, String>((ref, listId) {
 final isMovieInListProviderOld =
     Provider.family<bool, ({int movieId, String listId})>((ref, params) {
   final list = ref.watch(listByIdProvider(params.listId));
+  // ignore: deprecated_member_use_from_same_package
   return list?.movieIds.contains(params.movieId) ?? false;
 });
 
@@ -584,6 +579,7 @@ final isMovieInListProviderOld =
 final movieListsProviderOld =
     Provider.family<List<CustomList>, int>((ref, movieId) {
   final allLists = ref.watch(listsProvider);
+  // ignore: deprecated_member_use_from_same_package
   return allLists.where((list) => list.movieIds.contains(movieId)).toList();
 });
 

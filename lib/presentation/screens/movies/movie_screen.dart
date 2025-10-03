@@ -58,14 +58,14 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
   Future<void> _loadMovieWithRetry() async {
     if (_disposed) return; // 🔴 CRÍTICO: No ejecutar si disposed
-    
+
     try {
       await ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
     } catch (e) {
       if (_retryCount < _maxRetries && !_disposed && mounted) {
         _retryCount++;
         LoggerFactory.warning(
-          'Retry attempt $_retryCount/$_maxRetries for movie ${widget.movieId}');
+            'Retry attempt $_retryCount/$_maxRetries for movie ${widget.movieId}');
         // Esperar un poco antes de reintentar (exponential backoff)
         await Future.delayed(Duration(seconds: _retryCount));
         if (!_disposed && mounted) {
@@ -73,7 +73,8 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
         }
       } else if (!_disposed && mounted) {
         // Task 1.1: User feedback en error final
-        LoggerFactory.error('Failed to load movie ${widget.movieId} after $_maxRetries retries: $e');
+        LoggerFactory.error(
+            'Failed to load movie ${widget.movieId} after $_maxRetries retries: $e');
         _showErrorSnackbar();
       }
     }
@@ -81,7 +82,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
   void _showErrorSnackbar() {
     if (!mounted || _disposed) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text('No se pudo cargar la película'),
@@ -358,8 +359,7 @@ class _Genres extends ConsumerWidget {
 
                   // Debug: Log para cada conversión
                   if (kDebugMode && genreName == 'Desconocido') {
-                    LoggerFactory.debug(
-                        '⚠️ Género no encontrado: ID=$genreId');
+                    LoggerFactory.debug('⚠️ Género no encontrado: ID=$genreId');
                   }
 
                   return Container(
@@ -900,8 +900,10 @@ class _FullCastList extends StatelessWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 primary: false,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                itemExtent: 128, // 🔴 Task 1.3: Mejora performance significativamente
-                cacheExtent: 500, // 🔴 Task 1.3: Cache razonable para smooth scroll
+                itemExtent:
+                    128, // 🔴 Task 1.3: Mejora performance significativamente
+                cacheExtent:
+                    500, // 🔴 Task 1.3: Cache razonable para smooth scroll
                 itemCount: castList.length,
                 itemBuilder: (context, index) {
                   final actor = castList[index] as Map<String, dynamic>;

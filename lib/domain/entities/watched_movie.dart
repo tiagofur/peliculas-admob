@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+
 import 'movie.dart';
 
 part 'watched_movie.g.dart';

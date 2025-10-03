@@ -122,9 +122,8 @@ class RecommendationEngine {
       double similarity = 0.0;
 
       // Similitud de géneros (40%)
-      final genreSimilarity = _calculateGenreSimilarity(
-          movie1.genreIds,
-          movie2.genreIds);
+      final genreSimilarity =
+          _calculateGenreSimilarity(movie1.genreIds, movie2.genreIds);
       similarity += genreSimilarity * 0.4;
 
       // Similitud de embeddings (30%)

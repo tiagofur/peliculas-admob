@@ -261,13 +261,22 @@ class HomeViewState extends ConsumerState<HomeView>
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Theme.of(ref.context).colorScheme.primary.withValues(alpha: 0.1),
-                    Theme.of(ref.context).colorScheme.secondary.withValues(alpha: 0.1),
+                    Theme.of(ref.context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.1),
+                    Theme.of(ref.context)
+                        .colorScheme
+                        .secondary
+                        .withValues(alpha: 0.1),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Theme.of(ref.context).colorScheme.primary.withValues(alpha: 0.3),
+                  color: Theme.of(ref.context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
@@ -285,15 +294,22 @@ class HomeViewState extends ConsumerState<HomeView>
                       children: [
                         Text(
                           '🎯 Recomendaciones con IA',
-                          style: Theme.of(ref.context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(ref.context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(ref.context).colorScheme.primary,
+                                color:
+                                    Theme.of(ref.context).colorScheme.primary,
                               ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Seleccionadas especialmente para ti',
-                          style: Theme.of(ref.context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(ref.context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
                                 color: Theme.of(ref.context)
                                     .colorScheme
                                     .onSurface
