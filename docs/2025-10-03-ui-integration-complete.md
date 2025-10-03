@@ -60,6 +60,7 @@ final watchProvidersProvider = FutureProvider.autoDispose
 ```
 
 **Características**:
+
 - ✅ `cacheServiceProvider` - Singleton de CacheService
 - ✅ `streamingServiceManagerProvider` - Singleton de StreamingServiceManager
 - ✅ `watchProvidersProvider` - FutureProvider family para fetch por movieId
@@ -144,6 +145,7 @@ class WatchProvidersSection extends ConsumerWidget {
 ```
 
 **Características**:
+
 - ✅ ConsumerWidget para acceso a Riverpod
 - ✅ Fetch automático al construir
 - ✅ Loading state con indicador sutil
@@ -160,6 +162,7 @@ class WatchProvidersSection extends ConsumerWidget {
 **Cambios**:
 
 1. **Import agregado**:
+
 ```dart
 import '../streaming/watch_providers_section.dart';
 ```
@@ -167,6 +170,7 @@ import '../streaming/watch_providers_section.dart';
 2. **Reemplazos realizados** (2 ocurrencias):
 
 **ANTES**:
+
 ```dart
 // Watch Providers - Plataformas de streaming
 if (movie.watchProviders != null)
@@ -180,6 +184,7 @@ if (movie.watchProviders != null) const SizedBox(height: 16),
 ```
 
 **DESPUÉS**:
+
 ```dart
 // Watch Providers - Plataformas de streaming (fetched from TMDB)
 WatchProvidersSection(
@@ -191,6 +196,7 @@ WatchProvidersSection(
 ```
 
 **Ventajas**:
+
 - ✅ Ya no depende de `movie.watchProviders` (que puede estar null)
 - ✅ Fetch dinámico desde TMDB API
 - ✅ Cache automático (24 horas)
@@ -264,12 +270,12 @@ WatchProvidersSection(
 
 ### Cache Strategy
 
-| Escenario | Comportamiento | Tiempo |
-|-----------|----------------|--------|
-| **Primera visita** | API call + cache write | ~100-200ms |
-| **Visitas subsecuentes (< 24h)** | Cache hit | ~5-10ms |
-| **Cache expirado (> 24h)** | API call + cache update | ~100-200ms |
-| **Error de API** | Retorna null, UI oculta sección | ~50ms |
+| Escenario                        | Comportamiento                  | Tiempo     |
+| -------------------------------- | ------------------------------- | ---------- |
+| **Primera visita**               | API call + cache write          | ~100-200ms |
+| **Visitas subsecuentes (< 24h)** | Cache hit                       | ~5-10ms    |
+| **Cache expirado (> 24h)**       | API call + cache update         | ~100-200ms |
+| **Error de API**                 | Retorna null, UI oculta sección | ~50ms      |
 
 ### API Calls Reducidos
 
@@ -278,6 +284,7 @@ WatchProvidersSection(
 - **Reducción**: ~99% en películas populares (vistas frecuentemente)
 
 **Ejemplo**:
+
 - Película popular vista 1000 veces/día
 - Sin cache: 1000 API calls
 - Con cache: 1 API call
@@ -314,21 +321,25 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
 ### Pasos de Testing
 
 1. **Ejecutar app**:
+
    ```bash
    flutter run
    ```
 
 2. **Navegar a detalles de película**:
+
    - Home → Seleccionar cualquier película
    - Ver scroll hasta sección "Disponible en:"
 
 3. **Verificar estados**:
 
    **a) Loading State**:
+
    - Debe mostrar pequeño CircularProgressIndicator
    - Duración: < 200ms (cache) o ~1-2s (API call)
 
    **b) Success State con datos**:
+
    - Debe mostrar chips de proveedores (Netflix, Prime, Disney+, etc.)
    - Chips deben tener:
      - Logo del proveedor
@@ -337,20 +348,24 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
      - Borde verde si tiene afiliado
 
    **c) Success State sin datos**:
+
    - Sección NO se muestra (SizedBox.shrink)
    - Aplicación continúa normal
 
    **d) Error State**:
+
    - Sección NO se muestra
    - No hay error visible al usuario
    - App continúa funcionando
 
 4. **Probar tema oscuro**:
+
    - Cambiar a tema oscuro
    - Verificar chips tienen fondo oscuro
    - Verificar texto es legible
 
 5. **Probar múltiples películas**:
+
    - The Matrix (603)
    - Inception (27205)
    - The Dark Knight (155)
@@ -414,7 +429,7 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
 ✅ **Tema adaptado**: Colores correctos en oscuro/claro  
 ✅ **Graceful failures**: Errors no visibles al usuario  
 ✅ **Cache efectivo**: Visitas subsecuentes instantáneas  
-✅ **Datos reales**: Proveedores de TMDB API, no mock  
+✅ **Datos reales**: Proveedores de TMDB API, no mock
 
 ### Errores a Evitar
 
@@ -423,21 +438,21 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
 ❌ **Colores incorrectos** en tema oscuro  
 ❌ **Sección vacía visible** cuando no hay datos  
 ❌ **Múltiples API calls** para misma película  
-❌ **Datos mock** en lugar de reales  
+❌ **Datos mock** en lugar de reales
 
 ---
 
 ## 📈 Métricas de Éxito
 
-| Métrica | Target | Actual |
-|---------|--------|--------|
-| Compilación | 0 errores | ✅ 0 errores |
-| Warnings | 0 warnings | ✅ 0 warnings |
-| Loading time (cache) | < 50ms | ⏳ Por validar |
-| Loading time (API) | < 2s | ⏳ Por validar |
-| Cache hit rate | > 90% | ⏳ Por validar |
-| Error rate | < 1% | ⏳ Por validar |
-| UI theme support | 100% | ✅ 100% |
+| Métrica              | Target     | Actual         |
+| -------------------- | ---------- | -------------- |
+| Compilación          | 0 errores  | ✅ 0 errores   |
+| Warnings             | 0 warnings | ✅ 0 warnings  |
+| Loading time (cache) | < 50ms     | ⏳ Por validar |
+| Loading time (API)   | < 2s       | ⏳ Por validar |
+| Cache hit rate       | > 90%      | ⏳ Por validar |
+| Error rate           | < 1%       | ⏳ Por validar |
+| UI theme support     | 100%       | ✅ 100%        |
 
 ---
 
@@ -446,6 +461,7 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
 ### Inmediato (HOY)
 
 1. ⏳ **Testing manual** (15-20 minutos)
+
    - Ejecutar app
    - Probar flujo completo
    - Verificar ambos temas
@@ -459,11 +475,13 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
 ### Corto Plazo (Esta Semana)
 
 3. ⏳ **Region selection**
+
    - Permitir usuario elegir región (MX, US, ES, etc.)
    - Guardar preferencia
    - Actualizar providers según región
 
 4. ⏳ **A/B Testing**
+
    - Medir engagement con feature
    - Click-through rate en providers
    - Conversion tracking
@@ -476,6 +494,7 @@ dart format lib/presentation/providers/streaming/streaming_providers.dart \
 ### Medio Plazo (Próximas Semanas)
 
 6. ⏳ **UI enhancements**
+
    - Animaciones de entrada
    - Skeleton loaders
    - Pull-to-refresh para forzar actualización
@@ -527,11 +546,13 @@ La funcionalidad de Watch Providers (Streaming Platforms) ahora está completame
 7. ✅ **Code quality**: 0 errores, 0 warnings, formateado
 
 **Falta únicamente**:
+
 - ⏳ Testing manual para validar visualmente
 - ⏳ Screenshots para documentación
 - ⏳ Métricas reales de performance
 
 **Tiempo total invertido HOY**:
+
 - Backend TMDB: ~2 horas
 - Fix tema oscuro: ~30 minutos
 - UI Integration: ~35 minutos
