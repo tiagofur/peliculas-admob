@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../config/helpers/human_formats.dart';
+import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/streaming/streaming.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
@@ -968,16 +969,19 @@ class _EnhancedCast extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(
             height: 140,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: mainCast.length,
-              itemBuilder: (context, index) {
-                final actor = mainCast[index] as Map<String, dynamic>;
-                final profilePath = actor['profile_path'] as String?;
-                final name = actor['name'] as String? ?? 'Actor desconocido';
-                final character = actor['character'] as String?;
+            child: ScrollConfiguration(
+              behavior: CustomScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: mainCast.length,
+                itemBuilder: (context, index) {
+                  final actor = mainCast[index] as Map<String, dynamic>;
+                  final profilePath = actor['profile_path'] as String?;
+                  final name = actor['name'] as String? ?? 'Actor desconocido';
+                  final character = actor['character'] as String?;
 
-                return Container(
+                  return Container(
                   width: 90,
                   margin: const EdgeInsets.only(right: 12),
                   child: Column(
@@ -1025,8 +1029,9 @@ class _EnhancedCast extends StatelessWidget {
                         ),
                     ],
                   ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],

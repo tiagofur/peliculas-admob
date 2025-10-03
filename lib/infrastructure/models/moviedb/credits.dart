@@ -7,8 +7,12 @@ class Credits {
 
   factory Credits.fromJson(Map<String, dynamic> json) => Credits(
         id: json['id'] ?? 0,
-        cast: List<Cast>.from(json['cast'].map((x) => Cast.fromJson(x))),
-        crew: List<Crew>.from(json['crew'].map((x) => Crew.fromJson(x))),
+        cast: json['cast'] != null
+            ? List<Cast>.from(json['cast'].map((x) => Cast.fromJson(x)))
+            : [],
+        crew: json['crew'] != null
+            ? List<Crew>.from(json['crew'].map((x) => Crew.fromJson(x)))
+            : [],
       );
 
   final int id;

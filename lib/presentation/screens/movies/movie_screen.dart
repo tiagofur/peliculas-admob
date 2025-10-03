@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../config/helpers/human_formats.dart';
+import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../core/analytics/analytics_service.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/movie.dart';
@@ -831,17 +832,20 @@ class _FullCastList extends StatelessWidget {
           const SizedBox(height: 12),
           SizedBox(
             height: 200,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              itemCount: castList.length,
-              itemBuilder: (context, index) {
-                final actor = castList[index] as Map<String, dynamic>;
-                final profilePath = actor['profile_path'] as String?;
-                final name = actor['name'] as String? ?? 'Actor desconocido';
-                final character = actor['character'] as String?;
+            child: ScrollConfiguration(
+              behavior: CustomScrollBehavior(),
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemCount: castList.length,
+                itemBuilder: (context, index) {
+                  final actor = castList[index] as Map<String, dynamic>;
+                  final profilePath = actor['profile_path'] as String?;
+                  final name = actor['name'] as String? ?? 'Actor desconocido';
+                  final character = actor['character'] as String?;
 
-                return Container(
+                  return Container(
                   width: 120,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   child: Card(
@@ -889,9 +893,10 @@ class _FullCastList extends StatelessWidget {
                         ),
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: const EdgeInsets.all(6.0),
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   name,
@@ -904,7 +909,7 @@ class _FullCastList extends StatelessWidget {
                                 ),
                                 if (character != null &&
                                     character.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2),
                                   Text(
                                     character,
                                     style: textStyles.bodySmall?.copyWith(
@@ -924,8 +929,9 @@ class _FullCastList extends StatelessWidget {
                       ],
                     ),
                   ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],

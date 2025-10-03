@@ -191,12 +191,36 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
         LoggerFactory.info('🌐 Fetching movie from network: $id');
         final movie = await _networkDatasource.getMovieById(id);
 
-        // Save to both caches (basic data only - credits not persisted in Hive)
+        if (kDebugMode) {
+          print('📤 REPOSITORY: Got movie from API');
+          print('  ID: ${movie.id}');
+          print('  Title: ${movie.title}');
+          print('  Has credits: ${movie.credits != null}');
+          if (movie.credits != null) {
+            print('  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+          }
+        }
+
+        // Save to memory cache WITH credits (full data)
         _saveToMemoryCache(cacheKey, [movie]);
-        await _localDatasource.cacheMovie(movie);
+
+        // Save to Hive cache in background (basic data only for offline fallback)
+        // DO NOT await - let it run asynchronously to avoid blocking
+        // This prevents Hive from interfering with the returned object
+        _localDatasource.cacheMovie(movie).catchError((e) {
+          LoggerFactory.warning('⚠️ Failed to cache movie to Hive: $e');
+          return false; // Return a bool to match Future<bool> return type
+        });
 
         LoggerFactory.info(
-            '✅ Fetched and cached movie: ${movie.title} (credits: ${movie.credits != null})');
+            '✅ Returning movie from API: ${movie.title} (credits: ${movie.credits != null})');
+
+        if (kDebugMode) {
+          print('📤 REPOSITORY RETURNING movie from API:');
+          print('  Credits != null: ${movie.credits != null}');
+        }
+
+        // Return immediately with full data from API
         return movie;
       } catch (e) {
         LoggerFactory.error('❌ Network error for movie $id: $e');

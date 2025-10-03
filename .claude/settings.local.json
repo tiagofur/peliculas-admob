@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git commit -m \"$(cat <<''EOF''\nfix: Reposicionar Elenco Completo justo arriba de Recomendaciones\n\nCambios realizados:\n\n- Movido widget _FullCastList de después del banner principal a justo\n  antes de Recomendaciones\n- Colocado después del Native Ad #3 y antes de SimilarMovies\n- El widget _FullCastList ya estaba diseñado sin botones de favorito/visto,\n  solo muestra información (foto, nombre, personaje)\n- Actualizado comentario del Native Ad #3 para reflejar nueva posición\n\nNuevo flujo:\n[Info + Géneros + Rating]\n↓\n🟦 BANNER #1\n↓\n[Reparto Principal + Equipo + Info Técnica]\n↓\n🟦 NATIVE AD #2\n↓\n[Listas + Videos]\n↓\n🟦 NATIVE AD #3\n↓\n[Elenco Completo] ← Reposicionado aquí\n↓\n[Recomendaciones con ads]\n\nBeneficios:\n✅ Elenco Completo está agrupado visualmente con Recomendaciones\n✅ Flujo más lógico: info técnica → listas → elenco → recomendaciones\n✅ Sin botones de acción en tarjetas de actores (solo información)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(flutter run:*)"
     ],
     "deny": [],
     "ask": []

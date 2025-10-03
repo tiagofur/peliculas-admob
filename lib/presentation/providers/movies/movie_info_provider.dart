@@ -79,29 +79,40 @@ class MovieMapNotifier extends AsyncNotifier<Map<String, Movie>> {
 
       // Debug: Log movie before saving to state
       if (kDebugMode) {
-        print(
-            '🎬 MovieInfoProvider: Received movie ${movie.title} from repository');
-        print('   Has credits: ${movie.credits != null}');
+        print('📥 MovieInfoProvider: Received movie from repository');
+        print('   ID: ${movie.id}');
+        print('   Title: ${movie.title}');
+        print('   Credits != null: ${movie.credits != null}');
         if (movie.credits != null) {
-          print(
-              '   Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+          print('   Credits type: ${movie.credits.runtimeType}');
+          print('   Credits keys: ${movie.credits!.keys}');
+          print('   Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+        } else {
+          print('   ❌ Credits is NULL in provider!');
         }
       }
 
       final updatedMovies = Map<String, Movie>.from(currentMovies)
         ..[movieId] = movie;
 
+      if (kDebugMode) {
+        print('📦 Before unmodifiable - movie in map:');
+        final movieInMap = updatedMovies[movieId];
+        print('   Has credits: ${movieInMap?.credits != null}');
+      }
+
       state = AsyncValue.data(Map<String, Movie>.unmodifiable(updatedMovies));
 
       // Debug: Verify movie in state
       if (kDebugMode) {
-        print('🎬 MovieInfoProvider: Movie saved to state. Verifying...');
+        print('✅ MovieInfoProvider: Movie saved to state. Verifying...');
         final savedMovie = state.value?[movieId];
         if (savedMovie != null) {
           print('   Saved movie has credits: ${savedMovie.credits != null}');
           if (savedMovie.credits != null) {
-            print(
-                '   Saved cast length: ${(savedMovie.credits!['cast'] as List?)?.length ?? 0}');
+            print('   Saved cast length: ${(savedMovie.credits!['cast'] as List?)?.length ?? 0}');
+          } else {
+            print('   ❌ Credits was LOST when saving to state!');
           }
         }
       }
