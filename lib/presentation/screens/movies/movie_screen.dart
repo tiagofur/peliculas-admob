@@ -18,6 +18,7 @@ import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/admob/web_safe_ad_widgets.dart';
 import '../../widgets/movies/movie_rating_and_notes.dart';
+import '../../widgets/skeletons/skeletons.dart'; // Task 2.5
 import '../../widgets/watchlist/add_to_watchlist_button.dart';
 import '../../widgets/widgets.dart';
 
@@ -110,8 +111,8 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
     // Usa .when para manejar los estados del caché (mapa).
     return moviesCache.when(
-      loading: () => const ElegantLoadingScreen(
-        message: 'Cargando película...',
+      loading: () => const Scaffold(
+        body: MovieDetailsSkeleton(), // Task 2.5: Skeleton loader
       ),
       error: (error, stackTrace) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
@@ -142,7 +143,7 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
           }
 
           return const Scaffold(
-            body: MovieDetailLoadingPlaceholder(),
+            body: MovieDetailsSkeleton(), // Task 2.5: New skeleton loader
           );
         }
 

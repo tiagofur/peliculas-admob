@@ -13,6 +13,7 @@ import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/admob/web_safe_ad_widgets.dart';
 import '../../widgets/guest_mode_banner.dart';
 import '../../widgets/movies/movie_horizontal_listview_with_ads.dart';
+import '../../widgets/skeletons/skeletons.dart'; // Task 2.5
 import '../../widgets/widgets.dart';
 
 class HomeView extends ConsumerStatefulWidget {
@@ -168,6 +169,35 @@ class HomeViewState extends ConsumerState<HomeView>
                 ref.read(provider.notifier).loadNextPage();
               }
             });
+
+            // Task 2.5: Show skeleton while loading
+            if (movies.isEmpty && state.state == MoviesState.loading) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          subTitle,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const MovieHorizontalListSkeleton(itemCount: 5),
+                ],
+              );
+            }
 
             return MovieHorizontalListviewWithAds(
               movies: movies,
