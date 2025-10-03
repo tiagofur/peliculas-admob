@@ -314,7 +314,8 @@ class ListActions {
         );
       }
 
-      LoggerFactory.info('✅ Lista duplicada exitosamente: "$newName" con ${items.length} películas');
+      LoggerFactory.info(
+          '✅ Lista duplicada exitosamente: "$newName" con ${items.length} películas');
 
       return createdList;
     } catch (e) {
