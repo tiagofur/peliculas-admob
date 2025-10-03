@@ -77,6 +77,19 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
         // Una vez que el caché tiene datos, busca la película específica.
         final movie = moviesMap[widget.movieId];
 
+        // Debug: Log movie from provider
+        if (kDebugMode && movie != null) {
+          print('🎬 MovieScreen: Received movie from provider');
+          print('  ID: ${movie.id}');
+          print('  Title: ${movie.title}');
+          print('  Has credits: ${movie.credits != null}');
+          if (movie.credits != null) {
+            print('  Credits keys: ${movie.credits!.keys.toList()}');
+            print(
+                '  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+          }
+        }
+
         // Si la película específica aún no está en el mapa, muestra un loader.
         if (movie == null) {
           if (failedMovieIds.contains(widget.movieId)) {

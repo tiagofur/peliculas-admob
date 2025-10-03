@@ -76,10 +76,25 @@ class MovieMapNotifier extends AsyncNotifier<Map<String, Movie>> {
       final movie = await movieRepository.getMovieById(movieId);
       failuresNotifier.remove(movieId);
 
+      // Debug: Log movie before saving to state
+      LoggerFactory.debug(
+          '🎬 MovieInfoProvider: Received movie ${movie.title} from repository');
+      LoggerFactory.debug(
+          '   Has credits: ${movie.credits != null} (${movie.credits != null ? (movie.credits!['cast'] as List?)?.length ?? 0 : 0} actors)');
+
       final updatedMovies = Map<String, Movie>.from(currentMovies)
         ..[movieId] = movie;
 
       state = AsyncValue.data(Map<String, Movie>.unmodifiable(updatedMovies));
+
+      // Debug: Verify movie in state
+      LoggerFactory.debug(
+          '🎬 MovieInfoProvider: Movie saved to state. Verifying...');
+      final savedMovie = state.value?[movieId];
+      if (savedMovie != null) {
+        LoggerFactory.debug(
+            '   Saved movie has credits: ${savedMovie.credits != null}');
+      }
     } on MovieException catch (error, stackTrace) {
       if (error.code == 'MOVIE_NOT_FOUND') {
         LoggerFactory.warning(
