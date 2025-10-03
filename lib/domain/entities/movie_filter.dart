@@ -19,7 +19,7 @@ class MovieFilter {
     this.watchProviders = const [],
   });
 
-  final List<String> genres;
+  final List<int> genres;
   final int? minYear;
   final int? maxYear;
   final int? minDuration;
@@ -36,7 +36,7 @@ class MovieFilter {
   final List<String> watchProviders;
 
   MovieFilter copyWith({
-    List<String>? genres,
+    List<int>? genres,
     int? minYear,
     int? maxYear,
     int? minDuration,
@@ -160,13 +160,13 @@ class GenreOption {
     this.isSelected = false,
   });
 
-  final String id;
+  final int id;
   final String name;
   final String emoji;
   final bool isSelected;
 
   GenreOption copyWith({
-    String? id,
+    int? id,
     String? name,
     String? emoji,
     bool? isSelected,
@@ -209,5 +209,5 @@ class MoodOption {
   final String description;
   final String emoji;
   final Color color;
-  final List<String> associatedGenres;
+  final List<int> associatedGenres;
 }

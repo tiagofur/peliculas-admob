@@ -636,12 +636,12 @@ class _FiltersBottomSheet extends ConsumerWidget {
 
   Widget _buildGenreChips(WidgetRef ref) {
     final popularGenres = [
-      {'id': '28', 'name': 'Acción'},
-      {'id': '35', 'name': 'Comedia'},
-      {'id': '18', 'name': 'Drama'},
-      {'id': '27', 'name': 'Terror'},
-      {'id': '878', 'name': 'Ciencia Ficción'},
-      {'id': '10749', 'name': 'Romance'},
+      {'id': 28, 'name': 'Acción'},
+      {'id': 35, 'name': 'Comedia'},
+      {'id': 18, 'name': 'Drama'},
+      {'id': 27, 'name': 'Terror'},
+      {'id': 878, 'name': 'Ciencia Ficción'},
+      {'id': 10749, 'name': 'Romance'},
     ];
 
     final selectedGenres = ref.watch(movieFiltersNotifierProvider).genres;
@@ -653,12 +653,12 @@ class _FiltersBottomSheet extends ConsumerWidget {
       children: popularGenres.map((genre) {
         final isSelected = selectedGenres.contains(genre['id']);
         return FilterChip(
-          label: Text(genre['name']!),
+          label: Text(genre['name']! as String),
           selected: isSelected,
           onSelected: (selected) {
-            final newGenres = List<String>.from(selectedGenres);
+            final newGenres = List<int>.from(selectedGenres);
             if (selected) {
-              newGenres.add(genre['id']!);
+              newGenres.add(genre['id']! as int);
             } else {
               newGenres.remove(genre['id']!);
             }

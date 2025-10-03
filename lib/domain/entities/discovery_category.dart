@@ -18,7 +18,7 @@ class DiscoveryCategory {
   final String description;
   final String emoji;
   final Color color;
-  final List<String> associatedGenres;
+  final List<int> associatedGenres;
   final Map<String, dynamic> filters;
   final String? mood;
   final IconData icon;
@@ -29,7 +29,7 @@ class DiscoveryCategory {
     String? description,
     String? emoji,
     Color? color,
-    List<String>? associatedGenres,
+    List<int>? associatedGenres,
     Map<String, dynamic>? filters,
     String? mood,
     IconData? icon,

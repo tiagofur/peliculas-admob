@@ -34,7 +34,7 @@ void main() {
 
       // Should return a list (even if empty for some regions)
       expect(availability, isA<List<PlatformAvailability>>());
-      
+
       // Log what we found for debugging
       if (availability.isNotEmpty) {
         for (final avail in availability) {
@@ -48,7 +48,8 @@ void main() {
       }
     });
 
-    test('checkMovieAvailability handles invalid movie ID gracefully', () async {
+    test('checkMovieAvailability handles invalid movie ID gracefully',
+        () async {
       const invalidMovieId = 'invalid_id';
       const region = 'US';
 
@@ -81,7 +82,7 @@ void main() {
 
       // Cached call should be very fast (< 100ms)
       expect(stopwatch.elapsedMilliseconds, lessThan(100));
-      
+
       // Should return a list
       expect(availability2, isA<List<PlatformAvailability>>());
     });
@@ -102,11 +103,11 @@ void main() {
         expect(avail.platform, isA<StreamingPlatform>());
         expect(avail.platform.id, isNotEmpty);
         expect(avail.platform.displayName, isNotEmpty);
-        
+
         // Should be one of our known platforms
         final knownPlatforms = StreamingPlatform.allPlatforms;
         final isKnown = knownPlatforms.any((p) => p.id == avail.platform.id);
-        expect(isKnown, isTrue, 
+        expect(isKnown, isTrue,
             reason: 'Platform ${avail.platform.id} should be in allPlatforms');
       }
     });
@@ -126,18 +127,18 @@ void main() {
         // Basic validation
         expect(avail.isAvailable, isTrue);
         expect(avail.platform, isNotNull);
-        
+
         // At least one availability type should be true
-        final hasAvailabilityType = avail.isFree || 
-            avail.requiresSubscription || 
-            avail.canRent || 
+        final hasAvailabilityType = avail.isFree ||
+            avail.requiresSubscription ||
+            avail.canRent ||
             avail.canPurchase;
         expect(hasAvailabilityType, isTrue,
             reason: 'Should have at least one availability type');
-        
+
         // Quality should be set
         expect(avail.quality, isNotEmpty);
-        
+
         // Currency should be set
         expect(avail.currency, isNotEmpty);
       }

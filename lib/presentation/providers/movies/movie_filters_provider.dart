@@ -8,7 +8,7 @@ class MovieFilterNotifier extends Notifier<MovieFilter> {
   @override
   MovieFilter build() => const MovieFilter();
 
-  void updateGenres(List<String> genres) {
+  void updateGenres(List<int> genres) {
     state = state.copyWith(genres: genres);
   }
 
@@ -74,7 +74,7 @@ class MovieFilterNotifier extends Notifier<MovieFilter> {
 
   void applyQuickFilter({
     String? type,
-    List<String>? genres,
+    List<int>? genres,
     double? minRating,
     int? minYear,
     String? sortBy,
@@ -102,25 +102,25 @@ typedef MovieFiltersNotifier = MovieFilterNotifier;
 class GenreOptionsNotifier extends Notifier<List<GenreOption>> {
   @override
   List<GenreOption> build() => [
-        const GenreOption(id: '28', name: 'Acción', emoji: '💥'),
-        const GenreOption(id: '12', name: 'Aventura', emoji: '🗺️'),
-        const GenreOption(id: '16', name: 'Animación', emoji: '🎨'),
-        const GenreOption(id: '35', name: 'Comedia', emoji: '😂'),
-        const GenreOption(id: '80', name: 'Crimen', emoji: '🔫'),
-        const GenreOption(id: '99', name: 'Documental', emoji: '📹'),
-        const GenreOption(id: '18', name: 'Drama', emoji: '🎭'),
-        const GenreOption(id: '10751', name: 'Familiar', emoji: '👨‍👩‍👧‍👦'),
-        const GenreOption(id: '14', name: 'Fantasía', emoji: '🧙‍♂️'),
-        const GenreOption(id: '36', name: 'Historia', emoji: '📜'),
-        const GenreOption(id: '27', name: 'Terror', emoji: '👻'),
-        const GenreOption(id: '10402', name: 'Música', emoji: '🎵'),
-        const GenreOption(id: '9648', name: 'Misterio', emoji: '🔍'),
-        const GenreOption(id: '10749', name: 'Romance', emoji: '💕'),
-        const GenreOption(id: '878', name: 'Ciencia Ficción', emoji: '🚀'),
-        const GenreOption(id: '10770', name: 'Película de TV', emoji: '📺'),
-        const GenreOption(id: '53', name: 'Thriller', emoji: '😰'),
-        const GenreOption(id: '10752', name: 'Guerra', emoji: '⚔️'),
-        const GenreOption(id: '37', name: 'Western', emoji: '🤠'),
+        const GenreOption(id: 28, name: 'Acción', emoji: '💥'),
+        const GenreOption(id: 12, name: 'Aventura', emoji: '🗺️'),
+        const GenreOption(id: 16, name: 'Animación', emoji: '🎨'),
+        const GenreOption(id: 35, name: 'Comedia', emoji: '😂'),
+        const GenreOption(id: 80, name: 'Crimen', emoji: '🔫'),
+        const GenreOption(id: 99, name: 'Documental', emoji: '📹'),
+        const GenreOption(id: 18, name: 'Drama', emoji: '🎭'),
+        const GenreOption(id: 10751, name: 'Familiar', emoji: '👨‍👩‍👧‍👦'),
+        const GenreOption(id: 14, name: 'Fantasía', emoji: '🧙‍♂️'),
+        const GenreOption(id: 36, name: 'Historia', emoji: '📜'),
+        const GenreOption(id: 27, name: 'Terror', emoji: '👻'),
+        const GenreOption(id: 10402, name: 'Música', emoji: '🎵'),
+        const GenreOption(id: 9648, name: 'Misterio', emoji: '🔍'),
+        const GenreOption(id: 10749, name: 'Romance', emoji: '💕'),
+        const GenreOption(id: 878, name: 'Ciencia Ficción', emoji: '🚀'),
+        const GenreOption(id: 10770, name: 'Película de TV', emoji: '📺'),
+        const GenreOption(id: 53, name: 'Thriller', emoji: '😰'),
+        const GenreOption(id: 10752, name: 'Guerra', emoji: '⚔️'),
+        const GenreOption(id: 37, name: 'Western', emoji: '🤠'),
       ];
 }
 
@@ -180,7 +180,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para cuando quieres reír y pasarla bien',
       emoji: '😄',
       color: Colors.yellow,
-      associatedGenres: ['35', '10751', '16'], // Comedia, Familiar, Animación
+      associatedGenres: [35, 10751, 16], // Comedia, Familiar, Animación
     ),
     const MoodOption(
       id: 'romantic',
@@ -188,7 +188,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para una noche especial con tu pareja',
       emoji: '💕',
       color: Colors.pink,
-      associatedGenres: ['10749', '18'], // Romance, Drama
+      associatedGenres: [10749, 18], // Romance, Drama
     ),
     const MoodOption(
       id: 'adventurous',
@@ -196,11 +196,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para cuando buscas emociones fuertes',
       emoji: '🗺️',
       color: Colors.orange,
-      associatedGenres: [
-        '12',
-        '28',
-        '878'
-      ], // Aventura, Acción, Ciencia Ficción
+      associatedGenres: [12, 28, 878], // Aventura, Acción, Ciencia Ficción
     ),
     const MoodOption(
       id: 'thoughtful',
@@ -208,7 +204,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para cuando quieres algo profundo',
       emoji: '🤔',
       color: Colors.purple,
-      associatedGenres: ['18', '99', '36'], // Drama, Documental, Historia
+      associatedGenres: [18, 99, 36], // Drama, Documental, Historia
     ),
     const MoodOption(
       id: 'scary',
@@ -216,7 +212,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para los amantes del terror',
       emoji: '👻',
       color: Colors.red,
-      associatedGenres: ['27', '53'], // Terror, Thriller
+      associatedGenres: [27, 53], // Terror, Thriller
     ),
     const MoodOption(
       id: 'nostalgic',
@@ -224,7 +220,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para recordar los clásicos',
       emoji: '📼',
       color: Colors.brown,
-      associatedGenres: ['36', '10402', '37'], // Historia, Música, Western
+      associatedGenres: [36, 10402, 37], // Historia, Música, Western
     ),
     const MoodOption(
       id: 'mysterious',
@@ -232,7 +228,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para resolver enigmas',
       emoji: '🔍',
       color: Colors.indigo,
-      associatedGenres: ['9648', '80', '53'], // Misterio, Crimen, Thriller
+      associatedGenres: [9648, 80, 53], // Misterio, Crimen, Thriller
     ),
     const MoodOption(
       id: 'fantastical',
@@ -240,11 +236,7 @@ final moodOptionsProvider = Provider<List<MoodOption>>((ref) {
       description: 'Para escapar a otros mundos',
       emoji: '🧙‍♂️',
       color: Colors.teal,
-      associatedGenres: [
-        '14',
-        '878',
-        '16'
-      ], // Fantasía, Ciencia Ficción, Animación
+      associatedGenres: [14, 878, 16], // Fantasía, Ciencia Ficción, Animación
     ),
   ];
 });

@@ -16,6 +16,7 @@ Implementar integración real con APIs de proveedores de streaming para mostrar 
 ### API Seleccionada: TMDB Watch Providers
 
 **Por qué TMDB Watch Providers:**
+
 - ✅ **Gratis e ilimitado**: Sin costo, sin límites de requests
 - ✅ **Ya configurado**: Ya tenemos API key de TMDB (c0ebc54da33cf71326f548860eb6b5fb)
 - ✅ **Oficial**: Mantenido por TMDB, datos actualizados
@@ -23,6 +24,7 @@ Implementar integración real con APIs de proveedores de streaming para mostrar 
 - ✅ **Integrado**: Misma API que ya usamos para películas
 
 **APIs Evaluadas y Descartadas:**
+
 - ❌ Watchmode API: $8/mes para 10k requests, no configurado
 - ❌ JustWatch API: API oficial discontinuada
 - ❌ Streaming Availability (RapidAPI): Requiere pago, innecesario
@@ -34,6 +36,7 @@ GET https://api.themoviedb.org/3/movie/{movie_id}/watch/providers
 ```
 
 **Respuesta:**
+
 ```json
 {
   "results": {
@@ -59,6 +62,7 @@ GET https://api.themoviedb.org/3/movie/{movie_id}/watch/providers
 ### 1. Archivo Principal: `lib/core/streaming/real_availability_service.dart`
 
 **Cambios Realizados:**
+
 - ✅ Agregado cliente Dio para llamadas TMDB API
 - ✅ Implementado `_checkTmdbWatchProviders()` - método principal
 - ✅ Implementado `_parseTmdbWatchProvidersResponse()` - parser de respuesta TMDB
@@ -70,6 +74,7 @@ GET https://api.themoviedb.org/3/movie/{movie_id}/watch/providers
 - ✅ Mejorado manejo de errores
 
 **Imports Agregados:**
+
 ```dart
 import 'package:dio/dio.dart';
 import '../../config/constants/environment.dart';
@@ -77,6 +82,7 @@ import '../logging/logger_factory.dart';
 ```
 
 **Inicialización Dio:**
+
 ```dart
 _dio = Dio(BaseOptions(
   baseUrl: 'https://api.themoviedb.org/3',
@@ -89,6 +95,7 @@ _dio = Dio(BaseOptions(
 ### 2. Mapeo de Proveedores TMDB
 
 **Provider IDs Mapeados:**
+
 - 8 → Netflix
 - 9, 119 → Prime Video
 - 337 → Disney+
@@ -117,23 +124,24 @@ _dio = Dio(BaseOptions(
 ### Archivo de Test: `test/core/streaming/real_availability_service_test.dart`
 
 **Tests Implementados:**
+
 1. ✅ **TMDB Integration** (3 tests):
    - Retorna proveedores parsed de TMDB
    - Maneja IDs inválidos gracefully
    - Caché funciona correctamente
-   
 2. ✅ **Platform Mapping** (1 test):
    - Mapea provider IDs de TMDB correctamente
-   
 3. ✅ **Data Quality** (1 test):
    - PlatformAvailability tiene datos válidos
 
 **Resultados:**
+
 ```
 00:02 +5: All tests passed!
 ```
 
 **Inicialización de Tests:**
+
 ```dart
 setUpAll(() async {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -144,6 +152,7 @@ setUpAll(() async {
 ## Cobertura de Plataformas
 
 **Plataformas Soportadas:**
+
 - ✅ Netflix
 - ✅ Prime Video (Amazon)
 - ✅ Disney+
@@ -154,6 +163,7 @@ setUpAll(() async {
 - ✅ Peacock
 
 **Regiones Soportadas:**
+
 - 60+ países en TMDB Watch Providers
 - Incluye: US, CA, GB, DE, FR, ES, IT, BR, MX, AR, y más
 
@@ -169,6 +179,7 @@ setUpAll(() async {
 ## Performance
 
 **Benchmarks:**
+
 - **Primera llamada** (hit API): ~800-1500ms
 - **Segunda llamada** (caché): <10ms
 - **Cache hit rate**: >90% en uso normal
@@ -177,18 +188,21 @@ setUpAll(() async {
 ## Calidad de Código
 
 **Static Analysis:**
+
 ```bash
 $ flutter analyze lib/core/streaming/real_availability_service.dart --fatal-infos --fatal-warnings
 No issues found! (ran in 2.7s)
 ```
 
 **Formatting:**
+
 ```bash
 $ dart format lib/core/streaming/real_availability_service.dart
 Formatted 1 file (1 changed) in 0.47 seconds.
 ```
 
 **Lint Rules Aplicadas:**
+
 - ✅ No deprecated methods
 - ✅ LoggerFactory para logging (no print statements)
 - ✅ Color.withValues() para opacity (no withOpacity deprecated)
@@ -198,6 +212,7 @@ Formatted 1 file (1 changed) in 0.47 seconds.
 ## Integración UI
 
 **UI ya existente funciona automáticamente:**
+
 - `lib/presentation/widgets/streaming/streaming_availability_widget.dart`
 - `lib/presentation/widgets/streaming/platform_availability_card.dart`
 
@@ -206,6 +221,7 @@ La UI ya está preparada para consumir `List<PlatformAvailability>` real.
 ## Monitoreo y Analytics
 
 **Eventos Trackeados:**
+
 ```dart
 _analyticsService.trackEvent(
   AnalyticsEventType.userEngagement,
@@ -223,12 +239,14 @@ _analyticsService.trackEvent(
 ## Logging
 
 **Logs Implementados:**
+
 - ✅ Info: Fetching providers, cache hits, results parsed
 - ✅ Warning: API errors, no providers found
 - ✅ Error: Network failures, parsing errors
 - ✅ Debug: Unknown providers (para mapear en futuro)
 
 **Ejemplo:**
+
 ```
 [INFO] Fetching TMDB watch providers for movie: 550, region: US
 [INFO] Parsed 3 providers from TMDB for region US
@@ -238,11 +256,13 @@ _analyticsService.trackEvent(
 ## Configuración Requerida
 
 **Archivo `.env` (ya configurado):**
+
 ```env
 TMDB_API_KEY=c0ebc54da33cf71326f548860eb6b5fb
 ```
 
 **Opcional (Watchmode fallback):**
+
 ```env
 WATCHMODE_API_KEY=your_watchmode_key_here
 ```
@@ -250,15 +270,19 @@ WATCHMODE_API_KEY=your_watchmode_key_here
 ## Troubleshooting
 
 ### Problema: "No watch providers found"
+
 **Solución**: Normal para películas antiguas o regiones con poca cobertura. TMDB no tiene datos para todas las películas/regiones.
 
 ### Problema: "TMDB API error: 401"
+
 **Solución**: Verificar TMDB_API_KEY en .env file.
 
 ### Problema: "Provider not mapped"
+
 **Solución**: Ver logs debug para provider_id desconocido y agregarlo a `_mapTmdbProviderId()`.
 
 ### Problema: Tests fallan con "NotInitializedError"
+
 **Solución**: Asegurar que `Environment.load()` se llama en `setUpAll()`.
 
 ## Próximos Pasos (Mejoras Futuras)
@@ -266,18 +290,22 @@ WATCHMODE_API_KEY=your_watchmode_key_here
 ### Opcional - No requerido para v1.0:
 
 1. **Agregar más proveedores**:
+
    - Mapear provider_ids adicionales de TMDB
    - Agregar a `StreamingPlatform` según demanda
 
 2. **Precios de rental/compra**:
+
    - Considerar API de Watchmode para precios
    - O mostrar solo que está disponible sin precio
 
 3. **Deep Links**:
+
    - Implementar deep links a apps de streaming
    - Usar `deepLinkScheme` de `StreamingPlatform`
 
 4. **Notificaciones**:
+
    - Notificar cuando película se agregue a plataforma favorita
    - Requiere backend persistence
 
@@ -290,6 +318,7 @@ WATCHMODE_API_KEY=your_watchmode_key_here
 ✅ **Task 2.1 COMPLETADA**
 
 **Logros:**
+
 - ✅ Integración real con TMDB Watch Providers API
 - ✅ 8 plataformas principales soportadas
 - ✅ 60+ regiones soportadas
@@ -300,6 +329,7 @@ WATCHMODE_API_KEY=your_watchmode_key_here
 - ✅ Logging y analytics implementados
 
 **Impacto:**
+
 - Usuarios pueden ver dónde ver películas en tiempo real
 - Datos oficiales y actualizados de TMDB
 - Sin costos adicionales (API gratis)
@@ -308,6 +338,7 @@ WATCHMODE_API_KEY=your_watchmode_key_here
 **Estado de Fase 2: 100% COMPLETADA** 🎉
 
 **Tareas Completadas:**
+
 1. ✅ Task 2.2: GenreIds migration (3h)
 2. ✅ Task 2.4: Error messages centralization (3.5h)
 3. ✅ Task 2.5: Skeleton loaders (2h)

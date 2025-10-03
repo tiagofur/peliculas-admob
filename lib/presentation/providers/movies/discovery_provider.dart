@@ -13,7 +13,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Películas perfectas para una cita especial',
       emoji: '💕',
       color: Colors.pink,
-      associatedGenres: ['10749', '18'], // Romance, Drama
+      associatedGenres: [10749, 18], // Romance, Drama
       filters: {
         'with_genres': '10749',
         'vote_average.gte': 6.5,
@@ -28,7 +28,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Comedias románticas y dramas ligeros',
       emoji: '👫',
       color: Colors.pinkAccent,
-      associatedGenres: ['10749', '35'], // Romance, Comedia
+      associatedGenres: [10749, 35], // Romance, Comedia
       filters: {
         'with_genres': '10749,35',
         'vote_average.gte': 6.0,
@@ -44,7 +44,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Obras maestras que merecen ser redescubiertas',
       emoji: '🎭',
       color: Colors.amber,
-      associatedGenres: ['18', '36'], // Drama, Historia
+      associatedGenres: [18, 36], // Drama, Historia
       filters: {
         'primary_release_date.lte': '1999-12-31',
         'vote_average.gte': 7.5,
@@ -59,7 +59,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Películas increíbles que pocos conocen',
       emoji: '💎',
       color: Colors.teal,
-      associatedGenres: ['18', '53', '9648'], // Drama, Thriller, Misterio
+      associatedGenres: [18, 53, 9648], // Drama, Thriller, Misterio
       filters: {
         'vote_average.gte': 7.0,
         'vote_count.gte': 500,
@@ -76,7 +76,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Para disfrutar con toda la familia',
       emoji: '👨‍👩‍👧‍👦',
       color: Colors.green,
-      associatedGenres: ['10751', '16', '35'], // Familiar, Animación, Comedia
+      associatedGenres: [10751, 16, 35], // Familiar, Animación, Comedia
       filters: {
         'with_genres': '10751',
         'vote_average.gte': 6.0,
@@ -91,7 +91,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Entretenimiento ligero y divertido',
       emoji: '🍿',
       color: Colors.orange,
-      associatedGenres: ['35', '28', '12'], // Comedia, Acción, Aventura
+      associatedGenres: [35, 28, 12], // Comedia, Acción, Aventura
       filters: {
         'with_genres': '35,28,12',
         'vote_average.gte': 6.0,
@@ -108,7 +108,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Acción y aventura sin parar',
       emoji: '💥',
       color: Colors.red,
-      associatedGenres: ['28', '53', '12'], // Acción, Thriller, Aventura
+      associatedGenres: [28, 53, 12], // Acción, Thriller, Aventura
       filters: {
         'with_genres': '28',
         'vote_average.gte': 6.5,
@@ -122,11 +122,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Películas complejas y fascinantes',
       emoji: '🧠',
       color: Colors.purple,
-      associatedGenres: [
-        '878',
-        '9648',
-        '53'
-      ], // Ciencia Ficción, Misterio, Thriller
+      associatedGenres: [878, 9648, 53], // Ciencia Ficción, Misterio, Thriller
       filters: {
         'with_genres': '878,9648,53',
         'vote_average.gte': 7.0,
@@ -142,7 +138,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Perfectas para quedarse en casa',
       emoji: '🌧️',
       color: Colors.blueGrey,
-      associatedGenres: ['18', '10749', '35'], // Drama, Romance, Comedia
+      associatedGenres: [18, 10749, 35], // Drama, Romance, Comedia
       filters: {
         'with_genres': '18,10749,35',
         'vote_average.gte': 6.5,
@@ -157,7 +153,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Películas que alegran el día',
       emoji: '😊',
       color: Colors.yellow,
-      associatedGenres: ['35', '10751', '10402'], // Comedia, Familiar, Música
+      associatedGenres: [35, 10751, 10402], // Comedia, Familiar, Música
       filters: {
         'with_genres': '35,10751,10402',
         'vote_average.gte': 6.5,
@@ -174,7 +170,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Obras maestras de todo el mundo',
       emoji: '🌍',
       color: Colors.indigo,
-      associatedGenres: ['18', '36'], // Drama, Historia
+      associatedGenres: [18, 36], // Drama, Historia
       filters: {
         'with_original_language': 'fr,it,de,ja,ko,es',
         'vote_average.gte': 7.0,
@@ -188,7 +184,7 @@ final discoveryCategories = Provider<List<DiscoveryCategory>>((ref) {
       description: 'Películas reconocidas por la crítica',
       emoji: '🏆',
       color: Colors.deepOrange,
-      associatedGenres: ['18'], // Drama
+      associatedGenres: [18], // Drama
       filters: {
         'vote_average.gte': 7.5,
         'vote_count.gte': 2000,

@@ -119,7 +119,7 @@ class _GenresTab extends ConsumerWidget {
                 return FilterChip(
                   selected: isSelected,
                   onSelected: (selected) {
-                    final newGenres = List<String>.from(selectedGenres);
+                    final newGenres = List<int>.from(selectedGenres);
                     if (selected) {
                       newGenres.add(genre.id);
                     } else {
