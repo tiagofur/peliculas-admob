@@ -35,29 +35,70 @@ class MovieScreen extends ConsumerStatefulWidget {
 class MovieScreenState extends ConsumerState<MovieScreen> {
   int _retryCount = 0;
   static const int _maxRetries = 2;
+  bool _disposed = false; // 🔴 CRÍTICO: Prevenir memory leaks
 
   @override
   void initState() {
     super.initState();
-    // Se retrasa la llamada para evitar modificar el provider durante el build.
-    _loadMovieWithRetry();
+    // Task 1.2: Check cache antes de cargar para evitar doble carga
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_disposed) return;
+      final cache = ref.read(movieInfoProvider).value;
+      if (cache == null || cache[widget.movieId] == null) {
+        _loadMovieWithRetry();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true; // 🔴 CRÍTICO: Marcar como disposed para cancelar retries
+    super.dispose();
   }
 
   Future<void> _loadMovieWithRetry() async {
-    await Future(() async {
-      try {
-        await ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
-      } catch (e) {
-        if (_retryCount < _maxRetries && mounted) {
-          _retryCount++;
-          // Esperar un poco antes de reintentar (exponential backoff)
-          await Future.delayed(Duration(seconds: _retryCount));
-          if (mounted) {
-            _loadMovieWithRetry();
-          }
+    if (_disposed) return; // 🔴 CRÍTICO: No ejecutar si disposed
+    
+    try {
+      await ref.read(movieInfoProvider.notifier).loadMovie(widget.movieId);
+    } catch (e) {
+      if (_retryCount < _maxRetries && !_disposed && mounted) {
+        _retryCount++;
+        LoggerFactory.warning(
+          'Retry attempt $_retryCount/$_maxRetries for movie ${widget.movieId}');
+        // Esperar un poco antes de reintentar (exponential backoff)
+        await Future.delayed(Duration(seconds: _retryCount));
+        if (!_disposed && mounted) {
+          _loadMovieWithRetry();
         }
+      } else if (!_disposed && mounted) {
+        // Task 1.1: User feedback en error final
+        LoggerFactory.error('Failed to load movie ${widget.movieId} after $_maxRetries retries: $e');
+        _showErrorSnackbar();
       }
-    });
+    }
+  }
+
+  void _showErrorSnackbar() {
+    if (!mounted || _disposed) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('No se pudo cargar la película'),
+        backgroundColor: Colors.red.shade700,
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Reintentar',
+          textColor: Colors.white,
+          onPressed: () {
+            if (!_disposed && mounted) {
+              _retryCount = 0;
+              _loadMovieWithRetry();
+            }
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -860,6 +901,8 @@ class _FullCastList extends StatelessWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 primary: false,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
+                itemExtent: 128, // 🔴 Task 1.3: Mejora performance significativamente
+                cacheExtent: 500, // 🔴 Task 1.3: Cache razonable para smooth scroll
                 itemCount: castList.length,
                 itemBuilder: (context, index) {
                   final actor = castList[index] as Map<String, dynamic>;
