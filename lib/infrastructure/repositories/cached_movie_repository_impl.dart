@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../core/exceptions/app_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
@@ -155,12 +156,30 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
 
     // 1. Check memory cache (with credits)
     final memoryCached = _getFromMemoryCache(cacheKey);
-    if (memoryCached != null &&
-        memoryCached.isNotEmpty &&
-        memoryCached.first.credits != null) {
+    if (memoryCached != null && memoryCached.isNotEmpty) {
+      final hasCredits = memoryCached.first.credits != null;
       LoggerFactory.info(
-          '📱 Movie from memory cache (with credits): ${memoryCached.first.title}');
-      return memoryCached.first;
+          '📱 Movie from memory cache: ${memoryCached.first.title} (credits: $hasCredits)');
+
+      if (kDebugMode) {
+        print('🔍 Memory Cache Movie Details:');
+        print('  ID: ${memoryCached.first.id}');
+        print('  Title: ${memoryCached.first.title}');
+        print('  Has credits: ${memoryCached.first.credits != null}');
+        if (memoryCached.first.credits != null) {
+          print('  Credits keys: ${memoryCached.first.credits!.keys.toList()}');
+          print(
+              '  Cast length: ${(memoryCached.first.credits!['cast'] as List?)?.length ?? 0}');
+        }
+      }
+
+      if (hasCredits) {
+        return memoryCached.first;
+      }
+
+      // If memory cache exists but without credits, continue to fetch from network
+      LoggerFactory.info(
+          '⚠️ Memory cache exists but without credits - fetching from network');
     }
 
     // 2. Check connectivity
