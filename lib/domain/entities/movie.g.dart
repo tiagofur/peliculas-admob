@@ -19,7 +19,7 @@ class MovieAdapter extends TypeAdapter<Movie> {
     return Movie(
       adult: fields[0] as bool,
       backdropPath: fields[1] as String,
-      genreIds: (fields[2] as List).cast<String>(),
+      genreIds: (fields[2] as List).cast<int>(),
       id: fields[3] as int,
       originalLanguage: fields[4] as String,
       originalTitle: fields[5] as String,

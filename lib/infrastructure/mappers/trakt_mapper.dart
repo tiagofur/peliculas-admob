@@ -13,7 +13,7 @@ class TraktMovieMapper {
     return Movie(
       adult: false, // Trakt no maneja este campo explícitamente
       backdropPath: images.backdropUrl ?? '',
-      genreIds: traktMovie.genres ?? [],
+      genreIds: [], // Trakt usa nombres de géneros, no IDs
       id: traktMovie.ids.trakt,
       originalLanguage: traktMovie.language ?? 'en',
       originalTitle: traktMovie.title,
@@ -49,7 +49,7 @@ class TraktMovieMapper {
       homepage: movie.homepage,
       rating: movie.voteAverage > 0 ? movie.voteAverage : null,
       votes: movie.voteCount > 0 ? movie.voteCount : null,
-      genres: movie.genreIds,
+      genres: [], // Movie usa genreIds (int), Trakt usa genre names (String)
       language: movie.originalLanguage,
     );
   }

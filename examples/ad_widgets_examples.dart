@@ -208,7 +208,7 @@ class AdWidgetsExamples extends StatelessWidget {
       return Movie(
         adult: false,
         backdropPath: '/sample_backdrop_$index.jpg',
-        genreIds: ['28', '12', '878'], // Acción, Aventura, Ciencia ficción
+        genreIds: [28, 12, 878], // Acción, Aventura, Ciencia ficción
         id: index + 1,
         originalLanguage: 'en',
         originalTitle: 'Sample Movie ${index + 1}',
@@ -399,7 +399,7 @@ class _AdConfigurationDemoState extends State<AdConfigurationDemo> {
       return Movie(
         adult: false,
         backdropPath: '/sample_backdrop_$index.jpg',
-        genreIds: ['28', '12', '878'],
+        genreIds: [28, 12, 878],
         id: index + 1,
         originalLanguage: 'en',
         originalTitle: 'Sample Movie ${index + 1}',

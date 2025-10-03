@@ -353,14 +353,13 @@ class _Genres extends ConsumerWidget {
               return Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: movie.genreIds.map((genreIdStr) {
-                  final genreId = int.tryParse(genreIdStr) ?? 0;
+                children: movie.genreIds.map((genreId) {
                   final genreName = genresMap[genreId] ?? 'Desconocido';
 
                   // Debug: Log para cada conversión
                   if (kDebugMode && genreName == 'Desconocido') {
                     LoggerFactory.debug(
-                        '⚠️ Género no encontrado: String="$genreIdStr", Parsed=$genreId');
+                        '⚠️ Género no encontrado: ID=$genreId');
                   }
 
                   return Container(
@@ -405,7 +404,7 @@ class _Genres extends ConsumerWidget {
               return Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: movie.genreIds.map((genreIdStr) {
+                children: movie.genreIds.map((genreId) {
                   return Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -414,7 +413,7 @@ class _Genres extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Género $genreIdStr',
+                      'Género $genreId',
                       style: textStyles.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),

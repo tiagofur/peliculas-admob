@@ -132,7 +132,7 @@ class GamificationService {
         final genreUpdates = <Achievement>[];
         for (final genre in movie.genreIds) {
           final achievements = await updateProgress(
-              userId, 'genre_${genre.toLowerCase()}',
+              userId, 'genre_${genre}',
               metadata: metadata);
           genreUpdates.addAll(achievements);
         }

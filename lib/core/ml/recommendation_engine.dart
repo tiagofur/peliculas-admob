@@ -123,8 +123,8 @@ class RecommendationEngine {
 
       // Similitud de géneros (40%)
       final genreSimilarity = _calculateGenreSimilarity(
-          movie1.genreIds.map((g) => int.tryParse(g) ?? 0).toList(),
-          movie2.genreIds.map((g) => int.tryParse(g) ?? 0).toList());
+          movie1.genreIds,
+          movie2.genreIds);
       similarity += genreSimilarity * 0.4;
 
       // Similitud de embeddings (30%)
@@ -394,11 +394,7 @@ class RecommendationEngine {
                   posterPath: w.posterPath,
                   backdropPath: w.backdropPath,
                   releaseDate: w.releaseDate,
-                  genreIds: (w.genreIds)
-                      .map((g) => int.tryParse(g) ?? 0)
-                      .where((g) => g > 0)
-                      .map((g) => g.toString())
-                      .toList(),
+                  genreIds: w.genreIds,
                   voteAverage: w.voteAverage,
                   voteCount: w.movie.voteCount,
                   popularity: w.movie.popularity,
@@ -478,12 +474,10 @@ class RecommendationEngine {
     // Encontrar géneros poco explorados
     final userGenres = <int>{};
     for (final movie in favorites) {
-      userGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      userGenres.addAll(movie.genreIds);
     }
     for (final movie in watched) {
-      userGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      userGenres.addAll(movie.genreIds);
     }
 
     // Buscar películas de géneros diferentes
@@ -706,12 +700,10 @@ class RecommendationEngine {
     final allGenres = <int>{};
 
     for (final movie in favorites) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
     for (final movie in watched) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
 
     final totalMovies = favorites.length + watched.length;

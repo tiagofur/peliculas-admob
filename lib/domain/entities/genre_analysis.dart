@@ -21,7 +21,8 @@ class GenreAnalysis {
     // Contar géneros en favoritas
     for (final movie in favoriteMovies) {
       for (final genre in movie.genreIds) {
-        favoriteGenres[genre] = (favoriteGenres[genre] ?? 0) + 1;
+        final genreKey = genre.toString(); // Convertir ID a String temporalmente
+        favoriteGenres[genreKey] = (favoriteGenres[genreKey] ?? 0) + 1;
       }
     }
 

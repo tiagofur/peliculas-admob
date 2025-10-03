@@ -179,7 +179,8 @@ class EnhancedUserProfileService {
 
         // Contar géneros únicos
         for (final genreId in movie.genreIds) {
-          genrePreferences[genreId] = (genrePreferences[genreId] ?? 0) + 1;
+          final genreKey = genreId.toString();
+          genrePreferences[genreKey] = (genrePreferences[genreKey] ?? 0) + 1;
         }
 
         // Contar años
@@ -478,8 +479,8 @@ class EnhancedUserProfileService {
         genrePreferences: movie.genreIds.isEmpty
             ? null
             : {
-                for (String genre in movie.genreIds.take(3))
-                  genre: 1 // Incrementar contador por género
+                for (int genre in movie.genreIds.take(3))
+                  genre.toString(): 1 // Incrementar contador por género
               },
         yearPreferences: {
           movie.releaseDate.year: 1 // Incrementar contador por año

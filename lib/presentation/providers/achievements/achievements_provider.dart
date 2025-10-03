@@ -129,7 +129,7 @@ class AchievementsNotifier extends Notifier<AchievementsState> {
 
       // Track género explorado
       for (final genre in movie.genreIds) {
-        await repository.trackGenreExplored(genre);
+        await repository.trackGenreExplored(genre.toString());
       }
 
       // Track década explorada

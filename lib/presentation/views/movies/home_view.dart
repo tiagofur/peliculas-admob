@@ -240,7 +240,7 @@ class HomeViewState extends ConsumerState<HomeView>
             posterPath: rec.posterPath,
             backdropPath: '',
             releaseDate: DateTime.now(),
-            genreIds: rec.tags,
+            genreIds: [], // tags son String, no int - dejarlo vacío temporalmente
             voteAverage: rec.score * 10,
             voteCount: 0,
             popularity: rec.score * 100,

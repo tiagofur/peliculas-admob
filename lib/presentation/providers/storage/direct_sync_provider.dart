@@ -357,7 +357,7 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
           : DateTime.now(),
       adult: false,
       backdropPath: record['movie_backdrop_path'] as String? ?? '',
-      genreIds: <String>[],
+      genreIds: <int>[],
       originalLanguage: 'en',
       originalTitle: record['movie_title'] as String,
       popularity: 0.0,

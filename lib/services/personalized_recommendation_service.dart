@@ -194,10 +194,8 @@ class PersonalizedRecommendationService {
     // Filtrar por géneros favoritos
     final genreBasedMovies = allMovies.where((movie) {
       return movie.genreIds.any((genreId) {
-        final genreIdInt = int.tryParse(genreId);
-        return genreIdInt != null &&
-            genrePreferences.containsKey(genreIdInt) &&
-            genrePreferences[genreIdInt]! > 3.5;
+        return genrePreferences.containsKey(genreId) &&
+            genrePreferences[genreId]! > 3.5;
       });
     }).toList();
 
@@ -372,9 +370,8 @@ class PersonalizedRecommendationService {
     int genreCount = 0;
 
     for (final genreId in movie.genreIds) {
-      final genreIdInt = int.tryParse(genreId);
-      if (genreIdInt != null && genrePreferences.containsKey(genreIdInt)) {
-        totalScore += genrePreferences[genreIdInt]!;
+      if (genrePreferences.containsKey(genreId)) {
+        totalScore += genrePreferences[genreId]!;
         genreCount++;
       }
     }

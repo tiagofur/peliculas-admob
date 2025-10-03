@@ -367,7 +367,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,
-        genreIds: List<String>.from(movie['genre_ids'] as List? ?? []),
+        genreIds: List<int>.from(movie['genre_ids'] as List? ?? []),
         adult: movie['adult'] as bool? ?? false,
         originalLanguage: movie['original_language'] as String? ?? 'en',
         originalTitle: movie['original_title'] as String? ?? '',
@@ -430,7 +430,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         releaseDate: DateTime.parse('2023-$month-15'),
         voteAverage: 6.0 + (random.nextDouble() * 3.0),
         voteCount: random.nextInt(5000) + 100,
-        genreIds: ['28', '12', '878'], // Action, Adventure, Sci-Fi
+        genreIds: [28, 12, 878], // Action, Adventure, Sci-Fi
         adult: false,
         originalLanguage: 'en',
         originalTitle: 'HBO Max Movie ${index + 1} - $query',
@@ -476,7 +476,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         releaseDate: DateTime.parse('2023-$month-01'),
         voteAverage: 7.5 + (random.nextDouble() * 2.0),
         voteCount: random.nextInt(10000) + 1000,
-        genreIds: ['18', '80', '9648'], // Drama, Crime, Mystery
+        genreIds: [18, 80, 9648], // Drama, Crime, Mystery
         adult: false,
         originalLanguage: 'en',
         originalTitle: trendingTitles[index],

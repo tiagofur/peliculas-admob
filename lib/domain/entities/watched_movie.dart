@@ -36,5 +36,5 @@ class WatchedMovie {
   String get overview => movie.overview;
   double get voteAverage => movie.voteAverage;
   DateTime get releaseDate => movie.releaseDate;
-  List<String> get genreIds => movie.genreIds;
+  List<int> get genreIds => movie.genreIds;
 }

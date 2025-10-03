@@ -394,7 +394,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,
-        genreIds: List<String>.from(movie['genre_ids'] as List? ?? []),
+        genreIds: List<int>.from(movie['genre_ids'] as List? ?? []),
         adult: movie['adult'] as bool? ?? false,
         originalLanguage: movie['original_language'] as String? ?? 'en',
         originalTitle: movie['original_title'] as String? ?? '',

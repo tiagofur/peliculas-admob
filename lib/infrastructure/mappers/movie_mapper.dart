@@ -6,7 +6,7 @@ class MovieMapper {
   static Movie movieDBToEntity(MovieMovieDB moviedb) => Movie(
       adult: moviedb.adult,
       backdropPath: moviedb.backdropPath,
-      genreIds: moviedb.genreIds.map((e) => e.toString()).toList(),
+      genreIds: moviedb.genreIds,
       id: moviedb.id,
       originalLanguage: moviedb.originalLanguage,
       originalTitle: moviedb.originalTitle,
@@ -22,7 +22,7 @@ class MovieMapper {
   static Movie movieDetailsToEntity(MovieDetails moviedb) => Movie(
       adult: moviedb.adult,
       backdropPath: moviedb.backdropPath,
-      genreIds: moviedb.genres.map((e) => e.id.toString()).toList(),
+      genreIds: moviedb.genres.map((e) => e.id).toList(),
       id: moviedb.id,
       originalLanguage: moviedb.originalLanguage,
       originalTitle: moviedb.originalTitle,

@@ -357,6 +357,52 @@ class MockICustomListsRepository extends _i1.Mock
       ) as _i6.Future<bool>);
 
   @override
+  _i6.Future<_i2.CustomList> duplicateList(
+    String? listId,
+    String? newName,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #duplicateList,
+          [
+            listId,
+            newName,
+          ],
+        ),
+        returnValue: _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
+          this,
+          Invocation.method(
+            #duplicateList,
+            [
+              listId,
+              newName,
+            ],
+          ),
+        )),
+        returnValueForMissingStub:
+            _i6.Future<_i2.CustomList>.value(_FakeCustomList_0(
+          this,
+          Invocation.method(
+            #duplicateList,
+            [
+              listId,
+              newName,
+            ],
+          ),
+        )),
+      ) as _i6.Future<_i2.CustomList>);
+
+  @override
+  _i6.Future<void> clearListMovies(String? listId) => (super.noSuchMethod(
+        Invocation.method(
+          #clearListMovies,
+          [listId],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
   _i6.Stream<List<_i2.CustomList>> watchUserLists() => (super.noSuchMethod(
         Invocation.method(
           #watchUserLists,

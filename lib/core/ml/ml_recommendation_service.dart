@@ -508,7 +508,7 @@ class MLRecommendationService {
     // Score basado en géneros
     final moodGenres = List<int>.from(moodCharacteristics['genres'] ?? []);
     final genreMatch =
-        movie.genreIds.any((id) => moodGenres.contains(int.tryParse(id) ?? 0));
+        movie.genreIds.any((id) => moodGenres.contains(id));
     if (genreMatch) score += 0.6;
 
     // Score basado en rating mínimo
@@ -550,7 +550,7 @@ class MLRecommendationService {
     if (behaviorAnalysis.diversityScore > 0.6) {
       final isNewGenre = !favoriteMovies.any((fav) => fav.genreIds.any(
           (favId) => movie.genreIds.any((movieId) =>
-              (int.tryParse(favId) ?? 0) == (int.tryParse(movieId) ?? 0))));
+              favId == movieId)));
       if (isNewGenre) score += 0.2;
     }
 

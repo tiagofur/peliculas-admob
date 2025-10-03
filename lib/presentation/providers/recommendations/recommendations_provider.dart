@@ -397,12 +397,9 @@ Map<String, int> _getMostCommonGenres(List<Movie> movies) {
   final genreCount = <String, int>{};
 
   for (final movie in movies) {
-    for (final genreIdStr in movie.genreIds) {
-      final genreId = int.tryParse(genreIdStr) ?? 0;
-      if (genreId > 0) {
-        final genreName = _getGenreName(genreId);
-        genreCount[genreName] = (genreCount[genreName] ?? 0) + 1;
-      }
+    for (final genreId in movie.genreIds) {
+      final genreName = _getGenreName(genreId);
+      genreCount[genreName] = (genreCount[genreName] ?? 0) + 1;
     }
   }
 
@@ -432,11 +429,8 @@ List<int> _getTopGenres(List<Movie> movies, int limit) {
   final genreCount = <int, int>{};
 
   for (final movie in movies) {
-    for (final genreIdStr in movie.genreIds) {
-      final genreId = int.tryParse(genreIdStr) ?? 0;
-      if (genreId > 0) {
-        genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
-      }
+    for (final genreId in movie.genreIds) {
+      genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
     }
   }
 

@@ -45,7 +45,7 @@ class Movie {
       adult: json['adult'] ?? false,
       backdropPath: json['backdrop_path'] ?? '',
       genreIds:
-          json['genre_ids'] != null ? List<String>.from(json['genre_ids']) : [],
+          json['genre_ids'] != null ? List<int>.from(json['genre_ids']) : [],
       originalLanguage: json['original_language'] ?? '',
       originalTitle: json['original_title'] ?? '',
       overview: json['overview'] ?? '',
@@ -77,7 +77,7 @@ class Movie {
   @HiveField(1)
   final String backdropPath;
   @HiveField(2)
-  final List<String> genreIds;
+  final List<int> genreIds;
   @HiveField(3)
   final int id;
   @HiveField(4)
@@ -152,7 +152,7 @@ class Movie {
   Movie copyWith({
     bool? adult,
     String? backdropPath,
-    List<String>? genreIds,
+    List<int>? genreIds,
     int? id,
     String? originalLanguage,
     String? originalTitle,

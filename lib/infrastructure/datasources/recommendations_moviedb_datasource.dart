@@ -27,7 +27,8 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     final genreCount = <String, int>{};
     for (final movie in favoriteMovies) {
       for (final genre in movie.genreIds) {
-        genreCount[genre] = (genreCount[genre] ?? 0) + 1;
+        final genreKey = genre.toString();
+        genreCount[genreKey] = (genreCount[genreKey] ?? 0) + 1;
       }
     }
 
@@ -305,8 +306,9 @@ class RecommendationsMoviedbDatasource extends RecommendationsDatasource {
     // Analizar películas favoritas
     for (final movie in favoriteMovies) {
       for (final genre in movie.genreIds) {
-        genreCount[genre] = (genreCount[genre] ?? 0) + 1;
-        genreRating[genre] = (genreRating[genre] ?? 0) + movie.voteAverage;
+        final genreKey = genre.toString();
+        genreCount[genreKey] = (genreCount[genreKey] ?? 0) + 1;
+        genreRating[genreKey] = (genreRating[genreKey] ?? 0) + movie.voteAverage;
       }
       languages.add(movie.originalLanguage);
       totalRating += movie.voteAverage;

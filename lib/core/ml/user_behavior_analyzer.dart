@@ -244,8 +244,9 @@ class UserBehaviorAnalyzer {
 
     for (final movie in watchedMovies) {
       for (final genreId in movie.genreIds) {
-        genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
-        genreRatings[genreId] = (genreRatings[genreId] ?? [])
+        final genreKey = genreId.toString();
+        genreCount[genreKey] = (genreCount[genreKey] ?? 0) + 1;
+        genreRatings[genreKey] = (genreRatings[genreKey] ?? [])
           ..add(movie.voteAverage);
       }
     }
@@ -357,8 +358,7 @@ class UserBehaviorAnalyzer {
     // Diversidad de géneros
     final allGenres = <int>{};
     for (final movie in watchedMovies) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
     analysis.genreDiversity = allGenres.length / max(1, watchedMovies.length);
 
@@ -464,7 +464,7 @@ class UserBehaviorAnalyzer {
     for (final movie in favorites) {
       for (final entry in moodGenres.entries) {
         if (movie.genreIds
-            .any((id) => entry.value.contains(int.tryParse(id) ?? 0))) {
+            .any((id) => entry.value.contains(id))) {
           moodCounts[entry.key] =
               (moodCounts[entry.key] ?? 0) + 2; // Peso doble
         }
@@ -475,7 +475,7 @@ class UserBehaviorAnalyzer {
     for (final movie in watched) {
       for (final entry in moodGenres.entries) {
         if (movie.genreIds
-            .any((id) => entry.value.contains(int.tryParse(id) ?? 0))) {
+            .any((id) => entry.value.contains(id))) {
           moodCounts[entry.key] = (moodCounts[entry.key] ?? 0) + 1;
         }
       }
@@ -559,12 +559,10 @@ class UserBehaviorAnalyzer {
     final allGenres = <int>{};
 
     for (final movie in favorites) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
     for (final movie in watched) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
 
     final totalMovies = favorites.length + watched.length;
@@ -584,8 +582,7 @@ class UserBehaviorAnalyzer {
     // Bonus por diversidad de géneros en favoritos
     final favoriteGenres = <int>{};
     for (final movie in favorites) {
-      favoriteGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      favoriteGenres.addAll(movie.genreIds);
     }
 
     final genreDiversityBonus =
@@ -688,20 +685,14 @@ class UserBehaviorAnalyzer {
     final secondGenres = <int, int>{};
 
     for (final movie in firstHalf) {
-      for (final genreStr in movie.genreIds) {
-        final genre = int.tryParse(genreStr) ?? 0;
-        if (genre > 0) {
-          firstGenres[genre] = (firstGenres[genre] ?? 0) + 1;
-        }
+      for (final genre in movie.genreIds) {
+        firstGenres[genre] = (firstGenres[genre] ?? 0) + 1;
       }
     }
 
     for (final movie in secondHalf) {
-      for (final genreStr in movie.genreIds) {
-        final genre = int.tryParse(genreStr) ?? 0;
-        if (genre > 0) {
-          secondGenres[genre] = (secondGenres[genre] ?? 0) + 1;
-        }
+      for (final genre in movie.genreIds) {
+        secondGenres[genre] = (secondGenres[genre] ?? 0) + 1;
       }
     }
 
@@ -761,19 +752,13 @@ class UserBehaviorAnalyzer {
 
     for (final movie in favorites) {
       for (final genre in movie.genreIds) {
-        final genreId = int.tryParse(genre) ?? 0;
-        if (genreId > 0) {
-          genreCount[genreId] = (genreCount[genreId] ?? 0) + 2; // Peso doble
-        }
+        genreCount[genre] = (genreCount[genre] ?? 0) + 2; // Peso doble
       }
     }
 
     for (final movie in watched) {
       for (final genre in movie.genreIds) {
-        final genreId = int.tryParse(genre) ?? 0;
-        if (genreId > 0) {
-          genreCount[genreId] = (genreCount[genreId] ?? 0) + 1;
-        }
+        genreCount[genre] = (genreCount[genre] ?? 0) + 1;
       }
     }
 
@@ -837,12 +822,10 @@ class UserBehaviorAnalyzer {
     final allGenres = <int>{};
 
     for (final movie in favorites) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
     for (final movie in watched) {
-      allGenres.addAll(
-          movie.genreIds.map((g) => int.tryParse(g) ?? 0).where((g) => g > 0));
+      allGenres.addAll(movie.genreIds);
     }
 
     final totalMovies = favorites.length + watched.length;

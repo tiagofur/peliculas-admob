@@ -397,7 +397,7 @@ class SupabaseUserProfileRepository {
   }
 
   /// Parsea lista de IDs de géneros desde diferentes formatos
-  List<String> _parseGenreIds(dynamic genreData) {
+  List<int> _parseGenreIds(dynamic genreData) {
     if (genreData == null) return [];
 
     if (genreData is String) {
@@ -410,6 +410,8 @@ class SupabaseUserProfileRepository {
               .split(',')
               .map((s) => s.trim().replaceAll('"', ''))
               .where((s) => s.isNotEmpty)
+              .map((s) => int.tryParse(s) ?? 0)
+              .where((i) => i > 0)
               .toList();
           return parsed;
         } else {
@@ -418,6 +420,8 @@ class SupabaseUserProfileRepository {
               .split(',')
               .map((s) => s.trim())
               .where((s) => s.isNotEmpty)
+              .map((s) => int.tryParse(s) ?? 0)
+              .where((i) => i > 0)
               .toList();
         }
       } catch (e) {
@@ -427,7 +431,10 @@ class SupabaseUserProfileRepository {
     }
 
     if (genreData is List) {
-      return genreData.map((e) => e.toString()).toList();
+      return genreData
+          .map((e) => e is int ? e : int.tryParse(e.toString()) ?? 0)
+          .where((i) => i > 0)
+          .toList();
     }
 
     return [];
