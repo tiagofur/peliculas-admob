@@ -2,13 +2,13 @@ import '../../core/video/pip_manager.dart';
 import '../../core/logging/logger_factory.dart';
 
 /// Picture-in-Picture Service
-/// 
+///
 /// High-level service that uses the PipManager to provide
 /// Picture-in-Picture functionality across all platforms.
-/// 
+///
 /// This service acts as a facade to the platform-specific PipManager
 /// implementations, providing a simple API for the presentation layer.
-/// 
+///
 /// Platform support:
 /// - Android: Full support via flutter_in_app_pip
 /// - iOS: Full support via AVPictureInPictureController
@@ -33,10 +33,10 @@ class PipService {
   bool get isPipActive => _pipManager.isPipActive;
 
   /// Entra en modo Picture-in-Picture
-  /// 
+  ///
   /// [youtubeId] - El ID del video de YouTube
   /// [movieTitle] - El título de la película para mostrar
-  /// 
+  ///
   /// Retorna true si PiP se activó correctamente, false en caso contrario
   Future<bool> enterPipMode({
     required String youtubeId,
@@ -63,7 +63,7 @@ class PipService {
   }
 
   /// Actualiza los parámetros del PiP (solo Android)
-  /// 
+  ///
   /// [height] - Altura de la ventana PiP
   /// [width] - Ancho de la ventana PiP
   void updatePipParams({
@@ -78,4 +78,3 @@ class PipService {
     _pipManager.dispose();
   }
 }
-

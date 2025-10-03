@@ -36,21 +36,25 @@ Se completó la implementación de Picture-in-Picture (PiP) para iOS y Web, crea
 ### Archivos Nuevos (5)
 
 1. **`lib/core/video/pip_manager.dart`** (56 líneas)
+
    - Interface abstracta para PiP
    - Factory constructor con conditional imports
    - Documentación completa de plataformas
 
 2. **`lib/core/video/pip_manager_stub.dart`** (42 líneas)
+
    - Implementación stub para plataformas no soportadas
    - Logging de advertencias apropiado
 
 3. **`lib/core/video/pip_manager_mobile.dart`** (230 líneas)
+
    - Implementación Android (PipManagerAndroid)
    - Implementación iOS (PipManagerIOS)
-   - Widget _PipVideoPlayer compartido
+   - Widget \_PipVideoPlayer compartido
    - Manejo de ciclo de vida completo
 
 4. **`lib/core/video/pip_manager_web.dart`** (75 líneas)
+
    - Implementación Web con guía al usuario
    - Documentación de limitaciones de YouTube iframes
    - Recomendaciones para usuarios web
@@ -61,10 +65,12 @@ Se completó la implementación de Picture-in-Picture (PiP) para iOS y Web, crea
 ### Archivos Modificados (3)
 
 6. **`ios/Runner/Info.plist`** (+6 líneas)
+
    - Agregado `UIBackgroundModes` con `audio` y `fetch`
    - Configuración necesaria para iOS PiP
 
 7. **`ios/Runner/AppDelegate.swift`** (+15 líneas)
+
    - Import de AVFoundation
    - Configuración de AVAudioSession
    - Categoría `.playback` con modo `.moviePlayback`
@@ -115,6 +121,7 @@ import 'pip_manager_stub.dart'
 ```
 
 **Explicación**:
+
 - `dart.library.io` → Plataformas móviles (Android, iOS) y desktop
 - `dart.library.html` → Plataforma web
 - Default → Stub (fallback)
@@ -126,6 +133,7 @@ import 'pip_manager_stub.dart'
 ### 1. Configuración iOS (Info.plist)
 
 **Antes**:
+
 ```xml
 <!-- Solo deep links -->
 </dict>
@@ -133,6 +141,7 @@ import 'pip_manager_stub.dart'
 ```
 
 **Después**:
+
 ```xml
 <!-- Background Modes for Picture-in-Picture -->
 <key>UIBackgroundModes</key>
@@ -145,6 +154,7 @@ import 'pip_manager_stub.dart'
 ```
 
 **Propósito**:
+
 - `audio`: Permite que el audio continúe en background
 - `fetch`: Permite actualizaciones en background
 - Ambos necesarios para que PiP funcione correctamente
@@ -152,6 +162,7 @@ import 'pip_manager_stub.dart'
 ### 2. Configuración iOS (AppDelegate.swift)
 
 **Antes**:
+
 ```swift
 import UIKit
 import Flutter
@@ -166,6 +177,7 @@ import Flutter
 ```
 
 **Después**:
+
 ```swift
 import UIKit
 import Flutter
@@ -177,7 +189,7 @@ import AVFoundation
     // Configure AVAudioSession for Picture-in-Picture support
     do {
       try AVAudioSession.sharedInstance().setCategory(
-        .playback, 
+        .playback,
         mode: .moviePlayback,
         options: [.mixWithOthers, .allowAirPlay]
       )
@@ -185,7 +197,7 @@ import AVFoundation
     } catch {
       print("Failed to configure AVAudioSession for PiP: \(error)")
     }
-    
+
     GeneratedPluginRegistrant.register(with: self)
     return super.application(...)
   }
@@ -193,6 +205,7 @@ import AVFoundation
 ```
 
 **Propósito**:
+
 - `AVAudioSession.sharedInstance()`: Sesión de audio compartida
 - `.playback`: Categoría para reproducción de medios
 - `.moviePlayback`: Modo optimizado para videos
@@ -202,12 +215,14 @@ import AVFoundation
 ### 3. PipManager Interface
 
 **Características**:
+
 - Interface abstracta con factory constructor
 - Conditional imports para separación por plataforma
 - API unificada para todas las plataformas
 - Documentación clara de cada método
 
 **Métodos principales**:
+
 ```dart
 bool get isPipSupported;        // Verifica soporte
 bool get isPipActive;            // Estado actual
@@ -220,12 +235,14 @@ void dispose();                  // Liberar recursos
 ### 4. PipManagerAndroid (Mobile)
 
 **Características**:
+
 - Usa `flutter_in_app_pip` package
 - Manejo de estado con `_isPipActive`
 - Callback `onPiPClose` para limpiar estado
 - Widget `_PipVideoPlayer` con YouTube
 
 **Código clave**:
+
 ```dart
 PictureInPicture.startPiP(pipWidget: pipWidget);
 PictureInPicture.stopPiP();
@@ -241,12 +258,14 @@ PictureInPicture.updatePiPParams(
 ### 5. PipManagerIOS (Mobile)
 
 **Características**:
+
 - Usa el mismo `flutter_in_app_pip` package
 - Aprovecha configuración nativa de AVAudioSession
 - Mismo widget `_PipVideoPlayer` que Android
 - Manejo automático de tamaño de ventana por iOS
 
 **Diferencias con Android**:
+
 - iOS maneja el tamaño de ventana automáticamente
 - `updatePipParams()` es no-op en iOS
 - Depende de configuración en AppDelegate
@@ -254,16 +273,18 @@ PictureInPicture.updatePiPParams(
 ### 6. PipManagerWeb
 
 **Características**:
+
 - Implementación con guidance al usuario
 - Documentación de limitaciones técnicas
 - Logging informativo para alternativas
 
 **Limitaciones documentadas**:
+
 ```dart
 /// NOTE: Web PiP for YouTube is limited due to browser restrictions.
 /// YouTube videos in iframes cannot directly use the Picture-in-Picture API
 /// due to cross-origin restrictions.
-/// 
+///
 /// Recommended approach for users:
 /// - Open video in YouTube directly (button to open in new tab)
 /// - Use browser's native PiP controls (right-click on video)
@@ -273,6 +294,7 @@ PictureInPicture.updatePiPParams(
 Los videos de YouTube en iframes están sujetos a restricciones de CORS (Cross-Origin Resource Sharing). El navegador no permite que JavaScript acceda al elemento de video dentro del iframe de YouTube, por lo que no podemos llamar a `requestPictureInPicture()` programáticamente.
 
 **Soluciones alternativas propuestas**:
+
 1. Abrir video en YouTube directamente (`youtube.com/watch?v=...`)
 2. Usuario usa clic derecho → "Picture-in-Picture"
 3. Usar botón de PiP en controles de YouTube
@@ -280,12 +302,14 @@ Los videos de YouTube en iframes están sujetos a restricciones de CORS (Cross-O
 ### 7. PipService Refactorizado
 
 **Antes** (219 líneas):
+
 - Lógica mezclada con UI
 - Código duplicado para verificar `kIsWeb`
 - Widget `_PipVideoPlayer` dentro del servicio
 - Implementación directa de flutter_in_app_pip
 
 **Después** (80 líneas):
+
 - Facade limpia del PipManager
 - Sin verificaciones de plataforma (delegadas al manager)
 - Interfaz simple y documentada
@@ -300,12 +324,14 @@ Los videos de YouTube en iframes están sujetos a restricciones de CORS (Cross-O
 ### Testing Manual Realizado
 
 ✅ **Compilación exitosa**:
+
 ```bash
 flutter pub get
 # Got dependencies!
 ```
 
 ✅ **Análisis estático**:
+
 ```bash
 # Solo errores pre-existentes en profile_screen.dart (no relacionados)
 ```
@@ -313,6 +339,7 @@ flutter pub get
 ### Testing Manual Pendiente (por usuario)
 
 **iOS**:
+
 - [ ] Ejecutar en simulador iOS
 - [ ] Abrir detalles de película
 - [ ] Reproducir trailer
@@ -322,11 +349,13 @@ flutter pub get
 - [ ] Cerrar PiP
 
 **Android (regresión)**:
+
 - [ ] Ejecutar en emulador Android
 - [ ] Mismo flujo que iOS
 - [ ] Verificar que sigue funcionando
 
 **Web**:
+
 - [ ] Abrir en Chrome/Firefox/Safari
 - [ ] Intentar activar PiP
 - [ ] Verificar mensaje informativo
@@ -338,16 +367,16 @@ flutter pub get
 
 ### Líneas de Código
 
-| Archivo | Líneas | Tipo |
-|---------|--------|------|
-| `pip_manager.dart` | 56 | Nueva interface |
-| `pip_manager_stub.dart` | 42 | Nueva stub |
-| `pip_manager_mobile.dart` | 230 | Nueva Android + iOS |
-| `pip_manager_web.dart` | 75 | Nueva Web |
-| `video.dart` | 6 | Nuevo barrel |
-| **Total nuevo** | **409** | |
-| `pip_service.dart` | -139 | Refactorizado |
-| **Neto** | **+270** | |
+| Archivo                   | Líneas   | Tipo                |
+| ------------------------- | -------- | ------------------- |
+| `pip_manager.dart`        | 56       | Nueva interface     |
+| `pip_manager_stub.dart`   | 42       | Nueva stub          |
+| `pip_manager_mobile.dart` | 230      | Nueva Android + iOS |
+| `pip_manager_web.dart`    | 75       | Nueva Web           |
+| `video.dart`              | 6        | Nuevo barrel        |
+| **Total nuevo**           | **409**  |                     |
+| `pip_service.dart`        | -139     | Refactorizado       |
+| **Neto**                  | **+270** |                     |
 
 ### Distribución de Código
 
@@ -377,14 +406,14 @@ video.dart (2%)
 
 ### Cobertura de Plataformas
 
-| Plataforma | Soporte | Implementación |
-|------------|---------|----------------|
-| Android | ✅ Completo | PipManagerAndroid + flutter_in_app_pip |
-| iOS | ✅ Completo | PipManagerIOS + AVAudioSession |
-| Web | 🟡 Limitado | PipManagerWeb (guidance) |
-| Linux | ❌ No soportado | PipManagerStub |
-| macOS | ❌ No soportado | PipManagerStub |
-| Windows | ❌ No soportado | PipManagerStub |
+| Plataforma | Soporte         | Implementación                         |
+| ---------- | --------------- | -------------------------------------- |
+| Android    | ✅ Completo     | PipManagerAndroid + flutter_in_app_pip |
+| iOS        | ✅ Completo     | PipManagerIOS + AVAudioSession         |
+| Web        | 🟡 Limitado     | PipManagerWeb (guidance)               |
+| Linux      | ❌ No soportado | PipManagerStub                         |
+| macOS      | ❌ No soportado | PipManagerStub                         |
+| Windows    | ❌ No soportado | PipManagerStub                         |
 
 ---
 
@@ -395,12 +424,14 @@ video.dart (2%)
 **Decisión**: Crear `lib/core/video/` con managers separados
 
 **Alternativas consideradas**:
+
 - A) Refactorizar `pip_service.dart` in-place (más simple, menos escalable)
 - B) Crear nueva arquitectura modular (elegida)
 
 **Razón**: El audit especificaba crear `pip_manager.dart` y managers separados. Siguiendo la filosofía del proyecto: "proper architectural improvements, not quick fixes".
 
 **Beneficios**:
+
 - Separation of concerns clara
 - Testeable individualmente
 - Extensible para nuevas plataformas
@@ -411,6 +442,7 @@ video.dart (2%)
 **Decisión**: Usar conditional imports en lugar de runtime checks
 
 **Antes**:
+
 ```dart
 if (kIsWeb) {
   // Web code
@@ -422,6 +454,7 @@ if (kIsWeb) {
 ```
 
 **Después**:
+
 ```dart
 import 'pip_manager_stub.dart'
     if (dart.library.io) 'pip_manager_mobile.dart'
@@ -429,6 +462,7 @@ import 'pip_manager_stub.dart'
 ```
 
 **Razón**:
+
 - Compile-time decision vs runtime check
 - Mejor tree-shaking (código no usado no se compila)
 - Más idiomático en Flutter/Dart
@@ -439,11 +473,13 @@ import 'pip_manager_stub.dart'
 **Decisión**: Proporcionar guidance al usuario en lugar de fallar silenciosamente
 
 **Alternativas consideradas**:
+
 - A) Fallar silenciosamente (mala UX)
 - B) Mostrar error (frustrante)
 - C) Proporcionar guidance y alternativas (elegida)
 
 **Implementación**:
+
 ```dart
 LoggerFactory.info(
   'Alternativas para el usuario:\n'
@@ -460,12 +496,14 @@ LoggerFactory.info(
 **Decisión**: Reusar `flutter_in_app_pip` para iOS en lugar de channel nativo
 
 **Razón**:
+
 - `flutter_in_app_pip` soporta iOS internamente
 - La configuración nativa (AVAudioSession) es suficiente
 - Evita duplicar código
 - Mantiene API consistente
 
 **Configuración iOS**:
+
 - Info.plist: `UIBackgroundModes`
 - AppDelegate: AVAudioSession setup
 - flutter_in_app_pip maneja el resto
@@ -481,12 +519,14 @@ LoggerFactory.info(
 **Causa**: Cross-Origin Resource Sharing (CORS) restrictions
 
 **Detalles técnicos**:
+
 - HTML5 PiP API existe: `document.pictureInPictureEnabled`
 - Método disponible: `videoElement.requestPictureInPicture()`
 - **PERO**: No se puede acceder al `<video>` dentro del iframe de YouTube
 - Razón: YouTube está en `youtube.com`, nuestra app en otro dominio
 
 **Workarounds posibles**:
+
 1. ✅ Usuario abre video en YouTube directamente
 2. ✅ Usuario usa PiP nativo del navegador (clic derecho)
 3. ❌ Intentar usar YouTube Player API (aún tiene limitaciones)
@@ -499,6 +539,7 @@ LoggerFactory.info(
 **Propósito**: Gestionar cómo la app usa audio del sistema
 
 **Categorías principales**:
+
 - `.ambient`: Audio mezcla con otros (ej: música de fondo)
 - `.soloAmbient`: Audio solo para esta app
 - `.playback`: Reproducción de medios (elegida para PiP)
@@ -506,17 +547,20 @@ LoggerFactory.info(
 - `.playAndRecord`: Ambos
 
 **Modos**:
+
 - `.default`: Uso general
 - `.moviePlayback`: Videos (elegido para PiP)
 - `.voiceChat`: Llamadas
 - `.videoRecording`: Grabación de video
 
 **Opciones**:
+
 - `.mixWithOthers`: Permite audio simultáneo con otras apps
 - `.allowAirPlay`: Habilita AirPlay y PiP
 - `.duckOthers`: Reduce volumen de otras apps
 
 **Configuración para PiP**:
+
 ```swift
 try AVAudioSession.sharedInstance().setCategory(
   .playback,           // Para reproducción de medios
@@ -530,6 +574,7 @@ try AVAudioSession.sharedInstance().setCategory(
 **Versión**: 1.7.4 (en pubspec.yaml)
 
 **API principal**:
+
 ```dart
 // Iniciar PiP
 PictureInPicture.startPiP(pipWidget: widget);
@@ -542,6 +587,7 @@ PictureInPicture.updatePiPParams(pipParams: params);
 ```
 
 **PiPWidget**:
+
 ```dart
 PiPWidget(
   onPiPClose: () {
@@ -552,6 +598,7 @@ PiPWidget(
 ```
 
 **PiPParams** (Android only):
+
 ```dart
 PiPParams(
   pipWindowHeight: 300,
@@ -567,6 +614,7 @@ PiPParams(
 ```
 
 **Soporte de plataformas**:
+
 - ✅ Android 8.0+ (API 26+)
 - ✅ iOS 14.0+
 - ❌ Web (no soportado por el package)
@@ -574,6 +622,7 @@ PiPParams(
 ### 4. Conditional Imports en Dart
 
 **Sintaxis**:
+
 ```dart
 import 'default.dart'
     if (condition1) 'implementation1.dart'
@@ -581,6 +630,7 @@ import 'default.dart'
 ```
 
 **Condiciones comunes**:
+
 ```dart
 // Plataformas nativas (Android, iOS, desktop)
 if (dart.library.io)
@@ -596,12 +646,14 @@ if (dart.library.js)
 ```
 
 **Evaluación**:
+
 - Compile-time (no runtime)
 - Primera condición que sea true se usa
 - Si ninguna es true, usa default
 - Tree-shaking automático
 
 **Beneficios**:
+
 - Código específico de plataforma se excluye en build
 - Mejor performance (sin checks en runtime)
 - App size más pequeño

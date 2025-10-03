@@ -1,6 +1,6 @@
 /// Stub implementation for PiP Manager
 /// Used when no platform-specific implementation is available
-library pip_manager_stub;
+library;
 
 import '../../core/logging/logger_factory.dart';
 import 'pip_manager.dart';
@@ -41,4 +41,3 @@ class PipManagerStub implements PipManager {
     // No-op for stub
   }
 }
-

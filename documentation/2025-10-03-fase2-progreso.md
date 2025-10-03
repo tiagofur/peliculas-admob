@@ -1,4 +1,5 @@
-# **Fecha actualización**: 2025-01-10 - Post Task 2.3  
+# **Fecha actualización**: 2025-01-10 - Post Task 2.3
+
 **Estado General**: � AVANZADO - 80% Completado  
 **Última tarea completada**: Task 2.3 - PiP iOS/Web ✅FASE 2 - Mejoras de Arquitectura - PROGRESO ACTUALIZADO
 
@@ -221,6 +222,7 @@ Arquitectura modular de Picture-in-Picture con soporte completo para iOS y Web (
 ### Archivos Principales
 
 **Creados**:
+
 - `lib/core/video/pip_manager.dart` (interface + factory)
 - `lib/core/video/pip_manager_mobile.dart` (Android + iOS)
 - `lib/core/video/pip_manager_web.dart` (Web with guidance)
@@ -229,18 +231,19 @@ Arquitectura modular de Picture-in-Picture con soporte completo para iOS y Web (
 - `documentation/task2.3-pip-ios-web-completada.md` (5500+ palabras)
 
 **Modificados**:
+
 - `ios/Runner/Info.plist` (UIBackgroundModes)
 - `ios/Runner/AppDelegate.swift` (AVAudioSession setup)
 - `lib/presentation/services/pip_service.dart` (facade refactor)
 
 ### Plataformas
 
-| Plataforma | Soporte | Implementación |
-|------------|---------|----------------|
-| Android | ✅ Completo | PipManagerAndroid + flutter_in_app_pip |
-| iOS | ✅ Completo | PipManagerIOS + AVAudioSession |
-| Web | 🟡 Limitado | PipManagerWeb (guidance) |
-| Desktop | ⚪ No soportado | PipManagerStub |
+| Plataforma | Soporte         | Implementación                         |
+| ---------- | --------------- | -------------------------------------- |
+| Android    | ✅ Completo     | PipManagerAndroid + flutter_in_app_pip |
+| iOS        | ✅ Completo     | PipManagerIOS + AVAudioSession         |
+| Web        | 🟡 Limitado     | PipManagerWeb (guidance)               |
+| Desktop    | ⚪ No soportado | PipManagerStub                         |
 
 ### Performance
 

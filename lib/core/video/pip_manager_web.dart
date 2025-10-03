@@ -1,19 +1,19 @@
 /// Web implementation of PiP Manager using HTML5 Picture-in-Picture API
-/// 
+///
 /// NOTE: Web PiP for YouTube is limited due to browser restrictions.
 /// YouTube videos in iframes cannot directly use the Picture-in-Picture API
 /// due to cross-origin restrictions.
-/// 
+///
 /// Recommended approach for users:
 /// - Open video in YouTube directly (button to open in new tab)
 /// - Use browser's native PiP controls (right-click on video)
-/// 
+///
 /// Browser support:
 /// - Chrome 70+
 /// - Safari 13.1+
 /// - Firefox 69+
 /// - Edge 79+
-library pip_manager_web;
+library;
 
 import '../../core/logging/logger_factory.dart';
 import 'pip_manager.dart';
@@ -22,7 +22,7 @@ import 'pip_manager.dart';
 PipManager getPipManager() => PipManagerWeb();
 
 /// Web implementation - Provides fallback with user guidance
-/// 
+///
 /// Due to browser security restrictions, YouTube videos in iframes
 /// cannot programmatically enter Picture-in-Picture mode.
 /// Instead, we provide helpful messages and alternative actions.
@@ -65,7 +65,8 @@ class PipManagerWeb implements PipManager {
   @override
   Future<bool> exitPipMode() async {
     _isPipActive = false;
-    LoggerFactory.info('PiP Web: El usuario debe cerrar PiP desde el navegador');
+    LoggerFactory.info(
+        'PiP Web: El usuario debe cerrar PiP desde el navegador');
     return false;
   }
 
@@ -80,4 +81,3 @@ class PipManagerWeb implements PipManager {
     _isPipActive = false;
   }
 }
-

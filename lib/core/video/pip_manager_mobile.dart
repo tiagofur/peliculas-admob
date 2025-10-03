@@ -1,13 +1,15 @@
 /// Mobile (Android/iOS) implementation of PiP Manager
-/// 
+///
 /// Uses flutter_in_app_pip for Android and native iOS AVPictureInPictureController
-library pip_manager_mobile;
+library;
 
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_in_app_pip/flutter_in_app_pip.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart'
     if (dart.library.html) '../../core/platform/web_youtube_stub.dart';
+
 import '../../core/logging/logger_factory.dart';
 import 'pip_manager.dart';
 import 'pip_manager_stub.dart';
@@ -176,13 +178,12 @@ class PipManagerIOS implements PipManager {
 
 /// Video player widget for PiP mode
 class _PipVideoPlayer extends StatefulWidget {
-  final String youtubeId;
-  final String movieTitle;
-
   const _PipVideoPlayer({
     required this.youtubeId,
     required this.movieTitle,
   });
+  final String youtubeId;
+  final String movieTitle;
 
   @override
   State<_PipVideoPlayer> createState() => _PipVideoPlayerState();
@@ -224,4 +225,3 @@ class _PipVideoPlayerState extends State<_PipVideoPlayer> {
     );
   }
 }
-
