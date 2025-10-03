@@ -712,6 +712,63 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get achievements => 'Conquistas';
+
+  @override
+  String get errorMovieLoadFailed => 'Não foi possível carregar o filme';
+
+  @override
+  String get errorListLoadFailed => 'Não foi possível carregar a lista';
+
+  @override
+  String get errorNetworkError => 'Verifique sua conexão com a internet';
+
+  @override
+  String get errorServerError => 'O servidor não está respondendo';
+
+  @override
+  String get errorTimeout => 'A solicitação demorou muito';
+
+  @override
+  String get errorGeneric => 'Ocorreu um erro inesperado';
+
+  @override
+  String get actionRetry => 'Tentar novamente';
+
+  @override
+  String get actionCancel => 'Cancelar';
+
+  @override
+  String get actionDismiss => 'Fechar';
+
+  @override
+  String get errorLoadingAd => 'Erro ao carregar anúncio';
+
+  @override
+  String get errorCreateList => 'Erro ao criar a lista';
+
+  @override
+  String get errorOpenUrl => 'Não foi possível abrir a URL';
+
+  @override
+  String get errorLoginRequired => 'Você deve fazer login para continuar';
+
+  @override
+  String get successLoginComplete => 'Login bem-sucedido';
+
+  @override
+  String get successLogoutComplete => 'Sessão encerrada';
+
+  @override
+  String get successAccountCreated => 'Conta criada com sucesso';
+
+  @override
+  String get successVoteRegistered => 'Seu voto foi registrado';
+
+  @override
+  String get errorSendingFeedback => 'Erro ao enviar feedback';
+
+  @override
+  String get errorLoadingExplanation => 'Erro ao carregar explicação';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1268,4 +1325,61 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get achievements => 'Conquistas';
+
+  @override
+  String get errorMovieLoadFailed => 'Não foi possível carregar o filme';
+
+  @override
+  String get errorListLoadFailed => 'Não foi possível carregar a lista';
+
+  @override
+  String get errorNetworkError => 'Verifique sua conexão com a internet';
+
+  @override
+  String get errorServerError => 'O servidor não está respondendo';
+
+  @override
+  String get errorTimeout => 'A solicitação demorou muito';
+
+  @override
+  String get errorGeneric => 'Ocorreu um erro inesperado';
+
+  @override
+  String get actionRetry => 'Tentar novamente';
+
+  @override
+  String get actionCancel => 'Cancelar';
+
+  @override
+  String get actionDismiss => 'Fechar';
+
+  @override
+  String get errorLoadingAd => 'Erro ao carregar anúncio';
+
+  @override
+  String get errorCreateList => 'Erro ao criar a lista';
+
+  @override
+  String get errorOpenUrl => 'Não foi possível abrir a URL';
+
+  @override
+  String get errorLoginRequired => 'Você deve fazer login para continuar';
+
+  @override
+  String get successLoginComplete => 'Login bem-sucedido';
+
+  @override
+  String get successLogoutComplete => 'Sessão encerrada';
+
+  @override
+  String get successAccountCreated => 'Conta criada com sucesso';
+
+  @override
+  String get successVoteRegistered => 'Seu voto foi registrado';
+
+  @override
+  String get errorSendingFeedback => 'Erro ao enviar feedback';
+
+  @override
+  String get errorLoadingExplanation => 'Erro ao carregar explicação';
 }

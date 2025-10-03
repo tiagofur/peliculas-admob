@@ -2,9 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
+import '../../../core/utils/error_handler_helper.dart';
 import '../../../domain/entities/entities.dart';
+import '../../../generated/app_localizations.dart';
 import '../../providers/list_items_provider.dart';
 import '../../providers/storage/direct_custom_lists_provider.dart';
 
@@ -691,9 +692,6 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                         ? () async {
                             final navigator = Navigator.of(context);
                             final scaffoldContext = navigator.context;
-                            final messenger =
-                                ScaffoldMessenger.of(scaffoldContext);
-                            final colorScheme = Theme.of(context).colorScheme;
                             final name = _nameController.text.trim();
                             final description =
                                 _descriptionController.text.trim();
@@ -726,25 +724,15 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
 
                               navigator.pop();
 
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text('Lista "$name" creada'),
-                                  action: SnackBarAction(
-                                    label: 'Ver',
-                                    onPressed: () {
-                                      GoRouter.of(scaffoldContext)
-                                          .push('/lists/$newListId');
-                                    },
-                                  ),
-                                ),
+                              ErrorHandlerHelper.showSuccess(
+                                scaffoldContext,
+                                message: 'Lista "$name" creada',
                               );
                             } catch (e) {
                               if (!mounted || !scaffoldContext.mounted) return;
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text('Error al crear la lista: $e'),
-                                  backgroundColor: colorScheme.error,
-                                ),
+                              ErrorHandlerHelper.showError(
+                                scaffoldContext,
+                                message: AppLocalizations.of(scaffoldContext)!.errorCreateList,
                               );
                             }
                           }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/logging/logger_factory.dart';
+import '../../core/utils/error_handler_helper.dart';
 import '../../models/rating_helpfulness.dart';
 import '../../presentation/providers/auth_provider.dart';
 import '../../services/movie_rating_service.dart';
@@ -42,7 +43,7 @@ class _ReviewHelpfulnessVotingState
     final user = ref.read(currentUserProvider);
     if (user == null) {
       LoggerFactory.warning('Usuario no autenticado para votar');
-      _showLoginSnackBar();
+      ErrorHandlerHelper.showLoginRequired(context);
       return;
     }
 
@@ -72,48 +73,17 @@ class _ReviewHelpfulnessVotingState
 
       widget.onVoteChanged?.call();
 
-      _showSuccessSnackBar(isHelpful);
+      if (mounted) {
+        ErrorHandlerHelper.showVoteSuccess(context);
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
       LoggerFactory.error('Error al enviar voto de utilidad: $e');
-      _showErrorSnackBar();
-    }
-  }
-
-  void _showLoginSnackBar() {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes iniciar sesión para votar'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
-  }
-
-  void _showSuccessSnackBar(bool isHelpful) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isHelpful ? '¡Marcado como útil!' : 'Marcado como no útil',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
-  void _showErrorSnackBar() {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error al votar. Inténtalo de nuevo.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ErrorHandlerHelper.handleException(context, e, onRetry: () => _handleVote(isHelpful));
+      }
     }
   }
 

@@ -711,4 +711,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get achievements => 'Achievements';
+
+  @override
+  String get errorMovieLoadFailed => 'Could not load movie';
+
+  @override
+  String get errorListLoadFailed => 'Could not load list';
+
+  @override
+  String get errorNetworkError => 'Check your internet connection';
+
+  @override
+  String get errorServerError => 'Server is not responding';
+
+  @override
+  String get errorTimeout => 'Request took too long';
+
+  @override
+  String get errorGeneric => 'An unexpected error occurred';
+
+  @override
+  String get actionRetry => 'Retry';
+
+  @override
+  String get actionCancel => 'Cancel';
+
+  @override
+  String get actionDismiss => 'Dismiss';
+
+  @override
+  String get errorLoadingAd => 'Error loading ad';
+
+  @override
+  String get errorCreateList => 'Error creating list';
+
+  @override
+  String get errorOpenUrl => 'Could not open URL';
+
+  @override
+  String get errorLoginRequired => 'You must log in to continue';
+
+  @override
+  String get successLoginComplete => 'Login successful';
+
+  @override
+  String get successLogoutComplete => 'Session closed';
+
+  @override
+  String get successAccountCreated => 'Account created successfully';
+
+  @override
+  String get successVoteRegistered => 'Your vote has been registered';
+
+  @override
+  String get errorSendingFeedback => 'Error sending feedback';
+
+  @override
+  String get errorLoadingExplanation => 'Error loading explanation';
 }

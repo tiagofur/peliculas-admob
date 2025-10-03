@@ -1318,6 +1318,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Achievements'**
   String get achievements;
+
+  /// Error loading movie data
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load movie'**
+  String get errorMovieLoadFailed;
+
+  /// Error loading custom list
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load list'**
+  String get errorListLoadFailed;
+
+  /// Network/connectivity error
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection'**
+  String get errorNetworkError;
+
+  /// Server error
+  ///
+  /// In en, this message translates to:
+  /// **'Server is not responding'**
+  String get errorServerError;
+
+  /// Timeout error
+  ///
+  /// In en, this message translates to:
+  /// **'Request took too long'**
+  String get errorTimeout;
+
+  /// Generic error
+  ///
+  /// In en, this message translates to:
+  /// **'An unexpected error occurred'**
+  String get errorGeneric;
+
+  /// Retry action
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get actionRetry;
+
+  /// Cancel action
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get actionCancel;
+
+  /// Dismiss/close action
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get actionDismiss;
+
+  /// Error loading advertisement
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading ad'**
+  String get errorLoadingAd;
+
+  /// Error creating custom list
+  ///
+  /// In en, this message translates to:
+  /// **'Error creating list'**
+  String get errorCreateList;
+
+  /// Error opening external URL
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open URL'**
+  String get errorOpenUrl;
+
+  /// Error when login is required
+  ///
+  /// In en, this message translates to:
+  /// **'You must log in to continue'**
+  String get errorLoginRequired;
+
+  /// Success logging in
+  ///
+  /// In en, this message translates to:
+  /// **'Login successful'**
+  String get successLoginComplete;
+
+  /// Success logging out
+  ///
+  /// In en, this message translates to:
+  /// **'Session closed'**
+  String get successLogoutComplete;
+
+  /// Success creating account
+  ///
+  /// In en, this message translates to:
+  /// **'Account created successfully'**
+  String get successAccountCreated;
+
+  /// Success registering vote
+  ///
+  /// In en, this message translates to:
+  /// **'Your vote has been registered'**
+  String get successVoteRegistered;
+
+  /// Error sending feedback
+  ///
+  /// In en, this message translates to:
+  /// **'Error sending feedback'**
+  String get errorSendingFeedback;
+
+  /// Error loading ML explanation
+  ///
+  /// In en, this message translates to:
+  /// **'Error loading explanation'**
+  String get errorLoadingExplanation;
 }
 
 class _AppLocalizationsDelegate

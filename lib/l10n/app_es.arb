@@ -575,5 +575,81 @@
   "achievements": "Logros",
   "@achievements": {
     "description": "Etiqueta de la pestaña de logros"
+  },
+  "errorMovieLoadFailed": "No se pudo cargar la película",
+  "@errorMovieLoadFailed": {
+    "description": "Error al cargar datos de película"
+  },
+  "errorListLoadFailed": "No se pudo cargar la lista",
+  "@errorListLoadFailed": {
+    "description": "Error al cargar lista personalizada"
+  },
+  "errorNetworkError": "Verifica tu conexión a internet",
+  "@errorNetworkError": {
+    "description": "Error de red/conectividad"
+  },
+  "errorServerError": "El servidor no responde",
+  "@errorServerError": {
+    "description": "Error del servidor"
+  },
+  "errorTimeout": "La solicitud tardó demasiado",
+  "@errorTimeout": {
+    "description": "Error de timeout"
+  },
+  "errorGeneric": "Ocurrió un error inesperado",
+  "@errorGeneric": {
+    "description": "Error genérico"
+  },
+  "actionRetry": "Reintentar",
+  "@actionRetry": {
+    "description": "Acción de reintentar"
+  },
+  "actionCancel": "Cancelar",
+  "@actionCancel": {
+    "description": "Acción de cancelar"
+  },
+  "actionDismiss": "Cerrar",
+  "@actionDismiss": {
+    "description": "Acción de cerrar/descartar"
+  },
+  "errorLoadingAd": "Error al cargar anuncio",
+  "@errorLoadingAd": {
+    "description": "Error al cargar publicidad"
+  },
+  "errorCreateList": "Error al crear la lista",
+  "@errorCreateList": {
+    "description": "Error al crear lista personalizada"
+  },
+  "errorOpenUrl": "No se pudo abrir la URL",
+  "@errorOpenUrl": {
+    "description": "Error al abrir URL externa"
+  },
+  "errorLoginRequired": "Debes iniciar sesión para continuar",
+  "@errorLoginRequired": {
+    "description": "Error cuando se requiere login"
+  },
+  "successLoginComplete": "Inicio de sesión exitoso",
+  "@successLoginComplete": {
+    "description": "Éxito al iniciar sesión"
+  },
+  "successLogoutComplete": "Sesión cerrada",
+  "@successLogoutComplete": {
+    "description": "Éxito al cerrar sesión"
+  },
+  "successAccountCreated": "Usuario creado exitosamente",
+  "@successAccountCreated": {
+    "description": "Éxito al crear cuenta"
+  },
+  "successVoteRegistered": "Tu voto ha sido registrado",
+  "@successVoteRegistered": {
+    "description": "Éxito al registrar voto"
+  },
+  "errorSendingFeedback": "Error al enviar feedback",
+  "@errorSendingFeedback": {
+    "description": "Error al enviar retroalimentación"
+  },
+  "errorLoadingExplanation": "Error al cargar explicación",
+  "@errorLoadingExplanation": {
+    "description": "Error al cargar explicación ML"
   }
 }

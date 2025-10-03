@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/logging/logger_factory.dart';
+import '../core/utils/error_handler_helper.dart';
 import '../presentation/providers/auth_provider.dart';
 
 class QuickLoginWidget extends ConsumerStatefulWidget {
@@ -49,18 +50,14 @@ class _QuickLoginWidgetState extends ConsumerState<QuickLoginWidget> {
       LoggerFactory.info('✅ Login exitoso');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login exitoso')),
-        );
+        ErrorHandlerHelper.showLoginSuccess(context);
         context.go('/');
       }
     } catch (e) {
       LoggerFactory.error('❌ Error en login: $e');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ErrorHandlerHelper.handleException(context, e, onRetry: _signIn);
       }
     } finally {
       if (mounted) {
@@ -85,18 +82,14 @@ class _QuickLoginWidgetState extends ConsumerState<QuickLoginWidget> {
       LoggerFactory.info('✅ Usuario creado exitosamente');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Usuario creado exitosamente')),
-        );
+        ErrorHandlerHelper.showAccountCreated(context);
         context.go('/');
       }
     } catch (e) {
       LoggerFactory.error('❌ Error creando usuario: $e');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ErrorHandlerHelper.handleException(context, e, onRetry: _signUp);
       }
     } finally {
       if (mounted) {
@@ -114,17 +107,13 @@ class _QuickLoginWidgetState extends ConsumerState<QuickLoginWidget> {
       LoggerFactory.info('✅ Sesión cerrada');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sesión cerrada')),
-        );
+        ErrorHandlerHelper.showLogoutSuccess(context);
       }
     } catch (e) {
       LoggerFactory.error('❌ Error cerrando sesión: $e');
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ErrorHandlerHelper.handleException(context, e);
       }
     }
   }

@@ -908,5 +908,81 @@
   "achievements": "Achievements",
   "@achievements": {
     "description": "Achievements tab label"
+  },
+  "errorMovieLoadFailed": "Could not load movie",
+  "@errorMovieLoadFailed": {
+    "description": "Error loading movie data"
+  },
+  "errorListLoadFailed": "Could not load list",
+  "@errorListLoadFailed": {
+    "description": "Error loading custom list"
+  },
+  "errorNetworkError": "Check your internet connection",
+  "@errorNetworkError": {
+    "description": "Network/connectivity error"
+  },
+  "errorServerError": "Server is not responding",
+  "@errorServerError": {
+    "description": "Server error"
+  },
+  "errorTimeout": "Request took too long",
+  "@errorTimeout": {
+    "description": "Timeout error"
+  },
+  "errorGeneric": "An unexpected error occurred",
+  "@errorGeneric": {
+    "description": "Generic error"
+  },
+  "actionRetry": "Retry",
+  "@actionRetry": {
+    "description": "Retry action"
+  },
+  "actionCancel": "Cancel",
+  "@actionCancel": {
+    "description": "Cancel action"
+  },
+  "actionDismiss": "Dismiss",
+  "@actionDismiss": {
+    "description": "Dismiss/close action"
+  },
+  "errorLoadingAd": "Error loading ad",
+  "@errorLoadingAd": {
+    "description": "Error loading advertisement"
+  },
+  "errorCreateList": "Error creating list",
+  "@errorCreateList": {
+    "description": "Error creating custom list"
+  },
+  "errorOpenUrl": "Could not open URL",
+  "@errorOpenUrl": {
+    "description": "Error opening external URL"
+  },
+  "errorLoginRequired": "You must log in to continue",
+  "@errorLoginRequired": {
+    "description": "Error when login is required"
+  },
+  "successLoginComplete": "Login successful",
+  "@successLoginComplete": {
+    "description": "Success logging in"
+  },
+  "successLogoutComplete": "Session closed",
+  "@successLogoutComplete": {
+    "description": "Success logging out"
+  },
+  "successAccountCreated": "Account created successfully",
+  "@successAccountCreated": {
+    "description": "Success creating account"
+  },
+  "successVoteRegistered": "Your vote has been registered",
+  "@successVoteRegistered": {
+    "description": "Success registering vote"
+  },
+  "errorSendingFeedback": "Error sending feedback",
+  "@errorSendingFeedback": {
+    "description": "Error sending feedback"
+  },
+  "errorLoadingExplanation": "Error loading explanation",
+  "@errorLoadingExplanation": {
+    "description": "Error loading ML explanation"
   }
 }
