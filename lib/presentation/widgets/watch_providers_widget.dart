@@ -119,107 +119,134 @@ class WatchProvidersWidget extends StatelessWidget {
     final hasAffiliate =
         AffiliateService.hasAffiliateSupport(provider.providerId);
 
-    return GestureDetector(
-      onTap: () => _launchProvider(provider),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: hasAffiliate
-                ? Colors.green.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.3),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Provider logo
-            if (provider.logoPath.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: Image.network(
-                  resolveTmdbImageUrl(
-                    provider.logoPath,
-                    size: 'w45',
-                    fallback: 'https://via.placeholder.com/45x45.png?text=TV',
-                  ),
-                  width: 24,
-                  height: 24,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 24,
-                      height: 24,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.movie, size: 16),
-                    );
-                  },
-                ),
-              ),
-            const SizedBox(width: 8),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
 
-            // Provider name
-            Flexible(
-              child: Text(
-                provider.providerName,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
+        return GestureDetector(
+          onTap: () => _launchProvider(provider),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? theme.colorScheme.surface
+                  : theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: hasAffiliate
+                    ? Colors.green.withValues(alpha: isDark ? 0.5 : 0.3)
+                    : theme.colorScheme.outline.withValues(alpha: 0.3),
+                width: 1,
               ),
             ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Provider logo
+                if (provider.logoPath.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Image.network(
+                      resolveTmdbImageUrl(
+                        provider.logoPath,
+                        size: 'w45',
+                        fallback:
+                            'https://via.placeholder.com/45x45.png?text=TV',
+                      ),
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 24,
+                          height: 24,
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Icon(
+                            Icons.movie,
+                            size: 16,
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(width: 8),
 
-            // Affiliate indicator
-            if (hasAffiliate) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.link,
-                size: 16,
-                color: Colors.green[600],
-              ),
-            ]
-          ],
-        ),
-      ),
+                // Provider name
+                Flexible(
+                  child: Text(
+                    provider.providerName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                // Affiliate indicator
+                if (hasAffiliate) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.link,
+                    size: 16,
+                    color: Colors.green[isDark ? 400 : 600],
+                  ),
+                ]
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildAttribution() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 16,
-            color: Colors.grey[600],
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: GestureDetector(
-              onTap: () =>
-                  _launchUrl(AffiliateService.getJustWatchAttributionLink()),
-              child: Text(
-                AffiliateService.getAttributionText(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  decoration: TextDecoration.underline,
-                ),
-              ),
+    return Builder(
+      builder: (context) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.2),
             ),
           ),
-        ],
-      ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _launchUrl(
+                      AffiliateService.getJustWatchAttributionLink()),
+                  child: Text(
+                    AffiliateService.getAttributionText(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

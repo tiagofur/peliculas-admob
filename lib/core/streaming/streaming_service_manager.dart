@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import '../../domain/entities/streaming_availability.dart';
 import '../../domain/entities/streaming_platform.dart';
 import '../../domain/entities/subscription.dart';
+import '../../domain/entities/watch_providers.dart';
+import '../../infrastructure/repositories/tmdb_watch_providers_repository.dart';
 import '../analytics/analytics_service.dart';
 import '../cache/cache_service.dart';
 import '../logging/app_logger.dart';
@@ -43,6 +45,9 @@ class StreamingServiceManager {
   late final RealAvailabilityService _realAvailabilityService;
   late final RealtimeAvailabilityService _realtimeAvailabilityService;
 
+  // TMDB Watch Providers - Real data from TMDB API
+  late final TmdbWatchProvidersRepository _watchProvidersRepository;
+
   // Platform services
   late final NetflixService _netflixService;
   late final PrimeVideoService _primeVideoService;
@@ -54,6 +59,11 @@ class StreamingServiceManager {
 
   /// Initialize all streaming services
   void _initializeServices() {
+    // Initialize TMDB Watch Providers repository
+    _watchProvidersRepository = TmdbWatchProvidersRepository(
+      cacheService: cache,
+    );
+
     // Initialize real availability service
     _realAvailabilityService = RealAvailabilityService(
       httpClient: _httpClient,
@@ -102,6 +112,33 @@ class StreamingServiceManager {
 
   /// Get real availability service
   RealAvailabilityService get realAvailability => _realAvailabilityService;
+
+  /// Get watch providers repository
+  TmdbWatchProvidersRepository get watchProvidersRepository =>
+      _watchProvidersRepository;
+
+  /// Get watch providers for a movie (direct access with caching)
+  ///
+  /// This uses TMDB's Watch Providers API to get real streaming availability.
+  /// Data is cached for 24 hours for better performance.
+  ///
+  /// [movieId] - TMDB movie ID
+  /// [region] - ISO 3166-1 country code (default: current region)
+  /// [forceRefresh] - Skip cache and fetch fresh data
+  ///
+  /// Returns [WatchProviders] or null if not available for the region
+  Future<WatchProviders?> getWatchProviders(
+    int movieId, {
+    String? region,
+    bool forceRefresh = false,
+  }) async {
+    final targetRegion = region ?? _currentRegion;
+    return await _watchProvidersRepository.getWatchProviders(
+      movieId,
+      region: targetRegion,
+      forceRefresh: forceRefresh,
+    );
+  }
 
   /// Get platform service by platform ID
   StreamingPlatformServiceInterface? getPlatformService(String platformId) {

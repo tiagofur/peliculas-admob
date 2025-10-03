@@ -968,6 +968,160 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get challenges => 'Desafios';
 
   @override
+  String get conflictResolution => 'Resolução de conflitos';
+
+  @override
+  String get conflictDetected => 'Conflito de sincronização detectado';
+
+  @override
+  String get conflictDescription =>
+      'Um conflito foi detectado durante a sincronização. Por favor, escolha como resolvê-lo:';
+
+  @override
+  String get localVersion => 'Versão local';
+
+  @override
+  String get remoteVersion => 'Versão remota';
+
+  @override
+  String get mergedVersion => 'Versão mesclada';
+
+  @override
+  String get keepLocal => 'Manter local';
+
+  @override
+  String get keepRemote => 'Manter remota';
+
+  @override
+  String get mergeChanges => 'Mesclar alterações';
+
+  @override
+  String get manualChoice => 'Escolha manual';
+
+  @override
+  String get resolveConflict => 'Resolver conflito';
+
+  @override
+  String get cancel => 'Cancelar';
+
+  @override
+  String get conflictPreview => 'Visualização do conflito';
+
+  @override
+  String get mergePreview => 'Visualização da mesclagem';
+
+  @override
+  String get conflictHistory => 'Histórico de conflitos';
+
+  @override
+  String get noConflictsRecorded => 'Nenhum conflito registrado';
+
+  @override
+  String get conflictsWillAppearHere =>
+      'Os conflitos de sincronização aparecerão aqui quando ocorrerem';
+
+  @override
+  String get refresh => 'Atualizar';
+
+  @override
+  String get export => 'Exportar';
+
+  @override
+  String get clearHistory => 'Limpar histórico';
+
+  @override
+  String get filters => 'Filtros';
+
+  @override
+  String get searchPlaceholder => 'Buscar por entidade, tipo ou estratégia...';
+
+  @override
+  String get all => 'Todos';
+
+  @override
+  String get concurrentModification => 'Modificação concorrente';
+
+  @override
+  String get deleteVsModify => 'Exclusão vs. Modificação';
+
+  @override
+  String get duplicateCreation => 'Criação duplicada';
+
+  @override
+  String get localWins => 'Local vence';
+
+  @override
+  String get remoteWins => 'Remota vence';
+
+  @override
+  String get merge => 'Mesclar';
+
+  @override
+  String get userChoice => 'Escolha manual';
+
+  @override
+  String get resolved => 'Resolvido';
+
+  @override
+  String get pending => 'Pendente';
+
+  @override
+  String get entity => 'Entidade';
+
+  @override
+  String get detected => 'Detectado';
+
+  @override
+  String get strategy => 'Estratégia';
+
+  @override
+  String get reason => 'Motivo';
+
+  @override
+  String get rateThisMovie => 'Avalie este filme';
+
+  @override
+  String get yourRating => 'Sua avaliação';
+
+  @override
+  String get quickRate => 'Avaliação rápida';
+
+  @override
+  String get rateAndReview => 'Avaliar e comentar';
+
+  @override
+  String get shareYourOpinion => 'Compartilhe sua opinião com a comunidade';
+
+  @override
+  String get editRating => 'Editar avaliação';
+
+  @override
+  String get deleteRating => 'Excluir avaliação';
+
+  @override
+  String get confirmDeleteRating =>
+      'Tem certeza de que deseja excluir sua avaliação deste filme?';
+
+  @override
+  String get delete => 'Excluir';
+
+  @override
+  String get ratingDeletedSuccessfully => 'Avaliação excluída com sucesso!';
+
+  @override
+  String get noCustomLists => 'Ainda não há listas personalizadas!';
+
+  @override
+  String get noCustomListsMessage =>
+      'Você ainda não criou nenhuma lista personalizada de filmes';
+
+  @override
+  String get startCreating => 'Começar a criar';
+
+  @override
+  String get createYourFirstList => 'Crie sua primeira lista';
+
+  @override
   String get watched => 'Assistidos';
 
   @override
