@@ -9,7 +9,7 @@ import '../../../core/streaming/streaming.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/entities.dart';
 import '../streaming/streaming_availability_indicator.dart';
-import '../watch_providers_widget.dart';
+import '../streaming/watch_providers_section.dart';
 
 // Widgets públicos para usar en otras pantallas
 class MovieInfoSection extends StatelessWidget {
@@ -76,15 +76,13 @@ class MovieInfoSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Watch Providers - Plataformas de streaming
-        if (movie.watchProviders != null)
-          WatchProvidersWidget(
-            watchProviders: movie.watchProviders,
-            movieTitle: movie.title,
-            imdbId: movie.imdbId,
-            country: 'MX',
-          ),
-        if (movie.watchProviders != null) const SizedBox(height: 16),
+        // Watch Providers - Plataformas de streaming (fetched from TMDB)
+        WatchProvidersSection(
+          movieId: movie.id,
+          movieTitle: movie.title,
+          imdbId: movie.imdbId,
+          country: 'MX',
+        ),
 
         // Homepage link if available
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
@@ -233,15 +231,13 @@ class EnhancedMovieInfo extends ConsumerWidget {
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
 
-        // Watch Providers - Plataformas de streaming
-        if (movie.watchProviders != null)
-          WatchProvidersWidget(
-            watchProviders: movie.watchProviders,
-            movieTitle: movie.title,
-            imdbId: movie.imdbId,
-            country: 'MX',
-          ),
-        if (movie.watchProviders != null) const SizedBox(height: 16),
+        // Watch Providers - Plataformas de streaming (fetched from TMDB)
+        WatchProvidersSection(
+          movieId: movie.id,
+          movieTitle: movie.title,
+          imdbId: movie.imdbId,
+          country: 'MX',
+        ),
 
         // Homepage link if available
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
