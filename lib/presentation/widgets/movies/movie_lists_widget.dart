@@ -732,7 +732,8 @@ class _CreateListDialogState extends ConsumerState<_CreateListDialog> {
                               if (!mounted || !scaffoldContext.mounted) return;
                               ErrorHandlerHelper.showError(
                                 scaffoldContext,
-                                message: AppLocalizations.of(scaffoldContext)!.errorCreateList,
+                                message: AppLocalizations.of(scaffoldContext)!
+                                    .errorCreateList,
                               );
                             }
                           }

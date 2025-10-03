@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../../generated/app_localizations.dart';
 
 /// Helper class for centralized error handling and user feedback
-/// 
+///
 /// This class provides:
 /// - Consistent error message display across the app
 /// - Integration with app localization system
@@ -46,8 +47,8 @@ class ErrorHandlerHelper {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
@@ -69,8 +70,8 @@ class ErrorHandlerHelper {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.info_outline, color: Colors.white),
-            SizedBox(width: 8),
+            const Icon(Icons.info_outline, color: Colors.white),
+            const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),
@@ -92,8 +93,8 @@ class ErrorHandlerHelper {
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.white),
-            SizedBox(width: 8),
+            const Icon(Icons.warning_amber_rounded, color: Colors.white),
+            const SizedBox(width: 8),
             Expanded(child: Text(message)),
           ],
         ),

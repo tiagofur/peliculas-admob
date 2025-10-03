@@ -81,14 +81,17 @@ Sistema centralizado de mensajes de error con soporte multi-idioma (ES, EN, PT, 
 ### Archivos Principales
 
 **Creado**:
+
 - `lib/core/utils/error_handler_helper.dart`
 
 **Refactorizados**:
+
 - `lib/widgets/quick_login_widget.dart` (6 SnackBars → ErrorHandlerHelper)
 - `lib/widgets/reviews/review_helpfulness_voting.dart` (-45 líneas)
 - `lib/presentation/widgets/movies/movie_lists_widget.dart` (localized)
 
 **Localization**:
+
 - `lib/l10n/app_es.arb` (+23 mensajes)
 - `lib/l10n/app_en.arb` (+23 mensajes)
 - `lib/l10n/app_pt.arb` (+23 mensajes)

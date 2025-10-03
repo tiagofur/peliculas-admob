@@ -82,7 +82,8 @@ class _ReviewHelpfulnessVotingState
       });
       LoggerFactory.error('Error al enviar voto de utilidad: $e');
       if (mounted) {
-        ErrorHandlerHelper.handleException(context, e, onRetry: () => _handleVote(isHelpful));
+        ErrorHandlerHelper.handleException(context, e,
+            onRetry: () => _handleVote(isHelpful));
       }
     }
   }
