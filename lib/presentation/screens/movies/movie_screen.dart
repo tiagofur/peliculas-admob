@@ -3,12 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../config/helpers/human_formats.dart';
 import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../core/analytics/analytics_service.dart';
+import '../../../core/logging/logger_factory.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../services/share_service.dart';
+import '../../providers/movies/genre_provider.dart';
 import '../../providers/providers.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/storage/direct_watched_provider.dart';
@@ -80,13 +81,14 @@ class MovieScreenState extends ConsumerState<MovieScreen> {
 
         // Debug: Log movie from provider
         if (kDebugMode && movie != null) {
-          print('🎬 MovieScreen: Received movie from provider');
-          print('  ID: ${movie.id}');
-          print('  Title: ${movie.title}');
-          print('  Has credits: ${movie.credits != null}');
+          LoggerFactory.debug('🎬 MovieScreen: Received movie from provider');
+          LoggerFactory.debug('  ID: ${movie.id}');
+          LoggerFactory.debug('  Title: ${movie.title}');
+          LoggerFactory.debug('  Has credits: ${movie.credits != null}');
           if (movie.credits != null) {
-            print('  Credits keys: ${movie.credits!.keys.toList()}');
-            print(
+            LoggerFactory.debug(
+                '  Credits keys: ${movie.credits!.keys.toList()}');
+            LoggerFactory.debug(
                 '  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
           }
         }
@@ -217,13 +219,17 @@ class _MovieDetails extends StatelessWidget {
               // Reparto Principal (sección reducida)
               _CastSection(movie: movie),
 
+              // Elenco Completo - Inmediatamente después del Reparto Principal
+              const SizedBox(height: 8),
+              _FullCastList(movie: movie),
+
               // Crew (Director, Writer, etc.)
               const SizedBox(height: 16),
               _CrewSection(movie: movie),
 
-              // Detalles Técnicos + Estadísticas UNIFICADOS - NUEVO
+              // Estadísticas de la Película
               const SizedBox(height: 16),
-              _TechnicalAndStatsSection(movie: movie),
+              _MovieStatsSection(movie: movie),
 
               //* 2. Anuncio nativo después de info técnica
               const Padding(
@@ -245,20 +251,6 @@ class _MovieDetails extends StatelessWidget {
         //* Videos de la película (si tiene)
         VideosFromMovie(movieId: movie.id),
 
-        //* 3. Anuncio nativo antes de 'Elenco Completo'
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12.0),
-          child: kIsWeb
-              ? WebSafeNativeAdWidget()
-              : NativeAdWidget(
-                  height: 100,
-                  showLabel: false,
-                ),
-        ),
-
-        //* Elenco Completo - Justo arriba de Recomendaciones
-        _FullCastList(movie: movie),
-
         //* Películas similares (Recomendaciones con anuncios)
         SimilarMovies(movieId: movie.id),
       ],
@@ -266,7 +258,7 @@ class _MovieDetails extends StatelessWidget {
   }
 }
 
-class _Genres extends StatelessWidget {
+class _Genres extends ConsumerWidget {
   const _Genres({
     required this.movie,
   });
@@ -274,13 +266,16 @@ class _Genres extends StatelessWidget {
   final Movie movie;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textStyles = Theme.of(context).textTheme;
     final colors = Theme.of(context).colorScheme;
 
     if (movie.genreIds.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    // Obtener el mapa completo de géneros
+    final genresAsync = ref.watch(genresProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -304,41 +299,89 @@ class _Genres extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: movie.genreIds.map((genreIdStr) {
-              final genreId = int.tryParse(genreIdStr) ?? 0;
-              final genreName = _getGenreName(genreId);
+          genresAsync.when(
+            data: (genresMap) {
+              // Debug: Log para ver qué está pasando
+              if (kDebugMode) {
+                LoggerFactory.debug(
+                    '🎭 Géneros de película: ${movie.genreIds}');
+                LoggerFactory.debug(
+                    '🎭 Mapa de géneros disponibles: ${genresMap.keys.toList()}');
+              }
 
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      colors.primary.withValues(alpha: 0.7),
-                      colors.primary.withValues(alpha: 0.9),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: movie.genreIds.map((genreIdStr) {
+                  final genreId = int.tryParse(genreIdStr) ?? 0;
+                  final genreName = genresMap[genreId] ?? 'Desconocido';
+
+                  // Debug: Log para cada conversión
+                  if (kDebugMode && genreName == 'Desconocido') {
+                    LoggerFactory.debug(
+                        '⚠️ Género no encontrado: String="$genreIdStr", Parsed=$genreId');
+                  }
+
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colors.primary.withValues(alpha: 0.7),
+                          colors.primary.withValues(alpha: 0.9),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.primary.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Text(
-                  genreName,
-                  style: textStyles.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                    child: Text(
+                      genreName,
+                      style: textStyles.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                }).toList(),
               );
-            }).toList(),
+            },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            error: (error, stack) {
+              LoggerFactory.error('Error cargando géneros: $error');
+              // Fallback a mostrar los IDs si hay error
+              return Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: movie.genreIds.map((genreIdStr) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colors.primary.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Género $genreIdStr',
+                      style: textStyles.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
@@ -694,33 +737,6 @@ class _CastSection extends StatelessWidget {
   }
 }
 
-// Helper function to convert genre IDs to names
-String _getGenreName(int genreId) {
-  const genreMap = {
-    28: 'Acción',
-    12: 'Aventura',
-    16: 'Animación',
-    35: 'Comedia',
-    80: 'Crimen',
-    99: 'Documental',
-    18: 'Drama',
-    10751: 'Familiar',
-    14: 'Fantasía',
-    36: 'Historia',
-    27: 'Terror',
-    10402: 'Música',
-    9648: 'Misterio',
-    10749: 'Romance',
-    878: 'Ciencia Ficción',
-    10770: 'Película de TV',
-    53: 'Thriller',
-    10752: 'Guerra',
-    37: 'Western',
-  };
-
-  return genreMap[genreId] ?? 'Desconocido';
-}
-
 // Widget para mostrar el elenco completo
 class _FullCastList extends StatelessWidget {
   const _FullCastList({required this.movie});
@@ -734,32 +750,35 @@ class _FullCastList extends StatelessWidget {
 
     // Debug: Log credits data
     if (kDebugMode) {
-      print('🎬 DEBUG - Elenco Completo:');
-      print('  movie.id: ${movie.id}');
-      print('  movie.title: ${movie.title}');
-      print('  movie.credits == null: ${movie.credits == null}');
+      LoggerFactory.debug('🎬 DEBUG - Elenco Completo:');
+      LoggerFactory.debug('  movie.id: ${movie.id}');
+      LoggerFactory.debug('  movie.title: ${movie.title}');
+      LoggerFactory.debug('  movie.credits == null: ${movie.credits == null}');
 
       if (movie.credits != null) {
-        print('  movie.credits type: ${movie.credits.runtimeType}');
-        print('  movie.credits keys: ${movie.credits!.keys.toList()}');
-        print('  movie.credits.length: ${movie.credits!.length}');
+        LoggerFactory.debug(
+            '  movie.credits type: ${movie.credits.runtimeType}');
+        LoggerFactory.debug(
+            '  movie.credits keys: ${movie.credits!.keys.toList()}');
+        LoggerFactory.debug('  movie.credits.length: ${movie.credits!.length}');
 
         // Check each key
         for (var key in movie.credits!.keys) {
-          print('  Key "$key": ${movie.credits![key]?.runtimeType}');
+          LoggerFactory.debug(
+              '  Key "$key": ${movie.credits![key]?.runtimeType}');
         }
 
         // Try accessing 'cast'
-        print('  Accessing movie.credits[\'cast\']:');
+        LoggerFactory.debug('  Accessing movie.credits[\'cast\']:');
         final castData = movie.credits!['cast'];
-        print('    Result: ${castData?.runtimeType}');
-        print('    Is null: ${castData == null}');
-        print('    Is List: ${castData is List}');
+        LoggerFactory.debug('    Result: ${castData?.runtimeType}');
+        LoggerFactory.debug('    Is null: ${castData == null}');
+        LoggerFactory.debug('    Is List: ${castData is List}');
 
         if (castData is List) {
-          print('    List length: ${castData.length}');
+          LoggerFactory.debug('    List length: ${castData.length}');
           if (castData.isNotEmpty) {
-            print('    First item: ${castData.first}');
+            LoggerFactory.debug('    First item: ${castData.first}');
           }
         }
       }
@@ -768,14 +787,15 @@ class _FullCastList extends StatelessWidget {
     // Show cast only if available from API
     if (movie.credits == null) {
       if (kDebugMode) {
-        print('❌ movie.credits is NULL - returning empty widget');
+        LoggerFactory.debug('❌ movie.credits is NULL - returning empty widget');
       }
       return const SizedBox.shrink();
     }
 
     if (movie.credits?['cast'] == null) {
       if (kDebugMode) {
-        print('❌ movie.credits[\'cast\'] is NULL - returning empty widget');
+        LoggerFactory.debug(
+            '❌ movie.credits[\'cast\'] is NULL - returning empty widget');
       }
       return const SizedBox.shrink();
     }
@@ -784,13 +804,14 @@ class _FullCastList extends StatelessWidget {
 
     if (castList.isEmpty) {
       if (kDebugMode) {
-        print('❌ castList is EMPTY - returning empty widget');
+        LoggerFactory.debug('❌ castList is EMPTY - returning empty widget');
       }
       return const SizedBox.shrink();
     }
 
     if (kDebugMode) {
-      print('✅ Cast list valid! Rendering ${castList.length} actors');
+      LoggerFactory.debug(
+          '✅ Cast list valid! Rendering ${castList.length} actors');
     }
 
     return Container(
@@ -837,6 +858,7 @@ class _FullCastList extends StatelessWidget {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 physics: const AlwaysScrollableScrollPhysics(),
+                primary: false,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 itemCount: castList.length,
                 itemBuilder: (context, index) {
@@ -846,28 +868,42 @@ class _FullCastList extends StatelessWidget {
                   final character = actor['character'] as String?;
 
                   return Container(
-                  width: 120,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(12),
-                          ),
-                          child: profilePath != null && profilePath.isNotEmpty
-                              ? Image.network(
-                                  resolveBackdropUrl(profilePath, size: 'w185'),
-                                  width: 120,
-                                  height: 120,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
+                    width: 120,
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Card(
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            child: profilePath != null && profilePath.isNotEmpty
+                                ? Image.network(
+                                    resolveBackdropUrl(profilePath,
+                                        size: 'w185'),
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      width: 120,
+                                      height: 120,
+                                      color: colors.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 50,
+                                        color: colors.onSurface
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
                                     width: 120,
                                     height: 120,
                                     color: colors.surfaceContainerHighest,
@@ -878,57 +914,45 @@ class _FullCastList extends StatelessWidget {
                                           .withValues(alpha: 0.3),
                                     ),
                                   ),
-                                )
-                              : Container(
-                                  width: 120,
-                                  height: 120,
-                                  color: colors.surfaceContainerHighest,
-                                  child: Icon(
-                                    Icons.person,
-                                    size: 50,
-                                    color:
-                                        colors.onSurface.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(6.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  name,
-                                  style: textStyles.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (character != null &&
-                                    character.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(6.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
                                   Text(
-                                    character,
+                                    name,
                                     style: textStyles.bodySmall?.copyWith(
-                                      color: colors.onSurface
-                                          .withValues(alpha: 0.6),
-                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                     textAlign: TextAlign.center,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                  if (character != null &&
+                                      character.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      character,
+                                      style: textStyles.bodySmall?.copyWith(
+                                        color: colors.onSurface
+                                            .withValues(alpha: 0.6),
+                                        fontSize: 10,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ],
-                              ],
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                   );
                 },
               ),
@@ -940,9 +964,9 @@ class _FullCastList extends StatelessWidget {
   }
 }
 
-// Widget unificado para Detalles Técnicos + Estadísticas
-class _TechnicalAndStatsSection extends StatelessWidget {
-  const _TechnicalAndStatsSection({required this.movie});
+// Widget para Estadísticas adicionales de la Película (sin duplicar Detalles Técnicos)
+class _MovieStatsSection extends StatelessWidget {
+  const _MovieStatsSection({required this.movie});
 
   final Movie movie;
 
@@ -954,190 +978,113 @@ class _TechnicalAndStatsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colors.primaryContainer.withValues(alpha: 0.3),
-            colors.secondaryContainer.withValues(alpha: 0.2),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colors.primary.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        color: colors.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.analytics, color: colors.primary, size: 24),
-              ),
-              const SizedBox(width: 12),
+              Icon(Icons.bar_chart, color: colors.primary),
+              const SizedBox(width: 8),
               Text(
-                'Información Técnica y Estadísticas',
+                'Estadísticas',
                 style: textStyles.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Grid de stats
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.5,
+          const SizedBox(height: 12),
+          // Primera fila: Año y Estado (si disponible)
+          Row(
             children: [
-              if (movie.runtime != null && (movie.runtime ?? 0) > 0)
-                _StatBox(
-                  icon: Icons.access_time,
-                  title: 'Duración',
-                  value: '${movie.runtime} min',
-                  color: Colors.blue,
+              Expanded(
+                child: _MovieDetailItem(
+                  label: 'Año',
+                  value: movie.releaseDate.year.toString(),
+                  icon: Icons.calendar_today,
                 ),
-              _StatBox(
-                icon: Icons.calendar_today,
-                title: 'Año',
-                value: movie.releaseDate.year.toString(),
-                color: Colors.green,
               ),
-              _StatBox(
-                icon: Icons.star,
-                title: 'Calificación',
-                value: '${movie.voteAverage.toStringAsFixed(1)}/10',
-                color: _getRatingColor(movie.voteAverage),
-              ),
-              _StatBox(
-                icon: Icons.how_to_vote,
-                title: 'Votos',
-                value: HumanFormats.number(movie.voteCount.toDouble()),
-                color: Colors.purple,
-              ),
-              _StatBox(
-                icon: Icons.trending_up,
-                title: 'Popularidad',
-                value: movie.popularity.toStringAsFixed(0),
-                color: Colors.orange,
-              ),
-              if (movie.imdbId != null && movie.imdbId!.isNotEmpty)
-                _StatBox(
-                  icon: Icons.movie,
-                  title: 'IMDb ID',
-                  value: movie.imdbId!,
-                  color: Colors.amber,
-                  isSmallText: true,
+              if (movie.status != null && movie.status!.isNotEmpty)
+                Expanded(
+                  child: _MovieDetailItem(
+                    label: 'Estado',
+                    value: movie.status!,
+                    icon: Icons.info_outline,
+                  ),
                 ),
-              if (movie.budget != null && (movie.budget ?? 0) > 0)
-                _StatBox(
-                  icon: Icons.attach_money,
-                  title: 'Presupuesto',
-                  value:
-                      '\$${HumanFormats.number((movie.budget ?? 0).toDouble())}',
-                  color: Colors.teal,
-                  isSmallText: true,
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Segunda fila: Idioma Original y Clasificación
+          Row(
+            children: [
+              if (movie.originalLanguage.isNotEmpty)
+                Expanded(
+                  child: _MovieDetailItem(
+                    label: 'Idioma Original',
+                    value: movie.originalLanguage.toUpperCase(),
+                    icon: Icons.language,
+                  ),
                 ),
-              if (movie.revenue != null && (movie.revenue ?? 0) > 0)
-                _StatBox(
-                  icon: Icons.show_chart,
-                  title: 'Ingresos',
-                  value:
-                      '\$${HumanFormats.number((movie.revenue ?? 0).toDouble())}',
-                  color: Colors.lightGreen,
-                  isSmallText: true,
+              Expanded(
+                child: _MovieDetailItem(
+                  label: 'Clasificación',
+                  value: movie.adult ? 'Adultos' : 'Todo Público',
+                  icon: movie.adult ? Icons.warning : Icons.check_circle,
                 ),
+              ),
             ],
           ),
         ],
       ),
     );
   }
-
-  Color _getRatingColor(double rating) {
-    if (rating >= 8.0) return Colors.green;
-    if (rating >= 7.0) return Colors.lightGreen;
-    if (rating >= 6.0) return Colors.orange;
-    if (rating >= 5.0) return Colors.deepOrange;
-    return Colors.red;
-  }
 }
 
-class _StatBox extends StatelessWidget {
-  const _StatBox({
-    required this.icon,
-    required this.title,
+// Widget helper para items de detalle en estadísticas (similar a _DetailItem de enhanced_movie_info.dart)
+class _MovieDetailItem extends StatelessWidget {
+  const _MovieDetailItem({
+    required this.label,
     required this.value,
-    required this.color,
-    this.isSmallText = false,
+    required this.icon,
   });
 
-  final IconData icon;
-  final String title;
+  final String label;
   final String value;
-  final Color color;
-  final bool isSmallText;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final textStyles = Theme.of(context).textTheme;
+    final colors = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 2,
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: colors.onSurface.withValues(alpha: 0.6)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: textStyles.bodySmall?.copyWith(
+                  color: colors.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+              Text(
+                value,
+                style: textStyles.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: textStyles.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-              fontSize: isSmallText ? 12 : null,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: textStyles.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              fontSize: 11,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

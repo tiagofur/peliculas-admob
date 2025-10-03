@@ -974,6 +974,7 @@ class _EnhancedCast extends StatelessWidget {
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
                 itemCount: mainCast.length,
                 itemBuilder: (context, index) {
                   final actor = mainCast[index] as Map<String, dynamic>;
@@ -982,53 +983,53 @@ class _EnhancedCast extends StatelessWidget {
                   final character = actor['character'] as String?;
 
                   return Container(
-                  width: 90,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: Column(
-                    children: [
-                      CircleAvatar(
-                        radius: 35,
-                        backgroundColor: colors.surfaceContainerHighest,
-                        backgroundImage:
-                            profilePath != null && profilePath.isNotEmpty
-                                ? NetworkImage(
-                                    resolveTmdbImageUrl(
-                                      profilePath,
-                                      size: 'w185',
-                                    ),
-                                  )
-                                : null,
-                        child: profilePath == null || profilePath.isEmpty
-                            ? Icon(
-                                Icons.person,
-                                size: 35,
-                                color: colors.onSurface,
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        name,
-                        style: textStyles.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
+                    width: 90,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 35,
+                          backgroundColor: colors.surfaceContainerHighest,
+                          backgroundImage:
+                              profilePath != null && profilePath.isNotEmpty
+                                  ? NetworkImage(
+                                      resolveTmdbImageUrl(
+                                        profilePath,
+                                        size: 'w185',
+                                      ),
+                                    )
+                                  : null,
+                          child: profilePath == null || profilePath.isEmpty
+                              ? Icon(
+                                  Icons.person,
+                                  size: 35,
+                                  color: colors.onSurface,
+                                )
+                              : null,
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (character != null && character.isNotEmpty)
+                        const SizedBox(height: 8),
                         Text(
-                          character,
+                          name,
                           style: textStyles.bodySmall?.copyWith(
-                            color: colors.onSurface.withValues(alpha: 0.6),
-                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
                           ),
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                    ],
-                  ),
+                        if (character != null && character.isNotEmpty)
+                          Text(
+                            character,
+                            style: textStyles.bodySmall?.copyWith(
+                              color: colors.onSurface.withValues(alpha: 0.6),
+                              fontSize: 10,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
                   );
                 },
               ),
