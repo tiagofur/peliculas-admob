@@ -984,5 +984,25 @@
   "errorLoadingExplanation": "Error loading explanation",
   "@errorLoadingExplanation": {
     "description": "Error loading ML explanation"
+  },
+  "streamingProvidersTitle": "Available on:",
+  "@streamingProvidersTitle": {
+    "description": "Title for streaming providers section"
+  },
+  "streamingProvidersLoading": "Searching streaming providers...",
+  "@streamingProvidersLoading": {
+    "description": "Loading message for streaming providers"
+  },
+  "streamingProvidersNotAvailable": "Streaming information not available",
+  "@streamingProvidersNotAvailable": {
+    "description": "Message when no provider information is available"
+  },
+  "streamingProvidersError": "Error getting streaming providers",
+  "@streamingProvidersError": {
+    "description": "Error message when getting providers fails"
+  },
+  "streamingProvidersRetry": "Retry",
+  "@streamingProvidersRetry": {
+    "description": "Button to retry getting providers"
   }
 }

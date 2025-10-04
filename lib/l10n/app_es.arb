@@ -651,5 +651,25 @@
   "errorLoadingExplanation": "Error al cargar explicación",
   "@errorLoadingExplanation": {
     "description": "Error al cargar explicación ML"
+  },
+  "streamingProvidersTitle": "Disponible en:",
+  "@streamingProvidersTitle": {
+    "description": "Título de la sección de proveedores de streaming"
+  },
+  "streamingProvidersLoading": "Buscando proveedores de streaming...",
+  "@streamingProvidersLoading": {
+    "description": "Mensaje de carga para proveedores de streaming"
+  },
+  "streamingProvidersNotAvailable": "Información de streaming no disponible",
+  "@streamingProvidersNotAvailable": {
+    "description": "Mensaje cuando no hay información de proveedores"
+  },
+  "streamingProvidersError": "Error al obtener proveedores de streaming",
+  "@streamingProvidersError": {
+    "description": "Mensaje de error al obtener proveedores"
+  },
+  "streamingProvidersRetry": "Reintentar",
+  "@streamingProvidersRetry": {
+    "description": "Botón para reintentar obtener proveedores"
   }
 }

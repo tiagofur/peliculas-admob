@@ -4,6 +4,8 @@ import 'dart:convert';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/streaming_availability.dart';
 import '../../domain/entities/streaming_platform.dart';
+import '../../domain/entities/watch_providers.dart';
+import '../../infrastructure/repositories/tmdb_watch_providers_repository.dart';
 import '../analytics/analytics_service.dart';
 import '../cache/cache_service.dart';
 import '../logging/logger_factory.dart';
@@ -13,13 +15,15 @@ class AvailabilityChecker {
   AvailabilityChecker({
     AnalyticsService? analyticsService,
     CacheService? cacheService,
+    TmdbWatchProvidersRepository? tmdbRepository,
   })  : _analyticsService = analyticsService ?? AnalyticsService(),
-        _cacheService = cacheService ?? CacheService.instance;
+        _cacheService = cacheService ?? CacheService.instance,
+        _tmdbRepository = tmdbRepository ??
+            TmdbWatchProvidersRepository(
+                cacheService: cacheService ?? CacheService.instance);
   final AnalyticsService _analyticsService;
   final CacheService _cacheService;
-
-  // Use LoggerFactory static logger
-  static final _logger = LoggerFactory.logger;
+  final TmdbWatchProvidersRepository _tmdbRepository;
 
   // Cache duration for availability data
   static const Duration _cacheDuration = Duration(hours: 6);
@@ -53,44 +57,48 @@ class AvailabilityChecker {
       try {
         final cachedData = await _cacheService.get<String>(cacheKey);
         if (cachedData != null) {
-          _logger.info('Cache hit for movie: $movieTitle ($movieId)');
+          LoggerFactory.info('Cache hit for movie: $movieTitle ($movieId)');
           return StreamingAvailability.fromJson(jsonDecode(cachedData));
         }
       } catch (e) {
-        _logger.warning('Error reading from cache: $e');
+        LoggerFactory.warning('Error reading from cache: $e');
       }
     }
 
     try {
-      _logger.info('Checking availability for movie: $movieTitle ($movieId)');
+      LoggerFactory.info(
+          'Checking availability for movie: $movieTitle ($movieId)');
 
-      final platforms = [
-        StreamingPlatform.netflix,
-        StreamingPlatform.amazonPrime,
-        StreamingPlatform.disneyPlus,
-        StreamingPlatform.hboMax,
-        StreamingPlatform.hulu,
-        StreamingPlatform.appleTV,
-      ];
+      // Get real TMDB Watch Providers data instead of mock data
+      LoggerFactory.info(
+          'Fetching real TMDB watch providers data for movie $movieId');
 
       final List<PlatformAvailability> availabilities = [];
 
-      for (final platform in platforms) {
-        try {
-          final availability = await _checkPlatformAvailability(
-            platform: platform,
-            movieId: movieId,
-            movieTitle: movieTitle,
-            tmdbId: tmdbId,
-            region: region,
-          );
+      try {
+        final watchProviders = await _tmdbRepository.getWatchProviders(
+          int.parse(movieId),
+          region: region,
+        );
 
-          if (availability != null) {
-            availabilities.add(availability);
-          }
-        } catch (e) {
-          _logger.warning('Error checking ${platform.name} availability: $e');
+        if (watchProviders != null) {
+          // Convert TMDB WatchProviders to PlatformAvailability objects
+          availabilities.addAll(
+              await _convertWatchProvidersToPlatformAvailability(
+                  watchProviders));
+
+          LoggerFactory.info(
+              'Successfully fetched ${availabilities.length} platform availabilities from TMDB');
+        } else {
+          LoggerFactory.info(
+              'No watch providers found for movie $movieId in region $region');
         }
+      } catch (e) {
+        LoggerFactory.error('Error fetching TMDB watch providers: $e');
+        // Fallback to mock data if TMDB fails
+        LoggerFactory.info('Falling back to mock data due to TMDB error');
+        availabilities.addAll(
+            await _getMockPlatformAvailabilities(movieId, movieTitle, region));
       }
 
       final streamingAvailability = StreamingAvailability(
@@ -108,9 +116,10 @@ class AvailabilityChecker {
           jsonEncode(streamingAvailability.toJson()),
           expiration: _cacheDuration,
         );
-        _logger.info('Cached availability for movie: $movieTitle ($movieId)');
+        LoggerFactory.info(
+            'Cached availability for movie: $movieTitle ($movieId)');
       } catch (e) {
-        _logger.warning('Error writing to cache: $e');
+        LoggerFactory.warning('Error writing to cache: $e');
       }
 
       _analyticsService.trackEvent(
@@ -129,7 +138,7 @@ class AvailabilityChecker {
 
       return streamingAvailability;
     } catch (e) {
-      _logger.error('Error checking movie availability: $e');
+      LoggerFactory.error('Error checking movie availability: $e');
       _analyticsService.trackEvent(
         AnalyticsEventType.error,
         {
@@ -148,7 +157,7 @@ class AvailabilityChecker {
     bool useCache = true,
   }) async {
     try {
-      _logger.info('Checking availability for ${movies.length} movies');
+      LoggerFactory.info('Checking availability for ${movies.length} movies');
 
       final List<StreamingAvailability> results = [];
 
@@ -185,265 +194,227 @@ class AvailabilityChecker {
 
       return results;
     } catch (e) {
-      _logger.error('Error checking multiple movies availability: $e');
+      LoggerFactory.error('Error checking multiple movies availability: $e');
       return [];
     }
   }
 
-  /// Check availability on a specific platform
-  Future<PlatformAvailability?> _checkPlatformAvailability({
-    required StreamingPlatform platform,
-    required String movieId,
-    required String movieTitle,
-    String? tmdbId,
-    String region = 'US',
-  }) async {
-    try {
-      // This would typically call the platform's API or a third-party service
-      // For now, we'll simulate the availability check
+  /// Convert TMDB WatchProviders to PlatformAvailability objects
+  Future<List<PlatformAvailability>>
+      _convertWatchProvidersToPlatformAvailability(
+    WatchProviders watchProviders,
+  ) async {
+    final List<PlatformAvailability> availabilities = [];
 
-      switch (platform.id) {
-        case 'netflix':
-          return await _checkNetflixAvailability(
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
-
-        case 'amazon_prime':
-          return await _checkPrimeVideoAvailability(
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
-
-        case 'disney_plus':
-          return await _checkDisneyPlusAvailability(
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
-
-        case 'hbo_max':
-          return await _checkHBOMaxAvailability(
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
-
-        case 'hulu':
-          return await _checkHuluAvailability(
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
-
-        case 'apple_tv':
-          return await _checkAppleTVAvailability(
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
-
-        default:
-          return await _checkGenericPlatformAvailability(
-            platform: platform,
-            movieId: movieId,
-            movieTitle: movieTitle,
-            region: region,
-          );
+    // Process streaming (flatrate) providers - included in subscription
+    for (final provider in watchProviders.flatrate) {
+      final platform =
+          _mapProviderToPlatform(provider.providerId, provider.providerName);
+      if (platform != null) {
+        availabilities.add(PlatformAvailability(
+          platform: platform,
+          isAvailable: true,
+          isFree: false,
+          requiresSubscription: true,
+          canRent: false,
+          canPurchase: false,
+          quality: 'HD', // TMDB doesn't provide quality info
+          deepLink:
+              _buildPlatformDeepLink(platform, provider.providerId.toString()),
+          audioLanguages: ['en', 'es'],
+          subtitleLanguages: ['en', 'es'],
+          metadata: {
+            'provider_id': provider.providerId,
+            'provider_name': provider.providerName,
+            'logo_path': provider.logoPath,
+            'display_priority': provider.displayPriority,
+            'type': 'subscription',
+          },
+        ));
       }
-    } catch (e) {
-      _logger.error('Error checking ${platform.name} availability: $e');
-      return null;
+    }
+
+    // Process rental providers
+    for (final provider in watchProviders.rent) {
+      final platform =
+          _mapProviderToPlatform(provider.providerId, provider.providerName);
+      if (platform != null) {
+        availabilities.add(PlatformAvailability(
+          platform: platform,
+          isAvailable: true,
+          isFree: false,
+          requiresSubscription: false,
+          canRent: true,
+          canPurchase: false,
+          rentalPrice: 3.99, // TMDB doesn't provide pricing, use default
+          currency: 'USD',
+          quality: 'HD',
+          deepLink:
+              _buildPlatformDeepLink(platform, provider.providerId.toString()),
+          audioLanguages: ['en', 'es'],
+          subtitleLanguages: ['en', 'es'],
+          metadata: {
+            'provider_id': provider.providerId,
+            'provider_name': provider.providerName,
+            'logo_path': provider.logoPath,
+            'display_priority': provider.displayPriority,
+            'type': 'rent',
+          },
+        ));
+      }
+    }
+
+    // Process purchase providers
+    for (final provider in watchProviders.buy) {
+      final platform =
+          _mapProviderToPlatform(provider.providerId, provider.providerName);
+      if (platform != null) {
+        availabilities.add(PlatformAvailability(
+          platform: platform,
+          isAvailable: true,
+          isFree: false,
+          requiresSubscription: false,
+          canRent: false,
+          canPurchase: true,
+          purchasePrice: 12.99, // TMDB doesn't provide pricing, use default
+          currency: 'USD',
+          quality: 'HD',
+          deepLink:
+              _buildPlatformDeepLink(platform, provider.providerId.toString()),
+          audioLanguages: ['en', 'es'],
+          subtitleLanguages: ['en', 'es'],
+          metadata: {
+            'provider_id': provider.providerId,
+            'provider_name': provider.providerName,
+            'logo_path': provider.logoPath,
+            'display_priority': provider.displayPriority,
+            'type': 'buy',
+          },
+        ));
+      }
+    }
+
+    return availabilities;
+  }
+
+  /// Map TMDB provider ID to StreamingPlatform
+  StreamingPlatform? _mapProviderToPlatform(
+      int providerId, String providerName) {
+    // Common provider IDs from TMDB
+    switch (providerId) {
+      case 8: // Netflix
+        return StreamingPlatform.netflix;
+      case 9: // Amazon Prime Video
+        return StreamingPlatform.amazonPrime;
+      case 337: // Disney Plus
+        return StreamingPlatform.disneyPlus;
+      case 384: // HBO Max
+        return StreamingPlatform.hboMax;
+      case 15: // Hulu
+        return StreamingPlatform.hulu;
+      case 350: // Apple TV
+        return StreamingPlatform.appleTV;
+      case 2: // Apple iTunes
+        return StreamingPlatform.appleTV;
+      case 3: // Google Play Movies
+        return const StreamingPlatform(
+          id: 'google_play',
+          name: 'Google Play',
+          displayName: 'Google Play Movies',
+          logoUrl:
+              'https://image.tmdb.org/t/p/original/tbEdFQDwx5LEVr8WpSeXQSIirVq.jpg',
+          baseUrl: 'https://play.google.com/store/movies',
+          deepLinkScheme: 'market',
+          requiresSubscription: false,
+          supportedCountries: ['US', 'MX', 'ES', 'AR', 'CO', 'CL'],
+        );
+      case 68: // Microsoft Store
+        return const StreamingPlatform(
+          id: 'microsoft_store',
+          name: 'Microsoft Store',
+          displayName: 'Microsoft Store',
+          logoUrl:
+              'https://image.tmdb.org/t/p/original/shq88b09gTBYC4hA4WnmlnBu8wd.jpg',
+          baseUrl: 'https://www.microsoft.com/store/movies-and-tv',
+          deepLinkScheme: 'ms-windows-store',
+          requiresSubscription: false,
+          supportedCountries: ['US', 'MX', 'ES'],
+        );
+      case 10: // Amazon Video (different from Prime)
+        return StreamingPlatform.amazonPrime;
+      default:
+        // Create a generic platform for unknown providers
+        return StreamingPlatform(
+          id: 'provider_$providerId',
+          name: providerName,
+          displayName: providerName,
+          logoUrl: 'https://image.tmdb.org/t/p/original/provider_logo.jpg',
+          baseUrl: 'https://provider.com',
+          deepLinkScheme: 'provider',
+          requiresSubscription: false,
+          supportedCountries: ['US', 'MX'],
+        );
     }
   }
 
-  /// Check Netflix availability
-  Future<PlatformAvailability?> _checkNetflixAvailability({
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    // Simulate Netflix API call
-    // In a real implementation, this would call Netflix's API or a service like JustWatch
-
-    return PlatformAvailability(
-      platform: StreamingPlatform.netflix,
-      isAvailable: _simulateAvailability(),
-      isFree: false,
-      requiresSubscription: true,
-      canRent: false,
-      canPurchase: false,
-      currency: 'USD',
-      quality: '4K',
-      deepLink: 'netflix://title/$movieId',
-      audioLanguages: ['en', 'es', 'fr'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de'],
-      metadata: {
-        'subscription_price': 15.99,
-        'web_link': 'https://www.netflix.com/title/$movieId'
-      },
-    );
+  /// Build deep link for platform
+  String _buildPlatformDeepLink(StreamingPlatform platform, String providerId) {
+    switch (platform.id) {
+      case 'netflix':
+        return 'netflix://title/$providerId';
+      case 'amazon_prime':
+        return 'aiv://aiv/resume?asin=$providerId';
+      case 'disney_plus':
+        return 'disneyplus://content/$providerId';
+      case 'hbo_max':
+        return 'hbomax://content/$providerId';
+      case 'hulu':
+        return 'hulu://watch/$providerId';
+      case 'apple_tv':
+        return 'videos://movie/$providerId';
+      default:
+        return '${platform.deepLinkScheme}://content/$providerId';
+    }
   }
 
-  /// Check Prime Video availability
-  Future<PlatformAvailability?> _checkPrimeVideoAvailability({
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    final isAvailable = _simulateAvailability();
-    final isFree = isAvailable && _simulateAvailability(probability: 0.3);
+  /// Fallback method for mock data (in case TMDB fails)
+  Future<List<PlatformAvailability>> _getMockPlatformAvailabilities(
+    String movieId,
+    String movieTitle,
+    String region,
+  ) async {
+    LoggerFactory.warning('Using fallback mock data for movie $movieId');
 
-    return PlatformAvailability(
-      platform: StreamingPlatform.amazonPrime,
-      isAvailable: isAvailable,
-      isFree: isFree,
-      requiresSubscription: isFree,
-      canRent: !isFree && isAvailable,
-      canPurchase: !isFree && isAvailable,
-      rentalPrice: !isFree && isAvailable ? 3.99 : null,
-      purchasePrice: !isFree && isAvailable ? 14.99 : null,
-      currency: 'USD',
-      quality: '4K',
-      deepLink: 'aiv://aiv/resume?asin=$movieId',
-      audioLanguages: ['en', 'es', 'fr'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de'],
-      metadata: {
-        'subscription_price': isFree ? 8.99 : null,
-        'web_link': 'https://www.amazon.com/dp/$movieId'
-      },
-    );
+    final platforms = [
+      StreamingPlatform.netflix,
+      StreamingPlatform.amazonPrime,
+      StreamingPlatform.disneyPlus,
+    ];
+
+    final List<PlatformAvailability> availabilities = [];
+
+    for (final platform in platforms) {
+      if (_simulateAvailability()) {
+        availabilities.add(PlatformAvailability(
+          platform: platform,
+          isAvailable: true,
+          isFree: false,
+          requiresSubscription: true,
+          canRent: false,
+          canPurchase: false,
+          quality: 'HD',
+          deepLink: _buildPlatformDeepLink(platform, movieId),
+          audioLanguages: ['en', 'es'],
+          subtitleLanguages: ['en', 'es'],
+          metadata: {'source': 'mock_fallback'},
+        ));
+      }
+    }
+
+    return availabilities;
   }
 
-  /// Check Disney+ availability
-  Future<PlatformAvailability?> _checkDisneyPlusAvailability({
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    return PlatformAvailability(
-      platform: StreamingPlatform.disneyPlus,
-      isAvailable: _simulateAvailability(probability: 0.4),
-      isFree: false,
-      requiresSubscription: true,
-      canRent: false,
-      canPurchase: false,
-      currency: 'USD',
-      quality: '4K',
-      deepLink: 'disneyplus://content/$movieId',
-      audioLanguages: ['en', 'es', 'fr'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de'],
-      metadata: {
-        'subscription_price': 7.99,
-        'web_link': 'https://www.disneyplus.com/movies/$movieId'
-      },
-    );
-  }
-
-  /// Check HBO Max availability
-  Future<PlatformAvailability?> _checkHBOMaxAvailability({
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    return PlatformAvailability(
-      platform: StreamingPlatform.hboMax,
-      isAvailable: _simulateAvailability(probability: 0.3),
-      isFree: false,
-      requiresSubscription: true,
-      canRent: false,
-      canPurchase: false,
-      currency: 'USD',
-      quality: '4K',
-      deepLink: 'hbomax://content/$movieId',
-      audioLanguages: ['en', 'es'],
-      subtitleLanguages: ['en', 'es', 'fr'],
-      metadata: {
-        'subscription_price': 14.99,
-        'web_link': 'https://www.hbomax.com/feature/$movieId'
-      },
-    );
-  }
-
-  /// Check Hulu availability
-  Future<PlatformAvailability?> _checkHuluAvailability({
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    return PlatformAvailability(
-      platform: StreamingPlatform.hulu,
-      isAvailable: _simulateAvailability(probability: 0.35),
-      isFree: false,
-      requiresSubscription: true,
-      canRent: false,
-      canPurchase: false,
-      currency: 'USD',
-      quality: 'HD',
-      deepLink: 'hulu://watch/$movieId',
-      audioLanguages: ['en', 'es'],
-      subtitleLanguages: ['en', 'es'],
-      metadata: {
-        'subscription_price': 7.99,
-        'web_link': 'https://www.hulu.com/watch/$movieId'
-      },
-    );
-  }
-
-  /// Check Apple TV+ availability
-  Future<PlatformAvailability?> _checkAppleTVAvailability({
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    final isAvailable = _simulateAvailability(probability: 0.25);
-    final isFree = isAvailable && _simulateAvailability(probability: 0.2);
-
-    return PlatformAvailability(
-      platform: StreamingPlatform.appleTV,
-      isAvailable: isAvailable,
-      isFree: isFree,
-      requiresSubscription: isFree,
-      canRent: !isFree && isAvailable,
-      canPurchase: !isFree && isAvailable,
-      rentalPrice: !isFree && isAvailable ? 4.99 : null,
-      purchasePrice: !isFree && isAvailable ? 19.99 : null,
-      currency: 'USD',
-      quality: '4K',
-      deepLink: 'videos://movie/$movieId',
-      audioLanguages: ['en', 'es', 'fr'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de'],
-      metadata: {
-        'subscription_price': isFree ? 6.99 : null,
-        'web_link': 'https://tv.apple.com/movie/$movieId'
-      },
-    );
-  }
-
-  /// Check generic platform availability
-  Future<PlatformAvailability?> _checkGenericPlatformAvailability({
-    required StreamingPlatform platform,
-    required String movieId,
-    required String movieTitle,
-    required String region,
-  }) async {
-    return PlatformAvailability(
-      platform: platform,
-      isAvailable: _simulateAvailability(probability: 0.3),
-      isFree: false,
-      requiresSubscription: platform.requiresSubscription,
-      canRent: false,
-      canPurchase: false,
-      deepLink: '${platform.deepLinkScheme}content/$movieId',
-      audioLanguages: ['en'],
-      subtitleLanguages: ['en'],
-      metadata: {'web_link': '${platform.baseUrl}/movie/$movieId'},
-    );
-  }
-
-  /// Simulate availability for demo purposes
+  /// Simulate availability for demo purposes (kept for fallback)
   bool _simulateAvailability({double probability = 0.4}) {
     return DateTime.now().millisecondsSinceEpoch % 100 < (probability * 100);
   }
@@ -452,9 +423,9 @@ class AvailabilityChecker {
   Future<void> clearCache() async {
     try {
       await _cacheService.clear();
-      _logger.info('Availability cache cleared');
+      LoggerFactory.info('Availability cache cleared');
     } catch (e) {
-      _logger.error('Error clearing availability cache: $e');
+      LoggerFactory.error('Error clearing availability cache: $e');
     }
   }
 
@@ -473,7 +444,7 @@ class AvailabilityChecker {
 
       return null;
     } catch (e) {
-      _logger.error('Error getting cached availability: $e');
+      LoggerFactory.error('Error getting cached availability: $e');
       return null;
     }
   }

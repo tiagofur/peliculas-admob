@@ -2,13 +2,19 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Flutter Debug (Selected Device)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "flutterMode": "debug"
+    },
+    {
       "name": "Flutter Debug (Windows)",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "windows",
-      "args": ["--flavor", "development"]
+      "deviceId": "windows"
     },
     {
       "name": "Flutter Debug (Chrome)",
@@ -16,8 +22,7 @@
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "chrome",
-      "args": ["--flavor", "development"]
+      "deviceId": "chrome"
     },
     {
       "name": "Flutter Debug (Edge)",
@@ -25,17 +30,7 @@
       "type": "dart",
       "program": "lib/main.dart",
       "flutterMode": "debug",
-      "deviceId": "edge",
-      "args": ["--flavor", "development"]
-    },
-    {
-      "name": "Flutter Debug (Android Emulator)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "flutterMode": "debug",
-      "deviceId": "emulator",
-      "args": ["--flavor", "development"]
+      "deviceId": "edge"
     },
     {
       "name": "Flutter Profile (Windows)",

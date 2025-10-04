@@ -768,4 +768,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorLoadingExplanation => 'Error loading explanation';
+
+  @override
+  String get streamingProvidersTitle => 'Available on:';
+
+  @override
+  String get streamingProvidersLoading => 'Searching streaming providers...';
+
+  @override
+  String get streamingProvidersNotAvailable =>
+      'Streaming information not available';
+
+  @override
+  String get streamingProvidersError => 'Error getting streaming providers';
+
+  @override
+  String get streamingProvidersRetry => 'Retry';
 }

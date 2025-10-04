@@ -9,6 +9,7 @@ export 'movies/movie_info_provider.dart';
 export 'movies/movies_providers.dart';
 export 'movies/movies_repository_provider.dart';
 export 'movies/movies_slideshow_provider.dart';
+export 'movies/watch_providers_provider.dart';
 export 'recommendations/paginated_recommendations_provider.dart';
 export 'recommendations/recommendations_provider.dart';
 export 'search/search_movies_provider.dart';

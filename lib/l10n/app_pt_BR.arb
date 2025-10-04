@@ -224,5 +224,10 @@
   "successAccountCreated": "Conta criada com sucesso",
   "successVoteRegistered": "Seu voto foi registrado",
   "errorSendingFeedback": "Erro ao enviar feedback",
-  "errorLoadingExplanation": "Erro ao carregar explicação"
+  "errorLoadingExplanation": "Erro ao carregar explicação",
+  "streamingProvidersTitle": "Disponível em:",
+  "streamingProvidersLoading": "Buscando provedores de streaming...",
+  "streamingProvidersNotAvailable": "Informação de streaming não disponível",
+  "streamingProvidersError": "Erro ao obter provedores de streaming",
+  "streamingProvidersRetry": "Tentar novamente"
 }

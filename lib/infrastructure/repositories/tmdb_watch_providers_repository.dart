@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../core/cache/cache_service.dart';
 import '../../core/logging/logger_factory.dart';
 import '../../domain/entities/watch_providers.dart';
@@ -16,6 +18,8 @@ class TmdbWatchProvidersRepository {
 
   // Cache TTL: 24 hours (providers don't change frequently)
   static const Duration _cacheTTL = Duration(hours: 24);
+  // Background refresh throttle to avoid frequent revalidations per key
+  static const Duration _refreshThrottle = Duration(hours: 2);
 
   /// Get watch providers for a movie with caching
   ///
@@ -40,7 +44,26 @@ class TmdbWatchProvidersRepository {
           '📦 Cache hit for watch providers: movie $movieId, region $region',
         );
         try {
-          return WatchProviders.fromJson(cached);
+          // Return cached immediately
+          final data = WatchProviders.fromJson(cached);
+
+          // Trigger background refresh using SWR strategy (throttled)
+          unawaited(_refreshIfNeeded(cacheKey, () async {
+            final fresh = await _datasource.getWatchProviders(
+              movieId,
+              region: region,
+            );
+            if (fresh != null) {
+              await cacheService.set(
+                cacheKey,
+                fresh.toJson(),
+                expiration: _cacheTTL,
+              );
+              LoggerFactory.debug('🔄 SWR cache updated for movie $movieId');
+            }
+          }));
+
+          return data;
         } catch (e) {
           LoggerFactory.error('Error parsing cached watch providers: $e');
           await cacheService.remove(cacheKey);
@@ -79,6 +102,24 @@ class TmdbWatchProvidersRepository {
     }
 
     return providers;
+  }
+
+  /// Throttled background refresh helper using a short-lived lock key
+  Future<void> _refreshIfNeeded(
+      String cacheKey, Future<void> Function() task) async {
+    try {
+      final lockKey = '${cacheKey}_refresh_lock';
+      final hasLock = await cacheService.containsKey(lockKey);
+      if (hasLock) return;
+
+      // Acquire lock with throttle expiration
+      await cacheService.set(lockKey, true, expiration: _refreshThrottle);
+
+      // Execute refresh in background
+      await task();
+    } catch (e) {
+      LoggerFactory.warning('SWR refresh failed: $e');
+    }
   }
 
   /// Get watch providers for multiple movies

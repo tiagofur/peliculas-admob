@@ -772,4 +772,22 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorLoadingExplanation => 'Error al cargar explicación';
+
+  @override
+  String get streamingProvidersTitle => 'Disponible en:';
+
+  @override
+  String get streamingProvidersLoading =>
+      'Buscando proveedores de streaming...';
+
+  @override
+  String get streamingProvidersNotAvailable =>
+      'Información de streaming no disponible';
+
+  @override
+  String get streamingProvidersError =>
+      'Error al obtener proveedores de streaming';
+
+  @override
+  String get streamingProvidersRetry => 'Reintentar';
 }

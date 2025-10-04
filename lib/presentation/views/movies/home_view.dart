@@ -126,9 +126,6 @@ class HomeViewState extends ConsumerState<HomeView>
                 state: topRatedState,
               ),
 
-              // Sección de recomendaciones personalizadas
-              _buildRecommendationsSection(ref),
-
               // Banner al final de la página (ALTA PRIORIDAD según documento)
               kIsWeb
                   ? const WebSafeFullWidthAdWidget()

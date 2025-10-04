@@ -25,10 +25,6 @@ class StreamingServiceManager {
     http.Client? httpClient,
   })  : logger = logger ?? AppLogger.instance,
         _httpClient = httpClient ?? http.Client(),
-        _availabilityChecker = AvailabilityChecker(
-          analyticsService: analytics,
-          cacheService: cache,
-        ),
         _deepLinkingService = DeepLinkingService(
           analyticsService: analytics,
         ) {
@@ -39,7 +35,7 @@ class StreamingServiceManager {
   final AppLogger logger;
   final http.Client _httpClient;
   final DeepLinkingService _deepLinkingService;
-  final AvailabilityChecker _availabilityChecker;
+  late final AvailabilityChecker _availabilityChecker;
 
   // Real-time availability services
   late final RealAvailabilityService _realAvailabilityService;
@@ -62,6 +58,13 @@ class StreamingServiceManager {
     // Initialize TMDB Watch Providers repository
     _watchProvidersRepository = TmdbWatchProvidersRepository(
       cacheService: cache,
+    );
+
+    // Initialize availability checker with TMDB repository
+    _availabilityChecker = AvailabilityChecker(
+      analyticsService: analytics,
+      cacheService: cache,
+      tmdbRepository: _watchProvidersRepository,
     );
 
     // Initialize real availability service

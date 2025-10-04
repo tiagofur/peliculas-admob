@@ -769,6 +769,22 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errorLoadingExplanation => 'Erro ao carregar explicação';
+
+  @override
+  String get streamingProvidersTitle => 'Disponível em:';
+
+  @override
+  String get streamingProvidersLoading => 'Buscando provedores de streaming...';
+
+  @override
+  String get streamingProvidersNotAvailable =>
+      'Informação de streaming não disponível';
+
+  @override
+  String get streamingProvidersError => 'Erro ao obter provedores de streaming';
+
+  @override
+  String get streamingProvidersRetry => 'Tentar novamente';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1536,4 +1552,20 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get errorLoadingExplanation => 'Erro ao carregar explicação';
+
+  @override
+  String get streamingProvidersTitle => 'Disponível em:';
+
+  @override
+  String get streamingProvidersLoading => 'Buscando provedores de streaming...';
+
+  @override
+  String get streamingProvidersNotAvailable =>
+      'Informação de streaming não disponível';
+
+  @override
+  String get streamingProvidersError => 'Erro ao obter provedores de streaming';
+
+  @override
+  String get streamingProvidersRetry => 'Tentar novamente';
 }

@@ -1432,6 +1432,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Error loading explanation'**
   String get errorLoadingExplanation;
+
+  /// Title for streaming providers section
+  ///
+  /// In en, this message translates to:
+  /// **'Available on:'**
+  String get streamingProvidersTitle;
+
+  /// Loading message for streaming providers
+  ///
+  /// In en, this message translates to:
+  /// **'Searching streaming providers...'**
+  String get streamingProvidersLoading;
+
+  /// Message when no provider information is available
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming information not available'**
+  String get streamingProvidersNotAvailable;
+
+  /// Error message when getting providers fails
+  ///
+  /// In en, this message translates to:
+  /// **'Error getting streaming providers'**
+  String get streamingProvidersError;
+
+  /// Button to retry getting providers
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get streamingProvidersRetry;
 }
 
 class _AppLocalizationsDelegate
