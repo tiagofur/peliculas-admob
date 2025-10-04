@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../presentation/providers/auth_provider.dart';
-import '../../presentation/screens/achievements_screen.dart';
+import '../../presentation/screens/achievements_screen_new.dart';
 import '../../presentation/screens/app_info/about_screen.dart';
 import '../../presentation/screens/app_info/help_screen.dart';
 import '../../presentation/screens/app_info/privacy_policy_screen.dart';
@@ -183,7 +183,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                             builder: (context, ref, child) {
                               final currentUser =
                                   ref.watch(currentUserProvider);
-                              return AchievementsScreen(
+                              return AchievementsScreenNew(
                                 userId: currentUser?.id ?? '',
                               );
                             },
@@ -684,7 +684,7 @@ final appRouter = GoRouter(
                         return Consumer(
                           builder: (context, ref, child) {
                             final currentUser = ref.watch(currentUserProvider);
-                            return AchievementsScreen(
+                            return AchievementsScreenNew(
                               userId: currentUser?.id ?? '',
                             );
                           },

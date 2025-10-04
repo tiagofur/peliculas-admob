@@ -25,11 +25,6 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
     return {};
   }
 
-  /// Callback para películas añadidas a watchlist
-  void onMovieAddedToWatchlist(Movie movie) {
-    // Opcional: trackear añadidos a watchlist para achievements
-  }
-
   /// Inicializa con el usuario actual si existe
   void _initializeWithCurrentUser() {
     final currentUser = Supabase.instance.client.auth.currentUser;
@@ -114,7 +109,6 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
         await _sync.addToWatchlist(currentUser.id, movie, priority: priority);
         LoggerFactory.info(
             'DirectWatchlist: Añadido a watchlist: ${movie.title}');
-        onMovieAddedToWatchlist(movie);
       }
     } catch (e) {
       LoggerFactory.error('DirectWatchlist: Error en toggle: $e');

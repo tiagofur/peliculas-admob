@@ -128,6 +128,12 @@ class GamificationService {
       case 'movie_favorited':
         return await updateProgress(userId, 'movies_favorited',
             metadata: metadata);
+      case 'movie_added_to_watchlist':
+        return await updateProgress(userId, 'movies_watchlisted',
+            metadata: metadata);
+      case 'movie_shared':
+        return await updateProgress(userId, 'movies_shared',
+            metadata: metadata);
       case 'genre_explored':
         final genreUpdates = <Achievement>[];
         for (final genre in movie.genreIds) {
@@ -322,6 +328,8 @@ class GamificationService {
       ],
       'movies_rated': [AchievementType.socialInteraction],
       'movies_favorited': [AchievementType.qualityViewer],
+      'movies_watchlisted': [AchievementType.socialInteraction],
+      'movies_shared': [AchievementType.socialInteraction],
       'year_active': [AchievementType.yearStreak],
     };
 
@@ -447,6 +455,60 @@ class GamificationService {
         rarity: AchievementRarity.uncommon,
         points: 20,
         unlockMessage: '¡Tienes excelente gusto!',
+      ),
+
+      // Logros de watchlist
+      Achievement(
+        id: 'watchlist_starter',
+        title: 'Lista en Marcha',
+        description: 'Agregar 10 películas a tu watchlist',
+        iconName: 'bookmark',
+        targetValue: 10,
+        category: AchievementCategory.social,
+        type: AchievementType.socialInteraction,
+        rarity: AchievementRarity.common,
+        points: 10,
+        unlockMessage: '¡Tu lista de películas por ver está creciendo!',
+      ),
+
+      Achievement(
+        id: 'watchlist_master',
+        title: 'Maestro de la Lista',
+        description: 'Agregar 50 películas a tu watchlist',
+        iconName: 'bookmarks',
+        targetValue: 50,
+        category: AchievementCategory.social,
+        type: AchievementType.socialInteraction,
+        rarity: AchievementRarity.uncommon,
+        points: 25,
+        unlockMessage: '¡Nunca te quedarás sin películas por ver!',
+      ),
+
+      // Logros de compartir
+      Achievement(
+        id: 'social_starter',
+        title: 'Compartiendo el Amor',
+        description: 'Compartir 5 películas',
+        iconName: 'share',
+        targetValue: 5,
+        category: AchievementCategory.social,
+        type: AchievementType.socialInteraction,
+        rarity: AchievementRarity.common,
+        points: 10,
+        unlockMessage: '¡Estás compartiendo tu pasión por el cine!',
+      ),
+
+      Achievement(
+        id: 'influencer',
+        title: 'Influencer Cinematográfico',
+        description: 'Compartir 25 películas',
+        iconName: 'campaign',
+        targetValue: 25,
+        category: AchievementCategory.social,
+        type: AchievementType.socialInteraction,
+        rarity: AchievementRarity.uncommon,
+        points: 30,
+        unlockMessage: '¡Eres una influencia para otros cinéfilos!',
       ),
 
       // Logros especiales y legendarios
