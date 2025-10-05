@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthException;
@@ -399,6 +400,29 @@ class CentralizedErrorHandler {
     OperationContext? context,
     VoidCallback? retryCallback,
   ) {
+    // Mensaje específico para Web
+    if (kIsWeb) {
+      return UserFriendlyError(
+        title: '💾 Error de almacenamiento web',
+        message:
+            'No pudimos guardar datos localmente. Esto puede ocurrir si:\n'
+            '• Estás en modo incógnito/privado\n'
+            '• El almacenamiento del navegador está lleno\n'
+            '• Las cookies están bloqueadas\n\n'
+            'Tu sesión se mantendrá activa igualmente.',
+        actionable: true,
+        severity: ErrorSeverity.low, // Bajamos severidad en Web
+        retryCallback: retryCallback,
+        primaryAction: retryCallback != null
+            ? ErrorAction(
+                label: 'Continuar',
+                callback: retryCallback,
+              )
+            : null,
+      );
+    }
+    
+    // Mensaje para plataformas nativas
     return UserFriendlyError(
       title: '💾 Error de almacenamiento',
       message:

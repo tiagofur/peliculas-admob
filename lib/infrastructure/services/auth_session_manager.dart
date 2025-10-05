@@ -117,6 +117,17 @@ class AuthSessionManager {
       }
     } catch (e) {
       _recordFailure();
+      
+      // En Web, Supabase ya maneja la persistencia automáticamente con PKCE
+      // Si falla el almacenamiento local, no es crítico
+      if (kIsWeb) {
+        LoggerFactory.warning(
+          '⚠️ No se pudo persistir sesión localmente en Web (no es crítico): $e\n'
+          'Supabase maneja la persistencia automáticamente con PKCE.');
+        // No lanzar error en Web, solo advertir
+        return;
+      }
+      
       LoggerFactory.error('❌ Error persistiendo sesión: $e');
       throw Exception('Error al guardar sesión: $e');
     }
