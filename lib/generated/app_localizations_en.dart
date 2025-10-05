@@ -27,7 +27,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get information => 'Information';
 
   @override
-  String get systemThemeDescription => 'The \'System\' mode will automatically follow your device\'s theme setting.';
+  String get systemThemeDescription =>
+      'The \'System\' mode will automatically follow your device\'s theme setting.';
 
   @override
   String get system => 'System';
@@ -63,7 +64,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get portugueseBrazil => 'Portuguese (Brazil)';
 
   @override
-  String get languageDescription => 'Change the app language. The app will restart to apply the new language.';
+  String get languageDescription =>
+      'Change the app language. The app will restart to apply the new language.';
 
   @override
   String get home => 'Home';
@@ -144,25 +146,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get guestBannerBenefitCloudSyncTitle => 'Cloud synchronization';
 
   @override
-  String get guestBannerBenefitCloudSyncDescription => 'Your favorites and watched movies on all your devices';
+  String get guestBannerBenefitCloudSyncDescription =>
+      'Your favorites and watched movies on all your devices';
 
   @override
   String get guestBannerBenefitSocialTitle => 'Social features';
 
   @override
-  String get guestBannerBenefitSocialDescription => 'Share reviews and connect with other movie lovers';
+  String get guestBannerBenefitSocialDescription =>
+      'Share reviews and connect with other movie lovers';
 
   @override
   String get guestBannerBenefitStatsTitle => 'Advanced statistics';
 
   @override
-  String get guestBannerBenefitStatsDescription => 'Detailed insights about your movie habits';
+  String get guestBannerBenefitStatsDescription =>
+      'Detailed insights about your movie habits';
 
   @override
   String get guestBannerBenefitBackupTitle => 'Secure backup';
 
   @override
-  String get guestBannerBenefitBackupDescription => 'Never lose your movie history';
+  String get guestBannerBenefitBackupDescription =>
+      'Never lose your movie history';
 
   @override
   String get guestBannerCreateAccount => 'Create account';
@@ -201,7 +207,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get conflictDetected => 'Synchronization Conflict Detected';
 
   @override
-  String get conflictDescription => 'A conflict has been detected during synchronization. Please choose how to resolve it:';
+  String get conflictDescription =>
+      'A conflict has been detected during synchronization. Please choose how to resolve it:';
 
   @override
   String get localVersion => 'Local Version';
@@ -243,7 +250,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noConflictsRecorded => 'No conflicts recorded';
 
   @override
-  String get conflictsWillAppearHere => 'Synchronization conflicts will appear here when they occur';
+  String get conflictsWillAppearHere =>
+      'Synchronization conflicts will appear here when they occur';
 
   @override
   String get refresh => 'Refresh';
@@ -324,7 +332,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteRating => 'Delete Rating';
 
   @override
-  String get confirmDeleteRating => 'Are you sure you want to delete your rating for this movie?';
+  String get confirmDeleteRating =>
+      'Are you sure you want to delete your rating for this movie?';
 
   @override
   String get delete => 'Delete';
@@ -336,7 +345,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noCustomLists => 'No custom lists yet!';
 
   @override
-  String get noCustomListsMessage => 'You haven\'t created any custom movie lists';
+  String get noCustomListsMessage =>
+      'You haven\'t created any custom movie lists';
 
   @override
   String get startCreating => 'Start creating';
@@ -477,7 +487,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customListsEmptyTitle => 'Empty list';
 
   @override
-  String get customListsEmptyDescription => 'Add movies to this list from any movie details screen';
+  String get customListsEmptyDescription =>
+      'Add movies to this list from any movie details screen';
 
   @override
   String get customListsExploreButton => 'Explore movies';
@@ -498,7 +509,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customListsCreateDescriptionLabel => 'Description';
 
   @override
-  String get customListsCreateDescriptionHint => 'Describe the purpose of this list';
+  String get customListsCreateDescriptionHint =>
+      'Describe the purpose of this list';
 
   @override
   String get customListsCreateEmojiLabel => 'Emoji';
@@ -529,7 +541,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customListsEditDescriptionLabel => 'Description';
 
   @override
-  String get customListsEditDescriptionOptionalLabel => 'Description (optional)';
+  String get customListsEditDescriptionOptionalLabel =>
+      'Description (optional)';
 
   @override
   String get customListsEditConfirm => 'Save';
@@ -763,7 +776,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get streamingProvidersLoading => 'Searching streaming providers...';
 
   @override
-  String get streamingProvidersNotAvailable => 'Streaming information not available';
+  String get streamingProvidersNotAvailable =>
+      'Streaming information not available';
 
   @override
   String get streamingProvidersError => 'Error getting streaming providers';

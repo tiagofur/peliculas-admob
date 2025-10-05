@@ -27,7 +27,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get information => 'Informações';
 
   @override
-  String get systemThemeDescription => 'O modo \'Sistema\' seguirá automaticamente a configuração de tema do seu dispositivo.';
+  String get systemThemeDescription =>
+      'O modo \'Sistema\' seguirá automaticamente a configuração de tema do seu dispositivo.';
 
   @override
   String get system => 'Sistema';
@@ -63,7 +64,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get portugueseBrazil => 'Português (Brasil)';
 
   @override
-  String get languageDescription => 'Altere o idioma do app. Ele será reiniciado para aplicar o novo idioma.';
+  String get languageDescription =>
+      'Altere o idioma do app. Ele será reiniciado para aplicar o novo idioma.';
 
   @override
   String get home => 'Início';
@@ -144,25 +146,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get guestBannerBenefitCloudSyncTitle => 'Sincronização na nuvem';
 
   @override
-  String get guestBannerBenefitCloudSyncDescription => 'Seus favoritos e filmes vistos em todos os seus dispositivos';
+  String get guestBannerBenefitCloudSyncDescription =>
+      'Seus favoritos e filmes vistos em todos os seus dispositivos';
 
   @override
   String get guestBannerBenefitSocialTitle => 'Recursos sociais';
 
   @override
-  String get guestBannerBenefitSocialDescription => 'Compartilhe resenhas e conecte-se com outros cinéfilos';
+  String get guestBannerBenefitSocialDescription =>
+      'Compartilhe resenhas e conecte-se com outros cinéfilos';
 
   @override
   String get guestBannerBenefitStatsTitle => 'Estatísticas avançadas';
 
   @override
-  String get guestBannerBenefitStatsDescription => 'Insights detalhados sobre seus hábitos cinematográficos';
+  String get guestBannerBenefitStatsDescription =>
+      'Insights detalhados sobre seus hábitos cinematográficos';
 
   @override
   String get guestBannerBenefitBackupTitle => 'Backup seguro';
 
   @override
-  String get guestBannerBenefitBackupDescription => 'Nunca perca seu histórico de filmes';
+  String get guestBannerBenefitBackupDescription =>
+      'Nunca perca seu histórico de filmes';
 
   @override
   String get guestBannerCreateAccount => 'Criar conta';
@@ -201,7 +207,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get conflictDetected => 'Synchronization Conflict Detected';
 
   @override
-  String get conflictDescription => 'A conflict has been detected during synchronization. Please choose how to resolve it:';
+  String get conflictDescription =>
+      'A conflict has been detected during synchronization. Please choose how to resolve it:';
 
   @override
   String get localVersion => 'Local Version';
@@ -243,7 +250,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noConflictsRecorded => 'No conflicts recorded';
 
   @override
-  String get conflictsWillAppearHere => 'Synchronization conflicts will appear here when they occur';
+  String get conflictsWillAppearHere =>
+      'Synchronization conflicts will appear here when they occur';
 
   @override
   String get refresh => 'Refresh';
@@ -324,7 +332,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get deleteRating => 'Delete Rating';
 
   @override
-  String get confirmDeleteRating => 'Are you sure you want to delete your rating for this movie?';
+  String get confirmDeleteRating =>
+      'Are you sure you want to delete your rating for this movie?';
 
   @override
   String get delete => 'Delete';
@@ -336,7 +345,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get noCustomLists => 'No custom lists yet!';
 
   @override
-  String get noCustomListsMessage => 'You haven\'t created any custom movie lists';
+  String get noCustomListsMessage =>
+      'You haven\'t created any custom movie lists';
 
   @override
   String get startCreating => 'Start creating';
@@ -477,7 +487,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get customListsEmptyTitle => 'Lista vazia';
 
   @override
-  String get customListsEmptyDescription => 'Adicione filmes a esta lista a partir dos detalhes de qualquer filme';
+  String get customListsEmptyDescription =>
+      'Adicione filmes a esta lista a partir dos detalhes de qualquer filme';
 
   @override
   String get customListsExploreButton => 'Explorar filmes';
@@ -498,7 +509,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get customListsCreateDescriptionLabel => 'Descrição';
 
   @override
-  String get customListsCreateDescriptionHint => 'Descreva o objetivo desta lista';
+  String get customListsCreateDescriptionHint =>
+      'Descreva o objetivo desta lista';
 
   @override
   String get customListsCreateEmojiLabel => 'Emoji';
@@ -610,7 +622,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get customListsAddMovieSearchHint => 'Escreve o nome de um filme';
 
   @override
-  String get customListsAddMovieSearchEmpty => 'Escreve o nome de um filme para pesquisar';
+  String get customListsAddMovieSearchEmpty =>
+      'Escreve o nome de um filme para pesquisar';
 
   @override
   String customListsAddMovieSearchError(Object error) {
@@ -648,7 +661,8 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get watchlistEmptyDescription => 'Adicione filmes que quer ver mais tarde';
+  String get watchlistEmptyDescription =>
+      'Adicione filmes que quer ver mais tarde';
 
   @override
   String get watchlistExploreButton => 'Explorar filmes';
@@ -763,7 +777,8 @@ class AppLocalizationsPt extends AppLocalizations {
   String get streamingProvidersLoading => 'Buscando provedores de streaming...';
 
   @override
-  String get streamingProvidersNotAvailable => 'Informação de streaming não disponível';
+  String get streamingProvidersNotAvailable =>
+      'Informação de streaming não disponível';
 
   @override
   String get streamingProvidersError => 'Erro ao obter provedores de streaming';
@@ -774,7 +789,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
 class AppLocalizationsPtBr extends AppLocalizationsPt {
-  AppLocalizationsPtBr(): super('pt_BR');
+  AppLocalizationsPtBr() : super('pt_BR');
 
   @override
   String get appTitle => 'Filmes';
@@ -795,7 +810,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get information => 'Informações';
 
   @override
-  String get systemThemeDescription => 'O modo \'Sistema\' seguirá automaticamente a configuração de tema do seu dispositivo.';
+  String get systemThemeDescription =>
+      'O modo \'Sistema\' seguirá automaticamente a configuração de tema do seu dispositivo.';
 
   @override
   String get system => 'Sistema';
@@ -831,7 +847,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get portugueseBrazil => 'Português (Brasil)';
 
   @override
-  String get languageDescription => 'Altere o idioma do app. Ele será reiniciado para aplicar o novo idioma.';
+  String get languageDescription =>
+      'Altere o idioma do app. Ele será reiniciado para aplicar o novo idioma.';
 
   @override
   String get home => 'Início';
@@ -912,25 +929,29 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get guestBannerBenefitCloudSyncTitle => 'Sincronização na nuvem';
 
   @override
-  String get guestBannerBenefitCloudSyncDescription => 'Seus favoritos e filmes vistos em todos os seus dispositivos';
+  String get guestBannerBenefitCloudSyncDescription =>
+      'Seus favoritos e filmes vistos em todos os seus dispositivos';
 
   @override
   String get guestBannerBenefitSocialTitle => 'Recursos sociais';
 
   @override
-  String get guestBannerBenefitSocialDescription => 'Compartilhe resenhas e conecte-se com outros cinéfilos';
+  String get guestBannerBenefitSocialDescription =>
+      'Compartilhe resenhas e conecte-se com outros cinéfilos';
 
   @override
   String get guestBannerBenefitStatsTitle => 'Estatísticas avançadas';
 
   @override
-  String get guestBannerBenefitStatsDescription => 'Insights detalhados sobre seus hábitos cinematográficos';
+  String get guestBannerBenefitStatsDescription =>
+      'Insights detalhados sobre seus hábitos cinematográficos';
 
   @override
   String get guestBannerBenefitBackupTitle => 'Backup seguro';
 
   @override
-  String get guestBannerBenefitBackupDescription => 'Nunca perca seu histórico de filmes';
+  String get guestBannerBenefitBackupDescription =>
+      'Nunca perca seu histórico de filmes';
 
   @override
   String get guestBannerCreateAccount => 'Criar conta';
@@ -969,7 +990,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get conflictDetected => 'Conflito de sincronização detectado';
 
   @override
-  String get conflictDescription => 'Um conflito foi detectado durante a sincronização. Por favor, escolha como resolvê-lo:';
+  String get conflictDescription =>
+      'Um conflito foi detectado durante a sincronização. Por favor, escolha como resolvê-lo:';
 
   @override
   String get localVersion => 'Versão local';
@@ -1011,7 +1033,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get noConflictsRecorded => 'Nenhum conflito registrado';
 
   @override
-  String get conflictsWillAppearHere => 'Os conflitos de sincronização aparecerão aqui quando ocorrerem';
+  String get conflictsWillAppearHere =>
+      'Os conflitos de sincronização aparecerão aqui quando ocorrerem';
 
   @override
   String get refresh => 'Atualizar';
@@ -1092,7 +1115,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get deleteRating => 'Excluir avaliação';
 
   @override
-  String get confirmDeleteRating => 'Tem certeza de que deseja excluir sua avaliação deste filme?';
+  String get confirmDeleteRating =>
+      'Tem certeza de que deseja excluir sua avaliação deste filme?';
 
   @override
   String get delete => 'Excluir';
@@ -1104,7 +1128,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get noCustomLists => 'Ainda não há listas personalizadas!';
 
   @override
-  String get noCustomListsMessage => 'Você ainda não criou nenhuma lista personalizada de filmes';
+  String get noCustomListsMessage =>
+      'Você ainda não criou nenhuma lista personalizada de filmes';
 
   @override
   String get startCreating => 'Começar a criar';
@@ -1245,7 +1270,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get customListsEmptyTitle => 'Lista vazia';
 
   @override
-  String get customListsEmptyDescription => 'Adicione filmes a esta lista pelos detalhes de qualquer filme';
+  String get customListsEmptyDescription =>
+      'Adicione filmes a esta lista pelos detalhes de qualquer filme';
 
   @override
   String get customListsExploreButton => 'Explorar filmes';
@@ -1266,7 +1292,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get customListsCreateDescriptionLabel => 'Descrição';
 
   @override
-  String get customListsCreateDescriptionHint => 'Descreva o propósito desta lista';
+  String get customListsCreateDescriptionHint =>
+      'Descreva o propósito desta lista';
 
   @override
   String get customListsCreateEmojiLabel => 'Emoji';
@@ -1378,7 +1405,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get customListsAddMovieSearchHint => 'Digite o nome de um filme';
 
   @override
-  String get customListsAddMovieSearchEmpty => 'Digite o nome de um filme para buscar';
+  String get customListsAddMovieSearchEmpty =>
+      'Digite o nome de um filme para buscar';
 
   @override
   String customListsAddMovieSearchError(Object error) {
@@ -1416,7 +1444,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get watchlistEmptyDescription => 'Adicione filmes que você quer assistir depois';
+  String get watchlistEmptyDescription =>
+      'Adicione filmes que você quer assistir depois';
 
   @override
   String get watchlistExploreButton => 'Explorar filmes';
@@ -1531,7 +1560,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get streamingProvidersLoading => 'Buscando provedores de streaming...';
 
   @override
-  String get streamingProvidersNotAvailable => 'Informação de streaming não disponível';
+  String get streamingProvidersNotAvailable =>
+      'Informação de streaming não disponível';
 
   @override
   String get streamingProvidersError => 'Erro ao obter provedores de streaming';
