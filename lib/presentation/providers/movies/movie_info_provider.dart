@@ -86,7 +86,8 @@ class MovieMapNotifier extends AsyncNotifier<Map<String, Movie>> {
         if (movie.credits != null) {
           print('   Credits type: ${movie.credits.runtimeType}');
           print('   Credits keys: ${movie.credits!.keys}');
-          print('   Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+          print(
+              '   Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
         } else {
           print('   ❌ Credits is NULL in provider!');
         }
@@ -110,7 +111,8 @@ class MovieMapNotifier extends AsyncNotifier<Map<String, Movie>> {
         if (savedMovie != null) {
           print('   Saved movie has credits: ${savedMovie.credits != null}');
           if (savedMovie.credits != null) {
-            print('   Saved cast length: ${(savedMovie.credits!['cast'] as List?)?.length ?? 0}');
+            print(
+                '   Saved cast length: ${(savedMovie.credits!['cast'] as List?)?.length ?? 0}');
           } else {
             print('   ❌ Credits was LOST when saving to state!');
           }

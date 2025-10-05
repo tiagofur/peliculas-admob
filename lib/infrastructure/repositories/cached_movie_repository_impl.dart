@@ -197,7 +197,8 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
           print('  Title: ${movie.title}');
           print('  Has credits: ${movie.credits != null}');
           if (movie.credits != null) {
-            print('  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
+            print(
+                '  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
           }
         }
 

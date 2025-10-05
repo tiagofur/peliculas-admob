@@ -404,8 +404,7 @@ class CentralizedErrorHandler {
     if (kIsWeb) {
       return UserFriendlyError(
         title: '💾 Error de almacenamiento web',
-        message:
-            'No pudimos guardar datos localmente. Esto puede ocurrir si:\n'
+        message: 'No pudimos guardar datos localmente. Esto puede ocurrir si:\n'
             '• Estás en modo incógnito/privado\n'
             '• El almacenamiento del navegador está lleno\n'
             '• Las cookies están bloqueadas\n\n'
@@ -421,7 +420,7 @@ class CentralizedErrorHandler {
             : null,
       );
     }
-    
+
     // Mensaje para plataformas nativas
     return UserFriendlyError(
       title: '💾 Error de almacenamiento',

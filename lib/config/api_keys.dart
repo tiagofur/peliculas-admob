@@ -78,6 +78,19 @@ class ApiKeys {
         'SUPABASE_ANON_KEY not configured. Set via dart-define or .env file');
   }
 
+  // Google OAuth Client ID Web (para Google Sign-In)
+  static String get googleClientIdWeb {
+    const dartDefineKey = String.fromEnvironment('GOOGLE_CLIENT_ID_WEB');
+    if (dartDefineKey.isNotEmpty) return dartDefineKey;
+
+    final envKey = dotenv.env['GOOGLE_CLIENT_ID_WEB'];
+    if (envKey != null && envKey.isNotEmpty) return envKey;
+
+    throw const ConfigurationException(
+        'GOOGLE_CLIENT_ID_WEB not configured. Set via dart-define or .env file. '
+        'Get it from Google Cloud Console -> APIs & Services -> Credentials');
+  }
+
   // Validación de todas las claves en startup
   static void validateConfiguration() {
     if (kDebugMode) {
@@ -108,6 +121,20 @@ class ApiKeys {
       } catch (e) {
         if (kDebugMode) {
           LoggerFactory.warning('⚠️  Supabase not configured (optional)');
+        }
+      }
+
+      // Opcional: validar Google Client ID si está presente
+      try {
+        final googleClientId = googleClientIdWeb;
+        if (kDebugMode) {
+          LoggerFactory.info(
+              '✅ Google Client ID: ${googleClientId.substring(0, 20)}...');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          LoggerFactory.warning(
+              '⚠️  Google Client ID not configured (required for Google Sign-In)');
         }
       }
 

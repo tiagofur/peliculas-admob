@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../config/api_keys.dart';
 import '../../core/analytics/analytics_service.dart';
 import '../../core/cache/image_cache_manager.dart';
 import '../../core/config/supabase_config.dart';
@@ -31,9 +34,54 @@ class AuthRepositoryImpl implements AuthRepository {
   final TokenRefreshService _tokenRefreshService = TokenRefreshService.instance;
   final ImageCompressor _imageCompressor = const ImageCompressor();
   final UuidGenerator _uuidGenerator = const UuidGenerator();
+
+  // GoogleSignIn configurado para soportar Web + Android con Supabase
+  late final GoogleSignIn _googleSignIn = _createGoogleSignIn();
+
   StreamController<domain.User?>? _authStateController;
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<TokenRefreshEvent>? _tokenRefreshSubscription;
+
+  /// Obtiene el Google Client ID Web desde la configuración
+  String? _getGoogleClientId() {
+    try {
+      return ApiKeys.googleClientIdWeb;
+    } catch (e) {
+      LoggerFactory.warning(
+          '⚠️ Google Client ID not configured. Google Sign-In will not work. '
+          'Configure GOOGLE_CLIENT_ID_WEB in .env file');
+      return null;
+    }
+  }
+
+  GoogleSignIn _createGoogleSignIn() {
+    const scopes = <String>[
+      'email',
+      'profile',
+      'openid',
+    ];
+
+    final webClientId = _getGoogleClientId();
+
+    if (kIsWeb) {
+      if (webClientId == null) {
+        LoggerFactory.error(
+          '❌ GOOGLE_CLIENT_ID_WEB requerido para Google Sign-In en Web. '
+          'Configura la variable en .env o dart-define.',
+        );
+      }
+
+      return GoogleSignIn(
+        clientId: webClientId,
+        scopes: scopes,
+      );
+    }
+
+    return GoogleSignIn(
+      serverClientId: webClientId,
+      scopes: scopes,
+    );
+  }
 
   void _initAuthStateStream() {
     _authStateController = StreamController<domain.User?>.broadcast();
@@ -52,9 +100,9 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user != null) {
         _authStateController?.add(UserModel.fromSupabaseUser(user));
 
-        // Persistir sesión cuando se autentica
+        // Persistir sesión de forma no bloqueante cuando se autentica
         if (data.session != null) {
-          _sessionManager.persistSession(data.session!);
+          _persistSessionAsync(data.session!);
         }
 
         // Track onboarding completion for first-time users
@@ -134,9 +182,10 @@ class AuthRepositoryImpl implements AuthRepository {
         throw Exception('Error al iniciar sesión');
       }
 
-      // Persistir sesión inmediatamente después de login exitoso
+      // Persistir sesión de forma no bloqueante
+      // No esperamos la persistencia para no bloquear el login
       if (response.session != null) {
-        await _sessionManager.persistSession(response.session!);
+        _persistSessionAsync(response.session!);
       }
 
       if (response.user == null) {
@@ -186,9 +235,10 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      // Persistir sesión inmediatamente después de signup exitoso
+      // Persistir sesión de forma no bloqueante
+      // No esperamos la persistencia para no bloquear el signup
       if (response.session != null) {
-        await _sessionManager.persistSession(response.session!);
+        _persistSessionAsync(response.session!);
       }
 
       if (response.user == null) {
@@ -205,8 +255,156 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<domain.User> signInWithGoogle() async {
+    try {
+      // En Web migramos al flujo oficial de Supabase OAuth para Google
+      // evitando el uso de google_sign_in_web.signIn() (obsoleto y poco fiable para idToken)
+      if (kIsWeb) {
+        final redirectOrigin = Uri.base.origin;
+
+        await _supabase.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: redirectOrigin,
+        );
+
+        // Esperar a que Supabase complete la sesión (popup/redirect)
+        final supabaseUser = await _waitForSupabaseUser();
+        if (supabaseUser == null) {
+          throw Exception('No se pudo completar la autenticación con Google');
+        }
+
+        await _ensureDefaultUserProfile(supabaseUser.id);
+        LoggerFactory.info(
+            '✅ Autenticación con Google (Web/OAuth) exitosa: ${supabaseUser.email}');
+        return UserModel.fromSupabaseUser(supabaseUser);
+      }
+
+      // 1. Iniciar el flujo de autenticación de Google
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        throw Exception('Autenticación de Google cancelada');
+      }
+
+      // 2. Obtener los detalles de autenticación
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final String? accessToken =
+          googleAuth.accessToken; // Puede ser null en Android
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw Exception('No se pudo obtener el idToken de Google');
+      }
+
+      // 3. Autenticar con Supabase usando el ID token de Google
+      final response = await _supabase.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      if (response.user == null) {
+        throw Exception('Error al autenticar con Supabase');
+      }
+
+      // 4. Persistir sesión de forma no bloqueante
+      // No esperamos la persistencia para no bloquear el login
+      // Supabase ya maneja la sesión automáticamente en Web
+      if (response.session != null) {
+        _persistSessionAsync(response.session!);
+      }
+
+      // 5. Asegurar que existe el perfil de usuario
+      await _ensureDefaultUserProfile(response.user!.id);
+
+      LoggerFactory.info(
+          '✅ Autenticación con Google exitosa: ${response.user!.email}');
+
+      return UserModel.fromSupabaseUser(response.user!);
+    } on AuthException catch (e) {
+      LoggerFactory.error('❌ Error de autenticación de Google: ${e.message}');
+      throw Exception(_getAuthErrorMessage(e.message));
+    } catch (e) {
+      // Fallback solo en Android/iOS: usar OAuth de Supabase con deep link
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        LoggerFactory.warning(
+            '⚠️ GoogleSignIn nativo falló, intentando OAuth móvil con deep link: $e');
+
+        final redirectUri = Uri.parse('peliculas://auth-callback');
+        try {
+          await _supabase.auth.signInWithOAuth(
+            OAuthProvider.google,
+            redirectTo: redirectUri
+                .toString(), // SIEMPRE deep link, nunca Uri.base.origin
+          );
+
+          final user = await _waitForSupabaseUser();
+          if (user == null) {
+            throw Exception('No se completó la autenticación OAuth de Google');
+          }
+
+          await _ensureDefaultUserProfile(user.id);
+          LoggerFactory.info(
+              '✅ Autenticación con Google (OAuth móvil) exitosa: ${user.email}');
+          return UserModel.fromSupabaseUser(user);
+        } on AuthException catch (e2) {
+          LoggerFactory.error(
+              '❌ Error de autenticación OAuth (móvil) con Google: ${e2.message}');
+          throw Exception(_getAuthErrorMessage(e2.message));
+        } catch (e2) {
+          LoggerFactory.error(
+              '❌ Error inesperado en autenticación OAuth (móvil) con Google: $e2');
+          throw Exception('Error al autenticar con Google: ${e2.toString()}');
+        }
+      }
+      // Desktop: mostrar error claro
+      else if (!kIsWeb &&
+          (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+        LoggerFactory.error(
+            '❌ Login con Google no soportado en escritorio nativo. Usa la versión Web.');
+        throw Exception(
+            'Login con Google no soportado en escritorio nativo. Usa la versión Web.');
+      }
+
+      LoggerFactory.error('❌ Error inesperado en autenticación de Google: $e');
+      throw Exception('Error al autenticar con Google: ${e.toString()}');
+    }
+  }
+
+  Future<User?> _waitForSupabaseUser(
+      {Duration timeout = const Duration(seconds: 20)}) async {
+    // Retornar inmediatamente si ya existe
+    final current = _supabase.auth.currentUser;
+    if (current != null) return current;
+
+    final completer = Completer<User?>();
+    late StreamSubscription<AuthState> sub;
+    sub = _supabase.auth.onAuthStateChange.listen((event) {
+      final user = event.session?.user;
+      if (user != null && !completer.isCompleted) {
+        completer.complete(user);
+        sub.cancel();
+      }
+    });
+
+    try {
+      return await completer.future
+          .timeout(timeout, onTimeout: () => _supabase.auth.currentUser);
+    } finally {
+      await sub.cancel();
+    }
+  }
+
+  @override
   Future<void> signOut() async {
     try {
+      // Cerrar sesión de Google si está activa
+      if (await _googleSignIn.isSignedIn()) {
+        await _googleSignIn.signOut();
+      }
+
       // Limpiar datos persistentes antes de cerrar sesión
       await _sessionManager.clearSession();
 
@@ -215,6 +413,25 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (e) {
       throw Exception('Error al cerrar sesión');
     }
+  }
+
+  void _persistSessionAsync(Session session) {
+    if (kIsWeb) {
+      if (kDebugMode) {
+        LoggerFactory.debug(
+            'AuthRepositoryImpl (Web): se omite persistencia manual de sesión');
+      }
+      return;
+    }
+
+    unawaited(() async {
+      try {
+        await _sessionManager.persistSession(session);
+      } catch (error) {
+        LoggerFactory.warning(
+            '⚠️ No se pudo persistir sesión localmente (no crítico): $error');
+      }
+    }());
   }
 
   @override

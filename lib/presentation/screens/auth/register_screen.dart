@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/error_handling/centralized_error_handler.dart';
 import '../../../core/exceptions/auth_exceptions.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/auth/google_sign_in_button.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -53,11 +55,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             if (error is EmailConfirmationRequiredException) {
               _showEmailConfirmationDialog(error.message);
             } else {
+              // Extraer mensaje amigable del error
+              final errorMessage =
+                  error is UserFriendlyError ? error.message : error.toString();
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(error.toString()),
+                  content: Text(errorMessage),
                   backgroundColor: colorScheme.error,
                   behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 4),
                 ),
               );
             }
@@ -106,6 +113,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                     // Divider
                     _buildDivider(theme),
+                    const SizedBox(height: 24),
+
+                    // Botón de Google Sign-In
+                    const GoogleSignInButton(),
                     const SizedBox(height: 24),
 
                     // Login

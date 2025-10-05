@@ -1,38 +1,39 @@
 {
   "project_info": {
-    "project_number": "123456789012",
-    "project_id": "your-firebase-project-id",
-    "storage_bucket": "your-firebase-project-id.appspot.com"
+    "project_number": "52247335939",
+    "project_id": "peliculas-170cc",
+    "storage_bucket": "peliculas-170cc.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef123456789",
+        "mobilesdk_app_id": "1:52247335939:android:33d49e301e8aa79fbc6a36",
         "android_client_info": {
           "package_name": "mx.creapolis.peliculas"
         }
       },
       "oauth_client": [
         {
-          "client_id": "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com",
+          "client_id": "52247335939-tjjjps4puo5a9cdgc0sel24v6ug94cbt.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ1234567"
+          "current_key": "AIzaSyCkzd09t8vyLzercBs1CD_RW9QoeLmDOpA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "123456789012-abcdefghijklmnopqrstuvwxyz123456.apps.googleusercontent.com",
+              "client_id": "52247335939-tjjjps4puo5a9cdgc0sel24v6ug94cbt.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
         }
-      }
+      },
+      "admob_app_id": "ca-app-pub-3460220325831299~7925363454"
     }
   ],
   "configuration_version": "1"

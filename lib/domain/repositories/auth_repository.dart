@@ -21,6 +21,8 @@ abstract class AuthRepository {
     String? avatarUrl,
   });
 
+  Future<User> signInWithGoogle();
+
   Future<void> signOut();
 
   Future<void> resetPassword(String email);

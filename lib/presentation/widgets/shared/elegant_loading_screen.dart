@@ -175,7 +175,8 @@ class ShimmerLoadingPlaceholder extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: Shimmer.fromColors(
-            baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            baseColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             highlightColor: colorScheme.surface,
             child: Container(
               height: itemHeight,
@@ -206,7 +207,8 @@ class ProfileLoadingPlaceholder extends StatelessWidget {
         children: [
           // Avatar shimmer
           Shimmer.fromColors(
-            baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            baseColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             highlightColor: colorScheme.surface,
             child: Container(
               width: 128,
@@ -221,7 +223,8 @@ class ProfileLoadingPlaceholder extends StatelessWidget {
 
           // Name shimmer
           Shimmer.fromColors(
-            baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            baseColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             highlightColor: colorScheme.surface,
             child: Container(
               width: 200,
@@ -236,7 +239,8 @@ class ProfileLoadingPlaceholder extends StatelessWidget {
 
           // Username shimmer
           Shimmer.fromColors(
-            baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            baseColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             highlightColor: colorScheme.surface,
             child: Container(
               width: 120,
@@ -259,7 +263,8 @@ class ProfileLoadingPlaceholder extends StatelessWidget {
                     right: index == 2 ? 0 : 4,
                   ),
                   child: Shimmer.fromColors(
-                    baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    baseColor: colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.3),
                     highlightColor: colorScheme.surface,
                     child: Container(
                       height: 80,
@@ -280,7 +285,8 @@ class ProfileLoadingPlaceholder extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Shimmer.fromColors(
-                baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                baseColor:
+                    colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 highlightColor: colorScheme.surface,
                 child: Container(
                   height: 120,
@@ -313,7 +319,8 @@ class MovieDetailLoadingPlaceholder extends StatelessWidget {
         children: [
           // Backdrop shimmer
           Shimmer.fromColors(
-            baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+            baseColor:
+                colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
             highlightColor: colorScheme.surface,
             child: Container(
               width: double.infinity,
@@ -329,7 +336,8 @@ class MovieDetailLoadingPlaceholder extends StatelessWidget {
               children: [
                 // Title shimmer
                 Shimmer.fromColors(
-                  baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                  baseColor: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.3),
                   highlightColor: colorScheme.surface,
                   child: Container(
                     width: double.infinity,
@@ -348,7 +356,8 @@ class MovieDetailLoadingPlaceholder extends StatelessWidget {
                     return Padding(
                       padding: EdgeInsets.only(right: index < 2 ? 8 : 0),
                       child: Shimmer.fromColors(
-                        baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        baseColor: colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.3),
                         highlightColor: colorScheme.surface,
                         child: Container(
                           width: 80,
@@ -369,7 +378,8 @@ class MovieDetailLoadingPlaceholder extends StatelessWidget {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Shimmer.fromColors(
-                      baseColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      baseColor: colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
                       highlightColor: colorScheme.surface,
                       child: Container(
                         width: index == 3

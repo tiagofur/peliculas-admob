@@ -17,7 +17,7 @@ import '../../../domain/entities/user.dart';
 import '../../../domain/entities/user_profile.dart';
 import '../../../domain/entities/user_stats.dart';
 import '../../providers/auth_provider.dart' hide currentUserProvider;
-import '../../providers/movie_ratings_provider.dart';
+import '../../providers/unified_ratings_provider.dart';
 import '../../providers/user_profile/user_profile_providers.dart';
 import '../../providers/user_session_provider.dart';
 import '../../widgets/profile_avatar.dart';
@@ -894,8 +894,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
           return const SizedBox.shrink();
         }
 
-        final recentRatingsAsync = ref.watch(recentRatingsProvider);
-        final ratingStats = ref.watch(userRatingStatsProvider);
+        // Usar unified_ratings_provider que tiene sincronización real-time
+        final recentRatings = ref.watch(recentRatingsProvider);
+        final ratingStats = ref.watch(ratingsStatsProvider);
+        final unifiedState = ref.watch(unifiedRatingsProvider);
+
+        // Mostrar loading si está inicializando
+        if (unifiedState.isLoading && recentRatings.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        // Mostrar error si hay
+        if (unifiedState.error != null) {
+          return _buildRatingsErrorState(theme, ref);
+        }
 
         return SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -912,24 +929,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
               ],
 
               // Lista de valoraciones
-              recentRatingsAsync.when(
-                data: (ratings) {
-                  if (ratings.isEmpty) {
-                    return _buildEmptyRatingsState(theme);
-                  }
-                  return _buildRatingsListWithSearch(theme, ratings);
-                },
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (error, stack) {
-                  LoggerFactory.error('Error cargando valoraciones: $error');
-                  return _buildRatingsErrorState(theme, ref);
-                },
-              ),
+              if (recentRatings.isEmpty)
+                _buildEmptyRatingsState(theme)
+              else
+                _buildRatingsListWithSearch(theme, recentRatings),
             ],
           ),
         );

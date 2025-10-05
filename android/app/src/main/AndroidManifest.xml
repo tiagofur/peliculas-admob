@@ -72,6 +72,13 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="peliculas" android:host="auth-callback" />
+            </intent-filter>
+            <!-- (Opcional: mantener el intent-filter genérico para peliculas://) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="peliculas" />
             </intent-filter>
             

@@ -1,19 +1,23 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../config/api_keys.dart';
+import '../../infrastructure/services/resilient_auth_local_storage.dart';
 
 class SupabaseConfig {
   static String get supabaseUrl => ApiKeys.supabaseUrl;
   static String get supabaseAnonKey => ApiKeys.supabaseAnonKey;
 
   static Future<void> initialize() async {
+    final localStorage = createResilientAuthLocalStorage(supabaseUrl);
+
     await Supabase.initialize(
       url: supabaseUrl,
       anonKey: supabaseAnonKey,
       debug: true, // Activar debug para diagnosticar problemas de cache
       // ✅ CRÍTICO: Configurar authOptions para persistir sesión
-      authOptions: const FlutterAuthClientOptions(
+      authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce, // Más seguro con PKCE
+        localStorage: localStorage,
       ),
       realtimeClientOptions: const RealtimeClientOptions(
         eventsPerSecond: 10,

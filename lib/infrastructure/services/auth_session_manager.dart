@@ -42,6 +42,15 @@ class AuthSessionManager {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
+    if (kIsWeb) {
+      _isInitialized = true;
+      if (kDebugMode) {
+        LoggerFactory.info(
+            'ℹ️ AuthSessionManager (Web): delegando persistencia a Supabase');
+      }
+      return;
+    }
+
     try {
       // Ejecutar inicialización con timeout
       await _executeWithTimeout(
@@ -78,6 +87,14 @@ class AuthSessionManager {
 
   /// Guarda la sesión actual de forma segura
   Future<void> persistSession(Session session) async {
+    if (kIsWeb) {
+      if (kDebugMode) {
+        LoggerFactory.debug(
+            'AuthSessionManager (Web): se omite persistencia manual, Supabase maneja PKCE');
+      }
+      return;
+    }
+
     try {
       await _executeWithTimeout(
         () async {
@@ -110,31 +127,35 @@ class AuthSessionManager {
         operationName: 'persistSession',
       );
 
-      _consecutiveFailures = 0; // Reset on success
+      _consecutiveFailures = 0;
 
       if (kDebugMode) {
-        LoggerFactory.info('✅ Sesión persistida de forma segura');
+        const platformLabel = kIsWeb ? 'Web' : 'plataforma nativa';
+        LoggerFactory.info(
+            '✅ Sesión persistida de forma segura en $platformLabel');
       }
     } catch (e) {
       _recordFailure();
-      
-      // En Web, Supabase ya maneja la persistencia automáticamente con PKCE
-      // Si falla el almacenamiento local, no es crítico
-      if (kIsWeb) {
-        LoggerFactory.warning(
-          '⚠️ No se pudo persistir sesión localmente en Web (no es crítico): $e\n'
-          'Supabase maneja la persistencia automáticamente con PKCE.');
-        // No lanzar error en Web, solo advertir
-        return;
+
+      const platformLabel = kIsWeb ? 'Web' : 'plataforma nativa';
+      LoggerFactory.warning(
+        '⚠️ No se pudo persistir sesión localmente en $platformLabel (no es crítico): $e',
+      );
+
+      if (kDebugMode) {
+        LoggerFactory.debug(
+            'Persistencia de sesión falló pero se continúa sin bloquear el login');
       }
-      
-      LoggerFactory.error('❌ Error persistiendo sesión: $e');
-      throw Exception('Error al guardar sesión: $e');
     }
   }
 
   /// Recupera una sesión persistente
   Future<bool> recoverSession() async {
+    if (kIsWeb) {
+      // Supabase maneja la sesión automáticamente en Web
+      return _supabase.auth.currentSession != null;
+    }
+
     try {
       // Check circuit breaker
       if (_shouldCircuitBreak()) {
@@ -157,6 +178,10 @@ class AuthSessionManager {
 
   /// Valida si la sesión actual sigue siendo válida
   Future<bool> validateCurrentSession() async {
+    if (kIsWeb) {
+      return _supabase.auth.currentSession != null;
+    }
+
     try {
       return await _executeWithTimeout(
         () async {
@@ -208,6 +233,11 @@ class AuthSessionManager {
 
   /// Limpia todos los datos de sesión
   Future<void> clearSession() async {
+    if (kIsWeb) {
+      // Supabase clean-up es manejado por auth.signOut; no hay almacenamiento local propio
+      return;
+    }
+
     try {
       _validationTimer?.cancel();
 
@@ -225,6 +255,20 @@ class AuthSessionManager {
 
   /// Obtiene información sobre la sesión persistida
   Future<Map<String, dynamic>?> getSessionInfo() async {
+    if (kIsWeb) {
+      final session = _supabase.auth.currentSession;
+      final user = session?.user;
+      if (session == null || user == null) return null;
+
+      return {
+        'user_id': user.id,
+        'device_id': null,
+        'created_at': DateTime.now().millisecondsSinceEpoch,
+        'expires_at': session.expiresAt,
+        'is_valid': true,
+      };
+    }
+
     try {
       final encryptedData = await _storage.getString(_sessionKey);
       if (encryptedData == null) return null;
@@ -246,6 +290,10 @@ class AuthSessionManager {
 
   /// Verifica si hay una sesión persistente disponible
   Future<bool> hasPersistedSession() async {
+    if (kIsWeb) {
+      return _supabase.auth.currentSession != null;
+    }
+
     try {
       final encryptedData = await _storage.getString(_sessionKey);
       return encryptedData != null;
@@ -257,6 +305,10 @@ class AuthSessionManager {
   // --- Métodos privados ---
 
   Future<void> _initializeDeviceId() async {
+    if (kIsWeb) {
+      return;
+    }
+
     _deviceId = await _storage.getString(_deviceIdKey);
 
     if (_deviceId == null) {
@@ -272,6 +324,10 @@ class AuthSessionManager {
   }
 
   Future<bool> _recoverPersistedSession() async {
+    if (kIsWeb) {
+      return _supabase.auth.currentSession != null;
+    }
+
     try {
       final encryptedData = await _storage.getString(_sessionKey);
       if (encryptedData == null) return false;
@@ -376,6 +432,10 @@ class AuthSessionManager {
   }
 
   void _startPeriodicValidation() {
+    if (kIsWeb) {
+      return;
+    }
+
     _validationTimer?.cancel(); // Cancel existing timer if any
 
     _validationTimer =

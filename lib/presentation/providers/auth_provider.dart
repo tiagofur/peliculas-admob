@@ -329,6 +329,33 @@ class AuthNotifier extends Notifier<AsyncValue<void>>
     );
   }
 
+  Future<void> signInWithGoogle() async {
+    state = const AsyncValue.loading();
+    await safeUpdateState<void>(
+      () async {
+        LoggerFactory.info('🔑 Attempting Google Sign-In');
+
+        await _authRepository.signInWithGoogle();
+
+        // Ejecutar callback post-autenticación si está disponible
+        final user = _authRepository.currentUser;
+        if (user != null && _onAuthSuccess != null) {
+          await _onAuthSuccess!(user);
+        }
+      },
+      onSuccess: (_) {
+        state = const AsyncValue.data(null);
+        LoggerFactory.info('✅ Google Sign-In successful');
+      },
+      onError: (userError) {
+        state = AsyncValue.error(userError, StackTrace.current);
+        LoggerFactory.warning('❌ Google Sign-In failed: ${userError.title}');
+      },
+      operationName: 'signInWithGoogle',
+      context: OperationContext.authentication,
+    );
+  }
+
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
