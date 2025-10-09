@@ -5,11 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../config/helpers/human_formats.dart';
 import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../core/logging/logger_factory.dart';
-import '../../../core/streaming/streaming.dart';
 import '../../../core/utils/tmdb_image_utils.dart';
 import '../../../domain/entities/entities.dart';
-import '../streaming/streaming_availability_indicator.dart';
-import '../streaming/watch_providers_section.dart';
 
 // Widgets públicos para usar en otras pantallas
 class MovieInfoSection extends StatelessWidget {
@@ -60,29 +57,6 @@ class MovieInfoSection extends StatelessWidget {
           _SpokenLanguages(movie: movie),
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
-
-        // Streaming Quick Action Button
-        StreamingQuickAction(
-          movieId: movie.id,
-          movieTitle: movie.title,
-        ),
-        const SizedBox(height: 16),
-
-        // Streaming Availability Section
-        StreamingAvailabilityDetail(
-          movieId: movie.id,
-          movieTitle: movie.title,
-          onPlatformTap: (platform) => _launchStreamingPlatform(platform),
-        ),
-        const SizedBox(height: 16),
-
-        // Watch Providers - Plataformas de streaming (fetched from TMDB)
-        WatchProvidersSection(
-          movieId: movie.id,
-          movieTitle: movie.title,
-          imdbId: movie.imdbId,
-          country: 'MX',
-        ),
 
         // Homepage link if available
         if (movie.homepage != null && movie.homepage!.isNotEmpty)
@@ -146,23 +120,6 @@ class MovieInfoSection extends StatelessWidget {
       }
     } catch (e) {
       LoggerFactory.error('Error al abrir URL: $e');
-    }
-  }
-
-  Future<void> _launchStreamingPlatform(StreamingPlatform platform) async {
-    try {
-      final deepLinkingService = DeepLinkingService();
-      final success = await deepLinkingService.launchStreamingApp(
-        platform: platform,
-        movieId: movie.id.toString(),
-      );
-
-      if (!success) {
-        // Handle error - could show snackbar if context available
-        LoggerFactory.error('No se pudo abrir ${platform.displayName}');
-      }
-    } catch (e) {
-      LoggerFactory.error('Error al abrir la aplicación: $e');
     }
   }
 }
@@ -230,14 +187,6 @@ class EnhancedMovieInfo extends ConsumerWidget {
           _SpokenLanguages(movie: movie),
         if (movie.spokenLanguages != null && movie.spokenLanguages!.isNotEmpty)
           const SizedBox(height: 16),
-
-        // Watch Providers - Plataformas de streaming (fetched from TMDB)
-        WatchProvidersSection(
-          movieId: movie.id,
-          movieTitle: movie.title,
-          imdbId: movie.imdbId,
-          country: 'MX',
-        ),
 
         // Homepage link if available
         if (movie.homepage != null && movie.homepage!.isNotEmpty)

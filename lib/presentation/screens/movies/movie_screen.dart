@@ -17,7 +17,6 @@ import '../../providers/storage/direct_watchlist_provider.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
 import '../../widgets/admob/web_safe_ad_widgets.dart';
-import '../../widgets/movie_watch_providers_widget.dart';
 import '../../widgets/movies/movie_rating_and_notes.dart';
 import '../../widgets/skeletons/skeletons.dart'; // Task 2.5
 import '../../widgets/watchlist/add_to_watchlist_button.dart';
@@ -254,9 +253,14 @@ class _MovieDetails extends StatelessWidget {
               const SizedBox(height: 16),
               MovieRatingAndNotes(movie: movie),
 
-              // Streaming Providers Section
+              // Unified Streaming Providers Section - Single source of truth
               const SizedBox(height: 16),
-              MovieWatchProvidersWidget(movie: movie),
+              UnifiedStreamingWidget(
+                movieId: movie.id,
+                movieTitle: movie.title,
+                imdbId: movie.imdbId,
+                region: 'MX',
+              ),
 
               //* 1. Banner antes de 'Reparto Principal'
               const Padding(
