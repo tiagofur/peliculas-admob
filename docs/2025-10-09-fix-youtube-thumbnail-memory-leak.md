@@ -9,6 +9,7 @@
 ## 📋 Problema Identificado
 
 ### Archivo Afectado
+
 `lib/presentation/widgets/videos/youtube_thumbnail.dart`
 
 ### Descripción del Problema
@@ -27,12 +28,12 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
   int _currentResolutionIndex = 0;
   bool _isAdvancing = false;
   bool _hasLoggedFinalFailure = false;
-  
+
   void _scheduleAdvanceResolution() {
     if (_isAdvancing || _currentResolutionIndex >= _resolutions.length - 1 || !mounted) {
       return;
     }
-    
+
     _isAdvancing = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return; // ⚠️ Solo verificaba mounted
@@ -42,12 +43,13 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
       });
     });
   }
-  
+
   // ❌ NO HAY dispose()
 }
 ```
 
 **Problemas**:
+
 - PostFrameCallback puede ejecutarse **después del dispose()**
 - Solo verificaba `mounted`, que puede ser true dentro del callback
 - No había log de cleanup para debugging
@@ -73,7 +75,7 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
   bool _isAdvancing = false;
   bool _hasLoggedFinalFailure = false;
   bool _isDisposed = false; // ✅ NUEVO: Flag explícito
-  
+
   void _scheduleAdvanceResolution() {
     if (_isAdvancing ||
         _currentResolutionIndex >= _resolutions.length - 1 ||
@@ -81,7 +83,7 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
         !mounted) {
       return;
     }
-    
+
     _isAdvancing = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_isDisposed || !mounted) { // ✅ NUEVO: Doble verificación
@@ -93,7 +95,7 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
       });
     });
   }
-  
+
   @override
   void dispose() { // ✅ NUEVO: Método completo
     _isDisposed = true;
@@ -110,25 +112,28 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
 
 ### Antes vs Después
 
-| Aspecto | Antes | Después | Mejora |
-|---------|-------|---------|--------|
-| **dispose() implementado** | ❌ No | ✅ Sí | ✅ |
-| **Flag de disposed** | ❌ No | ✅ `_isDisposed` | ✅ |
-| **Verificación en callback** | ⚠️ Solo `mounted` | ✅ `_isDisposed` + `mounted` | ✅ |
-| **Verificación en schedule** | ⚠️ Parcial | ✅ Completa | ✅ |
-| **Logs de debugging** | ❌ No | ✅ Sí | ✅ |
+| Aspecto                      | Antes             | Después                      | Mejora |
+| ---------------------------- | ----------------- | ---------------------------- | ------ |
+| **dispose() implementado**   | ❌ No             | ✅ Sí                        | ✅     |
+| **Flag de disposed**         | ❌ No             | ✅ `_isDisposed`             | ✅     |
+| **Verificación en callback** | ⚠️ Solo `mounted` | ✅ `_isDisposed` + `mounted` | ✅     |
+| **Verificación en schedule** | ⚠️ Parcial        | ✅ Completa                  | ✅     |
+| **Logs de debugging**        | ❌ No             | ✅ Sí                        | ✅     |
 
 ### Beneficios del Fix
 
 1. **Previene Memory Leaks**:
+
    - PostFrameCallback no ejecuta setState después de dispose
    - Flag `_isDisposed` garantiza que no se agenda más trabajo
 
 2. **Debugging Mejorado**:
+
    - Log con youtubeId para tracking
    - Facilita identificar widgets no limpiados
 
 3. **Robustez**:
+
    - Doble verificación (`_isDisposed` + `mounted`)
    - Prevención en scheduling y en callback
 
@@ -155,12 +160,14 @@ $ flutter analyze lib/presentation/widgets/videos/youtube_thumbnail.dart
 ### Escenarios de Prueba
 
 #### Caso 1: Carga Normal
+
 1. Widget se monta
 2. Imagen carga correctamente
 3. Widget se desmonta
 4. ✅ dispose() se ejecuta, log aparece
 
 #### Caso 2: Fallback de Resolución
+
 1. Widget se monta
 2. Primera resolución falla
 3. PostFrameCallback programa siguiente resolución
@@ -169,6 +176,7 @@ $ flutter analyze lib/presentation/widgets/videos/youtube_thumbnail.dart
 6. ✅ No hay setState después de dispose
 
 #### Caso 3: Navegación Rápida
+
 1. Usuario navega a pantalla con thumbnails
 2. Usuario navega de vuelta **inmediatamente**
 3. PostFrameCallback aún pendiente
@@ -179,13 +187,17 @@ $ flutter analyze lib/presentation/widgets/videos/youtube_thumbnail.dart
 ## 📊 Impacto del Fix
 
 ### Severidad Original
+
 🟡 **MEDIA** - No era crítico pero podía causar:
+
 - Memory leaks en navegación frecuente
 - Crashes por setState después de dispose
 - Acumulación de callbacks pendientes
 
 ### Después del Fix
+
 ✅ **RESUELTO** - Widget ahora:
+
 - Limpia recursos correctamente
 - Previene setState después de dispose
 - Sigue buenas prácticas de Flutter
@@ -200,20 +212,20 @@ $ flutter analyze lib/presentation/widgets/videos/youtube_thumbnail.dart
 // ✅ PATRÓN RECOMENDADO
 class _MyWidgetState extends State<MyWidget> {
   bool _isDisposed = false;
-  
+
   void scheduleWork() {
     if (_isDisposed || !mounted) return;
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // SIEMPRE verificar antes de setState
       if (_isDisposed || !mounted) return;
-      
+
       setState(() {
         // Safe setState
       });
     });
   }
-  
+
   @override
   void dispose() {
     _isDisposed = true;
@@ -245,12 +257,14 @@ WidgetsBinding.instance.addPostFrameCallback((_) {
 ### Cuándo Usar Este Patrón
 
 ✅ **SÍ usar** cuando:
+
 - Widget usa PostFrameCallback
 - Widget usa Future.delayed + setState
 - Widget usa Timer + setState
 - Widget usa async callbacks con setState
 
 ❌ **NO necesario** cuando:
+
 - Widget solo tiene state síncrono
 - Widget no usa callbacks asincrónicos
 - Widget es StatelessWidget
@@ -271,12 +285,12 @@ lib/presentation/widgets/videos/youtube_thumbnail.dart
 
 ### Líneas de Código
 
-| Métrica | Valor |
-|---------|-------|
-| **Líneas agregadas** | 10 |
-| **Líneas modificadas** | 5 |
-| **Total cambios** | 15 líneas |
-| **Complejidad** | Baja (simple flag + dispose) |
+| Métrica                | Valor                        |
+| ---------------------- | ---------------------------- |
+| **Líneas agregadas**   | 10                           |
+| **Líneas modificadas** | 5                            |
+| **Total cambios**      | 15 líneas                    |
+| **Complejidad**        | Baja (simple flag + dispose) |
 
 ---
 
@@ -313,11 +327,13 @@ lib/presentation/widgets/videos/youtube_thumbnail.dart
 ## 🚀 Próximos Pasos
 
 ### Inmediato
+
 1. ✅ Commit del fix
 2. ✅ Push a repositorio
 3. ⏳ Validación manual en app
 
 ### Seguimiento
+
 1. 🔍 **Verificar 15 StreamSubscription** (siguiente tarea)
 2. 📊 **Memory profiling** con DevTools
 3. 🧪 **Integration tests** para navegación extensa
@@ -327,16 +343,20 @@ lib/presentation/widgets/videos/youtube_thumbnail.dart
 ## 🏁 Conclusión
 
 ### Resultado
+
 ✅ **FIX EXITOSO** - Memory leak en YouTubeThumbnail resuelto
 
 ### Impacto
+
 - ✅ Widget más robusto
 - ✅ Previene crashes por setState después de dispose
 - ✅ Mejor debugging con logs
 - ✅ Consistencia con el resto del proyecto
 
 ### Estado del P0-2
+
 Con este fix:
+
 - ✅ **1/1 problemas medios resueltos** (100%)
 - 🔍 **15 StreamSubscription pendientes de verificación**
 - 📊 **Memory profiling pendiente**

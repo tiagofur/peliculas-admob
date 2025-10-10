@@ -12,6 +12,7 @@
 **Hallazgo Principal**: El problema P0-3 del roadmap **YA ESTÁ COMPLETAMENTE RESUELTO**. La aplicación cuenta con un sistema de resolución de conflictos **más avanzado** de lo que el roadmap solicitaba.
 
 **Estado**:
+
 ```
 ┌─────────────────────────────────────────────────┐
 │  P0-3: SYNC CONFLICTS - Estado de Implementación │
@@ -35,10 +36,12 @@
 **P0-3 - SYNC CONFLICTS** (Estimado: 4h)
 
 **Descripción original**:
+
 > "Sincronización pierde datos en conflictos"  
 > **Impacto**: Crítico - Pérdida de datos del usuario
 
 **Tareas solicitadas**:
+
 - [ ] **[P0-008]** Implementar 3-way merge algorithm (2h)
   - _Archivos mencionados_: `lib/services/conflict_resolver.dart`
 - [ ] **[P0-009]** Agregar version tracking a todos los models (1h)
@@ -55,6 +58,7 @@
 **Archivo**: `lib/core/sync/conflict_resolver.dart` (358 líneas)
 
 **Funcionalidad encontrada**:
+
 ```dart
 /// Motor de resolución de conflictos para entidades sincronizables
 class ConflictResolver {
@@ -98,6 +102,7 @@ class ConflictResolver {
 ```
 
 **Características implementadas**:
+
 - ✅ **Detección automática de conflictos** con `detectConflict()`
 - ✅ **4 estrategias de resolución** (localWins, remoteWins, merge, userChoice)
 - ✅ **Merge inteligente** usando `mergeWith()` en cada entidad
@@ -108,7 +113,8 @@ class ConflictResolver {
 - ✅ **Resolución en lote** con `resolveConflicts()` múltiples
 - ✅ **Estadísticas de resolución** con tracking de patrones
 
-**Nivel de implementación**: 
+**Nivel de implementación**:
+
 - **Roadmap solicitaba**: 3-way merge básico
 - **Implementación real**: Sistema avanzado con múltiples estrategias, detección automática, y merge inteligente
 
@@ -119,6 +125,7 @@ class ConflictResolver {
 **Archivo**: `lib/core/sync/conflict_resolution/advanced_conflict_resolver.dart` (717 líneas)
 
 **Funcionalidad adicional encontrada**:
+
 ```dart
 /// Resolver avanzado de conflictos con estrategias especializadas
 class AdvancedConflictResolver {
@@ -153,6 +160,7 @@ class AdvancedConflictResolver {
 ```
 
 **Características avanzadas**:
+
 - ✅ **10 estrategias de resolución** (vs 4 básicas)
 - ✅ **Contexto de resolución** con preferencias de usuario
 - ✅ **Field-specific strategies** (estrategia por campo individual)
@@ -164,6 +172,7 @@ class AdvancedConflictResolver {
 - ✅ **Metadata completo** con tiempo de resolución y métricas
 
 **Nivel de implementación**:
+
 - **Roadmap solicitaba**: 3-way merge básico (2 horas)
 - **Implementación real**: Sistema enterprise-grade con 10 estrategias, contexto completo, y configuración granular (probablemente 20+ horas de desarrollo)
 
@@ -174,6 +183,7 @@ class AdvancedConflictResolver {
 **Archivo**: `lib/domain/entities/syncable_entity.dart` (275 líneas)
 
 **Funcionalidad encontrada**:
+
 ```dart
 /// Interfaz base para todas las entidades sincronizables
 abstract class SyncableEntity {
@@ -230,6 +240,7 @@ abstract class SyncableEntity {
 ```
 
 **Metadatos de sincronización implementados**:
+
 - ✅ `syncVersion` - Versión incremental para tracking
 - ✅ `lastModifiedAt` - Timestamp de última modificación
 - ✅ `createdAt` - Timestamp de creación
@@ -240,6 +251,7 @@ abstract class SyncableEntity {
 - ✅ `hasChangedSince()` - Detección de cambios desde timestamp
 
 **Entidades con version tracking** (todas implementadas):
+
 1. ✅ `SyncableFavorite` (486 líneas)
 2. ✅ `SyncableWatchlistItem` (278+ líneas)
 3. ✅ `SyncableWatchedMovie` (280+ líneas)
@@ -247,6 +259,7 @@ abstract class SyncableEntity {
 5. ✅ `SyncableCustomList` (227+ líneas)
 
 **Nivel de implementación**:
+
 - **Roadmap solicitaba**: Version tracking básico (1 hora)
 - **Implementación real**: Sistema completo con checksums, precedencia, timestamps, device tracking, y soft delete (probablemente 8+ horas de desarrollo)
 
@@ -259,6 +272,7 @@ abstract class SyncableEntity {
 **Archivo**: `lib/core/sync/persistent_sync_queue.dart` (369 líneas)
 
 **Funcionalidad encontrada**:
+
 ```dart
 /// Cola persistente para operaciones de sincronización
 /// Utiliza SharedPreferences para persistencia simple y rápida
@@ -274,7 +288,7 @@ class PersistentSyncQueue {
   Future<void> _loadOperations() async {
     final jsonString = _prefs?.getString(_queueKey);
     final List<dynamic> jsonList = json.decode(jsonString);
-    
+
     for (final item in jsonList) {
       final operation = SyncOperation.fromJson(item);
       _operations.add(operation);
@@ -302,6 +316,7 @@ class PersistentSyncQueue {
 ```
 
 **Características implementadas**:
+
 - ✅ **Persistencia con SharedPreferences** (survives app restart)
 - ✅ **Serialización JSON** completa
 - ✅ **Cola priorizada** (ordenamiento por prioridad)
@@ -316,6 +331,7 @@ class PersistentSyncQueue {
 **Archivo**: `lib/infrastructure/services/persistent_sync_queue.dart` (99 líneas)
 
 **Funcionalidad adicional**:
+
 ```dart
 class PersistentSyncQueue {
   final WebSafeStorageService _storage;
@@ -329,12 +345,14 @@ class PersistentSyncQueue {
 ```
 
 **Características adicionales**:
+
 - ✅ **Web-safe storage** para compatibilidad web
 - ✅ **Item tracking** individual
 - ✅ **Empty check** rápido
 - ✅ **Clear operation** para limpieza completa
 
 **Nivel de implementación**:
+
 - **Roadmap solicitaba**: Offline queue básica (1 hora)
 - **Implementación real**: **DOS** implementaciones completas con persistencia, priorización, retry logic, y soporte web (probablemente 12+ horas de desarrollo)
 
@@ -347,6 +365,7 @@ class PersistentSyncQueue {
 **Archivo**: `test/services/realtime_sync_conflict_resolution_test.dart` (475 líneas)
 
 **Cobertura de tests**:
+
 - ✅ Test de detección de conflictos
 - ✅ Test de resolución local wins
 - ✅ Test de resolución remote wins
@@ -357,6 +376,7 @@ class PersistentSyncQueue {
 - ✅ Test de batch resolution
 
 **Otros tests relacionados**:
+
 - `test/syncable_entity_test.dart` - Tests de entidades sincronizables
 - `test/watched_movies_realtime_sync_test.dart` - Tests de sync en tiempo real
 - `test/services/realtime_sync_manager_scenarios_test.dart` - Escenarios complejos
@@ -364,6 +384,7 @@ class PersistentSyncQueue {
 - `test/integration/complete_login_migration_sync_test.dart` - Tests de integración
 
 **Nivel de testing**:
+
 - **475+ líneas** de tests específicos de conflictos
 - **Multiple test files** cubriendo diferentes escenarios
 - **Integration tests** para flujos completos
@@ -374,49 +395,49 @@ class PersistentSyncQueue {
 
 ### P0-008: 3-Way Merge Algorithm
 
-| Aspecto | Roadmap (2h) | Implementación Real | Estado |
-|---------|-------------|---------------------|---------|
-| Conflict detection | Básica | Automática + checksums | ✅ **SUPERIOR** |
-| Merge strategies | 1 estrategia | 4 básicas + 10 avanzadas | ✅ **SUPERIOR** |
-| User interaction | No mencionado | Dialog completo | ✅ **BONUS** |
-| Batch resolution | No mencionado | Implementado | ✅ **BONUS** |
-| Statistics tracking | No mencionado | Implementado | ✅ **BONUS** |
-| Field-specific merge | No mencionado | Implementado | ✅ **BONUS** |
-| Context-aware | No mencionado | Network + Device aware | ✅ **BONUS** |
-| **Total** | **Básico** | **Enterprise-grade** | ✅ **300% MEJOR** |
+| Aspecto              | Roadmap (2h)  | Implementación Real      | Estado            |
+| -------------------- | ------------- | ------------------------ | ----------------- |
+| Conflict detection   | Básica        | Automática + checksums   | ✅ **SUPERIOR**   |
+| Merge strategies     | 1 estrategia  | 4 básicas + 10 avanzadas | ✅ **SUPERIOR**   |
+| User interaction     | No mencionado | Dialog completo          | ✅ **BONUS**      |
+| Batch resolution     | No mencionado | Implementado             | ✅ **BONUS**      |
+| Statistics tracking  | No mencionado | Implementado             | ✅ **BONUS**      |
+| Field-specific merge | No mencionado | Implementado             | ✅ **BONUS**      |
+| Context-aware        | No mencionado | Network + Device aware   | ✅ **BONUS**      |
+| **Total**            | **Básico**    | **Enterprise-grade**     | ✅ **300% MEJOR** |
 
 ---
 
 ### P0-009: Version Tracking
 
-| Aspecto | Roadmap (1h) | Implementación Real | Estado |
-|---------|-------------|---------------------|---------|
-| Version field | syncVersion | ✅ Implementado | ✅ **COMPLETO** |
-| Timestamp tracking | lastModifiedAt | ✅ + createdAt | ✅ **MEJOR** |
-| Device tracking | No mencionado | ✅ deviceId | ✅ **BONUS** |
-| Checksum | No mencionado | ✅ MD5 hash | ✅ **BONUS** |
-| Precedence logic | No mencionado | ✅ hasPrecedenceOver() | ✅ **BONUS** |
-| Soft delete | No mencionado | ✅ isDeleted flag | ✅ **BONUS** |
-| Content comparison | No mencionado | ✅ hasSameContentAs() | ✅ **BONUS** |
-| Change detection | No mencionado | ✅ hasChangedSince() | ✅ **BONUS** |
-| **Total** | **Básico** | **Completo + 6 extras** | ✅ **400% MEJOR** |
+| Aspecto            | Roadmap (1h)   | Implementación Real     | Estado            |
+| ------------------ | -------------- | ----------------------- | ----------------- |
+| Version field      | syncVersion    | ✅ Implementado         | ✅ **COMPLETO**   |
+| Timestamp tracking | lastModifiedAt | ✅ + createdAt          | ✅ **MEJOR**      |
+| Device tracking    | No mencionado  | ✅ deviceId             | ✅ **BONUS**      |
+| Checksum           | No mencionado  | ✅ MD5 hash             | ✅ **BONUS**      |
+| Precedence logic   | No mencionado  | ✅ hasPrecedenceOver()  | ✅ **BONUS**      |
+| Soft delete        | No mencionado  | ✅ isDeleted flag       | ✅ **BONUS**      |
+| Content comparison | No mencionado  | ✅ hasSameContentAs()   | ✅ **BONUS**      |
+| Change detection   | No mencionado  | ✅ hasChangedSince()    | ✅ **BONUS**      |
+| **Total**          | **Básico**     | **Completo + 6 extras** | ✅ **400% MEJOR** |
 
 ---
 
 ### P0-010: Offline Queue
 
-| Aspecto | Roadmap (1h) | Implementación Real | Estado |
-|---------|-------------|---------------------|---------|
-| Persistence | Basic queue | SharedPreferences | ✅ **COMPLETO** |
-| Serialization | No mencionado | JSON completo | ✅ **MEJOR** |
-| Priority queue | No mencionado | ✅ Implementado | ✅ **BONUS** |
-| Retry logic | No mencionado | ✅ Implementado | ✅ **BONUS** |
-| Error tracking | No mencionado | ✅ Implementado | ✅ **BONUS** |
-| User-specific | No mencionado | ✅ Per-user queues | ✅ **BONUS** |
-| Web support | No mencionado | ✅ Web-safe storage | ✅ **BONUS** |
-| Cleanup | No mencionado | ✅ Auto cleanup | ✅ **BONUS** |
-| Dual implementation | No mencionado | ✅ Core + Infrastructure | ✅ **BONUS** |
-| **Total** | **Básico** | **2 implementaciones completas** | ✅ **500% MEJOR** |
+| Aspecto             | Roadmap (1h)  | Implementación Real              | Estado            |
+| ------------------- | ------------- | -------------------------------- | ----------------- |
+| Persistence         | Basic queue   | SharedPreferences                | ✅ **COMPLETO**   |
+| Serialization       | No mencionado | JSON completo                    | ✅ **MEJOR**      |
+| Priority queue      | No mencionado | ✅ Implementado                  | ✅ **BONUS**      |
+| Retry logic         | No mencionado | ✅ Implementado                  | ✅ **BONUS**      |
+| Error tracking      | No mencionado | ✅ Implementado                  | ✅ **BONUS**      |
+| User-specific       | No mencionado | ✅ Per-user queues               | ✅ **BONUS**      |
+| Web support         | No mencionado | ✅ Web-safe storage              | ✅ **BONUS**      |
+| Cleanup             | No mencionado | ✅ Auto cleanup                  | ✅ **BONUS**      |
+| Dual implementation | No mencionado | ✅ Core + Infrastructure         | ✅ **BONUS**      |
+| **Total**           | **Básico**    | **2 implementaciones completas** | ✅ **500% MEJOR** |
 
 ---
 
@@ -429,22 +450,27 @@ class PersistentSyncQueue {
 ### Mecanismos de Protección Encontrados
 
 #### 1. ✅ Soft Delete (No hard delete)
+
 ```dart
 /// Indica si la entidad está marcada como eliminada (soft delete)
 bool get isDeleted;
 ```
+
 - **Efecto**: Los datos eliminados se marcan pero no se borran
 - **Beneficio**: Recuperación posible, no hay pérdida permanente
 
 #### 2. ✅ Version Tracking
+
 ```dart
 /// Versión de sincronización para detección de conflictos
 int get syncVersion;
 ```
+
 - **Efecto**: Cada cambio incrementa la versión
 - **Beneficio**: Detección automática de conflictos concurrentes
 
 #### 3. ✅ Checksums para Integridad
+
 ```dart
 String generateChecksum() {
   final dataMap = toSupabaseJson();
@@ -454,10 +480,12 @@ String generateChecksum() {
   return digest.toString();
 }
 ```
+
 - **Efecto**: Hash MD5 del contenido real
 - **Beneficio**: Detección de cambios sin comparar campo por campo
 
 #### 4. ✅ Merge Inteligente en Cada Entidad
+
 ```dart
 // Ejemplo: SyncableFavorite.mergeWith()
 SyncableEntity mergeWith(SyncableEntity other) {
@@ -473,10 +501,12 @@ SyncableEntity mergeWith(SyncableEntity other) {
   );
 }
 ```
+
 - **Efecto**: Combina datos de ambas versiones
 - **Beneficio**: NO se pierde información de ninguna versión
 
 #### 5. ✅ Offline Queue con Persistencia
+
 ```dart
 /// Cola persistente que sobrevive a reinicios de la app
 class PersistentSyncQueue {
@@ -487,10 +517,12 @@ class PersistentSyncQueue {
   }
 }
 ```
+
 - **Efecto**: Cambios locales guardados aunque la app se cierre
 - **Beneficio**: NO se pierden operaciones pendientes
 
 #### 6. ✅ Conflict Detection Automática
+
 ```dart
 ConflictInfo<T>? detectConflict<T extends SyncableEntity>(T local, T remote) {
   // Si ambas tienen el mismo checksum, no hay conflicto
@@ -509,10 +541,12 @@ ConflictInfo<T>? detectConflict<T extends SyncableEntity>(T local, T remote) {
   );
 }
 ```
+
 - **Efecto**: Detecta conflictos ANTES de sobrescribir
 - **Beneficio**: Prevención proactiva de pérdida de datos
 
 #### 7. ✅ Fallback Strategies
+
 ```dart
 try {
   final merged = conflict.localEntity.mergeWith(conflict.remoteEntity);
@@ -522,6 +556,7 @@ try {
   return _resolveLocalWins(conflict);  // NUNCA pierde datos locales
 }
 ```
+
 - **Efecto**: Si el merge falla, usa estrategia segura
 - **Beneficio**: Garantía de que NO se pierden datos en errores
 
@@ -532,6 +567,7 @@ try {
 ### Respuesta: **NO**
 
 **Evidencia**:
+
 1. ✅ **Soft delete** previene eliminación permanente
 2. ✅ **Merge inteligente** combina ambas versiones
 3. ✅ **Offline queue** persiste cambios locales
@@ -541,6 +577,7 @@ try {
 7. ✅ **Tests de 475 líneas** validan el sistema
 
 **Probabilidad de pérdida de datos**: **<0.1%**
+
 - Solo posible en escenarios extremos (corrupción de storage, bug de Supabase, etc.)
 - No hay escenarios normales donde se pierdan datos
 
@@ -550,31 +587,31 @@ try {
 
 ### Cobertura de Funcionalidad
 
-| Funcionalidad | Solicitado | Implementado | Estado |
-|--------------|-----------|--------------|---------|
-| 3-way merge | ✅ | ✅ + 13 estrategias adicionales | ✅ 1400% |
-| Version tracking | ✅ | ✅ + 7 features adicionales | ✅ 800% |
-| Offline queue | ✅ | ✅ + 8 features adicionales + 2 implementaciones | ✅ 1000% |
-| **Total** | **3 features** | **3 core + 28 adicionales** | ✅ **1033%** |
+| Funcionalidad    | Solicitado     | Implementado                                     | Estado       |
+| ---------------- | -------------- | ------------------------------------------------ | ------------ |
+| 3-way merge      | ✅             | ✅ + 13 estrategias adicionales                  | ✅ 1400%     |
+| Version tracking | ✅             | ✅ + 7 features adicionales                      | ✅ 800%      |
+| Offline queue    | ✅             | ✅ + 8 features adicionales + 2 implementaciones | ✅ 1000%     |
+| **Total**        | **3 features** | **3 core + 28 adicionales**                      | ✅ **1033%** |
 
 ### Líneas de Código
 
-| Componente | Líneas | Complejidad |
-|-----------|--------|-------------|
-| ConflictResolver | 358 | Alta |
-| AdvancedConflictResolver | 717 | Muy Alta |
-| SyncableEntity | 275 | Alta |
-| PersistentSyncQueue (Core) | 369 | Alta |
-| PersistentSyncQueue (Infra) | 99 | Media |
-| ConflictStrategy | 293 | Alta |
-| Tests de conflictos | 475 | Alta |
-| **Total** | **2,586 líneas** | **Enterprise-grade** |
+| Componente                  | Líneas           | Complejidad          |
+| --------------------------- | ---------------- | -------------------- |
+| ConflictResolver            | 358              | Alta                 |
+| AdvancedConflictResolver    | 717              | Muy Alta             |
+| SyncableEntity              | 275              | Alta                 |
+| PersistentSyncQueue (Core)  | 369              | Alta                 |
+| PersistentSyncQueue (Infra) | 99               | Media                |
+| ConflictStrategy            | 293              | Alta                 |
+| Tests de conflictos         | 475              | Alta                 |
+| **Total**                   | **2,586 líneas** | **Enterprise-grade** |
 
 ### Tiempo de Desarrollo Estimado
 
-| Roadmap Original | Implementación Real | Ratio |
-|-----------------|---------------------|-------|
-| 4 horas | ~40-60 horas | **10x-15x más completo** |
+| Roadmap Original | Implementación Real | Ratio                    |
+| ---------------- | ------------------- | ------------------------ |
+| 4 horas          | ~40-60 horas        | **10x-15x más completo** |
 
 ---
 
@@ -583,6 +620,7 @@ try {
 ### 1. ⭐ **MARCAR P0-3 COMO COMPLETADO EN ROADMAP**
 
 **Justificación**:
+
 - Las 3 tareas solicitadas están implementadas
 - La implementación es SUPERIOR a lo solicitado
 - No hay evidencia de pérdida de datos
@@ -591,6 +629,7 @@ try {
 ### 2. 📝 **ACTUALIZAR DOCUMENTACIÓN**
 
 **Acción sugerida**:
+
 - Documentar el sistema de conflictos para futuros desarrolladores
 - Crear guía de uso de estrategias avanzadas
 - Documentar casos de uso de `ConflictContext`
@@ -598,6 +637,7 @@ try {
 ### 3. 🧪 **OPCIONAL: Manual Testing**
 
 Aunque el sistema está completo, validar manualmente:
+
 - [ ] Crear conflicto en favoritos (modificar mismo ítem en 2 dispositivos)
 - [ ] Verificar que merge combina cambios correctamente
 - [ ] Probar offline queue (hacer cambios sin conexión, reconectar)
@@ -609,6 +649,7 @@ Aunque el sistema está completo, validar manualmente:
 ### 4. 🔄 **OPCIONAL: Performance Profiling**
 
 Dado que el sistema es complejo, valdría la pena:
+
 - Medir tiempo de resolución de conflictos en lote
 - Optimizar checksums si es necesario
 - Profiling de persistent queue en volúmenes altos
@@ -661,6 +702,7 @@ Dado que el sistema es complejo, valdría la pena:
 ## 📚 Archivos Clave Analizados
 
 ### Core Sync
+
 - `lib/core/sync/conflict_resolver.dart` (358 líneas)
 - `lib/core/sync/conflict_resolution/advanced_conflict_resolver.dart` (717 líneas)
 - `lib/core/sync/conflict_resolution/strategies/conflict_strategy.dart` (293 líneas)
@@ -669,6 +711,7 @@ Dado que el sistema es complejo, valdría la pena:
 - `lib/core/sync/sync_operation.dart`
 
 ### Domain Entities
+
 - `lib/domain/entities/syncable_entity.dart` (275 líneas)
 - `lib/domain/entities/syncable_favorite.dart` (486 líneas)
 - `lib/domain/entities/syncable_watchlist_item.dart`
@@ -677,13 +720,16 @@ Dado que el sistema es complejo, valdría la pena:
 - `lib/domain/entities/syncable_custom_list.dart`
 
 ### Infrastructure
+
 - `lib/infrastructure/services/persistent_sync_queue.dart` (99 líneas)
 - `lib/infrastructure/services/realtime_sync_manager.dart`
 
 ### Tests
+
 - `test/services/realtime_sync_conflict_resolution_test.dart` (475 líneas)
 - `test/syncable_entity_test.dart`
 - `test/watched_movies_realtime_sync_test.dart`
 
 ### Roadmap
+
 - `documentation/2025-09-25-audit/ROADMAP-COMPLETO.md`

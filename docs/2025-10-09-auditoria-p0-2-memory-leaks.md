@@ -20,12 +20,14 @@
 ### Hallazgos Clave
 
 ✅ **BUENAS NOTICIAS**:
+
 - **La mayoría del código YA tiene dispose() implementado**
 - Patrón consistente en widgets con AnimationController
 - RealtimeChannel con unsubscribe correcto en providers principales
 - Servicios principales tienen cleanup implementado
 
 ⚠️ **PROBLEMAS ENCONTRADOS**:
+
 - **2 widgets StatefulWidget SIN dispose()**: YouTubeThumbnail, AddToWatchlistDialog
 - **30+ StreamSubscription**: Necesitan verificación de .cancel()
 - **10+ Timer**: Algunos en servicios de scaling/monitoring
@@ -42,16 +44,17 @@
 **Archivo**: `lib/presentation/widgets/videos/youtube_thumbnail.dart` (líneas 1-127)
 
 **Problema**:
+
 ```dart
 class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
   static const List<String> _resolutions = <String>[...];
-  
+
   int _currentResolutionIndex = 0;
   bool _isAdvancing = false;
   bool _hasLoggedFinalFailure = false;
-  
+
   // ❌ NO HAY dispose() implementado
-  
+
   @override
   Widget build(BuildContext context) {
     // Usa WidgetsBinding.instance.addPostFrameCallback
@@ -61,6 +64,7 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
 ```
 
 **Análisis**:
+
 - Usa `WidgetsBinding.instance.addPostFrameCallback()`
 - NO tiene `dispose()` para cancelar callbacks pendientes
 - Puede causar memory leak si el widget se desmonta durante carga de imagen
@@ -68,21 +72,22 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
 **Severidad**: 🟡 **MEDIA** - No usa Timer ni AnimationController, pero callbacks pueden persistir
 
 **Solución Recomendada**:
+
 ```dart
 class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
   bool _mounted = true;
-  
+
   @override
   void dispose() {
     _mounted = false;
     super.dispose();
   }
-  
+
   void _scheduleAdvanceResolution() {
     if (_isAdvancing || _currentResolutionIndex >= _resolutions.length - 1 || !_mounted) {
       return;
     }
-    
+
     _isAdvancing = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_mounted) return; // ✅ Verificar antes de setState
@@ -97,17 +102,18 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
 
 ---
 
-#### 1.2. _AddToWatchlistDialogState ❌ **LEAK ENCONTRADO**
+#### 1.2. \_AddToWatchlistDialogState ❌ **LEAK ENCONTRADO**
 
 **Archivo**: `lib/presentation/widgets/watchlist/add_to_watchlist_button.dart` (líneas 177-267)
 
 **Problema**:
+
 ```dart
 class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
   WatchlistPriority _selectedPriority = WatchlistPriority.normal;
-  
+
   // ❌ NO HAY dispose() implementado
-  
+
   @override
   Widget build(BuildContext context) {
     // Dialog simple con RadioGroup
@@ -116,6 +122,7 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
 ```
 
 **Análisis**:
+
 - Dialog simple sin recursos pesados
 - Solo usa state local (WatchlistPriority)
 - NO tiene Timer, AnimationController, ni StreamSubscription
@@ -129,27 +136,29 @@ class _AddToWatchlistDialogState extends State<_AddToWatchlistDialog> {
 ### 2. ✅ RealtimeChannel - BIEN IMPLEMENTADO
 
 **Archivos Auditados**:
+
 - `lib/presentation/providers/storage/direct_sync_provider.dart`
 - `lib/presentation/providers/storage/direct_watchlist_provider.dart`
 - `lib/presentation/providers/storage/direct_custom_lists_provider.dart`
 - `lib/infrastructure/services/realtime_sync_manager.dart`
 
 **Patrón Correcto Encontrado**:
+
 ```dart
 // ✅ CORRECTO: subscribe + unsubscribe en dispose
 class DirectSyncService extends Notifier<Map<int, Movie>> {
   RealtimeChannel? _realtimeChannel;
-  
+
   Future<void> _setupRealtimeListeners() async {
     _realtimeChannel = _supabase
         .from('user_$tableName')
         .stream(primaryKey: ['user_id', 'movie_id']);
-    
+
     _realtimeChannel!.subscribe((status, [error]) {
       // Listener logic
     });
   }
-  
+
   void dispose() {
     _realtimeChannel?.unsubscribe(); // ✅ Cleanup correcto
     LoggerFactory.info('🧹 DirectSyncService disposed');
@@ -172,7 +181,7 @@ class DirectSyncService extends Notifier<Map<int, Movie>> {
 ```dart
 class UnifiedRatingService {
   StreamSubscription<List<Map<String, dynamic>>>? _realtimeSubscription;
-  
+
   void dispose() {
     LoggerFactory.info('🧹 UnifiedRatingService: Disposing...');
     _realtimeSubscription?.cancel(); // ✅ Correcto
@@ -193,13 +202,13 @@ class UnifiedRatingService {
 ```dart
 class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
   late StreamSubscription<MetricsSnapshot> _metricsSubscription;
-  
+
   @override
   void initState() {
     super.initState();
     // _metricsSubscription = ...
   }
-  
+
   @override
   void dispose() {
     // ⚠️ VERIFICAR: ¿Tiene _metricsSubscription.cancel()?
@@ -214,16 +223,16 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
 
 #### 3.3. Otros StreamSubscription a Verificar
 
-| Archivo | Variable | Estado |
-|---------|----------|--------|
-| `custom_lists_auth_integration.dart` | `_authSubscription` | 🔍 Revisar |
-| `achievement_notification_service.dart` | `_achievementSubscription` | 🔍 Revisar |
-| `sync_integration_provider.dart` | `_connectivitySubscription` | 🔍 Revisar |
-| `user_session_provider.dart` | `_authSubscription`, `_profileSubscription` | 🔍 Revisar |
-| `unified_sync_provider.dart` | `_realtimeSubscription` | 🔍 Revisar |
-| `auth_repository_impl.dart` | `_authSubscription`, `_tokenRefreshSubscription` | 🔍 Revisar |
-| `connectivity_manager.dart` | `_connectivitySubscription` | 🔍 Revisar |
-| `sync_coordinator.dart` | `_connectionSubscription`, `_backgroundSyncSubscription` | 🔍 Revisar |
+| Archivo                                 | Variable                                                 | Estado     |
+| --------------------------------------- | -------------------------------------------------------- | ---------- |
+| `custom_lists_auth_integration.dart`    | `_authSubscription`                                      | 🔍 Revisar |
+| `achievement_notification_service.dart` | `_achievementSubscription`                               | 🔍 Revisar |
+| `sync_integration_provider.dart`        | `_connectivitySubscription`                              | 🔍 Revisar |
+| `user_session_provider.dart`            | `_authSubscription`, `_profileSubscription`              | 🔍 Revisar |
+| `unified_sync_provider.dart`            | `_realtimeSubscription`                                  | 🔍 Revisar |
+| `auth_repository_impl.dart`             | `_authSubscription`, `_tokenRefreshSubscription`         | 🔍 Revisar |
+| `connectivity_manager.dart`             | `_connectivitySubscription`                              | 🔍 Revisar |
+| `sync_coordinator.dart`                 | `_connectionSubscription`, `_backgroundSyncSubscription` | 🔍 Revisar |
 
 **Total**: 🔍 **15+ archivos requieren verificación manual**
 
@@ -241,17 +250,17 @@ class _RealtimeSyncDashboardState extends ConsumerState<RealtimeSyncDashboard> {
 class Phase6Manager {
   Timer? _syncTimer;
   Timer? _analyticsTimer;
-  
+
   void initialize() {
     _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       _performAutoSync();
     });
-    
+
     _analyticsTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       _sendAnalytics();
     });
   }
-  
+
   void dispose() {
     _syncTimer?.cancel(); // ✅ Correcto
     _analyticsTimer?.cancel(); // ✅ Correcto
@@ -271,14 +280,14 @@ class Phase6Manager {
 ```dart
 class AdvancedThemeManager {
   Timer? _autoThemeTimer;
-  
+
   void startAutoThemeSchedule() {
     _autoThemeTimer?.cancel();
     _autoThemeTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       _updateThemeBasedOnTime();
     });
   }
-  
+
   void dispose() {
     _autoThemeTimer?.cancel(); // ✅ Correcto
     LoggerFactory.info('✅ AdvancedThemeManager disposed');
@@ -299,21 +308,21 @@ class EnterpriseMonitoringService {
   Timer? _monitoringTimer;
   Timer? _alertsTimer;
   Timer? _reportTimer;
-  
+
   void initialize() {
     _monitoringTimer = Timer.periodic(_monitoringInterval, (_) async {
       await _collectMetrics();
     });
-    
+
     _alertsTimer = Timer.periodic(_alertsInterval, (_) {
       _processAlerts();
     });
-    
+
     _reportTimer = Timer.periodic(_reportInterval, (_) {
       _generateReport();
     });
   }
-  
+
   void dispose() {
     _monitoringTimer?.cancel(); // ✅ Correcto
     _alertsTimer?.cancel(); // ✅ Correcto
@@ -329,13 +338,13 @@ class EnterpriseMonitoringService {
 
 #### 4.4. Otros Timer a Verificar
 
-| Archivo | Timers | Estado |
-|---------|--------|--------|
-| `scaling_manager_simplified.dart` | `_healthCheckTimer` | ✅ Correcto |
-| `load_balancer_service.dart` | `_healthCheckTimer` | ✅ Correcto |
-| `image_preloader_service.dart` | `_preloadTimer` | ✅ Correcto |
-| `cache_configuration_service.dart` | `_metricsTimer` | 🔍 Revisar |
-| `adsense_dom_adapter_web.dart` | `timeoutTimer` (local) | ✅ Correcto (scope local) |
+| Archivo                            | Timers                 | Estado                    |
+| ---------------------------------- | ---------------------- | ------------------------- |
+| `scaling_manager_simplified.dart`  | `_healthCheckTimer`    | ✅ Correcto               |
+| `load_balancer_service.dart`       | `_healthCheckTimer`    | ✅ Correcto               |
+| `image_preloader_service.dart`     | `_preloadTimer`        | ✅ Correcto               |
+| `cache_configuration_service.dart` | `_metricsTimer`        | 🔍 Revisar                |
+| `adsense_dom_adapter_web.dart`     | `timeoutTimer` (local) | ✅ Correcto (scope local) |
 
 **Resultado**: ✅ **La mayoría de Timer tienen .cancel() en dispose()**
 
@@ -353,25 +362,25 @@ class EnterpriseMonitoringService {
 class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late AnimationController _slideController;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    
+
     _fadeController.forward();
     _slideController.forward();
   }
-  
+
   @override
   void dispose() {
     _exitCinemaMode();
@@ -395,13 +404,13 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
 // ✅ PATRÓN CORRECTO encontrado en 50+ widgets:
 class _MyWidgetState extends State<MyWidget> with TickerProviderStateMixin {
   late AnimationController _controller;
-  
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, ...);
   }
-  
+
   @override
   void dispose() {
     _controller.dispose(); // ✅ SIEMPRE presente
@@ -411,6 +420,7 @@ class _MyWidgetState extends State<MyWidget> with TickerProviderStateMixin {
 ```
 
 **Archivos Verificados**:
+
 - ✅ `page_transitions.dart` (2 controllers)
 - ✅ `streaming_loading_indicator.dart` (2 controllers)
 - ✅ `unified_streaming_widget.dart` (1 controller)
@@ -428,6 +438,7 @@ class _MyWidgetState extends State<MyWidget> with TickerProviderStateMixin {
 **Archivo**: `lib/infrastructure/services/realtime_sync_manager.dart` (líneas 909-960)
 
 **Análisis**:
+
 ```dart
 class RealtimeSyncManager {
   final Map<String, RealtimeChannel> _channels = {};
@@ -435,18 +446,18 @@ class RealtimeSyncManager {
   final Map<String, Timer> _throttleTimers = {};
   final Map<String, List<RealtimeEvent>> _batchedEvents = {};
   final StreamController<RealtimeSyncEvent> _eventController;
-  
+
   Future<void> dispose() async {
     try {
       LoggerFactory.info('🔒 Starting RealtimeSyncManager disposal...');
-      
+
       // 1. Marcar como no inicializado
       _isInitialized = false;
       _isListening = false;
-      
+
       // 2. Detener listeners
       await stopListening();
-      
+
       // 3. Cleanup canales con timeout
       await _cleanupChannels().timeout(
         const Duration(seconds: 10),
@@ -455,7 +466,7 @@ class RealtimeSyncManager {
           return Future.value();
         },
       );
-      
+
       // 4. Cancelar StreamSubscription
       final subscriptionFutures = _subscriptions.values.map((subscription) async {
         try {
@@ -466,12 +477,12 @@ class RealtimeSyncManager {
       });
       await Future.wait(subscriptionFutures, eagerError: false);
       _subscriptions.clear();
-      
+
       // 5. Cerrar StreamController
       if (!_eventController.isClosed) {
         await _eventController.close(); // ✅ Correcto
       }
-      
+
       LoggerFactory.info('✅ RealtimeSyncManager disposed successfully');
     } catch (e) {
       LoggerFactory.error('❌ Error during RealtimeSyncManager disposal: $e');
@@ -480,21 +491,21 @@ class RealtimeSyncManager {
       _channels.clear();
       _throttleTimers.clear();
       _batchedEvents.clear();
-      
+
       if (!_eventController.isClosed) {
         _eventController.close();
       }
     }
   }
-  
+
   Future<void> _cleanupChannels() async {
     LoggerFactory.info('🧹 Starting channel cleanup...');
-    
+
     // Desuscribir canales con timeout
     final channelCleanupFutures = _channels.entries.map((entry) async {
       final tableName = entry.key;
       final channel = entry.value;
-      
+
       try {
         await channel.unsubscribe().timeout( // ✅ Correcto
           const Duration(seconds: 5),
@@ -508,15 +519,15 @@ class RealtimeSyncManager {
         LoggerFactory.warning('⚠️ Failed to unsubscribe channel $tableName: $e');
       }
     });
-    
+
     await Future.wait(channelCleanupFutures, eagerError: false);
     _channels.clear();
-    
+
     // Cancelar timers de throttling
     for (final entry in _throttleTimers.entries) {
       final tableName = entry.key;
       final timer = entry.value;
-      
+
       if (timer.isActive) {
         timer.cancel(); // ✅ Correcto
         LoggerFactory.info('✅ Throttle timer cancelled: $tableName');
@@ -529,6 +540,7 @@ class RealtimeSyncManager {
 ```
 
 **Características**:
+
 - ✅ **Dispose() completo** con cleanup de todos los recursos
 - ✅ **Timeout handling** para evitar hangs
 - ✅ **Error handling** con cleanup de emergencia
@@ -545,28 +557,31 @@ class RealtimeSyncManager {
 
 ### Métricas Globales
 
-| Categoría | Total Encontrado | Con dispose() | Sin dispose() | Estado |
-|-----------|------------------|---------------|---------------|--------|
-| **StatefulWidget** | 100+ | 98+ | 2 | 🟡 **98% correcto** |
-| **AnimationController** | 50+ | 50+ | 0 | ✅ **100% correcto** |
-| **Timer** | 10+ | 9+ | 1 | 🟢 **90% correcto** |
-| **RealtimeChannel** | 6 | 6 | 0 | ✅ **100% correcto** |
-| **StreamSubscription** | 30+ | ? | ? | 🔍 **Requiere verificación** |
-| **StreamController** | 5+ | 5+ | 0 | ✅ **100% correcto** |
+| Categoría               | Total Encontrado | Con dispose() | Sin dispose() | Estado                       |
+| ----------------------- | ---------------- | ------------- | ------------- | ---------------------------- |
+| **StatefulWidget**      | 100+             | 98+           | 2             | 🟡 **98% correcto**          |
+| **AnimationController** | 50+              | 50+           | 0             | ✅ **100% correcto**         |
+| **Timer**               | 10+              | 9+            | 1             | 🟢 **90% correcto**          |
+| **RealtimeChannel**     | 6                | 6             | 0             | ✅ **100% correcto**         |
+| **StreamSubscription**  | 30+              | ?             | ?             | 🔍 **Requiere verificación** |
+| **StreamController**    | 5+               | 5+            | 0             | ✅ **100% correcto**         |
 
 ---
 
 ### Problemas Confirmados
 
 #### 🔴 **CRÍTICO** (0 encontrados)
+
 - Ninguno
 
 #### 🟡 **MEDIO** (1 encontrado)
+
 1. **YouTubeThumbnail** - Widget sin dispose() con PostFrameCallback
    - **Archivo**: `lib/presentation/widgets/videos/youtube_thumbnail.dart`
    - **Solución**: Agregar flag `_mounted` y dispose()
 
 #### 🟢 **BAJO** (1 encontrado)
+
 1. **AddToWatchlistDialog** - Dialog simple sin recursos pesados
    - **Archivo**: `lib/presentation/widgets/watchlist/add_to_watchlist_button.dart`
    - **Acción**: No requiere cambios
@@ -621,16 +636,19 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
 
 #### Providers que DEBERÍAN usar autoDispose:
 
-1. ✅ **DirectWatchlistService** 
+1. ✅ **DirectWatchlistService**
+
    - Actualmente: `NotifierProvider<DirectWatchlistService, Map<int, WatchlistMovie>>`
    - Recomendado: `NotifierProvider.autoDispose` (pero tiene RealtimeChannel)
    - **Decisión**: ❌ **NO cambiar** - RealtimeChannel necesita persistencia
 
 2. ✅ **DirectSyncService** (Favorites/Watched)
+
    - Similar a Watchlist
    - **Decisión**: ❌ **NO cambiar** - RealtimeChannel necesita persistencia
 
 3. 🔍 **UnifiedRatingsProvider**
+
    - Tiene StreamSubscription
    - **Decisión**: 🔍 **EVALUAR** - Depende de uso
 
@@ -641,11 +659,13 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
 ### Criterios para AutoDispose
 
 ✅ **SÍ usar autoDispose** cuando:
+
 - Provider es temporal (solo para una pantalla)
 - No tiene RealtimeChannel o StreamSubscription de larga duración
 - Estado puede reconstruirse fácilmente
 
 ❌ **NO usar autoDispose** cuando:
+
 - Provider maneja RealtimeChannel (necesita persistencia)
 - Estado es costoso de reconstruir
 - Provider es singleton global
@@ -660,7 +680,7 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
 
 ### Fase 2: Fix Medio (2-3 horas)
 
-1. ✅ **YouTubeThumbnail** - Agregar dispose() con flag _mounted
+1. ✅ **YouTubeThumbnail** - Agregar dispose() con flag \_mounted
    - Estimado: 30 minutos
    - Prioridad: Alta
 
@@ -715,10 +735,11 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
 ### ✅ Patrones Correctos Encontrados
 
 1. **AnimationController Pattern**:
+
    ```dart
    class _MyState extends State<MyWidget> with TickerProviderStateMixin {
      late AnimationController _controller;
-     
+
      @override
      void dispose() {
        _controller.dispose(); // ✅ SIEMPRE
@@ -728,15 +749,16 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
    ```
 
 2. **Timer Pattern**:
+
    ```dart
    class MyService {
      Timer? _timer;
-     
+
      void start() {
        _timer?.cancel(); // ✅ Cancel antes de crear nuevo
        _timer = Timer.periodic(...);
      }
-     
+
      void dispose() {
        _timer?.cancel(); // ✅ Cancel en dispose
      }
@@ -744,15 +766,16 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
    ```
 
 3. **RealtimeChannel Pattern**:
+
    ```dart
    class MyProvider {
      RealtimeChannel? _channel;
-     
+
      void setup() {
        _channel = supabase.from('table').stream(...);
        _channel!.subscribe(...);
      }
-     
+
      void dispose() {
        _channel?.unsubscribe(); // ✅ Unsubscribe en dispose
      }
@@ -763,11 +786,11 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
    ```dart
    class MyService {
      StreamSubscription? _subscription;
-     
+
      void listen() {
        _subscription = stream.listen(...);
      }
-     
+
      void dispose() {
        _subscription?.cancel(); // ✅ Cancel en dispose
      }
@@ -777,6 +800,7 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
 ### ⚠️ Anti-Patrones a Evitar
 
 1. ❌ **Widget sin dispose() con PostFrameCallback**:
+
    ```dart
    // ❌ MAL
    class _MyState extends State<MyWidget> {
@@ -787,18 +811,18 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
      }
      // NO HAY dispose()
    }
-   
+
    // ✅ BIEN
    class _MyState extends State<MyWidget> {
      bool _mounted = true;
-     
+
      void scheduleCallback() {
        WidgetsBinding.instance.addPostFrameCallback((_) {
          if (!_mounted) return;
          setState(() {});
        });
      }
-     
+
      @override
      void dispose() {
        _mounted = false;
@@ -808,6 +832,7 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
    ```
 
 2. ❌ **StreamSubscription sin cancel**:
+
    ```dart
    // ❌ MAL
    class MyService {
@@ -817,17 +842,17 @@ final myProvider = NotifierProvider.autoDispose<MyNotifier, State>(() => MyNotif
        }); // ❌ No guardamos subscription
      }
    }
-   
+
    // ✅ BIEN
    class MyService {
      StreamSubscription? _sub;
-     
+
      void listen() {
        _sub = stream.listen((data) {
          // Process data
        });
      }
-     
+
      void dispose() {
        _sub?.cancel();
      }
