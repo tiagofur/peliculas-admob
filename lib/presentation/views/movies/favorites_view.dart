@@ -21,12 +21,10 @@ class FavoritesViewState extends ConsumerState<FavoritesView>
   bool isLastPage = false;
   bool isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-
-    loadNextPage();
-  }
+  // 🐛 FIX: NO llamar loadNextPage() en initState
+  // El provider DirectSyncService ya se inicializa automáticamente
+  // y carga los datos cuando el usuario se autentica.
+  // Llamar loadNextPage() aquí causaba doble carga.
 
   void loadNextPage() async {
     if (isLoading || isLastPage) return;

@@ -28,6 +28,8 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
   RealtimeChannel? _realtimeChannel;
   String? _currentUserId;
   bool _isInitialized = false;
+  bool _isLoading = false; // 🐛 FIX: Prevenir cargas simultáneas
+  int _loadCounter = 0; // 🐛 DEBUG: Contador de cargas para tracking
 
   @override
   Map<int, SyncableMovie> build() {
@@ -53,16 +55,30 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
   }
 
   Future<void> _loadMoviesFromSupabase() async {
+    // 🐛 FIX: Prevenir cargas simultáneas
+    if (_isLoading) {
+      LoggerFactory.warning(
+          '⚠️ $logPrefix: [LOAD #$_loadCounter] Ya hay una carga en progreso, ignorando...');
+      return;
+    }
+
+    _isLoading = true;
+    _loadCounter++;
+    final currentLoadId = _loadCounter;
+
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
         state = {};
         _currentUserId = null;
+        LoggerFactory.info(
+            '🔍 $logPrefix: [LOAD #$currentLoadId] Sin usuario, limpiando estado');
         return;
       }
 
       _currentUserId = currentUser.id;
-      LoggerFactory.info('$logPrefix: Cargando desde Supabase...');
+      LoggerFactory.info(
+          '🔍 $logPrefix: [LOAD #$currentLoadId] Iniciando carga desde Supabase...');
 
       final moviesData = await sync.getUserMovies(currentUser.id);
 
@@ -74,32 +90,31 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
 
       state = moviesMap;
       LoggerFactory.info(
-          '$logPrefix: Cargadas ${moviesMap.length} películas desde Supabase');
+          '✅ $logPrefix: [LOAD #$currentLoadId] Cargadas ${moviesMap.length} películas desde Supabase');
 
-      // Si no se cargaron películas, hacer un intento adicional después de un delay
-      if (moviesMap.isEmpty && _currentUserId != null) {
-        LoggerFactory.info(
-            '$logPrefix: Sin películas cargadas, reintentando en 2 segundos...');
-        Future.delayed(const Duration(seconds: 2), () {
-          if (_currentUserId != null) {
-            _loadMoviesFromSupabase();
-          }
-        });
-      }
+      // 🐛 FIX: Eliminar reintentos automáticos que causan doble carga
+      // Si realmente no hay películas, el usuario simplemente no tiene favoritos
+      // No necesitamos reintentar automáticamente
     } catch (e) {
-      LoggerFactory.error('$logPrefix: Error cargando desde Supabase: $e');
+      LoggerFactory.error(
+          '❌ $logPrefix: [LOAD #$currentLoadId] Error cargando desde Supabase: $e');
       state = {};
 
-      // En caso de error, reintentar después de un delay
-      if (_currentUserId != null) {
+      // 🐛 FIX: Solo reintentar en caso de error de red, no siempre
+      // Y solo si no hay otra carga programada
+      if (_currentUserId != null && e.toString().contains('network')) {
         LoggerFactory.info(
-            '$logPrefix: Reintentando carga después de error en 3 segundos...');
-        Future.delayed(const Duration(seconds: 3), () {
-          if (_currentUserId != null) {
+            '🔄 $logPrefix: [LOAD #$currentLoadId] Error de red, reintentando en 5 segundos...');
+        Future.delayed(const Duration(seconds: 5), () {
+          if (_currentUserId != null && !_isLoading) {
             _loadMoviesFromSupabase();
           }
         });
       }
+    } finally {
+      _isLoading = false;
+      LoggerFactory.info(
+          '🏁 $logPrefix: [LOAD #$currentLoadId] Finalizando carga (isLoading = false)');
     }
   }
 
@@ -154,24 +169,30 @@ abstract class DirectSyncService extends Notifier<Map<int, SyncableMovie>> {
   }
 
   void enableAfterLogin() {
-    LoggerFactory.info('🔐 $logPrefix: Habilitando después del login...');
+    LoggerFactory.info(
+        '🔐 $logPrefix: [enableAfterLogin] Habilitando después del login...');
 
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) {
       LoggerFactory.warning(
-          '🔐 $logPrefix: No hay usuario autenticado, omitiendo inicialización');
+          '🔐 $logPrefix: [enableAfterLogin] No hay usuario autenticado, omitiendo inicialización');
       return;
     }
 
     _currentUserId = currentUser.id;
 
+    // 🐛 FIX: Solo inicializar una vez
     if (!_isInitialized) {
+      LoggerFactory.info(
+          '🔐 $logPrefix: [enableAfterLogin] Primera inicialización, cargando y configurando listeners...');
       _loadMoviesFromSupabase();
       _setupRealtimeListeners();
       _isInitialized = true;
     } else {
-      LoggerFactory.info('🔐 $logPrefix: Ya inicializado, solo recargando...');
-      _loadMoviesFromSupabase();
+      // 🐛 FIX: Si ya está inicializado, NO recargar automáticamente
+      // El usuario puede hacer pull-to-refresh si lo necesita
+      LoggerFactory.info(
+          '🔐 $logPrefix: [enableAfterLogin] Ya inicializado, no recargando (usa pull-to-refresh si necesitas actualizar)');
     }
   }
 

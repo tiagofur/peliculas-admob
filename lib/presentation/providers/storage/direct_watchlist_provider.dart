@@ -15,6 +15,8 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
   RealtimeChannel? _realtimeChannel;
   String? _currentUserId;
   bool _isInitialized = false;
+  bool _isLoading = false; // 🐛 FIX: Prevenir cargas simultáneas
+  int _loadCounter = 0; // 🐛 DEBUG: Contador de cargas para tracking
 
   @override
   Map<int, WatchlistMovie> build() {
@@ -43,18 +45,31 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
 
   /// Cargar watchlist directamente desde Supabase
   Future<void> _loadWatchlistFromSupabase() async {
+    // 🐛 FIX: Prevenir cargas simultáneas
+    if (_isLoading) {
+      LoggerFactory.warning(
+          '⚠️ DirectWatchlist: [LOAD #$_loadCounter] Ya hay una carga en progreso, ignorando...');
+      return;
+    }
+
+    _isLoading = true;
+    _loadCounter++;
+    final currentLoadId = _loadCounter;
+
     try {
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) {
         state = {};
         _currentUserId = null;
+        LoggerFactory.info(
+            '🔍 DirectWatchlist: [LOAD #$currentLoadId] Sin usuario, limpiando estado');
         return;
       }
 
       _currentUserId = currentUser.id;
 
       LoggerFactory.info(
-          'DirectWatchlist: Cargando watchlist directa desde Supabase...');
+          '🔍 DirectWatchlist: [LOAD #$currentLoadId] Iniciando carga desde Supabase...');
 
       final watchlistMovies = await _sync.getUserWatchlist(currentUser.id);
 
@@ -66,12 +81,28 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
       state = watchlistMap;
 
       LoggerFactory.info(
-          'DirectWatchlist: Cargados ${watchlistMovies.length} items en watchlist directa');
+          '✅ DirectWatchlist: [LOAD #$currentLoadId] Cargados ${watchlistMovies.length} items en watchlist');
       LoggerFactory.debug(
           'DirectWatchlist: IDs: ${watchlistMap.keys.toList()}');
     } catch (e) {
-      LoggerFactory.error('DirectWatchlist: Error cargando: $e');
+      LoggerFactory.error(
+          '❌ DirectWatchlist: [LOAD #$currentLoadId] Error cargando: $e');
       state = {};
+
+      // 🐛 FIX: Solo reintentar en caso de error de red, no siempre
+      if (_currentUserId != null && e.toString().contains('network')) {
+        LoggerFactory.info(
+            '🔄 DirectWatchlist: [LOAD #$currentLoadId] Error de red, reintentando en 5 segundos...');
+        Future.delayed(const Duration(seconds: 5), () {
+          if (_currentUserId != null && !_isLoading) {
+            _loadWatchlistFromSupabase();
+          }
+        });
+      }
+    } finally {
+      _isLoading = false;
+      LoggerFactory.info(
+          '🏁 DirectWatchlist: [LOAD #$currentLoadId] Finalizando carga (isLoading = false)');
     }
   }
 
@@ -453,26 +484,30 @@ class DirectWatchlistService extends Notifier<Map<int, WatchlistMovie>> {
 
   /// Habilita el provider después del login
   void enableAfterLogin() {
-    LoggerFactory.info('🔐 DirectWatchlist: Habilitando después del login...');
+    LoggerFactory.info(
+        '🔐 DirectWatchlist: [enableAfterLogin] Habilitando después del login...');
 
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser == null) {
       LoggerFactory.warning(
-          '🔐 DirectWatchlist: No hay usuario autenticado, omitiendo inicialización');
+          '🔐 DirectWatchlist: [enableAfterLogin] No hay usuario autenticado, omitiendo inicialización');
       return;
     }
 
     _currentUserId = currentUser.id;
 
-    // Solo inicializar si no se ha hecho antes
+    // 🐛 FIX: Solo inicializar una vez
     if (!_isInitialized) {
+      LoggerFactory.info(
+          '🔐 DirectWatchlist: [enableAfterLogin] Primera inicialización, cargando y configurando listeners...');
       _loadWatchlistFromSupabase();
       _setupRealtimeListeners();
       _isInitialized = true;
     } else {
+      // 🐛 FIX: Si ya está inicializado, NO recargar automáticamente
+      // El usuario puede hacer pull-to-refresh si lo necesita
       LoggerFactory.info(
-          '🔐 DirectWatchlist: Ya inicializado, solo recargando datos...');
-      _loadWatchlistFromSupabase();
+          '🔐 DirectWatchlist: [enableAfterLogin] Ya inicializado, no recargando (usa pull-to-refresh si necesitas actualizar)');
     }
   }
 
