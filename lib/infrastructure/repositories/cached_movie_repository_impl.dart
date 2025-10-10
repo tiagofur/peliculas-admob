@@ -1,5 +1,4 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../core/exceptions/app_exceptions.dart';
 import '../../core/logging/logger_factory.dart';
@@ -161,18 +160,6 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
       LoggerFactory.info(
           '📱 Movie from memory cache: ${memoryCached.first.title} (credits: $hasCredits)');
 
-      if (kDebugMode) {
-        print('🔍 Memory Cache Movie Details:');
-        print('  ID: ${memoryCached.first.id}');
-        print('  Title: ${memoryCached.first.title}');
-        print('  Has credits: ${memoryCached.first.credits != null}');
-        if (memoryCached.first.credits != null) {
-          print('  Credits keys: ${memoryCached.first.credits!.keys.toList()}');
-          print(
-              '  Cast length: ${(memoryCached.first.credits!['cast'] as List?)?.length ?? 0}');
-        }
-      }
-
       if (hasCredits) {
         return memoryCached.first;
       }
@@ -191,17 +178,6 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
         LoggerFactory.info('🌐 Fetching movie from network: $id');
         final movie = await _networkDatasource.getMovieById(id);
 
-        if (kDebugMode) {
-          print('📤 REPOSITORY: Got movie from API');
-          print('  ID: ${movie.id}');
-          print('  Title: ${movie.title}');
-          print('  Has credits: ${movie.credits != null}');
-          if (movie.credits != null) {
-            print(
-                '  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
-          }
-        }
-
         // Save to memory cache WITH credits (full data)
         _saveToMemoryCache(cacheKey, [movie]);
 
@@ -215,11 +191,6 @@ class CachedMovieRepositoryImpl extends MoviesRepository {
 
         LoggerFactory.info(
             '✅ Returning movie from API: ${movie.title} (credits: ${movie.credits != null})');
-
-        if (kDebugMode) {
-          print('📤 REPOSITORY RETURNING movie from API:');
-          print('  Credits != null: ${movie.credits != null}');
-        }
 
         // Return immediately with full data from API
         return movie;

@@ -5,7 +5,7 @@ import '../core/gamification/challenge_notifications.dart';
 import '../core/gamification/models/challenge.dart';
 import '../core/gamification/models/challenge_enums.dart';
 import '../core/logging/logger_factory.dart';
-import '../presentation/providers/user_stats_provider.dart' as userStats;
+import '../presentation/providers/user_stats_provider.dart' as user_stats;
 
 /// Widget to display a single challenge card
 class ChallengeCard extends StatelessWidget {
@@ -374,7 +374,7 @@ class ChallengeStats extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final statsAsync = ref.watch(userStats.userStatsProvider);
+    final statsAsync = ref.watch(user_stats.userStatsProvider);
     return statsAsync.when(
       data: (stats) {
         // Robust null checks and error handling
