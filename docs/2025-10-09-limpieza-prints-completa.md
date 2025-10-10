@@ -12,6 +12,7 @@
 **Objetivo**: Eliminar todos los print() statements temporales del código y dejar solo LoggerFactory para logging estructurado.
 
 **Resultado**:
+
 ```
 ┌─────────────────────────────────────────────────┐
 │      Limpieza de print() - Resultados Final     │
@@ -33,6 +34,7 @@
 ### Contexto del Problema
 
 **Todos los 39 print() statements estaban relacionados con un bug específico**:
+
 - Issue: "Credits data loss during serialization"
 - Pattern: API → Datasource → Repository → Provider
 - Los credits de películas se perdían durante la serialización/deserialización
@@ -40,12 +42,12 @@
 
 ### Distribución Original
 
-| Archivo | print() Count | Propósito |
-|---------|---------------|-----------|
-| `movie_info_provider.dart` | 17 | Verificar credits en provider/state |
-| `moviedb_datasource.dart` | 10 | Verificar credits desde API |
-| `cached_movie_repository_impl.dart` | 12 | Verificar credits en cache |
-| **TOTAL** | **39** | Debugging temporal |
+| Archivo                             | print() Count | Propósito                           |
+| ----------------------------------- | ------------- | ----------------------------------- |
+| `movie_info_provider.dart`          | 17            | Verificar credits en provider/state |
+| `moviedb_datasource.dart`           | 10            | Verificar credits desde API         |
+| `cached_movie_repository_impl.dart` | 12            | Verificar credits en cache          |
+| **TOTAL**                           | **39**        | Debugging temporal                  |
 
 ---
 
@@ -56,16 +58,19 @@
 **Análisis crítico**:
 
 1. **Debugging temporal, no logs permanentes**
+
    - Los prints fueron agregados para debuggear un bug específico
    - No aportan valor una vez resuelto el problema
    - No son necesarios en operación normal
 
 2. **LoggerFactory ya está bien implementado**
+
    - Los archivos YA tienen LoggerFactory para casos importantes
    - Los prints duplicaban información que LoggerFactory ya reporta
    - LoggerFactory.info/error/warning ya cubren los flujos críticos
 
 3. **Código más limpio y profesional**
+
    - Sin prints redundantes en producción
    - Sin bloques `if (kDebugMode)` innecesarios
    - Logging estructurado únicamente con LoggerFactory
@@ -88,11 +93,13 @@
 **Ubicación**: `lib/presentation/providers/movies/movie_info_provider.dart`
 
 **Cambios**:
+
 - ❌ Eliminados 17 print() statements (líneas 82-117)
 - ✅ Removido import innecesario: `import 'package:flutter/foundation.dart';`
 - ✅ Mantenido LoggerFactory para errores reales
 
 **ANTES** (82 líneas):
+
 ```dart
 import 'package:flutter/foundation.dart';
 
@@ -100,7 +107,7 @@ import 'package:flutter/foundation.dart';
 
 try {
   final movie = await movieRepository.getMovieById(movieId);
-  
+
   // Debug: Log movie before saving to state
   if (kDebugMode) {
     print('📥 MovieInfoProvider: Received movie from repository');
@@ -115,18 +122,18 @@ try {
       print('   ❌ Credits is NULL in provider!');
     }
   }
-  
+
   final updatedMovies = Map<String, Movie>.from(currentMovies)
     ..[movieId] = movie;
-  
+
   if (kDebugMode) {
     print('📦 Before unmodifiable - movie in map:');
     final movieInMap = updatedMovies[movieId];
     print('   Has credits: ${movieInMap?.credits != null}');
   }
-  
+
   state = AsyncValue.data(Map<String, Movie>.unmodifiable(updatedMovies));
-  
+
   // Debug: Verify movie in state
   if (kDebugMode) {
     print('✅ MovieInfoProvider: Movie saved to state. Verifying...');
@@ -146,6 +153,7 @@ try {
 ```
 
 **DESPUÉS** (simple y limpio):
+
 ```dart
 // import 'package:flutter/foundation.dart'; ❌ ELIMINADO
 
@@ -153,10 +161,10 @@ try {
 
 try {
   final movie = await movieRepository.getMovieById(movieId);
-  
+
   final updatedMovies = Map<String, Movie>.from(currentMovies)
     ..[movieId] = movie;
-  
+
   state = AsyncValue.data(Map<String, Movie>.unmodifiable(updatedMovies));
 } on MovieException catch (error, stackTrace) {
   if (error.code == 'MOVIE_NOT_FOUND') {
@@ -168,6 +176,7 @@ try {
 ```
 
 **Beneficios**:
+
 - 🎯 Código 40% más corto y legible
 - ✅ LoggerFactory mantenido para errores reales
 - ✅ Sin debugging temporal
@@ -179,11 +188,13 @@ try {
 **Ubicación**: `lib/infrastructure/datasources/moviedb_datasource.dart`
 
 **Cambios**:
+
 - ❌ Eliminados 10 print() statements (líneas 132-161)
 - ✅ Mantenido import `flutter/foundation.dart` (necesario para `kIsWeb`)
 - ✅ LoggerFactory ya existente para logs importantes
 
 **ANTES** (con debugging):
+
 ```dart
 @override
 Future<Movie> getMovieById(String id) async {
@@ -191,7 +202,7 @@ Future<Movie> getMovieById(String id) async {
     final response = await dio.get('/movie/$id', queryParameters: {
       'append_to_response': 'credits,videos,images,reviews,similar,keywords,watch/providers'
     });
-    
+
     // Debug: Log credits data from API
     if (kDebugMode) {
       print('🎬 API Response for movie $id:');
@@ -201,18 +212,18 @@ Future<Movie> getMovieById(String id) async {
         print('  Credits crew length: ${response.data['credits']['crew']?.length ?? 0}');
       }
     }
-    
+
     final movieDetails = MovieDetails.fromJson(response.data);
-    
+
     // Debug: Log movieDetails credits
     if (kDebugMode) {
       print('🎬 MovieDetails after fromJson:');
       print('  movieDetails.credits: ${movieDetails.credits}');
       print('  movieDetails.credits?.cast.length: ${movieDetails.credits?.cast.length}');
     }
-    
+
     final Movie movie = MovieMapper.movieDetailsToEntity(movieDetails);
-    
+
     // Debug: Log final movie credits
     if (kDebugMode) {
       print('🎬 Movie after mapper:');
@@ -223,7 +234,7 @@ Future<Movie> getMovieById(String id) async {
         print('  movie.credits[\'cast\'] length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
       }
     }
-    
+
     return movie;
   } on DioException catch (e) {
     // ...
@@ -232,6 +243,7 @@ Future<Movie> getMovieById(String id) async {
 ```
 
 **DESPUÉS** (limpio):
+
 ```dart
 @override
 Future<Movie> getMovieById(String id) async {
@@ -239,14 +251,14 @@ Future<Movie> getMovieById(String id) async {
     final response = await dio.get('/movie/$id', queryParameters: {
       'append_to_response': 'credits,videos,images,reviews,similar,keywords,watch/providers'
     });
-    
+
     if (response.statusCode != 200) {
       throw Exception('Película con id: $id no encontrada');
     }
-    
+
     final movieDetails = MovieDetails.fromJson(response.data);
     final Movie movie = MovieMapper.movieDetailsToEntity(movieDetails);
-    
+
     return movie;
   } on DioException catch (e) {
     if (e.response?.statusCode == 404) {
@@ -258,6 +270,7 @@ Future<Movie> getMovieById(String id) async {
 ```
 
 **Beneficios**:
+
 - 🎯 35 líneas → 15 líneas (57% reducción)
 - ✅ Lógica clara sin noise de debugging
 - ✅ LoggerFactory ya presente en otros métodos (getNowPlaying, getPopular, etc.)
@@ -269,11 +282,13 @@ Future<Movie> getMovieById(String id) async {
 **Ubicación**: `lib/infrastructure/repositories/cached_movie_repository_impl.dart`
 
 **Cambios**:
+
 - ❌ Eliminados 12 print() statements (líneas 165-221)
 - ❌ Removido import innecesario: `import 'package:flutter/foundation.dart';`
 - ✅ LoggerFactory ya implementado para todos los flujos críticos
 
 **ANTES** (con debugging redundante):
+
 ```dart
 // 1. Check memory cache (with credits)
 final memoryCached = _getFromMemoryCache(cacheKey);
@@ -281,7 +296,7 @@ if (memoryCached != null && memoryCached.isNotEmpty) {
   final hasCredits = memoryCached.first.credits != null;
   LoggerFactory.info(
       '📱 Movie from memory cache: ${memoryCached.first.title} (credits: $hasCredits)');
-  
+
   if (kDebugMode) {
     print('🔍 Memory Cache Movie Details:');
     print('  ID: ${memoryCached.first.id}');
@@ -292,7 +307,7 @@ if (memoryCached != null && memoryCached.isNotEmpty) {
       print('  Cast length: ${(memoryCached.first.credits!['cast'] as List?)?.length ?? 0}');
     }
   }
-  
+
   if (hasCredits) {
     return memoryCached.first;
   }
@@ -303,7 +318,7 @@ if (memoryCached != null && memoryCached.isNotEmpty) {
 try {
   LoggerFactory.info('🌐 Fetching movie from network: $id');
   final movie = await _networkDatasource.getMovieById(id);
-  
+
   if (kDebugMode) {
     print('📤 REPOSITORY: Got movie from API');
     print('  ID: ${movie.id}');
@@ -313,16 +328,16 @@ try {
       print('  Cast length: ${(movie.credits!['cast'] as List?)?.length ?? 0}');
     }
   }
-  
+
   _saveToMemoryCache(cacheKey, [movie]);
-  
+
   LoggerFactory.info('✅ Returning movie from API: ${movie.title} (credits: ${movie.credits != null})');
-  
+
   if (kDebugMode) {
     print('📤 REPOSITORY RETURNING movie from API:');
     print('  Credits != null: ${movie.credits != null}');
   }
-  
+
   return movie;
 } catch (e) {
   // ...
@@ -330,6 +345,7 @@ try {
 ```
 
 **DESPUÉS** (limpio con LoggerFactory):
+
 ```dart
 // 1. Check memory cache (with credits)
 final memoryCached = _getFromMemoryCache(cacheKey);
@@ -337,11 +353,11 @@ if (memoryCached != null && memoryCached.isNotEmpty) {
   final hasCredits = memoryCached.first.credits != null;
   LoggerFactory.info(
       '📱 Movie from memory cache: ${memoryCached.first.title} (credits: $hasCredits)');
-  
+
   if (hasCredits) {
     return memoryCached.first;
   }
-  
+
   LoggerFactory.info('⚠️ Memory cache exists but without credits - fetching from network');
 }
 
@@ -350,16 +366,16 @@ if (memoryCached != null && memoryCached.isNotEmpty) {
 try {
   LoggerFactory.info('🌐 Fetching movie from network: $id');
   final movie = await _networkDatasource.getMovieById(id);
-  
+
   _saveToMemoryCache(cacheKey, [movie]);
-  
+
   _localDatasource.cacheMovie(movie).catchError((e) {
     LoggerFactory.warning('⚠️ Failed to cache movie to Hive: $e');
     return false;
   });
-  
+
   LoggerFactory.info('✅ Returning movie from API: ${movie.title} (credits: ${movie.credits != null})');
-  
+
   return movie;
 } catch (e) {
   LoggerFactory.error('❌ Network error for movie $id: $e');
@@ -368,6 +384,7 @@ try {
 ```
 
 **Beneficios**:
+
 - 🎯 Sin prints redundantes con LoggerFactory
 - ✅ LoggerFactory.info ya reporta toda la información necesaria
 - ✅ Código más profesional y mantenible
@@ -377,6 +394,7 @@ try {
 ## ✅ Bonus: Fix de Naming Convention
 
 **Problema encontrado durante análisis**:
+
 ```
 info - The prefix 'userStats' isn't a lower_case_with_underscores identifier
 ```
@@ -384,6 +402,7 @@ info - The prefix 'userStats' isn't a lower_case_with_underscores identifier
 **Archivo**: `lib/widgets/challenge_widgets.dart`
 
 **Fix aplicado**:
+
 ```dart
 // ANTES
 import '../presentation/providers/user_stats_provider.dart' as userStats;
@@ -418,20 +437,24 @@ final statsAsync = ref.watch(user_stats.userStatsProvider);
 ### Validación
 
 ✅ **flutter analyze**:
+
 ```bash
 Analyzing peliculas-admob...
 No issues found! (ran in 23.1s)
 ```
 
 ✅ **Verificación de print() restantes**:
+
 ```powershell
-Get-ChildItem -Path lib -Recurse -Filter *.dart | 
-  Select-String -Pattern "^\s*print\(" | 
+Get-ChildItem -Path lib -Recurse -Filter *.dart |
+  Select-String -Pattern "^\s*print\(" |
   Measure-Object
 ```
+
 **Resultado**: `0` print() statements
 
 ✅ **LoggerFactory preservation**:
+
 - Todos los LoggerFactory.info/error/warning mantenidos
 - Logging estructurado funcionando correctamente
 - Sin pérdida de capacidad de debugging
@@ -442,11 +465,11 @@ Get-ChildItem -Path lib -Recurse -Filter *.dart |
 
 ### Estado de P0-4: DEPRECATED CODE
 
-| Tarea | Antes | Después | Estado |
-|-------|-------|---------|--------|
-| **P0-011: withOpacity()** | 0 encontrados | - | ✅ YA COMPLETO |
-| **P0-012: print()** | 39 encontrados | 0 restantes | ✅ **COMPLETO** |
-| **P0-013: LoggerFactory** | ~95% | 100% | ✅ COMPLETO |
+| Tarea                     | Antes          | Después     | Estado          |
+| ------------------------- | -------------- | ----------- | --------------- |
+| **P0-011: withOpacity()** | 0 encontrados  | -           | ✅ YA COMPLETO  |
+| **P0-012: print()**       | 39 encontrados | 0 restantes | ✅ **COMPLETO** |
+| **P0-013: LoggerFactory** | ~95%           | 100%        | ✅ COMPLETO     |
 
 **Progreso P0-4**: 0/3 → **3/3 ✅ 100% COMPLETADO**
 
@@ -457,11 +480,13 @@ Get-ChildItem -Path lib -Recurse -Filter *.dart |
 ### 1. Código Más Limpio
 
 **Antes**:
+
 - 39 print() statements dispersos
 - Bloques `if (kDebugMode)` en múltiples archivos
 - Debugging temporal permanente en código
 
 **Después**:
+
 - 0 print() statements ✅
 - Código simple y directo
 - Solo logging estructurado con LoggerFactory
@@ -469,11 +494,13 @@ Get-ChildItem -Path lib -Recurse -Filter *.dart |
 ### 2. Mejor Debugging
 
 **Antes**:
+
 - Prints temporales mezclados con código
 - Información redundante
 - Difícil filtrar logs importantes
 
 **Después**:
+
 - LoggerFactory estructurado y consistente
 - Logs importantes claramente identificados
 - Fácil filtrar por nivel (info/error/warning/debug)
@@ -481,11 +508,13 @@ Get-ChildItem -Path lib -Recurse -Filter *.dart |
 ### 3. Profesionalismo
 
 **Antes**:
+
 - Apariencia de debugging activo
 - Código "work in progress"
 - Prints para bug específico
 
 **Después**:
+
 - Código production-ready ✅
 - Logging profesional
 - Sin rastros de debugging temporal
@@ -493,11 +522,13 @@ Get-ChildItem -Path lib -Recurse -Filter *.dart |
 ### 4. Mantenibilidad
 
 **Antes**:
+
 - Difícil entender qué logs son importantes
 - Prints pueden olvidarse y acumularse
 - Inconsistencia en logging
 
 **Después**:
+
 - Patrón claro: solo LoggerFactory
 - Fácil agregar logs siguiendo el estándar
 - Consistencia en toda la codebase
@@ -558,6 +589,7 @@ LoggerFactory.debug('📊 Stats: $stats');
 ### Immediate Actions
 
 ✅ **P0-4 COMPLETADO** - Todas las tareas finalizadas:
+
 - ✅ P0-011: withOpacity migration (0 encontrados)
 - ✅ P0-012: print() elimination (39 eliminados)
 - ✅ P0-013: LoggerFactory validation (100%)
@@ -567,11 +599,13 @@ LoggerFactory.debug('📊 Stats: $stats');
 **Opciones disponibles**:
 
 1. **P0-5: CRASH PREVENTION** (si existe en roadmap)
+
    - Test suite validation
    - Build validation
    - Crash reporting setup
 
 2. **P1: PERFORMANCE IMPROVEMENTS**
+
    - Optimize hot paths
    - Reduce jank
    - Memory optimization
@@ -584,6 +618,7 @@ LoggerFactory.debug('📊 Stats: $stats');
 ### Documentation
 
 ✅ **Documentación creada**:
+
 - `2025-10-09-auditoria-p0-4-deprecated-code.md` - Auditoría completa
 - `2025-10-09-limpieza-prints-completa.md` - Este documento (resumen de ejecución)
 
@@ -596,6 +631,7 @@ LoggerFactory.debug('📊 Stats: $stats');
 ✅ **MISIÓN COMPLETADA**: 39 print() statements eliminados exitosamente
 
 **Estadísticas finales**:
+
 - 39 print() eliminados → 0 restantes ✅
 - 2 imports innecesarios removidos ✅
 - ~110 líneas de código eliminadas ✅
@@ -604,25 +640,30 @@ LoggerFactory.debug('📊 Stats: $stats');
 - Código 30% más limpio ✅
 
 **Tiempo de ejecución**:
+
 - Estimado: 35-55 minutos
 - Real: ~25 minutos ✅
 - Ahead of schedule: 10-30 minutos
 
 **Impacto en P0-4**:
+
 - Progreso: 2/3 → 3/3 (100% completo)
 - P0-4 COMPLETADO ✅
 
 ### Lecciones Aprendidas
 
-1. **Audit-first approach funciona**: 
+1. **Audit-first approach funciona**:
+
    - Descubrimos que 2/3 tareas ya estaban completas
    - Solo 1 tarea requirió trabajo real
 
 2. **Eliminar > Migrar**:
+
    - Los prints temporales deben eliminarse, no migrarse
    - LoggerFactory debe usarse para logs permanentes
 
 3. **Código limpio es mejor código**:
+
    - Sin prints temporales
    - Sin debugging noise
    - Profesional y mantenible
@@ -644,11 +685,14 @@ LoggerFactory.debug('📊 Stats: $stats');
 ## 📎 Archivos Modificados
 
 ### Archivos principales
+
 1. `lib/presentation/providers/movies/movie_info_provider.dart`
+
    - 17 print() eliminados
    - 1 import removido
 
 2. `lib/infrastructure/datasources/moviedb_datasource.dart`
+
    - 10 print() eliminados
    - Import de foundation mantenido (necesario para kIsWeb)
 
@@ -657,9 +701,11 @@ LoggerFactory.debug('📊 Stats: $stats');
    - 1 import removido
 
 ### Bonus fix
+
 4. `lib/widgets/challenge_widgets.dart`
    - Naming convention fix: `userStats` → `user_stats`
 
 ### Documentación
+
 5. `docs/2025-10-09-auditoria-p0-4-deprecated-code.md` (auditoría)
 6. `docs/2025-10-09-limpieza-prints-completa.md` (este documento)
