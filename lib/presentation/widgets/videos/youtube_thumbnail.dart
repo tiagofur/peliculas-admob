@@ -38,6 +38,7 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
   int _currentResolutionIndex = 0;
   bool _isAdvancing = false;
   bool _hasLoggedFinalFailure = false;
+  bool _isDisposed = false;
 
   String get _currentUrl =>
       'https://img.youtube.com/vi/${widget.youtubeId}/${_resolutions[_currentResolutionIndex]}';
@@ -45,13 +46,14 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
   void _scheduleAdvanceResolution() {
     if (_isAdvancing ||
         _currentResolutionIndex >= _resolutions.length - 1 ||
+        _isDisposed ||
         !mounted) {
       return;
     }
 
     _isAdvancing = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
+      if (_isDisposed || !mounted) {
         return;
       }
       setState(() {
@@ -59,6 +61,14 @@ class _YouTubeThumbnailState extends State<YouTubeThumbnail> {
         _isAdvancing = false;
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    LoggerFactory.info(
+        '🧹 YouTubeThumbnail disposed for video: ${widget.youtubeId}');
+    super.dispose();
   }
 
   @override

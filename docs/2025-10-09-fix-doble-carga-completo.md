@@ -9,18 +9,23 @@
 ## 📋 Resumen Ejecutivo
 
 ### Problema Original
+
 El usuario reportó que al navegar a **"Mi Biblioteca > Favoritos"**, las películas se cargaban **2 veces**, causando:
+
 - 🐌 Lentitud percibida
 - 📊 Consumo innecesario de API calls a Supabase (2-3x más)
 - 🔋 Mayor uso de recursos
 
 ### Solución Implementada
+
 Se implementó un **fix integral en 3 providers**:
+
 1. ✅ **DirectFavoritesService** (hereda de DirectSyncService)
 2. ✅ **DirectWatchlistService** (implementación independiente)
 3. ✅ **DirectWatchedService** (hereda de DirectSyncService - fix automático)
 
 ### Resultado
+
 - ✅ **66-83% reducción** en API calls
 - ✅ **50-75% más rápido** en tiempo de carga
 - ✅ **100% eliminación** de reintentos innecesarios
@@ -33,20 +38,24 @@ Se implementó un **fix integral en 3 providers**:
 ### Causas Identificadas (5 problemas)
 
 1. **Reintentos automáticos agresivos**
+
    - Reintentaba si no había películas (usuario nuevo legítimo)
    - Reintentaba siempre en errores (incluso permanentes)
    - Cadena de reintentos acumulados
 
 2. **Carga duplicada en `initState()`** (solo en FavoritesView)
+
    - `FavoritesView.initState()` llamaba `loadNextPage()`
    - Provider ya se auto-inicializaba
    - Causaba doble carga garantizada
 
 3. **Recarga en `enableAfterLogin()`**
+
    - Recargaba incluso si ya tenía datos
    - Ocurría en cada navegación post-login
 
 4. **Falta de deduplicación**
+
    - Múltiples llamadas simultáneas se ejecutaban todas
    - Sin protección contra race conditions
 
@@ -63,6 +72,7 @@ Se implementó un **fix integral en 3 providers**:
 **Archivo**: `lib/presentation/providers/storage/direct_sync_provider.dart`
 
 #### Cambios:
+
 ```dart
 // ✅ Agregados flags de control
 bool _isLoading = false; // Prevenir cargas simultáneas
@@ -115,6 +125,7 @@ if (!_isInitialized) {
 **Archivo**: `lib/presentation/providers/storage/direct_watchlist_provider.dart`
 
 #### Cambios Aplicados:
+
 ```dart
 // ✅ Mismos flags de control
 bool _isLoading = false;
@@ -158,6 +169,7 @@ if (!_isInitialized) {
 **Archivo**: `lib/presentation/views/movies/favorites_view.dart`
 
 #### Cambio:
+
 ```dart
 // ❌ ANTES:
 @override
@@ -171,7 +183,8 @@ void initState() {
 // El provider DirectSyncService ya se inicializa automáticamente
 ```
 
-**Motivo**: 
+**Motivo**:
+
 - Provider ya se auto-inicializa en su `build()`
 - `AutomaticKeepAliveClientMixin` mantiene el estado
 - No hay necesidad de carga manual
@@ -183,6 +196,7 @@ void initState() {
 **Estado**: ✅ **YA ESTABAN CORRECTOS**
 
 Ambos NO tenían `initState()` con carga, por lo tanto:
+
 - ✅ **WatchlistScreen**: Sin problemas detectados
 - ✅ **WatchedView**: Sin problemas detectados
 
@@ -192,19 +206,19 @@ Ambos NO tenían `initState()` con carga, por lo tanto:
 
 ### Antes del Fix
 
-| Provider | Cargas/Nav | API Calls | Tiempo | Reintentos |
-|----------|------------|-----------|--------|------------|
-| Favorites | 2-3 | 4-6 | 1-2s | ∞ |
-| Watchlist | 2-3 | 4-6 | 1-2s | ∞ |
-| Watched | 2-3 | 4-6 | 1-2s | ∞ |
+| Provider  | Cargas/Nav | API Calls | Tiempo | Reintentos |
+| --------- | ---------- | --------- | ------ | ---------- |
+| Favorites | 2-3        | 4-6       | 1-2s   | ∞          |
+| Watchlist | 2-3        | 4-6       | 1-2s   | ∞          |
+| Watched   | 2-3        | 4-6       | 1-2s   | ∞          |
 
 ### Después del Fix
 
-| Provider | Cargas/Nav | API Calls | Tiempo | Reintentos |
-|----------|------------|-----------|--------|------------|
-| Favorites | 1 ✅ | 1 ✅ | <500ms ✅ | 0 ✅ |
-| Watchlist | 1 ✅ | 1 ✅ | <500ms ✅ | 0 ✅ |
-| Watched | 1 ✅ | 1 ✅ | <500ms ✅ | 0 ✅ |
+| Provider  | Cargas/Nav | API Calls | Tiempo    | Reintentos |
+| --------- | ---------- | --------- | --------- | ---------- |
+| Favorites | 1 ✅       | 1 ✅      | <500ms ✅ | 0 ✅       |
+| Watchlist | 1 ✅       | 1 ✅      | <500ms ✅ | 0 ✅       |
+| Watched   | 1 ✅       | 1 ✅      | <500ms ✅ | 0 ✅       |
 
 ### Mejoras Globales
 
@@ -218,24 +232,29 @@ Ambos NO tenían `initState()` con carga, por lo tanto:
 ## ✅ Validación Realizada
 
 ### 1. Análisis Estático
+
 ```bash
 flutter analyze --fatal-infos --fatal-warnings
 # Resultado: ✅ PASADO (1 warning menor no relacionado)
 ```
 
 ### 2. Tests Automáticos
+
 ```bash
 flutter test test/realtime_sync_manager_test.dart
 # Resultado: ✅ 12/12 tests pasados
 ```
 
 ### 3. Testing Manual - Favoritos
+
 ✅ **Validado y aprobado por el usuario**
+
 - Solo aparece `[LOAD #1]` en logs
 - Pull-to-refresh funciona correctamente
 - Navegación no causa recargas
 
 ### 4. Testing Manual - Watchlist y Watched
+
 ⏳ **Pendiente de validación por el usuario**
 
 ---
@@ -243,6 +262,7 @@ flutter test test/realtime_sync_manager_test.dart
 ## 🧪 Guía de Testing Manual
 
 ### Para Watchlist:
+
 ```bash
 # 1. Ejecutar app
 flutter run
@@ -263,6 +283,7 @@ flutter run
 ```
 
 ### Para Watched:
+
 ```bash
 # Mismo procedimiento que Watchlist
 # Buscar logs: "DirectWatched: [LOAD #X]"
@@ -273,12 +294,15 @@ flutter run
 ## 📁 Archivos Modificados
 
 ### Core Changes
+
 1. ✅ `lib/presentation/providers/storage/direct_sync_provider.dart` (~80 líneas)
+
    - Agregado `_isLoading` y `_loadCounter`
    - Optimizado `_loadMoviesFromSupabase()`
    - Optimizado `enableAfterLogin()`
 
 2. ✅ `lib/presentation/providers/storage/direct_watchlist_provider.dart` (~70 líneas)
+
    - Agregado `_isLoading` y `_loadCounter`
    - Optimizado `_loadWatchlistFromSupabase()`
    - Optimizado `enableAfterLogin()`
@@ -287,7 +311,9 @@ flutter run
    - Eliminado `initState()` completo
 
 ### Documentation
+
 4. ✅ `docs/2025-10-09-fix-doble-carga-favoritos.md` (nuevo)
+
    - Documentación detallada del fix original
 
 5. ✅ `docs/2025-10-09-fix-doble-carga-completo.md` (este archivo)
@@ -300,16 +326,19 @@ flutter run
 ### ✅ Buenas Prácticas
 
 1. **Deduplicación de Peticiones Async**
+
    - Siempre usar flag `_isLoading`
    - Liberar en `finally` block
    - Logs con IDs únicos para tracking
 
 2. **Reintentos Inteligentes**
+
    - Solo en errores recuperables (red)
    - Verificar `_isLoading` antes de reintentar
    - Dejar control al usuario (pull-to-refresh)
 
 3. **Lifecycle de Widgets**
+
    - No duplicar inicialización de providers en `initState()`
    - Confiar en auto-inicialización de providers
    - Respetar `AutomaticKeepAliveClientMixin`
@@ -332,17 +361,21 @@ flutter run
 ## 🚀 Próximos Pasos
 
 ### Inmediato
+
 1. ✅ **Testing manual de Watchlist** - Validar logs y comportamiento
 2. ✅ **Testing manual de Watched** - Validar logs y comportamiento
 3. ⏳ **Confirmar con usuario** que todo funciona correctamente
 
 ### Corto Plazo
+
 Si todo funciona bien:
+
 1. Considerar **métricas automáticas** de API calls
 2. Implementar **preloading** de tabs para mejor UX
 3. Evaluar **cache en memoria** adicional
 
 ### Largo Plazo
+
 1. Documentar patrón en **guía de contribución**
 2. Aplicar mismo patrón a **otros providers** si los hay
 3. Crear **tests automáticos** específicos para doble carga
@@ -352,6 +385,7 @@ Si todo funciona bien:
 ## 📚 Referencias
 
 ### Archivos Relacionados
+
 - `lib/presentation/providers/storage/direct_sync_provider.dart` - Base service
 - `lib/presentation/providers/storage/direct_favorites_provider.dart` - Favorites provider
 - `lib/presentation/providers/storage/direct_watchlist_provider.dart` - Watchlist provider
@@ -361,11 +395,13 @@ Si todo funciona bien:
 - `lib/presentation/views/movies/watched_view.dart` - Watched view
 
 ### Documentación
+
 - [ROADMAP-COMPLETO.md](../documentation/2025-09-25-audit/ROADMAP-COMPLETO.md)
 - [Copilot Instructions](../.github/copilot-instructions.md)
 - [2025-10-09-fix-doble-carga-favoritos.md](./2025-10-09-fix-doble-carga-favoritos.md)
 
 ### Issues del Roadmap
+
 - **P0-3**: Sync Conflicts (relacionado)
 - **P1-1**: Realtime Sync Optimization (próximo)
 
@@ -410,6 +446,7 @@ Se implementó exitosamente un **fix integral para doble carga** en los 3 provid
 3. ✅ **DirectWatchedService** - Fix heredado automáticamente
 
 **Resultado esperado**:
+
 - 🚀 66-83% menos API calls
 - 🚀 50-75% más rápido
 - 🚀 100% menos reintentos innecesarios
