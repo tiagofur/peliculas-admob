@@ -12,7 +12,8 @@
 
    <application
         android:label="Peliculas"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:extractNativeLibs="false">
         
         <!-- AdMob Application ID - MUST be inside <application> but outside <activity> -->
         <meta-data

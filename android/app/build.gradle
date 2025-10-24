@@ -60,12 +60,13 @@ android {
     }
 
     // Configuración para soporte de 16KB page size
+    // AGP 8.5.1+ soporta 16KB automáticamente con useLegacyPackaging = false
     packagingOptions {
         jniLibs {
+            // false = usa uncompressed native libs con 16KB alignment (recomendado)
+            // Requiere AGP 8.5.1+ para zipalign automático en 16KB
             useLegacyPackaging = false
         }
-        // Permitir que Flutter maneje el stripping de símbolos automáticamente
-        // Removemos doNotStrip para evitar conflictos con el proceso de stripping
     }
 
     defaultConfig {

@@ -290,8 +290,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      final String? accessToken =
-          googleAuth.accessToken; // Puede ser null en Android
+      final String? accessToken = googleAuth.accessToken;
       final String? idToken = googleAuth.idToken;
 
       if (idToken == null) {

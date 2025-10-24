@@ -1,7 +1,7 @@
 name: peliculas
 description: Aplicacion de Peliculas.
 publish_to: "none"
-version: 1.2.1+6
+version: 1.3.0+7
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -50,7 +50,7 @@ dependencies:
   supabase_flutter: ^2.9.1
   http: ^1.1.0
   logging: ^1.2.0
-  google_sign_in: ^6.2.2
+  google_sign_in: ^6.2.1
   path_provider: ^2.1.1
   crypto: ^3.0.3
   confetti: ^0.8.0
@@ -81,6 +81,7 @@ dev_dependencies:
   mockito: ^5.4.4
 
   supabase: any
+
 flutter_native_splash:
   color: "#EEBEB8"
   image: web/icons/Icon-192.png
