@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../generated/app_localizations.dart';
+import '../../services/monetization/adaptive_monetization_manager.dart';
 import '../../services/monetization/purchases_service.dart';
+import '../../services/monetization/user_monetization_preferences_service.dart';
 
 /// Paywall de Películas Pro: compra lifetime + restaurar compras.
 ///
@@ -17,6 +19,7 @@ class ProPaywallScreen extends StatefulWidget {
 class _ProPaywallScreenState extends State<ProPaywallScreen> {
   final PurchasesService _purchases = LocalPurchasesService.instance;
   bool? _isPro;
+  bool? _breakActive;
   bool _busy = false;
 
   @override
@@ -27,8 +30,13 @@ class _ProPaywallScreenState extends State<ProPaywallScreen> {
 
   Future<void> _refresh() async {
     final isPro = await _purchases.isPro();
+    final breakActive = await UserMonetizationPreferencesService.instance
+        .isAdBreakActive();
     if (!mounted) return;
-    setState(() => _isPro = isPro);
+    setState(() {
+      _isPro = isPro;
+      _breakActive = breakActive;
+    });
   }
 
   Future<void> _buy(AppLocalizations l10n) async {
@@ -41,6 +49,26 @@ class _ProPaywallScreenState extends State<ProPaywallScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l10n.proActive)),
+    );
+  }
+
+  /// Recompensa opt-in: ver un anuncio otorga 24 h sin forzados (S1).
+  Future<void> _watchAd(AppLocalizations l10n) async {
+    setState(() => _busy = true);
+    final ok = await AdaptiveMonetizationManager.instance.showRewardedAd(
+      onRewardEarned: (_) async {
+        await UserMonetizationPreferencesService.instance
+            .grantAdBreak(const Duration(hours: 24));
+      },
+      context: 'pro_paywall',
+    );
+    if (!mounted) return;
+    await _refresh();
+    setState(() => _busy = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? l10n.proBreakActive : l10n.rewardedUnavailable),
+      ),
     );
   }
 
@@ -108,6 +136,21 @@ class _ProPaywallScreenState extends State<ProPaywallScreen> {
               icon: const Icon(Icons.workspace_premium),
               label: Text(l10n.proBuy),
             ),
+          if (_breakActive == true)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.snooze),
+                title: Text(l10n.proBreakActive),
+              ),
+            ),
+          if (_isPro == false) ...[
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : () => _watchAd(l10n),
+              icon: const Icon(Icons.play_circle_outline),
+              label: Text(l10n.proWatchAd),
+            ),
+          ],
           const SizedBox(height: 8),
           TextButton.icon(
             onPressed: _busy ? null : () => _restore(l10n),

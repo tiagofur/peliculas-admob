@@ -815,6 +815,15 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get proNoPurchases => 'Nenhuma compra encontrada';
+
+  @override
+  String get proWatchAd => 'Ver anúncio';
+
+  @override
+  String get proBreakActive => '24 h sem anúncios';
+
+  @override
+  String get rewardedUnavailable => 'Anúncio indisponível no momento';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1628,4 +1637,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get proNoPurchases => 'Nenhuma compra encontrada';
+
+  @override
+  String get proWatchAd => 'Ver anúncio';
+
+  @override
+  String get proBreakActive => '24 h sem anúncios';
+
+  @override
+  String get rewardedUnavailable => 'Anúncio indisponível no momento';
 }

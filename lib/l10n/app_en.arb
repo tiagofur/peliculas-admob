@@ -1014,5 +1014,8 @@
   "proRestore": "Restore purchases",
   "proActive": "Pro active",
   "proLifetimeNote": "One-time payment. No subscription.",
-  "proNoPurchases": "No purchases found"
+  "proNoPurchases": "No purchases found",
+  "proWatchAd": "Watch ad",
+  "proBreakActive": "24 h ad-free active",
+  "rewardedUnavailable": "No ad available right now"
 }

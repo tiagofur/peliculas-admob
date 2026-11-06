@@ -681,5 +681,8 @@
   "proRestore": "Restaurar compras",
   "proActive": "Pro activo",
   "proLifetimeNote": "Pago único. Sin suscripción.",
-  "proNoPurchases": "No se encontraron compras"
+  "proNoPurchases": "No se encontraron compras",
+  "proWatchAd": "Ver anuncio",
+  "proBreakActive": "Tienes 24 h sin anuncios",
+  "rewardedUnavailable": "Anuncio no disponible ahora"
 }
