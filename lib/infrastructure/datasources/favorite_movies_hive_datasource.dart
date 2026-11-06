@@ -129,8 +129,10 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
 
   @override
   Future<void> clearExpiredCache() async {
-    final box = await _getBox();
-    await box.clear();
+    // Favorites carry no TTL: there is nothing "expired" to clear.
+    // A blanket box.clear() here wiped user data on every maintenance run.
+    LoggerFactory.info(
+        '⏭️ Skipping expired-cache cleanup for favorites (no TTL)');
   }
 
   @override
@@ -157,23 +159,27 @@ class FavoriteMoviesHiveDatasource extends LocalStorageDatasource {
 
   Future<void> removeFavoriteById(int movieId) async {
     final box = await _getBox();
-    final existingMovieIndex =
-        box.values.toList().indexWhere((m) => m.id == movieId);
-
-    if (existingMovieIndex != -1) {
-      await box.deleteAt(existingMovieIndex);
-      LoggerFactory.info('✅ Removed movie $movieId from favorites via ID');
+    // Key-based delete: toggleFavorite/saveFavorite store under movie.id.
+    await box.delete(movieId);
+    // Sweep legacy rows written with auto-increment keys (old box.add path),
+    // which box.delete(movieId) cannot reach.
+    final orphanKeys = box.keys.where((key) {
+      if (key == movieId) return false;
+      final value = box.get(key);
+      return value is Movie && value.id == movieId;
+    }).toList();
+    for (final key in orphanKeys) {
+      await box.delete(key);
     }
+    LoggerFactory.info('✅ Removed movie $movieId from favorites via ID');
   }
 
   Future<void> saveFavorite(Movie movie) async {
     final box = await _getBox();
-    final isAlreadyFavorite = box.values.toList().any((m) => m.id == movie.id);
-
-    if (!isAlreadyFavorite) {
-      await box.add(movie);
-      LoggerFactory.info('✅ Saved movie ${movie.id} to favorites');
-    }
+    // Always key by movie.id: box.add() mints auto-increment keys that
+    // duplicate rows and escape key-based deletes.
+    await box.put(movie.id, movie);
+    LoggerFactory.info('✅ Saved movie ${movie.id} to favorites');
   }
 
   @override

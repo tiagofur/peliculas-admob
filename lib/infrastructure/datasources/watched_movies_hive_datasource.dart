@@ -13,45 +13,47 @@ class WatchedMoviesHiveDatasource extends WatchedMoviesDatasource {
 
   Box<WatchedMovie>? _watchedMoviesBox;
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
-  Future<void> _initHive() async {
+  /// Serialized init: concurrent callers (constructor + first use) share one.
+  Future<void> _initHive() {
+    _initFuture ??= _doInitHive();
+    return _initFuture!;
+  }
+
+  Future<void> _doInitHive() async {
     if (_isInitialized) return;
 
+    // initFlutter falla cuando Hive ya fue inicializado con otro path
+    // (tests) o el provider de directorios no está disponible: no es fatal,
+    // la apertura del box decide.
     try {
-      // Inicializar Hive de manera compatible con Web
-      if (kIsWeb) {
-        // En Web, Hive usa IndexedDB automáticamente
-        await Hive.initFlutter();
-      } else {
-        // En plataformas nativas, usar el directorio por defecto
-        await Hive.initFlutter();
-      }
+      await Hive.initFlutter();
+    } catch (_) {
+      // Continuar: Hive.init() externo (tests) ya deja un path utilizable.
+    }
 
-      // Registrar adaptadores si no están registrados
-      ensureMovieAdaptersRegistered();
-      if (!Hive.isAdapterRegistered(1)) {
-        Hive.registerAdapter(WatchedMovieAdapter());
-      }
+    // Registrar adaptadores si no están registrados
+    ensureMovieAdaptersRegistered();
+    if (!Hive.isAdapterRegistered(1)) {
+      Hive.registerAdapter(WatchedMovieAdapter());
+    }
 
+    try {
       _watchedMoviesBox = await Hive.openBox<WatchedMovie>('watched_movies');
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
         LoggerFactory.error(
-            'Error inicializando Hive para películas vistas: $e');
+            'Error abriendo box watched_movies: $e. Intentando reparar.');
       }
-      // En caso de error, intentar con un nombre de box diferente
-      try {
-        _watchedMoviesBox =
-            await Hive.openBox<WatchedMovie>('watched_movies_fallback');
-        _isInitialized = true;
-      } catch (e2) {
-        if (kDebugMode) {
-          LoggerFactory.error(
-              'Error inicializando Hive con fallback para películas vistas: $e2');
-        }
-        rethrow;
-      }
+      // El box principal está ilegible (corrupto): eliminarlo y reabrirlo
+      // en limpio en lugar de bifurcar a un box fallback que dividiría
+      // silenciosamente los datos del usuario en dos stores. Los datos se
+      // re-sincronizan desde Supabase.
+      await Hive.deleteBoxFromDisk('watched_movies');
+      _watchedMoviesBox = await Hive.openBox<WatchedMovie>('watched_movies');
+      _isInitialized = true;
     }
   }
 
