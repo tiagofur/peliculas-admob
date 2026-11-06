@@ -118,6 +118,12 @@ class AdaptiveMonetizationManager {
       {AppContextUX context = AppContextUX.browsing}) async {
     if (!isMonetizationAvailable) return false;
 
+    // Pro: cero banners forzados (S1). Rewarded sigue vía showRewardedAd.
+    if (await _userPrefs.isPro()) {
+      LoggerFactory.debug('Banner ad omitido: usuario Pro');
+      return false;
+    }
+
     // Evaluar con estrategia UX-first
     final userType = await _userPrefs.getUserType();
     final decision = await _uxStrategy.shouldShowAd(
@@ -144,6 +150,12 @@ class AdaptiveMonetizationManager {
   Future<bool> canShowInterstitialAd(
       {AppContextUX context = AppContextUX.browsing}) async {
     if (!isMonetizationAvailable) return false;
+
+    // Pro: cero intersticiales (S1). Rewarded sigue vía showRewardedAd.
+    if (await _userPrefs.isPro()) {
+      LoggerFactory.debug('Intersticial ad omitido: usuario Pro');
+      return false;
+    }
 
     // Evaluar con estrategia UX-first (más estricta para intersticiales)
     final userType = await _userPrefs.getUserType();
@@ -297,6 +309,9 @@ class AdaptiveMonetizationManager {
   Future<UserMonetizationPreferences> getUserPreferences() async {
     return await _userPrefs.getUserPreferences();
   }
+
+  /// Indica si el usuario tiene Pro activo (passthrough a prefs).
+  Future<bool> isPro() => _userPrefs.isPro();
 
   /// Obtiene estadísticas de uso del usuario
   Future<UserUsageStats> getUserUsageStats() async {
