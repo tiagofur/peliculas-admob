@@ -314,7 +314,7 @@ class AdvancedLoggingService {
         'event_type': eventType,
         'table_name': tableName,
         'success': success.toString(),
-        if (error != null) 'error': error,
+        'error': ?error,
       },
     );
 
@@ -337,7 +337,7 @@ class AdvancedLoggingService {
       connected ? 1.0 : 0.0,
       tags: {
         'connected': connected.toString(),
-        if (networkType != null) 'network_type': networkType,
+        'network_type': ?networkType,
       },
     );
 

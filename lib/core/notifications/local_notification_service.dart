@@ -68,7 +68,7 @@ class LocalNotificationService {
       final plugin = _flutterLocalNotificationsPlugin;
       if (plugin != null) {
         await plugin.initialize(
-          initializationSettings,
+          settings: initializationSettings,
           onDidReceiveNotificationResponse: _onNotificationTapped,
         );
       }
@@ -359,10 +359,10 @@ class LocalNotificationService {
       final plugin = _flutterLocalNotificationsPlugin;
       if (plugin != null) {
         await plugin.show(
-          id,
-          title,
-          body,
-          notificationDetails,
+          id: id,
+          title: title,
+          body: body,
+          notificationDetails: notificationDetails,
           payload: payload,
         );
       }
@@ -427,13 +427,13 @@ class LocalNotificationService {
       final plugin = _flutterLocalNotificationsPlugin;
       if (plugin != null) {
         await plugin.zonedSchedule(
-          id,
-          title,
-          body,
-          tz.TZDateTime.from(scheduledDate, tz.local),
-          notificationDetails,
-          payload: payload,
+          id: id,
+          title: title,
+          body: body,
+          scheduledDate: tz.TZDateTime.from(scheduledDate, tz.local),
+          notificationDetails: notificationDetails,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          payload: payload,
         );
       }
 
@@ -497,13 +497,13 @@ class LocalNotificationService {
       final plugin = _flutterLocalNotificationsPlugin;
       if (plugin != null) {
         await plugin.periodicallyShow(
-          id,
-          title,
-          body,
-          repeatInterval,
-          notificationDetails,
-          payload: payload,
+          id: id,
+          title: title,
+          body: body,
+          repeatInterval: repeatInterval,
+          notificationDetails: notificationDetails,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          payload: payload,
         );
       }
 
@@ -524,7 +524,7 @@ class LocalNotificationService {
     try {
       final plugin = _flutterLocalNotificationsPlugin;
       if (plugin != null) {
-        await plugin.cancel(id);
+        await plugin.cancel(id: id);
       }
       await _removeScheduledNotification(id);
 
