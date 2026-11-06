@@ -47,7 +47,7 @@ class GamificationNotificationService {
     );
 
     await _notifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -92,10 +92,10 @@ class GamificationNotificationService {
     );
 
     await _notifications.show(
-      achievement.id.hashCode,
-      '🏆 Achievement Unlocked!',
-      '${achievement.name} - ${achievement.description}',
-      details,
+      id: achievement.id.hashCode,
+      title: '🏆 Achievement Unlocked!',
+      body: '${achievement.name} - ${achievement.description}',
+      notificationDetails: details,
       payload: 'achievement:${achievement.id}',
     );
 
@@ -132,10 +132,10 @@ class GamificationNotificationService {
     );
 
     await _notifications.show(
-      level.hashCode,
-      '🎉 Level Up!',
-      'Congratulations! You reached ${level.name}',
-      details,
+      id: level.hashCode,
+      title: '🎉 Level Up!',
+      body: 'Congratulations! You reached ${level.name}',
+      notificationDetails: details,
       payload: 'level_up:${level.name}',
     );
 
@@ -172,10 +172,10 @@ class GamificationNotificationService {
     );
 
     await _notifications.show(
-      badge.id.hashCode,
-      '🎖️ Badge Earned!',
-      '${badge.title} - ${badge.description}',
-      details,
+      id: badge.id.hashCode,
+      title: '🎖️ Badge Earned!',
+      body: '${badge.title} - ${badge.description}',
+      notificationDetails: details,
       payload: 'badge:${badge.id}',
     );
 
@@ -212,10 +212,10 @@ class GamificationNotificationService {
     );
 
     await _notifications.show(
-      challenge.id.hashCode,
-      '✅ Challenge Complete!',
-      '${challenge.title} - Earned ${challenge.pointsReward} points',
-      details,
+      id: challenge.id.hashCode,
+      title: '✅ Challenge Complete!',
+      body: '${challenge.title} - Earned ${challenge.pointsReward} points',
+      notificationDetails: details,
       payload: 'challenge:${challenge.id}',
     );
 
@@ -252,10 +252,10 @@ class GamificationNotificationService {
     );
 
     await _notifications.show(
-      streakDays.hashCode,
-      '🔥 Streak Milestone!',
-      '$streakDays days in a row! Earned $points bonus points',
-      details,
+      id: streakDays.hashCode,
+      title: '🔥 Streak Milestone!',
+      body: '$streakDays days in a row! Earned $points bonus points',
+      notificationDetails: details,
       payload: 'streak:$streakDays',
     );
 
@@ -292,13 +292,12 @@ class GamificationNotificationService {
     );
 
     await _notifications.zonedSchedule(
-      999, // Fixed ID for daily reminder
-      '🎬 Movie Time!',
-      'Discover new movies and earn rewards today!',
-      _nextInstanceOfTime(20, 0), // 8 PM daily
-      details,
+      id: 999, // Fixed ID for daily reminder
+      title: '🎬 Movie Time!',
+      body: 'Discover new movies and earn rewards today!',
+      scheduledDate: _nextInstanceOfTime(20, 0), // 8 PM daily
+      notificationDetails: details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-
       matchDateTimeComponents: DateTimeComponents.time,
       payload: 'daily_reminder',
     );
@@ -324,7 +323,7 @@ class GamificationNotificationService {
 
   /// Cancel specific notification
   Future<void> cancelNotification(int id) async {
-    await _notifications.cancel(id);
+    await _notifications.cancel(id: id);
   }
 
   /// Dispose resources

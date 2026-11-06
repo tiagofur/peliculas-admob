@@ -273,7 +273,7 @@ class NotificationManager {
       _resetDailyCountIfNeeded();
 
       _log('Sistema de notificaciones inicializado correctamente');
-    } catch (e, _) {
+    } catch (e) {
       _log('Error inicializando notificaciones: $e');
     }
   }
@@ -298,7 +298,7 @@ class NotificationManager {
     );
 
     await _localNotifications.initialize(
-      initSettings,
+      settings: initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
     );
 
@@ -330,9 +330,12 @@ class NotificationManager {
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         _log('Permisos de notificaciones push concedidos');
 
-        // Obtener token FCM
-        final token = await messaging.getToken();
-        _log('Token FCM: $token');
+        // Registrar la instancia con FCM (v17+). El FID llega por
+        // onRegistered y es el identificador de envío directo.
+        await messaging.register();
+        messaging.onRegistered.listen((fid) {
+          _log('FCM registrado. Installation ID (FID): $fid');
+        });
 
         // Configurar handlers
         FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
@@ -347,7 +350,7 @@ class NotificationManager {
       } else {
         _log('Permisos de notificaciones push denegados');
       }
-    } catch (e, _) {
+    } catch (e) {
       _log('Error inicializando Firebase Messaging: $e');
     }
   }
@@ -446,7 +449,7 @@ class NotificationManager {
       await preferencesService.incrementDailyCount();
 
       _log('Notificación inteligente programada: ${config.title}');
-    } catch (e, _) {
+    } catch (e) {
       _log('Error programando notificación inteligente: $e');
     }
   }
@@ -619,10 +622,10 @@ class NotificationManager {
     });
 
     await _localNotifications.show(
-      id,
-      config.title,
-      config.body,
-      details,
+      id: id,
+      title: config.title,
+      body: config.body,
+      notificationDetails: details,
       payload: payload,
     );
 
@@ -784,11 +787,6 @@ class NotificationManager {
   Future<void> cancelAllLocalNotifications() async {
     await _localNotifications.cancelAll();
     _log('Todas las notificaciones locales canceladas');
-  }
-
-  /// Obtiene el token FCM actual
-  Future<String?> getFCMToken() async {
-    return await _firebaseMessaging?.getToken();
   }
 
   /// Suscribe a un tópico de FCM

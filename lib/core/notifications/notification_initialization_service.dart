@@ -151,18 +151,17 @@ class NotificationInitializationService {
         _handleNotificationTap(initialMessage);
       }
 
-      // Obtener el token FCM
-      String? token = await FirebaseMessaging.instance.getToken();
-      if (kDebugMode) {
-        LoggerFactory.info('FCM Token: $token');
-      }
+      // Registrar la instancia con FCM (v17+: register/onRegistered
+      // reemplazan a getToken/onTokenRefresh).
+      await FirebaseMessaging.instance.register();
 
-      // Listener para cambios en el token
-      FirebaseMessaging.instance.onTokenRefresh.listen((String token) {
+      // onRegistered emite el Firebase Installation ID (FID) en el registro
+      // y ante cada rotación. Es el identificador de envío directo.
+      FirebaseMessaging.instance.onRegistered.listen((String fid) {
         if (kDebugMode) {
-          LoggerFactory.info('FCM Token refreshed: $token');
+          LoggerFactory.info('FCM registered, FID: $fid');
         }
-        _sendTokenToServer(token);
+        _sendTokenToServer(fid);
       });
     } catch (e) {
       if (kDebugMode) {
@@ -183,12 +182,15 @@ class NotificationInitializationService {
         return;
       }
 
-      // Asumimos una tabla 'profiles' con una columna 'fcm_token'
+      // NOTA FCM v17+: `token` es el Firebase Installation ID (FID), el
+      // identificador de envío directo. Se guarda en la columna 'fcm_token'
+      // (nombre conservado por compatibilidad); el remitente externo debe
+      // enviar a este FID, no a un registration token legacy.
       await _supabase
           .from('profiles')
           .update({'fcm_token': token}).eq('id', userId);
 
-      LoggerFactory.info('FCM token sent to server successfully.');
+      LoggerFactory.info('FCM installation ID sent to server successfully.');
     } catch (e) {
       LoggerFactory.error('Error sending FCM token to server: $e');
     }
@@ -343,20 +345,6 @@ class NotificationInitializationService {
         LoggerFactory.warning(
             '⚠️ No hay contexto de navegación disponible para push');
       }
-    }
-  }
-
-  /// Obtiene el token FCM actual
-  Future<String?> getFCMToken() async {
-    if (kIsWeb) return null;
-
-    try {
-      return await FirebaseMessaging.instance.getToken();
-    } catch (e) {
-      if (kDebugMode) {
-        LoggerFactory.error('Error getting FCM token: $e');
-      }
-      return null;
     }
   }
 
