@@ -8,6 +8,7 @@ import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../domain/entities/movie.dart';
 import '../../../generated/app_localizations.dart';
 import '../../../services/hybrid_image_service.dart';
+import '../../../services/monetization/user_monetization_preferences_service.dart';
 import '../../providers/storage/direct_favorites_provider.dart';
 import '../../providers/storage/direct_watched_provider.dart';
 import '../admob/ad_integration_helper.dart';
@@ -45,11 +46,13 @@ class _MovieHorizontalListviewWithAdsState
     extends State<MovieHorizontalListviewWithAds> {
   final scrollController = ScrollController();
   late List<AdListItem> _mixedItems;
+  bool _adsSuppressedByPro = false;
 
   @override
   void initState() {
     super.initState();
     _updateMixedItems();
+    _resolveProSuppression();
 
     scrollController.addListener(() {
       if (widget.loadNextPage == null) return;
@@ -73,8 +76,21 @@ class _MovieHorizontalListviewWithAdsState
     }
   }
 
+  /// Resuelve Pro de forma asíncrona y reconstruye sin anuncios (S1).
+  Future<void> _resolveProSuppression() async {
+    if (!widget.enableAds) return;
+    final isPro =
+        await UserMonetizationPreferencesService.instance.isPro();
+    if (isPro && mounted && !_adsSuppressedByPro) {
+      setState(() {
+        _adsSuppressedByPro = true;
+        _updateMixedItems();
+      });
+    }
+  }
+
   void _updateMixedItems() {
-    if (widget.enableAds) {
+    if (widget.enableAds && !_adsSuppressedByPro) {
       _mixedItems = AdIntegrationHelper.createHorizontalAdList(
         widget.movies,
       );

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 import '../../../domain/entities/movie.dart';
+import '../../../services/monetization/user_monetization_preferences_service.dart';
 import '../admob/ad_integration_helper.dart';
 import '../admob/full_width_ad_widget.dart';
 import '../admob/grid_ad_widget.dart';
@@ -39,11 +40,13 @@ class MovieMasonryWithAds extends StatefulWidget {
 class _MovieMasonryWithAdsState extends State<MovieMasonryWithAds> {
   late List<AdListItem> _mixedItems;
   final ScrollController _scrollController = ScrollController();
+  bool _adsSuppressedByPro = false;
 
   @override
   void initState() {
     super.initState();
     _updateMixedItems();
+    _resolveProSuppression();
     _setupScrollListener();
   }
 
@@ -59,9 +62,22 @@ class _MovieMasonryWithAdsState extends State<MovieMasonryWithAds> {
     }
   }
 
+  /// Resuelve Pro de forma asíncrona y reconstruye sin anuncios (S1).
+  Future<void> _resolveProSuppression() async {
+    final isPro =
+        await UserMonetizationPreferencesService.instance.isPro();
+    if (isPro && mounted && !_adsSuppressedByPro) {
+      setState(() {
+        _adsSuppressedByPro = true;
+        _updateMixedItems();
+      });
+    }
+  }
+
   void _updateMixedItems() {
     _mixedItems = AdIntegrationHelper.createGridAdList(
       widget.movies,
+      isPro: _adsSuppressedByPro,
     );
   }
 

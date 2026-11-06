@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
 import '../../../core/logging/logger_factory.dart';
+import 'pro_ad_gate.dart';
 import 'web_safe_ad_widgets.dart';
 
 /// Widget de anuncio que ocupa el espacio de una tarjeta en grids verticales
@@ -37,6 +38,9 @@ class _GridAdWidgetState extends State<GridAdWidget> {
   }
 
   void _loadAd() {
+    // Pro: no cargar ni pedir anuncios (S1).
+    if (hideAdsForPro) return;
+
     // En web, usar el sistema web-safe (no hacer nada aquí)
     if (kIsWeb) {
       LoggerFactory.info('Usando AdSense para grid ads en web');
@@ -103,6 +107,9 @@ class _GridAdWidgetState extends State<GridAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     // En web, usar el widget web-safe
     if (kIsWeb) {
       return const WebSafeGridAdWidget();

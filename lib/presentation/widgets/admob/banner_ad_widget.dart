@@ -6,6 +6,7 @@ import '../../../config/helpers/ad_helper.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/monetization/monetization_analytics_service.dart';
 import '../../../widgets/ads/ad_placeholder_widget.dart';
+import 'pro_ad_gate.dart';
 import 'web_safe_ad_widgets.dart';
 
 class BannerAdWidget extends StatefulWidget {
@@ -29,6 +30,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   }
 
   void _loadBannerAd() {
+    // Pro: no cargar ni pedir anuncios (S1).
+    if (hideAdsForPro) return;
+
     // En web, usar el sistema web-safe
     if (kIsWeb) {
       LoggerFactory.info('Usando AdSense para banner ads en web');
@@ -121,6 +125,9 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     // En web, usar el widget web-safe
     if (kIsWeb) {
       return const WebSafeBannerAdWidget();

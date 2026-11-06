@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../services/monetization/adaptive_monetization_manager.dart';
+import '../admob/pro_ad_gate.dart';
 
 /// Widget adaptativo de banner que funciona con AdMob (móvil) y AdSense (web/desktop)
 /// Prioriza la experiencia de usuario y se integra naturalmente en la UI
@@ -126,6 +127,9 @@ class _AdaptiveBannerWidgetState extends State<AdaptiveBannerWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
