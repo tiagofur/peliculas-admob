@@ -20,7 +20,7 @@ Runner: dart format + flutter analyze + flutter test. Mirror Engram: pending (si
 - T3 (S1) Gatear ControlledAdWidget/AdIntegrationHelper/widgets/AdAwareScreen + widget tests. Route: inline. Status: done. Commit: ver L5.
 - T4 (S5) Cableado nativo StoreKit/Play (IDs, Sandbox) + docs. Route: inline. Status: done. Commit: ver L6.
 - T5 (S1,S4) Paywall + restaurar + entry settings/perfil + tests. Route: inline. Status: done. Commit: ver L7.
-- T6 (S2) Funciones Pro por adición (sin recortar gratis) + tests. Route: inline. Status: pending. Commit: -.
+- T6 (S2) Funciones Pro por adición (sin recortar gratis) + tests. Route: inline. Status: done. Commit: ver L8.
 - T7 (S3,S6) QA e2e ads-on/ads-off/restore + analyze/test + docs. Route: inline. Status: pending. Commit: -.
 - T8 Verificador independiente (agente revisor) + push + PR Fixes #N. Route: delegated verify. Status: pending.
 
@@ -32,4 +32,5 @@ Runner: dart format + flutter analyze + flutter test. Mirror Engram: pending (si
 - L4: T1 commit 7fd2b65ed8510fd4701240c6df1075775be69a36 (prefs isPro/setProActive/guardas + purchases_service + 7 tests verdes en pro_entitlement_test.dart + format). Issue GitHub pendiente: timeout de red en gh issue create, reintento antes del PR.
 - L5: T2 commit de627c2e479edd00ce889fbdd8094cb3e8de4720 (RED observado en contador Pro, gates manager+AdMob, 9/9 tests). T3 commit 4c9ddbdd6584a4ac5f4bd400de02ec3a738626e2 (pro_ad_gate + guards en 5 leaf + 5 WebSafe + adaptive + Controlled + helper isPro + 2 listados + AdAware/AdTrigger/ListAdInserter + 8 widget tests verdes + analyze limpio).
 - L6: T4 docs-only honesto (sin cambios nativos requeridos hasta agregar plugin de billing): docs/guides/pro-store-setup.md con producto peliculas_pro_lifetime, pasos Play + App Store Connect, Sandbox y checklist anti-rechazo.
-- L7: T5 commit pendiente: ProPaywallScreen (comprar/restaurar) + ruta /pro-paywall + card Pro en settings + 10 keys l10n x4 locales + 3 widget tests verdes + analyze limpio.
+- L7: T5 commit 670137586c13e850d424b3fcf89d7f12afe92b4f (ProPaywallScreen + ruta /pro-paywall + card Pro en settings + 10 keys l10n x4 locales + 3 widget tests verdes + analyze limpio).
+- L8: T6 commit pendiente: ProFeatureGate (temas/listas/stats, solo adición, gratis intacto) + 2 tests verdes. Sin badge en perfil: pantalla de perfil es authcompleja y settings/paywall ya visibilizan Pro.
