@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../domain/entities/movie.dart';
@@ -13,7 +14,13 @@ class TriggerFreeWatchlistSync {
       TriggerFreeWatchlistSync._internal();
   static TriggerFreeWatchlistSync get instance => _instance;
 
-  final SupabaseClient _supabase = Supabase.instance.client;
+  SupabaseClient? _debugClient;
+
+  SupabaseClient get _supabase => _debugClient ?? Supabase.instance.client;
+
+  /// Testing seam: inject a fake client in unit tests.
+  @visibleForTesting
+  set debugClient(SupabaseClient client) => _debugClient = client;
 
   /// Obtiene watchlist del usuario
   Future<List<WatchlistMovie>> getUserWatchlist(String userId) async {
@@ -24,6 +31,7 @@ class TriggerFreeWatchlistSync {
           .from('user_watchlist')
           .select('*')
           .eq('user_id', userId)
+          .eq('is_deleted', false)
           .order('added_at', ascending: false);
 
       final List<dynamic> data = response as List<dynamic>;
@@ -51,22 +59,28 @@ class TriggerFreeWatchlistSync {
 
       final now = DateTime.now().toUtc().toIso8601String();
 
-      // Usar upsert directo para evitar problemas con RPC
-      await _supabase.from('user_watchlist').upsert({
-        'user_id': userId,
-        'movie_id': movie.id,
-        'movie_title': movie.title,
-        'movie_poster_path': movie.posterPath,
-        'movie_backdrop_path': movie.backdropPath,
-        'movie_overview': movie.overview,
-        'movie_release_date': movie.releaseDate.toIso8601String(),
-        'movie_vote_average': movie.voteAverage,
-        'priority': priority.value,
-        'added_at': now,
-        'last_modified_at': now,
-        'is_deleted': false,
-        'sync_version': 1,
-      });
+      // Usar upsert directo para evitar problemas con RPC.
+      // onConflict es obligatorio: sin objetivo de conflicto el upsert
+      // inserta duplicados en lugar de conciliar.
+      await _supabase.from('user_watchlist').upsert(
+        {
+          'user_id': userId,
+          'movie_id': movie.id,
+          'movie_title': movie.title,
+          'movie_poster_path': movie.posterPath,
+          'movie_backdrop_path': movie.backdropPath,
+          'movie_overview': movie.overview,
+          'movie_release_date': movie.releaseDate.toIso8601String(),
+          'movie_vote_average': movie.voteAverage,
+          'priority': priority.value,
+          'added_at': now,
+          'last_modified_at': now,
+          'is_deleted': false,
+          'sync_version': 1,
+        },
+        onConflict: 'user_id,movie_id',
+        ignoreDuplicates: false,
+      );
 
       LoggerFactory.info(
           '✅ [TriggerFree] Película agregada a watchlist: ${movie.title}');
@@ -111,12 +125,13 @@ class TriggerFreeWatchlistSync {
       LoggerFactory.info(
           '🔄 [TriggerFree] Cambiando prioridad: $movieId -> ${newPriority.name}');
 
+      // Nota: no se toca sync_version. Resetearlo a 1 en un UPDATE rompe
+      // la monotonicidad que usa la resolución de conflictos.
       await _supabase
           .from('user_watchlist')
           .update({
             'priority': newPriority.value,
             'last_modified_at': DateTime.now().toUtc().toIso8601String(),
-            'sync_version': 1,
           })
           .eq('user_id', userId)
           .eq('movie_id', movieId);
@@ -136,14 +151,18 @@ class TriggerFreeWatchlistSync {
 
     final now = DateTime.now().toUtc().toIso8601String();
 
-    await _supabase.from('user_watchlist').upsert({
-      'user_id': userId,
-      'movie_id': movie.id,
-      'movie_title': movie.title,
-      'priority': priority.value,
-      'added_at': now,
-      'is_deleted': false,
-    });
+    await _supabase.from('user_watchlist').upsert(
+      {
+        'user_id': userId,
+        'movie_id': movie.id,
+        'movie_title': movie.title,
+        'priority': priority.value,
+        'added_at': now,
+        'is_deleted': false,
+      },
+      onConflict: 'user_id,movie_id',
+      ignoreDuplicates: false,
+    );
 
     LoggerFactory.info('✅ [TriggerFree] Fallback exitoso para watchlist');
   }

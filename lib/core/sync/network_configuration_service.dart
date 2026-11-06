@@ -288,6 +288,8 @@ class NetworkConfigurationService {
         return NetworkQuality.excellent; // Ethernet es excelente
       case ConnectivityResult.mobile:
         return NetworkQuality.fair; // Móvil es variable
+      case ConnectivityResult.satellite:
+        return NetworkQuality.poor; // Satélite: alta latencia
       case ConnectivityResult.bluetooth:
         return NetworkQuality.poor; // Bluetooth es limitado
       case ConnectivityResult.vpn:

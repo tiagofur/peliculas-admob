@@ -14,8 +14,15 @@ class SimpleFavoritesSync {
   static final SimpleFavoritesSync _instance = SimpleFavoritesSync._internal();
   static SimpleFavoritesSync get instance => _instance;
 
-  final SupabaseClient _supabase = Supabase.instance.client;
   bool _isSyncing = false;
+  SupabaseClient? _debugClient;
+
+  SupabaseClient get _supabase => _debugClient ?? Supabase.instance.client;
+
+  /// Testing seam: inject a fake client in unit tests. Production always
+  /// uses `Supabase.instance.client`.
+  @visibleForTesting
+  set debugClient(SupabaseClient client) => _debugClient = client;
 
   /// Verifica la estructura de la tabla user_favorites
   Future<void> checkDatabaseStructure() async {
@@ -89,10 +96,15 @@ class SimpleFavoritesSync {
       try {
         await _supabase.from('user_favorites').insert(favoriteData);
       } catch (e) {
-        // Si ya existe, intentar con DELETE + INSERT
+        // Si ya existe, intentar con DELETE + INSERT acotado a la película
+        // (sin el filtro de movie_id se borrarían TODOS los favoritos)
         if (e.toString().contains('duplicate key') ||
             e.toString().contains('unique constraint')) {
-          await _supabase.from('user_favorites').delete().eq('user_id', userId);
+          await _supabase
+              .from('user_favorites')
+              .delete()
+              .eq('user_id', userId)
+              .eq('movie_id', movie.id);
 
           await _supabase.from('user_favorites').insert(favoriteData);
         } else {
@@ -112,8 +124,13 @@ class SimpleFavoritesSync {
     try {
       LoggerFactory.info('🗑️ Removiendo favorito con movieId: $movieId');
 
-      // USAR DELETE DIRECTO para evitar problemas de trigger
-      await _supabase.from('user_favorites').delete().eq('user_id', userId);
+      // USAR DELETE DIRECTO para evitar problemas de trigger,
+      // siempre acotado a la película (sin movie_id borraría todo el usuario)
+      await _supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', userId)
+          .eq('movie_id', movieId);
 
       LoggerFactory.info('✅ Favorito removido exitosamente: $movieId');
     } catch (e) {
@@ -129,6 +146,7 @@ class SimpleFavoritesSync {
           .from('user_favorites')
           .select('id')
           .eq('user_id', userId)
+          .eq('movie_id', movieId)
           .limit(1);
 
       final List<dynamic> data = response as List<dynamic>;
