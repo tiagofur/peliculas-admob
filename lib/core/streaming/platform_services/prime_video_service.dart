@@ -17,9 +17,9 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     http.Client? httpClient,
     required AnalyticsService analytics,
     required RealAvailabilityService availabilityService,
-  })  : _httpClient = httpClient ?? http.Client(),
-        _analytics = analytics,
-        _availabilityService = availabilityService;
+  }) : _httpClient = httpClient ?? http.Client(),
+       _analytics = analytics,
+       _availabilityService = availabilityService;
   final String _baseUrl = StreamingApiConfig.primeVideoBaseUrl;
   static const String _deepLinkScheme = 'aiv://';
 
@@ -37,18 +37,20 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'movie_id': movieId,
         'region': region,
-        'api_used':
-            StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+        'api_used': 'tmdb_watch_providers',
       });
 
-      // Try real availability service first
+      // TMDB watch providers is the only availability source: keep only
+      // this platform's entry instead of the first of any platform.
       final availabilityList = await _availabilityService.checkAvailability(
         movieId,
         region: region,
       );
 
-      if (availabilityList.isNotEmpty) {
-        return availabilityList.first;
+      for (final availability in availabilityList) {
+        if (availability.platform.id == StreamingPlatform.amazonPrime.id) {
+          return availability;
+        }
       }
 
       // If Prime Video API is configured, try direct API call
@@ -63,11 +65,9 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
-      return await _simulatePrimeAvailability(
-        tmdbId: movieId,
-        region: region,
-      );
+      // No simulated fallback: TMDB is the only source, so absence
+      // of data means "not available", not "invent availability".
+      return null;
     } catch (e) {
       // Error checking Prime Video availability: $e
       return null;
@@ -85,8 +85,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         'query': query,
         'region': region,
         'limit': limit,
-        'api_used':
-            StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'none',
       });
 
       // If Prime Video API is configured, use real API
@@ -102,7 +101,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
+      // Without a configured catalog API there is no source: keep empty.
       return await _simulatePrimeSearch(
         query: query,
         region: region,
@@ -122,8 +121,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'region': region,
         'limit': limit,
-        'api_used':
-            StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'simulated',
+        'api_used': StreamingApiConfig.hasPrimeVideoApiKey ? 'real' : 'none',
       });
 
       // If Prime Video API is configured, use real API
@@ -138,11 +136,8 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
-      return await _simulatePrimeTrending(
-        region: region,
-        limit: limit,
-      );
+      // Without a configured catalog API there is no source: keep empty.
+      return await _simulatePrimeTrending(region: region, limit: limit);
     } catch (e) {
       // Error getting Prime Video trending content: $e
       return [];
@@ -178,10 +173,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
 
   /// Launch Prime Video app with deep link
   @override
-  String generateDeepLink({
-    required String movieId,
-    String? tmdbId,
-  }) {
+  String generateDeepLink({required String movieId, String? tmdbId}) {
     // Prime Video deep link format: aiv://aiv/resume?asin={asin}
     final deepLink = '${_deepLinkScheme}aiv/resume?asin=$movieId';
 
@@ -212,7 +204,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
           features: [
             'Unlimited streaming',
             'Prime Video Originals',
-            'Ad-supported'
+            'Ad-supported',
           ],
           quality: 'HD/4K',
         ),
@@ -226,7 +218,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
             'Free shipping',
             'Prime Music',
             'Prime Reading',
-            'Prime Gaming'
+            'Prime Gaming',
           ],
           quality: 'HD/4K',
         ),
@@ -265,11 +257,9 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required String region,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/catalog/titles/$tmdbId')
-          .replace(queryParameters: {
-        'region': region,
-        'include_availability': 'true',
-      });
+      final url = Uri.parse('$_baseUrl/catalog/titles/$tmdbId').replace(
+        queryParameters: {'region': region, 'include_availability': 'true'},
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.primeVideoHeaders)
@@ -297,12 +287,14 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/search').replace(queryParameters: {
-        'q': query,
-        'region': region,
-        'limit': limit.toString(),
-        'content_type': 'movie',
-      });
+      final url = Uri.parse('$_baseUrl/search').replace(
+        queryParameters: {
+          'q': query,
+          'region': region,
+          'limit': limit.toString(),
+          'content_type': 'movie',
+        },
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.primeVideoHeaders)
@@ -327,12 +319,14 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/trending').replace(queryParameters: {
-        'region': region,
-        'limit': limit.toString(),
-        'content_type': 'movie',
-        'time_period': 'week',
-      });
+      final url = Uri.parse('$_baseUrl/trending').replace(
+        queryParameters: {
+          'region': region,
+          'limit': limit.toString(),
+          'content_type': 'movie',
+          'time_period': 'week',
+        },
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.primeVideoHeaders)
@@ -353,7 +347,9 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
 
   /// Parse Prime Video availability response
   PlatformAvailability _parsePrimeAvailability(
-      Map<String, dynamic> data, String tmdbId) {
+    Map<String, dynamic> data,
+    String tmdbId,
+  ) {
     final availability = data['availability'] as Map<String, dynamic>? ?? {};
     final pricing = data['pricing'] as Map<String, dynamic>? ?? {};
     final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
@@ -371,10 +367,12 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
       currency: pricing['currency'] as String? ?? 'USD',
       quality: metadata['video_quality'] as String? ?? '4K Ultra HD',
       deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages:
-          List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
-      subtitleLanguages:
-          List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+      audioLanguages: List<String>.from(
+        metadata['audio_languages'] as List? ?? ['en'],
+      ),
+      subtitleLanguages: List<String>.from(
+        metadata['subtitle_languages'] as List? ?? ['en'],
+      ),
     );
   }
 
@@ -390,7 +388,7 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
         backdropPath: movie['backdrop_path'] as String? ?? '',
         releaseDate: movie['release_date'] != null
             ? DateTime.tryParse(movie['release_date'] as String) ??
-                DateTime.now()
+                  DateTime.now()
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,
@@ -404,43 +402,13 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     }).toList();
   }
 
-  // Simulation methods (fallback when real APIs are not available)
-  Future<PlatformAvailability?> _simulatePrimeAvailability({
-    required String tmdbId,
-    required String region,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    final isAvailable =
-        int.parse(tmdbId.replaceAll(RegExp(r'[^0-9]'), '')) % 4 != 0;
-
-    if (!isAvailable) return null;
-
-    final contentType = await getContentType(movieId: tmdbId, region: region);
-
-    return PlatformAvailability(
-      platform: StreamingPlatform.amazonPrime,
-      isAvailable: true,
-      isFree: contentType == PrimeContentType.included,
-      requiresSubscription: contentType == PrimeContentType.included,
-      canRent: contentType == PrimeContentType.rental,
-      canPurchase: contentType == PrimeContentType.purchase,
-      rentalPrice: contentType == PrimeContentType.rental ? 3.99 : null,
-      purchasePrice: contentType == PrimeContentType.purchase ? 14.99 : null,
-      currency: 'USD',
-      quality: '4K',
-      deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages: ['en', 'es', 'fr', 'de'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de', 'it'],
-    );
-  }
-
+  // Empty catalog results: without a configured platform API there is
+  // no catalog source, so search, trending and originals stay empty.
   Future<List<Movie>> _simulatePrimeSearch({
     required String query,
     required String region,
     required int limit,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 700));
     return [];
   }
 
@@ -448,7 +416,6 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required String region,
     required int limit,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
     return [];
   }
 
@@ -456,7 +423,6 @@ class PrimeVideoService implements StreamingPlatformServiceInterface {
     required String region,
     required int limit,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 400));
     return [];
   }
 

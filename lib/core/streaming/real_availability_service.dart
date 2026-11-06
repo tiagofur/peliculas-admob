@@ -11,6 +11,7 @@ import '../analytics/analytics_service.dart';
 import '../logging/app_logger.dart';
 import '../logging/logger_factory.dart';
 import 'streaming_api_config.dart';
+import 'tmdb_provider_mapper.dart';
 
 /// Real streaming availability service using TMDB Watch Providers API and third-party APIs
 ///
@@ -21,18 +22,18 @@ class RealAvailabilityService {
     http.Client? httpClient,
     AnalyticsService? analyticsService,
     AppLogger? logger,
-  })  : _httpClient = httpClient ?? http.Client(),
-        _analyticsService = analyticsService ?? AnalyticsService(),
-        _logger = logger ?? AppLogger.instance {
+  }) : _httpClient = httpClient ?? http.Client(),
+       _analyticsService = analyticsService ?? AnalyticsService(),
+       _logger = logger ?? AppLogger.instance {
     // Initialize Dio for TMDB API calls
-    _dio = Dio(BaseOptions(
-      baseUrl: 'https://api.themoviedb.org/3',
-      queryParameters: {
-        'api_key': Environment.theMovieDbKey,
-      },
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 15),
-    ));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: 'https://api.themoviedb.org/3',
+        queryParameters: {'api_key': Environment.theMovieDbKey},
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 15),
+      ),
+    );
   }
 
   final http.Client _httpClient;
@@ -80,16 +81,17 @@ class RealAvailabilityService {
       // Fallback to Watchmode API if TMDB returns no results and Watchmode is configured
       if (availability.isEmpty && StreamingApiConfig.isWatchmodeConfigured) {
         LoggerFactory.info(
-            'TMDB returned no providers, trying Watchmode API...');
+          'TMDB returned no providers, trying Watchmode API...',
+        );
         availability = await _checkWatchmodeAvailability(tmdbId, region);
       }
 
-      // Fallback to simulated data only in development mode
+      // TMDB is the only source: an empty result simply means no
+      // providers reported for this movie and region.
       if (availability.isEmpty) {
         LoggerFactory.warning(
-            'No streaming providers found for movie: $tmdbId in region: $region');
-        // Don't return simulated data - return empty list instead
-        // availability = await _getSimulatedAvailability(tmdbId, region);
+          'No streaming providers found for movie: $tmdbId in region: $region',
+        );
       }
 
       // Cache the results
@@ -103,30 +105,26 @@ class RealAvailabilityService {
         _cleanCache();
       }
 
-      _analyticsService.trackEvent(
-        AnalyticsEventType.userEngagement,
-        {
-          'action': 'availability_checked',
-          'tmdb_id': tmdbId,
-          'region': region,
-          'platforms_found': availability.length,
-          'cache_used': false,
-          'source': 'tmdb_watch_providers',
-        },
-      );
+      _analyticsService.trackEvent(AnalyticsEventType.userEngagement, {
+        'action': 'availability_checked',
+        'tmdb_id': tmdbId,
+        'region': region,
+        'platforms_found': availability.length,
+        'cache_used': false,
+        'source': 'tmdb_watch_providers',
+      });
 
       return availability;
     } catch (e, stackTrace) {
-      LoggerFactory.error('Error checking movie availability: $e',
-          stackTrace: stackTrace);
-      _analyticsService.trackEvent(
-        AnalyticsEventType.error,
-        {
-          'action': 'availability_check_failed',
-          'tmdb_id': tmdbId,
-          'error': e.toString(),
-        },
+      LoggerFactory.error(
+        'Error checking movie availability: $e',
+        stackTrace: stackTrace,
       );
+      _analyticsService.trackEvent(AnalyticsEventType.error, {
+        'action': 'availability_check_failed',
+        'tmdb_id': tmdbId,
+        'error': e.toString(),
+      });
 
       // Return empty list on error instead of simulated data
       return [];
@@ -149,7 +147,8 @@ class RealAvailabilityService {
   ) async {
     try {
       LoggerFactory.info(
-          'Fetching TMDB watch providers for movie: $tmdbId, region: $region');
+        'Fetching TMDB watch providers for movie: $tmdbId, region: $region',
+      );
 
       final response = await _dio.get('/movie/$tmdbId/watch/providers');
 
@@ -158,16 +157,20 @@ class RealAvailabilityService {
         return _parseTmdbWatchProvidersResponse(data, region);
       } else {
         LoggerFactory.warning(
-            'TMDB Watch Providers API error: ${response.statusCode}');
+          'TMDB Watch Providers API error: ${response.statusCode}',
+        );
         return [];
       }
     } on DioException catch (e) {
       LoggerFactory.error(
-          'TMDB Watch Providers API request failed: ${e.message}');
+        'TMDB Watch Providers API request failed: ${e.message}',
+      );
       return [];
     } catch (e, stackTrace) {
-      LoggerFactory.error('Unexpected error in TMDB Watch Providers: $e',
-          stackTrace: stackTrace);
+      LoggerFactory.error(
+        'Unexpected error in TMDB Watch Providers: $e',
+        stackTrace: stackTrace,
+      );
       return [];
     }
   }
@@ -201,6 +204,9 @@ class RealAvailabilityService {
         return [];
       }
 
+      // TMDB watch link for this region (real JustWatch attribution link).
+      final regionLink = regionData['link'] as String?;
+
       // Process streaming (flatrate) providers
       final flatrate = regionData['flatrate'] as List?;
       if (flatrate != null) {
@@ -209,6 +215,7 @@ class RealAvailabilityService {
             provider as Map<String, dynamic>,
             isFree: false,
             requiresSubscription: true,
+            regionLink: regionLink,
           );
           if (platformAvailability != null) {
             availability.add(platformAvailability);
@@ -224,6 +231,7 @@ class RealAvailabilityService {
             provider as Map<String, dynamic>,
             isFree: true,
             requiresSubscription: false,
+            regionLink: regionLink,
           );
           if (platformAvailability != null) {
             availability.add(platformAvailability);
@@ -238,6 +246,7 @@ class RealAvailabilityService {
           final platformAvailability = _parseTmdbProvider(
             provider as Map<String, dynamic>,
             canRent: true,
+            regionLink: regionLink,
           );
           if (platformAvailability != null) {
             availability.add(platformAvailability);
@@ -252,6 +261,7 @@ class RealAvailabilityService {
           final platformAvailability = _parseTmdbProvider(
             provider as Map<String, dynamic>,
             canPurchase: true,
+            regionLink: regionLink,
           );
           if (platformAvailability != null) {
             availability.add(platformAvailability);
@@ -260,10 +270,13 @@ class RealAvailabilityService {
       }
 
       LoggerFactory.info(
-          'Parsed ${availability.length} providers from TMDB for region $region');
+        'Parsed ${availability.length} providers from TMDB for region $region',
+      );
     } catch (e, stackTrace) {
-      LoggerFactory.error('Error parsing TMDB watch providers response: $e',
-          stackTrace: stackTrace);
+      LoggerFactory.error(
+        'Error parsing TMDB watch providers response: $e',
+        stackTrace: stackTrace,
+      );
     }
 
     return availability;
@@ -276,18 +289,17 @@ class RealAvailabilityService {
     bool requiresSubscription = false,
     bool canRent = false,
     bool canPurchase = false,
+    String? regionLink,
   }) {
     try {
       final providerId = provider['provider_id'] as int?;
       final providerName = provider['provider_name'] as String?;
-      final logoPath = provider['logo_path'] as String?;
 
       if (providerId == null || providerName == null) return null;
 
       final platform = _mapTmdbProviderId(providerId, providerName);
       if (platform == null) {
-        LoggerFactory.debug(
-            'Unknown TMDB provider: $providerName (ID: $providerId)');
+        // Already logged by TmdbProviderMapper; skip without inventing data.
         return null;
       }
 
@@ -302,9 +314,7 @@ class RealAvailabilityService {
         purchasePrice: null,
         currency: 'USD',
         quality: 'HD', // Default quality
-        deepLink: logoPath != null
-            ? 'https://image.tmdb.org/t/p/original$logoPath'
-            : null,
+        deepLink: regionLink,
         audioLanguages: ['en'],
         subtitleLanguages: ['en'],
       );
@@ -314,36 +324,12 @@ class RealAvailabilityService {
     }
   }
 
-  /// Map TMDB provider ID to StreamingPlatform
+  /// Map TMDB provider ID to StreamingPlatform.
   ///
-  /// Reference: https://api.themoviedb.org/3/watch/providers/movie
+  /// Single source of truth lives in [TmdbProviderMapper]; reference:
+  /// https://api.themoviedb.org/3/watch/providers/movie
   StreamingPlatform? _mapTmdbProviderId(int providerId, String providerName) {
-    switch (providerId) {
-      case 8:
-        return StreamingPlatform.netflix;
-      case 9:
-      case 119: // Prime Video (alternate ID)
-        return StreamingPlatform.primeVideo;
-      case 337:
-        return StreamingPlatform.disneyPlus;
-      case 384:
-      case 425: // HBO Max (alternate ID)
-        return StreamingPlatform.hboMax;
-      case 15:
-        return StreamingPlatform.hulu;
-      case 350:
-        return StreamingPlatform.appleTV;
-      case 531:
-        return StreamingPlatform.paramountPlus;
-      case 387:
-        return StreamingPlatform.peacock;
-      // Note: TMDB has more providers, but we only map those defined in StreamingPlatform
-      default:
-        // Log unknown providers for future mapping
-        LoggerFactory.debug(
-            'Unmapped TMDB provider: $providerName (ID: $providerId)');
-        return null;
-    }
+    return TmdbProviderMapper.mapProvider(providerId, providerName);
   }
 
   /// Check availability using Watchmode API (fallback)
@@ -352,12 +338,15 @@ class RealAvailabilityService {
     String region,
   ) async {
     try {
-      final url = Uri.parse(
-              '${StreamingApiConfig.watchmodeBaseUrl}/title/$tmdbId/sources')
-          .replace(queryParameters: {
-        'regions': region,
-        'source_types': 'sub,free,rent,buy',
-      });
+      final url =
+          Uri.parse(
+            '${StreamingApiConfig.watchmodeBaseUrl}/title/$tmdbId/sources',
+          ).replace(
+            queryParameters: {
+              'regions': region,
+              'source_types': 'sub,free,rent,buy',
+            },
+          );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.watchmodeHeaders)
@@ -385,21 +374,23 @@ class RealAvailabilityService {
       final platform = _mapPlatformName(platformName);
 
       if (platform != null) {
-        availability.add(PlatformAvailability(
-          platform: platform,
-          isAvailable: true,
-          isFree: source['type'] == 'free',
-          requiresSubscription: source['type'] == 'sub',
-          canRent: source['type'] == 'rent',
-          canPurchase: source['type'] == 'buy',
-          rentalPrice: source['price']?.toDouble(),
-          purchasePrice: source['price']?.toDouble(),
-          currency: 'USD',
-          quality: source['format'] ?? 'HD',
-          deepLink: source['web_url'],
-          audioLanguages: ['en'],
-          subtitleLanguages: ['en'],
-        ));
+        availability.add(
+          PlatformAvailability(
+            platform: platform,
+            isAvailable: true,
+            isFree: source['type'] == 'free',
+            requiresSubscription: source['type'] == 'sub',
+            canRent: source['type'] == 'rent',
+            canPurchase: source['type'] == 'buy',
+            rentalPrice: source['price']?.toDouble(),
+            purchasePrice: source['price']?.toDouble(),
+            currency: 'USD',
+            quality: source['format'] ?? 'HD',
+            deepLink: source['web_url'],
+            audioLanguages: ['en'],
+            subtitleLanguages: ['en'],
+          ),
+        );
       }
     }
 
@@ -431,9 +422,11 @@ class RealAvailabilityService {
   /// Clean old cache entries
   void _cleanCache() {
     final now = DateTime.now();
-    _cache.removeWhere((key, value) =>
-        now.difference(value.timestamp) >
-        StreamingApiConfig.availabilityCacheExpiration);
+    _cache.removeWhere(
+      (key, value) =>
+          now.difference(value.timestamp) >
+          StreamingApiConfig.availabilityCacheExpiration,
+    );
   }
 
   /// Clear all cache

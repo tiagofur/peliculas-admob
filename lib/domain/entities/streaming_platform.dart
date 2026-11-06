@@ -159,7 +159,7 @@ class StreamingPlatform {
       'IT',
       'BR',
       'MX',
-      'AR'
+      'AR',
     ],
     requiresSubscription: true,
     subscriptionUrl: 'https://www.netflix.com/signup',
@@ -183,7 +183,7 @@ class StreamingPlatform {
       'IT',
       'BR',
       'MX',
-      'AR'
+      'AR',
     ],
     requiresSubscription: true,
     subscriptionUrl: 'https://www.amazon.com/prime',
@@ -207,7 +207,7 @@ class StreamingPlatform {
       'IT',
       'BR',
       'MX',
-      'AR'
+      'AR',
     ],
     requiresSubscription: true,
     subscriptionUrl: 'https://www.disneyplus.com/sign-up',
@@ -231,7 +231,7 @@ class StreamingPlatform {
       'IT',
       'BR',
       'MX',
-      'AR'
+      'AR',
     ],
     requiresSubscription: true,
     subscriptionUrl: 'https://www.hbomax.com/subscribe',
@@ -268,7 +268,7 @@ class StreamingPlatform {
       'IT',
       'BR',
       'MX',
-      'AR'
+      'AR',
     ],
     requiresSubscription: true,
     subscriptionUrl: 'https://tv.apple.com',
@@ -286,7 +286,19 @@ class StreamingPlatform {
     logoUrl: 'https://www.paramountplus.com/favicon.ico',
     baseUrl: 'https://www.paramountplus.com',
     deepLinkScheme: 'paramountplus',
-    supportedCountries: ['US', 'CA'],
+    supportedCountries: [
+      'US',
+      'CA',
+      'MX',
+      'BR',
+      'AR',
+      'CO',
+      'CL',
+      'ES',
+      'GB',
+      'DE',
+      'FR',
+    ],
     requiresSubscription: true,
     subscriptionUrl: 'https://www.paramountplus.com/account/signup',
   );
@@ -303,14 +315,220 @@ class StreamingPlatform {
     subscriptionUrl: 'https://www.peacocktv.com/premium',
   );
 
+  /// Google Play Movies (TMDB transactional provider).
+  static const StreamingPlatform googlePlay = StreamingPlatform(
+    id: 'google_play',
+    name: 'Google Play',
+    displayName: 'Google Play Movies',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/aZRENwYILujqs0RVOZutTh0BVGV.png',
+    baseUrl: 'https://play.google.com/store/movies',
+    deepLinkScheme: 'market',
+    supportedCountries: [
+      'US',
+      'MX',
+      'ES',
+      'AR',
+      'CO',
+      'CL',
+      'BR',
+      'GB',
+      'DE',
+      'FR',
+    ],
+    requiresSubscription: false,
+  );
+
+  /// Microsoft Store (TMDB transactional provider).
+  static const StreamingPlatform microsoftStore = StreamingPlatform(
+    id: 'microsoft_store',
+    name: 'Microsoft Store',
+    displayName: 'Microsoft Store',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/shq88b09gTBYC4hA4WnmlnBu8wd.jpg',
+    baseUrl: 'https://www.microsoft.com/store/movies-and-tv',
+    deepLinkScheme: 'ms-windows-store',
+    supportedCountries: ['US', 'MX', 'ES'],
+    requiresSubscription: false,
+  );
+
+  /// YouTube store and YouTube Premium (TMDB transactional providers).
+  static const StreamingPlatform youtube = StreamingPlatform(
+    id: 'youtube',
+    name: 'YouTube',
+    displayName: 'YouTube',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/5Maob4o5w8oZnNeYpCDyVFD3M7X.png',
+    baseUrl: 'https://www.youtube.com/movies',
+    deepLinkScheme: 'vnd.youtube',
+    supportedCountries: [
+      'US',
+      'MX',
+      'ES',
+      'AR',
+      'CO',
+      'CL',
+      'BR',
+      'GB',
+      'DE',
+      'FR',
+    ],
+    requiresSubscription: false,
+  );
+
+  /// Fandango At Home (TMDB transactional provider, US).
+  static const StreamingPlatform fandango = StreamingPlatform(
+    id: 'fandango',
+    name: 'Fandango At Home',
+    displayName: 'Fandango At Home',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/wpOt6x0dRxTrIzuBosto4LGd7E9.png',
+    baseUrl: 'https://www.fandango.com',
+    deepLinkScheme: 'fandango',
+    supportedCountries: ['US'],
+    requiresSubscription: false,
+  );
+
+  /// Rakuten TV (TMDB transactional provider).
+  static const StreamingPlatform rakutenTV = StreamingPlatform(
+    id: 'rakuten_tv',
+    name: 'Rakuten TV',
+    displayName: 'Rakuten TV',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/872dfVu1biZISJ8rO143CZZutPR.png',
+    baseUrl: 'https://www.rakuten.tv',
+    deepLinkScheme: 'rakutentv',
+    supportedCountries: ['ES', 'GB', 'DE', 'FR', 'IT'],
+    requiresSubscription: false,
+  );
+
+  /// Claro video (TMDB transactional provider, LATAM).
+  static const StreamingPlatform claroVideo = StreamingPlatform(
+    id: 'claro_video',
+    name: 'Claro video',
+    displayName: 'Claro video',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/zTJg0WVErBkcJv4S9FkQRUyXjnq.png',
+    baseUrl: 'https://www.clarovideo.com',
+    deepLinkScheme: 'clarovideo',
+    supportedCountries: ['MX', 'AR', 'CO', 'CL', 'BR'],
+    requiresSubscription: false,
+  );
+
+  /// ViX (TMDB provider, LATAM).
+  static const StreamingPlatform vix = StreamingPlatform(
+    id: 'vix',
+    name: 'ViX',
+    displayName: 'ViX',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/ieJ55scAVrvboTpeJcZa3JlLIrS.png',
+    baseUrl: 'https://www.vix.com',
+    deepLinkScheme: 'vix',
+    supportedCountries: ['MX', 'US', 'AR', 'CO', 'CL', 'BR', 'ES'],
+    requiresSubscription: false,
+  );
+
+  /// MUBI (TMDB subscription provider).
+  static const StreamingPlatform mubi = StreamingPlatform(
+    id: 'mubi',
+    name: 'MUBI',
+    displayName: 'MUBI',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/k7iSlvgWzZuO4zU5PcBjhABMuia.png',
+    baseUrl: 'https://mubi.com',
+    deepLinkScheme: 'mubi',
+    supportedCountries: ['US', 'MX', 'ES', 'GB', 'DE', 'FR', 'BR'],
+    requiresSubscription: true,
+    subscriptionUrl: 'https://mubi.com/signup',
+  );
+
+  /// Tubi TV (TMDB free provider).
+  static const StreamingPlatform tubi = StreamingPlatform(
+    id: 'tubi',
+    name: 'Tubi TV',
+    displayName: 'Tubi TV',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/9dEuvA8wg5TSeFBZlPxSVxFdimJ.png',
+    baseUrl: 'https://tubitv.com',
+    deepLinkScheme: 'tubitv',
+    supportedCountries: ['US', 'MX'],
+    requiresSubscription: false,
+  );
+
+  /// Crunchyroll (TMDB subscription provider).
+  static const StreamingPlatform crunchyroll = StreamingPlatform(
+    id: 'crunchyroll',
+    name: 'Crunchyroll',
+    displayName: 'Crunchyroll',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/uFL3c4Cq8M6WoLymlC5Y8bmGytV.png',
+    baseUrl: 'https://www.crunchyroll.com',
+    deepLinkScheme: 'crunchyroll',
+    supportedCountries: ['US', 'MX', 'ES', 'BR'],
+    requiresSubscription: true,
+    subscriptionUrl: 'https://www.crunchyroll.com/premium',
+  );
+
+  /// Pluto TV (TMDB free provider).
+  static const StreamingPlatform plutoTV = StreamingPlatform(
+    id: 'pluto_tv',
+    name: 'Pluto TV',
+    displayName: 'Pluto TV',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/fN4czqaMQNLeF6sSSIjGbAWzvwK.png',
+    baseUrl: 'https://pluto.tv',
+    deepLinkScheme: 'plutotv',
+    supportedCountries: ['US', 'MX', 'ES', 'BR'],
+    requiresSubscription: false,
+  );
+
+  /// Plex (TMDB free provider).
+  static const StreamingPlatform plex = StreamingPlatform(
+    id: 'plex',
+    name: 'Plex',
+    displayName: 'Plex',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/blAEhvx3XX8sV0fFVFk88FFjubs.png',
+    baseUrl: 'https://watch.plex.tv',
+    deepLinkScheme: 'plex',
+    supportedCountries: ['US', 'MX'],
+    requiresSubscription: false,
+  );
+
+  /// Universal+ (TMDB subscription provider, LATAM).
+  static const StreamingPlatform universalPlus = StreamingPlatform(
+    id: 'universal_plus',
+    name: 'Universal+',
+    displayName: 'Universal+',
+    logoUrl:
+        'https://image.tmdb.org/t/p/original/j3Q750FwRyIejO5MrNu25Kia57.png',
+    baseUrl: 'https://www.universalplus.com',
+    deepLinkScheme: 'universalplus',
+    supportedCountries: ['MX', 'AR', 'CO', 'CL', 'BR'],
+    requiresSubscription: true,
+  );
+
   static List<StreamingPlatform> get allPlatforms => [
-        netflix,
-        amazonPrime,
-        disneyPlus,
-        hboMax,
-        hulu,
-        appleTV,
-        paramountPlus,
-        peacock,
-      ];
+    netflix,
+    amazonPrime,
+    disneyPlus,
+    hboMax,
+    hulu,
+    appleTV,
+    paramountPlus,
+    peacock,
+    googlePlay,
+    microsoftStore,
+    youtube,
+    fandango,
+    rakutenTV,
+    claroVideo,
+    vix,
+    mubi,
+    tubi,
+    crunchyroll,
+    plutoTV,
+    plex,
+    universalPlus,
+  ];
 }
