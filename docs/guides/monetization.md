@@ -516,6 +516,22 @@ Test different ad placements:
 
 ---
 
+## Películas Pro (pago único)
+
+Compra lifetime `peliculas_pro_lifetime` que quita todos los ads forzados
+(banner/intersticial/native/grid/fullwidth, AdMob + AdSense) y desbloquea
+funciones Pro. Los rewarded quedan como opt-in voluntario.
+
+- Fuente de verdad: `UserMonetizationPreferencesService.isPro()` +
+  cache síncrono `isProCached` para widgets.
+- Compras: `PurchasesService` + `LocalPurchasesService` (offline-first);
+  el billing real se conecta implementando el contrato (ver
+  `docs/guides/pro-store-setup.md`).
+- Gates: `AdaptiveMonetizationManager`, `AdvancedAdMobService`,
+  `ControlledAdWidget`, `AdIntegrationHelper`, leaf widgets admob,
+  `AdAwareScreen`/`AdTrigger`/`ListAdInserter`, `ProFeatureGate`.
+- UI: `ProPaywallScreen` en ruta `/pro-paywall`, entrada en ajustes.
+
 ## Resources
 
 - [AdMob Documentation](https://developers.google.com/admob)

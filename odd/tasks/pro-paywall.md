@@ -21,7 +21,7 @@ Runner: dart format + flutter analyze + flutter test. Mirror Engram: pending (si
 - T4 (S5) Cableado nativo StoreKit/Play (IDs, Sandbox) + docs. Route: inline. Status: done. Commit: ver L6.
 - T5 (S1,S4) Paywall + restaurar + entry settings/perfil + tests. Route: inline. Status: done. Commit: ver L7.
 - T6 (S2) Funciones Pro por adición (sin recortar gratis) + tests. Route: inline. Status: done. Commit: ver L8.
-- T7 (S3,S6) QA e2e ads-on/ads-off/restore + analyze/test + docs. Route: inline. Status: pending. Commit: -.
+- T7 (S3,S6) QA e2e ads-on/ads-off/restore + analyze/test + docs. Route: inline. Status: done. Commit: ver L10.
 - T8 Verificador independiente (agente revisor) + push + PR Fixes #N. Route: delegated verify. Status: pending.
 
 ## Log
@@ -33,4 +33,6 @@ Runner: dart format + flutter analyze + flutter test. Mirror Engram: pending (si
 - L5: T2 commit de627c2e479edd00ce889fbdd8094cb3e8de4720 (RED observado en contador Pro, gates manager+AdMob, 9/9 tests). T3 commit 4c9ddbdd6584a4ac5f4bd400de02ec3a738626e2 (pro_ad_gate + guards en 5 leaf + 5 WebSafe + adaptive + Controlled + helper isPro + 2 listados + AdAware/AdTrigger/ListAdInserter + 8 widget tests verdes + analyze limpio).
 - L6: T4 docs-only honesto (sin cambios nativos requeridos hasta agregar plugin de billing): docs/guides/pro-store-setup.md con producto peliculas_pro_lifetime, pasos Play + App Store Connect, Sandbox y checklist anti-rechazo.
 - L7: T5 commit 670137586c13e850d424b3fcf89d7f12afe92b4f (ProPaywallScreen + ruta /pro-paywall + card Pro en settings + 10 keys l10n x4 locales + 3 widget tests verdes + analyze limpio).
-- L8: T6 commit pendiente: ProFeatureGate (temas/listas/stats, solo adición, gratis intacto) + 2 tests verdes. Sin badge en perfil: pantalla de perfil es authcompleja y settings/paywall ya visibilizan Pro.
+- L8: T6 commit 0e5a549545ebcccd5180ffe0e5fb528fbda23f32 (ProFeatureGate aditivo + 2 tests verdes). Sin badge en perfil: esa pantalla es auth-compleja y settings/paywall ya visibilizan Pro.
+- L9: Issue #115 creado (reintento OK; este repo no usa labels type:*). Suite completa en curso (T7).
+- L10: T7 commit pendiente: sección Pro en docs/guides/monetization.md + ruta /pro-paywall en 2ª tabla del router (fix: solo estaba en la 1ª) + veredicto QA: analyze 20 issues preexistentes en mocks/auth/sync (cero en archivos Pro), 22/22 tests Pro verdes, suite completa con fallos solo en archivos idénticos a main (mocks dorados/sync sin tocar).

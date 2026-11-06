@@ -930,5 +930,23 @@ final appRouter = GoRouter(
         );
       },
     ),
+
+    // Ruta del paywall de Películas Pro
+    GoRoute(
+      path: '/pro-paywall',
+      name: 'pro-paywall',
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const ProPaywallScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return CinematicPageTransitions.slideUpTransition(
+              page: child,
+              duration: const Duration(milliseconds: 500),
+            ).transitionsBuilder(context, animation, secondaryAnimation, child);
+          },
+        );
+      },
+    ),
   ],
 );
