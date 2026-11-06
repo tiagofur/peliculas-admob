@@ -54,8 +54,9 @@ class AdvancedAdMobService {
 
       // Configurar configuración de solicitudes
       final requestConfiguration = RequestConfiguration(
-        tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
-        tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
+        // App de audiencia general: sin señales de tratamiento por edad
+        // (migración v9: reemplaza tagForChildDirectedTreatment/tagForUnderAgeOfConsent en .no)
+        ageRestrictedTreatment: AgeRestrictedTreatment.unspecified,
         testDeviceIds: kDebugMode ? ['TEST_DEVICE_ID'] : null,
       );
 

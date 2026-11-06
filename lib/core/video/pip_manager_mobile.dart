@@ -195,19 +195,15 @@ class _PipVideoPlayerState extends State<_PipVideoPlayer> {
   @override
   void initState() {
     super.initState();
-    _controller = YoutubePlayerController(
-      initialVideoId: widget.youtubeId,
-      flags: const YoutubePlayerFlags(
-        autoPlay: true,
-        mute: false,
-        enableCaption: false,
-      ),
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: widget.youtubeId,
+      autoPlay: true,
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.close();
     super.dispose();
   }
 
@@ -218,8 +214,6 @@ class _PipVideoPlayerState extends State<_PipVideoPlayer> {
       body: Center(
         child: YoutubePlayer(
           controller: _controller,
-          showVideoProgressIndicator: true,
-          progressIndicatorColor: Colors.red,
         ),
       ),
     );

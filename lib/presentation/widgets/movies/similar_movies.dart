@@ -24,7 +24,7 @@ class SimilarMovies extends ConsumerWidget {
         movies: movies,
         movieId: movieId,
       ),
-      error: (_, __) =>
+      error: (_, _) =>
           const Center(child: Text('No se pudo cargar películas similares')),
       loading: () =>
           const Center(child: CircularProgressIndicator(strokeWidth: 2)),

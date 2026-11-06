@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../config/theme/custom_scroll_behavior.dart';
@@ -906,14 +907,13 @@ class _FullCastList extends StatelessWidget {
             child: ScrollConfiguration(
               behavior: CustomScrollBehavior(),
               child: ListView.builder(
+                scrollCacheExtent: const ScrollCacheExtent.pixels(500),
                 scrollDirection: Axis.horizontal,
                 physics: const AlwaysScrollableScrollPhysics(),
                 primary: false,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 itemExtent:
-                    128, // 🔴 Task 1.3: Mejora performance significativamente
-                cacheExtent:
-                    500, // 🔴 Task 1.3: Cache razonable para smooth scroll
+                    128, // 🔴 Task 1.3: Cache razonable para smooth scroll
                 itemCount: castList.length,
                 itemBuilder: (context, index) {
                   final actor = castList[index] as Map<String, dynamic>;

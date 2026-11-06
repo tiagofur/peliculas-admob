@@ -39,7 +39,7 @@ class FavoriteMoviesService extends Notifier<Map<int, Movie>> {
           }
         },
         loading: () {},
-        error: (_, __) {
+        error: (_, _) {
           // Mantener estado actual en caso de error
         },
       );

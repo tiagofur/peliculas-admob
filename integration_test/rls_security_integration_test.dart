@@ -13,7 +13,7 @@ void main() {
       await Supabase.initialize(
         url: const String.fromEnvironment('SUPABASE_URL',
             defaultValue: 'https://test.supabase.co'),
-        anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY',
+        publishableKey: const String.fromEnvironment('SUPABASE_ANON_KEY',
             defaultValue: 'test-key'),
       );
       supabase = Supabase.instance.client;

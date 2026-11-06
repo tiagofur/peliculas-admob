@@ -62,7 +62,7 @@ class AdvancedAnalyticsService {
   }) async {
     await _logEvent('screen_view', parameters: {
       'screen_name': screenName,
-      if (screenClass != null) 'screen_class': screenClass,
+      'screen_class': ?screenClass,
       ...?parameters,
     });
   }
@@ -76,9 +76,9 @@ class AdvancedAnalyticsService {
   }) async {
     await _logEvent('movie_search', parameters: {
       'search_term': searchTerm,
-      if (resultCount != null) 'result_count': resultCount,
+      'result_count': ?resultCount,
       if (filters != null) 'filters': filters.join(','),
-      if (searchType != null) 'search_type': searchType,
+      'search_type': ?searchType,
     });
   }
 
@@ -93,8 +93,8 @@ class AdvancedAnalyticsService {
     await _logEvent('movie_interaction', parameters: {
       'action': action,
       'movie_id': movieId,
-      if (movieTitle != null) 'movie_title': movieTitle,
-      if (rating != null) 'rating': rating,
+      'movie_title': ?movieTitle,
+      'rating': ?rating,
       ...?additionalData,
     });
   }
@@ -109,8 +109,8 @@ class AdvancedAnalyticsService {
     await _logEvent('social_interaction', parameters: {
       'action': action,
       'content_type': contentType,
-      if (contentId != null) 'content_id': contentId,
-      if (shareMethod != null) 'share_method': shareMethod,
+      'content_id': ?contentId,
+      'share_method': ?shareMethod,
     });
   }
 
@@ -125,8 +125,8 @@ class AdvancedAnalyticsService {
     await _logEvent('recommendation_interaction', parameters: {
       'action': action,
       'recommendation_type': recommendationType,
-      if (movieId != null) 'movie_id': movieId,
-      if (position != null) 'position': position,
+      'movie_id': ?movieId,
+      'position': ?position,
     });
   }
 
@@ -140,8 +140,8 @@ class AdvancedAnalyticsService {
     await _logEvent('ad_interaction', parameters: {
       'ad_type': adType,
       'action': action,
-      if (adContext != null) 'ad_context': adContext,
-      if (rewardAmount != null) 'reward_amount': rewardAmount,
+      'ad_context': ?adContext,
+      'reward_amount': ?rewardAmount,
     });
   }
 
@@ -155,7 +155,7 @@ class AdvancedAnalyticsService {
     await _logEvent('performance_metric', parameters: {
       'metric_name': metricName,
       'value': value,
-      if (unit != null) 'unit': unit,
+      'unit': ?unit,
       ...?context,
     });
   }
@@ -185,8 +185,8 @@ class AdvancedAnalyticsService {
   }) async {
     await _logEvent('user_engagement', parameters: {
       'action': action,
-      if (feature != null) 'feature': feature,
-      if (sessionDuration != null) 'session_duration': sessionDuration,
+      'feature': ?feature,
+      'session_duration': ?sessionDuration,
       ...?additionalData,
     });
   }
@@ -284,9 +284,9 @@ class MovieAnalytics {
       movieId: movieId,
       movieTitle: movieTitle,
       additionalData: {
-        if (genre != null) 'genre': genre,
-        if (rating != null) 'imdb_rating': rating,
-        if (source != null) 'source': source,
+        'genre': ?genre,
+        'imdb_rating': ?rating,
+        'source': ?source,
       },
     );
   }
@@ -374,7 +374,7 @@ class PerformanceAnalytics {
       unit: 'milliseconds',
       context: {
         'endpoint': endpoint,
-        if (success != null) 'success': success,
+        'success': ?success,
       },
     );
   }

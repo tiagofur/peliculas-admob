@@ -42,7 +42,7 @@ class CombinedStatsView extends ConsumerWidget {
                 topGenres: [],
                 watchingStreak: 0,
               ),
-              error: (_, __) => recommendations.BasicUserStats(
+              error: (_, _) => recommendations.BasicUserStats(
                 totalFavorites: 0,
                 totalWatched: 0,
                 totalMovies: 0,

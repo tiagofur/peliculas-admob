@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../../../core/logging/logger_factory.dart';
 
@@ -139,13 +140,15 @@ class _OptimizedListViewState<T> extends State<OptimizedListView<T>>
     }
 
     return ListView.builder(
+      scrollCacheExtent: widget.cacheExtent != null
+          ? ScrollCacheExtent.pixels(widget.cacheExtent!)
+          : null,
       controller: _controller,
       itemCount: widget.items.length + (_isLoadingMore ? 1 : 0),
       shrinkWrap: widget.shrinkWrap,
       scrollDirection: widget.scrollDirection,
       physics: widget.physics,
       addAutomaticKeepAlives: widget.addAutomaticKeepAlives,
-      cacheExtent: widget.cacheExtent,
       semanticChildCount: widget.semanticChildCount,
       dragStartBehavior: widget.dragStartBehavior,
       clipBehavior: widget.clipBehavior,
@@ -298,11 +301,13 @@ class _OptimizedGridViewState<T> extends State<OptimizedGridView<T>> {
         widget.items.length + (_isLoadingMore ? widget.crossAxisCount : 0);
 
     return GridView.builder(
+      scrollCacheExtent: widget.cacheExtent != null
+          ? ScrollCacheExtent.pixels(widget.cacheExtent!)
+          : null,
       controller: _controller,
       itemCount: totalItems,
       shrinkWrap: widget.shrinkWrap,
       physics: widget.physics,
-      cacheExtent: widget.cacheExtent,
       semanticChildCount: widget.semanticChildCount,
       dragStartBehavior: widget.dragStartBehavior,
       clipBehavior: widget.clipBehavior,

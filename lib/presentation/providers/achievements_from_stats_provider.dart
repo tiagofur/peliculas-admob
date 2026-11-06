@@ -231,7 +231,7 @@ final achievementStatsFromRealDataProvider =
       totalPoints: 0,
       completionPercentage: 0,
     ),
-    error: (_, __) => const AchievementStatsFromRealData(
+    error: (_, _) => const AchievementStatsFromRealData(
       totalAchievements: 0,
       unlockedAchievements: 0,
       lockedAchievements: 0,

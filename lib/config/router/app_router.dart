@@ -151,7 +151,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/my-library',
-                redirect: (_, __) => '/my-library/watchlist',
+                redirect: (_, _) => '/my-library/watchlist',
               ),
             ],
           ),
@@ -196,7 +196,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               GoRoute(
                 path: '/statistics',
-                redirect: (_, __) => '/statistics/overview',
+                redirect: (_, _) => '/statistics/overview',
               ),
             ],
           ),
@@ -653,7 +653,7 @@ final appRouter = GoRouter(
             ),
             GoRoute(
               path: '/my-library',
-              redirect: (_, __) => '/my-library/watchlist',
+              redirect: (_, _) => '/my-library/watchlist',
             ),
           ],
         ),
@@ -697,7 +697,7 @@ final appRouter = GoRouter(
             ),
             GoRoute(
               path: '/statistics',
-              redirect: (_, __) => '/statistics/overview',
+              redirect: (_, _) => '/statistics/overview',
             ),
           ],
         ),

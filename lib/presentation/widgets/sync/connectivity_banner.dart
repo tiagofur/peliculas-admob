@@ -135,7 +135,7 @@ class ConnectivityStatusChip extends ConsumerWidget {
     return connectivityAsync.when(
       data: (status) => _buildChip(context, status),
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 
@@ -260,7 +260,7 @@ class ConnectivityFloatingIndicator extends ConsumerWidget {
     return connectivityAsync.when(
       data: (status) => _buildFloatingIndicator(context, status),
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 

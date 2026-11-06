@@ -845,7 +845,7 @@ final listMovieCountsMapProvider = Provider<Map<String, int>>((ref) {
       return countsMap;
     },
     loading: () => {},
-    error: (_, __) => {},
+    error: (_, _) => {},
   );
 });
 

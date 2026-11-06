@@ -12,7 +12,7 @@ class SupabaseConfig {
 
     await Supabase.initialize(
       url: supabaseUrl,
-      anonKey: supabaseAnonKey,
+      publishableKey: supabaseAnonKey,
       debug: true, // Activar debug para diagnosticar problemas de cache
       // ✅ CRÍTICO: Configurar authOptions para persistir sesión
       authOptions: FlutterAuthClientOptions(

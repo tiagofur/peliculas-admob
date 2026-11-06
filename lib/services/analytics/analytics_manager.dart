@@ -88,7 +88,7 @@ class AnalyticsManager {
     await _analytics.logScreenView(
       screenName: screenName,
       parameters: {
-        if (previousScreen != null) 'previous_screen': previousScreen,
+        'previous_screen': ?previousScreen,
         ...?additionalData,
       },
     );
@@ -188,14 +188,14 @@ class AnalyticsManager {
       movieTitle: movieTitle,
       rating: rating,
       additionalData: {
-        if (isAdding != null) 'is_adding': isAdding,
+        'is_adding': ?isAdding,
       },
     );
 
     _metrics.recordEvent('movie_action', data: {
       'action': action,
       'movie_id': movieId,
-      if (isAdding != null) 'is_adding': isAdding,
+      'is_adding': ?isAdding,
     });
   }
 
@@ -260,7 +260,7 @@ class AnalyticsManager {
       errorMessage: errorMessage,
       stackTrace: stackTrace,
       context: {
-        if (screen != null) 'screen': screen,
+        'screen': ?screen,
         ...?context,
       },
     );
@@ -286,7 +286,7 @@ class AnalyticsManager {
       errorMessage: errorMessage,
       context: {
         'endpoint': endpoint,
-        if (statusCode != null) 'status_code': statusCode,
+        'status_code': ?statusCode,
         if (responseTime != null)
           'response_time_ms': responseTime.inMilliseconds,
       },
