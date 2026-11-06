@@ -95,7 +95,11 @@ class GeneralMoviesHiveDatasource extends LocalStorageDatasource {
 
   @override
   Future<void> clearExpiredCache() async {
-    await clearAllCache();
+    // Cached movies carry no TTL: there is nothing "expired" to clear.
+    // Delegating to clearAllCache() wiped 30 category boxes on every
+    // maintenance run. Use clearAllCache()/clearAll() for explicit purges.
+    LoggerFactory.info(
+        '⏭️ Skipping expired-cache cleanup for movies (no TTL)');
   }
 
   @override

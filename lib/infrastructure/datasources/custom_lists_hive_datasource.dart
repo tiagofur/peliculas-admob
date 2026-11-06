@@ -64,23 +64,34 @@ class CustomListsHiveDataSource {
     }
   }
 
-  /// Guarda múltiples listas en el cache local
+  /// Guarda múltiples listas en el cache local.
+  /// Escribe primero TODO lo nuevo y solo después elimina lo obsoleto:
+  /// si algo falla a mitad del batch, el cache anterior sigue intacto
+  /// (el clear()-primero dejaba una ventana de cache vacío/corrupto).
   Future<void> cacheLists(List<CustomList> lists) async {
     try {
       final box = await Hive.openBox<Map>(_boxName);
       final itemsBox = await Hive.openBox<List<int>>(_itemsBoxName);
 
-      // Limpiar cache existente
-      await box.clear();
-      await itemsBox.clear();
-
-      // Guardar todas las listas
+      final incomingIds = <String>{};
       for (final list in lists) {
         final listData = list.toJson();
         listData.remove('movieIds');
         await box.put(list.id, listData);
         // ignore: deprecated_member_use_from_same_package
         await itemsBox.put(list.id, list.movieIds);
+        incomingIds.add(list.id);
+      }
+
+      for (final key in box.keys.toList()) {
+        if (!incomingIds.contains(key)) {
+          await box.delete(key);
+        }
+      }
+      for (final key in itemsBox.keys.toList()) {
+        if (!incomingIds.contains(key)) {
+          await itemsBox.delete(key);
+        }
       }
 
       LoggerFactory.debug(

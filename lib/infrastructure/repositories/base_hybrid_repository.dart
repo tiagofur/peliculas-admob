@@ -110,7 +110,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
       try {
         _emitEvent(RepositoryEventType.syncStarted, 'Sync started');
 
-        final result = await _syncManager!.performFullSync();
+        final result = await _syncManager.performFullSync();
 
         _emitEvent(
           result.success
@@ -136,7 +136,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   @override
   Future<List<T>> getRemoteData() async {
     if (_syncManager != null) {
-      return await _syncManager!.getRemoteChanges();
+      return await _syncManager.getRemoteChanges();
     }
     return [];
   }
@@ -146,7 +146,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     if (_syncManager != null && items.isNotEmpty) {
       LoggerFactory.info('📤 Uploading ${items.length} $entityType items');
 
-      final result = await _syncManager!.uploadChanges(items);
+      final result = await _syncManager.uploadChanges(items);
 
       LoggerFactory.info('📤 Upload result: ${result.toString()}');
 
@@ -161,7 +161,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     if (_syncManager != null && items.isNotEmpty) {
       LoggerFactory.info('📥 Downloading ${items.length} $entityType items');
 
-      final result = await _syncManager!.downloadChanges(items);
+      final result = await _syncManager.downloadChanges(items);
 
       LoggerFactory.info('📥 Download result: ${result.toString()}');
 
@@ -177,14 +177,14 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
       LoggerFactory.info(
           '⚖️ Resolving conflicts between ${local.length} local and ${remote.length} remote $entityType items');
 
-      final conflicts = await _syncManager!.detectConflicts();
+      final conflicts = await _syncManager.detectConflicts();
 
       if (conflicts.isNotEmpty) {
         LoggerFactory.info('🔍 Found ${conflicts.length} conflicts to resolve');
 
         for (final conflict in conflicts) {
           try {
-            final resolved = await _syncManager!.resolveConflict(conflict);
+            final resolved = await _syncManager.resolveConflict(conflict);
             await updateLocal(resolved);
             LoggerFactory.debug(
                 '✅ Resolved conflict for $entityType: ${resolved.id}');
@@ -199,7 +199,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   @override
   Future<bool> hasPendingSync() async {
     if (_syncCoordinator != null) {
-      final stats = await _syncCoordinator!.getSyncStatistics();
+      final stats = await _syncCoordinator.getSyncStatistics();
       final queueStats = stats['queue'] as Map<String, dynamic>? ?? {};
       final readyCount = queueStats['ready_to_execute'] as int? ?? 0;
       return readyCount > 0;
@@ -210,7 +210,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
   @override
   Future<List<String>> getPendingSyncItems() async {
     if (_syncCoordinator != null) {
-      final stats = await _syncCoordinator!.getSyncStatistics();
+      final stats = await _syncCoordinator.getSyncStatistics();
       final queueStats = stats['queue'] as Map<String, dynamic>? ?? {};
       final pendingItems = queueStats['pending_items'] as List<dynamic>? ?? [];
       return pendingItems.cast<String>();
@@ -310,7 +310,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
         if (_syncManager != null && userId != 'anonymous_user') {
           LoggerFactory.debug(
               '🌐 Attempting to get remote data for $entityType');
-          final remoteEntities = await _syncManager!.getRemoteChanges();
+          final remoteEntities = await _syncManager.getRemoteChanges();
 
           if (remoteEntities.isNotEmpty) {
             // Actualizar datos locales con los remotos
@@ -371,7 +371,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
       if (_syncManager != null && userId != 'anonymous_user') {
         LoggerFactory.info(
             '🔄 Forcing full sync before data retrieval for $entityType');
-        await _syncManager!.performFullSync();
+        await _syncManager.performFullSync();
       }
 
       // Obtener datos actualizados
@@ -396,7 +396,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
 
     if (_syncManager != null) {
       LoggerFactory.info('🔄 Force sync requested for $entityType');
-      return await _syncManager!.performFullSync();
+      return await _syncManager.performFullSync();
     } else {
       LoggerFactory.warning('⚠️ No sync manager available for forced sync');
       return SyncResult.success(
@@ -552,7 +552,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
         return;
       }
 
-      await _syncCoordinator!.queueSyncOperation(
+      await _syncCoordinator.queueSyncOperation(
         entityType: entityType,
         entityId: entity?.id ?? entityId!,
         type: operationType,
@@ -567,10 +567,10 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
 
   /// Intenta sincronización inmediata si las condiciones son favorables
   Future<void> _tryImmediateSync() async {
-    if (_syncCoordinator != null && !_syncCoordinator!.isSyncing) {
+    if (_syncCoordinator != null && !_syncCoordinator.isSyncing) {
       try {
         // Solo intentar si no estamos ya sincronizando
-        await _syncCoordinator!.syncEntity(entityType);
+        await _syncCoordinator.syncEntity(entityType);
       } catch (e) {
         // No es crítico si falla - la operación queda en cola
         LoggerFactory.debug('ℹ️ Immediate sync failed (not critical): $e');
@@ -619,7 +619,7 @@ abstract class BaseHybridRepository<T extends SyncableEntity>
     Map<String, dynamic> syncStats = {};
     if (_syncManager != null) {
       try {
-        final stats = await _syncManager!.getSyncStatistics();
+        final stats = await _syncManager.getSyncStatistics();
         syncStats = {
           'total_entities': stats.totalEntities,
           'synced_entities': stats.syncedEntities,

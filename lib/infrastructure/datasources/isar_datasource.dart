@@ -16,52 +16,65 @@ class HiveDatasource extends LocalStorageDatasource {
   Box<Movie>? _moviesBox;
   Box<WatchlistMovie>? _watchlistBox;
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
   /// Public getter for watchlist box
   Box<WatchlistMovie>? get watchlistBox => _watchlistBox;
 
-  Future<void> _initHive() async {
+  /// Serialized init: concurrent callers (constructor + first use) share one.
+  Future<void> _initHive() {
+    _initFuture ??= _doInitHive();
+    return _initFuture!;
+  }
+
+  Future<void> _doInitHive() async {
     if (_isInitialized) return;
 
+    // initFlutter falla cuando Hive ya fue inicializado con otro path
+    // (tests) o el provider de directorios no está disponible: no es fatal,
+    // la apertura de los boxes decide.
     try {
-      // Inicializar Hive de manera compatible con Web
-      if (kIsWeb) {
-        // En Web, Hive usa IndexedDB automáticamente
-        await Hive.initFlutter();
-      } else {
-        // En plataformas nativas, usar el directorio por defecto
-        await Hive.initFlutter();
-      }
+      await Hive.initFlutter();
+    } catch (_) {
+      // Continuar: Hive.init() externo (tests) ya deja un path utilizable.
+    }
 
-      // Registrar adaptadores si no están registrados
-      ensureMovieAdaptersRegistered();
-      if (!Hive.isAdapterRegistered(100)) {
-        Hive.registerAdapter(WatchlistPriorityAdapter());
-      }
-      if (!Hive.isAdapterRegistered(101)) {
-        Hive.registerAdapter(WatchlistMovieAdapter());
-      }
+    // Registrar adaptadores si no están registrados
+    ensureMovieAdaptersRegistered();
+    if (!Hive.isAdapterRegistered(100)) {
+      Hive.registerAdapter(WatchlistPriorityAdapter());
+    }
+    if (!Hive.isAdapterRegistered(101)) {
+      Hive.registerAdapter(WatchlistMovieAdapter());
+    }
 
+    try {
       _moviesBox = await Hive.openBox<Movie>('movies');
       _watchlistBox =
           await Hive.openBox<WatchlistMovie>('isar_watchlist_cache');
       _isInitialized = true;
     } catch (e) {
       if (kDebugMode) {
-        LoggerFactory.error('Error inicializando Hive: $e');
+        LoggerFactory.error(
+            'Error abriendo boxes isar (movies): $e. Intentando reparar.');
       }
-      // En caso de error, intentar con un nombre de box diferente
+      // Boxes ilegibles (corruptos): eliminarlos y reabrirlos en limpio en
+      // lugar de bifurcar a boxes fallback que dividirían silenciosamente
+      // los datos del usuario en dos stores. Los datos se re-sincronizan.
       try {
-        _moviesBox = await Hive.openBox<Movie>('movies_fallback');
-        _watchlistBox =
-            await Hive.openBox<WatchlistMovie>('isar_watchlist_cache_fallback');
-        _isInitialized = true;
-      } catch (e2) {
-        if (kDebugMode) {
-          LoggerFactory.error('Error inicializando Hive con fallback: $e2');
-        }
-        rethrow;
+        await Hive.deleteBoxFromDisk('movies');
+      } catch (_) {
+        // Ya no existe o está bloqueado; el reopen decide.
       }
+      try {
+        await Hive.deleteBoxFromDisk('isar_watchlist_cache');
+      } catch (_) {
+        // Ya no existe o está bloqueado; el reopen decide.
+      }
+      _moviesBox = await Hive.openBox<Movie>('movies');
+      _watchlistBox =
+          await Hive.openBox<WatchlistMovie>('isar_watchlist_cache');
+      _isInitialized = true;
     }
   }
 

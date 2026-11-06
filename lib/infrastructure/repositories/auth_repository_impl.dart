@@ -35,8 +35,9 @@ class AuthRepositoryImpl implements AuthRepository {
   final ImageCompressor _imageCompressor = const ImageCompressor();
   final UuidGenerator _uuidGenerator = const UuidGenerator();
 
-  // GoogleSignIn configurado para soportar Web + Android con Supabase
-  late final GoogleSignIn _googleSignIn = _createGoogleSignIn();
+  // GoogleSignIn v7: singleton + inicialización explícita única
+  GoogleSignIn get _googleSignIn => GoogleSignIn.instance;
+  bool _googleSignInInitialized = false;
 
   StreamController<domain.User?>? _authStateController;
   StreamSubscription<AuthState>? _authSubscription;
@@ -54,12 +55,15 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  GoogleSignIn _createGoogleSignIn() {
-    const scopes = <String>[
-      'email',
-      'profile',
-      'openid',
-    ];
+  static const _googleScopes = <String>[
+    'email',
+    'profile',
+    'openid',
+  ];
+
+  /// Inicializa el singleton de GoogleSignIn exactamente una vez (v7).
+  Future<void> _ensureGoogleSignInInitialized() async {
+    if (_googleSignInInitialized) return;
 
     final webClientId = _getGoogleClientId();
 
@@ -70,17 +74,11 @@ class AuthRepositoryImpl implements AuthRepository {
           'Configura la variable en .env o dart-define.',
         );
       }
-
-      return GoogleSignIn(
-        clientId: webClientId,
-        scopes: scopes,
-      );
+      await GoogleSignIn.instance.initialize(clientId: webClientId);
+    } else {
+      await GoogleSignIn.instance.initialize(serverClientId: webClientId);
     }
-
-    return GoogleSignIn(
-      serverClientId: webClientId,
-      scopes: scopes,
-    );
+    _googleSignInInitialized = true;
   }
 
   void _initAuthStateStream() {
@@ -219,7 +217,7 @@ class AuthRepositoryImpl implements AuthRepository {
         password: password,
         data: {
           'full_name': fullName,
-          if (avatarUrl != null) 'avatar_url': avatarUrl,
+          'avatar_url': ?avatarUrl,
         },
       );
 
@@ -279,19 +277,27 @@ class AuthRepositoryImpl implements AuthRepository {
         return UserModel.fromSupabaseUser(supabaseUser);
       }
 
-      // 1. Iniciar el flujo de autenticación de Google
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-
-      if (googleUser == null) {
-        throw Exception('Autenticación de Google cancelada');
+      // 1. Iniciar el flujo de autenticación de Google (v7: authenticate)
+      await _ensureGoogleSignInInitialized();
+      late final GoogleSignInAccount googleUser;
+      try {
+        googleUser = await _googleSignIn.authenticate(
+          scopeHint: _googleScopes,
+        );
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          throw Exception('Autenticación de Google cancelada');
+        }
+        rethrow;
       }
 
-      // 2. Obtener los detalles de autenticación
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      // 2. Obtener los detalles de autenticación (v7: getter síncrono)
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-      final String? accessToken = googleAuth.accessToken;
       final String? idToken = googleAuth.idToken;
+      final String? accessToken = await googleUser.authorizationClient
+          .authorizationForScopes(_googleScopes)
+          .then((auth) => auth?.accessToken);
 
       if (idToken == null) {
         throw Exception('No se pudo obtener el idToken de Google');
@@ -399,10 +405,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<void> signOut() async {
     try {
-      // Cerrar sesión de Google si está activa
-      if (await _googleSignIn.isSignedIn()) {
-        await _googleSignIn.signOut();
-      }
+      // Cerrar sesión de Google (signOut es idempotente en v7)
+      await _ensureGoogleSignInInitialized();
+      await _googleSignIn.signOut();
 
       // Limpiar datos persistentes antes de cerrar sesión
       await _sessionManager.clearSession();
@@ -454,9 +459,9 @@ class AuthRepositoryImpl implements AuthRepository {
       final updateAttributes = UserAttributes(
         email: email,
         data: {
-          if (fullName != null) 'full_name': fullName,
-          if (fullName != null) 'display_name': fullName,
-          if (avatarUrl != null) 'avatar_url': avatarUrl,
+          'full_name': ?fullName,
+          'display_name': ?fullName,
+          'avatar_url': ?avatarUrl,
         },
       );
 
@@ -526,14 +531,13 @@ class AuthRepositoryImpl implements AuthRepository {
           'display_name': trimmedFullName,
         if (clearUsername)
           'username': null
-        else if (normalizedUsername != null)
-          'username': normalizedUsername,
+        else 'username': ?normalizedUsername,
         if (sanitizedBio != null && sanitizedBio.isNotEmpty)
           'bio': sanitizedBio,
-        if (avatarUrl != null) 'avatar_url': avatarUrl,
-        if (avatarHash != null) 'avatar_hash': avatarHash,
-        if (stats != null) 'stats': stats,
-        if (preferences != null) 'preferences': preferences,
+        'avatar_url': ?avatarUrl,
+        'avatar_hash': ?avatarHash,
+        'stats': ?stats,
+        'preferences': ?preferences,
         'updated_at': DateTime.now().toIso8601String(),
         'last_synced_at': DateTime.now().toIso8601String(),
       };
@@ -698,9 +702,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }) async {
     try {
       final updateData = {
-        if (moviesWatched != null) 'movies_watched': moviesWatched,
-        if (favoritesCount != null) 'favorites_count': favoritesCount,
-        if (listsCount != null) 'lists_count': listsCount,
+        'movies_watched': ?moviesWatched,
+        'favorites_count': ?favoritesCount,
+        'lists_count': ?listsCount,
         'last_activity': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       };
