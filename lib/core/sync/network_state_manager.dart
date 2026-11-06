@@ -331,7 +331,7 @@ class NetworkStateManager {
       await Future.delayed(const Duration(seconds: 2));
 
       try {
-        await _syncCoordinator!.performFullSync();
+        await _syncCoordinator.performFullSync();
       } catch (e) {
         LoggerFactory.error('❌ Auto-sync after reconnection failed: $e');
       }
@@ -364,7 +364,7 @@ class NetworkStateManager {
         LoggerFactory.info('⏰ Auto-sync triggered');
 
         try {
-          await _syncCoordinator!.performFullSync();
+          await _syncCoordinator.performFullSync();
         } catch (e) {
           LoggerFactory.error('❌ Auto-sync failed: $e');
         }
@@ -422,7 +422,7 @@ class NetworkStateManager {
 
     try {
       LoggerFactory.info('🔄 Manual sync requested');
-      await _syncCoordinator!.performFullSync();
+      await _syncCoordinator.performFullSync();
       return true;
     } catch (e) {
       LoggerFactory.error('❌ Manual sync failed: $e');

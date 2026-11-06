@@ -598,7 +598,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
       try {
         _emitEvent(RepositoryEventType.syncStarted, 'Optimized sync started');
 
-        final result = await _syncManager!.performFullSync();
+        final result = await _syncManager.performFullSync();
 
         // Limpiar cache después de sync exitoso
         if (result.success) {
@@ -624,7 +624,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<List<T>> getRemoteData() async {
     if (_syncManager != null) {
-      return await _syncManager!.getRemoteChanges();
+      return await _syncManager.getRemoteChanges();
     }
     return [];
   }
@@ -632,7 +632,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<void> upload(List<T> items) async {
     if (_syncManager != null && items.isNotEmpty) {
-      final result = await _syncManager!.uploadChanges(items);
+      final result = await _syncManager.uploadChanges(items);
       if (!result.success) {
         throw Exception('Upload failed: ${result.errors.join(', ')}');
       }
@@ -642,7 +642,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<void> download(List<T> items) async {
     if (_syncManager != null && items.isNotEmpty) {
-      final result = await _syncManager!.downloadChanges(items);
+      final result = await _syncManager.downloadChanges(items);
       if (!result.success) {
         throw Exception('Download failed: ${result.errors.join(', ')}');
       }
@@ -652,9 +652,9 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<void> resolveConflicts(List<T> local, List<T> remote) async {
     if (_syncManager != null) {
-      final conflicts = await _syncManager!.detectConflicts();
+      final conflicts = await _syncManager.detectConflicts();
       for (final conflict in conflicts) {
-        final resolved = await _syncManager!.resolveConflict(conflict);
+        final resolved = await _syncManager.resolveConflict(conflict);
         await updateLocal(resolved);
         _invalidateEntityCache(resolved.id);
       }
@@ -664,7 +664,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<bool> hasPendingSync() async {
     if (_syncCoordinator != null) {
-      final stats = await _syncCoordinator!.getSyncStatistics();
+      final stats = await _syncCoordinator.getSyncStatistics();
       final queueStats = stats['queue'] as Map<String, dynamic>? ?? {};
       return (queueStats['ready_to_execute'] as int? ?? 0) > 0;
     }
@@ -674,7 +674,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
   @override
   Future<List<String>> getPendingSyncItems() async {
     if (_syncCoordinator != null) {
-      final stats = await _syncCoordinator!.getSyncStatistics();
+      final stats = await _syncCoordinator.getSyncStatistics();
       final queueStats = stats['queue'] as Map<String, dynamic>? ?? {};
       final pendingItems = queueStats['pending_items'] as List<dynamic>? ?? [];
       return pendingItems.cast<String>();
@@ -701,7 +701,7 @@ abstract class OptimizedHybridRepository<T extends SyncableEntity>
         return;
       }
 
-      await _syncCoordinator!.queueSyncOperation(
+      await _syncCoordinator.queueSyncOperation(
         entityType: entityType,
         entityId: entity?.id ?? entityId!,
         type: operationType,

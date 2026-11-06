@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for handling application caching
@@ -13,6 +14,22 @@ class CacheService {
   /// Initialize the cache service
   Future<void> initialize() async {
     _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  /// Testing seam: drop the cached instance so tests can swap mock values.
+  @visibleForTesting
+  void debugResetForTesting() {
+    _prefs = null;
+  }
+
+  /// Reads a string key without throwing on non-String value types
+  /// (bool/int/double/list keys coexist in the shared store).
+  String? _readString(SharedPreferences prefs, String key) {
+    try {
+      return prefs.getString(key);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Store a value in cache with optional expiration
@@ -33,9 +50,15 @@ class CacheService {
   Future<T?> get<T>(String key) async {
     await initialize();
 
-    final cachedString = _prefs?.getString(key);
+    final prefs = _prefs;
+    if (prefs == null) return null;
+    final cachedString = _readString(prefs, key);
     if (cachedString == null) return null;
 
+    if (!_isCacheEnvelope(cachedString)) {
+      // Not our entry (foreign key or corrupted data): never delete it.
+      return null;
+    }
     try {
       final cacheData = jsonDecode(cachedString) as Map<String, dynamic>;
       final timestamp = cacheData['timestamp'] as int;
@@ -52,8 +75,6 @@ class CacheService {
 
       return cacheData['value'] as T?;
     } catch (e) {
-      // If parsing fails, remove the corrupted cache entry
-      await remove(key);
       return null;
     }
   }
@@ -64,10 +85,34 @@ class CacheService {
     return await (_prefs?.remove(key) ?? Future.value(false));
   }
 
-  /// Clear all cache
+  /// Cache envelope written by [set]: {value, timestamp, expiration}.
+  /// Anything else in SharedPreferences belongs to someone else and must
+  /// never be touched (auth tokens, settings, sync queues...).
+  bool _isCacheEnvelope(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map<String, dynamic>) return false;
+      return decoded['timestamp'] is int &&
+          decoded.containsKey('value') &&
+          decoded.containsKey('expiration');
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Clear all cache entries. Scoped to our own envelope keys: SharedPreferences
+  /// is a shared store, so a blanket `clear()` would wipe other features' data.
   Future<bool> clear() async {
     await initialize();
-    return await (_prefs?.clear() ?? Future.value(false));
+    final prefs = _prefs;
+    if (prefs == null) return false;
+    for (final key in prefs.getKeys().toList()) {
+      final raw = _readString(prefs, key);
+      if (raw != null && _isCacheEnvelope(raw)) {
+        await prefs.remove(key);
+      }
+    }
+    return true;
   }
 
   /// Check if a key exists in cache
@@ -90,8 +135,12 @@ class CacheService {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     for (final key in keys) {
-      final cachedString = _prefs?.getString(key);
-      if (cachedString == null) continue;
+      final prefs = _prefs;
+      if (prefs == null) continue;
+      final cachedString = _readString(prefs, key);
+      // Skip foreign keys and anything that is not our envelope:
+      // deleting what we cannot parse is how sync queues got wiped.
+      if (cachedString == null || !_isCacheEnvelope(cachedString)) continue;
 
       try {
         final cacheData = jsonDecode(cachedString) as Map<String, dynamic>;
@@ -105,8 +154,7 @@ class CacheService {
           }
         }
       } catch (e) {
-        // Remove corrupted entries
-        await remove(key);
+        // Envelope shape changed mid-flight: leave it, never delete blindly.
       }
     }
   }
@@ -118,8 +166,10 @@ class CacheService {
     final keys = await getAllKeys();
     int totalSize = 0;
 
+    final prefs = _prefs;
+    if (prefs == null) return 0;
     for (final key in keys) {
-      final value = _prefs?.getString(key);
+      final value = _readString(prefs, key);
       if (value != null) {
         totalSize += value.length;
       }
