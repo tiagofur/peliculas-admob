@@ -22,6 +22,9 @@ class MoviesSlideshow extends StatelessWidget {
         viewportFraction: 0.8,
         scale: 0.9,
         autoplay: true,
+        // card_swiper 3.0.1 simula el loop con 2e9 items y rompe la
+        // assertion de precisión de scroll en Flutter actual.
+        loop: false,
         pagination: SwiperPagination(
             margin: const EdgeInsets.only(top: 0),
             builder: DotSwiperPaginationBuilder(

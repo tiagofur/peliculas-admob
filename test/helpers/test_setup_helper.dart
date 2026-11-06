@@ -77,7 +77,7 @@ class TestSetupHelper {
     try {
       await Supabase.initialize(
         url: 'https://mock-supabase-url.supabase.co',
-        anonKey: 'mock-anon-key-for-testing-purposes-only-not-real',
+        publishableKey: 'mock-anon-key-for-testing-purposes-only-not-real',
         debug: false,
       );
       _supabaseInitialized = true;
@@ -99,7 +99,7 @@ class TestSetupHelper {
       _supabaseInitialized = false;
       await Supabase.initialize(
         url: 'https://mock-supabase-url.supabase.co',
-        anonKey: 'mock-anon-key-for-testing-purposes-only-not-real',
+        publishableKey: 'mock-anon-key-for-testing-purposes-only-not-real',
         debug: false,
       );
       _supabaseInitialized = true;

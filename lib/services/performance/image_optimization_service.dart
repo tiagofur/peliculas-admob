@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import 'advanced_cache_manager.dart';
 
@@ -87,12 +88,11 @@ class ImageOptimizationService {
     bool shrinkWrap = false,
   }) {
     return ListView.builder(
+      scrollCacheExtent: const ScrollCacheExtent.pixels(1000.0),
       controller: scrollController,
       padding: padding,
       shrinkWrap: shrinkWrap,
-      itemCount: itemCount,
-      // Configuración de optimización
-      cacheExtent: 1000.0, // Pre-cache items fuera de la vista
+      itemCount: itemCount, // Pre-cache items fuera de la vista
       physics: const BouncingScrollPhysics(), // Suavizar scroll
       itemBuilder: (context, index) {
         // Wrapper para lazy loading
@@ -114,6 +114,7 @@ class ImageOptimizationService {
     ScrollController? scrollController,
   }) {
     return GridView.builder(
+      scrollCacheExtent: const ScrollCacheExtent.pixels(1500.0),
       controller: scrollController,
       padding: padding,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -122,8 +123,7 @@ class ImageOptimizationService {
         crossAxisSpacing: 8.0,
         mainAxisSpacing: 8.0,
       ),
-      itemCount: itemCount,
-      cacheExtent: 1500.0, // Más cache para grids
+      itemCount: itemCount, // Más cache para grids
       physics: const BouncingScrollPhysics(),
       itemBuilder: (context, index) {
         return _LazyLoadWrapper(

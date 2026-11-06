@@ -45,19 +45,11 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
 
     // Configurar controlador de YouTube solo en plataformas no web
     if (!kIsWeb) {
-      _controller = YoutubePlayerController(
-        initialVideoId: widget.youtubeId,
-        flags: const YoutubePlayerFlags(
-          hideThumbnail: false,
-          showLiveFullscreenButton: true,
-          mute: false,
-          autoPlay: true,
-          disableDragSeek: false,
-          loop: false,
-          isLive: false,
-          forceHD: true,
-          enableCaption: true,
-          controlsVisibleAtStart: true,
+      _controller = YoutubePlayerController.fromVideoId(
+        videoId: widget.youtubeId,
+        autoPlay: true,
+        params: const YoutubePlayerParams(
+          showFullscreenButton: true,
         ),
       );
     }
@@ -151,7 +143,7 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
   void dispose() {
     _exitCinemaMode();
     if (!kIsWeb && _controller != null) {
-      _controller!.dispose();
+      _controller!.close();
     }
     _fadeController.dispose();
     _slideController.dispose();
@@ -175,12 +167,6 @@ class _CinemaModeState extends State<CinemaMode> with TickerProviderStateMixin {
                     : _controller != null
                         ? YoutubePlayer(
                             controller: _controller!,
-                            showVideoProgressIndicator: true,
-                            progressIndicatorColor: Colors.red,
-                            progressColors: const ProgressBarColors(
-                              playedColor: Colors.red,
-                              handleColor: Colors.redAccent,
-                            ),
                           )
                         : const SizedBox(),
               ),

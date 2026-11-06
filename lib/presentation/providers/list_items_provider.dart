@@ -32,7 +32,7 @@ final listMovieCountProvider = Provider.family<int, String>((ref, listId) {
   return ref.watch(listItemsProvider(listId)).when(
         data: (items) => items.length,
         loading: () => 0,
-        error: (_, __) => 0,
+        error: (_, _) => 0,
       );
 });
 
@@ -43,7 +43,7 @@ final isMovieInListProvider =
   return ref.watch(listItemsProvider(params.listId)).when(
         data: (items) => items.any((item) => item.movieId == params.movieId),
         loading: () => false,
-        error: (_, __) => false,
+        error: (_, _) => false,
       );
 });
 
@@ -90,7 +90,7 @@ final listItemByIdProvider =
             orElse: () => throw StateError('Item not found'),
           ),
           loading: () => null,
-          error: (_, __) => null,
+          error: (_, _) => null,
         );
   },
 );
