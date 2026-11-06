@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:http/http.dart' as http;
 
@@ -18,9 +17,9 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     http.Client? httpClient,
     required AnalyticsService analytics,
     required RealAvailabilityService availabilityService,
-  })  : _httpClient = httpClient ?? http.Client(),
-        _analytics = analytics,
-        _availabilityService = availabilityService {
+  }) : _httpClient = httpClient ?? http.Client(),
+       _analytics = analytics,
+       _availabilityService = availabilityService {
     _baseUrl = StreamingApiConfig.hboMaxBaseUrl;
   }
 
@@ -41,21 +40,23 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     try {
       // Checking HBO Max availability for movie
 
-      // Try RealAvailabilityService first
+      // TMDB watch providers is the only availability source: keep only
+      // this platform's entry instead of the first of any platform.
       final availabilityList = await _availabilityService.checkAvailability(
         movieId,
         region: region,
       );
 
-      if (availabilityList.isNotEmpty) {
-        final realAvailability = availabilityList.first;
-        _analytics.trackEvent(AnalyticsEventType.userEngagement, {
-          'movie_id': movieId,
-          'region': region,
-          'available': realAvailability.isAvailable,
-          'api_used': 'real_availability_service',
-        });
-        return realAvailability;
+      for (final availability in availabilityList) {
+        if (availability.platform.id == StreamingPlatform.hboMax.id) {
+          _analytics.trackEvent(AnalyticsEventType.userEngagement, {
+            'movie_id': movieId,
+            'region': region,
+            'available': availability.isAvailable,
+            'api_used': 'tmdb_watch_providers',
+          });
+          return availability;
+        }
       }
 
       // Try direct HBO Max API if configured
@@ -76,20 +77,16 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
-      final simulatedAvailability = await _simulateHboMaxAvailability(
-        tmdbId: movieId,
-        region: region,
-      );
-
+      // No simulated fallback: TMDB is the only source, so absence
+      // of data means "not available", not "invent availability".
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'movie_id': movieId,
         'region': region,
-        'available': simulatedAvailability?.isAvailable ?? false,
-        'api_used': 'simulation',
+        'available': false,
+        'api_used': 'tmdb_watch_providers',
       });
 
-      return simulatedAvailability;
+      return null;
     } catch (e) {
       // Error checking HBO Max availability
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
@@ -128,20 +125,15 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
-      final simulatedResults = await _simulateHboMaxSearch(
-        query: query,
-        region: region,
-        limit: limit,
-      );
-
+      // No catalog source without a configured API: return empty
+      // instead of invented titles.
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'query': query,
-        'results_count': simulatedResults.length,
-        'api_used': 'simulation',
+        'results_count': 0,
+        'api_used': 'none',
       });
 
-      return simulatedResults;
+      return [];
     } catch (e) {
       // Error searching HBO Max content
       return [];
@@ -172,18 +164,14 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
-      final simulatedResults = await _simulateHboMaxTrending(
-        region: region,
-        limit: limit,
-      );
-
+      // No catalog source without a configured API: return empty
+      // instead of invented titles.
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
-        'results_count': simulatedResults.length,
-        'api_used': 'simulation',
+        'results_count': 0,
+        'api_used': 'none',
       });
 
-      return simulatedResults;
+      return [];
     } catch (e) {
       // Error getting HBO Max trending content
       return [];
@@ -192,17 +180,15 @@ class HboMaxService implements StreamingPlatformServiceInterface {
 
   /// Generate deep link for HBO Max content
   @override
-  String generateDeepLink({
-    required String movieId,
-    String? tmdbId,
-  }) {
+  String generateDeepLink({required String movieId, String? tmdbId}) {
     return 'https://play.hbomax.com/feature/urn:hbo:feature:$movieId';
   }
 
   /// Get available subscription plans
   @override
-  Future<List<SubscriptionPlan>> getSubscriptionPlans(
-      {String region = 'US'}) async {
+  Future<List<SubscriptionPlan>> getSubscriptionPlans({
+    String region = 'US',
+  }) async {
     return [
       const SubscriptionPlan(
         id: 'hbo_max_monthly',
@@ -243,11 +229,9 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     required String region,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/content/$tmdbId/availability')
-          .replace(queryParameters: {
-        'region': region,
-        'include_details': 'true',
-      });
+      final url = Uri.parse(
+        '$_baseUrl/content/$tmdbId/availability',
+      ).replace(queryParameters: {'region': region, 'include_details': 'true'});
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.hboMaxHeaders)
@@ -275,12 +259,14 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/search').replace(queryParameters: {
-        'q': query,
-        'region': region,
-        'limit': limit.toString(),
-        'content_type': 'movie',
-      });
+      final url = Uri.parse('$_baseUrl/search').replace(
+        queryParameters: {
+          'q': query,
+          'region': region,
+          'limit': limit.toString(),
+          'content_type': 'movie',
+        },
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.hboMaxHeaders)
@@ -305,12 +291,14 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/trending').replace(queryParameters: {
-        'region': region,
-        'limit': limit.toString(),
-        'content_type': 'movie',
-        'category': 'popular',
-      });
+      final url = Uri.parse('$_baseUrl/trending').replace(
+        queryParameters: {
+          'region': region,
+          'limit': limit.toString(),
+          'content_type': 'movie',
+          'category': 'popular',
+        },
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.hboMaxHeaders)
@@ -331,7 +319,9 @@ class HboMaxService implements StreamingPlatformServiceInterface {
 
   /// Parse HBO Max availability response
   PlatformAvailability _parseHboMaxAvailability(
-      Map<String, dynamic> data, String tmdbId) {
+    Map<String, dynamic> data,
+    String tmdbId,
+  ) {
     final availability = data['availability'] as Map<String, dynamic>? ?? {};
     final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
 
@@ -345,10 +335,12 @@ class HboMaxService implements StreamingPlatformServiceInterface {
       currency: 'USD',
       quality: metadata['video_quality'] as String? ?? '4K Dolby Vision',
       deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages:
-          List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
-      subtitleLanguages:
-          List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+      audioLanguages: List<String>.from(
+        metadata['audio_languages'] as List? ?? ['en'],
+      ),
+      subtitleLanguages: List<String>.from(
+        metadata['subtitle_languages'] as List? ?? ['en'],
+      ),
     );
   }
 
@@ -364,7 +356,7 @@ class HboMaxService implements StreamingPlatformServiceInterface {
         backdropPath: movie['backdrop_path'] as String? ?? '',
         releaseDate: movie['release_date'] != null
             ? DateTime.tryParse(movie['release_date'] as String) ??
-                DateTime.now()
+                  DateTime.now()
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,
@@ -378,114 +370,8 @@ class HboMaxService implements StreamingPlatformServiceInterface {
     }).toList();
   }
 
-  // Simulation methods (fallback when real APIs are not available)
-  Future<PlatformAvailability?> _simulateHboMaxAvailability({
-    required String tmdbId,
-    required String region,
-  }) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    // Simulate availability based on movie ID
-    final isAvailable =
-        int.parse(tmdbId.replaceAll(RegExp(r'[^0-9]'), '')) % 4 == 0;
-
-    if (!isAvailable) return null;
-
-    return PlatformAvailability(
-      platform: StreamingPlatform.hboMax,
-      isAvailable: true,
-      isFree: false,
-      requiresSubscription: true,
-      canRent: false,
-      canPurchase: false,
-      currency: 'USD',
-      quality: '4K Dolby Vision',
-      deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages: ['en', 'es', 'fr', 'de', 'pt'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de', 'pt', 'it'],
-    );
-  }
-
-  Future<List<Movie>> _simulateHboMaxSearch({
-    required String query,
-    required String region,
-    required int limit,
-  }) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    // Generate simulated search results
-    final random = math.Random();
-    final resultCount = random.nextInt(limit) + 1;
-
-    return List.generate(resultCount, (index) {
-      final movieId = (random.nextInt(900000) + 100000).toString();
-      final month = (index % 12 + 1).toString().padLeft(2, '0');
-      return Movie(
-        id: int.parse(movieId),
-        title: 'HBO Max Movie ${index + 1} - $query',
-        overview: 'Simulated HBO Max movie matching "$query" search query.',
-        posterPath: '/simulated_poster_$movieId.jpg',
-        backdropPath: '/simulated_backdrop_$movieId.jpg',
-        releaseDate: DateTime.parse('2023-$month-15'),
-        voteAverage: 6.0 + (random.nextDouble() * 3.0),
-        voteCount: random.nextInt(5000) + 100,
-        genreIds: [28, 12, 878], // Action, Adventure, Sci-Fi
-        adult: false,
-        originalLanguage: 'en',
-        originalTitle: 'HBO Max Movie ${index + 1} - $query',
-        popularity: random.nextDouble() * 100,
-        video: false,
-      );
-    });
-  }
-
-  Future<List<Movie>> _simulateHboMaxTrending({
-    required String region,
-    required int limit,
-  }) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // Generate simulated trending content
-    final random = math.Random();
-    final trendingTitles = [
-      'Game of Thrones: The Movie',
-      'Succession: Origins',
-      'The Last of Us: Prequel',
-      'Euphoria: The Beginning',
-      'True Detective: Case Zero',
-      'Westworld: Genesis',
-      'The White Lotus: Paradise',
-      'Mare of Easttown: Before',
-      'Chernobyl: Aftermath',
-      'Band of Brothers: Reunion',
-    ];
-
-    final resultCount = math.min(limit, trendingTitles.length);
-    return List.generate(resultCount, (index) {
-      final movieId = (random.nextInt(900000) + 100000).toString();
-      final month = (index % 12 + 1).toString().padLeft(2, '0');
-      return Movie(
-        id: int.parse(movieId),
-        title: trendingTitles[index],
-        overview:
-            'Trending HBO Max exclusive content with premium production values.',
-        posterPath: '/trending_hbo_$movieId.jpg',
-        backdropPath: '/trending_hbo_backdrop_$movieId.jpg',
-        releaseDate: DateTime.parse('2023-$month-01'),
-        voteAverage: 7.5 + (random.nextDouble() * 2.0),
-        voteCount: random.nextInt(10000) + 1000,
-        genreIds: [18, 80, 9648], // Drama, Crime, Mystery
-        adult: false,
-        originalLanguage: 'en',
-        originalTitle: trendingTitles[index],
-        popularity: 90.0 + (random.nextDouble() * 10.0),
-        video: false,
-      );
-    });
-  }
+  // No simulated fallbacks: TMDB watch providers is the only source,
+  // so catalog search and trending return empty without a configured API.
 
   @override
   void dispose() {

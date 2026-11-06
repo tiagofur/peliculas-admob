@@ -9,6 +9,7 @@ import '../../infrastructure/repositories/tmdb_watch_providers_repository.dart';
 import '../analytics/analytics_service.dart';
 import '../cache/cache_service.dart';
 import '../logging/logger_factory.dart';
+import 'tmdb_provider_mapper.dart';
 
 /// Service for checking movie availability across streaming platforms
 class AvailabilityChecker {
@@ -16,11 +17,13 @@ class AvailabilityChecker {
     AnalyticsService? analyticsService,
     CacheService? cacheService,
     TmdbWatchProvidersRepository? tmdbRepository,
-  })  : _analyticsService = analyticsService ?? AnalyticsService(),
-        _cacheService = cacheService ?? CacheService.instance,
-        _tmdbRepository = tmdbRepository ??
-            TmdbWatchProvidersRepository(
-                cacheService: cacheService ?? CacheService.instance);
+  }) : _analyticsService = analyticsService ?? AnalyticsService(),
+       _cacheService = cacheService ?? CacheService.instance,
+       _tmdbRepository =
+           tmdbRepository ??
+           TmdbWatchProvidersRepository(
+             cacheService: cacheService ?? CacheService.instance,
+           );
   final AnalyticsService _analyticsService;
   final CacheService _cacheService;
   final TmdbWatchProvidersRepository _tmdbRepository;
@@ -67,11 +70,13 @@ class AvailabilityChecker {
 
     try {
       LoggerFactory.info(
-          'Checking availability for movie: $movieTitle ($movieId)');
+        'Checking availability for movie: $movieTitle ($movieId)',
+      );
 
       // Get real TMDB Watch Providers data instead of mock data
       LoggerFactory.info(
-          'Fetching real TMDB watch providers data for movie $movieId');
+        'Fetching real TMDB watch providers data for movie $movieId',
+      );
 
       final List<PlatformAvailability> availabilities = [];
 
@@ -84,21 +89,21 @@ class AvailabilityChecker {
         if (watchProviders != null) {
           // Convert TMDB WatchProviders to PlatformAvailability objects
           availabilities.addAll(
-              await _convertWatchProvidersToPlatformAvailability(
-                  watchProviders));
+            await _convertWatchProvidersToPlatformAvailability(watchProviders),
+          );
 
           LoggerFactory.info(
-              'Successfully fetched ${availabilities.length} platform availabilities from TMDB');
+            'Successfully fetched ${availabilities.length} platform availabilities from TMDB',
+          );
         } else {
           LoggerFactory.info(
-              'No watch providers found for movie $movieId in region $region');
+            'No watch providers found for movie $movieId in region $region',
+          );
         }
       } catch (e) {
         LoggerFactory.error('Error fetching TMDB watch providers: $e');
-        // Fallback to mock data if TMDB fails
-        LoggerFactory.info('Falling back to mock data due to TMDB error');
-        availabilities.addAll(
-            await _getMockPlatformAvailabilities(movieId, movieTitle, region));
+        // TMDB is the only source: on error keep whatever was fetched
+        // (possibly empty) instead of showing invented platforms.
       }
 
       final streamingAvailability = StreamingAvailability(
@@ -117,35 +122,30 @@ class AvailabilityChecker {
           expiration: _cacheDuration,
         );
         LoggerFactory.info(
-            'Cached availability for movie: $movieTitle ($movieId)');
+          'Cached availability for movie: $movieTitle ($movieId)',
+        );
       } catch (e) {
         LoggerFactory.warning('Error writing to cache: $e');
       }
 
-      _analyticsService.trackEvent(
-        AnalyticsEventType.movieView,
-        {
-          'movie_id': movieId,
-          'movie_title': movieTitle,
-          'region': region,
-          'platforms_found': availabilities.length,
-          'available_platforms': availabilities
-              .where((a) => a.isAvailable)
-              .map((a) => a.platform.id)
-              .toList(),
-        },
-      );
+      _analyticsService.trackEvent(AnalyticsEventType.movieView, {
+        'movie_id': movieId,
+        'movie_title': movieTitle,
+        'region': region,
+        'platforms_found': availabilities.length,
+        'available_platforms': availabilities
+            .where((a) => a.isAvailable)
+            .map((a) => a.platform.id)
+            .toList(),
+      });
 
       return streamingAvailability;
     } catch (e) {
       LoggerFactory.error('Error checking movie availability: $e');
-      _analyticsService.trackEvent(
-        AnalyticsEventType.error,
-        {
-          'movie_id': movieId,
-          'error': e.toString(),
-        },
-      );
+      _analyticsService.trackEvent(AnalyticsEventType.error, {
+        'movie_id': movieId,
+        'error': e.toString(),
+      });
       return null;
     }
   }
@@ -166,13 +166,15 @@ class AvailabilityChecker {
       for (int i = 0; i < movies.length; i += batchSize) {
         final batch = movies.skip(i).take(batchSize).toList();
 
-        final batchFutures = batch.map((movie) => checkMovieAvailability(
-              movieId: movie.id.toString(),
-              movieTitle: movie.title,
-              tmdbId: movie.id.toString(),
-              region: region,
-              useCache: useCache,
-            ));
+        final batchFutures = batch.map(
+          (movie) => checkMovieAvailability(
+            movieId: movie.id.toString(),
+            movieTitle: movie.title,
+            tmdbId: movie.id.toString(),
+            region: region,
+            useCache: useCache,
+          ),
+        );
 
         final batchResults = await Future.wait(batchFutures);
         results.addAll(batchResults.whereType<StreamingAvailability>());
@@ -183,14 +185,11 @@ class AvailabilityChecker {
         }
       }
 
-      _analyticsService.trackEvent(
-        AnalyticsEventType.movieView,
-        {
-          'movies_count': movies.length,
-          'results_count': results.length,
-          'region': region,
-        },
-      );
+      _analyticsService.trackEvent(AnalyticsEventType.movieView, {
+        'movies_count': movies.length,
+        'results_count': results.length,
+        'region': region,
+      });
 
       return results;
     } catch (e) {
@@ -201,160 +200,130 @@ class AvailabilityChecker {
 
   /// Convert TMDB WatchProviders to PlatformAvailability objects
   Future<List<PlatformAvailability>>
-      _convertWatchProvidersToPlatformAvailability(
+  _convertWatchProvidersToPlatformAvailability(
     WatchProviders watchProviders,
   ) async {
     final List<PlatformAvailability> availabilities = [];
 
     // Process streaming (flatrate) providers - included in subscription
     for (final provider in watchProviders.flatrate) {
-      final platform =
-          _mapProviderToPlatform(provider.providerId, provider.providerName);
+      final platform = _mapProviderToPlatform(
+        provider.providerId,
+        provider.providerName,
+      );
       if (platform != null) {
-        availabilities.add(PlatformAvailability(
-          platform: platform,
-          isAvailable: true,
-          isFree: false,
-          requiresSubscription: true,
-          canRent: false,
-          canPurchase: false,
-          quality: 'HD', // TMDB doesn't provide quality info
-          deepLink:
-              _buildPlatformDeepLink(platform, provider.providerId.toString()),
-          audioLanguages: ['en', 'es'],
-          subtitleLanguages: ['en', 'es'],
-          metadata: {
-            'provider_id': provider.providerId,
-            'provider_name': provider.providerName,
-            'logo_path': provider.logoPath,
-            'display_priority': provider.displayPriority,
-            'type': 'subscription',
-          },
-        ));
+        availabilities.add(
+          PlatformAvailability(
+            platform: platform,
+            isAvailable: true,
+            isFree: false,
+            requiresSubscription: true,
+            canRent: false,
+            canPurchase: false,
+            quality: 'HD', // TMDB doesn't provide quality info
+            deepLink: _buildPlatformDeepLink(
+              platform,
+              provider.providerId.toString(),
+            ),
+            audioLanguages: ['en', 'es'],
+            subtitleLanguages: ['en', 'es'],
+            metadata: {
+              'provider_id': provider.providerId,
+              'provider_name': provider.providerName,
+              'logo_path': provider.logoPath,
+              'display_priority': provider.displayPriority,
+              'type': 'subscription',
+            },
+          ),
+        );
       }
     }
 
     // Process rental providers
     for (final provider in watchProviders.rent) {
-      final platform =
-          _mapProviderToPlatform(provider.providerId, provider.providerName);
+      final platform = _mapProviderToPlatform(
+        provider.providerId,
+        provider.providerName,
+      );
       if (platform != null) {
-        availabilities.add(PlatformAvailability(
-          platform: platform,
-          isAvailable: true,
-          isFree: false,
-          requiresSubscription: false,
-          canRent: true,
-          canPurchase: false,
-          rentalPrice: 3.99, // TMDB doesn't provide pricing, use default
-          currency: 'USD',
-          quality: 'HD',
-          deepLink:
-              _buildPlatformDeepLink(platform, provider.providerId.toString()),
-          audioLanguages: ['en', 'es'],
-          subtitleLanguages: ['en', 'es'],
-          metadata: {
-            'provider_id': provider.providerId,
-            'provider_name': provider.providerName,
-            'logo_path': provider.logoPath,
-            'display_priority': provider.displayPriority,
-            'type': 'rent',
-          },
-        ));
+        availabilities.add(
+          PlatformAvailability(
+            platform: platform,
+            isAvailable: true,
+            isFree: false,
+            requiresSubscription: false,
+            canRent: true,
+            canPurchase: false,
+            rentalPrice: 3.99, // TMDB doesn't provide pricing, use default
+            currency: 'USD',
+            quality: 'HD',
+            deepLink: _buildPlatformDeepLink(
+              platform,
+              provider.providerId.toString(),
+            ),
+            audioLanguages: ['en', 'es'],
+            subtitleLanguages: ['en', 'es'],
+            metadata: {
+              'provider_id': provider.providerId,
+              'provider_name': provider.providerName,
+              'logo_path': provider.logoPath,
+              'display_priority': provider.displayPriority,
+              'type': 'rent',
+            },
+          ),
+        );
       }
     }
 
     // Process purchase providers
     for (final provider in watchProviders.buy) {
-      final platform =
-          _mapProviderToPlatform(provider.providerId, provider.providerName);
+      final platform = _mapProviderToPlatform(
+        provider.providerId,
+        provider.providerName,
+      );
       if (platform != null) {
-        availabilities.add(PlatformAvailability(
-          platform: platform,
-          isAvailable: true,
-          isFree: false,
-          requiresSubscription: false,
-          canRent: false,
-          canPurchase: true,
-          purchasePrice: 12.99, // TMDB doesn't provide pricing, use default
-          currency: 'USD',
-          quality: 'HD',
-          deepLink:
-              _buildPlatformDeepLink(platform, provider.providerId.toString()),
-          audioLanguages: ['en', 'es'],
-          subtitleLanguages: ['en', 'es'],
-          metadata: {
-            'provider_id': provider.providerId,
-            'provider_name': provider.providerName,
-            'logo_path': provider.logoPath,
-            'display_priority': provider.displayPriority,
-            'type': 'buy',
-          },
-        ));
+        availabilities.add(
+          PlatformAvailability(
+            platform: platform,
+            isAvailable: true,
+            isFree: false,
+            requiresSubscription: false,
+            canRent: false,
+            canPurchase: true,
+            purchasePrice: 12.99, // TMDB doesn't provide pricing, use default
+            currency: 'USD',
+            quality: 'HD',
+            deepLink: _buildPlatformDeepLink(
+              platform,
+              provider.providerId.toString(),
+            ),
+            audioLanguages: ['en', 'es'],
+            subtitleLanguages: ['en', 'es'],
+            metadata: {
+              'provider_id': provider.providerId,
+              'provider_name': provider.providerName,
+              'logo_path': provider.logoPath,
+              'display_priority': provider.displayPriority,
+              'type': 'buy',
+            },
+          ),
+        );
       }
     }
 
     return availabilities;
   }
 
-  /// Map TMDB provider ID to StreamingPlatform
+  /// Map TMDB provider ID to StreamingPlatform.
+  ///
+  /// Single source of truth lives in [TmdbProviderMapper]: unknown IDs
+  /// resolve to null and are skipped, never replaced with generic
+  /// platforms pointing at placeholder URLs.
   StreamingPlatform? _mapProviderToPlatform(
-      int providerId, String providerName) {
-    // Common provider IDs from TMDB
-    switch (providerId) {
-      case 8: // Netflix
-        return StreamingPlatform.netflix;
-      case 9: // Amazon Prime Video
-        return StreamingPlatform.amazonPrime;
-      case 337: // Disney Plus
-        return StreamingPlatform.disneyPlus;
-      case 384: // HBO Max
-        return StreamingPlatform.hboMax;
-      case 15: // Hulu
-        return StreamingPlatform.hulu;
-      case 350: // Apple TV
-        return StreamingPlatform.appleTV;
-      case 2: // Apple iTunes
-        return StreamingPlatform.appleTV;
-      case 3: // Google Play Movies
-        return const StreamingPlatform(
-          id: 'google_play',
-          name: 'Google Play',
-          displayName: 'Google Play Movies',
-          logoUrl:
-              'https://image.tmdb.org/t/p/original/tbEdFQDwx5LEVr8WpSeXQSIirVq.jpg',
-          baseUrl: 'https://play.google.com/store/movies',
-          deepLinkScheme: 'market',
-          requiresSubscription: false,
-          supportedCountries: ['US', 'MX', 'ES', 'AR', 'CO', 'CL'],
-        );
-      case 68: // Microsoft Store
-        return const StreamingPlatform(
-          id: 'microsoft_store',
-          name: 'Microsoft Store',
-          displayName: 'Microsoft Store',
-          logoUrl:
-              'https://image.tmdb.org/t/p/original/shq88b09gTBYC4hA4WnmlnBu8wd.jpg',
-          baseUrl: 'https://www.microsoft.com/store/movies-and-tv',
-          deepLinkScheme: 'ms-windows-store',
-          requiresSubscription: false,
-          supportedCountries: ['US', 'MX', 'ES'],
-        );
-      case 10: // Amazon Video (different from Prime)
-        return StreamingPlatform.amazonPrime;
-      default:
-        // Create a generic platform for unknown providers
-        return StreamingPlatform(
-          id: 'provider_$providerId',
-          name: providerName,
-          displayName: providerName,
-          logoUrl: 'https://image.tmdb.org/t/p/original/provider_logo.jpg',
-          baseUrl: 'https://provider.com',
-          deepLinkScheme: 'provider',
-          requiresSubscription: false,
-          supportedCountries: ['US', 'MX'],
-        );
-    }
+    int providerId,
+    String providerName,
+  ) {
+    return TmdbProviderMapper.mapProvider(providerId, providerName);
   }
 
   /// Build deep link for platform
@@ -373,50 +342,9 @@ class AvailabilityChecker {
       case 'apple_tv':
         return 'videos://movie/$providerId';
       default:
-        return '${platform.deepLinkScheme}://content/$providerId';
+        // No invented deep-link scheme: fall back to the platform website.
+        return platform.websiteUrl;
     }
-  }
-
-  /// Fallback method for mock data (in case TMDB fails)
-  Future<List<PlatformAvailability>> _getMockPlatformAvailabilities(
-    String movieId,
-    String movieTitle,
-    String region,
-  ) async {
-    LoggerFactory.warning('Using fallback mock data for movie $movieId');
-
-    final platforms = [
-      StreamingPlatform.netflix,
-      StreamingPlatform.amazonPrime,
-      StreamingPlatform.disneyPlus,
-    ];
-
-    final List<PlatformAvailability> availabilities = [];
-
-    for (final platform in platforms) {
-      if (_simulateAvailability()) {
-        availabilities.add(PlatformAvailability(
-          platform: platform,
-          isAvailable: true,
-          isFree: false,
-          requiresSubscription: true,
-          canRent: false,
-          canPurchase: false,
-          quality: 'HD',
-          deepLink: _buildPlatformDeepLink(platform, movieId),
-          audioLanguages: ['en', 'es'],
-          subtitleLanguages: ['en', 'es'],
-          metadata: {'source': 'mock_fallback'},
-        ));
-      }
-    }
-
-    return availabilities;
-  }
-
-  /// Simulate availability for demo purposes (kept for fallback)
-  bool _simulateAvailability({double probability = 0.4}) {
-    return DateTime.now().millisecondsSinceEpoch % 100 < (probability * 100);
   }
 
   /// Clear availability cache

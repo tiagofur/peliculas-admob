@@ -17,9 +17,9 @@ class NetflixService implements StreamingPlatformServiceInterface {
     http.Client? httpClient,
     required AnalyticsService analytics,
     required RealAvailabilityService availabilityService,
-  })  : _httpClient = httpClient ?? http.Client(),
-        _analytics = analytics,
-        _availabilityService = availabilityService;
+  }) : _httpClient = httpClient ?? http.Client(),
+       _analytics = analytics,
+       _availabilityService = availabilityService;
   static const String _baseUrl = StreamingApiConfig.netflixBaseUrl;
   static const String _deepLinkScheme = 'netflix://';
 
@@ -37,17 +37,20 @@ class NetflixService implements StreamingPlatformServiceInterface {
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
         'movie_id': movieId,
         'region': region,
-        'api_used': StreamingApiConfig.hasNetflixApiKey ? 'real' : 'simulated',
+        'api_used': 'tmdb_watch_providers',
       });
 
-      // Try real availability service first
+      // TMDB watch providers is the only availability source: keep only
+      // this platform's entry instead of the first of any platform.
       final availabilityList = await _availabilityService.checkAvailability(
         movieId,
         region: region,
       );
 
-      if (availabilityList.isNotEmpty) {
-        return availabilityList.first;
+      for (final availability in availabilityList) {
+        if (availability.platform.id == StreamingPlatform.netflix.id) {
+          return availability;
+        }
       }
 
       // If Netflix API is configured, try direct API call
@@ -62,11 +65,9 @@ class NetflixService implements StreamingPlatformServiceInterface {
         }
       }
 
-      // Fallback to simulation
-      return await _simulateNetflixAvailability(
-        tmdbId: movieId,
-        region: region,
-      );
+      // No simulated fallback: TMDB is the only source, so absence
+      // of data means "not available", not "invent availability".
+      return null;
     } catch (e) {
       // Error checking Netflix availability: $e
       return null;
@@ -94,7 +95,7 @@ class NetflixService implements StreamingPlatformServiceInterface {
         );
       }
 
-      // Fallback to simulation if no real API or no results
+      // Without a configured catalog API there is no source: keep empty.
       if (results.isEmpty) {
         results = await _simulateNetflixSearch(
           query: query,
@@ -108,8 +109,7 @@ class NetflixService implements StreamingPlatformServiceInterface {
         'query': query,
         'region': region,
         'results_count': results.length,
-        'api_used':
-            StreamingApiConfig.isNetflixConfigured ? 'real' : 'simulated',
+        'api_used': StreamingApiConfig.isNetflixConfigured ? 'real' : 'none',
       });
 
       return results;
@@ -143,12 +143,9 @@ class NetflixService implements StreamingPlatformServiceInterface {
         );
       }
 
-      // Fallback to simulation if no real API or no results
+      // Without a configured catalog API there is no source: keep empty.
       if (trending.isEmpty) {
-        trending = await _simulateNetflixTrending(
-          region: region,
-          limit: limit,
-        );
+        trending = await _simulateNetflixTrending(region: region, limit: limit);
       }
 
       _analytics.trackEvent(AnalyticsEventType.userEngagement, {
@@ -156,8 +153,7 @@ class NetflixService implements StreamingPlatformServiceInterface {
         'action': 'trending_fetched',
         'region': region,
         'results_count': trending.length,
-        'api_used':
-            StreamingApiConfig.isNetflixConfigured ? 'real' : 'simulated',
+        'api_used': StreamingApiConfig.isNetflixConfigured ? 'real' : 'none',
       });
 
       return trending;
@@ -169,12 +165,8 @@ class NetflixService implements StreamingPlatformServiceInterface {
 
   /// Launch Netflix app with deep link
   @override
-  String generateDeepLink({
-    required String movieId,
-    String? tmdbId,
-  }) {
+  String generateDeepLink({required String movieId, String? tmdbId}) {
     // Netflix deep link format: netflix://title/{netflix_id}
-    // For simulation, we'll use the movieId
     final deepLink = '${_deepLinkScheme}title/$movieId';
 
     _analytics.trackEvent(AnalyticsEventType.userEngagement, {
@@ -220,7 +212,7 @@ class NetflixService implements StreamingPlatformServiceInterface {
           features: [
             '4 Screens',
             'Ultra HD Available',
-            'Unlimited Movies & TV'
+            'Unlimited Movies & TV',
           ],
           quality: 'Best',
         ),
@@ -238,11 +230,9 @@ class NetflixService implements StreamingPlatformServiceInterface {
     required String region,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/titles/$tmdbId/availability')
-          .replace(queryParameters: {
-        'region': region,
-        'include_metadata': 'true',
-      });
+      final url = Uri.parse('$_baseUrl/titles/$tmdbId/availability').replace(
+        queryParameters: {'region': region, 'include_metadata': 'true'},
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.netflixHeaders)
@@ -271,12 +261,14 @@ class NetflixService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/search').replace(queryParameters: {
-        'q': query,
-        'region': region,
-        'limit': limit.toString(),
-        'type': 'movie',
-      });
+      final url = Uri.parse('$_baseUrl/search').replace(
+        queryParameters: {
+          'q': query,
+          'region': region,
+          'limit': limit.toString(),
+          'type': 'movie',
+        },
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.netflixHeaders)
@@ -301,12 +293,14 @@ class NetflixService implements StreamingPlatformServiceInterface {
     required int limit,
   }) async {
     try {
-      final url = Uri.parse('$_baseUrl/trending').replace(queryParameters: {
-        'region': region,
-        'limit': limit.toString(),
-        'type': 'movie',
-        'time_window': 'week',
-      });
+      final url = Uri.parse('$_baseUrl/trending').replace(
+        queryParameters: {
+          'region': region,
+          'limit': limit.toString(),
+          'type': 'movie',
+          'time_window': 'week',
+        },
+      );
 
       final response = await _httpClient
           .get(url, headers: StreamingApiConfig.netflixHeaders)
@@ -327,7 +321,9 @@ class NetflixService implements StreamingPlatformServiceInterface {
 
   /// Parse Netflix availability response
   PlatformAvailability _parseNetflixAvailability(
-      Map<String, dynamic> data, String tmdbId) {
+    Map<String, dynamic> data,
+    String tmdbId,
+  ) {
     final availability = data['availability'] as Map<String, dynamic>? ?? {};
     final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
 
@@ -341,10 +337,12 @@ class NetflixService implements StreamingPlatformServiceInterface {
       currency: 'USD',
       quality: metadata['video_quality'] as String? ?? 'HD',
       deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages:
-          List<String>.from(metadata['audio_languages'] as List? ?? ['en']),
-      subtitleLanguages:
-          List<String>.from(metadata['subtitle_languages'] as List? ?? ['en']),
+      audioLanguages: List<String>.from(
+        metadata['audio_languages'] as List? ?? ['en'],
+      ),
+      subtitleLanguages: List<String>.from(
+        metadata['subtitle_languages'] as List? ?? ['en'],
+      ),
     );
   }
 
@@ -360,7 +358,7 @@ class NetflixService implements StreamingPlatformServiceInterface {
         backdropPath: movie['backdrop_path'] as String? ?? '',
         releaseDate: movie['release_date'] != null
             ? DateTime.tryParse(movie['release_date'] as String) ??
-                DateTime.now()
+                  DateTime.now()
             : DateTime.now(),
         voteAverage: (movie['vote_average'] as num?)?.toDouble() ?? 0.0,
         voteCount: movie['vote_count'] as int? ?? 0,
@@ -374,44 +372,13 @@ class NetflixService implements StreamingPlatformServiceInterface {
     }).toList();
   }
 
-  // Simulation methods (fallback when real APIs are not available)
-  Future<PlatformAvailability?> _simulateNetflixAvailability({
-    required String tmdbId,
-    required String region,
-  }) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // Simulate availability based on movie ID
-    final isAvailable =
-        int.parse(tmdbId.replaceAll(RegExp(r'[^0-9]'), '')) % 3 == 0;
-
-    if (!isAvailable) return null;
-
-    return PlatformAvailability(
-      platform: StreamingPlatform.netflix,
-      isAvailable: true,
-      isFree: false,
-      requiresSubscription: true,
-      canRent: false,
-      canPurchase: false,
-      currency: 'USD',
-      quality: 'Ultra HD',
-      deepLink: generateDeepLink(movieId: tmdbId),
-      audioLanguages: ['en', 'es', 'fr'],
-      subtitleLanguages: ['en', 'es', 'fr', 'de'],
-    );
-  }
-
+  // Empty catalog results: without a configured platform API there is
+  // no catalog source, so search and trending stay empty.
   Future<List<Movie>> _simulateNetflixSearch({
     required String query,
     required String region,
     required int limit,
   }) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    // Return empty list for simulation
     return [];
   }
 
@@ -419,10 +386,6 @@ class NetflixService implements StreamingPlatformServiceInterface {
     required String region,
     required int limit,
   }) async {
-    // Simulate API delay
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    // Return empty list for simulation
     return [];
   }
 
@@ -460,11 +423,11 @@ class SubscriptionPlan {
   final String quality;
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'price': price,
-        'currency': currency,
-        'features': features,
-        'quality': quality,
-      };
+    'id': id,
+    'name': name,
+    'price': price,
+    'currency': currency,
+    'features': features,
+    'quality': quality,
+  };
 }
