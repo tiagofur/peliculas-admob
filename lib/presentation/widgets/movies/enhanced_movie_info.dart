@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../config/helpers/human_formats.dart';
@@ -926,11 +927,17 @@ class _EnhancedCast extends StatelessWidget {
                   final profilePath = actor['profile_path'] as String?;
                   final name = actor['name'] as String? ?? 'Actor desconocido';
                   final character = actor['character'] as String?;
+                  final actorId = actor['id'] as int?;
 
-                  return Container(
-                    width: 90,
-                    margin: const EdgeInsets.only(right: 12),
-                    child: Column(
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: actorId == null
+                        ? null
+                        : () => context.push('/person/$actorId'),
+                    child: Container(
+                      width: 90,
+                      margin: const EdgeInsets.only(right: 12),
+                      child: Column(
                       children: [
                         CircleAvatar(
                           radius: 35,
@@ -974,6 +981,7 @@ class _EnhancedCast extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                       ],
+                      ),
                     ),
                   );
                 },

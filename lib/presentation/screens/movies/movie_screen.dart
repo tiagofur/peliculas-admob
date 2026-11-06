@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../config/theme/custom_scroll_behavior.dart';
 import '../../../core/analytics/analytics_service.dart';
@@ -920,11 +921,17 @@ class _FullCastList extends StatelessWidget {
                   final profilePath = actor['profile_path'] as String?;
                   final name = actor['name'] as String? ?? 'Actor desconocido';
                   final character = actor['character'] as String?;
+                  final actorId = actor['id'] as int?;
 
-                  return Container(
-                    width: 120,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Card(
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: actorId == null
+                        ? null
+                        : () => context.push('/person/$actorId'),
+                    child: Container(
+                      width: 120,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Card(
                       elevation: 2,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1005,6 +1012,7 @@ class _FullCastList extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
                       ),
                     ),
                   );

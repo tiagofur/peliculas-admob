@@ -1,5 +1,6 @@
 export 'achievements/achievements_provider.dart';
 export 'actors/actors_by_movie_provider.dart';
+export 'actors/actor_details_provider.dart';
 export 'actors/actors_repository_provider.dart';
 export 'custom_lists_provider.dart';
 export 'movies/discovery_provider.dart';
