@@ -124,6 +124,12 @@ class AdaptiveMonetizationManager {
       return false;
     }
 
+    // Ad-break por rewarded: pausa temporal de forzados (S2).
+    if (await _userPrefs.isAdBreakActive()) {
+      LoggerFactory.debug('Banner ad omitido: ad-break vigente');
+      return false;
+    }
+
     // Evaluar con estrategia UX-first
     final userType = await _userPrefs.getUserType();
     final decision = await _uxStrategy.shouldShowAd(
@@ -154,6 +160,12 @@ class AdaptiveMonetizationManager {
     // Pro: cero intersticiales (S1). Rewarded sigue vía showRewardedAd.
     if (await _userPrefs.isPro()) {
       LoggerFactory.debug('Intersticial ad omitido: usuario Pro');
+      return false;
+    }
+
+    // Ad-break por rewarded: pausa temporal de forzados (S2).
+    if (await _userPrefs.isAdBreakActive()) {
+      LoggerFactory.debug('Intersticial ad omitido: ad-break vigente');
       return false;
     }
 
