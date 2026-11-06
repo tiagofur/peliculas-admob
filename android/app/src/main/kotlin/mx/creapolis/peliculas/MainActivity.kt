@@ -8,7 +8,7 @@ import com.google.android.gms.ads.nativead.NativeAdView
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin
-import io.flutter.plugins.googlemobileads.GoogleMobileAdsPlugin.NativeAdFactory
+import io.flutter.plugins.googlemobileads.NativeAdFactory
 
 class MainActivity: FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
