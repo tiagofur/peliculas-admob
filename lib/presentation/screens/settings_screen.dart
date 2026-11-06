@@ -6,6 +6,7 @@ import '../../config/theme/app_theme.dart' as app_theme;
 import '../../generated/app_localizations.dart';
 import '../providers/locale/locale_provider.dart';
 import '../providers/theme/theme_provider.dart';
+import '../../services/monetization/purchases_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -153,6 +154,54 @@ class SettingsScreen extends ConsumerWidget {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       context.push('/notification-settings');
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Sección Películas Pro
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.workspace_premium,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        l10n.proTitle,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  FutureBuilder<bool>(
+                    future: LocalPurchasesService.instance.isPro(),
+                    builder: (context, snapshot) {
+                      final isPro = snapshot.data ?? false;
+                      return ListTile(
+                        leading: Icon(
+                          isPro ? Icons.verified : Icons.lock_outline,
+                        ),
+                        title: Text(
+                          isPro ? l10n.proActive : l10n.proSubtitle,
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          context.push('/pro-paywall');
+                        },
+                      );
                     },
                   ),
                 ],

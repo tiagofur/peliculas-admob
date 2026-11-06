@@ -19,6 +19,11 @@ class UserMonetizationPreferencesService {
     return _instance!;
   }
 
+  /// Cache síncrono del entitlement Pro: fuente de verdad para los widgets
+  /// de anuncios (evita I/O asíncrono en build). Se sincroniza en
+  /// initialize() y setProActive().
+  static bool isProCached = false;
+
   static const String _keyUserPreferences = 'user_monetization_prefs';
   static const String _keyUserType = 'user_type';
   static const String _keyRegistrationDate = 'user_registration_date';
@@ -26,6 +31,7 @@ class UserMonetizationPreferencesService {
   static const String _keyTotalUsageTime = 'total_usage_time';
   static const String _keyLastAdInteraction = 'last_ad_interaction';
   static const String _keyAdInteractionHistory = 'ad_interaction_history';
+  static const String _keyIsPro = 'pro_entitlement_active';
 
   SharedPreferences? _prefs;
 
@@ -33,7 +39,11 @@ class UserMonetizationPreferencesService {
   Future<void> initialize() async {
     try {
       _prefs = await SharedPreferences.getInstance();
+      isProCached = _prefs!.getBool(_keyIsPro) ?? false;
       await _initializeNewUserIfNeeded();
+      if (isProCached) {
+        await setUserType(UserTypeUX.premiumUser);
+      }
       LoggerFactory.info('UserMonetizationPreferencesService inicializado');
     } catch (e) {
       LoggerFactory.error(
@@ -99,6 +109,9 @@ class UserMonetizationPreferencesService {
   Future<UserTypeUX> getUserType() async {
     if (_prefs == null) await initialize();
 
+    // Pro es fuente de verdad: siempre premium aunque la clave sea vieja.
+    if (isProCached) return UserTypeUX.premiumUser;
+
     final userTypeString = _prefs!.getString(_keyUserType);
     if (userTypeString == null) {
       return UserTypeUX.newUser;
@@ -124,9 +137,52 @@ class UserMonetizationPreferencesService {
     LoggerFactory.info('Tipo de usuario actualizado a: $userType');
   }
 
+  /// Indica si el usuario tiene Pro activo (compra lifetime).
+  Future<bool> isPro() async {
+    if (_prefs == null) await initialize();
+    return isProCached;
+  }
+
+  /// Activa o desactiva el entitlement Pro y sincroniza la fuente de verdad:
+  /// tipo premiumUser + optedOutOfAds. Al desactivar, recalcula el tipo
+  /// por uso para volver al estado anterior.
+  Future<void> setProActive(bool active) async {
+    if (_prefs == null) await initialize();
+
+    try {
+      await _prefs!.setBool(_keyIsPro, active);
+      isProCached = active;
+
+      final currentPrefs = await getUserPreferences();
+      if (active) {
+        await setUserType(UserTypeUX.premiumUser);
+        await saveUserPreferences(
+            currentPrefs.copyWith(optedOutOfAds: true));
+        LoggerFactory.info('Entitlement Pro activado');
+      } else {
+        await saveUserPreferences(
+            currentPrefs.copyWith(optedOutOfAds: false));
+        await _prefs!.remove(_keyUserType);
+        await _updateUserTypeBasedOnUsage();
+        LoggerFactory.info('Entitlement Pro desactivado');
+      }
+    } catch (e) {
+      LoggerFactory.error('Error actualizando entitlement Pro: $e');
+    }
+  }
+
   /// Actualiza automáticamente el tipo de usuario basado en patrones de uso
   Future<void> _updateUserTypeBasedOnUsage() async {
     if (_prefs == null) return;
+
+    // Pro nunca se degrada por uso: preservar premiumUser entre sesiones.
+    if (isProCached) {
+      final currentType = await getUserType();
+      if (currentType != UserTypeUX.premiumUser) {
+        await setUserType(UserTypeUX.premiumUser);
+      }
+      return;
+    }
 
     try {
       final registrationDate = _prefs!.getString(_keyRegistrationDate);
@@ -319,6 +375,8 @@ class UserMonetizationPreferencesService {
       await _prefs!.remove(_keyTotalUsageTime);
       await _prefs!.remove(_keyLastAdInteraction);
       await _prefs!.remove(_keyAdInteractionHistory);
+      await _prefs!.remove(_keyIsPro);
+      isProCached = false;
 
       LoggerFactory.info('Datos de usuario limpiados');
     } catch (e) {

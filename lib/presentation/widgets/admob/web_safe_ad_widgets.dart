@@ -5,6 +5,7 @@ import '../../../core/logging/logger_factory.dart';
 import '../../../services/monetization/adsense_service_stub.dart'
     if (dart.library.html) '../../../services/monetization/adsense_service.dart';
 import '../../../widgets/ads/ad_placeholder_widget.dart';
+import 'pro_ad_gate.dart';
 
 /// Web-safe wrapper para widgets de AdMob
 /// En web, estos widgets muestran AdSense, en móvil muestran AdMob
@@ -34,6 +35,9 @@ class _WebSafeBannerAdWidgetState extends State<WebSafeBannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     if (kIsWeb) {
       // En web, mostramos AdSense
       return const _AdSenseBannerWidget();
@@ -141,6 +145,9 @@ class _WebSafeNativeAdWidgetState extends State<WebSafeNativeAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     if (kIsWeb) {
       // En modo debug, mostrar placeholder claramente
       if (kDebugMode) {
@@ -247,6 +254,9 @@ class _WebSafeMovieCardAdWidgetState extends State<WebSafeMovieCardAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     final colors = Theme.of(context).colorScheme;
     final textStyles = Theme.of(context).textTheme;
 
@@ -504,6 +514,9 @@ class _WebSafeFullWidthAdWidgetState extends State<WebSafeFullWidthAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     if (kIsWeb) {
       // En modo debug, mostrar placeholder claramente
       if (kDebugMode) {
@@ -585,6 +598,9 @@ class _WebSafeGridAdWidgetState extends State<WebSafeGridAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     if (kIsWeb) {
       // En web, mostramos AdSense de grid
       return Container(

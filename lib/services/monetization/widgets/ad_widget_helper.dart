@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../advanced_admob_service.dart';
+import '../user_monetization_preferences_service.dart';
 
 /// Widget helper para integrar anuncios de manera fácil y consistente
 class AdWidget extends StatefulWidget {
@@ -111,11 +112,16 @@ class _AdAwareScreenState extends State<AdAwareScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // Registrar entrada a la pantalla
+    // Registrar entrada a la pantalla (Pro no acumula triggers, S1)
     if (widget.screenName != null) {
-      AdvancedAdMobService.instance.incrementInterstitialCounter(
-        action: 'screen_enter_${widget.screenName}',
-      );
+      final screenName = widget.screenName!;
+      UserMonetizationPreferencesService.instance.isPro().then((isPro) {
+        if (!isPro) {
+          AdvancedAdMobService.instance.incrementInterstitialCounter(
+            action: 'screen_enter_$screenName',
+          );
+        }
+      });
     }
   }
 
@@ -130,13 +136,19 @@ class _AdAwareScreenState extends State<AdAwareScreen>
     super.didChangeAppLifecycleState(state);
 
     // Mostrar interstitial cuando la app vuelve del background
+    // (Pro nunca muestra intersticiales, S1)
     if (state == AppLifecycleState.resumed &&
         widget.enableInterstitialAds &&
         widget.screenName != null) {
-      Future.delayed(const Duration(seconds: 1), () {
-        AdvancedAdMobService.instance.showInterstitialAdSmart(
-          context: 'app_resume_${widget.screenName}',
-        );
+      final screenName = widget.screenName!;
+      Future.delayed(const Duration(seconds: 1), () async {
+        final isPro =
+            await UserMonetizationPreferencesService.instance.isPro();
+        if (!isPro) {
+          AdvancedAdMobService.instance.showInterstitialAdSmart(
+            context: 'app_resume_$screenName',
+          );
+        }
       });
     }
   }
@@ -150,7 +162,10 @@ class _AdAwareScreenState extends State<AdAwareScreen>
 /// Helper para triggering de anuncios interstitials
 class AdTrigger {
   /// Trigger para navegación entre pantallas
+  /// (Pro no acumula ni muestra intersticiales, S1)
   static void onNavigation(String fromScreen, String toScreen) {
+    if (UserMonetizationPreferencesService.isProCached) return;
+
     AdvancedAdMobService.instance.incrementInterstitialCounter(
       action: 'navigation_$fromScreen-to-$toScreen',
     );
@@ -169,7 +184,10 @@ class AdTrigger {
   }
 
   /// Trigger para completar acciones importantes
+  /// (Pro nunca muestra intersticiales, S1)
   static void onActionComplete(String action) {
+    if (UserMonetizationPreferencesService.isProCached) return;
+
     AdvancedAdMobService.instance.showInterstitialAdSmart(
       context: 'action_complete_$action',
     );
@@ -195,7 +213,12 @@ class ListAdInserter {
     int adInterval = 5,
     Widget? customAdWidget,
   }) {
-    if (kIsWeb || items.isEmpty) return items;
+    // Pro: lista intacta, sin anuncios insertados (S1).
+    if (kIsWeb ||
+        items.isEmpty ||
+        UserMonetizationPreferencesService.isProCached) {
+      return items;
+    }
 
     final List<Widget> result = [];
 

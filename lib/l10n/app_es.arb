@@ -671,5 +671,15 @@
   "streamingProvidersRetry": "Reintentar",
   "@streamingProvidersRetry": {
     "description": "Botón para reintentar obtener proveedores"
-  }
+  },
+  "proTitle": "Películas Pro",
+  "proSubtitle": "Sin anuncios, para siempre",
+  "proBenefitNoAds": "Cero anuncios forzados en móvil y web",
+  "proBenefitThemes": "Temas personalizados ilimitados",
+  "proBenefitStats": "Listas y estadísticas avanzadas",
+  "proBuy": "Conseguir Pro",
+  "proRestore": "Restaurar compras",
+  "proActive": "Pro activo",
+  "proLifetimeNote": "Pago único. Sin suscripción.",
+  "proNoPurchases": "No se encontraron compras"
 }

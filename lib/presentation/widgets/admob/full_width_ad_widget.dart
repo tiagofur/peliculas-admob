@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
 import '../../../core/logging/logger_factory.dart';
+import 'pro_ad_gate.dart';
 import 'web_safe_ad_widgets.dart';
 
 /// Widget de anuncio que ocupa toda la línea horizontal en listas verticales
@@ -39,6 +40,9 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
   }
 
   void _loadAd() {
+    // Pro: no cargar ni pedir anuncios (S1).
+    if (hideAdsForPro) return;
+
     // En web, usar el sistema web-safe
     if (kIsWeb) {
       LoggerFactory.info('Usando AdSense para full width ads en web');
@@ -105,6 +109,9 @@ class _FullWidthAdWidgetState extends State<FullWidthAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     // En web, usar el widget web-safe
     if (kIsWeb) {
       return WebSafeFullWidthAdWidget(

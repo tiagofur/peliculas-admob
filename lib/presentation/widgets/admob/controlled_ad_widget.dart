@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../core/logging/base_logger.dart';
 import '../../../core/logging/logger_factory.dart';
 import '../../../core/monetization/ad_frequency_controller.dart';
+import '../../../services/monetization/user_monetization_preferences_service.dart';
 import 'banner_ad_widget.dart';
 import 'full_width_ad_widget.dart';
 import 'grid_ad_widget.dart';
@@ -63,6 +64,18 @@ class _ControlledAdWidgetState extends State<ControlledAdWidget> {
 
   Future<void> _checkAdPermission() async {
     try {
+      // Pro: no consultar frecuencia, directo a bloqueado (S1).
+      if (await UserMonetizationPreferencesService.instance.isPro()) {
+        const decision = AdDecisionResult.blockedByUserPreference;
+        setState(() {
+          _canShowAd = false;
+          _lastDecision = decision;
+          _isInitialized = true;
+        });
+        widget.onAdBlocked?.call(decision);
+        return;
+      }
+
       final decision = await _controller.canShowAd(adType: widget.adType.name);
 
       setState(() {

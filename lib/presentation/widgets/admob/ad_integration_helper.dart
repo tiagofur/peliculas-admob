@@ -86,8 +86,12 @@ class AdIntegrationHelper {
     }
   }
 
-  /// Crea una lista mixta de películas y anuncios para listas horizontales
-  static List<AdListItem> createHorizontalAdList(List<Movie> movies) {
+  /// Crea una lista mixta de películas y anuncios para listas horizontales.
+  /// Con [isPro] solo devuelve películas, sin huecos de anuncios (S1).
+  static List<AdListItem> createHorizontalAdList(
+    List<Movie> movies, {
+    bool isPro = false,
+  }) {
     final List<AdListItem> items = [];
 
     for (int i = 0; i < movies.length; i++) {
@@ -95,7 +99,7 @@ class AdIntegrationHelper {
       items.add(AdListItem.movie(movies[i]));
 
       // Agregar anuncio si corresponde
-      if (shouldShowHorizontalAd(i)) {
+      if (!isPro && shouldShowHorizontalAd(i)) {
         items.add(AdListItem.horizontalAd());
       }
     }
@@ -103,13 +107,19 @@ class AdIntegrationHelper {
     return items;
   }
 
-  /// Crea una lista mixta de películas y anuncios para grids verticales
-  static List<AdListItem> createGridAdList(List<Movie> movies) {
+  /// Crea una lista mixta de películas y anuncios para grids verticales.
+  /// Con [isPro] solo devuelve películas, sin huecos de anuncios (S1).
+  static List<AdListItem> createGridAdList(
+    List<Movie> movies, {
+    bool isPro = false,
+  }) {
     final List<AdListItem> items = [];
 
     for (int i = 0; i < movies.length; i++) {
       // Agregar película
       items.add(AdListItem.movie(movies[i]));
+
+      if (isPro) continue;
 
       // Agregar anuncio de línea completa si corresponde (prioridad)
       if (shouldShowFullWidthAd(i)) {

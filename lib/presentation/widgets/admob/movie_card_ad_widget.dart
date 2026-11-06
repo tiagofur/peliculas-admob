@@ -4,6 +4,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../../config/helpers/ad_helper.dart';
 import '../../../core/logging/logger_factory.dart';
+import 'pro_ad_gate.dart';
 import 'web_safe_ad_widgets.dart';
 
 /// Widget de anuncio que imita el tamaño y estilo de las tarjetas de películas
@@ -40,6 +41,9 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
   }
 
   void _loadAd() {
+    // Pro: no cargar ni pedir anuncios (S1).
+    if (hideAdsForPro) return;
+
     // No cargar anuncios en web
     if (kIsWeb) {
       return;
@@ -104,6 +108,9 @@ class _MovieCardAdWidgetState extends State<MovieCardAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Pro: cero anuncios, ni siquiera placeholders (S1).
+    if (hideAdsForPro) return const SizedBox.shrink();
+
     if (kIsWeb) {
       return WebSafeMovieCardAdWidget(
         width: widget.width,

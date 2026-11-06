@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'user_monetization_preferences_service.dart';
+
 /// Servicio avanzado para la gestión de AdMob con optimización de revenue
 class AdvancedAdMobService {
   AdvancedAdMobService._();
@@ -65,8 +67,15 @@ class AdvancedAdMobService {
       _isInitialized = true;
       debugPrint('✅ AdMob inicializado correctamente');
 
-      // Pre-cargar anuncios
-      await _preloadAds();
+      // Pro: solo precargar rewarded opt-in (S3); cero inventario forzado.
+      // Sin Pro: precarga completa como antes.
+      final isPro =
+          await UserMonetizationPreferencesService.instance.isPro();
+      if (isPro) {
+        await _loadRewardedAd();
+      } else {
+        await _preloadAds();
+      }
 
       return true;
     } catch (e) {
@@ -221,6 +230,11 @@ class AdvancedAdMobService {
   }) async {
     if (kIsWeb || !_isInitialized) return false;
 
+    // Pro: nunca intersticiales, ni siquiera forzados (S1).
+    if (await UserMonetizationPreferencesService.instance.isPro()) {
+      return false;
+    }
+
     // Verificar si se debe mostrar el anuncio
     if (!forceShow && !_shouldShowInterstitial()) {
       return false;
@@ -276,6 +290,10 @@ class AdvancedAdMobService {
 
   /// Incrementa el contador para interstitials inteligentes
   void incrementInterstitialCounter({String? action}) {
+    // Pro: no acumular triggers (S1). Cache síncrono porque los llamados
+    // son contextos void (initState, navegación).
+    if (UserMonetizationPreferencesService.isProCached) return;
+
     _interstitialAdCounter++;
 
     if (action != null) {

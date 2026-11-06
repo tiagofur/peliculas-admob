@@ -179,5 +179,15 @@
   "streamingProvidersLoading": "Buscando provedores de streaming...",
   "streamingProvidersNotAvailable": "Informação de streaming não disponível",
   "streamingProvidersError": "Erro ao obter provedores de streaming",
-  "streamingProvidersRetry": "Tentar novamente"
+  "streamingProvidersRetry": "Tentar novamente",
+  "proTitle": "Películas Pro",
+  "proSubtitle": "Sem anúncios, para sempre",
+  "proBenefitNoAds": "Zero anúncios forçados no celular e na web",
+  "proBenefitThemes": "Temas personalizados ilimitados",
+  "proBenefitStats": "Listas e estatísticas avançadas",
+  "proBuy": "Obter Pro",
+  "proRestore": "Restaurar compras",
+  "proActive": "Pro ativo",
+  "proLifetimeNote": "Pagamento único. Sem assinatura.",
+  "proNoPurchases": "Nenhuma compra encontrada"
 }
