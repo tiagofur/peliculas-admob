@@ -13,5 +13,6 @@
 /// ```
 library;
 
+export 'actor_details_skeleton.dart';
 export 'movie_card_skeleton.dart';
 export 'movie_details_skeleton.dart';

@@ -210,6 +210,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return MovieScreen(movieId: movieId);
         },
       ),
+      GoRoute(
+        path: '/person/:id',
+        name: ActorScreen.name,
+        builder: (context, state) {
+          final personId = state.pathParameters['id'] ?? 'no-id';
+          return ActorScreen(personId: personId);
+        },
+      ),
 
       // Ruta principal de recomendaciones
       GoRoute(
