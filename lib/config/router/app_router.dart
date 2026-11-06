@@ -11,6 +11,7 @@ import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
 import '../../presentation/screens/movies/simple_home_screen.dart';
 import '../../presentation/screens/notification_settings_screen.dart';
+import '../../presentation/screens/pro_paywall_screen.dart';
 import '../../presentation/screens/profile/profile_screen.dart';
 import '../../presentation/screens/ratings/user_ratings_screen.dart';
 import '../../presentation/screens/screens.dart';
@@ -474,6 +475,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const NotificationSettingsScreen(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return CinematicPageTransitions.slideUpTransition(
+                page: child,
+                duration: const Duration(milliseconds: 500),
+              ).transitionsBuilder(
+                  context, animation, secondaryAnimation, child);
+            },
+          );
+        },
+      ),
+
+      // Ruta del paywall de Películas Pro
+      GoRoute(
+        path: '/pro-paywall',
+        name: 'pro-paywall',
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const ProPaywallScreen(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) {
               return CinematicPageTransitions.slideUpTransition(

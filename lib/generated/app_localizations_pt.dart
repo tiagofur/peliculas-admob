@@ -785,6 +785,36 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get streamingProvidersRetry => 'Tentar novamente';
+
+  @override
+  String get proTitle => 'Películas Pro';
+
+  @override
+  String get proSubtitle => 'Sem anúncios, para sempre';
+
+  @override
+  String get proBenefitNoAds => 'Zero anúncios forçados no celular e na web';
+
+  @override
+  String get proBenefitThemes => 'Temas personalizados ilimitados';
+
+  @override
+  String get proBenefitStats => 'Listas e estatísticas avançadas';
+
+  @override
+  String get proBuy => 'Obter Pro';
+
+  @override
+  String get proRestore => 'Restaurar compras';
+
+  @override
+  String get proActive => 'Pro ativo';
+
+  @override
+  String get proLifetimeNote => 'Pagamento único. Sem assinatura.';
+
+  @override
+  String get proNoPurchases => 'Nenhuma compra encontrada';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -1568,4 +1598,34 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get streamingProvidersRetry => 'Tentar novamente';
+
+  @override
+  String get proTitle => 'Películas Pro';
+
+  @override
+  String get proSubtitle => 'Sem anúncios, para sempre';
+
+  @override
+  String get proBenefitNoAds => 'Zero anúncios forçados no celular e na web';
+
+  @override
+  String get proBenefitThemes => 'Temas personalizados ilimitados';
+
+  @override
+  String get proBenefitStats => 'Listas e estatísticas avançadas';
+
+  @override
+  String get proBuy => 'Obter Pro';
+
+  @override
+  String get proRestore => 'Restaurar compras';
+
+  @override
+  String get proActive => 'Pro ativo';
+
+  @override
+  String get proLifetimeNote => 'Pagamento único. Sem assinatura.';
+
+  @override
+  String get proNoPurchases => 'Nenhuma compra encontrada';
 }

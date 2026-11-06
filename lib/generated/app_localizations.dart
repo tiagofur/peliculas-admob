@@ -1462,6 +1462,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get streamingProvidersRetry;
+
+  /// No description provided for @proTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Películas Pro'**
+  String get proTitle;
+
+  /// No description provided for @proSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No ads, forever'**
+  String get proSubtitle;
+
+  /// No description provided for @proBenefitNoAds.
+  ///
+  /// In en, this message translates to:
+  /// **'Zero forced ads on mobile and web'**
+  String get proBenefitNoAds;
+
+  /// No description provided for @proBenefitThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited custom themes'**
+  String get proBenefitThemes;
+
+  /// No description provided for @proBenefitStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced lists and stats'**
+  String get proBenefitStats;
+
+  /// No description provided for @proBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Pro'**
+  String get proBuy;
+
+  /// No description provided for @proRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get proRestore;
+
+  /// No description provided for @proActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro active'**
+  String get proActive;
+
+  /// No description provided for @proLifetimeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time payment. No subscription.'**
+  String get proLifetimeNote;
+
+  /// No description provided for @proNoPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchases found'**
+  String get proNoPurchases;
 }
 
 class _AppLocalizationsDelegate

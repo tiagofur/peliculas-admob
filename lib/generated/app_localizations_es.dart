@@ -790,4 +790,34 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get streamingProvidersRetry => 'Reintentar';
+
+  @override
+  String get proTitle => 'Películas Pro';
+
+  @override
+  String get proSubtitle => 'Sin anuncios, para siempre';
+
+  @override
+  String get proBenefitNoAds => 'Cero anuncios forzados en móvil y web';
+
+  @override
+  String get proBenefitThemes => 'Temas personalizados ilimitados';
+
+  @override
+  String get proBenefitStats => 'Listas y estadísticas avanzadas';
+
+  @override
+  String get proBuy => 'Conseguir Pro';
+
+  @override
+  String get proRestore => 'Restaurar compras';
+
+  @override
+  String get proActive => 'Pro activo';
+
+  @override
+  String get proLifetimeNote => 'Pago único. Sin suscripción.';
+
+  @override
+  String get proNoPurchases => 'No se encontraron compras';
 }
