@@ -25,6 +25,10 @@ type Config struct {
 	AppleTeamID     string   // these three enable Apple token revoke
 	AppleKeyID      string
 	ApplePrivateKey string // .p8 contents, \n allowed
+
+	// StoreKit (Pro)
+	StoreKitBundleID string   // defaults to the first APPLE_CLIENT_IDS
+	ProProductIDs    []string // App Store product IDs that unlock Pro
 }
 
 func Load() (Config, error) {
@@ -43,6 +47,12 @@ func Load() (Config, error) {
 		AppleTeamID:     os.Getenv("APPLE_TEAM_ID"),
 		AppleKeyID:      os.Getenv("APPLE_KEY_ID"),
 		ApplePrivateKey: os.Getenv("APPLE_PRIVATE_KEY"),
+
+		StoreKitBundleID: os.Getenv("STOREKIT_BUNDLE_ID"),
+		ProProductIDs:    list(os.Getenv("PRO_PRODUCT_IDS")),
+	}
+	if c.StoreKitBundleID == "" && len(c.AppleClientIDs) > 0 {
+		c.StoreKitBundleID = c.AppleClientIDs[0]
 	}
 	if c.DatabaseURL != "" && len(c.JWTSecret) < 32 {
 		return c, errors.New("JWT_SECRET must be at least 32 characters (try: openssl rand -base64 48)")

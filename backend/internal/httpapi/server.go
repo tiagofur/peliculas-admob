@@ -16,13 +16,15 @@ import (
 
 	"github.com/tiagofur/peliculas-admob/backend/internal/auth"
 	"github.com/tiagofur/peliculas-admob/backend/internal/library"
+	"github.com/tiagofur/peliculas-admob/backend/internal/storekit"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
 )
 
 type Server struct {
 	TMDB       *tmdb.Proxy
-	Auth       *auth.Service    // nil when there is no database
-	Library    *library.Service // nil when there is no database
+	Auth       *auth.Service     // nil when there is no database
+	Library    *library.Service  // nil when there is no database
+	StoreKit   *storekit.Service // nil until STOREKIT_* is configured
 	Log        *slog.Logger
 	TrustProxy bool
 	Ready      func(context.Context) error // optional readiness check (DB ping)
@@ -34,6 +36,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /v1/tmdb/{path...}", s.tmdb)
 	s.authRoutes(mux)
 	s.syncRoutes(mux)
+	s.storekitRoutes(mux)
 
 	limiter := newIPLimiter(20, 40)
 	return s.recoverer(s.logRequests(limiter.middleware(s.clientIP, mux)))

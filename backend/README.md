@@ -2,7 +2,7 @@
 
 Backend propio que reemplaza a Supabase. Plan completo: [docs/PLAN.md](docs/PLAN.md).
 
-**Estado: fase 2** — caché de TMDB, login (email, Apple, Google) y biblioteca con sync listos. Pro y push vienen en las siguientes fases.
+**Estado: fase 3** — caché de TMDB, login (email, Apple, Google), biblioteca con sync y Pro (StoreKit 2) listos. Push y deploy vienen en las siguientes fases.
 
 ## Correr en local
 
@@ -54,6 +54,9 @@ TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:55432/test?sslmode=disable
 
 | GET | `/v1/sync?cursor=<c>` | Cambios de la biblioteca desde el cursor (vacío = todo) |
 | POST | `/v1/sync` | `{ops: [...]}` sube hasta 500 cambios → `{results: [...]}` |
+| POST | `/v1/storekit/transactions` | `{signed_transaction}` tras comprar o restaurar → estado Pro |
+| POST | `/v1/storekit/notifications` | Webhook de Apple (App Store Server Notifications V2) |
+| GET | `/v1/me/entitlements` | `{pro, product_id, expires_at, auto_renew, in_grace_period}` |
 
 **Sesión** = `{access_token, token_type, expires_in, refresh_token, user}`. El access token dura 15 min; el refresh token 60 días y se renueva en cada uso. Si alguien reutiliza un refresh token viejo (más de 30 s después), se cierran todas las sesiones de ese inicio de sesión.
 
@@ -91,6 +94,22 @@ Cada op responde `applied`, `stale` (ya había un cambio más nuevo: gana el úl
 
 **Cuándo sincronizar**: al abrir la app, al volver a primer plano y unos segundos después de cada cambio (subir primero, luego bajar).
 
+### Pro (StoreKit 2)
+
+**En la app:**
+1. Al comprar, pasa el ID del usuario como `appAccountToken`: `product.purchase(options: [.appAccountToken(userID)])`.
+2. Tras comprar o restaurar, envía `transaction.jwsRepresentation` a `POST /v1/storekit/transactions`.
+3. Para saber si es Pro, usa `GET /v1/me/entitlements`. `pro: true` con `expires_at: null` es de por vida.
+
+**En App Store Connect** (Mi app → Información de la app → Notificaciones del servidor de App Store): versión 2, URL `https://<tu-dominio>/v1/storekit/notifications` para producción y sandbox.
+
+Cómo funciona:
+- Todo lo que llega de Apple se verifica: firma ES256 con una cadena de certificados que termina en la Apple Root CA G3 (huella fijada en el código) y las marcas de Apple en el certificado intermedio y en el final.
+- Solo cuentan los productos de `PRO_PRODUCT_IDS` y el bundle de `STOREKIT_BUNDLE_ID`.
+- Renovaciones, reembolsos, vencimientos y periodo de gracia llegan por el webhook. Si Apple manda los avisos desordenados, uno viejo nunca pisa a uno nuevo.
+- Una compra pertenece a la primera cuenta que la reclama. Si otra cuenta intenta usar la misma compra: `409 purchase_owned_by_other_account`.
+- Si el aviso de Apple llega antes que la app, la compra se guarda sin dueño (o con el del `appAccountToken`) y se asigna cuando la app la reclama.
+
 `/v1/tmdb` solo acepta las rutas de la lista en `internal/tmdb/policy.go`. La cabecera `X-Cache` dice de dónde salió la respuesta: `HIT` (caché), `STALE` (caché caducada, refrescando detrás) o `MISS` (TMDB).
 
 ### Cambiar la app a la caché
@@ -118,6 +137,8 @@ Las imágenes siguen saliendo de `https://image.tmdb.org`.
 | `APPLE_CLIENT_IDS` | vacío | Bundle ID de iOS primero. Vacío = Apple desactivado |
 | `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | vacío | Clave `.p8` para revocar tokens de Apple al borrar cuenta |
 | `GOOGLE_CLIENT_IDS` | vacío | Client IDs de Google. Vacío = Google desactivado |
+| `STOREKIT_BUNDLE_ID` | primer `APPLE_CLIENT_IDS` | Bundle de la app que vende Pro |
+| `PRO_PRODUCT_IDS` | vacío | Productos que dan Pro. Vacío = Pro desactivado |
 
 ## Desplegar en el VPS
 
@@ -139,5 +160,6 @@ internal/cache/     LRU en memoria + tabla tmdb_cache en Postgres
 internal/tmdb/      lista de rutas, TTL, cliente TMDB y proxy con caché
 internal/auth/      email + bcrypt, Apple/Google (JWKS), JWT, refresh rotativo, cuenta
 internal/library/   biblioteca, listas, notas, episodios y sync por cursor
+internal/storekit/  verificación JWS de Apple, compras y webhook, estado Pro
 internal/httpapi/   rutas, logs, límite por IP
 ```

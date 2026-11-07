@@ -16,6 +16,7 @@ import (
 	"github.com/tiagofur/peliculas-admob/backend/internal/db"
 	"github.com/tiagofur/peliculas-admob/backend/internal/httpapi"
 	"github.com/tiagofur/peliculas-admob/backend/internal/library"
+	"github.com/tiagofur/peliculas-admob/backend/internal/storekit"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
 )
 
@@ -78,6 +79,17 @@ func run(log *slog.Logger) error {
 			Google: auth.NewGoogleVerifier(cfg.GoogleClientIDs),
 		}
 		srv.Library = &library.Service{DB: pool}
+
+		if cfg.StoreKitBundleID != "" && len(cfg.ProProductIDs) > 0 {
+			verifier, err := storekit.NewAppleVerifier()
+			if err != nil {
+				return err
+			}
+			srv.StoreKit = &storekit.Service{DB: pool, Verifier: verifier, Log: log,
+				BundleID: cfg.StoreKitBundleID, ProductIDs: cfg.ProProductIDs}
+		} else {
+			log.Warn("STOREKIT_BUNDLE_ID or PRO_PRODUCT_IDS not set: Pro is disabled")
+		}
 	} else {
 		log.Warn("DATABASE_URL not set: cache is memory-only; auth and sync are disabled")
 	}
