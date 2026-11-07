@@ -531,6 +531,9 @@ funciones Pro. Los rewarded quedan como opt-in voluntario.
   `ControlledAdWidget`, `AdIntegrationHelper`, leaf widgets admob,
   `AdAwareScreen`/`AdTrigger`/`ListAdInserter`, `ProFeatureGate`.
 - UI: `ProPaywallScreen` en ruta `/pro-paywall`, entrada en ajustes.
+- Rewarded opcional: ver un anuncio otorga 24 h sin forzados
+  (`grantAdBreak` + `isAdBreakActive`, respetado por manager y AdMob),
+  ofrecido en el paywall; no marca Pro y expira solo.
 
 ## Resources
 

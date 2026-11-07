@@ -235,6 +235,11 @@ class AdvancedAdMobService {
       return false;
     }
 
+    // Ad-break por rewarded: pausa temporal de forzados (S2).
+    if (await UserMonetizationPreferencesService.instance.isAdBreakActive()) {
+      return false;
+    }
+
     // Verificar si se debe mostrar el anuncio
     if (!forceShow && !_shouldShowInterstitial()) {
       return false;
@@ -290,9 +295,12 @@ class AdvancedAdMobService {
 
   /// Incrementa el contador para interstitials inteligentes
   void incrementInterstitialCounter({String? action}) {
-    // Pro: no acumular triggers (S1). Cache síncrono porque los llamados
-    // son contextos void (initState, navegación).
-    if (UserMonetizationPreferencesService.isProCached) return;
+    // Pro y ad-break: no acumular triggers (S1, S2). Cache síncrono
+    // porque los llamados son contextos void (initState, navegación).
+    if (UserMonetizationPreferencesService.isProCached ||
+        UserMonetizationPreferencesService.isAdBreakCached) {
+      return;
+    }
 
     _interstitialAdCounter++;
 

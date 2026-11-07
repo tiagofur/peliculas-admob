@@ -1522,6 +1522,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No purchases found'**
   String get proNoPurchases;
+
+  /// No description provided for @proWatchAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad'**
+  String get proWatchAd;
+
+  /// No description provided for @proBreakActive.
+  ///
+  /// In en, this message translates to:
+  /// **'24 h ad-free active'**
+  String get proBreakActive;
+
+  /// No description provided for @rewardedUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No ad available right now'**
+  String get rewardedUnavailable;
 }
 
 class _AppLocalizationsDelegate

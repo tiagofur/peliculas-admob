@@ -63,6 +63,29 @@ void main() {
     expect(await purchases.isPro(), isFalse);
   });
 
+  testWidgets('ver anuncio sin inventario informa no disponible',
+      (tester) async {
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Ver anuncio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Anuncio no disponible ahora'), findsOneWidget);
+    expect(await prefs.isAdBreakActive(), isFalse);
+  });
+
+  testWidgets('con break previo muestra el banner sin marcar Pro',
+      (tester) async {
+    await prefs.grantAdBreak(const Duration(hours: 24));
+
+    await tester.pumpWidget(_harness());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tienes 24 h sin anuncios'), findsWidgets);
+    expect(await purchases.isPro(), isFalse);
+  });
+
   testWidgets('con Pro previo muestra estado y restaurar lo mantiene',
       (tester) async {
     await prefs.setProActive(true);

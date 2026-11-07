@@ -5,3 +5,5 @@ export 'moviedb/movie_moviedb.dart';
 export 'moviedb/moviedb_response.dart';
 export 'moviedb/moviedb_videos.dart';
 export 'moviedb/reviews.dart';
+export 'moviedb/serie_moviedb.dart';
+export 'moviedb/serie_response.dart';

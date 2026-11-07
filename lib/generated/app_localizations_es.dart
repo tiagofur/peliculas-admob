@@ -820,4 +820,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get proNoPurchases => 'No se encontraron compras';
+
+  @override
+  String get proWatchAd => 'Ver anuncio';
+
+  @override
+  String get proBreakActive => 'Tienes 24 h sin anuncios';
+
+  @override
+  String get rewardedUnavailable => 'Anuncio no disponible ahora';
 }

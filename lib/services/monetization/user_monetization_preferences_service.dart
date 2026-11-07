@@ -24,6 +24,10 @@ class UserMonetizationPreferencesService {
   /// initialize() y setProActive().
   static bool isProCached = false;
 
+  /// Cache síncrono del ad-break por rewarded (24 h sin forzados).
+  /// Se reevalúa por tiempo en cada lectura de isAdBreakActive().
+  static bool isAdBreakCached = false;
+
   static const String _keyUserPreferences = 'user_monetization_prefs';
   static const String _keyUserType = 'user_type';
   static const String _keyRegistrationDate = 'user_registration_date';
@@ -32,6 +36,7 @@ class UserMonetizationPreferencesService {
   static const String _keyLastAdInteraction = 'last_ad_interaction';
   static const String _keyAdInteractionHistory = 'ad_interaction_history';
   static const String _keyIsPro = 'pro_entitlement_active';
+  static const String _keyAdBreakUntil = 'ad_break_until';
 
   SharedPreferences? _prefs;
 
@@ -40,6 +45,7 @@ class UserMonetizationPreferencesService {
     try {
       _prefs = await SharedPreferences.getInstance();
       isProCached = _prefs!.getBool(_keyIsPro) ?? false;
+      isAdBreakCached = _readAdBreakActive();
       await _initializeNewUserIfNeeded();
       if (isProCached) {
         await setUserType(UserTypeUX.premiumUser);
@@ -141,6 +147,41 @@ class UserMonetizationPreferencesService {
   Future<bool> isPro() async {
     if (_prefs == null) await initialize();
     return isProCached;
+  }
+
+  /// Otorga un break de anuncios forzados por la duración dada
+  /// (recompensa de rewarded opt-in). No marca Pro y expira solo.
+  Future<void> grantAdBreak(Duration duration) async {
+    if (_prefs == null) await initialize();
+
+    try {
+      final until = DateTime.now().add(duration);
+      await _prefs!.setString(_keyAdBreakUntil, until.toIso8601String());
+      isAdBreakCached = _readAdBreakActive();
+      LoggerFactory.info('Ad-break otorgado hasta $until');
+    } catch (e) {
+      LoggerFactory.error('Error otorgando ad-break: $e');
+    }
+  }
+
+  /// Indica si hay un ad-break vigente. Reevalúa el timestamp en cada
+  /// lectura para que la expiración sea automática.
+  Future<bool> isAdBreakActive() async {
+    if (_prefs == null) await initialize();
+    isAdBreakCached = _readAdBreakActive();
+    return isAdBreakCached;
+  }
+
+  /// Lectura síncrona del timestamp persistido (false si falta o expiró).
+  bool _readAdBreakActive() {
+    try {
+      final untilRaw = _prefs?.getString(_keyAdBreakUntil);
+      if (untilRaw == null) return false;
+      return DateTime.now().isBefore(DateTime.parse(untilRaw));
+    } catch (e) {
+      LoggerFactory.warning('Error leyendo ad-break, asumiendo inactivo: $e');
+      return false;
+    }
   }
 
   /// Activa o desactiva el entitlement Pro y sincroniza la fuente de verdad:
@@ -377,6 +418,8 @@ class UserMonetizationPreferencesService {
       await _prefs!.remove(_keyAdInteractionHistory);
       await _prefs!.remove(_keyIsPro);
       isProCached = false;
+      await _prefs!.remove(_keyAdBreakUntil);
+      isAdBreakCached = false;
 
       LoggerFactory.info('Datos de usuario limpiados');
     } catch (e) {
