@@ -1,8 +1,22 @@
-# Local: `docker compose up --build` → http://localhost:8080
-# VPS:   set DOMAIN in .env and add `--profile prod` to also start Caddy (HTTPS).
+# Local:  docker compose up -d --build            → http://127.0.0.1:8080
+# Server: docker compose --profile prod up -d    → https://$DOMAIN (Caddy) + daily backups
+#         With API_IMAGE=ghcr.io/... the server pulls the image CI built instead of building.
+# Fixed project name: another folder called backend/ must not share containers.
+name: peliculas
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   api:
-    build: .
+    image: ${API_IMAGE:-peliculas-api:local}
+    build:
+      context: .
+      args:
+        VERSION: ${API_VERSION:-dev}
     restart: unless-stopped
     env_file: .env
     environment:
@@ -13,6 +27,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    logging: *logging
 
   db:
     image: postgres:17-alpine
@@ -27,6 +42,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U peliculas"]
       interval: 5s
       retries: 10
+    logging: *logging
 
   caddy:
     image: caddy:2-alpine
@@ -37,11 +53,39 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp" # HTTP/3
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
-    depends_on: [api]
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+
+  backup:
+    build: ./deploy/backup
+    profiles: [prod]
+    restart: unless-stopped
+    environment:
+      PGHOST: db
+      PGUSER: peliculas
+      PGPASSWORD: ${POSTGRES_PASSWORD:-peliculas}
+      PGDATABASE: peliculas
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}          # UTC hour of the daily dump
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      # Off-server copy with rclone (optional), e.g. a Hetzner Storage Box over SFTP:
+      #   RCLONE_REMOTE=box:peliculas-backups plus RCLONE_CONFIG_BOX_* variables in .env
+      RCLONE_REMOTE: ${RCLONE_REMOTE:-}
+    env_file: .env
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    logging: *logging
 
 volumes:
   pgdata:
   caddy_data:
+  caddy_config:
