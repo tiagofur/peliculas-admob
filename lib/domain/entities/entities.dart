@@ -20,3 +20,4 @@ export 'temporada.dart';
 export 'episodio.dart';
 export 'watched_episode.dart';
 export 'series_progress.dart';
+export 'series_filter.dart';

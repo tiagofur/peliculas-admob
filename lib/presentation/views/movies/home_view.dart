@@ -1,12 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/logging/logger_factory.dart';
 import '../../../domain/entities/entities.dart';
 import '../../../generated/app_localizations.dart';
+import '../../delegates/search_series_delegate.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/providers.dart';
+import '../../providers/series/series_providers.dart';
+import '../../providers/series/series_repository_provider.dart';
+import '../../widgets/series/serie_horizontal_listview.dart';
 import '../../widgets/admob/banner_ad_widget.dart';
 import '../../widgets/admob/full_width_ad_widget.dart';
 import '../../widgets/admob/native_ad_widget.dart';
@@ -25,6 +30,8 @@ class HomeView extends ConsumerStatefulWidget {
 
 class HomeViewState extends ConsumerState<HomeView>
     with AutomaticKeepAliveClientMixin {
+  String _contentType = 'movies';
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +63,8 @@ class HomeViewState extends ConsumerState<HomeView>
         '🏠 HomeView - Building UI with ${nowPlayingMovies.length} now playing, ${popularMovies.length} popular movies');
 
     return SafeArea(
-      child: CustomScrollView(slivers: [
+      child: CustomScrollView(
+          key: PageStorageKey('home-$_contentType'), slivers: [
         const SliverAppBar(
           floating: true,
           flexibleSpace: FlexibleSpaceBar(
@@ -67,8 +75,9 @@ class HomeViewState extends ConsumerState<HomeView>
             delegate: SliverChildBuilderDelegate((context, index) {
           return Column(
             children: [
-              // Show slideshow immediately, even if empty
-              MoviesSlideshow(movies: slideShowMovies),
+              if (_contentType == 'movies')
+                // Show slideshow immediately, even if empty
+                MoviesSlideshow(movies: slideShowMovies),
 
               // Banner de modo guest (solo se muestra en modo guest)
               const GuestModeBanner(),
@@ -76,8 +85,46 @@ class HomeViewState extends ConsumerState<HomeView>
               // Banner discreto después del slideshow
               kIsWeb ? const WebSafeBannerAdWidget() : const BannerAdWidget(),
 
-              // ✅ LAZY LOADING: Load data when sections become visible
-              _buildMovieSection(
+              _buildContentToggle(ref),
+
+              if (_contentType == 'series') ...[
+                _buildSerieSection(
+                  series: ref.watch(popularSeriesProvider).series,
+                  sectionId: 'series-popular',
+                  title: 'Series populares',
+                  subTitle: 'Lo más visto en series',
+                  provider: popularSeriesProvider,
+                  state: ref.watch(popularSeriesProvider),
+                ),
+                _buildSerieSection(
+                  series: ref.watch(topRatedSeriesProvider).series,
+                  sectionId: 'series-top-rated',
+                  title: 'Series mejor valoradas',
+                  subTitle: 'Las favoritas de la crítica',
+                  provider: topRatedSeriesProvider,
+                  state: ref.watch(topRatedSeriesProvider),
+                ),
+                _buildSerieSection(
+                  series: ref.watch(onTheAirSeriesProvider).series,
+                  sectionId: 'series-on-the-air',
+                  title: 'Series en emisión',
+                  subTitle: 'Nuevos episodios cada semana',
+                  provider: onTheAirSeriesProvider,
+                  state: ref.watch(onTheAirSeriesProvider),
+                ),
+                _buildSerieSection(
+                  series: ref.watch(airingTodaySeriesProvider).series,
+                  sectionId: 'series-airing-today',
+                  title: 'Se emiten hoy',
+                  subTitle: 'Episodios de hoy',
+                  provider: airingTodaySeriesProvider,
+                  state: ref.watch(airingTodaySeriesProvider),
+                ),
+              ],
+
+              if (_contentType == 'movies')
+                // ✅ LAZY LOADING: Load data when sections become visible
+                _buildMovieSection(
                 l10n: l10n,
                 movies: nowPlayingMovies,
                 sectionId: 'now-playing',
@@ -87,18 +134,19 @@ class HomeViewState extends ConsumerState<HomeView>
                 state: nowPlayingState,
               ),
 
-              _buildMovieSection(
-                l10n: l10n,
-                movies: popularMovies,
-                sectionId: 'popular',
-                title: l10n.homePopularTitle,
-                subTitle: l10n.homePopularSubtitle,
-                provider: popularMoviesProvider,
-                state: popularState,
-              ),
+              if (_contentType == 'movies')
+                _buildMovieSection(
+                  l10n: l10n,
+                  movies: popularMovies,
+                  sectionId: 'popular',
+                  title: l10n.homePopularTitle,
+                  subTitle: l10n.homePopularSubtitle,
+                  provider: popularMoviesProvider,
+                  state: popularState,
+                ),
 
               // Sección de recomendaciones personalizadas
-              _buildRecommendationsSection(ref),
+              if (_contentType == 'movies') _buildRecommendationsSection(ref),
 
               // Anuncio nativo adicional entre "Tendencias" y "Próximamente" (MEDIA PRIORIDAD)
               const Padding(
@@ -106,25 +154,27 @@ class HomeViewState extends ConsumerState<HomeView>
                 child: kIsWeb ? WebSafeNativeAdWidget() : NativeAdWidget(),
               ),
 
-              _buildMovieSection(
-                l10n: l10n,
-                movies: upcomingMovies,
-                sectionId: 'upcoming',
-                title: l10n.homeUpcomingTitle,
-                subTitle: l10n.homeUpcomingSubtitle,
-                provider: upcomingMoviesProvider,
-                state: upcomingState,
-              ),
+              if (_contentType == 'movies')
+                _buildMovieSection(
+                  l10n: l10n,
+                  movies: upcomingMovies,
+                  sectionId: 'upcoming',
+                  title: l10n.homeUpcomingTitle,
+                  subTitle: l10n.homeUpcomingSubtitle,
+                  provider: upcomingMoviesProvider,
+                  state: upcomingState,
+                ),
 
-              _buildMovieSection(
-                l10n: l10n,
-                movies: topRatedMovies,
-                sectionId: 'top-rated',
-                title: l10n.homeTopRatedTitle,
-                subTitle: l10n.homeTopRatedSubtitle,
-                provider: topRatedMoviesProvider,
-                state: topRatedState,
-              ),
+              if (_contentType == 'movies')
+                _buildMovieSection(
+                  l10n: l10n,
+                  movies: topRatedMovies,
+                  sectionId: 'top-rated',
+                  title: l10n.homeTopRatedTitle,
+                  subTitle: l10n.homeTopRatedSubtitle,
+                  provider: topRatedMoviesProvider,
+                  state: topRatedState,
+                ),
 
               // Banner al final de la página (ALTA PRIORIDAD según documento)
               kIsWeb
@@ -142,6 +192,141 @@ class HomeViewState extends ConsumerState<HomeView>
           );
         }, childCount: 1)),
       ]),
+    );
+  }
+
+  Widget _buildContentToggle(WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(
+                  value: 'movies',
+                  label: Text('Películas'),
+                  icon: Icon(Icons.movie_outlined),
+                ),
+                ButtonSegment(
+                  value: 'series',
+                  label: Text('Series'),
+                  icon: Icon(Icons.tv_outlined),
+                ),
+              ],
+              selected: {_contentType},
+              onSelectionChanged: (selected) {
+                setState(() => _contentType = selected.first);
+              },
+            ),
+          ),
+          if (_contentType == 'series')
+            IconButton(
+              onPressed: () {
+                final seriesRepository = ref.read(seriesRepositoryProvider);
+                showSearch<Serie?>(
+                  context: context,
+                  delegate: SearchSeriesDelegate(
+                    initialSeries: const [],
+                    searchSeries: (query) =>
+                        seriesRepository.searchSeries(query),
+                  ),
+                ).then((serie) {
+                  if (serie == null) return;
+                  if (mounted) {
+                    context.push('/serie/${serie.id}');
+                  }
+                });
+              },
+              icon: const Icon(Icons.search),
+              tooltip: 'Buscar series',
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSerieSection({
+    required List<Serie> series,
+    required String sectionId,
+    required String title,
+    required String subTitle,
+    required NotifierProvider<dynamic, SeriesStateData> provider,
+    required SeriesStateData state,
+  }) {
+    return Column(
+      children: [
+        Builder(
+          builder: (context) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (series.isEmpty && state.state == SeriesState.initial) {
+                ref.read(provider.notifier).loadNextPage();
+              }
+            });
+
+            if (series.isEmpty && state.state == SeriesState.loading) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          subTitle,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const MovieHorizontalListSkeleton(itemCount: 5),
+                ],
+              );
+            }
+
+            return SerieHorizontalListview(
+              series: series,
+              title: title,
+              subTitle: subTitle,
+              loadNextPage: () => ref.read(provider.notifier).loadNextPage(),
+            );
+          },
+        ),
+        if (state.state == SeriesState.error)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error, color: Colors.red.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    state.errorMessage ?? 'Error desconocido',
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => ref.read(provider.notifier).refresh(),
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
