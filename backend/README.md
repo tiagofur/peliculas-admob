@@ -2,7 +2,7 @@
 
 Backend propio que reemplaza a Supabase. Plan completo: [docs/PLAN.md](docs/PLAN.md).
 
-**Estado: fase 0** — caché de TMDB lista. Auth, sync, Pro y push vienen en las siguientes fases.
+**Estado: fase 2** — caché de TMDB, login (email, Apple, Google) y biblioteca con sync listos. Pro y push vienen en las siguientes fases.
 
 ## Correr en local
 
@@ -28,12 +28,68 @@ TMDB_API_KEY=... go run ./cmd/api
 go vet ./... && go test -race ./...
 ```
 
+Los tests de login necesitan un Postgres; sin él se saltan:
+
+```bash
+docker run -d --name peliculas-testdb -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test -p 127.0.0.1:55432:5432 postgres:17-alpine
+TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:55432/test?sslmode=disable" go test -race -p 1 ./...
+```
+
 ## Endpoints
 
 | Método | Ruta | Qué hace |
 |---|---|---|
 | GET | `/healthz` | `ok` si la API y Postgres responden |
 | GET | `/v1/tmdb/{ruta}` | Mismo JSON que `https://api.themoviedb.org/3/{ruta}`, con caché |
+
+| POST | `/v1/auth/email/signup` | `{email, password, name?, device?}` → sesión (201) |
+| POST | `/v1/auth/email/login` | `{email, password, device?}` → sesión |
+| POST | `/v1/auth/apple` | `{id_token, nonce?, authorization_code?, name?, device?}` → sesión |
+| POST | `/v1/auth/google` | `{id_token, nonce?, device?}` → sesión |
+| POST | `/v1/auth/refresh` | `{refresh_token}` → sesión nueva (el refresh token cambia cada vez) |
+| POST | `/v1/auth/logout` | `{refresh_token}` → cierra la sesión de ese dispositivo (204) |
+| GET | `/v1/me` | Perfil (requiere `Authorization: Bearer <access_token>`) |
+| PATCH | `/v1/me` | `{display_name?, avatar_url?, locale?, country?}` |
+| DELETE | `/v1/me` | Borra la cuenta y todos sus datos (204). Revoca el token de Apple si hay clave `.p8` |
+
+| GET | `/v1/sync?cursor=<c>` | Cambios de la biblioteca desde el cursor (vacío = todo) |
+| POST | `/v1/sync` | `{ops: [...]}` sube hasta 500 cambios → `{results: [...]}` |
+
+**Sesión** = `{access_token, token_type, expires_in, refresh_token, user}`. El access token dura 15 min; el refresh token 60 días y se renueva en cada uso. Si alguien reutiliza un refresh token viejo (más de 30 s después), se cierran todas las sesiones de ese inicio de sesión.
+
+**Errores**: `{"error": "<código>"}` — `invalid_email`, `weak_password`, `email_taken` (409), `invalid_credentials`, `invalid_token`, `invalid_nonce` (401), `provider_not_configured` (503), `rate_limited` (429).
+
+**Cuentas que se juntan**: si alguien entra con Apple o Google y su email verificado ya existe, se usa esa cuenta. Si esa cuenta se registró con email y contraseña sin verificar, se borra la contraseña y se cierran sus sesiones (evita que alguien registre tu email antes que tú para quedarse con tu cuenta).
+
+### Sync de la biblioteca
+
+Cinco tipos de dato (`entity`):
+
+| entity | Clave | Campos |
+|---|---|---|
+| `library` | `kind` + `media_type` + `tmdb_id` | `kind`: `favorite` · `watchlist` · `watched`; foto mínima `title`, `poster_path`, `year` |
+| `list` | `id` (UUID que genera el dispositivo) | `name`, `description`, `position` |
+| `list_item` | `list_id` + `media_type` + `tmdb_id` | foto mínima + `position` |
+| `rating` | `media_type` + `tmdb_id` | `score` 1–10 (medias estrellas), `review` |
+| `episode` | `tv_id` + `season` + `episode` | `watched_at` |
+
+Todos llevan `updated_at` (hora del dispositivo) y `deleted` (borrado).
+
+**Subir** (`POST /v1/sync`):
+
+```json
+{"ops": [
+  {"entity": "library", "data": {"kind": "watchlist", "media_type": "movie", "tmdb_id": 550,
+   "title": "El club de la pelea", "poster_path": "/p.jpg", "year": "1999", "updated_at": "2026-11-07T12:00:00Z"}},
+  {"entity": "episode", "data": {"tv_id": 1399, "season": 1, "episode": 1, "updated_at": "2026-11-07T12:00:00Z"}}
+]}
+```
+
+Cada op responde `applied`, `stale` (ya había un cambio más nuevo: gana el último) o `invalid` (con `error`; el resto del lote sigue). Una hora del dispositivo en el futuro (más de 5 min) se cambia por la del servidor.
+
+**Bajar** (`GET /v1/sync?cursor=...`): devuelve `{cursor, has_more, library, lists, list_items, ratings, episodes}`. Guarda el `cursor` y envíalo la próxima vez. Si `has_more` es `true`, vuelve a pedir enseguida. Una fila puede llegar repetida: aplicarla dos veces da el mismo resultado.
+
+**Cuándo sincronizar**: al abrir la app, al volver a primer plano y unos segundos después de cada cambio (subir primero, luego bajar).
 
 `/v1/tmdb` solo acepta las rutas de la lista en `internal/tmdb/policy.go`. La cabecera `X-Cache` dice de dónde salió la respuesta: `HIT` (caché), `STALE` (caché caducada, refrescando detrás) o `MISS` (TMDB).
 
@@ -58,6 +114,10 @@ Las imágenes siguen saliendo de `https://image.tmdb.org`.
 | `MEM_CACHE_ENTRIES` | `5000` | Tamaño de la caché en memoria |
 | `CACHE_STALE_MAX` | `720h` | Cuánto se puede servir una respuesta caducada |
 | `TRUST_PROXY` | `false` | `true` detrás de Caddy (IP real del cliente) |
+| `JWT_SECRET` | — | Obligatorio con base de datos, mínimo 32 caracteres |
+| `APPLE_CLIENT_IDS` | vacío | Bundle ID de iOS primero. Vacío = Apple desactivado |
+| `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | vacío | Clave `.p8` para revocar tokens de Apple al borrar cuenta |
+| `GOOGLE_CLIENT_IDS` | vacío | Client IDs de Google. Vacío = Google desactivado |
 
 ## Desplegar en el VPS
 
@@ -77,5 +137,7 @@ internal/config/    variables de entorno
 internal/db/        conexión y migraciones SQL embebidas
 internal/cache/     LRU en memoria + tabla tmdb_cache en Postgres
 internal/tmdb/      lista de rutas, TTL, cliente TMDB y proxy con caché
+internal/auth/      email + bcrypt, Apple/Google (JWKS), JWT, refresh rotativo, cuenta
+internal/library/   biblioteca, listas, notas, episodios y sync por cursor
 internal/httpapi/   rutas, logs, límite por IP
 ```

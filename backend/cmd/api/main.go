@@ -10,10 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/tiagofur/peliculas-admob/backend/internal/auth"
 	"github.com/tiagofur/peliculas-admob/backend/internal/cache"
 	"github.com/tiagofur/peliculas-admob/backend/internal/config"
 	"github.com/tiagofur/peliculas-admob/backend/internal/db"
 	"github.com/tiagofur/peliculas-admob/backend/internal/httpapi"
+	"github.com/tiagofur/peliculas-admob/backend/internal/library"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
 )
 
@@ -54,8 +56,30 @@ func run(log *slog.Logger) error {
 		proxy.DB = pg
 		srv.Ready = pool.Ping
 		go pruneLoop(ctx, log, pg, cfg.StaleMax)
+
+		issuer, err := auth.NewIssuer([]byte(cfg.JWTSecret))
+		if err != nil {
+			return err
+		}
+		var bundleID string
+		if len(cfg.AppleClientIDs) > 0 {
+			bundleID = cfg.AppleClientIDs[0]
+		}
+		appleAPI, err := auth.NewAppleClient(cfg.AppleTeamID, cfg.AppleKeyID, bundleID, cfg.ApplePrivateKey)
+		if err != nil {
+			return err
+		}
+		if appleAPI == nil {
+			log.Warn("Apple .p8 key not set: Apple tokens will not be revoked on account deletion")
+		}
+		srv.Auth = &auth.Service{
+			DB: pool, Tokens: issuer, Log: log, AppleAPI: appleAPI,
+			Apple:  auth.NewAppleVerifier(cfg.AppleClientIDs),
+			Google: auth.NewGoogleVerifier(cfg.GoogleClientIDs),
+		}
+		srv.Library = &library.Service{DB: pool}
 	} else {
-		log.Warn("DATABASE_URL not set: cache is memory-only")
+		log.Warn("DATABASE_URL not set: cache is memory-only; auth and sync are disabled")
 	}
 
 	httpSrv := &http.Server{
