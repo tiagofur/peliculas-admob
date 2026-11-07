@@ -119,8 +119,9 @@ En vez del realtime de Supabase:
 
 | Fase | Qué | Hecho cuando |
 |---|---|---|
-| **0** | Esqueleto + caché TMDB | La app nativa usa `/v1/tmdb/*` y la key sale del binario |
-| **1** | Auth: email, Apple, Google, JWT, borrar cuenta | Login en la app nativa contra el backend |
+| **0** ✅ | Esqueleto + caché TMDB | La app nativa usa `/v1/tmdb/*` y la key sale del binario |
+| **1** ✅ | Auth: email, Apple, Google, JWT, borrar cuenta | Login en la app nativa contra el backend |
+| 1b | Email: verificar email y recuperar contraseña | Necesita proveedor de correo (Resend, Postmark…) |
 | **2** | Biblioteca, listas, ratings, episodios + sync | La app guarda y sincroniza sin Supabase |
 | **3** | Pro con StoreKit 2 | El servidor sabe quién es Pro (widgets, avisos, IA) |
 | **4** | Push APNs: episodios nuevos | Tarea diaria que avisa de estrenos de series seguidas |

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,14 @@ type Config struct {
 	MemEntries    int
 	StaleMax      time.Duration
 	TrustProxy    bool // read client IP from X-Forwarded-For (behind Caddy)
+
+	// Auth (needs DATABASE_URL)
+	JWTSecret       string
+	AppleClientIDs  []string // iOS bundle ID (+ Services ID for web)
+	GoogleClientIDs []string // iOS / Android / web OAuth client IDs
+	AppleTeamID     string   // these three enable Apple token revoke
+	AppleKeyID      string
+	ApplePrivateKey string // .p8 contents, \n allowed
 }
 
 func Load() (Config, error) {
@@ -27,6 +36,16 @@ func Load() (Config, error) {
 		MemEntries:    5000,
 		StaleMax:      30 * 24 * time.Hour,
 		TrustProxy:    os.Getenv("TRUST_PROXY") == "true",
+
+		JWTSecret:       os.Getenv("JWT_SECRET"),
+		AppleClientIDs:  list(os.Getenv("APPLE_CLIENT_IDS")),
+		GoogleClientIDs: list(os.Getenv("GOOGLE_CLIENT_IDS")),
+		AppleTeamID:     os.Getenv("APPLE_TEAM_ID"),
+		AppleKeyID:      os.Getenv("APPLE_KEY_ID"),
+		ApplePrivateKey: os.Getenv("APPLE_PRIVATE_KEY"),
+	}
+	if c.DatabaseURL != "" && len(c.JWTSecret) < 32 {
+		return c, errors.New("JWT_SECRET must be at least 32 characters (try: openssl rand -base64 48)")
 	}
 	if v := os.Getenv("MEM_CACHE_ENTRIES"); v != "" {
 		n, err := strconv.Atoi(v)
@@ -46,6 +65,16 @@ func Load() (Config, error) {
 		return c, errors.New("set TMDB_API_KEY or TMDB_READ_TOKEN")
 	}
 	return c, nil
+}
+
+func list(v string) []string {
+	var out []string
+	for _, s := range strings.Split(v, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
 }
 
 func env(k, def string) string {
