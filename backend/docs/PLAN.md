@@ -129,7 +129,7 @@ En vez del realtime de Supabase:
 | 3b | Pro 24 h por anuncio con recompensa | Verificación en servidor de AdMob (SSV) para no fiarse del dispositivo |
 | **4** ✅ | Push APNs: episodios nuevos | Tarea horaria que avisa de estrenos de series seguidas |
 | **5** ✅ | Deploy VPS: Compose, Caddy, backups diarios `pg_dump`, CI | API en producción con HTTPS ([DEPLOY.md](DEPLOY.md)) |
-| **6** | Migración desde Supabase | Usuarios (las contraseñas bcrypt de Supabase se copian tal cual) y datos migrados; Flutter apunta al backend; Supabase apagado |
+| **6** ✅ | Migración desde Supabase ([MIGRATION.md](MIGRATION.md)) | Usuarios (las contraseñas bcrypt de Supabase se copian tal cual) y datos migrados; Flutter apunta al backend; Supabase apagado |
 
 ## Seguridad
 

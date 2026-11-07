@@ -2,7 +2,7 @@
 
 Backend propio que reemplaza a Supabase. Plan completo: [docs/PLAN.md](docs/PLAN.md).
 
-**Estado: fase 5** — caché de TMDB, login (email, Apple, Google), biblioteca con sync, Pro (StoreKit 2), avisos de episodios nuevos (APNs) y deploy (VPS + CI) listos. Falta migrar los datos desde Supabase (fase 6).
+**Estado: fases 0–6 listas** — caché de TMDB, login (email, Apple, Google), biblioteca con sync, Pro (StoreKit 2), avisos de episodios nuevos (APNs), deploy (VPS + CI) y migración desde Supabase ([docs/MIGRATION.md](docs/MIGRATION.md)). Falta que la app Flutter use esta API para poder apagar Supabase.
 
 ## Correr en local
 
@@ -77,7 +77,7 @@ Cinco tipos de dato (`entity`):
 | `library` | `kind` + `media_type` + `tmdb_id` | `kind`: `favorite` · `watchlist` · `watched`; foto mínima `title`, `poster_path`, `year` |
 | `list` | `id` (UUID que genera el dispositivo) | `name`, `description`, `position` |
 | `list_item` | `list_id` + `media_type` + `tmdb_id` | foto mínima + `position` |
-| `rating` | `media_type` + `tmdb_id` | `score` 1–10 (medias estrellas), `review` |
+| `rating` | `media_type` + `tmdb_id` | `score` 1.0–10.0 en pasos de 0.5, `review` |
 | `episode` | `tv_id` + `season` + `episode` | `watched_at` |
 
 Todos llevan `updated_at` (hora del dispositivo) y `deleted` (borrado).
@@ -176,6 +176,8 @@ Guía paso a paso: [docs/DEPLOY.md](docs/DEPLOY.md). Resumen:
 ```
 cmd/api/            arranque, apagado limpio, limpieza horaria de la caché, `api healthcheck`
 deploy/             preparar el VPS, desplegar, restaurar y la imagen de backups
+cmd/migrate-supabase/ copia usuarios y bibliotecas desde Supabase
+internal/migrate/   lógica de la migración
 internal/config/    variables de entorno
 internal/db/        conexión y migraciones SQL embebidas
 internal/cache/     LRU en memoria + tabla tmdb_cache en Postgres

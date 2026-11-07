@@ -90,7 +90,7 @@ type ListItem struct {
 type Rating struct {
 	MediaType  string    `json:"media_type"`
 	TMDBID     int       `json:"tmdb_id"`
-	Score      int       `json:"score"` // 1..10
+	Score      float64   `json:"score"` // 1.0..10.0 in 0.5 steps
 	Review     string    `json:"review"`
 	Title      string    `json:"title"`
 	PosterPath string    `json:"poster_path"`
@@ -325,8 +325,8 @@ func (s *Service) applyRating(ctx context.Context, tx pgx.Tx, userID string, v R
 	if err := checkMedia(v.MediaType, v.TMDBID); err != nil {
 		return false, err
 	}
-	if !v.Deleted && (v.Score < 1 || v.Score > 10) {
-		return false, invalid("score must be 1..10")
+	if !v.Deleted && (v.Score < 1 || v.Score > 10 || v.Score*2 != math.Floor(v.Score*2)) {
+		return false, invalid("score must be 1.0..10.0 in 0.5 steps")
 	}
 	if v.Deleted {
 		v.Score = 0
