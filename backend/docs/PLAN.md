@@ -95,7 +95,8 @@ Todas las tablas de usuario llevan `updated_at` y `deleted_at` (borrado lógico)
 
 En vez del realtime de Supabase:
 
-- `GET /v1/sync?since=<cursor>` → todo lo que cambió desde el cursor (incluye borrados) + cursor nuevo.
+- `GET /v1/sync?cursor=<cursor>` → todo lo que cambió desde el cursor (incluye borrados) + cursor nuevo.
+- El cursor es el id de transacción de Postgres (`xid8`) más bajo aún en curso, así un cambio que se estaba guardando durante la descarga no se pierde.
 - `POST /v1/sync` → lote de cambios del dispositivo con su hora local. Gana el último que escribe (como hoy).
 - La app sincroniza al abrir, al volver a primer plano y tras cada cambio.
 - Si más adelante hace falta tiempo real: Server-Sent Events, sin cambiar el modelo.
@@ -122,7 +123,8 @@ En vez del realtime de Supabase:
 | **0** ✅ | Esqueleto + caché TMDB | La app nativa usa `/v1/tmdb/*` y la key sale del binario |
 | **1** ✅ | Auth: email, Apple, Google, JWT, borrar cuenta | Login en la app nativa contra el backend |
 | 1b | Email: verificar email y recuperar contraseña | Necesita proveedor de correo (Resend, Postmark…) |
-| **2** | Biblioteca, listas, ratings, episodios + sync | La app guarda y sincroniza sin Supabase |
+| **2** ✅ | Biblioteca, listas, ratings, episodios + sync | La app guarda y sincroniza sin Supabase |
+| 2b | Logros y perfil público (reseñas útiles, estadísticas) | Sustituye `user_achievements`, `rating_helpfulness_*` y las RPC de estadísticas |
 | **3** | Pro con StoreKit 2 | El servidor sabe quién es Pro (widgets, avisos, IA) |
 | **4** | Push APNs: episodios nuevos | Tarea diaria que avisa de estrenos de series seguidas |
 | **5** | Deploy VPS: Compose, Caddy, backups diarios `pg_dump` | API en producción con HTTPS |

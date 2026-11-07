@@ -15,6 +15,7 @@ import (
 	"github.com/tiagofur/peliculas-admob/backend/internal/config"
 	"github.com/tiagofur/peliculas-admob/backend/internal/db"
 	"github.com/tiagofur/peliculas-admob/backend/internal/httpapi"
+	"github.com/tiagofur/peliculas-admob/backend/internal/library"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
 )
 
@@ -76,8 +77,9 @@ func run(log *slog.Logger) error {
 			Apple:  auth.NewAppleVerifier(cfg.AppleClientIDs),
 			Google: auth.NewGoogleVerifier(cfg.GoogleClientIDs),
 		}
+		srv.Library = &library.Service{DB: pool}
 	} else {
-		log.Warn("DATABASE_URL not set: cache is memory-only and auth is disabled")
+		log.Warn("DATABASE_URL not set: cache is memory-only; auth and sync are disabled")
 	}
 
 	httpSrv := &http.Server{
