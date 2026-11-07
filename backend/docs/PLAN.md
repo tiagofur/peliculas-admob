@@ -127,7 +127,7 @@ En vez del realtime de Supabase:
 | 2b | Logros y perfil público (reseñas útiles, estadísticas) | Sustituye `user_achievements`, `rating_helpfulness_*` y las RPC de estadísticas |
 | **3** ✅ | Pro con StoreKit 2 | El servidor sabe quién es Pro (widgets, avisos, IA) |
 | 3b | Pro 24 h por anuncio con recompensa | Verificación en servidor de AdMob (SSV) para no fiarse del dispositivo |
-| **4** | Push APNs: episodios nuevos | Tarea diaria que avisa de estrenos de series seguidas |
+| **4** ✅ | Push APNs: episodios nuevos | Tarea horaria que avisa de estrenos de series seguidas |
 | **5** | Deploy VPS: Compose, Caddy, backups diarios `pg_dump` | API en producción con HTTPS |
 | **6** | Migración desde Supabase | Usuarios (las contraseñas bcrypt de Supabase se copian tal cual) y datos migrados; Flutter apunta al backend; Supabase apagado |
 

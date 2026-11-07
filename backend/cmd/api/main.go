@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // the distroless image has no zoneinfo; device timezones need it
 
 	"github.com/tiagofur/peliculas-admob/backend/internal/auth"
 	"github.com/tiagofur/peliculas-admob/backend/internal/cache"
@@ -16,6 +17,7 @@ import (
 	"github.com/tiagofur/peliculas-admob/backend/internal/db"
 	"github.com/tiagofur/peliculas-admob/backend/internal/httpapi"
 	"github.com/tiagofur/peliculas-admob/backend/internal/library"
+	"github.com/tiagofur/peliculas-admob/backend/internal/push"
 	"github.com/tiagofur/peliculas-admob/backend/internal/storekit"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
 )
@@ -89,6 +91,19 @@ func run(log *slog.Logger) error {
 				BundleID: cfg.StoreKitBundleID, ProductIDs: cfg.ProProductIDs}
 		} else {
 			log.Warn("STOREKIT_BUNDLE_ID or PRO_PRODUCT_IDS not set: Pro is disabled")
+		}
+
+		apns, err := push.NewAPNs(cfg.APNsKeyID, cfg.APNsTeamID, cfg.APNsTopic, cfg.APNsPrivateKey)
+		if err != nil {
+			return err
+		}
+		srv.Push = &push.Service{DB: pool, Log: log}
+		if apns != nil {
+			srv.Push.Sender = apns
+			job := &push.EpisodeJob{Push: srv.Push, Shows: proxy, ProOnly: cfg.PushProOnly, AlertHour: cfg.PushAlertHour}
+			go job.Loop(ctx, cfg.PushInterval)
+		} else {
+			log.Warn("APNS_KEY_ID / APNS_PRIVATE_KEY not set: devices are stored but no alerts are sent")
 		}
 	} else {
 		log.Warn("DATABASE_URL not set: cache is memory-only; auth and sync are disabled")

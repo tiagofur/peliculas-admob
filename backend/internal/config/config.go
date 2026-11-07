@@ -29,6 +29,15 @@ type Config struct {
 	// StoreKit (Pro)
 	StoreKitBundleID string   // defaults to the first APPLE_CLIENT_IDS
 	ProProductIDs    []string // App Store product IDs that unlock Pro
+
+	// Push (APNs). Team ID and topic default to APPLE_TEAM_ID / STOREKIT_BUNDLE_ID.
+	APNsKeyID      string
+	APNsTeamID     string
+	APNsPrivateKey string
+	APNsTopic      string
+	PushProOnly    bool
+	PushAlertHour  int
+	PushInterval   time.Duration
 }
 
 func Load() (Config, error) {
@@ -53,6 +62,27 @@ func Load() (Config, error) {
 	}
 	if c.StoreKitBundleID == "" && len(c.AppleClientIDs) > 0 {
 		c.StoreKitBundleID = c.AppleClientIDs[0]
+	}
+	c.APNsKeyID = os.Getenv("APNS_KEY_ID")
+	c.APNsTeamID = env("APNS_TEAM_ID", c.AppleTeamID)
+	c.APNsPrivateKey = os.Getenv("APNS_PRIVATE_KEY")
+	c.APNsTopic = env("APNS_TOPIC", c.StoreKitBundleID)
+	c.PushProOnly = os.Getenv("PUSH_PRO_ONLY") != "false"
+	c.PushAlertHour = 18
+	if v := os.Getenv("PUSH_ALERT_HOUR"); v != "" {
+		h, err := strconv.Atoi(v)
+		if err != nil || h < 0 || h > 23 {
+			return c, errors.New("PUSH_ALERT_HOUR must be 0..23")
+		}
+		c.PushAlertHour = h
+	}
+	c.PushInterval = time.Hour
+	if v := os.Getenv("PUSH_INTERVAL"); v != "" {
+		d, err := time.ParseDuration(v)
+		if err != nil || d < time.Minute {
+			return c, errors.New("PUSH_INTERVAL must be a duration of at least 1m")
+		}
+		c.PushInterval = d
 	}
 	if c.DatabaseURL != "" && len(c.JWTSecret) < 32 {
 		return c, errors.New("JWT_SECRET must be at least 32 characters (try: openssl rand -base64 48)")
