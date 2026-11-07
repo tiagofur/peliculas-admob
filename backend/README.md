@@ -2,7 +2,7 @@
 
 Backend propio que reemplaza a Supabase. Plan completo: [docs/PLAN.md](docs/PLAN.md).
 
-**Estado: fase 4** — caché de TMDB, login (email, Apple, Google), biblioteca con sync, Pro (StoreKit 2) y avisos de episodios nuevos (APNs) listos. Deploy y migración desde Supabase vienen en las siguientes fases.
+**Estado: fase 5** — caché de TMDB, login (email, Apple, Google), biblioteca con sync, Pro (StoreKit 2), avisos de episodios nuevos (APNs) y deploy (VPS + CI) listos. Falta migrar los datos desde Supabase (fase 6).
 
 ## Correr en local
 
@@ -40,6 +40,7 @@ TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:55432/test?sslmode=disable
 | Método | Ruta | Qué hace |
 |---|---|---|
 | GET | `/healthz` | `ok` si la API y Postgres responden |
+| GET | `/version` | Commit que está corriendo |
 | GET | `/v1/tmdb/{ruta}` | Mismo JSON que `https://api.themoviedb.org/3/{ruta}`, con caché |
 
 | POST | `/v1/auth/email/signup` | `{email, password, name?, device?}` → sesión (201) |
@@ -163,18 +164,18 @@ Las imágenes siguen saliendo de `https://image.tmdb.org`.
 
 ## Desplegar en el VPS
 
-```bash
-# en el servidor, con el DNS de DOMAIN apuntando a él
-cp .env.example .env   # TMDB, POSTGRES_PASSWORD, DOMAIN, TRUST_PROXY=true
-docker compose --profile prod up -d --build
-```
+Guía paso a paso: [docs/DEPLOY.md](docs/DEPLOY.md). Resumen:
 
-Caddy saca el certificado HTTPS solo. Los backups diarios de Postgres van en la fase 5.
+- `deploy/bootstrap.sh` prepara un Ubuntu 24.04 nuevo (Docker, firewall, usuario `deploy`, SSH solo con clave).
+- `docker compose --profile prod` añade Caddy (HTTPS automático, HTTP/3, cabeceras de seguridad) y backups diarios de Postgres con copia opcional fuera del servidor.
+- GitHub Actions (`.github/workflows/backend.yml`): tests con Postgres en cada PR; en `main`, imagen a `ghcr.io` y deploy por SSH si `DEPLOY_ENABLED=true`.
+- `GET /version` dice qué commit está corriendo.
 
 ## Estructura
 
 ```
-cmd/api/            arranque, apagado limpio, limpieza horaria de la caché
+cmd/api/            arranque, apagado limpio, limpieza horaria de la caché, `api healthcheck`
+deploy/             preparar el VPS, desplegar, restaurar y la imagen de backups
 internal/config/    variables de entorno
 internal/db/        conexión y migraciones SQL embebidas
 internal/cache/     LRU en memoria + tabla tmdb_cache en Postgres

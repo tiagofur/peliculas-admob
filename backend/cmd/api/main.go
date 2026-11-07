@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // the distroless image has no zoneinfo; device timezones need it
@@ -22,8 +23,16 @@ import (
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
 )
 
+// version is set at build time: -ldflags "-X main.version=<git sha>".
+var version = "dev"
+
 func main() {
-	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// `api healthcheck` lets Docker probe the container: the distroless
+	// image has no curl or shell.
+	if len(os.Args) > 1 && os.Args[1] == "healthcheck" {
+		os.Exit(healthcheck())
+	}
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil)).With("version", version)
 	if err := run(log); err != nil {
 		log.Error("fatal", "err", err)
 		os.Exit(1)
@@ -44,7 +53,7 @@ func run(log *slog.Logger) error {
 		StaleMax: cfg.StaleMax,
 		Log:      log,
 	}
-	srv := &httpapi.Server{TMDB: proxy, Log: log, TrustProxy: cfg.TrustProxy}
+	srv := &httpapi.Server{TMDB: proxy, Log: log, TrustProxy: cfg.TrustProxy, Version: version}
 
 	if cfg.DatabaseURL != "" {
 		pool, err := db.Open(ctx, cfg.DatabaseURL)
@@ -149,4 +158,24 @@ func pruneLoop(ctx context.Context, log *slog.Logger, pg *cache.Postgres, staleM
 			}
 		}
 	}
+}
+
+func healthcheck() int {
+	addr := os.Getenv("ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
+	if strings.HasPrefix(addr, ":") {
+		addr = "127.0.0.1" + addr
+	}
+	c := &http.Client{Timeout: 3 * time.Second}
+	resp, err := c.Get("http://" + addr + "/healthz")
+	if err != nil {
+		return 1
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return 1
+	}
+	return 0
 }

@@ -30,11 +30,16 @@ type Server struct {
 	Log        *slog.Logger
 	TrustProxy bool
 	Ready      func(context.Context) error // optional readiness check (DB ping)
+	Version    string
 }
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
+	mux.HandleFunc("GET /version", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"version":%q}`, s.Version)
+	})
 	mux.HandleFunc("GET /v1/tmdb/{path...}", s.tmdb)
 	s.authRoutes(mux)
 	s.syncRoutes(mux)
