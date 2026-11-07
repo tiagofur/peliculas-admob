@@ -10,8 +10,8 @@ Objetivo: agregar Series con paridad de Películas + episodios marcables y extra
 - S6: "asi que toma los agentes invetiguen como hacer, quiero todo perfecto y hermoso"
 - S7: "me gusta, hagamos tu recomendacion" — recomendación aprobada: Opción A tabs Películas|Series en Home, `FiltersView<T>` genérico, entidades nuevas sin reusar `typeId 0/1`.
 ## Tasks
-- T1 [S1,S2,S3] Entidades Serie/Temporada/Episodio/WatchedEpisode/SeriesProgress + Hive — route: inline — status: pending
-- T2 [S1,S3] Datasource TMDB /tv + SeriesRepository + mapper Trakt — route: inline — status: pending
+- T1 [S1,S2,S3] Entidades Serie/Temporada/Episodio/WatchedEpisode/SeriesProgress + Hive — route: inline — status: done — commit: dd3131a — 5 tests GREEN
+- T2 [S1,S3] Datasource TMDB /tv + SeriesRepository + mapper Trakt — route: inline — status: done — 7 tests GREEN, analyze clean
 - T3 [S3,S4] Providers series + SeriesFilter — route: inline — status: pending
 - T4 [S1,S2,S4] UI SerieDetail + rutas /serie — route: inline — status: pending
 - T5 [S4] Filtros parametrizados + búsqueda tv — route: inline — status: pending
