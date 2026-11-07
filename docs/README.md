@@ -18,6 +18,10 @@ Practical how-to guides for common tasks:
 - [Supabase Realtime](guides/supabase-realtime.md) - Real-time sync setup
 - [Monetization](guides/monetization.md) - AdSense and AdMob integration
 
+### 🍎 [iOS + Apple TV](ios/)
+
+- [Roadmap iOS + tvOS](ios/ROADMAP.md) - Posicionamiento, monetización e hitos hasta el lanzamiento
+
 ### 📊 [Audits](audits/)
 
 Code quality audits and improvements:
