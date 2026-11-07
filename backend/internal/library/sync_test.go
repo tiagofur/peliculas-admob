@@ -137,12 +137,13 @@ func TestInvalidOpsAreSkipped(t *testing.T) {
 		op("library", LibraryItem{Kind: "watchlist", MediaType: "book", TMDBID: 1}),
 		op("library", LibraryItem{Kind: "watchlist", MediaType: "movie", TMDBID: 1 << 40}),
 		op("rating", Rating{MediaType: "movie", TMDBID: 1, Score: 11}),
+		op("rating", Rating{MediaType: "movie", TMDBID: 1, Score: 7.3}),
 		op("episode", Episode{TVID: 1, Season: 1, Episode: 0}),
 		op("nope", nil),
 		Op{Entity: "library", Data: json.RawMessage(`"not an object"`)},
 		op("library", fav(2, t0)),
 	)
-	want := []string{"invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "applied"}
+	want := []string{"invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "applied"}
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("op %d: got %s want %s (%v)", i, got[i], want[i], got)
@@ -189,7 +190,7 @@ func TestListsAndOwnership(t *testing.T) {
 func TestRatingsAndEpisodes(t *testing.T) {
 	s, a, _ := testService(t)
 	got := push(t, s, a,
-		op("rating", Rating{MediaType: "tv", TMDBID: 1399, Score: 9, Review: "Épica", UpdatedAt: t0}),
+		op("rating", Rating{MediaType: "tv", TMDBID: 1399, Score: 9.5, Review: "Épica", UpdatedAt: t0}),
 		op("episode", Episode{TVID: 1399, Season: 1, Episode: 1, UpdatedAt: t0}),
 		op("episode", Episode{TVID: 1399, Season: 1, Episode: 2, WatchedAt: t0.Add(-time.Hour), UpdatedAt: t0}),
 	)
@@ -197,7 +198,7 @@ func TestRatingsAndEpisodes(t *testing.T) {
 		t.Fatalf("push: %v", got)
 	}
 	c := pull(t, s, a, "")
-	if len(c.Ratings) != 1 || c.Ratings[0].Score != 9 || c.Ratings[0].Review != "Épica" {
+	if len(c.Ratings) != 1 || c.Ratings[0].Score != 9.5 || c.Ratings[0].Review != "Épica" {
 		t.Fatalf("ratings: %+v", c.Ratings)
 	}
 	if len(c.Episodes) != 2 || !c.Episodes[0].WatchedAt.Equal(t0) && !c.Episodes[1].WatchedAt.Equal(t0) {

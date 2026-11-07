@@ -4,10 +4,11 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 ARG VERSION=dev
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /out/api ./cmd/api
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${VERSION}" -o /out/api ./cmd/api \
+ && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/migrate-supabase ./cmd/migrate-supabase
 
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /out/api /api
+COPY --from=build /out/api /out/migrate-supabase /
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 CMD ["/api", "healthcheck"]
 ENTRYPOINT ["/api"]
