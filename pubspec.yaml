@@ -71,12 +71,12 @@ dev_dependencies:
   supabase: ^2.16.5
 
 flutter_native_splash:
-  color: "#EEBEB8"
+  color: "#000000"
   image: web/icons/Icon-192.png
   web: true
 
   android_12:
-    color: "#EEBEB8"
+    color: "#000000"
 
 flutter:
   uses-material-design: true

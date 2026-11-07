@@ -30,6 +30,17 @@ class AppTheme {
   final int selectedColor;
   final ThemeMode themeMode;
 
+  /// System San Francisco font on Apple platforms (iOS/macOS resolve
+  /// `.SF Pro Text` to the native typeface). Null elsewhere so every
+  /// other platform keeps its default Roboto/Noto stack.
+  static String? _appleSystemFont() {
+    if (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      return '.SF Pro Text';
+    }
+    return null;
+  }
+
   // Determinar si debe usar tema oscuro basado en el modo y brillo del sistema
   bool _shouldUseDarkMode(BuildContext? context) {
     switch (themeMode) {
@@ -82,14 +93,25 @@ class AppTheme {
         seedColor: colorList[selectedColor],
         brightness: isDark ? Brightness.dark : Brightness.light,
       );
+      // Apple TV app look: pure-black canvas in dark mode. The seeded
+      // tonal containers stay slightly lifted so cards read as layered
+      // surfaces, like tvOS focus rows.
+      if (isDark) {
+        colorScheme = colorScheme.copyWith(surface: Colors.black);
+      }
     }
 
     return ThemeData(
       useMaterial3: true,
       brightness: isDark ? Brightness.dark : Brightness.light,
       colorScheme: colorScheme,
+      // Apple TV is dark-first; iOS light mode uses the grouped
+      // background so white cards sit on system gray, like Settings.
+      scaffoldBackgroundColor:
+          isDark ? Colors.black : const Color(0xFFF2F2F7),
       appBarTheme: const AppBarTheme(
         centerTitle: false,
+        scrolledUnderElevation: 0,
       ),
       // Enhanced button theme for accessibility
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -110,8 +132,13 @@ class AppTheme {
 
   /// Build text theme with accessibility enhancements
   TextTheme _buildAccessibleTextTheme(bool isDark, bool isHighContrast) {
-    final baseTheme =
+    final defaultTheme =
         isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme;
+    // Native San Francisco voice on Apple platforms; the fallback stack
+    // below keeps emoji and missing glyphs covered everywhere.
+    final baseTheme = _appleSystemFont() == null
+        ? defaultTheme
+        : defaultTheme.apply(fontFamily: _appleSystemFont());
 
     // Define fallback fonts for missing characters
     const fontFallbacks = ['NotoSans', 'NotoColorEmoji'];
@@ -152,7 +179,8 @@ class AppTheme {
       );
     }
 
-    // Apply fallback fonts to regular theme as well
+    // Apply fallback fonts to regular theme as well. Titles get the
+    // Apple large-title voice: semibold with tight tracking.
     return baseTheme.copyWith(
       bodyLarge: baseTheme.bodyLarge?.copyWith(
         fontFamilyFallback: fontFallbacks,
@@ -165,6 +193,8 @@ class AppTheme {
       ),
       titleLarge: baseTheme.titleLarge?.copyWith(
         fontFamilyFallback: fontFallbacks,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
       ),
       titleMedium: baseTheme.titleMedium?.copyWith(
         fontFamilyFallback: fontFallbacks,
@@ -180,6 +210,8 @@ class AppTheme {
       ),
       headlineSmall: baseTheme.headlineSmall?.copyWith(
         fontFamilyFallback: fontFallbacks,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
       ),
       displayLarge: baseTheme.displayLarge?.copyWith(
         fontFamilyFallback: fontFallbacks,

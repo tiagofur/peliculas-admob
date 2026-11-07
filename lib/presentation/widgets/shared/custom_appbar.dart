@@ -18,7 +18,11 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
-    final titleStyle = Theme.of(context).textTheme.titleMedium;
+    // Apple large-title voice: bold with tight tracking, like the TV app.
+    final titleStyle = Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.5,
+        );
     // LEGACY COMPATIBILITY FIXED - theme provider restored
     final themeState = ref.watch(themeNotifierProvider);
     final isDarkMode = themeState.isDarkMode;
@@ -32,8 +36,16 @@ class CustomAppbar extends ConsumerWidget implements PreferredSizeWidget {
             width: double.infinity,
             child: Row(
               children: [
-                Icon(Icons.movie_outlined, color: colors.primary),
-                const SizedBox(width: 5),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.movie_outlined,
+                      color: colors.primary, size: 20),
+                ),
+                const SizedBox(width: 8),
                 Text(l10n.appTitle, style: titleStyle),
                 const Spacer(),
                 // THEME TOGGLE RESTORED - provider fixed
