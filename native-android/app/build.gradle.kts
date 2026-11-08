@@ -48,6 +48,8 @@ dependencies {
   implementation(libs.coil.compose)
   implementation(libs.coil.network.okhttp)
   implementation(libs.androidx.security.crypto)
+  implementation(libs.play.billing)
+  implementation(libs.play.services.ads)
 
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.ui)

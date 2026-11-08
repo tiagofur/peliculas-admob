@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,8 +54,11 @@ import mx.creapolis.peliculas.android.ui.components.PosterCard
 fun UpNextScreen(
   library: LibraryStore,
   onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit,
+  proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
   vm: UpNextViewModel = viewModel(factory = UpNextViewModel.factory(library)),
 ) {
+  val context = LocalContext.current
+  val activeProStore = proStore ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.proStore
   val state by vm.state.collectAsState()
   val lib by library.state.collectAsState()
 
@@ -119,18 +123,21 @@ fun UpNextScreen(
             }
           }
         }
-        item {
-          // Los avisos de episodios son Pro (F7 conecta el paywall real).
-          Column(
-            Modifier
-              .fillMaxWidth()
-              .padding(horizontal = 20.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-          ) {
-            OutlinedButton(onClick = { /* paywall en F7 */ }) {
-              Icon(Icons.Filled.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
-              Spacer(Modifier.width(8.dp))
-              Text(stringResource(R.string.upnext_notify))
+        val isPro = activeProStore?.isPro ?: false
+        if (!isPro) {
+          item {
+            Column(
+              Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+              horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+              val reason = stringResource(R.string.upnext_pro_reason)
+              OutlinedButton(onClick = { activeProStore?.presentPaywall(reason = reason) }) {
+                Icon(Icons.Filled.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.upnext_notify))
+              }
             }
           }
         }

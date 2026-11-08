@@ -21,6 +21,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -75,6 +76,8 @@ fun RootScaffold() {
   val sessionState by session.state.collectAsState()
   val achievements = container.achievements
   val libraryState by library.state.collectAsState()
+  val proStore = container.proStore
+  val proState by proStore.state.collectAsState()
 
   // Evalúa logros en cada cambio relevante de la biblioteca (como iOS).
   androidx.compose.runtime.LaunchedEffect(
@@ -122,12 +125,14 @@ fun RootScaffold() {
           HomeScreen(
             onSeeAll = { route -> navController.navigate("seeall/${route.key}") },
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+            proStore = proStore,
           )
         }
         composable(AppTab.UP_NEXT.route) {
           mx.creapolis.peliculas.android.features.upnext.UpNextScreen(
             library = library,
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+            proStore = proStore,
           )
         }
         composable(AppTab.LIBRARY.route) {
@@ -176,6 +181,7 @@ fun RootScaffold() {
         composable("library/lists") {
           ListsScreen(
             library = library,
+            proStore = proStore,
             onBack = { navController.popBackStack() },
             onOpenList = { id, name -> navController.navigate("library/list/$id/${android.net.Uri.encode(name)}") },
           )
@@ -254,6 +260,7 @@ fun RootScaffold() {
           DetailWithBar(
             item = MediaItem(id = id, title = "", posterPath = "", backdropPath = "", rating = 0.0, kind = kind),
             library = library,
+            proStore = proStore,
             onBack = { navController.popBackStack() },
             onOpenPerson = { pid, name -> navController.navigate("person/$pid/${android.net.Uri.encode(name)}") },
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
@@ -318,6 +325,31 @@ fun RootScaffold() {
         achievement = toastState.toast,
         onDismiss = achievements::dismissToast,
       )
+
+      if (proState.showingPaywall) {
+        androidx.compose.ui.window.Dialog(
+          onDismissRequest = { proStore.dismissPaywall() },
+          properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+          mx.creapolis.peliculas.android.features.pro.PaywallScreen(
+            proStore = proStore,
+            onDismiss = { proStore.dismissPaywall() },
+          )
+        }
+      }
+
+      proState.message?.let { msg ->
+        androidx.compose.material3.AlertDialog(
+          onDismissRequest = { proStore.clearMessage() },
+          title = { Text(stringResource(R.string.notice)) },
+          text = { Text(msg) },
+          confirmButton = {
+            TextButton(onClick = { proStore.clearMessage() }) {
+              Text(stringResource(R.string.dialog_ok))
+            }
+          },
+        )
+      }
     }
   }
 }
@@ -343,6 +375,7 @@ private fun BarScreen(title: String, onBack: () -> Unit, content: @Composable ()
 private fun DetailWithBar(
   item: MediaItem,
   library: mx.creapolis.peliculas.android.core.library.LibraryStore,
+  proStore: mx.creapolis.peliculas.android.features.pro.ProStore,
   onBack: () -> Unit,
   onOpenPerson: (Int, String) -> Unit,
   onOpenItem: (MediaItem) -> Unit,
@@ -356,7 +389,13 @@ private fun DetailWithBar(
         }
       },
     )
-    DetailScreen(item = item, library = library, onOpenPerson = onOpenPerson, onOpenItem = onOpenItem)
+    DetailScreen(
+      item = item,
+      library = library,
+      onOpenPerson = onOpenPerson,
+      onOpenItem = onOpenItem,
+      proStore = proStore,
+    )
   }
 }
 

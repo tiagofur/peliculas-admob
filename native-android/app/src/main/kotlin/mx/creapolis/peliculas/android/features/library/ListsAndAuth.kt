@@ -51,10 +51,11 @@ import androidx.compose.foundation.background
 import mx.creapolis.peliculas.android.R
 import mx.creapolis.peliculas.android.core.library.LibraryStore
 
-/** Listas propias (port de `ListsView`): crear, renombrar, borrar. Límite 3 en gratis (F7 lo conecta al paywall). */
+/** Listas propias (port de `ListsView`): crear, renombrar, borrar. Límite 3 en gratis (conecta con Paywall). */
 @Composable
 fun ListsScreen(
   library: LibraryStore,
+  proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
   freeListLimit: Int = 3,
   onBack: () -> Unit,
   onOpenList: (id: String, name: String) -> Unit,
@@ -147,12 +148,20 @@ fun ListsScreen(
 
   // Diálogos crear / renombrar / borrar
   if (showCreate) {
-    if (state.visibleLists.size >= freeListLimit) {
+    val isPro = proStore?.isPro ?: false
+    if (!isPro && state.visibleLists.size >= freeListLimit) {
+      val paywallReason = stringResource(R.string.list_limit_pro_reason)
       AlertDialog(
         onDismissRequest = { showCreate = false },
         title = { Text(stringResource(R.string.list_limit_title)) },
         text = { Text(stringResource(R.string.list_limit_message)) },
         confirmButton = {
+          TextButton(onClick = {
+            showCreate = false
+            proStore?.presentPaywall(reason = paywallReason)
+          }) { Text(stringResource(R.string.pro_upgrade)) }
+        },
+        dismissButton = {
           TextButton(onClick = { showCreate = false }) { Text(stringResource(R.string.dialog_ok)) }
         },
       )

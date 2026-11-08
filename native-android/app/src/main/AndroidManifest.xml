@@ -20,5 +20,10 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+
+    <!-- AdMob App ID (ID de prueba oficial de Google para debug/desarrollo) -->
+    <meta-data
+      android:name="com.google.android.gms.ads.APPLICATION_ID"
+      android:value="ca-app-pub-3940256099942544~3347511713" />
   </application>
 </manifest>

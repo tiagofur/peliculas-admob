@@ -14,6 +14,9 @@ class AppContainer(private val appContext: android.content.Context) {
   /** Logros locales (persistidos en SharedPreferences). */
   val achievements = mx.creapolis.peliculas.android.features.gamification.AchievementStore(appContext)
 
+  /** ProStore: compras y suscripciones Google Play Billing (port de StoreKit 2). */
+  val proStore = mx.creapolis.peliculas.android.features.pro.ProStore(appContext)
+
   /** Sesión con refresh rotativo (tokens cifrados en Keystore). */
   val session = mx.creapolis.peliculas.android.core.auth.SessionStore(
     mx.creapolis.peliculas.android.core.auth.EncryptedSessionStorage(appContext),
@@ -37,5 +40,6 @@ class PeliculasApp : Application() {
   override fun onCreate() {
     super.onCreate()
     container = AppContainer(applicationContext)
+    mx.creapolis.peliculas.android.features.ads.AdsManager.initialize(this)
   }
 }

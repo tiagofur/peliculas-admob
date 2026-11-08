@@ -35,6 +35,14 @@ object AppConfig {
   var baseUrlOverride: String? = null
 
   val apiBaseUrl: String get() = baseUrlOverride ?: BuildConfig.API_BASE_URL
+
+  object Pro {
+    const val MONTHLY = "peliculas_pro_monthly"
+    const val YEARLY = "peliculas_pro_yearly"
+    const val LIFETIME = "peliculas_pro_lifetime"
+    val ALL = listOf(YEARLY, MONTHLY, LIFETIME)
+    const val FREE_LIST_LIMIT = 3
+  }
 }
 
 /** Proveedor de tokens que `ApiClient.authed` usa para autorizar y renovar. */
