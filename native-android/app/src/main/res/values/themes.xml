@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Compose pinta el tema (MaterialExpressiveTheme); esto solo es la ventana. -->
+  <style name="Theme.Peliculas" parent="android:Theme.Material.Light.NoActionBar">
+    <item name="android:statusBarColor">@android:color/transparent</item>
+  </style>
+</resources>
