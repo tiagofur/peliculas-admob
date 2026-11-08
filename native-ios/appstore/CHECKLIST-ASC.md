@@ -12,7 +12,7 @@ lo demás requiere tu Apple ID / consolas de AdMob.
 | Tests | 32/32 verdes (3 de integración contra backend local) |
 | Signing | `DEVELOPMENT_TEAM` (T5SKULSP2M) inyectado vía `sync-env.sh`; proyecto regenerado con `xcodegen` |
 | Bundle ID | `mx.creapolis.peliculas.native` (+ `.widget` y `.tests`) — **ficha nueva**, la Flutter sigue publicada aparte |
-| Legales | `https://peliculas.creapolis.dev/{privacidad,terminos,soporte}` (200 OK). Configuradas en `Info.plist` vía `IOS_*_URL` del `.env` |
+| Legales | `https://creapolis.dev/privacidad/` (Aviso), `https://creapolis.dev/terminos/` (Términos) y `https://creapolis.dev/es/contacto/` (Soporte) — 200 OK. Configuradas en `Info.plist` vía `IOS_*_URL` del `.env` |
 | StoreKit | `Products.storekit`: `peliculas_pro_monthly` $1.99 · `peliculas_pro_yearly` $12.99 (1 sem gratis) · `peliculas_pro_lifetime` $29.99. El paywall de la app coincide |
 | APNs push | Clave `U73X59U2VH` ya configurada en el backend de producción |
 | Privacy | `PrivacyInfo.xcprivacy` presente; ATT con texto en español; `ITSAppUsesNonExemptEncryption=false` |
@@ -43,8 +43,9 @@ lo demás requiere tu Apple ID / consolas de AdMob.
       `https://api-peliculas.creapolis.dev/v1/storekit/notifications`
       (producción **y** sandbox). El backend ya la valida.
 - [ ] **Versión 1.0.0**: subir las 7 capturas (6.9"), icono 1024, descripción,
-      keywords (español), soporte `https://peliculas.creapolis.dev/soporte`,
-      privacidad `/privacidad`, términos `/terminos`, clasificación 4+/12+
+      keywords (español), soporte `https://creapolis.dev/es/contacto/`,
+      privacidad `https://creapolis.dev/privacidad/`,
+      términos `https://creapolis.dev/terminos/`, clasificación 4+/12+
       (usa las mismas respuestas que la app Flutter ya publicada), Copyright © 2026 Tiago Furtado.
 - [ ] **Adjuntar los 3 IAP** a la versión 1.0.0 antes de enviar a revisión.
 - [ ] **Notas del revisor**: cuenta demo (crea un usuario por correo en la propia app
