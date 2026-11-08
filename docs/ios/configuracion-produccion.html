@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Películas iOS: producción</title>
+<meta name="description" content="Qué falta configurar fuera del código para publicar la app nativa iOS de Películas: Apple, App Store Connect, servidor, AdMob y legales.">
+<style>
+:root {
+  --bg: #f6f5f3;
+  --surface: #ffffff;
+  --surface-2: #f0eeea;
+  --text: #1c1b1a;
+  --muted: #6b6762;
+  --line: #e4e1dc;
+  --accent: #e8572e;
+  --accent-soft: #fde9e2;
+  --ok: #1f9d55;
+  --ok-soft: #e3f5ea;
+  --warn: #b7791f;
+  --warn-soft: #fbf1dd;
+  --danger: #c53030;
+  --code-bg: #1e1d22;
+  --code-text: #ece9f2;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e0d12;
+    --surface: #17161c;
+    --surface-2: #201f27;
+    --text: #f2f0f5;
+    --muted: #a39fae;
+    --line: #2c2a35;
+    --accent: #ff7043;
+    --accent-soft: #3a1f17;
+    --ok: #48bb78;
+    --ok-soft: #13291d;
+    --warn: #ecc94b;
+    --warn-soft: #2e2711;
+    --danger: #fc8181;
+    --code-bg: #0a090d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e0d12;
+  --surface: #17161c;
+  --surface-2: #201f27;
+  --text: #f2f0f5;
+  --muted: #a39fae;
+  --line: #2c2a35;
+  --accent: #ff7043;
+  --accent-soft: #3a1f17;
+  --ok: #48bb78;
+  --ok-soft: #13291d;
+  --warn: #ecc94b;
+  --warn-soft: #2e2711;
+  --danger: #fc8181;
+  --code-bg: #0a090d;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-underline-offset: 2px; }
+code { font: 0.88em ui-monospace, "SF Mono", Menlo, monospace; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; overflow-wrap: anywhere; }
+
+/* Barra superior */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner { max-width: 1120px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 16px; }
+.brand { font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+.brand span { color: var(--accent); }
+.progress { flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.progress-track { flex: 1; height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, #ffb340, var(--accent)); border-radius: 99px; transition: width .35s ease; }
+.progress-label { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 99px; height: 34px; padding: 0 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.icon-btn:hover { border-color: var(--accent); }
+
+/* Layout */
+.layout { max-width: 1120px; margin: 0 auto; padding: 24px 16px 80px; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px; }
+nav.toc { position: sticky; top: 80px; align-self: start; font-size: 14px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+nav.toc li { counter-increment: toc; }
+nav.toc a { display: flex; gap: 10px; padding: 7px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; }
+nav.toc a::before { content: counter(toc); font-variant-numeric: tabular-nums; color: var(--muted); opacity: .6; min-width: 1.2em; }
+nav.toc a:hover, nav.toc a.active { background: var(--surface); color: var(--text); }
+nav.toc a .done-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--line); align-self: center; flex: none; }
+nav.toc a.complete .done-dot { background: var(--ok); }
+
+/* Hero */
+.hero { padding: 8px 0 8px; }
+.hero h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 12px; }
+.hero p.lead { font-size: 18px; color: var(--muted); margin: 0 0 20px; max-width: 62ch; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.card h3 { margin: 0 0 10px; font-size: 16px; }
+.card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14.5px; }
+.card ul li { margin: 3px 0; }
+.card.ok h3 { color: var(--ok); }
+
+/* Secciones */
+section.step { margin-top: 48px; }
+section.step > header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+section.step > header .num { font-size: 13px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 2px 8px; font-variant-numeric: tabular-nums; }
+section.step h2 { font-size: 26px; letter-spacing: -0.02em; margin: 0; line-height: 1.2; }
+section.step > p.why { color: var(--muted); margin: 4px 0 18px; max-width: 70ch; }
+
+/* Tareas */
+.task { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin: 10px 0; transition: border-color .2s, background .2s; }
+.task.checked { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); background: color-mix(in srgb, var(--ok-soft) 55%, var(--surface)); }
+.task input[type="checkbox"] { appearance: none; width: 24px; height: 24px; margin: 1px 0 0; border: 2px solid var(--line); border-radius: 50%; cursor: pointer; display: grid; place-content: center; background: var(--surface); transition: .15s; }
+.task input[type="checkbox"]:hover { border-color: var(--accent); }
+.task input[type="checkbox"]:checked { background: var(--ok); border-color: var(--ok); }
+.task input[type="checkbox"]:checked::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.task input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 50%, transparent); outline-offset: 2px; }
+.task .t-title { font-weight: 600; margin: 0; cursor: pointer; }
+.task.checked .t-title { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ok) 60%, transparent); }
+.task .t-body { color: var(--muted); font-size: 14.5px; margin-top: 4px; }
+.task .t-body p { margin: 6px 0; }
+.task .t-body ol, .task .t-body ul { margin: 6px 0; padding-left: 20px; }
+.task .t-body li { margin: 3px 0; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .02em; padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 2px; }
+.tag.block { background: #fde2e1; color: #b42318; }
+.tag.rec { background: var(--warn-soft); color: var(--warn); }
+.tag.opt { background: var(--surface-2); color: var(--muted); }
+:root[data-theme="dark"] .tag.block { background: #3b1715; color: #ff9b94; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tag.block { background: #3b1715; color: #ff9b94; } }
+
+/* Avisos */
+.note { border-radius: 12px; padding: 12px 14px; font-size: 14.5px; margin: 12px 0; border: 1px solid var(--line); background: var(--surface-2); }
+.note.warn { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
+.note.tip { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 25%, transparent); }
+.note strong { color: var(--text); }
+
+/* Código */
+.code { position: relative; margin: 10px 0; }
+.code pre { margin: 0; background: var(--code-bg); color: var(--code-text); border-radius: 12px; padding: 14px 16px; overflow-x: auto; font: 13px/1.6 ui-monospace, "SF Mono", Menlo, monospace; }
+.code pre .c { color: #8b8798; }
+.code button { position: absolute; top: 8px; right: 8px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.08); color: #fff; border-radius: 8px; font: 600 12px/1 inherit; padding: 6px 10px; cursor: pointer; }
+.code button:hover { background: rgba(255,255,255,.16); }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 8px; }
+
+footer { margin-top: 64px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 20px; }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; gap: 0; }
+  nav.toc { display: none; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .brand small { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+@media print {
+  .topbar, nav.toc, .code button, .icon-btn { display: none !important; }
+  .layout { display: block; }
+  .task { break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Películas <span>iOS</span> <small>· producción</small></div>
+    <div class="progress" aria-live="polite">
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progreso">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">0 / 0</div>
+    </div>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Cambiar tema">Tema</button>
+    <button class="icon-btn" id="resetBtn" type="button">Reiniciar</button>
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="toc" aria-label="Pasos">
+    <ol id="toc"></ol>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <span class="pill">Checklist · tu progreso se guarda en este navegador</span>
+      <h1>Lo que falta para publicar la app iOS</h1>
+      <p class="lead">El código ya está listo. Lo que queda son cuentas, claves y páginas que solo tú puedes crear. Sigue los pasos en orden: los marcados <span class="tag block">bloquea</span> impiden publicar.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card ok">
+        <h3>✓ Ya hecho en el código</h3>
+        <ul>
+          <li>Migrada de Supabase al backend Go: TMDB por caché, login, sync, Pro y avisos.</li>
+          <li>La key de TMDB ya no va en la app; nada secreto en el binario.</li>
+          <li>Sign in with Apple + correo, tokens en el Llavero, borrar cuenta.</li>
+          <li>Pro con StoreKit 2: compras, restaurar, reclamo al servidor, paywall con textos legales.</li>
+          <li>Avisos de episodios por APNs, recordatorios locales, deep links.</li>
+          <li>Rediseño con Liquid Glass (iOS 26+) y respaldo en iOS 15–25.</li>
+          <li>Icono, Privacy Manifest, AdMob + consentimiento UMP, widget con pósters.</li>
+          <li>32 tests: unidad, compras (StoreKit) e integración con el backend real.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Lo que necesitas tener a mano</h3>
+        <ul>
+          <li>Cuenta del Apple Developer Program (99 USD/año).</li>
+          <li>Acceso a App Store Connect y a AdMob.</li>
+          <li>Un dominio y un VPS para el backend (ya hay guía de despliegue).</li>
+          <li>Datos bancarios y fiscales para cobrar suscripciones.</li>
+          <li>Una web donde publicar privacidad, términos y soporte.</li>
+          <li>Unas 2–3 horas, más la espera de revisión de Apple.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <section class="step" id="bundle" data-title="Bundle ID">
+      <header><span class="num">01</span><h2>Decide el bundle ID</h2></header>
+      <p class="why">Es lo primero porque todo lo demás (claves, productos, servidor) se ata a él y no se puede cambiar después de publicar.</p>
+
+      <div class="task" data-id="bundle-decide">
+        <input type="checkbox" id="bundle-decide" aria-labelledby="bundle-decide-t">
+        <div>
+          <label class="t-title" id="bundle-decide-t" for="bundle-decide">Elegir: ¿reemplaza a la app Flutter o es una app nueva? <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>La app Flutter de iOS usa <code>mx.creapolis.peliculas</code>. La nativa está configurada con <code>mx.creapolis.peliculas.native</code>.</p>
+            <ul>
+              <li><strong>Recomendado si la Flutter ya está en el App Store:</strong> usa <code>mx.creapolis.peliculas</code>. Se publica como actualización de la misma ficha: conservas usuarios, reseñas y posicionamiento. Sube la versión por encima de la actual de Flutter.</li>
+              <li>Si nunca publicaste la Flutter en iOS, puedes quedarte con <code>.native</code> o cambiarlo ahora a algo definitivo.</li>
+            </ul>
+            <p>Para cambiarlo: pon <code>IOS_BUNDLE_ID=…</code> en el <code>.env</code> (paso 7). El widget toma <code>&lt;bundle&gt;.widget</code> solo.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="bundle-version">
+        <input type="checkbox" id="bundle-version">
+        <div>
+          <label class="t-title" for="bundle-version">Ajustar la versión</label>
+          <div class="t-body"><p>En <code>native-ios/Config/Shared.xcconfig</code>: <code>MARKETING_VERSION</code> (p. ej. <code>3.0.0</code> si reemplaza a la Flutter) y <code>CURRENT_PROJECT_VERSION</code> (súbelo en cada envío a TestFlight).</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="step" id="apple" data-title="Apple Developer">
+      <header><span class="num">02</span><h2>Apple Developer</h2></header>
+      <p class="why">En <a href="https://developer.apple.com/account" target="_blank" rel="noopener">developer.apple.com/account</a>. Aquí salen el Team ID y las claves <code>.p8</code> que usa el servidor.</p>
+
+      <div class="task" data-id="apple-team">
+        <input type="checkbox" id="apple-team">
+        <div>
+          <label class="t-title" for="apple-team">Copiar tu Team ID <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>Membership details → Team ID (10 caracteres). Va en el <code>.env</code> de la raíz (<code>APPLE_TEAM_ID</code>) y en el del servidor.</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="apple-appid">
+        <input type="checkbox" id="apple-appid">
+        <div>
+          <label class="t-title" for="apple-appid">Activar capacidades en el App ID <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>Certificates, Identifiers &amp; Profiles → Identifiers → tu bundle ID (Xcode lo crea al firmar; si no existe, créalo):</p>
+            <ul>
+              <li><strong>Sign in with Apple</strong> (como "Primary App ID").</li>
+              <li><strong>Push Notifications</strong>.</li>
+            </ul>
+            <p>El widget (<code>&lt;bundle&gt;.widget</code>) no necesita capacidades.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="apple-key">
+        <input type="checkbox" id="apple-key">
+        <div>
+          <label class="t-title" for="apple-key">Crear una clave .p8 con APNs + Sign in with Apple <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>Keys → <strong>+</strong> → marca <em>Apple Push Notifications service (APNs)</em> y <em>Sign in with Apple</em> (configúrala con tu App ID). Descarga el <code>.p8</code> (solo se puede una vez) y anota el <strong>Key ID</strong>.</p>
+            <p>La misma clave sirve para las dos cosas en el servidor:</p>
+            <ul>
+              <li><code>APPLE_KEY_ID</code> / <code>APPLE_PRIVATE_KEY</code>: revocar el token de Apple al borrar una cuenta. <strong>App Review lo exige</strong> (guía 5.1.1(v)).</li>
+              <li><code>APNS_KEY_ID</code> / <code>APNS_PRIVATE_KEY</code>: enviar avisos de episodios.</li>
+            </ul>
+            <div class="note warn"><strong>Guárdala bien.</strong> Si pierdes el <code>.p8</code> tendrás que revocarla y crear otra.</div>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="apple-sbp">
+        <input type="checkbox" id="apple-sbp">
+        <div>
+          <label class="t-title" for="apple-sbp">Apuntarte al App Store Small Business Program <span class="tag rec">recomendado</span></label>
+          <div class="t-body"><p>Apple se queda el 15 % en vez del 30 % si facturas menos de 1 M USD al año. <a href="https://developer.apple.com/app-store/small-business-program/" target="_blank" rel="noopener">Solicitud</a>.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="step" id="server" data-title="Servidor (backend Go)">
+      <header><span class="num">03</span><h2>Servidor en producción</h2></header>
+      <p class="why">La app de Release habla con <code>https://api.example.com</code> hasta que pongas tu dominio. Sin el servidor no hay contenido, cuentas ni compras verificadas.</p>
+
+      <div class="task" data-id="server-deploy">
+        <input type="checkbox" id="server-deploy">
+        <div>
+          <label class="t-title" for="server-deploy">Desplegar el backend con HTTPS <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>Sigue <code>backend/docs/DEPLOY.md</code> (VPS Ubuntu 24.04 + Docker Compose + Caddy con HTTPS automático). Apunta un registro DNS <code>A</code> de tu subdominio (p. ej. <code>api.tudominio.com</code>) a la IP del VPS.</p>
+            <p>Comprueba: <code>curl https://api.tudominio.com/healthz</code> → <code>ok</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="server-env">
+        <input type="checkbox" id="server-env">
+        <div>
+          <label class="t-title" for="server-env">Rellenar el .env del servidor <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>En el VPS, <code>backend/.env</code>. Usa el bundle ID del paso 1 en las tres variables que lo piden:</p>
+            <div class="code"><pre><span class="c"># backend/.env (producción)</span>
+DOMAIN=api.tudominio.com
+TRUST_PROXY=true
+
+TMDB_API_KEY=tu_key_de_themoviedb
+POSTGRES_PASSWORD=una-contraseña-larga
+JWT_SECRET=<span class="c">pega aquí: openssl rand -base64 48</span>
+
+<span class="c"># Sign in with Apple (bundle ID primero)</span>
+APPLE_CLIENT_IDS=mx.creapolis.peliculas
+APPLE_TEAM_ID=XXXXXXXXXX
+APPLE_KEY_ID=YYYYYYYYYY
+APPLE_PRIVATE_KEY="<contenido del archivo .p8 en una sola línea>"
+
+<span class="c"># Pro (StoreKit 2): mismos IDs que App Store Connect</span>
+STOREKIT_BUNDLE_ID=mx.creapolis.peliculas
+PRO_PRODUCT_IDS=peliculas_pro_monthly,peliculas_pro_yearly,peliculas_pro_lifetime
+
+<span class="c"># Avisos (APNs): puede ser la misma clave .p8</span>
+APNS_KEY_ID=YYYYYYYYYY
+APNS_PRIVATE_KEY="<contenido del archivo .p8 en una sola línea>"
+PUSH_PRO_ONLY=true</pre><button type="button" data-copy>Copiar</button></div>
+            <p>El contenido del <code>.p8</code> va en una línea, con <code>\n</code> donde había saltos. Luego: <code>docker compose --profile prod up -d</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="server-migrate">
+        <input type="checkbox" id="server-migrate">
+        <div>
+          <label class="t-title" for="server-migrate">Copiar usuarios y bibliotecas desde Supabase <span class="tag rec">si tienes usuarios</span></label>
+          <div class="t-body">
+            <p>Guía: <code>backend/docs/MIGRATION.md</code>. Pon <code>SUPABASE_DB_URL</code> (Session pooler, puerto 5432) y corre primero con <code>-dry-run</code>. Las contraseñas siguen funcionando y las cuentas de Apple entran en el mismo usuario.</p>
+            <div class="code"><pre>docker compose run --rm --entrypoint /migrate-supabase api -dry-run
+docker compose run --rm --entrypoint /migrate-supabase api</pre><button type="button" data-copy>Copiar</button></div>
+            <div class="note">No apagues Supabase todavía: la app Flutter (Android y web) sigue usándolo hasta que la migres al backend.</div>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="server-tmdb">
+        <input type="checkbox" id="server-tmdb">
+        <div>
+          <label class="t-title" for="server-tmdb">Revisar la licencia de TMDB para uso comercial <span class="tag rec">antes de cobrar</span></label>
+          <div class="t-body"><p>La API gratuita no cubre apps con ingresos. Escribe a TMDB o revisa sus <a href="https://www.themoviedb.org/api-terms-of-use" target="_blank" rel="noopener">términos</a> antes de activar Pro. La app ya muestra el crédito obligatorio (Inicio y Cuenta) y el de JustWatch en "Dónde verla".</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="step" id="asc" data-title="App Store Connect">
+      <header><span class="num">04</span><h2>App Store Connect</h2></header>
+      <p class="why">En <a href="https://appstoreconnect.apple.com" target="_blank" rel="noopener">appstoreconnect.apple.com</a>. Sin los acuerdos firmados, las compras no funcionan ni siquiera en TestFlight.</p>
+
+      <div class="task" data-id="asc-agreements">
+        <input type="checkbox" id="asc-agreements">
+        <div>
+          <label class="t-title" for="asc-agreements">Firmar el acuerdo de apps de pago, banco e impuestos <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>Business → Agreements: activa <strong>Paid Apps</strong>, añade la cuenta bancaria y los formularios fiscales. Tarda en aprobarse; hazlo pronto.</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="asc-app">
+        <input type="checkbox" id="asc-app">
+        <div>
+          <label class="t-title" for="asc-app">Crear la app (o usar la ficha existente) <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>Si reemplaza a la Flutter, usa su ficha. Si no, Apps → <strong>+</strong> → Nueva app con el bundle ID del paso 1. Categoría: Entretenimiento. Idioma principal: Español (México).</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="asc-products">
+        <input type="checkbox" id="asc-products">
+        <div>
+          <label class="t-title" for="asc-products">Crear los productos Pro con estos IDs exactos <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Product ID</th><th>Tipo</th><th>Precio sugerido</th><th>Notas</th></tr></thead>
+              <tbody>
+                <tr><td><code>peliculas_pro_monthly</code></td><td>Suscripción auto-renovable</td><td>1,99 USD/mes</td><td>Grupo "Películas Pro", nivel 2. Oferta: 1 semana gratis</td></tr>
+                <tr><td><code>peliculas_pro_yearly</code></td><td>Suscripción auto-renovable</td><td>12,99 USD/año</td><td>Mismo grupo, nivel 1. Oferta: 1 semana gratis</td></tr>
+                <tr><td><code>peliculas_pro_lifetime</code></td><td>No consumible</td><td>29,99 USD</td><td>Activa "En Familia" si quieres</td></tr>
+              </tbody>
+            </table></div>
+            <p>Cada producto necesita nombre y descripción (ES, y EN/PT si publicas ahí) y una captura del paywall para la revisión. Si cambias un ID, cámbialo también en <code>AppConfig.Pro</code>, <code>Products.storekit</code> y <code>PRO_PRODUCT_IDS</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="asc-notifications">
+        <input type="checkbox" id="asc-notifications">
+        <div>
+          <label class="t-title" for="asc-notifications">Configurar App Store Server Notifications V2 <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>App → Información de la app → Notificaciones del servidor del App Store → Versión 2. URL para producción <strong>y</strong> sandbox:</p>
+          <div class="code"><pre>https://api.tudominio.com/v1/storekit/notifications</pre><button type="button" data-copy>Copiar</button></div>
+          <p>Así el servidor se entera de renovaciones, cancelaciones y reembolsos aunque la app esté cerrada.</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="asc-privacy">
+        <input type="checkbox" id="asc-privacy">
+        <div>
+          <label class="t-title" for="asc-privacy">Rellenar las etiquetas de privacidad <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>App Privacy. Lo que recoge la app (ya declarado en <code>PrivacyInfo.xcprivacy</code>), vinculado al usuario, para funcionalidad, sin rastreo:</p>
+            <ul>
+              <li>Información de contacto → Correo electrónico</li>
+              <li>Identificadores → ID de usuario; ID del dispositivo (token de avisos)</li>
+              <li>Compras → Historial de compras</li>
+              <li>Contenido del usuario → Otro (biblioteca, listas, notas)</li>
+            </ul>
+            <p>Y lo de AdMob en la versión gratis (uso: publicidad de terceros): ID del dispositivo, datos de publicidad, interacción con el producto, datos de fallos y rendimiento, ubicación aproximada. Confírmalo con la guía de Google "Prepare for Apple's App Store data disclosure requirements".</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="asc-listing">
+        <input type="checkbox" id="asc-listing">
+        <div>
+          <label class="t-title" for="asc-listing">Ficha: capturas, textos y URLs <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <ul>
+              <li><strong>Capturas iPhone 6,9"</strong> (1320 × 2868): Inicio, ficha de serie con episodios, Siguiente, Biblioteca, paywall. La app es solo iPhone, así que no hacen falta de iPad.</li>
+              <li>Subtítulo, descripción, palabras clave y texto promocional.</li>
+              <li>URL de privacidad (obligatoria), URL de soporte y URL de marketing (opcional).</li>
+              <li>Clasificación por edades: tráilers y pósters de terceros → normalmente 12+.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="asc-demo">
+        <input type="checkbox" id="asc-demo">
+        <div>
+          <label class="t-title" for="asc-demo">Crear una cuenta demo para el revisor <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>Regístrate en la app de producción con un correo tuyo (p. ej. <code>review@tudominio.com</code>), añade algunas series a la Watchlist y marca episodios para que "Siguiente" tenga contenido. Pon correo y contraseña en App Review Information.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 -->
+    <section class="step" id="admob" data-title="AdMob">
+      <header><span class="num">05</span><h2>AdMob</h2></header>
+      <p class="why">El SDK y el consentimiento ya están integrados. Faltan los IDs reales y los mensajes de privacidad.</p>
+
+      <div class="note warn"><strong>Ojo:</strong> en tu <code>.env</code>, <code>ADMOB_IOS_BANNER</code> vale <code>ca-app-pub-test-banner-ios</code>, que no es un bloque real. En Release eso significa cero anuncios.</div>
+
+      <div class="task" data-id="admob-app">
+        <input type="checkbox" id="admob-app">
+        <div>
+          <label class="t-title" for="admob-app">Confirmar el App ID de iOS y crear un bloque banner <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>En AdMob → Apps: comprueba que <code>ca-app-pub-3460220325831299~7925363454</code> (copiado de la Flutter) es la app de <strong>iOS</strong>. Si reemplazas a la Flutter, vincúlala a la ficha del App Store.</p>
+            <p>Ad units → <strong>+</strong> → Banner. Copia el ID (<code>ca-app-pub-…/…</code>) a <code>ADMOB_IOS_BANNER</code>. En Debug la app usa siempre el banner de prueba de Google.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="admob-messages">
+        <input type="checkbox" id="admob-messages">
+        <div>
+          <label class="t-title" for="admob-messages">Publicar los mensajes de privacidad (RGPD + ATT) <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <p>Privacy &amp; messaging → crea y publica:</p>
+            <ul>
+              <li><strong>European regulations</strong> (RGPD): obligatorio para usuarios de la UE/Reino Unido.</li>
+              <li><strong>IDFA explainer</strong>: muestra una pantalla previa y luego el diálogo de App Tracking Transparency. El texto del permiso ya está en el Info.plist.</li>
+            </ul>
+            <p>Sin estos mensajes, el consentimiento no se pide y en la UE no se muestran anuncios. En Cuenta aparece "Privacidad de anuncios" cuando la ley lo exige.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="admob-appads">
+        <input type="checkbox" id="admob-appads">
+        <div>
+          <label class="t-title" for="admob-appads">Publicar app-ads.txt en tu web <span class="tag rec">recomendado</span></label>
+          <div class="t-body"><p>AdMob te da la línea; súbela a <code>https://tudominio.com/app-ads.txt</code> (el dominio de la URL de marketing de la ficha). Sin él, muchos anunciantes no pujan.</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="admob-skan">
+        <input type="checkbox" id="admob-skan">
+        <div>
+          <label class="t-title" for="admob-skan">Actualizar la lista SKAdNetwork <span class="tag opt">opcional</span></label>
+          <div class="t-body"><p>El <code>project.yml</code> trae la lista principal de Google. Si activas mediación con otras redes, añade sus identificadores en <code>SKAdNetworkItems</code>.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section class="step" id="legal" data-title="Páginas legales">
+      <header><span class="num">06</span><h2>Páginas legales</h2></header>
+      <p class="why">La app enlaza a ellas desde el login, el paywall y Cuenta. Ahora apuntan a direcciones de ejemplo que no existen.</p>
+
+      <div class="task" data-id="legal-pages">
+        <input type="checkbox" id="legal-pages">
+        <div>
+          <label class="t-title" for="legal-pages">Publicar privacidad, términos y soporte <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <ul>
+              <li><strong>Privacidad</strong>: qué datos guardas (correo, biblioteca, compras, token de avisos), que usas AdMob, cómo borrar la cuenta (desde la app, Cuenta → Borrar cuenta) y un contacto.</li>
+              <li><strong>Términos</strong>: uso del servicio, suscripciones (renovación automática, cancelación desde Ajustes del iPhone), créditos de TMDB.</li>
+              <li><strong>Soporte</strong>: página con un correo de contacto.</li>
+            </ul>
+            <p>Valores por defecto en <code>Shared.xcconfig</code>: <code>peliculas.creapolis.mx/privacidad</code>, <code>/terminos</code>, <code>/soporte</code>. Cámbialos con <code>IOS_PRIVACY_URL</code>, <code>IOS_TERMS_URL</code> y <code>IOS_SUPPORT_URL</code> en el <code>.env</code>.</p>
+            <div class="note">El paywall usa el EULA estándar de Apple además de tus términos. Si publicas uno propio, enlázalo en la descripción de la app.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="step" id="configure" data-title="Configurar la app">
+      <header><span class="num">07</span><h2>Configurar y firmar la app</h2></header>
+      <p class="why">Todo lo tuyo entra por el <code>.env</code> de la raíz del repo; un script lo pasa al build sin commitear nada.</p>
+
+      <div class="task" data-id="cfg-env">
+        <input type="checkbox" id="cfg-env">
+        <div>
+          <label class="t-title" for="cfg-env">Añadir las variables iOS al .env de la raíz <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <div class="code"><pre><span class="c"># .env (raíz del repo) — nunca se commitea</span>
+IOS_API_BASE_URL=https://api.tudominio.com
+APPLE_TEAM_ID=XXXXXXXXXX
+IOS_BUNDLE_ID=mx.creapolis.peliculas
+ADMOB_IOS_APP_ID=ca-app-pub-3460220325831299~7925363454
+ADMOB_IOS_BANNER=ca-app-pub-3460220325831299/XXXXXXXXXX
+IOS_PRIVACY_URL=https://tudominio.com/privacidad
+IOS_TERMS_URL=https://tudominio.com/terminos
+IOS_SUPPORT_URL=https://tudominio.com/soporte
+<span class="c"># Solo si pruebas Debug en un iPhone físico (IP de tu Mac o el servidor):</span>
+<span class="c"># IOS_API_BASE_URL_DEV=http://192.168.1.20:8787</span></pre><button type="button" data-copy>Copiar</button></div>
+            <p>Las <code>SUPABASE_*</code> y <code>TMDB_API_KEY</code> del <code>.env</code> ya no las usa la app iOS.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="cfg-generate">
+        <input type="checkbox" id="cfg-generate">
+        <div>
+          <label class="t-title" for="cfg-generate">Generar el proyecto y abrir Xcode</label>
+          <div class="t-body">
+            <div class="code"><pre>cd native-ios
+./scripts/sync-env.sh
+xcodegen generate
+open PeliculasNative.xcodeproj</pre><button type="button" data-copy>Copiar</button></div>
+            <p>Repite <code>sync-env.sh</code> + <code>xcodegen generate</code> cada vez que cambies el <code>.env</code> o el <code>project.yml</code>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="cfg-sign">
+        <input type="checkbox" id="cfg-sign">
+        <div>
+          <label class="t-title" for="cfg-sign">Comprobar la firma automática <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>Target PeliculasNative y PeliculasWidget → Signing &amp; Capabilities: debe salir tu equipo, sin errores, con <em>Sign in with Apple</em> y <em>Push Notifications</em> en la app. Si Xcode pide registrar el dispositivo o crear el App ID, acepta.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="step" id="test" data-title="Probar en TestFlight">
+      <header><span class="num">08</span><h2>Probar antes de enviar</h2></header>
+      <p class="why">El simulador ya pasó todo lo automatizable. Lo que sigue solo se puede comprobar con cuentas reales y un iPhone.</p>
+
+      <div class="task" data-id="test-local">
+        <input type="checkbox" id="test-local">
+        <div>
+          <label class="t-title" for="test-local">Correr los tests en tu Mac <span class="tag rec">recomendado</span></label>
+          <div class="t-body">
+            <div class="code"><pre>cd backend &amp;&amp; API_PORT=8787 docker compose up -d --build &amp;&amp; cd ..
+cd native-ios &amp;&amp; xcodebuild test -scheme PeliculasNative -destination 'platform=iOS Simulator,name=iPhone 18 Pro'</pre><button type="button" data-copy>Copiar</button></div>
+            <p>En Xcode, ⌘R usa <code>Products.storekit</code>: puedes comprar Pro, reembolsar y probar renovaciones sin App Store.</p>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="test-archive">
+        <input type="checkbox" id="test-archive">
+        <div>
+          <label class="t-title" for="test-archive">Archivar y subir a TestFlight <span class="tag block">bloquea</span></label>
+          <div class="t-body"><p>Destino "Any iOS Device" → Product → Archive (usa Release: tu servidor, APNs de producción, tu banner) → Distribute App → App Store Connect. Añade testers internos.</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="test-device">
+        <input type="checkbox" id="test-device">
+        <div>
+          <label class="t-title" for="test-device">Recorrer esta lista en un iPhone real <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <ul>
+              <li>Sign in with Apple, también con "Ocultar mi correo".</li>
+              <li>Registro e inicio con correo; cerrar sesión y volver a entrar: la biblioteca vuelve.</li>
+              <li>Dos dispositivos con la misma cuenta: un cambio aparece en el otro al abrir la app.</li>
+              <li>Compra con una cuenta Sandbox (Ajustes → Desarrollador → Cuenta sandbox), restaurar, y cancelar desde Gestionar suscripción.</li>
+              <li>Activar "Episodios nuevos" (siendo Pro) y, en Debug, "Enviar aviso de prueba". Tocar el aviso abre la serie.</li>
+              <li>Borrar cuenta: la sesión se cierra y no se puede volver a entrar con ella.</li>
+              <li>Anuncios: aparece el mensaje de consentimiento (prueba con VPN a la UE) y el banner; con Pro desaparece.</li>
+              <li>Accesibilidad: texto muy grande, VoiceOver en Inicio y en la ficha, Reducir movimiento y Reducir transparencia.</li>
+              <li>Si puedes, un iPhone con iOS 15–17 para ver el respaldo sin Liquid Glass.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 -->
+    <section class="step" id="review" data-title="Enviar a revisión">
+      <header><span class="num">09</span><h2>Enviar a revisión</h2></header>
+      <p class="why">Unas notas claras evitan rechazos por "no encontramos la función" o "falta información de la suscripción".</p>
+
+      <div class="task" data-id="review-notes">
+        <input type="checkbox" id="review-notes">
+        <div>
+          <label class="t-title" for="review-notes">Pegar las notas para el revisor <span class="tag block">bloquea</span></label>
+          <div class="t-body">
+            <div class="code"><pre>Cuenta demo: review@tudominio.com / (contraseña)
+
+- Inicio, búsqueda y fichas funcionan sin cuenta.
+- La cuenta sincroniza la biblioteca entre dispositivos. Se puede borrar
+  desde Cuenta (icono arriba a la derecha) → Borrar cuenta.
+- "Siguiente" muestra el próximo episodio de las series que sigues;
+  la cuenta demo ya tiene series con episodios marcados.
+- Películas Pro (Cuenta → Películas Pro): avisos de episodios nuevos,
+  sin anuncios y listas ilimitadas. Restaurar compras está en el paywall
+  y en Cuenta.
+- Los datos de películas vienen de TMDB y la disponibilidad de JustWatch,
+  con su crédito en la app.</pre><button type="button" data-copy>Copiar</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="task" data-id="review-submit">
+        <input type="checkbox" id="review-submit">
+        <div>
+          <label class="t-title" for="review-submit">Adjuntar los productos Pro a la versión y enviar</label>
+          <div class="t-body"><p>La primera vez, las suscripciones se revisan junto con la app: selecciónalas en la sección "In-App Purchases and Subscriptions" de la versión antes de enviar.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section class="step" id="later" data-title="Después del 1.0">
+      <header><span class="num">10</span><h2>Después del 1.0 (no bloquea)</h2></header>
+      <p class="why">Cosas que mejoran la app pero no impiden publicar.</p>
+
+      <div class="task" data-id="later-l10n">
+        <input type="checkbox" id="later-l10n">
+        <div>
+          <label class="t-title" for="later-l10n">Traducir la interfaz a inglés y portugués <span class="tag rec">recomendado</span></label>
+          <div class="t-body"><p>El contenido de TMDB ya sale en el idioma del teléfono (es/en/pt), pero los textos de la app están en español. Pasarlos a un String Catalog permite publicar la ficha en Brasil y EE. UU.</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="later-flutter">
+        <input type="checkbox" id="later-flutter">
+        <div>
+          <label class="t-title" for="later-flutter">Llevar la app Flutter (Android/web) al backend y apagar Supabase</label>
+          <div class="t-body"><p>El backend ya acepta las mismas cuentas. Cuando Flutter use <code>/v1/*</code>, se puede apagar Supabase (antes, mover los avatares de su Storage; ver MIGRATION.md).</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="later-min">
+        <input type="checkbox" id="later-min">
+        <div>
+          <label class="t-title" for="later-min">Valorar subir el mínimo a iOS 17 <span class="tag opt">opcional</span></label>
+          <div class="t-body"><p>iOS 15–16 son hoy una parte mínima de los iPhone activos. Subir a 17 permitiría quitar los respaldos y usar más APIs nativas (Observation, TipKit, vistas de StoreKit, Live Activities).</p></div>
+        </div>
+      </div>
+      <div class="task" data-id="later-features">
+        <input type="checkbox" id="later-features">
+        <div>
+          <label class="t-title" for="later-features">Siguientes funciones del roadmap <span class="tag opt">opcional</span></label>
+          <div class="t-body"><ul>
+            <li>Google Sign-In (el backend ya lo soporta).</li>
+            <li>Pro 24 h por anuncio con recompensa (fase 3b del backend).</li>
+            <li>Live Activity con cuenta atrás de estreno, App Intents/Siri, widget de bloqueo.</li>
+            <li>Soporte iPad y Apple TV.</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Generado junto con la migración de la app iOS al backend Go · noviembre de 2026. Referencias: <code>native-ios/README.md</code>, <code>backend/README.md</code>, <code>backend/docs/DEPLOY.md</code>, <code>backend/docs/MIGRATION.md</code>.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function () {
+  var KEY = "peliculas-ios-checklist-v1";
+  var THEME_KEY = "peliculas-ios-theme";
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var tasks = Array.prototype.slice.call(document.querySelectorAll(".task"));
+  var sections = Array.prototype.slice.call(document.querySelectorAll("section.step"));
+
+  // Índice lateral
+  var toc = document.getElementById("toc");
+  sections.forEach(function (s) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = "#" + s.id;
+    a.dataset.section = s.id;
+    a.appendChild(document.createTextNode(s.dataset.title));
+    var dot = document.createElement("span");
+    dot.className = "done-dot";
+    a.appendChild(dot);
+    li.appendChild(a);
+    toc.appendChild(li);
+  });
+
+  function refresh() {
+    var done = 0;
+    tasks.forEach(function (t) {
+      var on = !!state[t.dataset.id];
+      t.classList.toggle("checked", on);
+      t.querySelector("input").checked = on;
+      if (on) done++;
+    });
+    var pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressLabel").textContent = done + " / " + tasks.length;
+    document.querySelector(".progress-track").setAttribute("aria-valuenow", String(pct));
+    sections.forEach(function (s) {
+      var inner = s.querySelectorAll(".task");
+      var all = inner.length > 0 && Array.prototype.every.call(inner, function (t) { return !!state[t.dataset.id]; });
+      var link = toc.querySelector('[data-section="' + s.id + '"]');
+      if (link) link.classList.toggle("complete", all);
+    });
+  }
+
+  tasks.forEach(function (t) {
+    t.querySelector("input").addEventListener("change", function (e) {
+      state[t.dataset.id] = e.target.checked;
+      save();
+      refresh();
+    });
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (!confirm("¿Desmarcar todo?")) return;
+    state = {};
+    save();
+    refresh();
+  });
+
+  // Copiar
+  document.querySelectorAll("[data-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = btn.parentElement.querySelector("pre").innerText;
+      function ok() {
+        var old = btn.textContent;
+        btn.textContent = "Copiado ✓";
+        setTimeout(function () { btn.textContent = old; }, 1400);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, fallback);
+      } else { fallback(); }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); ok(); } catch (e) {}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  // Tema
+  var root = document.documentElement;
+  try { var saved = localStorage.getItem(THEME_KEY); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  document.getElementById("themeBtn").addEventListener("click", function () {
+    var current = root.getAttribute("data-theme") ||
+      (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    var next = current === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  });
+
+  // Sección activa en el índice
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        toc.querySelectorAll("a").forEach(function (a) { a.classList.toggle("active", a.dataset.section === en.target.id); });
+      });
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+
+  refresh();
+})();
+</script>
+</body>
+</html>

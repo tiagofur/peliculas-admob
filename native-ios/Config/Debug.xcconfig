@@ -1,0 +1,6 @@
+#include "Shared.xcconfig"
+#include? "Secrets.generated.xcconfig"
+
+API_BASE_URL = $(API_BASE_URL_DEV)
+GAD_AD_UNIT_ID = $(GAD_AD_UNIT_ID_TEST)
+APS_ENVIRONMENT = development
