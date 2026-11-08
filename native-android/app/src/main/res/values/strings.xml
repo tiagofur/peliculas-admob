@@ -5,4 +5,25 @@
   <string name="tab_up_next">Siguiente</string>
   <string name="tab_library">Biblioteca</string>
   <string name="tab_search">Buscar</string>
+  <string name="back">Atrás</string>
+  <string name="see_all">Ver todo</string>
+  <string name="badge_movie">PELÍCULA</string>
+  <string name="badge_show">SERIE</string>
+  <string name="top10_title">Top 10 de la semana</string>
+  <string name="top10_subtitle">Películas</string>
+  <string name="rail_trending_shows">Series en tendencia</string>
+  <string name="rail_now_playing">En cines</string>
+  <string name="rail_upcoming">Próximos estrenos</string>
+  <string name="rail_top_rated">Aclamadas por la crítica</string>
+  <string name="seeall_trending_week">Tendencias de la semana</string>
+  <string name="seeall_trending_tv">Series en tendencia</string>
+  <string name="seeall_now_playing">En cines</string>
+  <string name="seeall_upcoming">Próximos estrenos</string>
+  <string name="seeall_top_rated">Aclamadas por la crítica</string>
+  <string name="home_load_error">No pudimos cargar el contenido. Revisa tu conexión e inténtalo de nuevo.</string>
+  <string name="retry">Reintentar</string>
+  <string name="offline_title">Sin conexión</string>
+  <string name="offline_message">Revisa tu red e inténtalo de nuevo.</string>
+  <string name="seeall_empty">No hay títulos en esta lista ahora mismo.</string>
+  <string name="tmdb_attribution">Datos e imágenes de The Movie Database (TMDB). Esta app usa la API de TMDB pero no está respaldada ni certificada por TMDB.</string>
 </resources>

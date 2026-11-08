@@ -1,9 +1,11 @@
 package mx.creapolis.peliculas.android.ui.root
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryBooks
 import androidx.compose.material.icons.filled.PlayCircle
@@ -13,10 +15,12 @@ import androidx.compose.material.icons.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -27,6 +31,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import mx.creapolis.peliculas.android.R
+import mx.creapolis.peliculas.android.features.home.HomeScreen
+import mx.creapolis.peliculas.android.features.home.SeeAllScreen
 import mx.creapolis.peliculas.android.ui.screens.PlaceholderScreen
 
 /** Destinos raíz (espejo de `AppTab` en iOS). */
@@ -71,10 +77,19 @@ fun RootScaffold() {
   ) { padding ->
     Box(Modifier.fillMaxSize().padding(padding)) {
       NavHost(navController = navController, startDestination = AppTab.HOME.route) {
-        composable(AppTab.HOME.route) { PlaceholderScreen(AppTab.HOME) }
+        composable(AppTab.HOME.route) {
+          HomeScreen(onSeeAll = { route -> navController.navigate("seeall/${route.key}") })
+        }
         composable(AppTab.UP_NEXT.route) { PlaceholderScreen(AppTab.UP_NEXT) }
         composable(AppTab.LIBRARY.route) { PlaceholderScreen(AppTab.LIBRARY) }
         composable(AppTab.SEARCH.route) { PlaceholderScreen(AppTab.SEARCH) }
+        composable("seeall/{key}") { entry ->
+          val key = entry.arguments?.getString("key").orEmpty()
+          val route = mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute.fromKey(key)
+          if (route != null) {
+            SeeAllWithBar(route = route, onBack = { navController.popBackStack() })
+          }
+        }
       }
     }
   }
@@ -104,3 +119,23 @@ private val AppTab.outlinedIcon
     AppTab.LIBRARY -> Icons.Outlined.LibraryBooks
     AppTab.SEARCH -> Icons.Outlined.Search
   }
+
+/** "Ver todo" con barra superior (título + atrás), sin Scaffold anidado. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun SeeAllWithBar(
+  route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute,
+  onBack: () -> Unit,
+) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(stringResource(route.titleRes)) },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    SeeAllScreen(route)
+  }
+}

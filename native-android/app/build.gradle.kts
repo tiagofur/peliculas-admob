@@ -1,6 +1,6 @@
 plugins {
   alias(libs.plugins.android.application)
-  // Kotlin viene integrado en AGP 9+ (no aplicar kotlin-android aquí).
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.kotlin.serialization)
 }
@@ -45,6 +45,8 @@ dependencies {
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.okhttp)
+  implementation(libs.coil.compose)
+  implementation(libs.coil.network.okhttp)
 
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.ui)
