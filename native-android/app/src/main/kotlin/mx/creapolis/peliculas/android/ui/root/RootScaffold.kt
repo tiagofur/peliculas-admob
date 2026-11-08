@@ -82,7 +82,57 @@ fun RootScaffold() {
         }
         composable(AppTab.UP_NEXT.route) { PlaceholderScreen(AppTab.UP_NEXT) }
         composable(AppTab.LIBRARY.route) { PlaceholderScreen(AppTab.LIBRARY) }
-        composable(AppTab.SEARCH.route) { PlaceholderScreen(AppTab.SEARCH) }
+        composable(AppTab.SEARCH.route) {
+          val searchNav = mx.creapolis.peliculas.android.features.search.SearchNav(
+            openGenre = { kind, genre -> navController.navigate("results/genre/${kind.rawValue}/${genre.id}/${android.net.Uri.encode(genre.name)}") },
+            openMood = { mood -> navController.navigate("results/mood/${mood.name}") },
+            openPerson = { id, name -> navController.navigate("person/$id/${android.net.Uri.encode(name)}") },
+          )
+          mx.creapolis.peliculas.android.features.search.SearchScreen(nav = searchNav)
+        }
+
+        composable("results/genre/{kind}/{genreId}/{name}") { entry ->
+          val kind = mx.creapolis.peliculas.android.core.model.MediaKind.valueOf(
+            (entry.arguments?.getString("kind") ?: "movie").uppercase())
+          val genreId = entry.arguments?.getString("genreId")?.toIntOrNull() ?: 0
+          val name = entry.arguments?.getString("name").orEmpty()
+          ResultsWithBar(
+            title = name,
+            baseSource = mx.creapolis.peliculas.android.core.network.MediaListSource.Genre(kind, genreId),
+            filtersEnabled = true,
+            onBack = { navController.popBackStack() },
+          )
+        }
+
+        composable("results/mood/{mood}") { entry ->
+          val mood = entry.arguments?.getString("mood")
+            ?.let { runCatching { mx.creapolis.peliculas.android.features.search.Mood.valueOf(it) }.getOrNull() }
+          if (mood != null) {
+            val title = androidx.compose.ui.res.stringResource(mood.titleRes)
+            ResultsWithBar(
+              title = title,
+              baseSource = mood.source,
+              emptyMessage = androidx.compose.ui.res.stringResource(R.string.seeall_empty),
+              onBack = { navController.popBackStack() },
+            )
+          }
+        }
+
+        composable("person/{id}/{name}") { entry ->
+          val id = entry.arguments?.getString("id")?.toIntOrNull() ?: 0
+          val name = entry.arguments?.getString("name").orEmpty()
+          Column(Modifier.fillMaxSize()) {
+            TopAppBar(
+              title = { Text(name) },
+              navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                  Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                }
+              },
+            )
+            mx.creapolis.peliculas.android.features.people.ActorScreen(personId = id, fallbackName = name)
+          }
+        }
         composable("seeall/{key}") { entry ->
           val key = entry.arguments?.getString("key").orEmpty()
           val route = mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute.fromKey(key)
@@ -119,6 +169,34 @@ private val AppTab.outlinedIcon
     AppTab.LIBRARY -> Icons.Outlined.LibraryBooks
     AppTab.SEARCH -> Icons.Outlined.Search
   }
+
+/** Resultados de género/mood con barra superior. */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun ResultsWithBar(
+  title: String,
+  baseSource: mx.creapolis.peliculas.android.core.network.MediaListSource,
+  filtersEnabled: Boolean = false,
+  emptyMessage: String? = null,
+  onBack: () -> Unit,
+) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(title) },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    mx.creapolis.peliculas.android.features.search.ResultsScreen(
+      title = title,
+      baseSource = baseSource,
+      filtersEnabled = filtersEnabled,
+      emptyMessage = emptyMessage,
+    )
+  }
+}
 
 /** "Ver todo" con barra superior (título + atrás), sin Scaffold anidado. */
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)

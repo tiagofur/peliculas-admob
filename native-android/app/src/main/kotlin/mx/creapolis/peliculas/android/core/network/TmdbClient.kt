@@ -104,6 +104,14 @@ object TmdbClient {
   /** Actores/directores por nombre (solo primera página). */
   suspend fun searchPeople(query: String): List<TmdbPerson> =
     fetch<TmdbPersonsResponse>("/search/person", mapOf("query" to query, "include_adult" to "false")).results
+
+  /** Ficha de persona (bio, cumpleaños, oficio). */
+  suspend fun person(id: Int): TmdbPersonDetail =
+    fetch("/person/$id")
+
+  /** Filmografía: reparto de créditos combinados (como iOS `personCredits`). */
+  suspend fun personCredits(id: Int): List<TmdbMovie> =
+    fetch<TmdbMovieCredits>("/person/$id/combined_credits").cast
 }
 
 /** CDN de imágenes de TMDB (gemelo de `TMDBImage` en iOS). */
