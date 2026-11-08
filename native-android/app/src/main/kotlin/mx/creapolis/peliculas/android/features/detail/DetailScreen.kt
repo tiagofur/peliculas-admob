@@ -81,14 +81,16 @@ fun DetailScreen(
   library: LibraryStore,
   onOpenPerson: (id: Int, name: String) -> Unit,
   onOpenItem: (MediaItem) -> Unit,
+  proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
   vm: DetailViewModel = viewModel(key = item.key.description, factory = DetailViewModelFactory(item, library)),
 ) {
+  val context = LocalContext.current
+  val activeProStore = proStore ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.proStore
   val state by vm.state.collectAsState()
   val lib by library.state.collectAsState()
   var showTrailer by remember { mutableStateOf(false) }
   var editingReview by remember { mutableStateOf(false) }
   var reviewDraft by remember { mutableStateOf("") }
-  val context = LocalContext.current
 
   if (state.failed && state.detail == null) {
     Column(
@@ -380,6 +382,15 @@ fun DetailScreen(
         ) {
           items(state.similar) { PosterCard(it, Modifier.clickable { onOpenItem(it) }) }
         }
+      }
+    }
+
+    if (activeProStore != null) {
+      item {
+        mx.creapolis.peliculas.android.features.ads.AdBannerView(
+          proStore = activeProStore,
+          modifier = Modifier.padding(horizontal = 20.dp),
+        )
       }
     }
   }

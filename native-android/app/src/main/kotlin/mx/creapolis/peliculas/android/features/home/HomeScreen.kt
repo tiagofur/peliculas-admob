@@ -58,8 +58,11 @@ import mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
 fun HomeScreen(
   onSeeAll: (SeeAllRoute) -> Unit,
   onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
+  proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
   vm: HomeViewModel = viewModel(),
 ) {
+  val context = LocalContext.current
+  val activeProStore = proStore ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.proStore
   val state by vm.state.collectAsState()
   // Fuera del LazyColumn: su lambda de contenido no es composable.
   val railShowsTitle = stringResource(R.string.rail_trending_shows)
@@ -108,6 +111,12 @@ fun HomeScreen(
       rail(railNowPlayingTitle, state.nowPlaying, SeeAllRoute.NOW_PLAYING, onSeeAll, onOpenItem)
       rail(railUpcomingTitle, state.upcoming, SeeAllRoute.UPCOMING, onSeeAll, onOpenItem)
       rail(railTopRatedTitle, state.topRated, SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
+
+      if (activeProStore != null) {
+        item {
+          mx.creapolis.peliculas.android.features.ads.AdBannerView(proStore = activeProStore)
+        }
+      }
 
       item { TmdbAttribution() }
     }
