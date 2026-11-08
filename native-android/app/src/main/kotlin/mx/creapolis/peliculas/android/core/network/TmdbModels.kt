@@ -49,6 +49,21 @@ data class TmdbPerson(
 @Serializable
 data class TmdbPersonsResponse(val results: List<TmdbPerson> = emptyList())
 
+/** Ficha de persona (port de `TMDBPersonDetail`). */
+@Serializable
+data class TmdbPersonDetail(
+  val id: Int,
+  val name: String? = null,
+  val biography: String? = null,
+  val birthday: String? = null,
+  @SerialName("place_of_birth") val placeOfBirth: String? = null,
+  @SerialName("profile_path") val profilePath: String? = null,
+  @SerialName("known_for_department") val knownForDepartment: String? = null,
+)
+
+@Serializable
+data class TmdbMovieCredits(val cast: List<TmdbMovie> = emptyList())
+
 /** Orden de "Explorar por género" (port de `DiscoverSort`). */
 enum class DiscoverSort(val voteFloor: Int) {
   POPULARITY(50), RATING(150), NEWEST(10);
