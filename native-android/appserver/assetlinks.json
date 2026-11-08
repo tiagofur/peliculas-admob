@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "mx.creapolis.peliculas.android",
+      "sha256_cert_fingerprints": [
+        "FB:E4:EE:D6:7F:FF:EA:8A:C6:11:56:9D:FA:55:EE:EA:A9:FE:58:BE:9E:23:66:1F:DA:A2:EE:F8:A1:9D:17:9C"
+      ]
+    }
+  }
+]

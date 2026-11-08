@@ -199,4 +199,17 @@
   <string name="paywall_legal_lifetime">Pago único. Tuyo para siempre.</string>
   <string name="paywall_legal_subscription">Se renueva automáticamente salvo cancelación en Google Play › Pagos y suscripciones.</string>
   <string name="paywall_restore">Restaurar compras</string>
+  <string name="share">Compartir</string>
+  <string name="channel_reminders_name">Recordatorios de películas</string>
+  <string name="channel_reminders_desc">Avisos de tendencias los viernes y títulos pendientes los domingos.</string>
+  <string name="channel_episodes_name">Nuevos episodios</string>
+  <string name="channel_episodes_desc">Avisos de nuevos capítulos de las series que sigues.</string>
+  <string name="reminder_trends_title">Tendencias de la semana</string>
+  <string name="reminder_trends_body">Mira lo que todos están viendo este fin de semana.</string>
+  <string name="reminder_watchlist_title">Tu watchlist te espera</string>
+  <string name="reminder_watchlist_body">Tienes %1$d títulos guardados para ver.</string>
+  <string name="widget_name">Tendencias</string>
+  <string name="widget_desc">Las películas más vistas de hoy.</string>
+  <string name="widget_trending_today">Tendencia hoy</string>
+  <string name="widget_tap_to_open">Toca para abrir la app</string>
 </resources>

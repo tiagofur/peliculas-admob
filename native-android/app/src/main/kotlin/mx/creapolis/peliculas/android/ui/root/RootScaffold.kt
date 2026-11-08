@@ -91,6 +91,51 @@ fun RootScaffold() {
     achievements.refresh(
       mx.creapolis.peliculas.android.features.gamification.LibraryCounts.from(library, libraryState),
     )
+    container.reminders.reschedule(
+      libraryState.count(mx.creapolis.peliculas.android.core.library.LibraryStore.Kind.WATCHLIST),
+    )
+  }
+
+  // Escucha de Deep Links / App Links entrantes
+  androidx.compose.runtime.LaunchedEffect(Unit) {
+    mx.creapolis.peliculas.android.ui.navigation.DeepLinkRouter.targets.collect { target ->
+      when (target) {
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.Home -> {
+          navController.navigate(AppTab.HOME.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+          }
+        }
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.Search -> {
+          navController.navigate(AppTab.SEARCH.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+          }
+        }
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.Library -> {
+          navController.navigate(AppTab.LIBRARY.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+          }
+        }
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.UpNext -> {
+          navController.navigate(AppTab.UP_NEXT.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+          }
+        }
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.Account -> {
+          navController.navigate("account")
+        }
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.Pro -> {
+          proStore.presentPaywall()
+        }
+        is mx.creapolis.peliculas.android.ui.navigation.DeepLinkTarget.Detail -> {
+          navController.navigate("detail/${target.kind.rawValue}/${target.id}")
+        }
+      }
+      mx.creapolis.peliculas.android.ui.navigation.DeepLinkRouter.consume()
+    }
   }
 
   Scaffold(
