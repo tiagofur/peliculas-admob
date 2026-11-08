@@ -30,7 +30,17 @@ data class ApiError(val status: Int, val code: String) : Exception("api $status 
 
 /** Config visible para toda la app (viene de Gradle, como el xcconfig de iOS). */
 object AppConfig {
-  val apiBaseUrl: String get() = BuildConfig.API_BASE_URL
+  /** Override solo para el e2e de JVM (el release usa BuildConfig). */
+  @Volatile
+  var baseUrlOverride: String? = null
+
+  val apiBaseUrl: String get() = baseUrlOverride ?: BuildConfig.API_BASE_URL
+}
+
+/** Proveedor de tokens que `ApiClient.authed` usa para autorizar y renovar. */
+interface TokenProvider {
+  suspend fun validAccessToken(): String
+  suspend fun forceRefreshedAccessToken(): String
 }
 
 /**
@@ -38,6 +48,10 @@ object AppConfig {
  * propósito: espejo del cliente iOS con OkHttp y el mismo manejo de errores.
  */
 object ApiClient {
+
+  /** Lo registra `SessionStore` al crearse (una sola sesión por proceso). */
+  @Volatile
+  var tokenProvider: TokenProvider? = null
 
   val json: Json = Json {
     ignoreUnknownKeys = true
@@ -66,6 +80,25 @@ object ApiClient {
   fun url(path: String, query: Map<String, String> = emptyMap()): HttpUrl =
     buildUrl(AppConfig.apiBaseUrl, path, query)
 
+  /**
+   * Petición con sesión. Añade el Bearer y, si el servidor responde 401,
+   * renueva el token una vez y repite la petición (port de `authed` en iOS).
+   */
+  suspend fun authed(method: String, path: String, query: Map<String, String> = emptyMap(), body: String? = null): ByteArray {
+    val provider = tokenProvider ?: throw ApiError.NOT_SIGNED_IN
+    fun request(token: String): Request = Request.Builder()
+      .url(url(path, query))
+      .method(method, body?.toRequestBody("application/json".toMediaType()))
+      .header("Authorization", "Bearer $token")
+      .header("Cache-Control", "no-cache")
+      .build()
+    return try {
+      perform(request(provider.validAccessToken()))
+    } catch (e: ApiError) {
+      if (e.status == 401) perform(request(provider.forceRefreshedAccessToken())) else throw e
+    }
+  }
+
   /** Petición sin sesión (health, login, registro, proxy TMDB…). Body crudo. */
   suspend fun send(method: String, path: String, query: Map<String, String> = emptyMap(), body: String? = null): ByteArray =
     perform(Request.Builder()
@@ -92,5 +125,7 @@ object ApiClient {
   }
 
   inline fun <reified T> encode(value: T): String = json.encodeToString(value)
+  inline fun <reified T> encodeToString(value: T): String = json.encodeToString(value)
+  inline fun <reified T> decodeFromString(value: String): T = json.decodeFromString(value)
   inline fun <reified T> decode(data: ByteArray): T = json.decodeFromString(data.decodeToString())
 }

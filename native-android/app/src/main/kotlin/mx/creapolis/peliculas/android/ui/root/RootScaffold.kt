@@ -23,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +34,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import mx.creapolis.peliculas.android.PeliculasApp
+import mx.creapolis.peliculas.android.features.library.LibraryNav
+import mx.creapolis.peliculas.android.features.library.LibraryScreen
+import mx.creapolis.peliculas.android.features.library.LibraryGridScreen
+import mx.creapolis.peliculas.android.features.library.RatedGridScreen
+import mx.creapolis.peliculas.android.features.library.ListItemsScreen
+import mx.creapolis.peliculas.android.features.library.ListsScreen
+import mx.creapolis.peliculas.android.features.library.SignInScreen
+import mx.creapolis.peliculas.android.features.library.AccountScreen
 import mx.creapolis.peliculas.android.R
 import mx.creapolis.peliculas.android.core.model.MediaItem
 import mx.creapolis.peliculas.android.core.model.MediaKind
@@ -60,7 +69,10 @@ fun RootScaffold() {
   val navController = rememberNavController()
   val backStack by navController.currentBackStackEntryAsState()
   val current = AppTab.entries.firstOrNull { it.route == backStack?.destination?.route } ?: AppTab.HOME
-  val library = (LocalContext.current.applicationContext as PeliculasApp).container.library
+  val container = (LocalContext.current.applicationContext as PeliculasApp).container
+  val library = container.library
+  val session = container.session
+  val sessionState by session.state.collectAsState()
 
   Scaffold(
     bottomBar = {
@@ -97,7 +109,80 @@ fun RootScaffold() {
           )
         }
         composable(AppTab.UP_NEXT.route) { PlaceholderScreen(AppTab.UP_NEXT) }
-        composable(AppTab.LIBRARY.route) { PlaceholderScreen(AppTab.LIBRARY) }
+        composable(AppTab.LIBRARY.route) {
+          LibraryScreen(
+            library = library,
+            signedIn = sessionState.isSignedIn,
+            nav = LibraryNav(
+              openAccount = { navController.navigate("account") },
+              openSignIn = { navController.navigate("signin") },
+              openGrid = { kind -> navController.navigate("library/grid/${kind.name}") },
+              openRated = { navController.navigate("library/rated") },
+              openLists = { navController.navigate("library/lists") },
+              openList = { id, name -> navController.navigate("library/list/$id/${android.net.Uri.encode(name)}") },
+              openItem = { item -> navController.navigate(detailRoute(item)) },
+              explore = {
+                navController.navigate(AppTab.SEARCH.route) {
+                  popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                  launchSingleTop = true
+                }
+              },
+            ),
+          )
+        }
+
+        composable("library/grid/{kind}") { entry ->
+          val kind = runCatching {
+            mx.creapolis.peliculas.android.core.library.LibraryStore.Kind.valueOf(
+              entry.arguments?.getString("kind") ?: "WATCHLIST")
+          }.getOrDefault(mx.creapolis.peliculas.android.core.library.LibraryStore.Kind.WATCHLIST)
+          LibraryGridScreen(
+            kind = kind, library = library,
+            onBack = { navController.popBackStack() },
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+          )
+        }
+
+        composable("library/rated") { entry ->
+          RatedGridScreen(library, onBack = { navController.popBackStack() }) { item ->
+            navController.navigate(detailRoute(item))
+          }
+        }
+
+        composable("library/lists") {
+          ListsScreen(
+            library = library,
+            onBack = { navController.popBackStack() },
+            onOpenList = { id, name -> navController.navigate("library/list/$id/${android.net.Uri.encode(name)}") },
+          )
+        }
+
+        composable("library/list/{id}/{name}") { entry ->
+          ListItemsScreen(
+            listId = entry.arguments?.getString("id").orEmpty(),
+            listName = entry.arguments?.getString("name").orEmpty(),
+            library = library,
+            onBack = { navController.popBackStack() },
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+          )
+        }
+
+        composable("signin") {
+          SignInScreen(
+            session = session,
+            onDone = { navController.popBackStack() },
+            onBack = { navController.popBackStack() },
+          )
+        }
+
+        composable("account") {
+          AccountScreen(
+            session = session,
+            onBack = { navController.popBackStack() },
+            onSignedOut = { navController.popBackStack() },
+            onSignIn = { navController.navigate("signin") },
+          )
+        }
         composable(AppTab.SEARCH.route) {
           SearchScreen(
             nav = mx.creapolis.peliculas.android.features.search.SearchNav(
