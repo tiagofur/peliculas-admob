@@ -1,0 +1,106 @@
+package mx.creapolis.peliculas.android.ui.root
+
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LibraryBooks
+import androidx.compose.material.icons.outlined.PlayCircle
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import mx.creapolis.peliculas.android.R
+import mx.creapolis.peliculas.android.ui.screens.PlaceholderScreen
+
+/** Destinos raíz (espejo de `AppTab` en iOS). */
+enum class AppTab(val route: String) {
+  HOME("home"),
+  UP_NEXT("upnext"),
+  LIBRARY("library"),
+  SEARCH("search"),
+}
+
+@Composable
+fun RootScaffold() {
+  val navController = rememberNavController()
+  val backStack by navController.currentBackStackEntryAsState()
+  val current = AppTab.entries.firstOrNull { it.route == backStack?.destination?.route } ?: AppTab.HOME
+
+  Scaffold(
+    bottomBar = {
+      NavigationBar {
+        AppTab.entries.forEach { tab ->
+          val selected = tab == current
+          NavigationBarItem(
+            selected = selected,
+            onClick = {
+              navController.navigate(tab.route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+              }
+            },
+            icon = {
+              Icon(
+                imageVector = if (selected) tab.filledIcon else tab.outlinedIcon,
+                contentDescription = null,
+              )
+            },
+            label = { Text(stringResource(tab.labelRes)) },
+          )
+        }
+      }
+    },
+  ) { padding ->
+    Box(Modifier.fillMaxSize().padding(padding)) {
+      NavHost(navController = navController, startDestination = AppTab.HOME.route) {
+        composable(AppTab.HOME.route) { PlaceholderScreen(AppTab.HOME) }
+        composable(AppTab.UP_NEXT.route) { PlaceholderScreen(AppTab.UP_NEXT) }
+        composable(AppTab.LIBRARY.route) { PlaceholderScreen(AppTab.LIBRARY) }
+        composable(AppTab.SEARCH.route) { PlaceholderScreen(AppTab.SEARCH) }
+      }
+    }
+  }
+}
+
+/** Etiqueta localizada de cada pestaña (compartida con los placeholders). */
+val AppTab.labelRes: Int
+  get() = when (this) {
+    AppTab.HOME -> R.string.tab_home
+    AppTab.UP_NEXT -> R.string.tab_up_next
+    AppTab.LIBRARY -> R.string.tab_library
+    AppTab.SEARCH -> R.string.tab_search
+  }
+
+private val AppTab.filledIcon
+  get() = when (this) {
+    AppTab.HOME -> Icons.Filled.Home
+    AppTab.UP_NEXT -> Icons.Filled.PlayCircle
+    AppTab.LIBRARY -> Icons.Filled.LibraryBooks
+    AppTab.SEARCH -> Icons.Filled.Search
+  }
+
+private val AppTab.outlinedIcon
+  get() = when (this) {
+    AppTab.HOME -> Icons.Outlined.Home
+    AppTab.UP_NEXT -> Icons.Outlined.PlayCircle
+    AppTab.LIBRARY -> Icons.Outlined.LibraryBooks
+    AppTab.SEARCH -> Icons.Outlined.Search
+  }
