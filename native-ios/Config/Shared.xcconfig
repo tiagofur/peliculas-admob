@@ -23,6 +23,6 @@ GAD_AD_UNIT_ID_TEST = ca-app-pub-3940256099942544/2934735716
 GAD_AD_UNIT_ID_PROD = ca-app-pub-3940256099942544/2934735716
 
 // Páginas legales (obligatorias en App Store Connect y dentro de la app).
-PRIVACY_URL = https:/$()/peliculas.creapolis.mx/privacidad
-TERMS_URL = https:/$()/peliculas.creapolis.mx/terminos
-SUPPORT_URL = https:/$()/peliculas.creapolis.mx/soporte
+PRIVACY_URL = https:/$()/creapolis.dev/privacidad/
+TERMS_URL = https:/$()/creapolis.dev/terminos/
+SUPPORT_URL = https:/$()/creapolis.dev/es/contacto/
