@@ -40,7 +40,11 @@ import mx.creapolis.peliculas.android.core.network.TmdbPersonDetail
 
 /** Ficha de persona (port de `ActorView` en iOS): foto, bio y filmografía. */
 @Composable
-fun ActorScreen(personId: Int, fallbackName: String) {
+fun ActorScreen(
+  personId: Int,
+  fallbackName: String,
+  onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
+) {
   var detail by remember { mutableStateOf<TmdbPersonDetail?>(null) }
   var credits by remember { mutableStateOf<List<mx.creapolis.peliculas.android.core.model.MediaItem>>(emptyList()) }
   var failed by remember { mutableStateOf(false) }
@@ -140,7 +144,7 @@ fun ActorScreen(personId: Int, fallbackName: String) {
       }
     }
     items(credits, key = { it.key.description }) {
-      mx.creapolis.peliculas.android.ui.components.PosterCard(it, Modifier.fillMaxWidth())
+      mx.creapolis.peliculas.android.ui.components.PosterCard(it, Modifier.fillMaxWidth()) { onOpenItem(it) }
     }
   }
 }

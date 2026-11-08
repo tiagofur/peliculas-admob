@@ -2,6 +2,7 @@ package mx.creapolis.peliculas.android.core.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import mx.creapolis.peliculas.android.core.network.TmdbFullDetail
 import mx.creapolis.peliculas.android.core.network.TmdbMovie
 
 /** Equivalente de `MediaKind` en iOS: película o serie. */
@@ -75,4 +76,17 @@ fun TmdbMovie.toMediaItem(kind: MediaKind): MediaItem = MediaItem(
   rating = voteAverage ?: 0.0,
   kind = kind,
   year = (releaseDate ?: firstAirDate ?: "").take(4),
+)
+
+
+/** Desde el detalle completo (port de `init(detail:kind:)` en iOS). */
+fun TmdbFullDetail.toMediaItem(kind: MediaKind): MediaItem = MediaItem(
+  id = id,
+  title = displayTitle,
+  overview = overview ?: "",
+  posterPath = posterPath ?: "",
+  backdropPath = backdropPath ?: "",
+  rating = voteAverage ?: 0.0,
+  kind = kind,
+  year = (displayDate ?: "").take(4),
 )

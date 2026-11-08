@@ -103,3 +103,106 @@ sealed interface MediaListSource {
   ) : MediaListSource
   data class Search(val query: String, override val kind: MediaKind) : MediaListSource
 }
+
+// MARK: Detalle (port de TMDBFullDetail y amigos en iOS)
+
+@Serializable
+data class TmdbVideo(
+  val key: String,
+  val site: String,
+  val type: String? = null,
+  val official: Boolean? = null,
+)
+
+@Serializable
+data class TmdbVideos(val results: List<TmdbVideo> = emptyList())
+
+@Serializable
+data class TmdbCredits(val cast: List<TmdbPerson> = emptyList(), val crew: List<TmdbPerson> = emptyList())
+
+@Serializable
+data class TmdbProvider(
+  @SerialName("provider_id") val providerId: Int,
+  @SerialName("provider_name") val providerName: String,
+  @SerialName("logo_path") val logoPath: String? = null,
+)
+
+@Serializable
+data class TmdbWatchCountry(
+  val link: String? = null,
+  val flatrate: List<TmdbProvider>? = null,
+  val rent: List<TmdbProvider>? = null,
+  val buy: List<TmdbProvider>? = null,
+)
+
+@Serializable
+data class TmdbWatchResponse(val results: Map<String, TmdbWatchCountry> = emptyMap())
+
+@Serializable
+data class TmdbSeasonSummary(
+  @SerialName("season_number") val seasonNumber: Int,
+  @SerialName("episode_count") val episodeCount: Int? = null,
+  val name: String? = null,
+  @SerialName("air_date") val airDate: String? = null,
+  @SerialName("poster_path") val posterPath: String? = null,
+)
+
+@Serializable
+data class TmdbEpisodeRef(
+  @SerialName("season_number") val seasonNumber: Int,
+  @SerialName("episode_number") val episodeNumber: Int,
+  val name: String? = null,
+  val overview: String? = null,
+  @SerialName("air_date") val airDate: String? = null,
+  @SerialName("still_path") val stillPath: String? = null,
+  val runtime: Int? = null,
+)
+
+@Serializable
+data class TmdbEpisode(
+  val id: Int,
+  @SerialName("episode_number") val episodeNumber: Int,
+  @SerialName("season_number") val seasonNumber: Int? = null,
+  val name: String? = null,
+  val overview: String? = null,
+  @SerialName("still_path") val stillPath: String? = null,
+  val runtime: Int? = null,
+  @SerialName("vote_average") val voteAverage: Double? = null,
+  @SerialName("air_date") val airDate: String? = null,
+)
+
+@Serializable
+data class TmdbSeason(val episodes: List<TmdbEpisode> = emptyList())
+
+/** Detalle completo de película o serie (`append_to_response`). */
+@Serializable
+data class TmdbFullDetail(
+  val id: Int,
+  val title: String? = null,
+  val name: String? = null,
+  val overview: String? = null,
+  val tagline: String? = null,
+  @SerialName("poster_path") val posterPath: String? = null,
+  @SerialName("backdrop_path") val backdropPath: String? = null,
+  @SerialName("vote_average") val voteAverage: Double? = null,
+  @SerialName("release_date") val releaseDate: String? = null,
+  @SerialName("first_air_date") val firstAirDate: String? = null,
+  val runtime: Int? = null,
+  @SerialName("episode_run_time") val episodeRunTime: List<Int>? = null,
+  @SerialName("number_of_seasons") val numberOfSeasons: Int? = null,
+  @SerialName("number_of_episodes") val numberOfEpisodes: Int? = null,
+  val status: String? = null,
+  val genres: List<TmdbGenre>? = null,
+  val seasons: List<TmdbSeasonSummary>? = null,
+  @SerialName("next_episode_to_air") val nextEpisodeToAir: TmdbEpisodeRef? = null,
+  @SerialName("last_episode_to_air") val lastEpisodeToAir: TmdbEpisodeRef? = null,
+  val videos: TmdbVideos? = null,
+  val credits: TmdbCredits? = null,
+  @SerialName("created_by") val createdBy: List<TmdbPerson>? = null,
+  val similar: TmdbResponse? = null,
+  val recommendations: TmdbResponse? = null,
+  @SerialName("watch/providers") val watchProviders: TmdbWatchResponse? = null,
+) {
+  val displayTitle: String get() = title ?: name ?: ""
+  val displayDate: String? get() = releaseDate ?: firstAirDate
+}
