@@ -30,7 +30,7 @@
 .pub-cache/
 .pub/
 /build/
-flutter/
+flutter/build/
 flutter.tar.xz
 
 # Web related
