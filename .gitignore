@@ -78,3 +78,7 @@ Thumbs.db
 ehthumbs.db
 
 native-ios/Config/Secrets.generated.xcconfig
+
+# Estado de herramientas locales (ZCode, Impeccable)
+.impeccable/
+.zcode/
