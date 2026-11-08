@@ -1,70 +1,6 @@
 {
   "sourceLanguage" : "es",
   "strings" : {
-    "¡Listo! Tu Pro está activo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All set! Your Pro is active."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pronto! Seu Pro está ativo."
-          }
-        }
-      }
-    },
-    "¿Borrar tu cuenta?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete your account?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apagar sua conta?"
-          }
-        }
-      }
-    },
-    "¿Cerrar sesión?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign out?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sair da conta?"
-          }
-        }
-      }
-    },
-    "¿No tienes cuenta? Crear una" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Don’t have an account? Create one"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não tem conta? Crie uma"
-          }
-        }
-      }
-    },
     "%@ al año." : {
       "localizations" : {
         "en" : {
@@ -730,22 +666,6 @@
         }
       }
     },
-    "Agrega 50 favoritos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add 50 favorites"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione 50 favoritos"
-          }
-        }
-      }
-    },
     "Agrega 100 favoritos" : {
       "localizations" : {
         "en" : {
@@ -774,6 +694,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adicione 200 favoritos"
+          }
+        }
+      }
+    },
+    "Agrega 50 favoritos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add 50 favorites"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione 50 favoritos"
           }
         }
       }
@@ -858,86 +794,6 @@
         }
       }
     },
-    "Añade títulos desde su ficha (botón ⋯) o manteniendo pulsado un póster." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add titles from their details page (⋯ button) or by touching and holding a poster."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione títulos pela página de detalhes (botão ⋯) ou tocando e segurando um pôster."
-          }
-        }
-      }
-    },
-    "Añade una serie a tu Watchlist o marca un episodio visto y aquí verás qué toca después." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a series to your Watchlist or mark an episode as watched, and you’ll see what’s next here."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione uma série à sua Watchlist ou marque um episódio como visto e aqui você verá o que vem a seguir."
-          }
-        }
-      }
-    },
-    "Añadido recientemente" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recently Added"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionados recentemente"
-          }
-        }
-      }
-    },
-    "Añadir a lista" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to List"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar à lista"
-          }
-        }
-      }
-    },
-    "Añadir a Watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Watchlist"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar à Watchlist"
-          }
-        }
-      }
-    },
     "Anuncio" : {
       "localizations" : {
         "en" : {
@@ -966,38 +822,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apoie um desenvolvedor independente"
-          }
-        }
-      }
-    },
-    "Aún no calificas nada" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing Rated Yet"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nada avaliado ainda"
-          }
-        }
-      }
-    },
-    "Avísame cuando se estrenen" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notify Me When They Air"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avise-me quando estrearem"
           }
         }
       }
@@ -1066,6 +890,22 @@
         }
       }
     },
+    "Avísame cuando se estrenen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notify Me When They Air"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avise-me quando estrearem"
+          }
+        }
+      }
+    },
     "Ayuda y contacto" : {
       "localizations" : {
         "en" : {
@@ -1078,6 +918,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajuda e contato"
+          }
+        }
+      }
+    },
+    "Añade títulos desde su ficha (botón ⋯) o manteniendo pulsado un póster." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add titles from their details page (⋯ button) or by touching and holding a poster."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione títulos pela página de detalhes (botão ⋯) ou tocando e segurando um pôster."
+          }
+        }
+      }
+    },
+    "Añade una serie a tu Watchlist o marca un episodio visto y aquí verás qué toca después." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a series to your Watchlist or mark an episode as watched, and you’ll see what’s next here."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione uma série à sua Watchlist ou marque um episódio como visto e aqui você verá o que vem a seguir."
+          }
+        }
+      }
+    },
+    "Añadido recientemente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Added"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionados recentemente"
+          }
+        }
+      }
+    },
+    "Añadir a Watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Watchlist"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à Watchlist"
+          }
+        }
+      }
+    },
+    "Añadir a lista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to List"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à lista"
+          }
+        }
+      }
+    },
+    "Año" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ano"
+          }
+        }
+      }
+    },
+    "Aún no calificas nada" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing Rated Yet"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada avaliado ainda"
           }
         }
       }
@@ -1642,6 +1594,22 @@
         }
       }
     },
+    "Creado por" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Created by"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criado por"
+          }
+        }
+      }
+    },
     "Creador de Listas" : {
       "localizations" : {
         "en" : {
@@ -1926,6 +1894,25 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Onde assistir"
+          }
+        }
+      }
+    },
+    "EULA" : {
+      "shouldTranslate" : false
+    },
+    "Editar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar"
           }
         }
       }
@@ -2267,6 +2254,22 @@
         }
       }
     },
+    "Escribir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever"
+          }
+        }
+      }
+    },
     "Ese correo no parece válido." : {
       "localizations" : {
         "en" : {
@@ -2314,9 +2317,6 @@
           }
         }
       }
-    },
-    "EULA" : {
-      "shouldTranslate" : false
     },
     "Explorador" : {
       "localizations" : {
@@ -2458,6 +2458,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filmografia"
+          }
+        }
+      }
+    },
+    "Filtrar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filtrar"
           }
         }
       }
@@ -3038,22 +3054,6 @@
         }
       }
     },
-    "Mañana" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tomorrow"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Amanhã"
-          }
-        }
-      }
-    },
     "Mantén pulsado cualquier póster o usa los botones de la ficha para guardar títulos aquí." : {
       "localizations" : {
         "en" : {
@@ -3102,22 +3102,6 @@
         }
       }
     },
-    "Marca 50 episodios vistos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark 50 episodes as watched"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marque 50 episódios como vistos"
-          }
-        }
-      }
-    },
     "Marca 250 episodios vistos" : {
       "localizations" : {
         "en" : {
@@ -3130,6 +3114,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marque 250 episódios como vistos"
+          }
+        }
+      }
+    },
+    "Marca 50 episodios vistos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark 50 episodes as watched"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque 50 episódios como vistos"
           }
         }
       }
@@ -3278,6 +3278,118 @@
         }
       }
     },
+    "Mañana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amanhã"
+          }
+        }
+      }
+    },
+    "Mejor precio" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best Value"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melhor preço"
+          }
+        }
+      }
+    },
+    "Mejor valoradas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top Rated"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais bem avaliadas"
+          }
+        }
+      }
+    },
+    "Menos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos"
+          }
+        }
+      }
+    },
+    "Mira lo que todos están viendo este fin de semana." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See what everyone is watching this weekend."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veja o que todo mundo está assistindo neste fim de semana."
+          }
+        }
+      }
+    },
+    "Mira «%@» — la encontré en Películas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check out “%@” — I found it on Películas"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olha só “%@” — encontrei no Películas"
+          }
+        }
+      }
+    },
+    "Montaje" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editing"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Montagem"
+          }
+        }
+      }
+    },
     "Más" : {
       "localizations" : {
         "en" : {
@@ -3310,82 +3422,18 @@
         }
       }
     },
-    "Mejor precio" : {
+    "Más recientes" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Best Value"
+            "value" : "Newest"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Melhor preço"
-          }
-        }
-      }
-    },
-    "Menos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Less"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Menos"
-          }
-        }
-      }
-    },
-    "Mira «%@» — la encontré en Películas" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Check out “%@” — I found it on Películas"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Olha só “%@” — encontrei no Películas"
-          }
-        }
-      }
-    },
-    "Mira lo que todos están viendo este fin de semana." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See what everyone is watching this weekend."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veja o que todo mundo está assistindo neste fim de semana."
-          }
-        }
-      }
-    },
-    "Montaje" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Editing"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Montagem"
+            "value" : "Mais recentes"
           }
         }
       }
@@ -3514,6 +3562,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Não há dispositivos que possam recebê-la."
+          }
+        }
+      }
+    },
+    "No hay títulos en esta lista ahora mismo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing in this list right now."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada nesta lista agora mesmo."
+          }
+        }
+      }
+    },
+    "No hay títulos en este género ahora mismo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing in this genre right now."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada neste gênero agora mesmo."
           }
         }
       }
@@ -3758,22 +3838,6 @@
         }
       }
     },
-    "o con tu correo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "or with your email"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ou com seu e-mail"
-          }
-        }
-      }
-    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -3789,6 +3853,41 @@
           }
         }
       }
+    },
+    "Orden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sort"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ordenar"
+          }
+        }
+      }
+    },
+    "PELÍCULA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MOVIE"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FILME"
+          }
+        }
+      }
+    },
+    "PRO" : {
+      "shouldTranslate" : false
     },
     "Pago único. Tuyo para siempre, compartible con En Familia." : {
       "localizations" : {
@@ -3834,22 +3933,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filme"
-          }
-        }
-      }
-    },
-    "PELÍCULA" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MOVIE"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FILME"
           }
         }
       }
@@ -3930,6 +4013,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Política de Privacidade"
+          }
+        }
+      }
+    },
+    "Populares" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popular"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Populares"
           }
         }
       }
@@ -4062,9 +4161,6 @@
         }
       }
     },
-    "PRO" : {
-      "shouldTranslate" : false
-    },
     "Pro anual" : {
       "localizations" : {
         "en" : {
@@ -4145,6 +4241,22 @@
         }
       }
     },
+    "Prueba con otro título o revisa la ortografía." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another title or check the spelling."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tente outro título ou verifique a ortografia."
+          }
+        }
+      }
+    },
     "Próximamente" : {
       "localizations" : {
         "en" : {
@@ -4193,38 +4305,6 @@
         }
       }
     },
-    "Prueba con otro título o revisa la ortografía." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try another title or check the spelling."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tente outro título ou verifique a ortografia."
-          }
-        }
-      }
-    },
-    "puntos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "points"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "pontos"
-          }
-        }
-      }
-    },
     "Puntos" : {
       "localizations" : {
         "en" : {
@@ -4241,22 +4321,6 @@
         }
       }
     },
-    "Quitar de favoritos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove from Favorites"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remover dos favoritos"
-          }
-        }
-      }
-    },
     "Quitar de Watchlist" : {
       "localizations" : {
         "en" : {
@@ -4269,6 +4333,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remover da Watchlist"
+          }
+        }
+      }
+    },
+    "Quitar de favoritos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Favorites"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover dos favoritos"
           }
         }
       }
@@ -4417,6 +4497,22 @@
         }
       }
     },
+    "SERIE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SERIES"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SÉRIE"
+          }
+        }
+      }
+    },
     "Se borran para siempre tu cuenta, biblioteca, listas, notas y progreso. Las suscripciones se cancelan aparte en Ajustes › Apple ID." : {
       "localizations" : {
         "en" : {
@@ -4477,22 +4573,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Série"
-          }
-        }
-      }
-    },
-    "SERIE" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SERIES"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SÉRIE"
           }
         }
       }
@@ -4753,6 +4833,9 @@
         }
       }
     },
+    "TMDB" : {
+      "shouldTranslate" : false
+    },
     "Te avisamos el día del estreno de tus series." : {
       "localizations" : {
         "en" : {
@@ -4907,38 +4990,6 @@
         }
       }
     },
-    "Términos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terms"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Termos"
-          }
-        }
-      }
-    },
-    "Términos de uso" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terms of Use"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Termos de Uso"
-          }
-        }
-      }
-    },
     "Tienes %lld títulos guardados para ver." : {
       "localizations" : {
         "en" : {
@@ -5013,9 +5064,6 @@
         }
       }
     },
-    "TMDB" : {
-      "shouldTranslate" : false
-    },
     "Toca el corazón en la ficha de lo que más te guste." : {
       "localizations" : {
         "en" : {
@@ -5064,6 +5112,22 @@
         }
       }
     },
+    "Todos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos"
+          }
+        }
+      }
+    },
     "Top 10 de la semana" : {
       "localizations" : {
         "en" : {
@@ -5092,22 +5156,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trailer"
-          }
-        }
-      }
-    },
-    "Tú" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Você"
           }
         }
       }
@@ -5224,6 +5272,22 @@
         }
       }
     },
+    "Tu reseña" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Review"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua resenha"
+          }
+        }
+      }
+    },
     "Tu sesión caducó. Vuelve a iniciar sesión." : {
       "localizations" : {
         "en" : {
@@ -5252,6 +5316,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sua watchlist está esperando"
+          }
+        }
+      }
+    },
+    "Términos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos"
+          }
+        }
+      }
+    },
+    "Términos de uso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos de Uso"
+          }
+        }
+      }
+    },
+    "Tú" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você"
           }
         }
       }
@@ -5508,6 +5620,118 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Já tenho conta"
+          }
+        }
+      }
+    },
+    "o con tu correo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or with your email"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ou com seu e-mail"
+          }
+        }
+      }
+    },
+    "puntos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "points"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pontos"
+          }
+        }
+      }
+    },
+    "¡Listo! Tu Pro está activo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All set! Your Pro is active."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pronto! Seu Pro está ativo."
+          }
+        }
+      }
+    },
+    "¿Borrar tu cuenta?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete your account?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar sua conta?"
+          }
+        }
+      }
+    },
+    "¿Cerrar sesión?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair da conta?"
+          }
+        }
+      }
+    },
+    "¿No tienes cuenta? Crear una" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don’t have an account? Create one"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não tem conta? Crie uma"
+          }
+        }
+      }
+    },
+    "¿Qué te pareció?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What did you think?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que você achou?"
           }
         }
       }

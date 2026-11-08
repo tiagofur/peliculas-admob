@@ -113,8 +113,11 @@ final class SessionStore: ObservableObject {
       save(fresh)
       return fresh.accessToken
     } catch let error as APIError where error.status == 401 {
-      // Refresh revocado o caducado: la sesión ya no existe.
-      clearLocal()
+      // Refresh revocado o caducado: la sesión ya no existe. Mismos efectos
+      // locales que cerrar sesión (vaciar la biblioteca, salir de los avisos):
+      // si no, el siguiente inicio de sesión subiría el snapshot del usuario
+      // anterior y mezclaría dos cuentas.
+      await forceSignOut()
       throw error
     }
   }
@@ -139,6 +142,13 @@ final class SessionStore: ObservableObject {
     guard let current = stored else { return }
     for hook in willSignOut { await hook() }
     _ = try? await APIClient.send("POST", "/v1/auth/logout", body: ["refresh_token": current.refreshToken])
+    clearLocal()
+  }
+
+  /// Sesión muerta sin acción del usuario (401 al renovar): mismos efectos
+  /// locales que `signOut`, sin llamar al servidor (el token ya no sirve).
+  private func forceSignOut() async {
+    for hook in willSignOut { await hook() }
     clearLocal()
   }
 

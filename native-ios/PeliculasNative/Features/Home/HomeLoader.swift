@@ -14,6 +14,9 @@ final class HomeLoader: ObservableObject {
   @Published private(set) var personalTitle: String?
   @Published private(set) var loading = false
   @Published private(set) var failed = false
+  /// El héroe (`/trending/day`) falló o vino vacío aunque el resto cargó:
+  /// el placeholder debe ofrecer reintento en vez de quedarse en un gradiente mudo.
+  @Published private(set) var featuredFailed = false
 
   var isEmpty: Bool { featured.isEmpty && trending.isEmpty }
 
@@ -33,6 +36,7 @@ final class HomeLoader: ObservableObject {
     // Héroe: mezcla de películas y series del día con fondo disponible.
     let mixed = zip(dayMovies.prefix(4), dayShows).flatMap { [$0, $1] } + dayMovies.dropFirst(4)
     let heroes = mixed.filter { !$0.backdropPath.isEmpty }.prefix(6)
+    featuredFailed = heroes.isEmpty
     if !heroes.isEmpty { featured = Array(heroes) }
     if let m, !m.isEmpty { trending = m.map { MediaItem(tmdb: $0, kind: .movie) } }
     if let s, !s.isEmpty { trendingShows = s.map { MediaItem(tmdb: $0, kind: .tv) } }

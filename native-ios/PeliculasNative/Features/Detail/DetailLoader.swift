@@ -49,8 +49,15 @@ final class DetailLoader: ObservableObject {
     loadingEpisodes = true
     defer { loadingEpisodes = false }
     let season = selectedSeason
-    guard let eps = try? await TMDBClient.season(tvId: item.id, season: season), season == selectedSeason else { return }
-    episodes = eps.map(EpisodeItem.init(tmdb:))
+    do {
+      let eps = try await TMDBClient.season(tvId: item.id, season: season)
+      guard season == selectedSeason else { return }
+      episodes = eps.map(EpisodeItem.init(tmdb:))
+    } catch {
+      // Falló la carga: no dejar colgados los episodios de la temporada anterior.
+      guard season == selectedSeason else { return }
+      episodes = []
+    }
   }
 
   /// Abre en la última temporada emitida que tenga algo.
@@ -82,6 +89,26 @@ final class DetailLoader: ObservableObject {
     case "Post Production", "Planned": return String(localized: "Próximamente")
     default: return nil
     }
+  }
+
+  /// "Dirección" (películas, del `crew`) o "Creado por" (series, `created_by`).
+  var creditHeadline: (label: String, names: String)? {
+    guard let d = detail, let kind = item?.kind else { return nil }
+    return Self.creditHeadline(for: d, kind: kind)
+  }
+
+  static func creditHeadline(for d: TMDBFullDetail, kind: MediaKind) -> (label: String, names: String)? {
+    if kind == .tv {
+      let creators = (d.createdBy ?? []).compactMap(\.name).filter { !$0.isEmpty }.prefix(2)
+      guard !creators.isEmpty else { return nil }
+      return (String(localized: "Creado por"), creators.joined(separator: ", "))
+    }
+    var seen = Set<String>()
+    let directors = (d.credits?.crew ?? []).filter { $0.job == "Director" }
+      .compactMap(\.name).filter { !$0.isEmpty && seen.insert($0).inserted }
+      .prefix(2)
+    guard !directors.isEmpty else { return nil }
+    return (String(localized: "Dirección"), directors.joined(separator: ", "))
   }
 }
 

@@ -19,6 +19,12 @@ struct SearchView: View {
           } else {
             PosterGrid(items: loader.results) { $0.kind == .tv && loader.scope == .all ? String(localized: "SERIE") : nil }
               .padding(.vertical, 12)
+            if !loader.done {
+              ProgressView()
+                .opacity(loader.loadingMore ? 1 : 0)
+                .padding()
+                .onAppear { Task { await loader.loadMore() } }
+            }
           }
         }
       }
@@ -130,21 +136,84 @@ private struct GenreTile: View {
 private struct GenreResultsView: View {
   let genre: TMDBGenre
   let kind: MediaKind
-  @StateObject private var loader = GenreLoader()
+  @State private var year: Int?
+  @State private var sort: DiscoverSort = .popularity
+
+  private var source: MediaListSource {
+    .genre(kind: kind, genreId: genre.id, year: year, sort: sort)
+  }
 
   var body: some View {
-    ScrollView {
-      PosterGrid(items: loader.items)
-        .padding(.vertical, 12)
-      if !loader.items.isEmpty {
+    GenreResultsList(genre: genre, source: source)
+      .id(source) // cambiar filtro ⇒ lista nueva desde la página 1
+      .navigationTitle(genre.name)
+      .toolbar { filterMenu }
+  }
+
+  private var filterMenu: some ToolbarContent {
+    ToolbarItem {
+      Menu {
+        Picker("Orden", selection: $sort) {
+          Label("Populares", systemImage: "flame").tag(DiscoverSort.popularity)
+          Label("Mejor valoradas", systemImage: "star.fill").tag(DiscoverSort.rating)
+          Label("Más recientes", systemImage: "calendar").tag(DiscoverSort.newest)
+        }
+        Picker("Año", selection: Binding(get: { year ?? 0 }, set: { year = $0 == 0 ? nil : $0 })) {
+          Text("Todos").tag(0)
+          ForEach(Self.years, id: \.self) { y in
+            Text(verbatim: "\(y)").tag(y)
+          }
+        }
+      } label: {
+        Image(systemName: year != nil || sort != .popularity
+              ? "line.3.horizontal.decrease.circle.fill"
+              : "line.3.horizontal.decrease.circle")
+      }
+      .accessibilityLabel("Filtrar")
+    }
+  }
+
+  private static let years: [Int] = {
+    let current = Calendar.current.component(.year, from: Date())
+    return (current - 25...current).reversed()
+  }()
+}
+
+private struct GenreResultsList: View {
+  let genre: TMDBGenre
+  let source: MediaListSource
+  @StateObject private var loader: PagedListLoader
+
+  init(genre: TMDBGenre, source: MediaListSource) {
+    self.genre = genre
+    self.source = source
+    _loader = StateObject(wrappedValue: PagedListLoader(source: source))
+  }
+
+  var body: some View {
+    Group {
+      if loader.items.isEmpty && loader.failed {
+        EmptyState(icon: "wifi.exclamationmark",
+                   title: "Sin conexión",
+                   message: "Revisa tu red e inténtalo de nuevo.") {
+          Button("Reintentar") { Task { await loader.loadMore() } }
+            .glassProminentButtonStyle()
+        }
+      } else if loader.items.isEmpty && loader.loading {
         ProgressView()
-          .opacity(loader.loading ? 1 : 0)
-          .padding()
-          .onAppear { Task { await loader.loadMore(kind: kind, genre: genre.id) } }
+      } else if loader.items.isEmpty {
+        EmptyState(icon: "film",
+                   title: "Nada por aquí",
+                   message: "No hay títulos en este género ahora mismo.")
+      } else {
+        ScrollView {
+          PosterGrid(items: loader.items)
+            .padding(.vertical, 12)
+          LoadMoreFooter(loader: loader)
+        }
       }
     }
-    .overlay { if loader.items.isEmpty && loader.loading { ProgressView() } }
     .navigationTitle(genre.name)
-    .task { if loader.items.isEmpty { await loader.loadMore(kind: kind, genre: genre.id) } }
+    .task { if loader.items.isEmpty { await loader.loadMore() } }
   }
 }

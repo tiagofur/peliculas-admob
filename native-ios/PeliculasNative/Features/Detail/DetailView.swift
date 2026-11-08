@@ -9,6 +9,8 @@ struct DetailView: View {
   @State private var showingNewList = false
   @State private var newListName = ""
   @State private var overviewExpanded = false
+  @State private var editingReview = false
+  @State private var reviewDraft = ""
   let item: MediaItem
 
   private var current: MediaItem { loader.item ?? item }
@@ -21,7 +23,15 @@ struct DetailView: View {
 
         VStack(alignment: .leading, spacing: 28) {
           actionBar
+          if let credit = loader.creditHeadline {
+            HStack(spacing: 6) {
+              Text(verbatim: credit.label).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+              Text(verbatim: credit.names).font(.subheadline)
+            }
+            .accessibilityElement(children: .combine)
+          }
           ratingRow
+          reviewSection
           overview
           if current.kind == .tv, !loader.seasons.isEmpty { seasonsSection }
           if let key = loader.trailerKey { trailerSection(key) }
@@ -34,8 +44,12 @@ struct DetailView: View {
             .padding(.horizontal, -20)
           }
           if loader.failed {
-            Label("No se pudo cargar toda la información. Desliza para reintentar.", systemImage: "wifi.exclamationmark")
-              .font(.footnote).foregroundStyle(.secondary)
+            VStack(spacing: 10) {
+              Label("No se pudo cargar toda la información.", systemImage: "wifi.exclamationmark")
+                .font(.footnote).foregroundStyle(.secondary)
+              Button("Reintentar") { Task { await loader.load(item) } }
+                .font(.footnote.weight(.semibold))
+            }
           }
           AdBannerView().padding(.horizontal, -20)
         }
@@ -46,6 +60,7 @@ struct DetailView: View {
     }
     .coordinateSpace(name: "detailScroll")
     .ignoresSafeArea(edges: .top)
+    .refreshable { await loader.load(item) }
     .background(Color(.systemBackground))
     .navigationTitle(current.title)
     .navigationBarTitleDisplayMode(.inline)
@@ -219,6 +234,53 @@ struct DetailView: View {
     .padding(.horizontal, 14)
     .padding(.vertical, 4)
     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+  }
+
+  // MARK: Reseña personal
+
+  private var reviewSection: some View {
+    let review = library.review(for: current.key) ?? ""
+    return VStack(alignment: .leading, spacing: 8) {
+      HStack {
+        Text("Tu reseña")
+          .font(.subheadline.weight(.semibold))
+          .foregroundStyle(.secondary)
+        Spacer()
+        if !editingReview {
+          Button {
+            reviewDraft = review
+            editingReview = true
+          } label: {
+            Label(review.isEmpty ? "Escribir" : "Editar", systemImage: "square.and.pencil")
+              .font(.footnote.weight(.semibold))
+          }
+        }
+      }
+      if editingReview {
+        VStack(alignment: .leading, spacing: 8) {
+          TextField("¿Qué te pareció?", text: $reviewDraft, axis: .vertical)
+            .lineLimit(3...6)
+            .textFieldStyle(.plain)
+          HStack {
+            Spacer()
+            Button("Cancelar") { editingReview = false }
+            Button("Guardar") {
+              library.setReview(current, reviewDraft)
+              editingReview = false
+            }
+            .font(.subheadline.weight(.semibold))
+          }
+        }
+        .padding(12)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+      } else if !review.isEmpty {
+        Text(review)
+          .font(.subheadline)
+          .padding(12)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+      }
+    }
   }
 
   // MARK: Sinopsis
