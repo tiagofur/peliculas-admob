@@ -63,8 +63,15 @@ final class LibraryStore: ObservableObject {
 
   func count(_ kind: LibraryKind) -> Int { (marks[kind] ?? [:]).values.filter { !$0.deleted }.count }
 
+  /// Reseña personal de un título (`nil` si no hay texto).
+  func review(for key: MediaKey) -> String? {
+    guard ratings[key]?.deleted != true else { return nil }
+    let text = ratings[key]?.review ?? ""
+    return text.isEmpty ? nil : text
+  }
+
   func rating(for key: MediaKey) -> Double? {
-    guard let r = ratings[key], !r.deleted else { return nil }
+    guard let r = ratings[key], !r.deleted, r.score > 0 else { return nil }
     return r.score
   }
 
@@ -143,17 +150,35 @@ final class LibraryStore: ObservableObject {
     Haptics.toggle(on)
   }
 
-  /// Nota 1–10 en pasos de 0.5. `nil` la borra.
+  /// Nota 1–10 en pasos de 0.5. `nil` la borra (si hay reseña escrita, esta se conserva).
   func rate(_ item: MediaItem, score: Double?) {
     remember(item)
     let now = Date()
     let value = score.map { min(10, max(1, ($0 * 2).rounded() / 2)) }
     let previous = ratings[item.key]
-    ratings[item.key] = RatingStamp(score: value ?? previous?.score ?? 0, review: previous?.review ?? "",
-                                    updatedAt: now, deleted: value == nil)
+    let review = previous?.review ?? ""
+    let deleted = value == nil && review.isEmpty
+    ratings[item.key] = RatingStamp(score: value ?? 0, review: review,
+                                    updatedAt: now, deleted: deleted)
     enqueue(.rating(RatingRow(mediaType: item.kind, tmdbId: item.id, score: value ?? 0,
-                              review: previous?.review ?? "", title: item.title,
-                              posterPath: item.posterPath, updatedAt: now, deleted: value == nil)))
+                              review: review, title: item.title,
+                              posterPath: item.posterPath, updatedAt: now, deleted: deleted)))
+    Haptics.selection()
+  }
+
+  /// Reseña personal (viaja en el sync junto a la nota). Vacía la borra si
+  /// tampoco hay nota.
+  func setReview(_ item: MediaItem, _ text: String) {
+    remember(item)
+    let now = Date()
+    let review = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    let previous = ratings[item.key]
+    let score = previous?.score ?? 0
+    let deleted = review.isEmpty && score == 0
+    ratings[item.key] = RatingStamp(score: score, review: review, updatedAt: now, deleted: deleted)
+    enqueue(.rating(RatingRow(mediaType: item.kind, tmdbId: item.id, score: score,
+                              review: review, title: item.title,
+                              posterPath: item.posterPath, updatedAt: now, deleted: deleted)))
     Haptics.selection()
   }
 

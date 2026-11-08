@@ -136,9 +136,15 @@ enum TMDBClient {
       return try await get("/movie/now_playing", query: ["page": "\(page)", "region": userRegion])
     case .upcoming:
       return try await get("/movie/upcoming", query: ["page": "\(page)", "region": userRegion])
-    case .genre(let kind, let genreId):
-      let q = ["sort_by": "popularity.desc", "include_adult": "false",
-               "page": "\(page)", "vote_count.gte": "50", "with_genres": "\(genreId)"]
+    case .genre(let kind, let genreId, let year, let sort):
+      var q = ["sort_by": sort.sortBy(kind), "include_adult": "false",
+               "page": "\(page)", "vote_count.gte": "\(sort.voteFloor)", "with_genres": "\(genreId)"]
+      if let year { q[kind == .movie ? "primary_release_year" : "first_air_date_year"] = "\(year)" }
+      if sort == .newest {
+        // "Más recientes": sin esto entran estrenos futuros sin votos.
+        let today = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
+        q[kind == .movie ? "primary_release_date.lte" : "first_air_date.lte"] = today
+      }
       return try await get("/discover/\(kind.rawValue)", query: q)
     case .search(let query, let kind):
       return try await searchPage(query, kind: kind, page: page)
@@ -153,15 +159,38 @@ enum MediaListSource: Hashable {
   case topRated(kind: MediaKind)
   case nowPlaying
   case upcoming
-  case genre(kind: MediaKind, genreId: Int)
+  case genre(kind: MediaKind, genreId: Int, year: Int? = nil, sort: DiscoverSort = .popularity)
   case search(query: String, kind: MediaKind)
 
   var kind: MediaKind {
     switch self {
-    case .trending(let kind, _), .topRated(let kind), .genre(let kind, _), .search(_, let kind):
+    case .trending(let kind, _), .topRated(let kind), .genre(let kind, _, _, _), .search(_, let kind):
       return kind
     case .nowPlaying, .upcoming:
       return .movie
+    }
+  }
+}
+
+/// Orden de "Explorar por género" (TMDB `sort_by` de discover).
+enum DiscoverSort: Hashable {
+  case popularity, rating, newest
+
+  /// TMDB usa campos de fecha distintos para película y serie.
+  func sortBy(_ kind: MediaKind) -> String {
+    switch self {
+    case .popularity: return "popularity.desc"
+    case .rating: return "vote_average.desc"
+    case .newest: return kind == .movie ? "primary_release_date.desc" : "first_air_date.desc"
+    }
+  }
+
+  /// Piso de votos para no llenar la lista de títulos desconocidos.
+  var voteFloor: Int {
+    switch self {
+    case .popularity: return 50
+    case .rating: return 150
+    case .newest: return 10
     }
   }
 }
@@ -208,12 +237,14 @@ struct TMDBGenre: Decodable, Hashable, Identifiable {
 
 struct TMDBGenreList: Decodable { let genres: [TMDBGenre] }
 
-struct TMDBCredits: Decodable { let cast: [TMDBPerson] }
+struct TMDBCredits: Decodable { let cast: [TMDBPerson]; let crew: [TMDBPerson]? }
 
 struct TMDBPerson: Decodable {
   let id: Int
   let name: String?
   let character: String?
+  /// Solo en el `crew` (Director, Screenplay…).
+  let job: String?
   let profilePath: String?
 }
 
@@ -300,6 +331,7 @@ struct TMDBFullDetail: Decodable {
   let lastEpisodeToAir: TMDBEpisodeRef?
   let videos: TMDBVideos?
   let credits: TMDBCredits?
+  let createdBy: [TMDBPerson]?
   let similar: TMDBResponse?
   let recommendations: TMDBResponse?
   let watchProviders: TMDBWatchResponse?
@@ -308,6 +340,8 @@ struct TMDBFullDetail: Decodable {
     case id, title, name, overview, tagline, posterPath, backdropPath, voteAverage
     case releaseDate, firstAirDate, runtime, episodeRunTime, numberOfSeasons, numberOfEpisodes
     case status, genres, seasons, nextEpisodeToAir, lastEpisodeToAir, videos, credits, similar, recommendations
+    // Con convertFromSnakeCase la clave explícita va en forma convertida.
+    case createdBy
     case watchProviders = "watch/providers"
   }
 }

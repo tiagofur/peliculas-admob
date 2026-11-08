@@ -177,10 +177,34 @@ El "Pro" de Flutter es un purchases service local (sin IAP real); el de iOS ya u
 |---|---|---|
 | 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (rama `feat/ios-infinite-scroll`) |
 | 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (misma rama) |
-| 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ⏳ pendiente |
+| 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ✅ **hecha** (misma rama) |
 | 4. Features nuevas | Estadísticas/Wrapped → Mood discovery → búsqueda de personas → historial → universal links | ⏳ pendiente |
 
 Cada fase sale en PR separado sobre `native-ios/`.
+
+### Notas de la fase 3 (2026-11-08)
+
+- **Reseñas personales**: `LibraryStore.setReview` + `review(for:)` — el campo `review` del
+  sync por fin tiene UI. En el Detalle: sección "Tu reseña" con editor y bloque de lectura.
+  Interplay nota/reseña cuidado: quitar la nota conserva la reseña; borrar reseña sin nota
+  sí marca la fila borrada. `rating(for:)` ahora devuelve `nil` con score 0.
+- **Dirección / creador**: `TMDBCredits.crew` + `TMDBFullDetail.createdBy` + `TMDBPerson.job`.
+  Películas: directores dedup del crew; series: `created_by`. Fila "Dirección/Creado por"
+  bajo la barra de acciones. Función pura estática testeable.
+- **Orden + año en Explorar por género**: `DiscoverSort` (populares / mejor valoradas /
+  más recientes) con piso de votos por orden y tope de fecha de estreno para "recientes";
+  `MediaListSource.genre` ahora lleva `year` (parámetro que estaba muerto) y `sort`.
+  Menú de filtros en la toolbar; cambiar filtro recrea la lista por identidad (`.id(source)`).
+- **i18n**: 14 claves nuevas en `Localizable.xcstrings` (es base + en + pt-BR), incluidas 2
+  que faltaban de la fase 1 ("No hay títulos en esta lista/el género…").
+- **Trampa documentada**: con `JSONDecoder.convertFromSnakeCase`, las CodingKeys explícitas
+  deben ir en forma *convertida* (`case createdBy`, no `= "created_by"` — el decoder convierte
+  la clave del JSON y luego compara). `watch/providers` sí necesita raw value porque contiene `/`.
+- Verificado en simulador vía deep link `peliculas://movie/550`: fila "Dirección David
+  Fincher" y sección "Tu reseña" visibles en el detalle real.
+- Batería completa: **53/53 tests** (8 nuevos de QuickWins).
+
+### Notas de la fase 2 (2026-11-08)
 
 ### Notas de la fase 2 (2026-11-08)
 
