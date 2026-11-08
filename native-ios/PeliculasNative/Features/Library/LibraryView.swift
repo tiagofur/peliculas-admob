@@ -30,6 +30,14 @@ struct LibraryView: View {
       }
       .refreshable { await library.sync() }
       .navigationTitle("Biblioteca")
+      .toolbar {
+        ToolbarItem(placement: .navigationBarTrailing) {
+          NavigationLink(destination: HistoryView()) {
+            Image(systemName: "clock.arrow.circlepath")
+          }
+          .accessibilityLabel("Historial")
+        }
+      }
       .accountToolbar()
     }
   }
@@ -54,6 +62,10 @@ struct LibraryView: View {
       Divider().padding(.leading, 60)
       row("Listas", icon: "list.star", color: .indigo, count: library.visibleLists.count) {
         ListsView()
+      }
+      Divider().padding(.leading, 60)
+      row("Estadísticas", icon: "chart.bar.fill", color: .teal, count: 0) {
+        StatsView()
       }
     }
     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 20, style: .continuous))

@@ -364,6 +364,22 @@
         }
       }
     },
+    "%lld películas · %lld series" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld movies · %lld shows"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld filmes · %lld séries"
+          }
+        }
+      }
+    },
     "%lld semanas" : {
       "localizations" : {
         "en" : {
@@ -618,6 +634,22 @@
         }
       }
     },
+    "Actividad" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividade"
+          }
+        }
+      }
+    },
     "Actuación" : {
       "localizations" : {
         "en" : {
@@ -646,6 +678,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Viciado em Séries"
+          }
+        }
+      }
+    },
+    "Adrenalina pura" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pure Adrenaline"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adrenalina pura"
           }
         }
       }
@@ -1354,6 +1402,22 @@
         }
       }
     },
+    "Comedia ligera" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light Comedy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comédia leve"
+          }
+        }
+      }
+    },
     "Compartir" : {
       "localizations" : {
         "en" : {
@@ -1770,6 +1834,22 @@
         }
       }
     },
+    "De tus series seguidas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From shows you follow"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das séries que você segue"
+          }
+        }
+      }
+    },
     "Demasiados intentos. Espera unos segundos." : {
       "localizations" : {
         "en" : {
@@ -1814,6 +1894,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Descubra o que assistir"
+          }
+        }
+      }
+    },
+    "Descubrir" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discover"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descobrir"
           }
         }
       }
@@ -1878,6 +1974,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Disponibilidade em %@ com dados do JustWatch."
+          }
+        }
+      }
+    },
+    "Década" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decade"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Década"
+          }
+        }
+      }
+    },
+    "Década de estreno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release decade"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Década de lançamento"
           }
         }
       }
@@ -2073,6 +2201,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Em todos os seus dispositivos"
+          }
+        }
+      }
+    },
+    "En tu watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In your watchlist"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na sua watchlist"
           }
         }
       }
@@ -2298,6 +2442,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Esta compra já está vinculada a outra conta."
+          }
+        }
+      }
+    },
+    "Estadísticas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stats"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estatísticas"
           }
         }
       }
@@ -2654,6 +2814,22 @@
         }
       }
     },
+    "Historial" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Histórico"
+          }
+        }
+      }
+    },
     "Hoy" : {
       "localizations" : {
         "en" : {
@@ -2730,6 +2906,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Início"
+          }
+        }
+      }
+    },
+    "Joyas ocultas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden Gems"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Joias escondidas"
           }
         }
       }
@@ -3022,6 +3214,22 @@
         }
       }
     },
+    "Los títulos que marques como vistos aparecerán aquí por mes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titles you mark as watched will appear here by month."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os títulos que você marcar como vistos aparecerão aqui por mês."
+          }
+        }
+      }
+    },
     "Lugar" : {
       "localizations" : {
         "en" : {
@@ -3198,6 +3406,22 @@
         }
       }
     },
+    "Marca títulos como vistos y aquí verás tu actividad, tus épocas favoritas y tu nota media." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark titles as watched and you'll see your activity, favorite decades and average score here."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque títulos como vistos e aqui você verá sua atividade, suas décadas favoritas e sua nota média."
+          }
+        }
+      }
+    },
     "Marcar %@ como visto" : {
       "localizations" : {
         "en" : {
@@ -3342,6 +3566,38 @@
         }
       }
     },
+    "Mente viajada" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mind-Bending"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mente viajada"
+          }
+        }
+      }
+    },
+    "Mes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mês"
+          }
+        }
+      }
+    },
     "Mira lo que todos están viendo este fin de semana." : {
       "localizations" : {
         "en" : {
@@ -3466,6 +3722,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nada por aqui"
+          }
+        }
+      }
+    },
+    "Nada visto aún" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing watched yet"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada visto ainda"
           }
         }
       }
@@ -3742,6 +4014,38 @@
         }
       }
     },
+    "Noche de sustos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scary Night"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noite de sustos"
+          }
+        }
+      }
+    },
+    "Noche romántica" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Romantic Night"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noite romântica"
+          }
+        }
+      }
+    },
     "Nombre" : {
       "localizations" : {
         "en" : {
@@ -3754,6 +4058,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nome"
+          }
+        }
+      }
+    },
+    "Nota media" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average Score"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nota média"
           }
         }
       }
@@ -3921,6 +4241,22 @@
         }
       }
     },
+    "Para llorar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To Cry"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para chorar"
+          }
+        }
+      }
+    },
     "Película" : {
       "localizations" : {
         "en" : {
@@ -3985,6 +4321,22 @@
         }
       }
     },
+    "Personas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "People"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pessoas"
+          }
+        }
+      }
+    },
     "Piloto" : {
       "localizations" : {
         "en" : {
@@ -3997,6 +4349,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Piloto"
+          }
+        }
+      }
+    },
+    "Plan familiar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Family Plan"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plano familiar"
           }
         }
       }
@@ -4061,6 +4429,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Para começar"
+          }
+        }
+      }
+    },
+    "Por ver" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To Watch"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Para ver"
           }
         }
       }
@@ -4705,6 +5089,22 @@
         }
       }
     },
+    "Sin estadísticas todavía" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stats yet"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem estatísticas ainda"
+          }
+        }
+      }
+    },
     "Sin resultados" : {
       "localizations" : {
         "en" : {
@@ -4781,6 +5181,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sincronizar agora"
+          }
+        }
+      }
+    },
+    "Sobre 10" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Out of 10"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre 10"
           }
         }
       }
@@ -5320,6 +5736,22 @@
         }
       }
     },
+    "Tus épocas" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Eras"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suas épocas"
+          }
+        }
+      }
+    },
     "Términos" : {
       "localizations" : {
         "en" : {
@@ -5428,6 +5860,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ver detalhes"
+          }
+        }
+      }
+    },
+    "Ver filmografía" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See filmography"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver filmografia"
           }
         }
       }
@@ -5572,6 +6020,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vistos recentemente"
+          }
+        }
+      }
+    },
+    "Vistos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vistos"
+          }
+        }
+      }
+    },
+    "Vistos por mes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watched per month"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vistos por mês"
           }
         }
       }

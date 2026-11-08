@@ -175,12 +175,34 @@ El "Pro" de Flutter es un purchases service local (sin IAP real); el de iOS ya u
 
 | Fase | Alcance | Estado |
 |---|---|---|
-| 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (rama `feat/ios-infinite-scroll`) |
-| 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (misma rama) |
-| 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ✅ **hecha** (misma rama) |
-| 4. Features nuevas | Estadísticas/Wrapped → Mood discovery → búsqueda de personas → historial → universal links | ⏳ pendiente |
+| 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (PR [#163](https://github.com/tiagofur/peliculas-admob/pull/163)) |
+| 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (PR #163) |
+| 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ✅ **hecha** (PR #163) |
+| 4. Features nuevas | Estadísticas ✓ · Moods ✓ · Personas ✓ · Historial ✓ · Universal links ⏳ (requiere AASA en servidor) | 🚧 casi completa (PR #163) |
 
-Cada fase sale en PR separado sobre `native-ios/`.
+### Notas de la fase 4 (2026-11-08)
+
+- **Estadísticas** (`Features/Stats/StatsView.swift`): `LibraryStats.build` puro y testeable
+  (vistos película/serie, nota media sin borradas, ventana fija de 12 meses de actividad con
+  ceros, décadas por año de estreno). UI con Swift Charts (barras actividad + épocas) y tiles.
+  Entrada: fila "Estadísticas" en Biblioteca. El Wrapped compartible (imagen) queda como
+  follow-up — requiere render a UIImage + ShareLink.
+- **Descubrimiento por mood** (`Moods.swift`): 8 moods curados ("Joyas ocultas", "Noche
+  romántica"…) → `MediaListSource.discover` con géneros + piso de votos + nota mínima
+  (paridad con las categorías de Flutter). Grid "Descubrir" en Buscar → `PagedResultsView`
+  (grid paginado genérico que ahora también usan los géneros).
+- **Búsqueda de personas**: `searchPeople` (`/search/person`) en paralelo con los títulos
+  solo en el scope "Todo"; hasta 3 personas con foto → fila "Personas" → `ActorView`.
+  Un fallo de personas no tumba la búsqueda.
+- **Historial completo** (`HistoryView`): `LibraryStore.watchedLog()` (visto ordenado por
+  fecha real de marca), agrupado por mes con `List` insetGrouped. Entrada: botón reloj en la
+  toolbar de Biblioteca.
+- **Universal links**: NO empezado aquí a propósito — requiere entitlement + rutas https y
+  el archivo `apple-app-site-association` servido en `creapolis.dev` (Plesk), además de
+  decidir el dominio/rutas. Se propone como fase aparte con paso de servidor.
+- i18n: 30 claves nuevas (en + pt-BR), incluidas interpoladas (`%lld películas · %lld series`).
+- Batería completa: **57/57 tests** (+4 PhaseFourTests). Captura verificada: fila Estadísticas
+  y botón Historial visibles en Biblioteca.
 
 ### Notas de la fase 3 (2026-11-08)
 
