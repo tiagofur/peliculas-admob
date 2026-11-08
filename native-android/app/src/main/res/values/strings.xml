@@ -115,4 +115,11 @@
   <string name="account_delete">Borrar cuenta y datos</string>
   <string name="account_delete_confirm_title">¿Borrar tu cuenta?</string>
   <string name="account_delete_confirm_message">Se borra tu cuenta y toda tu biblioteca en el servidor. No se puede deshacer.</string>
+  <string name="upnext_continue">Continuar viendo</string>
+  <string name="upnext_upcoming">Próximos episodios</string>
+  <string name="upnext_notify">Avísame cuando se estrenen</string>
+  <string name="upnext_empty">Nada que seguir todavía</string>
+  <string name="upnext_empty_hint">Añade una serie a tu Watchlist o marca un episodio visto y aquí verás qué toca después.</string>
+  <string name="upnext_next_episode">Siguiente episodio</string>
+  <string name="upnext_start_show">Empieza la serie</string>
 </resources>
