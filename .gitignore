@@ -76,3 +76,5 @@ temp/
 # OS generated files
 Thumbs.db
 ehthumbs.db
+
+native-ios/Config/Secrets.generated.xcconfig
