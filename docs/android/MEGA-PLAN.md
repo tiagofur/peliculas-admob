@@ -5,7 +5,10 @@
 > Código nuevo en `native-android/`. Producto: [`PRODUCT.md`](../../PRODUCT.md) ·
 > Plan iOS que cierra: [audits/2026-11-ios-app-review.md](../audits/2026-11-ios-app-review.md)
 >
-> Redactado: 2026-11-08 · Estado: 📝 plan (pendiente de aprobación)
+> Redactado: 2026-11-08 · Estado: 🚧 ejecución — **F0 ✅** (PR #166) · **F1 ✅** (Home + infinite scroll, verificado en emulador)
+> F1 incluye: Kotlin 2.4.10 + KGP clásico (`android.builtInKotlin=false` + `android.newDsl=false`,
+> necesario para Coil 3.6 que requiere Kotlin 2.4) y material3 1.5.0-rc01 (en 1.4.0 stable las
+> APIs de theming Expressive aún son `internal`).
 
 ---
 
