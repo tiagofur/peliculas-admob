@@ -24,7 +24,9 @@ import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -63,6 +65,9 @@ data class LibraryNav(
   val openList: (id: String, name: String) -> Unit,
   val openItem: (MediaItem) -> Unit,
   val explore: () -> Unit,
+  val openStats: () -> Unit = {},
+  val openAchievements: () -> Unit = {},
+  val openHistory: () -> Unit = {},
 )
 
 /** Biblioteca estilo Música (port de `LibraryView` en iOS). */
@@ -89,6 +94,9 @@ fun LibraryScreen(
           style = MaterialTheme.typography.headlineSmall,
           modifier = Modifier.weight(1f),
         )
+        IconButton(onClick = nav.openHistory) {
+          Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.history_title))
+        }
         IconButton(onClick = nav.openAccount) {
           Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.account))
         }
@@ -130,6 +138,20 @@ fun LibraryScreen(
           color = Color(0xFF5C6BC0),
           count = state.visibleLists.size,
           onClick = nav.openLists,
+        )
+        CategoryRow(
+          title = stringResource(R.string.achievements_title),
+          icon = { Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
+          color = Color(0xFFFFC94D),
+          count = 0,
+          onClick = nav.openAchievements,
+        )
+        CategoryRow(
+          title = stringResource(R.string.stats_title),
+          icon = { Icon(Icons.Filled.BarChart, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
+          color = Color(0xFF26A69A),
+          count = 0,
+          onClick = nav.openStats,
         )
       }
     }

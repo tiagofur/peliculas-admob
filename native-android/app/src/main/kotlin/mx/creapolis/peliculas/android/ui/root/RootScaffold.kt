@@ -73,6 +73,22 @@ fun RootScaffold() {
   val library = container.library
   val session = container.session
   val sessionState by session.state.collectAsState()
+  val achievements = container.achievements
+  val libraryState by library.state.collectAsState()
+
+  // Evalúa logros en cada cambio relevante de la biblioteca (como iOS).
+  androidx.compose.runtime.LaunchedEffect(
+    libraryState.count(mx.creapolis.peliculas.android.core.library.LibraryStore.Kind.FAVORITE),
+    libraryState.count(mx.creapolis.peliculas.android.core.library.LibraryStore.Kind.WATCHLIST),
+    libraryState.count(mx.creapolis.peliculas.android.core.library.LibraryStore.Kind.WATCHED),
+    libraryState.ratedCount,
+    libraryState.visibleLists.size,
+    libraryState.episodes.size,
+  ) {
+    achievements.refresh(
+      mx.creapolis.peliculas.android.features.gamification.LibraryCounts.from(library, libraryState),
+    )
+  }
 
   Scaffold(
     bottomBar = {
@@ -119,6 +135,9 @@ fun RootScaffold() {
             library = library,
             signedIn = sessionState.isSignedIn,
             nav = LibraryNav(
+              openStats = { navController.navigate("stats") },
+              openAchievements = { navController.navigate("achievements") },
+              openHistory = { navController.navigate("history") },
               openAccount = { navController.navigate("account") },
               openSignIn = { navController.navigate("signin") },
               openGrid = { kind -> navController.navigate("library/grid/${kind.name}") },
@@ -170,6 +189,31 @@ fun RootScaffold() {
             onBack = { navController.popBackStack() },
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
           )
+        }
+
+        composable("stats") {
+          BarScreen(title = stringResource(R.string.stats_title), onBack = { navController.popBackStack() }) {
+            mx.creapolis.peliculas.android.features.stats.StatsScreen(library = library)
+          }
+        }
+
+        composable("achievements") {
+          BarScreen(title = stringResource(R.string.achievements_title), onBack = { navController.popBackStack() }) {
+            mx.creapolis.peliculas.android.features.gamification.AchievementsScreen(
+              store = achievements,
+              onBack = { navController.popBackStack() },
+            )
+          }
+        }
+
+        composable("history") {
+          BarScreen(title = stringResource(R.string.history_title), onBack = { navController.popBackStack() }) {
+            mx.creapolis.peliculas.android.features.library.HistoryScreen(
+              library = library,
+              onBack = { navController.popBackStack() },
+              onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+            )
+          }
         }
 
         composable("signin") {
@@ -269,7 +313,28 @@ fun RootScaffold() {
           )
         }
       }
+      val toastState by achievements.state.collectAsState()
+      mx.creapolis.peliculas.android.features.gamification.AchievementToast(
+        achievement = toastState.toast,
+        onDismiss = achievements::dismissToast,
+      )
     }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BarScreen(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(title) },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    content()
   }
 }
 

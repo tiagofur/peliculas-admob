@@ -11,6 +11,9 @@ class AppContainer(private val appContext: android.content.Context) {
   /** Biblioteca persistente compartida (outbox + sync, port de iOS). */
   val library = mx.creapolis.peliculas.android.core.library.LibraryStore.fromContext(appContext)
 
+  /** Logros locales (persistidos en SharedPreferences). */
+  val achievements = mx.creapolis.peliculas.android.features.gamification.AchievementStore(appContext)
+
   /** Sesión con refresh rotativo (tokens cifrados en Keystore). */
   val session = mx.creapolis.peliculas.android.core.auth.SessionStore(
     mx.creapolis.peliculas.android.core.auth.EncryptedSessionStorage(appContext),
