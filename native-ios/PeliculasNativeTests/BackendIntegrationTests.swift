@@ -32,6 +32,17 @@ final class BackendIntegrationTests: XCTestCase {
     XCTAssertFalse(detail.seasons?.isEmpty ?? true)
   }
 
+  /// El infinite scroll ("Ver todo") vive de esto: `page` atraviesa el proxy
+  /// del backend y TMDB devuelve páginas distintas con `total_pages`.
+  func testPagedListFetchesDistinctPages() async throws {
+    let page1 = try await TMDBClient.pagedList(.trending(kind: .movie, window: "week"), page: 1)
+    let page2 = try await TMDBClient.pagedList(.trending(kind: .movie, window: "week"), page: 2)
+    XCTAssertGreaterThan(page1.totalPages, 1)
+    XCTAssertFalse(page1.results.isEmpty)
+    XCTAssertFalse(page2.results.isEmpty)
+    XCTAssertNotEqual(page1.results.first?.id, page2.results.first?.id, "la página 2 no debe repetir la 1")
+  }
+
   func testSignUpSyncAcrossTwoDevicesAndDeleteAccount() async throws {
     let session = SessionStore.shared
     let email = "ios-e2e-\(UUID().uuidString.prefix(8).lowercased())@peliculas.test"

@@ -54,15 +54,8 @@ enum TMDBClient {
   static func upcoming() async throws -> [TMDBMovie] { try await list("/movie/upcoming", ["region": userRegion]) }
   static func onTheAir() async throws -> [TMDBMovie] { try await list("/tv/on_the_air") }
 
-  static func search(_ query: String, kind: MediaKind) async throws -> [TMDBMovie] {
-    try await list("/search/\(kind.rawValue)", ["query": query, "include_adult": "false"])
-  }
-
-  static func discover(kind: MediaKind, genreId: Int?, year: Int?, page: Int = 1) async throws -> [TMDBMovie] {
-    var q = ["sort_by": "popularity.desc", "include_adult": "false", "page": "\(page)", "vote_count.gte": "50"]
-    if let genreId { q["with_genres"] = "\(genreId)" }
-    if let year { q[kind == .movie ? "primary_release_year" : "first_air_date_year"] = "\(year)" }
-    return try await list("/discover/\(kind.rawValue)", q)
+  static func searchPage(_ query: String, kind: MediaKind, page: Int) async throws -> TMDBPagedMovies {
+    try await get("/search/\(kind.rawValue)", query: ["query": query, "include_adult": "false", "page": "\(page)"])
   }
 
   static func genres(kind: MediaKind) async throws -> [TMDBGenre] {
@@ -128,11 +121,61 @@ enum TMDBClient {
     let r = providers(from: decoded, region: region)
     return (r.link, r.providers)
   }
+
+  // MARK: Listas paginadas
+
+  /// Lista completa paginada ("Ver todo", explorar, búsqueda). El backend ya
+  /// deja pasar `page` (`internal/tmdb/policy.go`) y TMDB devuelve `total_pages`.
+  static func pagedList(_ source: MediaListSource, page: Int) async throws -> TMDBPagedMovies {
+    switch source {
+    case .trending(let kind, let window):
+      return try await get("/trending/\(kind.rawValue)/\(window)", query: ["page": "\(page)"])
+    case .topRated(let kind):
+      return try await get("/\(kind.rawValue)/top_rated", query: ["page": "\(page)"])
+    case .nowPlaying:
+      return try await get("/movie/now_playing", query: ["page": "\(page)", "region": userRegion])
+    case .upcoming:
+      return try await get("/movie/upcoming", query: ["page": "\(page)", "region": userRegion])
+    case .genre(let kind, let genreId):
+      let q = ["sort_by": "popularity.desc", "include_adult": "false",
+               "page": "\(page)", "vote_count.gte": "50", "with_genres": "\(genreId)"]
+      return try await get("/discover/\(kind.rawValue)", query: q)
+    case .search(let query, let kind):
+      return try await searchPage(query, kind: kind, page: page)
+    }
+  }
+}
+
+/// De dónde sale una lista paginada. Cada caso es un endpoint TMDB de una sola
+/// clase de contenido, así que `kind` es conocido.
+enum MediaListSource: Hashable {
+  case trending(kind: MediaKind, window: String)
+  case topRated(kind: MediaKind)
+  case nowPlaying
+  case upcoming
+  case genre(kind: MediaKind, genreId: Int)
+  case search(query: String, kind: MediaKind)
+
+  var kind: MediaKind {
+    switch self {
+    case .trending(let kind, _), .topRated(let kind), .genre(let kind, _), .search(_, let kind):
+      return kind
+    case .nowPlaying, .upcoming:
+      return .movie
+    }
+  }
 }
 
 // MARK: - Modelos TMDB
 
 struct TMDBResponse: Decodable { let results: [TMDBMovie] }
+
+/// Respuesta paginada de TMDB (`page`, `results`, `total_pages`).
+struct TMDBPagedMovies: Decodable {
+  let page: Int
+  let results: [TMDBMovie]
+  let totalPages: Int
+}
 
 struct TMDBMovie: Decodable {
   let id: Int

@@ -20,10 +20,15 @@ final class SearchLoader: ObservableObject {
   @Published private(set) var results: [MediaItem] = []
   @Published private(set) var searching = false
   @Published private(set) var failed = false
+  @Published private(set) var loadingMore = false
   @Published private(set) var history: [String] = []
   @Published private(set) var movieGenres: [TMDBGenre] = []
   @Published private(set) var tvGenres: [TMDBGenre] = []
 
+  /// Infinite scroll de resultados (igual que en Flutter). Tope defensivo de 10 páginas.
+  private(set) var done = false
+  private var page = 1
+  private let maxPages = 10
   private var task: Task<Void, Never>?
   private let historyKey = "peliculas.search.history.v1"
 
@@ -67,26 +72,62 @@ final class SearchLoader: ObservableObject {
   private func run(_ q: String) async {
     defer { searching = false }
     do {
-      let found: [MediaItem]
-      switch scope {
-      case .movies: found = try await TMDBClient.search(q, kind: .movie).map { MediaItem(tmdb: $0, kind: .movie) }
-      case .series: found = try await TMDBClient.search(q, kind: .tv).map { MediaItem(tmdb: $0, kind: .tv) }
-      case .all:
-        async let m = TMDBClient.search(q, kind: .movie)
-        async let t = TMDBClient.search(q, kind: .tv)
-        let (movies, shows) = try await (m, t)
-        // Intercala por popularidad aproximada (nota × presencia de póster).
-        let all = movies.map { MediaItem(tmdb: $0, kind: .movie) } + shows.map { MediaItem(tmdb: $0, kind: .tv) }
-        found = all.sorted { score($0, q) > score($1, q) }
-      }
+      let page1 = try await fetchResults(q, page: 1)
       guard !Task.isCancelled, q == trimmed else { return }
-      results = found
+      results = page1.items
+      page = 1
+      done = page1.items.isEmpty || 1 >= min(maxPages, max(1, page1.totalPages))
       failed = false
-      if !found.isEmpty { addHistory(q) }
+      if !page1.items.isEmpty { addHistory(q) }
     } catch {
       guard !Task.isCancelled else { return }
       results = []
       failed = true
+      done = false
+    }
+  }
+
+  private struct PageBatch {
+    let items: [MediaItem]
+    let totalPages: Int
+  }
+
+  /// Busca una página; en "Todo" mezcla películas y series por relevancia aproximada.
+  private func fetchResults(_ q: String, page: Int) async throws -> PageBatch {
+    switch scope {
+    case .movies:
+      let r = try await TMDBClient.searchPage(q, kind: .movie, page: page)
+      return PageBatch(items: r.results.map { MediaItem(tmdb: $0, kind: .movie) }, totalPages: r.totalPages)
+    case .series:
+      let r = try await TMDBClient.searchPage(q, kind: .tv, page: page)
+      return PageBatch(items: r.results.map { MediaItem(tmdb: $0, kind: .tv) }, totalPages: r.totalPages)
+    case .all:
+      async let m = TMDBClient.searchPage(q, kind: .movie, page: page)
+      async let t = TMDBClient.searchPage(q, kind: .tv, page: page)
+      let (movies, shows) = try await (m, t)
+      // Intercala por popularidad aproximada (nota × presencia de póster).
+      let all = movies.results.map { MediaItem(tmdb: $0, kind: .movie) } + shows.results.map { MediaItem(tmdb: $0, kind: .tv) }
+      return PageBatch(items: all.sorted { score($0, q) > score($1, q) }, totalPages: min(movies.totalPages, shows.totalPages))
+    }
+  }
+
+  /// Siguiente página para el infinite scroll de resultados. Deduplica y se
+  /// detiene al agotar `total_pages` o al llegar al tope defensivo.
+  func loadMore() async {
+    guard !searching, !loadingMore, !done, !results.isEmpty, !trimmed.isEmpty else { return }
+    loadingMore = true
+    defer { loadingMore = false }
+    let q = trimmed
+    let next = page + 1
+    do {
+      let batch = try await fetchResults(q, page: next)
+      guard !Task.isCancelled, q == trimmed else { return }
+      page = next
+      done = batch.items.isEmpty || next >= min(maxPages, max(1, batch.totalPages))
+      let existing = Set(results.map(\.key))
+      results += batch.items.filter { !existing.contains($0.key) }
+    } catch {
+      // Silencioso: al volver a aparecer el pie reintenta la misma página.
     }
   }
 
@@ -113,25 +154,4 @@ final class SearchLoader: ObservableObject {
   }
 }
 
-/// Resultados de "Explorar por género" con paginación infinita.
-@MainActor
-final class GenreLoader: ObservableObject {
-  @Published private(set) var items: [MediaItem] = []
-  @Published private(set) var loading = false
-  private var page = 0
-  private var done = false
-
-  func loadMore(kind: MediaKind, genre: Int) async {
-    guard !loading, !done else { return }
-    loading = true
-    defer { loading = false }
-    page += 1
-    guard let found = try? await TMDBClient.discover(kind: kind, genreId: genre, year: nil, page: page) else {
-      page -= 1
-      return
-    }
-    if found.isEmpty || page >= 10 { done = true }
-    let existing = Set(items.map(\.key))
-    items += found.map { MediaItem(tmdb: $0, kind: kind) }.filter { !existing.contains($0.key) }
-  }
-}
+// "Explorar por género" usa el `PagedListLoader` compartido (con infinite scroll).

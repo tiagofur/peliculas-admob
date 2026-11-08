@@ -19,6 +19,12 @@ struct SearchView: View {
           } else {
             PosterGrid(items: loader.results) { $0.kind == .tv && loader.scope == .all ? String(localized: "SERIE") : nil }
               .padding(.vertical, 12)
+            if !loader.done {
+              ProgressView()
+                .opacity(loader.loadingMore ? 1 : 0)
+                .padding()
+                .onAppear { Task { await loader.loadMore() } }
+            }
           }
         }
       }
@@ -130,21 +136,38 @@ private struct GenreTile: View {
 private struct GenreResultsView: View {
   let genre: TMDBGenre
   let kind: MediaKind
-  @StateObject private var loader = GenreLoader()
+  @StateObject private var loader: PagedListLoader
+
+  init(genre: TMDBGenre, kind: MediaKind) {
+    self.genre = genre
+    self.kind = kind
+    _loader = StateObject(wrappedValue: PagedListLoader(source: .genre(kind: kind, genreId: genre.id)))
+  }
 
   var body: some View {
-    ScrollView {
-      PosterGrid(items: loader.items)
-        .padding(.vertical, 12)
-      if !loader.items.isEmpty {
+    Group {
+      if loader.items.isEmpty && loader.failed {
+        EmptyState(icon: "wifi.exclamationmark",
+                   title: "Sin conexión",
+                   message: "Revisa tu red e inténtalo de nuevo.") {
+          Button("Reintentar") { Task { await loader.loadMore() } }
+            .glassProminentButtonStyle()
+        }
+      } else if loader.items.isEmpty && loader.loading {
         ProgressView()
-          .opacity(loader.loading ? 1 : 0)
-          .padding()
-          .onAppear { Task { await loader.loadMore(kind: kind, genre: genre.id) } }
+      } else if loader.items.isEmpty {
+        EmptyState(icon: "film",
+                   title: "Nada por aquí",
+                   message: "No hay títulos en este género ahora mismo.")
+      } else {
+        ScrollView {
+          PosterGrid(items: loader.items)
+            .padding(.vertical, 12)
+          LoadMoreFooter(loader: loader)
+        }
       }
     }
-    .overlay { if loader.items.isEmpty && loader.loading { ProgressView() } }
     .navigationTitle(genre.name)
-    .task { if loader.items.isEmpty { await loader.loadMore(kind: kind, genre: genre.id) } }
+    .task { if loader.items.isEmpty { await loader.loadMore() } }
   }
 }

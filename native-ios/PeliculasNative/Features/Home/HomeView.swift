@@ -29,12 +29,12 @@ struct HomeView: View {
             PosterRail(items: loader.personal) { SectionHeader(title, subtitle: String(localized: "Recomendaciones para ti")) }
           }
           if !loader.trending.isEmpty {
-            Top10Rail(items: Array(loader.trending.prefix(10)))
+            Top10Rail(items: Array(loader.trending.prefix(10)), source: .trending(kind: .movie, window: "week"))
           }
-          rail(String(localized: "Series en tendencia"), loader.trendingShows)
-          rail(String(localized: "En cines"), loader.nowPlaying)
-          rail(String(localized: "Próximos estrenos"), loader.upcoming)
-          rail(String(localized: "Aclamadas por la crítica"), loader.topRated)
+          rail(String(localized: "Series en tendencia"), loader.trendingShows, source: .trending(kind: .tv, window: "week"))
+          rail(String(localized: "En cines"), loader.nowPlaying, source: .nowPlaying)
+          rail(String(localized: "Próximos estrenos"), loader.upcoming, source: .upcoming)
+          rail(String(localized: "Aclamadas por la crítica"), loader.topRated, source: .topRated(kind: .movie))
 
           TMDBAttribution()
             .padding(.horizontal, 20)
@@ -64,10 +64,10 @@ struct HomeView: View {
   }
 
   @ViewBuilder
-  private func rail(_ title: String, _ items: [MediaItem]) -> some View {
+  private func rail(_ title: String, _ items: [MediaItem], source: MediaListSource) -> some View {
     if !items.isEmpty {
       PosterRail(items: items) {
-        SectionHeader(title) { SeeAllView(title: title, items: items) }
+        SectionHeader(title) { SeeAllView(title: title, source: source, seed: items) }
       }
     }
   }
@@ -305,11 +305,12 @@ struct UpNextCard: View {
 
 private struct Top10Rail: View {
   let items: [MediaItem]
+  let source: MediaListSource
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       SectionHeader(String(localized: "Top 10 de la semana"), subtitle: String(localized: "Películas")) {
-        SeeAllView(title: String(localized: "Tendencias de la semana"), items: items)
+        SeeAllView(title: String(localized: "Tendencias de la semana"), source: source, seed: items)
       }
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 6) {
