@@ -10,19 +10,21 @@ struct APIError: LocalizedError, Equatable {
 
   var errorDescription: String? {
     switch code {
-    case "offline": return "Sin conexión. Revisa tu red e inténtalo de nuevo."
-    case "invalid_email": return "Ese correo no parece válido."
-    case "weak_password": return "La contraseña necesita al menos 8 caracteres."
-    case "email_taken": return "Ya existe una cuenta con ese correo. Inicia sesión."
-    case "invalid_credentials": return "Correo o contraseña incorrectos."
-    case "invalid_token", "missing_token": return "Tu sesión caducó. Vuelve a iniciar sesión."
-    case "invalid_nonce": return "No se pudo verificar el inicio de sesión. Inténtalo de nuevo."
-    case "provider_not_configured": return "Este método de acceso aún no está disponible."
-    case "rate_limited": return "Demasiados intentos. Espera unos segundos."
-    case "purchase_owned_by_other_account": return "Esta compra ya está vinculada a otra cuenta."
-    case "storekit_disabled": return "Las compras no están disponibles ahora mismo."
-    case "auth_disabled": return "El servidor no tiene cuentas activadas."
-    default: return "Algo salió mal (\(status == 0 ? code : String(status))). Inténtalo más tarde."
+    case "offline": return String(localized: "Sin conexión. Revisa tu red e inténtalo de nuevo.")
+    case "invalid_email": return String(localized: "Ese correo no parece válido.")
+    case "weak_password": return String(localized: "La contraseña necesita al menos 8 caracteres.")
+    case "email_taken": return String(localized: "Ya existe una cuenta con ese correo. Inicia sesión.")
+    case "invalid_credentials": return String(localized: "Correo o contraseña incorrectos.")
+    case "invalid_token", "missing_token": return String(localized: "Tu sesión caducó. Vuelve a iniciar sesión.")
+    case "invalid_nonce": return String(localized: "No se pudo verificar el inicio de sesión. Inténtalo de nuevo.")
+    case "provider_not_configured": return String(localized: "Este método de acceso aún no está disponible.")
+    case "rate_limited": return String(localized: "Demasiados intentos. Espera unos segundos.")
+    case "purchase_owned_by_other_account": return String(localized: "Esta compra ya está vinculada a otra cuenta.")
+    case "storekit_disabled": return String(localized: "Las compras no están disponibles ahora mismo.")
+    case "auth_disabled": return String(localized: "El servidor no tiene cuentas activadas.")
+    default:
+      let detail = status == 0 ? code : String(status)
+      return String(localized: "Algo salió mal (\(detail)). Inténtalo más tarde.")
     }
   }
 }

@@ -89,12 +89,15 @@ final class ActorLoader: ObservableObject {
       return
     }
     name = detail.name ?? ""
-    department = detail.knownForDepartment ?? ""
+    department = Self.department(detail.knownForDepartment ?? "")
     profilePath = detail.profilePath ?? ""
     biography = detail.biography ?? ""
     var f: [(String, String)] = []
-    if let b = detail.birthday, !b.isEmpty { f.append(("Nacimiento", b)) }
-    if let p = detail.placeOfBirth, !p.isEmpty { f.append(("Lugar", p)) }
+    if let b = detail.birthday, !b.isEmpty {
+      let shown = UpNextStore.parseDay(b)?.formatted(.dateTime.day().month(.wide).year()) ?? b
+      f.append((String(localized: "Nacimiento"), shown))
+    }
+    if let p = detail.placeOfBirth, !p.isEmpty { f.append((String(localized: "Lugar"), p)) }
     facts = f
     if let credits = try? await TMDBClient.personCredits(id: id) {
       // Lo más conocido primero, sin duplicados (un actor puede salir dos veces en una serie).
@@ -104,6 +107,25 @@ final class ActorLoader: ObservableObject {
         .filter { !$0.posterPath.isEmpty && seen.insert($0.key).inserted }
         .sorted { $0.rating > $1.rating }
         .prefix(30).map { $0 }
+    }
+  }
+
+  /// TMDB manda el departamento siempre en inglés.
+  private static func department(_ raw: String) -> String {
+    switch raw {
+    case "Acting": return String(localized: "Actuación")
+    case "Directing": return String(localized: "Dirección")
+    case "Writing": return String(localized: "Guion")
+    case "Production": return String(localized: "Producción")
+    case "Creator": return String(localized: "Creación")
+    case "Sound": return String(localized: "Sonido")
+    case "Camera": return String(localized: "Fotografía")
+    case "Editing": return String(localized: "Montaje")
+    case "Art": return String(localized: "Dirección de arte")
+    case "Visual Effects": return String(localized: "Efectos visuales")
+    case "Costume & Make-Up": return String(localized: "Vestuario y maquillaje")
+    case "Crew": return String(localized: "Equipo técnico")
+    default: return raw
     }
   }
 }

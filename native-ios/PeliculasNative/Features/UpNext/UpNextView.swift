@@ -27,7 +27,7 @@ struct UpNextView: View {
       .accountToolbar()
     }
     .task { await upNext.load(library: library) }
-    .onChange(of: library.watchedEpisodeCount) { _ in Task { await upNext.load(library: library) } }
+    .onChange(of: library.watchedEpisodeCount) { Task { await upNext.load(library: library) } }
   }
 
   private var content: some View {
@@ -37,17 +37,17 @@ struct UpNextView: View {
         let notStarted = upNext.entries.filter { !$0.started }
         if !started.isEmpty {
           VStack(alignment: .leading, spacing: 14) {
-            SectionHeader("Continuar viendo")
+            SectionHeader(String(localized: "Continuar viendo"))
             ForEach(started) { UpNextRow(entry: $0) }
           }
         }
         if !upNext.upcoming.isEmpty {
           VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Próximos episodios")
+            SectionHeader(String(localized: "Próximos episodios"))
             ForEach(upNext.upcoming) { UpcomingRow(entry: $0) }
             if !pro.isPro {
               Button {
-                pro.presentPaywall(reason: "Con Pro te avisamos el día que sale cada episodio.")
+                pro.presentPaywall(reason: String(localized: "Con Pro te avisamos el día que sale cada episodio."))
               } label: {
                 Label("Avísame cuando se estrenen", systemImage: "bell.badge")
                   .font(.subheadline.weight(.semibold))
@@ -58,7 +58,7 @@ struct UpNextView: View {
         }
         if !notStarted.isEmpty {
           VStack(alignment: .leading, spacing: 10) {
-            SectionHeader("Por empezar")
+            SectionHeader(String(localized: "Por empezar"))
             ScrollView(.horizontal, showsIndicators: false) {
               LazyHStack(spacing: 14) {
                 ForEach(notStarted) { PosterCard(item: $0.show, width: 112) }
@@ -119,9 +119,9 @@ private struct UpcomingRow: View {
   private func relative(_ date: Date) -> String {
     let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: date).day ?? 0
     switch days {
-    case 0: return "Hoy"
-    case 1: return "Mañana"
-    default: return "En \(days) días"
+    case 0: return String(localized: "Hoy")
+    case 1: return String(localized: "Mañana")
+    default: return String(localized: "En \(days) días")
     }
   }
 }

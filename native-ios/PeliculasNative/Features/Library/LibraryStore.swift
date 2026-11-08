@@ -282,7 +282,7 @@ final class LibraryStore: ObservableObject {
       cursor = nil
       lastSyncError = nil
     } catch {
-      lastSyncError = (error as? LocalizedError)?.errorDescription ?? "No se pudo sincronizar."
+      lastSyncError = (error as? LocalizedError)?.errorDescription ?? String(localized: "No se pudo sincronizar.")
     }
   }
 

@@ -1,11 +1,18 @@
 import Foundation
+import SwiftUI
 
 @MainActor
 final class SearchLoader: ObservableObject {
   enum Scope: String, CaseIterable, Hashable {
-    case all = "Todo"
-    case movies = "Películas"
-    case series = "Series"
+    case all, movies, series
+
+    var title: LocalizedStringKey {
+      switch self {
+      case .all: return "Todo"
+      case .movies: return "Películas"
+      case .series: return "Series"
+      }
+    }
   }
 
   @Published var query = "" { didSet { if oldValue != query { schedule() } } }

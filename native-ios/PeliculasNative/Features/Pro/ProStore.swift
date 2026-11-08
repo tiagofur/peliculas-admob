@@ -45,7 +45,7 @@ final class ProStore: ObservableObject {
       let loaded = try await Product.products(for: AppConfig.Pro.all)
       products = AppConfig.Pro.all.compactMap { id in loaded.first { $0.id == id } }
     } catch {
-      message = "No se pudieron cargar los planes. Revisa tu conexión."
+      message = String(localized: "No se pudieron cargar los planes. Revisa tu conexión.")
     }
   }
 
@@ -65,14 +65,14 @@ final class ProStore: ObservableObject {
           showingPaywall = false
         }
       case .pending:
-        message = "Tu compra está pendiente de aprobación."
+        message = String(localized: "Tu compra está pendiente de aprobación.")
       case .userCancelled:
         break
       @unknown default:
         break
       }
     } catch {
-      message = "No se pudo completar la compra."
+      message = String(localized: "No se pudo completar la compra.")
     }
   }
 
@@ -81,11 +81,11 @@ final class ProStore: ObservableObject {
     do {
       try await AppStore.sync()
     } catch {
-      message = "No se pudo conectar con el App Store."
+      message = String(localized: "No se pudo conectar con el App Store.")
     }
     await refresh()
     await claimAll()
-    message = isPro ? "¡Listo! Tu Pro está activo." : "No encontramos compras de Pro en tu Apple ID."
+    message = isPro ? String(localized: "¡Listo! Tu Pro está activo.") : String(localized: "No encontramos compras de Pro en tu Apple ID.")
   }
 
   /// Recalcula el estado con lo que StoreKit tiene firmado en el dispositivo.
@@ -137,9 +137,9 @@ final class ProStore: ObservableObject {
 
   var planName: String {
     switch activeProductID {
-    case AppConfig.Pro.lifetime: return "Pro de por vida"
-    case AppConfig.Pro.yearly: return "Pro anual"
-    case AppConfig.Pro.monthly: return "Pro mensual"
+    case AppConfig.Pro.lifetime: return String(localized: "Pro de por vida")
+    case AppConfig.Pro.yearly: return String(localized: "Pro anual")
+    case AppConfig.Pro.monthly: return String(localized: "Pro mensual")
     default: return "Pro"
     }
   }

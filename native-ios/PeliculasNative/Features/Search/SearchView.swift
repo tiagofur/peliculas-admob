@@ -17,7 +17,7 @@ struct SearchView: View {
                        message: loader.failed ? "Revisa tu red e inténtalo de nuevo." : "Prueba con otro título o revisa la ortografía.")
               .frame(minHeight: 360)
           } else {
-            PosterGrid(items: loader.results) { $0.kind == .tv && loader.scope == .all ? "SERIE" : nil }
+            PosterGrid(items: loader.results) { $0.kind == .tv && loader.scope == .all ? String(localized: "SERIE") : nil }
               .padding(.vertical, 12)
           }
         }
@@ -62,7 +62,7 @@ struct SearchView: View {
   }
 
   @ViewBuilder
-  private func genreGrid(title: String, genres: [TMDBGenre], kind: MediaKind) -> some View {
+  private func genreGrid(title: LocalizedStringKey, genres: [TMDBGenre], kind: MediaKind) -> some View {
     if !genres.isEmpty {
       VStack(alignment: .leading, spacing: 12) {
         Text(title).font(.title3.weight(.bold)).padding(.horizontal, 20).accessibilityAddTraits(.isHeader)
@@ -87,12 +87,12 @@ private struct SearchScopes: ViewModifier {
   func body(content: Content) -> some View {
     if #available(iOS 16.4, *) {
       content.searchScopes($loader.scope, activation: .onSearchPresentation) {
-        ForEach(SearchLoader.Scope.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+        ForEach(SearchLoader.Scope.allCases, id: \.self) { Text($0.title).tag($0) }
       }
     } else {
       content.safeAreaInset(edge: .top) {
         Picker("Tipo", selection: $loader.scope) {
-          ForEach(SearchLoader.Scope.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+          ForEach(SearchLoader.Scope.allCases, id: \.self) { Text($0.title).tag($0) }
         }
         .pickerStyle(.segmented)
         .padding(.horizontal, 20)

@@ -29,7 +29,7 @@ struct DetailView: View {
           if !loader.cast.isEmpty { castSection }
           if !loader.similar.isEmpty {
             PosterRail(items: loader.similar) {
-              SectionHeader("Te puede gustar")
+              SectionHeader(String(localized: "Te puede gustar"))
             }
             .padding(.horizontal, -20)
           }
@@ -50,7 +50,7 @@ struct DetailView: View {
     .navigationTitle(current.title)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      ToolbarItem(placement: .principal) { Text("") }
+      ToolbarItem(placement: .principal) { Text(verbatim: "") }
     }
     .task {
       library.touchRecent(item)
@@ -77,7 +77,7 @@ struct DetailView: View {
   private var titleBlock: some View {
     VStack(alignment: .leading, spacing: 8) {
       HStack(spacing: 8) {
-        Text(current.kind == .tv ? "SERIE" : "PELÍCULA")
+        (current.kind == .tv ? Text("SERIE") : Text("PELÍCULA"))
           .font(.caption2.weight(.bold))
           .tracking(1.2)
           .padding(.horizontal, 10)
@@ -121,8 +121,11 @@ struct DetailView: View {
         Button {
           library.toggle(current, in: .watchlist)
         } label: {
-          Label(library.isInWatchlist(current) ? "Guardada" : "Watchlist",
-                systemImage: library.isInWatchlist(current) ? "checkmark" : "plus")
+          Label {
+            library.isInWatchlist(current) ? Text("Guardada") : Text("Watchlist")
+          } icon: {
+            Image(systemName: library.isInWatchlist(current) ? "checkmark" : "plus")
+          }
             .font(.headline)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
@@ -159,7 +162,7 @@ struct DetailView: View {
             if pro.isPro || library.visibleLists.count < AppConfig.Pro.freeListLimit {
               showingNewList = true
             } else {
-              pro.presentPaywall(reason: "Con Pro creas todas las listas que quieras.")
+              pro.presentPaywall(reason: String(localized: "Con Pro creas todas las listas que quieras."))
             }
           } label: {
             Label("Nueva lista…", systemImage: "plus")
@@ -177,7 +180,7 @@ struct DetailView: View {
     }
   }
 
-  private func circleButton(_ icon: String, label: String, tint: Color?, action: @escaping () -> Void) -> some View {
+  private func circleButton(_ icon: String, label: LocalizedStringKey, tint: Color?, action: @escaping () -> Void) -> some View {
     Button(action: action) {
       Image(systemName: icon)
         .font(.headline)
@@ -229,7 +232,7 @@ struct DetailView: View {
           .lineLimit(overviewExpanded ? nil : 4)
           .fixedSize(horizontal: false, vertical: true)
         if current.overview.count > 220 {
-          Button(overviewExpanded ? "Menos" : "Más") {
+          Button(overviewExpanded ? LocalizedStringKey("Menos") : LocalizedStringKey("Más")) {
             withAnimation(.easeInOut(duration: 0.25)) { overviewExpanded.toggle() }
           }
           .font(.subheadline.weight(.semibold))
@@ -248,10 +251,10 @@ struct DetailView: View {
         let aired = loader.episodes.filter(\.hasAired).map(\.number)
         if !aired.isEmpty {
           let watched = library.seasonWatchedCount(tvId: current.id, season: loader.selectedSeason)
-          Text("\(min(watched, aired.count))/\(aired.count)")
+          Text(verbatim: "\(min(watched, aired.count))/\(aired.count)")
             .font(.subheadline.monospacedDigit())
             .foregroundStyle(.secondary)
-          Button(watched >= aired.count ? "Desmarcar" : "Marcar todo") {
+          Button(watched >= aired.count ? LocalizedStringKey("Desmarcar") : LocalizedStringKey("Marcar todo")) {
             library.toggleSeason(tvId: current.id, season: loader.selectedSeason, episodeNumbers: aired)
           }
           .font(.subheadline.weight(.semibold))
@@ -265,7 +268,7 @@ struct DetailView: View {
               loader.selectedSeason = s.seasonNumber
               Task { await loader.loadEpisodes() }
             } label: {
-              Text(s.name ?? "Temporada \(s.seasonNumber)")
+              Text(s.name ?? String(localized: "Temporada \(s.seasonNumber)"))
                 .font(.subheadline.weight(selected ? .semibold : .regular))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
@@ -396,7 +399,7 @@ private struct EpisodeCell: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(episode.hasAired ? 1 : 0.5)
       VStack(alignment: .leading, spacing: 3) {
-        Text("\(episode.number). \(episode.title)")
+        Text(verbatim: "\(episode.number). \(episode.title)")
           .font(.subheadline.weight(.semibold))
           .lineLimit(2)
         Text(subtitle)
@@ -420,7 +423,7 @@ private struct EpisodeCell: View {
             .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(watched ? "Episodio \(episode.number) visto. Desmarcar" : "Marcar episodio \(episode.number) como visto")
+        .accessibilityLabel(watched ? Text("Episodio \(episode.number) visto. Desmarcar") : Text("Marcar episodio \(episode.number) como visto"))
       }
     }
     .accessibilityElement(children: .contain)
@@ -431,9 +434,9 @@ private struct EpisodeCell: View {
     if let date = UpNextStore.parseDay(episode.airDate) {
       parts.append(episode.hasAired
         ? date.formatted(.dateTime.day().month(.abbreviated).year())
-        : "Se estrena el \(date.formatted(.dateTime.day().month(.wide)))")
+        : String(localized: "Se estrena el \(date.formatted(.dateTime.day().month(.wide)))"))
     }
-    if let r = episode.runtime, r > 0 { parts.append("\(r) min") }
+    if let r = episode.runtime, r > 0 { parts.append(String(localized: "\(r) min")) }
     return parts.joined(separator: " · ")
   }
 }

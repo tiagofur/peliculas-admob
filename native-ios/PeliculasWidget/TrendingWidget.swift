@@ -50,9 +50,9 @@ struct TrendProvider: TimelineProvider {
   }
 
   static let sample = [
-    TrendItem(id: 0, title: "Dune: Parte Dos", rating: 8.2, poster: nil),
+    TrendItem(id: 0, title: String(localized: "Dune: Parte Dos"), rating: 8.2, poster: nil),
     TrendItem(id: 1, title: "Oppenheimer", rating: 8.1, poster: nil),
-    TrendItem(id: 2, title: "Pobres criaturas", rating: 7.8, poster: nil),
+    TrendItem(id: 2, title: String(localized: "Pobres criaturas"), rating: 7.8, poster: nil),
   ]
 }
 
@@ -105,7 +105,7 @@ struct TrendMediumView: View {
           Link(destination: URL(string: item.id > 0 ? "peliculas://movie/\(item.id)" : "peliculas://trending")!) {
             VStack(alignment: .leading, spacing: 4) {
               Poster(item: item).frame(height: 84)
-              Text("\(i + 1). \(item.title)").font(.caption2.weight(.semibold)).lineLimit(1)
+              Text(verbatim: "\(i + 1). \(item.title)").font(.caption2.weight(.semibold)).lineLimit(1)
             }
           }
         }

@@ -1,6 +1,7 @@
 name: PeliculasNative
 options:
   bundleIdPrefix: mx.creapolis.peliculas
+  developmentLanguage: es
   deploymentTarget:
     iOS: "15.0"
   xcodeVersion: "27.0"
@@ -20,6 +21,8 @@ settings:
     CURRENT_PROJECT_VERSION: $(CURRENT_PROJECT_VERSION)
     DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
     CODE_SIGN_STYLE: Automatic
+    SWIFT_EMIT_LOC_STRINGS: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
 targets:
   PeliculasWidget:
     type: app-extension
@@ -31,6 +34,8 @@ targets:
         CFBundleDisplayName: Películas
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: es
+        CFBundleLocalizations: [es, en, pt-BR]
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         API_BASE_URL: $(API_BASE_URL)
@@ -52,6 +57,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(APP_BUNDLE_ID).tests
         GENERATE_INFOPLIST_FILE: YES
+        # XCTest solo existe para iOS 17+; la app sigue en iOS 15.
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
   PeliculasNative:
     type: application
     platform: iOS
@@ -72,7 +79,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDevelopmentRegion: es
-        CFBundleLocalizations: [es]
+        CFBundleLocalizations: [es, en, pt-BR]
         LSApplicationCategoryType: public.app-category.entertainment
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:

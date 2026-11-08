@@ -200,5 +200,5 @@ extension MediaItem {
     URL(string: "https://www.themoviedb.org/\(kind == .movie ? "movie" : "tv")/\(id)")!
   }
 
-  var shareText: String { "Mira «\(title)» — la encontré en Películas" }
+  var shareText: String { String(localized: "Mira «\(title)» — la encontré en Películas") }
 }

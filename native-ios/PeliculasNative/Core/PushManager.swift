@@ -67,9 +67,9 @@ final class PushManager: NSObject, ObservableObject {
     do {
       let data = try await APIClient.authed("POST", "/v1/devices/test")
       let sent = (try? JSONDecoder().decode([String: Int].self, from: data))?["sent"] ?? 0
-      lastMessage = sent > 0 ? "Aviso de prueba enviado." : "No hay dispositivos que puedan recibirlo."
+      lastMessage = sent > 0 ? String(localized: "Aviso de prueba enviado.") : String(localized: "No hay dispositivos que puedan recibirlo.")
     } catch let error as APIError where error.code == "push_not_configured" {
-      lastMessage = "El servidor aún no tiene la clave de APNs."
+      lastMessage = String(localized: "El servidor aún no tiene la clave de APNs.")
     } catch {
       lastMessage = (error as? LocalizedError)?.errorDescription
     }

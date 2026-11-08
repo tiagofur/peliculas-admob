@@ -67,7 +67,9 @@ struct PaywallView: View {
       Text("Películas Pro")
         .font(.system(size: 36, weight: .heavy))
         .foregroundStyle(.white)
-      Text(pro.paywallReason ?? "Lo mejor de la app, sin anuncios y con avisos de tus series.")
+      Group {
+        if let reason = pro.paywallReason { Text(reason) } else { Text("Lo mejor de la app, sin anuncios y con avisos de tus series.") }
+      }
         .font(.body)
         .foregroundStyle(.white.opacity(0.75))
         .multilineTextAlignment(.center)
@@ -85,7 +87,7 @@ struct PaywallView: View {
     .glassCard(cornerRadius: 24)
   }
 
-  private func feature(_ icon: String, _ color: Color, _ title: String, _ subtitle: String) -> some View {
+  private func feature(_ icon: String, _ color: Color, _ title: LocalizedStringKey, _ subtitle: LocalizedStringKey) -> some View {
     HStack(alignment: .top, spacing: 14) {
       Image(systemName: icon)
         .font(.title3)
@@ -128,8 +130,9 @@ struct PaywallView: View {
           let monthly = pro.products.first(where: { $0.id == AppConfig.Pro.monthly }) else { return nil }
     let yearlyCost = NSDecimalNumber(decimal: product.price).doubleValue
     let monthlyCost = NSDecimalNumber(decimal: monthly.price).doubleValue * 12
-    guard monthlyCost > 0, yearlyCost < monthlyCost else { return "Mejor precio" }
-    return "Ahorra \(Int(((1 - yearlyCost / monthlyCost) * 100).rounded()))%"
+    guard monthlyCost > 0, yearlyCost < monthlyCost else { return String(localized: "Mejor precio") }
+    let percent = Int(((1 - yearlyCost / monthlyCost) * 100).rounded())
+    return String(localized: "Ahorra \(percent)%")
   }
 
   private var selectedProduct: Product? { pro.products.first { $0.id == selected } }
@@ -165,19 +168,21 @@ struct PaywallView: View {
   }
 
   private var ctaTitle: String {
-    guard let p = selectedProduct else { return "Continuar" }
-    if p.subscription?.introductoryOffer?.paymentMode == .freeTrial, introEligible { return "Probar gratis" }
-    return p.type == .nonConsumable ? "Comprar por \(p.displayPrice)" : "Suscribirme"
+    guard let p = selectedProduct else { return String(localized: "Continuar") }
+    if p.subscription?.introductoryOffer?.paymentMode == .freeTrial, introEligible { return String(localized: "Probar gratis") }
+    return p.type == .nonConsumable ? String(localized: "Comprar por \(p.displayPrice)") : String(localized: "Suscribirme")
   }
 
   private func renewalText(_ p: Product) -> String {
-    guard let sub = p.subscription else { return "Pago único. Tuyo para siempre, compartible con En Familia." }
-    let period = sub.subscriptionPeriod.unit == .year ? "año" : "mes"
-    var text = "\(p.displayPrice) al \(period). "
+    guard let sub = p.subscription else { return String(localized: "Pago único. Tuyo para siempre, compartible con En Familia.") }
+    var price = sub.subscriptionPeriod.unit == .year
+      ? String(localized: "\(p.displayPrice) al año.")
+      : String(localized: "\(p.displayPrice) al mes.")
     if let intro = sub.introductoryOffer, intro.paymentMode == .freeTrial, introEligible {
-      text = "Gratis \(intro.period.debugDescriptionES), luego " + text
+      price = String(localized: "Gratis \(intro.period.localizedLength), luego \(price)")
     }
-    return text + "Se renueva automáticamente salvo que la canceles al menos 24 h antes del final del periodo, desde Ajustes › Apple ID › Suscripciones."
+    let renewal = String(localized: "Se renueva automáticamente salvo que la canceles al menos 24 h antes del final del periodo, desde Ajustes › Apple ID › Suscripciones.")
+    return price + " " + renewal
   }
 
   private var footer: some View {
@@ -212,9 +217,12 @@ private struct PlanRow: View {
         VStack(alignment: .leading, spacing: 2) {
           HStack(spacing: 8) {
             Text(product.displayName).font(.headline).foregroundStyle(.white)
+              .lineLimit(1).minimumScaleFactor(0.8)
             if let badge {
               Text(badge)
                 .font(.caption2.weight(.bold))
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(Color.orange, in: Capsule())
@@ -241,28 +249,30 @@ private struct PlanRow: View {
   }
 
   private var detail: String {
-    guard let sub = product.subscription else { return "Un solo pago" }
-    var s = sub.subscriptionPeriod.unit == .year ? "Facturado cada año" : "Facturado cada mes"
+    guard let sub = product.subscription else { return String(localized: "Un solo pago") }
+    var s = String(localized: "Facturado cada mes")
     if sub.subscriptionPeriod.unit == .year {
       let perMonth = (product.price / 12) as NSDecimalNumber
-      s = "Equivale a \(product.priceFormatStyle.format(perMonth.decimalValue))/mes"
+      let formatted = product.priceFormatStyle.format(perMonth.decimalValue)
+      s = String(localized: "Equivale a \(formatted)/mes")
     }
     if let intro = sub.introductoryOffer, intro.paymentMode == .freeTrial, introEligible {
-      s += " · \(intro.period.debugDescriptionES) gratis"
+      s += " · " + String(localized: "\(intro.period.localizedLength) gratis")
     }
     return s
   }
 }
 
 extension Product.SubscriptionPeriod {
-  /// "1 semana", "1 mes"… en español.
-  var debugDescriptionES: String {
+  /// "1 semana", "3 meses"… en el idioma de la app (plurales en el catálogo).
+  var localizedLength: String {
     let n = value
     switch unit {
-    case .day: return n == 7 ? "1 semana" : (n == 1 ? "1 día" : "\(n) días")
-    case .week: return n == 1 ? "1 semana" : "\(n) semanas"
-    case .month: return n == 1 ? "1 mes" : "\(n) meses"
-    case .year: return n == 1 ? "1 año" : "\(n) años"
+    case .day where n % 7 == 0: return String(localized: "\(n / 7) semanas")
+    case .day: return String(localized: "\(n) días")
+    case .week: return String(localized: "\(n) semanas")
+    case .month: return String(localized: "\(n) meses")
+    case .year: return String(localized: "\(n) años")
     @unknown default: return "\(n)"
     }
   }

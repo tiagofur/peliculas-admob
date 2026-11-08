@@ -53,6 +53,6 @@ final class HomeLoader: ObservableObject {
     }
     guard let recs = try? await TMDBClient.recommendations(kind: seed.kind, id: seed.id), !recs.isEmpty else { return }
     personal = recs.prefix(15).map { MediaItem(tmdb: $0, kind: seed.kind) }
-    personalTitle = "Porque te gustó \(seed.title)"
+    personalTitle = String(localized: "Porque te gustó \(seed.title)")
   }
 }

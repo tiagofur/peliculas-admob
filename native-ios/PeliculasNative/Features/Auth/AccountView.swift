@@ -142,15 +142,15 @@ struct AccountView: View {
         HStack {
           Label("Logros", systemImage: "trophy.fill")
           Spacer()
-          Text("\(achievements.unlockedCount)/\(achievements.totalCount)").foregroundStyle(.secondary)
+          Text(verbatim: "\(achievements.unlockedCount)/\(achievements.totalCount)").foregroundStyle(.secondary)
         }
       }
     }
   }
 
-  private func stat(_ value: Int, _ label: String) -> some View {
+  private func stat(_ value: Int, _ label: LocalizedStringKey) -> some View {
     VStack(spacing: 2) {
-      Text("\(value)").font(.title3.weight(.bold).monospacedDigit())
+      Text(verbatim: "\(value)").font(.title3.weight(.bold).monospacedDigit())
       Text(label).font(.caption2).foregroundStyle(.secondary)
     }
     .frame(maxWidth: .infinity)
@@ -197,7 +197,7 @@ struct AccountView: View {
   private func setEpisodeAlerts(_ on: Bool) async {
     guard session.isSignedIn else { router.showingSignIn = true; return }
     if on {
-      guard pro.isPro else { pro.presentPaywall(reason: "Los avisos de episodios nuevos son parte de Pro."); return }
+      guard pro.isPro else { pro.presentPaywall(reason: String(localized: "Los avisos de episodios nuevos son parte de Pro.")); return }
       if await push.requestPermission() { await push.upload() }
     } else {
       await push.unregister()

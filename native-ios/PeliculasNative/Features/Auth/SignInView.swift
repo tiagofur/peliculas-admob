@@ -50,7 +50,7 @@ struct SignInView: View {
                 .focused($focus, equals: .email)
             }
             field {
-              SecureField(mode == .signUp ? "Contraseña (mín. 8)" : "Contraseña", text: $password)
+              SecureField(passwordPlaceholder, text: $password)
                 .textContentType(mode == .signUp ? .newPassword : .password)
                 .focused($focus, equals: .password)
                 .onSubmit(submit)
@@ -67,7 +67,7 @@ struct SignInView: View {
 
           Button(action: submit) {
             Group {
-              if session.busy { ProgressView() } else { Text(mode == .signIn ? "Iniciar sesión" : "Crear cuenta") }
+              if session.busy { ProgressView() } else { Text(submitTitle) }
             }
             .font(.headline)
             .frame(maxWidth: .infinity)
@@ -77,7 +77,7 @@ struct SignInView: View {
           .controlSize(.large)
           .disabled(session.busy || email.isEmpty || password.isEmpty)
 
-          Button(mode == .signIn ? "¿No tienes cuenta? Crear una" : "Ya tengo cuenta") {
+          Button(switchModeTitle) {
             withAnimation { mode = mode == .signIn ? .signUp : .signIn }
             error = nil
           }
@@ -93,7 +93,7 @@ struct SignInView: View {
         ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
       }
     }
-    .onChange(of: session.isSignedIn) { if $0 { dismiss() } }
+    .onChange(of: session.isSignedIn) { _, isSignedIn in if isSignedIn { dismiss() } }
   }
 
   private var header: some View {
@@ -102,7 +102,7 @@ struct SignInView: View {
         .font(.system(size: 44))
         .foregroundStyle(.tint)
         .padding(.bottom, 4)
-      Text(mode == .signIn ? "Inicia sesión" : "Crea tu cuenta")
+      Text(headerTitle)
         .font(.largeTitle.weight(.bold))
       Text("Tu biblioteca, tus series y tu progreso en todos tus dispositivos.")
         .font(.subheadline)
@@ -111,6 +111,11 @@ struct SignInView: View {
     }
     .padding(.top, 8)
   }
+
+  private var passwordPlaceholder: LocalizedStringKey { mode == .signUp ? "Contraseña (mín. 8)" : "Contraseña" }
+  private var submitTitle: LocalizedStringKey { mode == .signIn ? "Iniciar sesión" : "Crear cuenta" }
+  private var switchModeTitle: LocalizedStringKey { mode == .signIn ? "¿No tienes cuenta? Crear una" : "Ya tengo cuenta" }
+  private var headerTitle: LocalizedStringKey { mode == .signIn ? "Inicia sesión" : "Crea tu cuenta" }
 
   private func field<C: View>(@ViewBuilder _ content: () -> C) -> some View {
     content()
@@ -135,7 +140,7 @@ struct SignInView: View {
   private func submit() {
     let mail = email.trimmingCharacters(in: .whitespacesAndNewlines)
     if mode == .signUp && password.count < 8 {
-      error = "La contraseña necesita al menos 8 caracteres."
+      error = String(localized: "La contraseña necesita al menos 8 caracteres.")
       return
     }
     Task {
@@ -156,7 +161,7 @@ struct SignInView: View {
       Haptics.success()
     } catch {
       Haptics.warning()
-      self.error = (error as? LocalizedError)?.errorDescription ?? "No se pudo iniciar sesión."
+      self.error = (error as? LocalizedError)?.errorDescription ?? String(localized: "No se pudo iniciar sesión.")
     }
   }
 }

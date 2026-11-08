@@ -44,8 +44,8 @@ final class ReminderManager: ObservableObject {
     friday.weekday = 6
     friday.hour = 19
     let trends = UNMutableNotificationContent()
-    trends.title = "Tendencias de la semana"
-    trends.body = "Mira lo que todos están viendo este fin de semana."
+    trends.title = String(localized: "Tendencias de la semana")
+    trends.body = String(localized: "Mira lo que todos están viendo este fin de semana.")
     trends.userInfo = ["url": "peliculas://trending"]
     center.add(UNNotificationRequest(identifier: ids[0], content: trends,
                                      trigger: UNCalendarNotificationTrigger(dateMatching: friday, repeats: true)))
@@ -55,8 +55,8 @@ final class ReminderManager: ObservableObject {
     sunday.weekday = 1
     sunday.hour = 18
     let wl = UNMutableNotificationContent()
-    wl.title = "Tu watchlist te espera"
-    wl.body = watchlistCount == 1 ? "Tienes 1 título guardado para ver." : "Tienes \(watchlistCount) títulos guardados para ver."
+    wl.title = String(localized: "Tu watchlist te espera")
+    wl.body = String(localized: "Tienes \(watchlistCount) títulos guardados para ver.")
     wl.userInfo = ["url": "peliculas://library"]
     center.add(UNNotificationRequest(identifier: ids[1], content: wl,
                                      trigger: UNCalendarNotificationTrigger(dateMatching: sunday, repeats: true)))

@@ -10,7 +10,7 @@ struct RootView: View {
   var body: some View {
     tabs
       .overlay(alignment: .top) { AchievementToast() }
-      .onChange(of: LibraryCounts(library)) { achievements.check($0) }
+      .onChange(of: LibraryCounts(library)) { _, counts in achievements.check(counts) }
       .modalHost(.root)
       .sheet(isPresented: $router.showingAccount) { AccountView().modalHost(.account) }
       .sheet(item: $router.presented) { item in
@@ -102,7 +102,7 @@ struct AchievementToast: View {
             Text("Logro desbloqueado").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             Text(item.name).font(.subheadline.weight(.bold))
           }
-          Text("+\(item.points)")
+          Text(verbatim: "+\(item.points)")
             .font(.subheadline.weight(.heavy).monospacedDigit())
             .foregroundStyle(.tint)
             .padding(.leading, 4)

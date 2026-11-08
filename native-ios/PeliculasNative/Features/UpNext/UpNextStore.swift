@@ -9,7 +9,7 @@ struct EpisodeRef: Hashable, Comparable, Sendable {
     (a.season, a.episode) < (b.season, b.episode)
   }
 
-  var label: String { "T\(season) · E\(episode)" }
+  var label: String { String(localized: "T\(season) · E\(episode)") }
 }
 
 /// Lógica pura de "qué toca ver ahora" (testeable sin red).

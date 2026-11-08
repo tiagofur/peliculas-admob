@@ -13,8 +13,8 @@ struct APIUser: Codable, Equatable, Sendable {
 
   var shownName: String {
     if let n = displayName, !n.isEmpty { return n }
-    if email.hasSuffix("privaterelay.appleid.com") { return "Usuario de Apple" }
-    return email.split(separator: "@").first.map(String.init) ?? "Tú"
+    if email.hasSuffix("privaterelay.appleid.com") { return String(localized: "Usuario de Apple") }
+    return email.split(separator: "@").first.map(String.init) ?? String(localized: "Tú")
   }
 
   var initials: String {

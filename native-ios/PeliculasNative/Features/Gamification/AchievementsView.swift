@@ -11,7 +11,7 @@ struct AchievementsView: View {
       Section {
         VStack(alignment: .leading, spacing: 10) {
           HStack(alignment: .firstTextBaseline) {
-            Text("\(achievements.totalPoints)")
+            Text(verbatim: "\(achievements.totalPoints)")
               .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
             Text("puntos").font(.headline).foregroundStyle(.secondary)
             Spacer()
@@ -60,12 +60,14 @@ private struct AchievementRow: View {
         }
       }
       Spacer()
-      Text(item.isUnlocked ? "+\(item.points)" : "\(item.progress)/\(item.target)")
+      Text(verbatim: item.isUnlocked ? "+\(item.points)" : "\(item.progress)/\(item.target)")
         .font(.caption.weight(.bold).monospacedDigit())
         .foregroundStyle(item.isUnlocked ? .green : .secondary)
     }
     .padding(.vertical, 2)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(item.name). \(item.description). \(item.isUnlocked ? "Desbloqueado" : "\(item.progress) de \(item.target)")")
+    .accessibilityLabel(item.isUnlocked
+      ? Text("\(item.name). \(item.description). Desbloqueado")
+      : Text("\(item.name). \(item.description). \(item.progress) de \(item.target)"))
   }
 }

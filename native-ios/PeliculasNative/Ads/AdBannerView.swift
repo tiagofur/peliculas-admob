@@ -25,9 +25,8 @@ final class AdsManager: ObservableObject {
     ConsentInformation.shared.requestConsentInfoUpdate(with: params) { [weak self] _ in
       Task { @MainActor in
         guard let root = Self.rootViewController() else { self?.startSDKIfAllowed(); return }
-        ConsentForm.loadAndPresentIfRequired(from: root) { _ in
-          Task { @MainActor in self?.startSDKIfAllowed() }
-        }
+        try? await ConsentForm.loadAndPresentIfRequired(from: root)
+        self?.startSDKIfAllowed()
       }
     }
     // Si ya había consentimiento de otra sesión, no hace falta esperar.

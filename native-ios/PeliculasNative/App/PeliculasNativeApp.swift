@@ -43,7 +43,7 @@ struct PeliculasNativeApp: App {
         .environmentObject(router)
         .onOpenURL { router.open($0) }
         .task { wireUp() }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
           switch phase {
           case .active:
             Task {

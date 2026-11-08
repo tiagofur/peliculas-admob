@@ -21,7 +21,7 @@ struct LibraryView: View {
             .frame(minHeight: 280)
           } else {
             VStack(alignment: .leading, spacing: 12) {
-              SectionHeader("Añadido recientemente")
+              SectionHeader(String(localized: "Añadido recientemente"))
               PosterGrid(items: recentlyAdded)
             }
           }
@@ -60,7 +60,7 @@ struct LibraryView: View {
     .padding(.horizontal, 20)
   }
 
-  private func row<D: View>(_ title: String, icon: String, color: Color, count: Int, @ViewBuilder destination: () -> D) -> some View {
+  private func row<D: View>(_ title: LocalizedStringKey, icon: String, color: Color, count: Int, @ViewBuilder destination: () -> D) -> some View {
     NavigationLink(destination: destination()) {
       HStack(spacing: 14) {
         Image(systemName: icon)
@@ -71,7 +71,7 @@ struct LibraryView: View {
         Text(title).font(.body)
         Spacer()
         if count > 0 {
-          Text("\(count)").font(.body.monospacedDigit()).foregroundStyle(.secondary)
+          Text(verbatim: "\(count)").font(.body.monospacedDigit()).foregroundStyle(.secondary)
         }
         Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
       }
@@ -81,7 +81,7 @@ struct LibraryView: View {
     }
     .buttonStyle(.plain)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(title), \(count)")
+    .accessibilityLabel(Text(title) + Text(verbatim: ", \(count)"))
   }
 
   private var syncBanner: some View {
@@ -120,7 +120,7 @@ struct LibraryGridView: View {
   let kind: LibraryKind
   @State private var filter: MediaKind? = nil
 
-  private var title: String {
+  private var title: LocalizedStringKey {
     switch kind {
     case .watchlist: return "Watchlist"
     case .favorite: return "Favoritos"
@@ -160,7 +160,7 @@ struct LibraryGridView: View {
     }
   }
 
-  private var emptyMessage: String {
+  private var emptyMessage: LocalizedStringKey {
     switch kind {
     case .watchlist: return "Guarda lo que quieras ver más tarde con el botón Watchlist."
     case .favorite: return "Toca el corazón en la ficha de lo que más te guste."
@@ -211,7 +211,7 @@ struct ListsView: View {
             ListCover(items: list.items)
             VStack(alignment: .leading, spacing: 2) {
               Text(list.name).font(.body.weight(.medium))
-              Text(list.items.count == 1 ? "1 título" : "\(list.items.count) títulos")
+              Text("\(list.items.count) títulos")
                 .font(.caption).foregroundStyle(.secondary)
             }
           }
@@ -236,7 +236,7 @@ struct ListsView: View {
             name = ""
             creating = true
           } else {
-            pro.presentPaywall(reason: "La versión gratis incluye \(AppConfig.Pro.freeListLimit) listas. Con Pro, ilimitadas.")
+            pro.presentPaywall(reason: String(localized: "La versión gratis incluye \(AppConfig.Pro.freeListLimit) listas. Con Pro, ilimitadas."))
           }
         } label: {
           Image(systemName: "plus")
@@ -287,7 +287,7 @@ private struct ListDetailView: View {
 
   var body: some View {
     let items = library.itemsOfList(listId)
-    let name = library.lists[listId]?.name ?? "Lista"
+    let name = library.lists[listId]?.name ?? String(localized: "Lista")
     ScrollView {
       if items.isEmpty {
         EmptyState(icon: "text.badge.plus", title: "Lista vacía",

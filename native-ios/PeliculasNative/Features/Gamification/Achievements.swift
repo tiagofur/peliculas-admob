@@ -55,20 +55,20 @@ final class AchievementStore: ObservableObject {
   }
 
   private static let defs: [Def] = [
-    Def(id: "first_movie", name: "Primera Película", description: "Agrega tu primer favorito", icon: "heart.fill", points: 10, target: 1, count: { $0.favorites }),
-    Def(id: "movie_enthusiast", name: "Entusiasta del Cine", description: "Agrega 10 favoritos", icon: "heart.circle.fill", points: 50, target: 10, count: { $0.favorites }),
-    Def(id: "movie_collector", name: "Coleccionista", description: "Agrega 50 favoritos", icon: "square.stack.3d.up.fill", points: 150, target: 50, count: { $0.favorites }),
-    Def(id: "movie_curator", name: "Curador de Cine", description: "Agrega 100 favoritos", icon: "rosette", points: 300, target: 100, count: { $0.favorites }),
-    Def(id: "movie_master", name: "Maestro del Cine", description: "Agrega 200 favoritos", icon: "crown.fill", points: 500, target: 200, count: { $0.favorites }),
-    Def(id: "first_watchlist", name: "Para después", description: "Guarda tu primer título en la watchlist", icon: "bookmark.fill", points: 10, target: 1, count: { $0.watchlist }),
-    Def(id: "first_watched", name: "Primera Vista", description: "Marca tu primer título como visto", icon: "eye.fill", points: 10, target: 1, count: { $0.watched }),
-    Def(id: "cinephile", name: "Cinéfilo", description: "Marca 10 títulos como vistos", icon: "film.stack.fill", points: 50, target: 10, count: { $0.watched }),
-    Def(id: "list_creator", name: "Creador de Listas", description: "Crea tu primera lista", icon: "list.star", points: 25, target: 1, count: { $0.lists }),
-    Def(id: "first_rating", name: "Crítico Novato", description: "Califica tu primer título", icon: "star.fill", points: 10, target: 1, count: { $0.ratings }),
-    Def(id: "critic", name: "Crítico", description: "Califica 25 títulos", icon: "star.circle.fill", points: 75, target: 25, count: { $0.ratings }),
-    Def(id: "first_episode", name: "Piloto", description: "Marca tu primer episodio visto", icon: "play.tv.fill", points: 10, target: 1, count: { $0.episodes }),
-    Def(id: "binge_watcher", name: "Maratonista", description: "Marca 50 episodios vistos", icon: "flame.fill", points: 100, target: 50, count: { $0.episodes }),
-    Def(id: "series_addict", name: "Adicto a las Series", description: "Marca 250 episodios vistos", icon: "sparkles.tv.fill", points: 300, target: 250, count: { $0.episodes }),
+    Def(id: "first_movie", name: String(localized: "Primera Película"), description: String(localized: "Agrega tu primer favorito"), icon: "heart.fill", points: 10, target: 1, count: { $0.favorites }),
+    Def(id: "movie_enthusiast", name: String(localized: "Entusiasta del Cine"), description: String(localized: "Agrega 10 favoritos"), icon: "heart.circle.fill", points: 50, target: 10, count: { $0.favorites }),
+    Def(id: "movie_collector", name: String(localized: "Coleccionista"), description: String(localized: "Agrega 50 favoritos"), icon: "square.stack.3d.up.fill", points: 150, target: 50, count: { $0.favorites }),
+    Def(id: "movie_curator", name: String(localized: "Curador de Cine"), description: String(localized: "Agrega 100 favoritos"), icon: "rosette", points: 300, target: 100, count: { $0.favorites }),
+    Def(id: "movie_master", name: String(localized: "Maestro del Cine"), description: String(localized: "Agrega 200 favoritos"), icon: "crown.fill", points: 500, target: 200, count: { $0.favorites }),
+    Def(id: "first_watchlist", name: String(localized: "Para después"), description: String(localized: "Guarda tu primer título en la watchlist"), icon: "bookmark.fill", points: 10, target: 1, count: { $0.watchlist }),
+    Def(id: "first_watched", name: String(localized: "Primera Vista"), description: String(localized: "Marca tu primer título como visto"), icon: "eye.fill", points: 10, target: 1, count: { $0.watched }),
+    Def(id: "cinephile", name: String(localized: "Cinéfilo"), description: String(localized: "Marca 10 títulos como vistos"), icon: "film.stack.fill", points: 50, target: 10, count: { $0.watched }),
+    Def(id: "list_creator", name: String(localized: "Creador de Listas"), description: String(localized: "Crea tu primera lista"), icon: "list.star", points: 25, target: 1, count: { $0.lists }),
+    Def(id: "first_rating", name: String(localized: "Crítico Novato"), description: String(localized: "Califica tu primer título"), icon: "star.fill", points: 10, target: 1, count: { $0.ratings }),
+    Def(id: "critic", name: String(localized: "Crítico"), description: String(localized: "Califica 25 títulos"), icon: "star.circle.fill", points: 75, target: 25, count: { $0.ratings }),
+    Def(id: "first_episode", name: String(localized: "Piloto"), description: String(localized: "Marca tu primer episodio visto"), icon: "play.tv.fill", points: 10, target: 1, count: { $0.episodes }),
+    Def(id: "binge_watcher", name: String(localized: "Maratonista"), description: String(localized: "Marca 50 episodios vistos"), icon: "flame.fill", points: 100, target: 50, count: { $0.episodes }),
+    Def(id: "series_addict", name: String(localized: "Adicto a las Series"), description: String(localized: "Marca 250 episodios vistos"), icon: "sparkles.tv.fill", points: 300, target: 250, count: { $0.episodes }),
   ]
 
   init() {
@@ -128,13 +128,13 @@ struct UserLevel {
   let pointsRequired: Int
 
   private static let all: [UserLevel] = [
-    UserLevel(level: 1, name: "Novato del Cine", pointsRequired: 0),
-    UserLevel(level: 2, name: "Explorador", pointsRequired: 150),
-    UserLevel(level: 3, name: "Entusiasta", pointsRequired: 400),
-    UserLevel(level: 4, name: "Conocedor", pointsRequired: 800),
-    UserLevel(level: 5, name: "Crítico", pointsRequired: 1500),
-    UserLevel(level: 6, name: "Maestro del Cine", pointsRequired: 2500),
-    UserLevel(level: 7, name: "Leyenda del Cine", pointsRequired: 4000),
+    UserLevel(level: 1, name: String(localized: "Novato del Cine"), pointsRequired: 0),
+    UserLevel(level: 2, name: String(localized: "Explorador"), pointsRequired: 150),
+    UserLevel(level: 3, name: String(localized: "Entusiasta"), pointsRequired: 400),
+    UserLevel(level: 4, name: String(localized: "Conocedor"), pointsRequired: 800),
+    UserLevel(level: 5, name: String(localized: "Crítico"), pointsRequired: 1500),
+    UserLevel(level: 6, name: String(localized: "Maestro del Cine"), pointsRequired: 2500),
+    UserLevel(level: 7, name: String(localized: "Leyenda del Cine"), pointsRequired: 4000),
   ]
 
   static func level(for points: Int) -> UserLevel {

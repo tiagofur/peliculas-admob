@@ -23,18 +23,18 @@ struct HomeView: View {
             ContinueWatchingRail(entries: Array(upNext.entries.prefix(10)))
           }
           if !library.recentItems().isEmpty {
-            PosterRail(items: library.recentItems()) { SectionHeader("Visto recientemente") }
+            PosterRail(items: library.recentItems()) { SectionHeader(String(localized: "Visto recientemente")) }
           }
           if let title = loader.personalTitle, !loader.personal.isEmpty {
-            PosterRail(items: loader.personal) { SectionHeader(title, subtitle: "Recomendaciones para ti") }
+            PosterRail(items: loader.personal) { SectionHeader(title, subtitle: String(localized: "Recomendaciones para ti")) }
           }
           if !loader.trending.isEmpty {
             Top10Rail(items: Array(loader.trending.prefix(10)))
           }
-          rail("Series en tendencia", loader.trendingShows)
-          rail("En cines", loader.nowPlaying)
-          rail("Próximos estrenos", loader.upcoming)
-          rail("Aclamadas por la crítica", loader.topRated)
+          rail(String(localized: "Series en tendencia"), loader.trendingShows)
+          rail(String(localized: "En cines"), loader.nowPlaying)
+          rail(String(localized: "Próximos estrenos"), loader.upcoming)
+          rail(String(localized: "Aclamadas por la crítica"), loader.topRated)
 
           TMDBAttribution()
             .padding(.horizontal, 20)
@@ -52,7 +52,7 @@ struct HomeView: View {
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         // Título oculto sobre el héroe (sigue sirviendo para el botón Atrás).
-        ToolbarItem(placement: .principal) { Text("") }
+        ToolbarItem(placement: .principal) { Text(verbatim: "") }
       }
       .accountToolbar()
     }
@@ -138,7 +138,7 @@ private struct HeroPage: View {
       .accessibilityHidden(true)
 
       VStack(alignment: .leading, spacing: 10) {
-        Text(item.kind == .tv ? "SERIE" : "PELÍCULA")
+        (item.kind == .tv ? Text("SERIE") : Text("PELÍCULA"))
           .font(.caption2.weight(.bold))
           .tracking(1.2)
           .foregroundStyle(.secondary)
@@ -178,7 +178,7 @@ private struct HeroPage: View {
             }
             .glassButtonStyle()
             .controlSize(.large)
-            .accessibilityLabel(library.isInWatchlist(item) ? "Quitar de Watchlist" : "Añadir a Watchlist")
+            .accessibilityLabel(library.isInWatchlist(item) ? Text("Quitar de Watchlist") : Text("Añadir a Watchlist"))
           }
         }
         .padding(.top, 4)
@@ -204,7 +204,7 @@ private struct HeroPlaceholder: View {
         VStack(spacing: 12) {
           Image(systemName: "wifi.exclamationmark").font(.system(size: 44)).foregroundStyle(.secondary)
           Text("No pudimos cargar el contenido").font(.headline)
-          Text(AppConfig.isAPIConfigured || isDebug ? "Revisa tu conexión e inténtalo de nuevo." : "Falta configurar la URL del servidor.")
+          (AppConfig.isAPIConfigured || isDebug ? Text("Revisa tu conexión e inténtalo de nuevo.") : Text("Falta configurar la URL del servidor."))
             .font(.subheadline).foregroundStyle(.secondary)
           Button("Reintentar", action: retry).glassProminentButtonStyle()
         }
@@ -230,7 +230,7 @@ private struct ContinueWatchingRail: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      SectionHeader("Continuar viendo")
+      SectionHeader(String(localized: "Continuar viendo"))
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 14) {
           ForEach(entries) { UpNextCard(entry: $0, width: 280) }
@@ -285,7 +285,7 @@ struct UpNextCard: View {
         }
         VStack(alignment: .leading, spacing: 2) {
           Text(entry.show.title).font(.subheadline.weight(.semibold)).lineLimit(1)
-          Text(entry.episodeTitle.isEmpty ? (entry.started ? "Siguiente episodio" : "Empieza la serie") : entry.episodeTitle)
+          episodeTitle
             .font(.caption).foregroundStyle(.secondary).lineLimit(1)
         }
       }
@@ -293,6 +293,11 @@ struct UpNextCard: View {
     }
     .buttonStyle(.plain)
     .accessibilityElement(children: .contain)
+  }
+
+  private var episodeTitle: Text {
+    if !entry.episodeTitle.isEmpty { return Text(entry.episodeTitle) }
+    return entry.started ? Text("Siguiente episodio") : Text("Empieza la serie")
   }
 }
 
@@ -303,13 +308,15 @@ private struct Top10Rail: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      SectionHeader("Top 10 de la semana", subtitle: "Películas") { SeeAllView(title: "Tendencias de la semana", items: items) }
+      SectionHeader(String(localized: "Top 10 de la semana"), subtitle: String(localized: "Películas")) {
+        SeeAllView(title: String(localized: "Tendencias de la semana"), items: items)
+      }
       ScrollView(.horizontal, showsIndicators: false) {
         LazyHStack(spacing: 6) {
           ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
             NavigationLink(destination: DetailView(item: item)) {
               HStack(alignment: .bottom, spacing: -18) {
-                Text("\(i + 1)")
+                Text(verbatim: "\(i + 1)")
                   .font(.system(size: 96, weight: .black, design: .rounded))
                   .foregroundStyle(
                     LinearGradient(colors: [.primary.opacity(0.9), .primary.opacity(0.25)], startPoint: .top, endPoint: .bottom)

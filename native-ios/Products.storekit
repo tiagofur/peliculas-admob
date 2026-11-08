@@ -11,6 +11,16 @@
           "description": "Todo Pro para siempre, un solo pago.",
           "displayName": "Pro de por vida",
           "locale": "es_MX"
+        },
+        {
+          "description": "All of Pro forever, one payment.",
+          "displayName": "Pro Lifetime",
+          "locale": "en_US"
+        },
+        {
+          "description": "Todo o Pro para sempre, um só pagamento.",
+          "displayName": "Pro vitalício",
+          "locale": "pt_BR"
         }
       ],
       "productID": "peliculas_pro_lifetime",
@@ -53,6 +63,16 @@
               "description": "Sin anuncios, avisos de episodios y listas ilimitadas.",
               "displayName": "Pro mensual",
               "locale": "es_MX"
+            },
+            {
+              "description": "No ads, episode alerts and unlimited lists.",
+              "displayName": "Pro Monthly",
+              "locale": "en_US"
+            },
+            {
+              "description": "Sem anúncios, avisos de episódios e listas ilimitadas.",
+              "displayName": "Pro mensal",
+              "locale": "pt_BR"
             }
           ],
           "productID": "peliculas_pro_monthly",
@@ -79,6 +99,16 @@
               "description": "Un año de Pro con el mejor precio.",
               "displayName": "Pro anual",
               "locale": "es_MX"
+            },
+            {
+              "description": "A year of Pro at the best price.",
+              "displayName": "Pro Yearly",
+              "locale": "en_US"
+            },
+            {
+              "description": "Um ano de Pro pelo melhor preço.",
+              "displayName": "Pro anual",
+              "locale": "pt_BR"
             }
           ],
           "productID": "peliculas_pro_yearly",

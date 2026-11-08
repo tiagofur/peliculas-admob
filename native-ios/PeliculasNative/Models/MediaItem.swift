@@ -4,7 +4,7 @@ enum MediaKind: String, Codable, Sendable {
   case movie
   case tv
 
-  var label: String { self == .movie ? "Película" : "Serie" }
+  var label: String { self == .movie ? String(localized: "Película") : String(localized: "Serie") }
 }
 
 /// Identidad de un título. TMDB reutiliza números entre películas y series
@@ -55,7 +55,7 @@ struct MediaItem: Identifiable, Hashable, Codable, Sendable {
   init(tmdb: TMDBMovie, kind: MediaKind) {
     self.init(
       id: tmdb.id,
-      title: tmdb.title ?? tmdb.name ?? "Sin título",
+      title: tmdb.title ?? tmdb.name ?? String(localized: "Sin título"),
       overview: tmdb.overview ?? "",
       posterPath: tmdb.posterPath ?? "",
       backdropPath: tmdb.backdropPath ?? "",
@@ -68,7 +68,7 @@ struct MediaItem: Identifiable, Hashable, Codable, Sendable {
   init(detail: TMDBFullDetail, kind: MediaKind) {
     self.init(
       id: detail.id,
-      title: detail.title ?? detail.name ?? "Sin título",
+      title: detail.title ?? detail.name ?? String(localized: "Sin título"),
       overview: detail.overview ?? "",
       posterPath: detail.posterPath ?? "",
       backdropPath: detail.backdropPath ?? "",

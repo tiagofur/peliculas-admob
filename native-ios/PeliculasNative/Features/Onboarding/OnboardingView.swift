@@ -56,7 +56,7 @@ struct OnboardingView: View {
     .interactiveDismissDisabled()
   }
 
-  private func row(_ icon: String, _ color: Color, _ title: String, _ text: String) -> some View {
+  private func row(_ icon: String, _ color: Color, _ title: LocalizedStringKey, _ text: LocalizedStringKey) -> some View {
     HStack(alignment: .top, spacing: 18) {
       Image(systemName: icon)
         .font(.system(size: 30))

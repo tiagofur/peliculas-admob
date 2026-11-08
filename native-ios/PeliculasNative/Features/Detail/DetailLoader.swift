@@ -63,10 +63,10 @@ final class DetailLoader: ObservableObject {
     var parts: [String] = []
     if !item.year.isEmpty { parts.append(item.year) }
     if item.kind == .movie, let r = d.runtime, r > 0 {
-      parts.append(r >= 60 ? "\(r / 60) h \(r % 60) min" : "\(r) min")
+      parts.append(r >= 60 ? String(localized: "\(r / 60) h \(r % 60) min") : String(localized: "\(r) min"))
     }
     if item.kind == .tv, let s = d.numberOfSeasons, s > 0 {
-      parts.append(s == 1 ? "1 temporada" : "\(s) temporadas")
+      parts.append(String(localized: "\(s) temporadas"))
     }
     if let g = d.genres?.prefix(2).map(\.name), !g.isEmpty { parts.append(g.joined(separator: ", ")) }
     return parts
@@ -74,12 +74,12 @@ final class DetailLoader: ObservableObject {
 
   var statusText: String? {
     switch detail?.status {
-    case "Returning Series": return "En emisión"
-    case "Ended": return "Finalizada"
-    case "Canceled": return "Cancelada"
-    case "In Production": return "En producción"
+    case "Returning Series": return String(localized: "En emisión")
+    case "Ended": return String(localized: "Finalizada")
+    case "Canceled": return String(localized: "Cancelada")
+    case "In Production": return String(localized: "En producción")
     case "Released": return nil
-    case "Post Production", "Planned": return "Próximamente"
+    case "Post Production", "Planned": return String(localized: "Próximamente")
     default: return nil
     }
   }
@@ -111,7 +111,7 @@ struct EpisodeItem: Identifiable, Hashable {
   init(tmdb: TMDBEpisode) {
     id = tmdb.id
     number = tmdb.episodeNumber
-    title = tmdb.name ?? "Episodio \(tmdb.episodeNumber)"
+    title = tmdb.name ?? String(localized: "Episodio \(tmdb.episodeNumber)")
     overview = tmdb.overview ?? ""
     stillPath = tmdb.stillPath ?? ""
     runtime = tmdb.runtime

@@ -85,13 +85,14 @@ final class BackendIntegrationTests: XCTestCase {
     XCTAssertFalse(session.isSignedIn)
   }
 
-  func testWrongPasswordShowsSpanishError() async {
+  func testWrongPasswordShowsLocalizedError() async {
     do {
       try await SessionStore.shared.signIn(email: "nadie-\(UUID().uuidString.prefix(6))@peliculas.test", password: "incorrecta123")
       XCTFail("no debería entrar")
     } catch let error as APIError {
       XCTAssertEqual(error.code, "invalid_credentials")
-      XCTAssertEqual(error.errorDescription, "Correo o contraseña incorrectos.")
+      // En el idioma del simulador (la clave base es la frase en español).
+      XCTAssertEqual(error.errorDescription, String(localized: "Correo o contraseña incorrectos."))
     } catch {
       XCTFail("error inesperado \(error)")
     }

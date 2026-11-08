@@ -182,39 +182,23 @@ extension SectionHeader where Destination == EmptyView {
 /// Estado vacío: `ContentUnavailableView` en iOS 17+, equivalente propio antes.
 struct EmptyState<Actions: View>: View {
   let icon: String
-  let title: String
-  let message: String
+  let title: LocalizedStringKey
+  let message: LocalizedStringKey
   @ViewBuilder var actions: Actions
 
   var body: some View {
-    if #available(iOS 17, *) {
-      ContentUnavailableView {
-        Label(title, systemImage: icon)
-      } description: {
-        Text(message)
-      } actions: {
-        actions
-      }
-    } else {
-      VStack(spacing: 12) {
-        Image(systemName: icon)
-          .font(.system(size: 48, weight: .regular))
-          .foregroundStyle(.secondary)
-        Text(title).font(.title3.weight(.semibold))
-        Text(message)
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-          .multilineTextAlignment(.center)
-        actions
-      }
-      .padding(32)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
+    ContentUnavailableView {
+      Label(title, systemImage: icon)
+    } description: {
+      Text(message)
+    } actions: {
+      actions
     }
   }
 }
 
 extension EmptyState where Actions == EmptyView {
-  init(icon: String, title: String, message: String) {
+  init(icon: String, title: LocalizedStringKey, message: LocalizedStringKey) {
     self.init(icon: icon, title: title, message: message) { EmptyView() }
   }
 }
