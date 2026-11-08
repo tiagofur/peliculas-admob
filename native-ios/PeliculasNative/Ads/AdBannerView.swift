@@ -21,6 +21,8 @@ final class AdsManager: ObservableObject {
     #if canImport(GoogleMobileAds)
     guard !started else { return }
     started = true
+    // Capturas para App Store (scripts de appstore/): sin banner ni formulario de consentimiento.
+    if ProcessInfo.processInfo.arguments.contains("-screenshots") { return }
     let params = RequestParameters()
     ConsentInformation.shared.requestConsentInfoUpdate(with: params) { [weak self] _ in
       Task { @MainActor in
