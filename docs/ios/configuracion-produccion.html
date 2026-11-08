@@ -316,7 +316,7 @@ footer { margin-top: 64px; color: var(--muted); font-size: 13px; border-top: 1px
     <!-- 3 -->
     <section class="step" id="server" data-title="Servidor (backend Go)">
       <header><span class="num">03</span><h2>Servidor en producción</h2></header>
-      <p class="why">La app de Release habla con <code>https://api.example.com</code> hasta que pongas tu dominio. Sin el servidor no hay contenido, cuentas ni compras verificadas.</p>
+      <p class="why">La app de Release habla con <code>https://api-peliculas.creapolis.dev</code> (desplegado en el VPS, Puerto 8790 detrás del nginx de Plesk). Sin el servidor no hay contenido, cuentas ni compras verificadas.</p>
 
       <div class="task" data-id="server-deploy">
         <input type="checkbox" id="server-deploy">
@@ -470,7 +470,7 @@ docker compose run --rm --entrypoint /migrate-supabase api</pre><button type="bu
       <header><span class="num">05</span><h2>AdMob</h2></header>
       <p class="why">El SDK y el consentimiento ya están integrados. Faltan los IDs reales y los mensajes de privacidad.</p>
 
-      <div class="note warn"><strong>Ojo:</strong> en tu <code>.env</code>, <code>ADMOB_IOS_BANNER</code> vale <code>ca-app-pub-test-banner-ios</code>, que no es un bloque real. En Release eso significa cero anuncios.</div>
+      <div class="note"><strong>Estado:</strong> <code>ADMOB_IOS_BANNER</code> está comentado en el <code>.env</code>, así que Release usa el banner de prueba oficial de Google. Cuando crees el bloque real, descomenta la variable y ejecuta <code>sync-env.sh</code>.</div>
 
       <div class="task" data-id="admob-app">
         <input type="checkbox" id="admob-app">
@@ -527,7 +527,7 @@ docker compose run --rm --entrypoint /migrate-supabase api</pre><button type="bu
               <li><strong>Términos</strong>: uso del servicio, suscripciones (renovación automática, cancelación desde Ajustes del iPhone), créditos de TMDB.</li>
               <li><strong>Soporte</strong>: página con un correo de contacto.</li>
             </ul>
-            <p>Valores por defecto en <code>Shared.xcconfig</code>: <code>peliculas.creapolis.mx/privacidad</code>, <code>/terminos</code>, <code>/soporte</code>. Cámbialos con <code>IOS_PRIVACY_URL</code>, <code>IOS_TERMS_URL</code> y <code>IOS_SUPPORT_URL</code> en el <code>.env</code>.</p>
+            <p>Configurado vía <code>.env</code> a <code>peliculas.creapolis.dev/privacidad</code>, <code>/terminos</code>, <code>/soporte</code> (el dominio <code>.mx</code> está sin DNS delegado). Se cambian con <code>IOS_PRIVACY_URL</code>, <code>IOS_TERMS_URL</code> y <code>IOS_SUPPORT_URL</code> en el <code>.env</code>.</p>
             <div class="note">El paywall usa el EULA estándar de Apple además de tus términos. Si publicas uno propio, enlázalo en la descripción de la app.</div>
           </div>
         </div>
