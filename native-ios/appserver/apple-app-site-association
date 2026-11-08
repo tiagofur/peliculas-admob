@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "T5SKULSP2M.mx.creapolis.peliculas.native"
+        ],
+        "components": [
+          { "/": "/movie/*", "comment": "Ficha de película" },
+          { "/": "/pelicula/*", "comment": "Ficha de película (alias)" },
+          { "/": "/serie/*", "comment": "Ficha de serie" },
+          { "/": "/tv/*", "comment": "Ficha de serie (alias)" },
+          { "/": "/trending", "comment": "Inicio / tendencias" }
+        ]
+      }
+    ]
+  }
+}

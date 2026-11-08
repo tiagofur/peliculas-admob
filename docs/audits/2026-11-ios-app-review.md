@@ -178,7 +178,7 @@ El "Pro" de Flutter es un purchases service local (sin IAP real); el de iOS ya u
 | 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (PR [#163](https://github.com/tiagofur/peliculas-admob/pull/163)) |
 | 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (PR #163) |
 | 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ✅ **hecha** (PR #163) |
-| 4. Features nuevas | Estadísticas ✓ · Moods ✓ · Personas ✓ · Historial ✓ · Universal links ⏳ (requiere AASA en servidor) | 🚧 casi completa (PR #163) |
+| 4. Features nuevas | Estadísticas ✓ · Moods ✓ · Personas ✓ · Historial ✓ · Universal links ✅ | ✅ **completa** (PR #163) |
 
 ### Notas de la fase 4 (2026-11-08)
 
@@ -203,6 +203,31 @@ El "Pro" de Flutter es un purchases service local (sin IAP real); el de iOS ya u
 - i18n: 30 claves nuevas (en + pt-BR), incluidas interpoladas (`%lld películas · %lld series`).
 - Batería completa: **57/57 tests** (+4 PhaseFourTests). Captura verificada: fila Estadísticas
   y botón Historial visibles en Biblioteca.
+
+### Universal links (2026-11-08, cierre de la fase 4)
+
+- **Dominio elegido: `peliculas.creapolis.dev`** (no el apex) — ya era subdominio Plesk y
+  hospeda la web Flutter: con la app instalada el enlace abre la app nativa (AASA) y sin ella
+  el usuario cae en la web que ya existía. Cero redirects; el share de la app ahora emite
+  enlaces propios en vez de themoviedb.org.
+- **App**: entitlement `applinks:peliculas.creapolis.dev` (junto a SIWA/APS),
+  `MediaItem.shareURL` → `https://peliculas.creapolis.dev/movie|serie/{id}`,
+  `DeepLinkRouter.open` maneja https del dominio (`/movie|pelicula|serie|tv/{id}`, `/trending`),
+  `DeepLinkRouter.webDomain` como fuente única. +3 tests (router https + shareURL).
+- **Servidor** (deployado y verificado): AASA versionada en
+  `native-ios/appserver/apple-app-site-association` (`appIDs: T5SKULSP2M.mx.creapolis.peliculas.native`,
+  componentes `/movie|pelicula|serie|tv/*` y `/trending`), copiada a
+  `ordo-vps:/opt/peliculas/aasa/` y servida vía location exacta en
+  `/var/www/vhosts/system/peliculas.creapolis.dev/conf/vhost_nginx.conf`
+  (`default_type application/json` + `alias`), aplicada con
+  `plesk sbin httpdmng --reconfigure-domain`. Verificado: `HTTP/2 200`,
+  `content-type: application/json`, JSON válido, web Flutter intacta (`/movie/550` sigue en HTML).
+- **Verificación end-to-end en simulador**: abrir el enlace https con la app instalada
+  abre la ficha nativa (El club de la pelea) — AASA + entitlement match OK.
+- **Nota para build a device**: el entitlement nuevo requiere regenerar el provisioning
+  profile con la capability Associated Domains — con firma automática Xcode lo hace solo;
+  si un build de device falla, abrir Xcode → Signing & Capabilities una vez.
+- Batería final: **60/60 tests**.
 
 ### Notas de la fase 3 (2026-11-08)
 
