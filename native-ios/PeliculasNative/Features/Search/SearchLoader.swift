@@ -24,6 +24,8 @@ final class SearchLoader: ObservableObject {
   @Published private(set) var history: [String] = []
   @Published private(set) var movieGenres: [TMDBGenre] = []
   @Published private(set) var tvGenres: [TMDBGenre] = []
+  /// Actores/directores que salen en la búsqueda "Todo".
+  @Published private(set) var people: [TMDBPerson] = []
 
   /// Infinite scroll de resultados (igual que en Flutter). Tope defensivo de 10 páginas.
   private(set) var done = false
@@ -71,20 +73,37 @@ final class SearchLoader: ObservableObject {
 
   private func run(_ q: String) async {
     defer { searching = false }
+    people = []
     do {
-      let page1 = try await fetchResults(q, page: 1)
-      guard !Task.isCancelled, q == trimmed else { return }
-      results = page1.items
-      page = 1
-      done = page1.items.isEmpty || 1 >= min(maxPages, max(1, page1.totalPages))
-      failed = false
-      if !page1.items.isEmpty { addHistory(q) }
+      switch scope {
+      case .all:
+        // Personas en paralelo con títulos; un fallo de personas no tumba la búsqueda.
+        async let peopleTask = TMDBClient.searchPeople(q)
+        let page1 = try await fetchResults(q, page: 1)
+        let found = (try? await peopleTask) ?? []
+        guard !Task.isCancelled, q == trimmed else { return }
+        finish(page1, people: found, q: q)
+      case .movies, .series:
+        let page1 = try await fetchResults(q, page: 1)
+        guard !Task.isCancelled, q == trimmed else { return }
+        finish(page1, people: [], q: q)
+      }
     } catch {
       guard !Task.isCancelled else { return }
       results = []
       failed = true
       done = false
     }
+  }
+
+  private func finish(_ page1: PageBatch, people found: [TMDBPerson], q: String) {
+    results = page1.items
+    page = 1
+    done = page1.items.isEmpty || 1 >= min(maxPages, max(1, page1.totalPages))
+    failed = false
+    // Personas con foto y nombre; el resto queda fuera de la fila.
+    self.people = Array(found.filter { $0.profilePath != nil && $0.name != nil }.prefix(3))
+    if !page1.items.isEmpty { addHistory(q) }
   }
 
   private struct PageBatch {

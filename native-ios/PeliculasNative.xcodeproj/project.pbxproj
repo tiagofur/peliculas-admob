@@ -9,9 +9,13 @@
 /* Begin PBXBuildFile section */
 		049F1B69CBC43F4EE6345D56 /* AchievementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA189F8A033716DF68AC985 /* AchievementsView.swift */; };
 		4C8D1E7F2A9B3C6D5E0F1A2B /* PagedListLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3F5A7C1B8D2E4F6A0C3B5D /* PagedListLoader.swift */; };
+		2D4F6A8C0E2B4D6F8A0C2E4B6D8F0A3 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C5E7A9B1D3F5B7D9A1C3E5B7D9F1A3C /* StatsView.swift */; };
+		5E7A9B1D3F5B7D9A1C3E5B7D9F1A3C2 /* Moods.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E6B8D0F2A4C6E8B0D2F4A6C8E0B3C5E /* Moods.swift */; };
+		7B9D1F3A5C7E9B1D3F5A7C9E1B3D5F7B /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9D1F3A5C7E9B1D3F5A7C9E1B3D5F7A /* HistoryView.swift */; };
 		7D2A9E4C1F6B3E8D5A0C2F4E /* PaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E8D1C4A7F2E9B6D3C0A8F5 /* PaginationTests.swift */; };
 		3A7C5E9B2D4F6A8C0E1B3D5F /* DeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0E2A4B6D8F0A2C4E6B8D0F /* DeepLinkTests.swift */; };
 		2B9D4F6A8C1E3B5D7F9A0C2E4B6D8F0A /* QuickWinsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8F0A2C4E6B8D1F3A5C7E9B1D3F5A7C /* QuickWinsTests.swift */; };
+		6E8B0D2F4A6C8E0B3C5E7A9B1D3F5B7D /* PhaseFourTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2D4F6A8C0E2B4D6F8A0C2E4B6D8F0A /* PhaseFourTests.swift */; };
 		1015B06EACFB1C49F06E1EB6 /* ProStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3952FE76712F9B9810AF60F /* ProStoreTests.swift */; };
 		142154C8DC70578F60872E33 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42C43740D2846FACCFAF5C4D /* AccountView.swift */; };
 		15CC6F565AD418D175D97536 /* ReminderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0E1655A93DE389EF5A8077 /* ReminderManager.swift */; };
@@ -161,6 +165,10 @@
 		B5E8D1C4A7F2E9B6D3C0A8F5 /* PaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationTests.swift; sourceTree = "<group>"; };
 		8C0E2A4B6D8F0A2C4E6B8D0F /* DeepLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkTests.swift; sourceTree = "<group>"; };
 		5D8F0A2C4E6B8D1F3A5C7E9B1D3F5A7C /* QuickWinsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickWinsTests.swift; sourceTree = "<group>"; };
+		3C5E7A9B1D3F5B7D9A1C3E5B7D9F1A3C /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		7B9D1F3A5C7E9B1D3F5A7C9E1B3D5F7A /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		4E6B8D0F2A4C6E8B0D2F4A6C8E0B3C5E /* Moods.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Moods.swift; sourceTree = "<group>"; };
+		0B2D4F6A8C0E2B4D6F8A0C2E4B6D8F0A /* PhaseFourTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhaseFourTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -219,9 +227,18 @@
 				D866B3FCBB2E68A9A9114B26 /* Onboarding */,
 				7C5E6AC7FDE381BBC0844D34 /* Pro */,
 				EB81DFD8FDAFFCFB901D2691 /* Search */,
+				9A2C4E6B8D0F2A4C6E8B0D2F4A6C8E0B /* Stats */,
 				53375DC039FC4635DDBE25BF /* UpNext */,
 			);
 			path = Features;
+			sourceTree = "<group>";
+		};
+		9A2C4E6B8D0F2A4C6E8B0D2F4A6C8E0B /* Stats */ = {
+			isa = PBXGroup;
+			children = (
+				3C5E7A9B1D3F5B7D9A1C3E5B7D9F1A3C /* StatsView.swift */,
+			);
+			path = Stats;
 			sourceTree = "<group>";
 		};
 		231E83029D33C1CBBF52D63F /* Gamification */ = {
@@ -245,6 +262,7 @@
 		30153FD8EFE75E1355EF82EF /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				7B9D1F3A5C7E9B1D3F5A7C9E1B3D5F7A /* HistoryView.swift */,
 				6F1B6DA7EDE43B3FF08F38C2 /* LibraryStore.swift */,
 				129BC08048224DCE01A1AA3F /* LibraryView.swift */,
 				B710F22E50570BC91768D323 /* SyncModels.swift */,
@@ -317,6 +335,7 @@
 				8C0E2A4B6D8F0A2C4E6B8D0F /* DeepLinkTests.swift */,
 				F2433A927E343C75666E7116 /* LevelTests.swift */,
 				B724979FD46847A402B0A461 /* ModelTests.swift */,
+				0B2D4F6A8C0E2B4D6F8A0C2E4B6D8F0A /* PhaseFourTests.swift */,
 				B5E8D1C4A7F2E9B6D3C0A8F5 /* PaginationTests.swift */,
 				B3952FE76712F9B9810AF60F /* ProStoreTests.swift */,
 				5D8F0A2C4E6B8D1F3A5C7E9B1D3F5A7C /* QuickWinsTests.swift */,
@@ -396,6 +415,7 @@
 		EB81DFD8FDAFFCFB901D2691 /* Search */ = {
 			isa = PBXGroup;
 			children = (
+				4E6B8D0F2A4C6E8B0D2F4A6C8E0B3C5E /* Moods.swift */,
 				091E49D887A6EC3B197137C3 /* SearchLoader.swift */,
 				F6795CEEA7C40AB478665769 /* SearchView.swift */,
 			);
@@ -575,6 +595,7 @@
 				6448D261F4DB2762C60C2D41 /* LibraryStore.swift in Sources */,
 				18173CFFF5AE533BF2F8C419 /* LibraryView.swift in Sources */,
 				40EE879BE8880D697D4F0557 /* MediaItem.swift in Sources */,
+				5E7A9B1D3F5B7D9A1C3E5B7D9F1A3C2 /* Moods.swift in Sources */,
 				EFDA5745B5DA7F3E57C33529 /* OnboardingView.swift in Sources */,
 				41505899E6C6FC141A4F06F3 /* PaywallView.swift in Sources */,
 				B7BE31006F3F4C1BE5067DC3 /* PeliculasNativeApp.swift in Sources */,
@@ -593,6 +614,8 @@
 				F587D9287F868E4DBC5DB953 /* SyncModels.swift in Sources */,
 				D816B829E9DB6B5BCE737C3B /* TMDBClient.swift in Sources */,
 				757DACA4181A2A9DE1E1A5BA /* TrailerView.swift in Sources */,
+				2D4F6A8C0E2B4D6F8A0C2E4B6D8F0A3 /* StatsView.swift in Sources */,
+				7B9D1F3A5C7E9B1D3F5A7C9E1B3D5F7B /* HistoryView.swift in Sources */,
 				C0BFC4571B8EA8E5DC6EEC2D /* UpNextStore.swift in Sources */,
 				25A3F739B15CF2F8C4BDA3F0 /* UpNextView.swift in Sources */,
 			);
@@ -608,6 +631,7 @@
 				87A219177F7013AD9E46517F /* ModelTests.swift in Sources */,
 				7D2A9E4C1F6B3E8D5A0C2F4E /* PaginationTests.swift in Sources */,
 				1015B06EACFB1C49F06E1EB6 /* ProStoreTests.swift in Sources */,
+				6E8B0D2F4A6C8E0B3C5E7A9B1D3F5B7D /* PhaseFourTests.swift in Sources */,
 				2B9D4F6A8C1E3B5D7F9A0C2E4B6D8F0A /* QuickWinsTests.swift in Sources */,
 				AA89FA33E381241635EFDA58 /* ProviderLinksTests.swift in Sources */,
 				32958594E04A6CBB8F32C6BA /* SyncTests.swift in Sources */,

@@ -75,6 +75,19 @@ final class LibraryStore: ObservableObject {
     return r.score
   }
 
+  /// Lo visto ordenado de más a menos reciente (para el historial).
+  func watchedLog() -> [(item: MediaItem, date: Date)] {
+    (marks[.watched] ?? [:]).filter { !$0.value.deleted }
+      .sorted { $0.value.updatedAt > $1.value.updatedAt }
+      .compactMap { key, mark in item(for: key).map { ($0, mark.updatedAt) } }
+  }
+
+  /// Estadísticas locales (actividad, épocas, notas) para la pantalla de Stats.
+  var stats: LibraryStats {
+    LibraryStats.build(watched: marks[.watched] ?? [:], ratings: ratings,
+                       episodeCount: watchedEpisodeCount, items: items)
+  }
+
   func ratedItems() -> [MediaItem] {
     ratings.filter { !$0.value.deleted }
       .sorted { $0.value.updatedAt > $1.value.updatedAt }

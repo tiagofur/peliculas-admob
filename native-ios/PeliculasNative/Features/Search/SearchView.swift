@@ -17,14 +17,19 @@ struct SearchView: View {
                        message: loader.failed ? "Revisa tu red e inténtalo de nuevo." : "Prueba con otro título o revisa la ortografía.")
               .frame(minHeight: 360)
           } else {
-            PosterGrid(items: loader.results) { $0.kind == .tv && loader.scope == .all ? String(localized: "SERIE") : nil }
-              .padding(.vertical, 12)
-            if !loader.done {
-              ProgressView()
-                .opacity(loader.loadingMore ? 1 : 0)
-                .padding()
-                .onAppear { Task { await loader.loadMore() } }
+            VStack(alignment: .leading, spacing: 16) {
+              if !loader.people.isEmpty {
+                peopleSection
+              }
+              PosterGrid(items: loader.results) { $0.kind == .tv && loader.scope == .all ? String(localized: "SERIE") : nil }
+              if !loader.done {
+                ProgressView()
+                  .opacity(loader.loadingMore ? 1 : 0)
+                  .padding()
+                  .onAppear { Task { await loader.loadMore() } }
+              }
             }
+            .padding(.vertical, 12)
           }
         }
       }
@@ -35,6 +40,38 @@ struct SearchView: View {
       .accountToolbar()
     }
     .task { await loader.loadGenres() }
+  }
+
+  /// Actores/directores encontrados en "Todo": fila compacta hacia la ficha de persona.
+  private var peopleSection: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text("Personas")
+        .font(.title3.weight(.bold))
+        .padding(.horizontal, 20)
+        .accessibilityAddTraits(.isHeader)
+      ForEach(loader.people, id: \.id) { person in
+        NavigationLink(destination: ActorView(personId: person.id, personName: person.name ?? "")) {
+          HStack(spacing: 12) {
+            InitialsAvatar(initials: Self.initials(of: person.name ?? ""))
+            VStack(alignment: .leading, spacing: 1) {
+              Text(person.name ?? "").font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
+              Text("Ver filmografía").font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+          }
+          .padding(.horizontal, 20)
+          .padding(.vertical, 8)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+      }
+    }
+  }
+
+  private static func initials(of name: String) -> String {
+    name.split(separator: " ").prefix(2).compactMap(\.first).map(String.init).joined().uppercased()
   }
 
   private var browse: some View {
@@ -61,10 +98,27 @@ struct SearchView: View {
         }
         .padding(.horizontal, 20)
       }
+      moodGrid
       genreGrid(title: "Explorar películas", genres: loader.movieGenres, kind: .movie)
       genreGrid(title: "Explorar series", genres: loader.tvGenres, kind: .tv)
     }
     .padding(.vertical, 12)
+  }
+
+  /// "Descubrir": moods curados con filtros fijos de discover.
+  private var moodGrid: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Descubrir").font(.title3.weight(.bold)).padding(.horizontal, 20).accessibilityAddTraits(.isHeader)
+      LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+        ForEach(Mood.allCases) { mood in
+          NavigationLink(destination: PagedResultsView(title: String(localized: mood.title), source: mood.source)) {
+            MoodTile(mood: mood)
+          }
+          .buttonStyle(.plain)
+        }
+      }
+      .padding(.horizontal, 20)
+    }
   }
 
   @ViewBuilder
@@ -144,9 +198,8 @@ private struct GenreResultsView: View {
   }
 
   var body: some View {
-    GenreResultsList(genre: genre, source: source)
+    PagedResultsView(title: genre.name, source: source, emptyMessage: "No hay títulos en este género ahora mismo.")
       .id(source) // cambiar filtro ⇒ lista nueva desde la página 1
-      .navigationTitle(genre.name)
       .toolbar { filterMenu }
   }
 
@@ -179,14 +232,18 @@ private struct GenreResultsView: View {
   }()
 }
 
-private struct GenreResultsList: View {
-  let genre: TMDBGenre
+/// Grid paginado con infinite scroll para un `MediaListSource` cualquiera
+/// (género, mood…). Estados: cargando, error con reintentar, vacío.
+struct PagedResultsView: View {
+  let title: String
   let source: MediaListSource
+  let emptyMessage: LocalizedStringKey
   @StateObject private var loader: PagedListLoader
 
-  init(genre: TMDBGenre, source: MediaListSource) {
-    self.genre = genre
+  init(title: String, source: MediaListSource, emptyMessage: LocalizedStringKey = "Nada por aquí") {
+    self.title = title
     self.source = source
+    self.emptyMessage = emptyMessage
     _loader = StateObject(wrappedValue: PagedListLoader(source: source))
   }
 
@@ -204,7 +261,7 @@ private struct GenreResultsList: View {
       } else if loader.items.isEmpty {
         EmptyState(icon: "film",
                    title: "Nada por aquí",
-                   message: "No hay títulos en este género ahora mismo.")
+                   message: emptyMessage)
       } else {
         ScrollView {
           PosterGrid(items: loader.items)
@@ -213,7 +270,7 @@ private struct GenreResultsList: View {
         }
       }
     }
-    .navigationTitle(genre.name)
+    .navigationTitle(Text(verbatim: title))
     .task { if loader.items.isEmpty { await loader.loadMore() } }
   }
 }

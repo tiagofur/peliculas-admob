@@ -58,6 +58,12 @@ enum TMDBClient {
     try await get("/search/\(kind.rawValue)", query: ["query": query, "include_adult": "false", "page": "\(page)"])
   }
 
+  /// Actores/directores por nombre (solo primera página: 3 resultados en UI).
+  static func searchPeople(_ query: String) async throws -> [TMDBPerson] {
+    let r: TMDBPersonsResponse = try await get("/search/person", query: ["query": query, "include_adult": "false", "page": "1"])
+    return r.results
+  }
+
   static func genres(kind: MediaKind) async throws -> [TMDBGenre] {
     let r: TMDBGenreList = try await get("/genre/\(kind.rawValue)/list")
     return r.genres
@@ -146,6 +152,11 @@ enum TMDBClient {
         q[kind == .movie ? "primary_release_date.lte" : "first_air_date.lte"] = today
       }
       return try await get("/discover/\(kind.rawValue)", query: q)
+    case .discover(let kind, let genreIds, let voteFloor, let minRating, let order):
+      var q: [String: String] = ["sort_by": order, "include_adult": "false", "page": "\(page)",
+                                 "vote_count.gte": "\(voteFloor)", "with_genres": genreIds]
+      if let minRating { q["vote_average.gte"] = "\(minRating)" }
+      return try await get("/discover/\(kind.rawValue)", query: q)
     case .search(let query, let kind):
       return try await searchPage(query, kind: kind, page: page)
     }
@@ -160,11 +171,13 @@ enum MediaListSource: Hashable {
   case nowPlaying
   case upcoming
   case genre(kind: MediaKind, genreId: Int, year: Int? = nil, sort: DiscoverSort = .popularity)
+  case discover(kind: MediaKind, genreIds: String, voteFloor: Int, minRating: Double? = nil, order: String = "popularity.desc")
   case search(query: String, kind: MediaKind)
 
   var kind: MediaKind {
     switch self {
-    case .trending(let kind, _), .topRated(let kind), .genre(let kind, _, _, _), .search(_, let kind):
+    case .trending(let kind, _), .topRated(let kind), .genre(let kind, _, _, _),
+         .discover(let kind, _, _, _, _), .search(_, let kind):
       return kind
     case .nowPlaying, .upcoming:
       return .movie
@@ -198,6 +211,8 @@ enum DiscoverSort: Hashable {
 // MARK: - Modelos TMDB
 
 struct TMDBResponse: Decodable { let results: [TMDBMovie] }
+
+struct TMDBPersonsResponse: Decodable { let results: [TMDBPerson] }
 
 /// Respuesta paginada de TMDB (`page`, `results`, `total_pages`).
 struct TMDBPagedMovies: Decodable {

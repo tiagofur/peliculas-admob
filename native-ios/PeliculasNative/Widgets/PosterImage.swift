@@ -196,8 +196,9 @@ enum ShareSheet {
 }
 
 extension MediaItem {
+  /// Universal link: con la app abre la ficha; sin ella, la web (Flutter).
   var shareURL: URL {
-    URL(string: "https://www.themoviedb.org/\(kind == .movie ? "movie" : "tv")/\(id)")!
+    URL(string: "https://peliculas.creapolis.dev/\(kind == .movie ? "movie" : "serie")/\(id)")!
   }
 
   var shareText: String { String(localized: "Mira «\(title)» — la encontré en Películas") }

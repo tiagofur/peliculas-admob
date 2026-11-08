@@ -175,12 +175,59 @@ El "Pro" de Flutter es un purchases service local (sin IAP real); el de iOS ya u
 
 | Fase | Alcance | Estado |
 |---|---|---|
-| 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (rama `feat/ios-infinite-scroll`) |
-| 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (misma rama) |
-| 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ✅ **hecha** (misma rama) |
-| 4. Features nuevas | Estadísticas/Wrapped → Mood discovery → búsqueda de personas → historial → universal links | ⏳ pendiente |
+| 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (PR [#163](https://github.com/tiagofur/peliculas-admob/pull/163)) |
+| 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (PR #163) |
+| 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ✅ **hecha** (PR #163) |
+| 4. Features nuevas | Estadísticas ✓ · Moods ✓ · Personas ✓ · Historial ✓ · Universal links ✅ | ✅ **completa** (PR #163) |
 
-Cada fase sale en PR separado sobre `native-ios/`.
+### Notas de la fase 4 (2026-11-08)
+
+- **Estadísticas** (`Features/Stats/StatsView.swift`): `LibraryStats.build` puro y testeable
+  (vistos película/serie, nota media sin borradas, ventana fija de 12 meses de actividad con
+  ceros, décadas por año de estreno). UI con Swift Charts (barras actividad + épocas) y tiles.
+  Entrada: fila "Estadísticas" en Biblioteca. El Wrapped compartible (imagen) queda como
+  follow-up — requiere render a UIImage + ShareLink.
+- **Descubrimiento por mood** (`Moods.swift`): 8 moods curados ("Joyas ocultas", "Noche
+  romántica"…) → `MediaListSource.discover` con géneros + piso de votos + nota mínima
+  (paridad con las categorías de Flutter). Grid "Descubrir" en Buscar → `PagedResultsView`
+  (grid paginado genérico que ahora también usan los géneros).
+- **Búsqueda de personas**: `searchPeople` (`/search/person`) en paralelo con los títulos
+  solo en el scope "Todo"; hasta 3 personas con foto → fila "Personas" → `ActorView`.
+  Un fallo de personas no tumba la búsqueda.
+- **Historial completo** (`HistoryView`): `LibraryStore.watchedLog()` (visto ordenado por
+  fecha real de marca), agrupado por mes con `List` insetGrouped. Entrada: botón reloj en la
+  toolbar de Biblioteca.
+- **Universal links**: NO empezado aquí a propósito — requiere entitlement + rutas https y
+  el archivo `apple-app-site-association` servido en `creapolis.dev` (Plesk), además de
+  decidir el dominio/rutas. Se propone como fase aparte con paso de servidor.
+- i18n: 30 claves nuevas (en + pt-BR), incluidas interpoladas (`%lld películas · %lld series`).
+- Batería completa: **57/57 tests** (+4 PhaseFourTests). Captura verificada: fila Estadísticas
+  y botón Historial visibles en Biblioteca.
+
+### Universal links (2026-11-08, cierre de la fase 4)
+
+- **Dominio elegido: `peliculas.creapolis.dev`** (no el apex) — ya era subdominio Plesk y
+  hospeda la web Flutter: con la app instalada el enlace abre la app nativa (AASA) y sin ella
+  el usuario cae en la web que ya existía. Cero redirects; el share de la app ahora emite
+  enlaces propios en vez de themoviedb.org.
+- **App**: entitlement `applinks:peliculas.creapolis.dev` (junto a SIWA/APS),
+  `MediaItem.shareURL` → `https://peliculas.creapolis.dev/movie|serie/{id}`,
+  `DeepLinkRouter.open` maneja https del dominio (`/movie|pelicula|serie|tv/{id}`, `/trending`),
+  `DeepLinkRouter.webDomain` como fuente única. +3 tests (router https + shareURL).
+- **Servidor** (deployado y verificado): AASA versionada en
+  `native-ios/appserver/apple-app-site-association` (`appIDs: T5SKULSP2M.mx.creapolis.peliculas.native`,
+  componentes `/movie|pelicula|serie|tv/*` y `/trending`), copiada a
+  `ordo-vps:/opt/peliculas/aasa/` y servida vía location exacta en
+  `/var/www/vhosts/system/peliculas.creapolis.dev/conf/vhost_nginx.conf`
+  (`default_type application/json` + `alias`), aplicada con
+  `plesk sbin httpdmng --reconfigure-domain`. Verificado: `HTTP/2 200`,
+  `content-type: application/json`, JSON válido, web Flutter intacta (`/movie/550` sigue en HTML).
+- **Verificación end-to-end en simulador**: abrir el enlace https con la app instalada
+  abre la ficha nativa (El club de la pelea) — AASA + entitlement match OK.
+- **Nota para build a device**: el entitlement nuevo requiere regenerar el provisioning
+  profile con la capability Associated Domains — con firma automática Xcode lo hace solo;
+  si un build de device falla, abrir Xcode → Signing & Capabilities una vez.
+- Batería final: **60/60 tests**.
 
 ### Notas de la fase 3 (2026-11-08)
 
