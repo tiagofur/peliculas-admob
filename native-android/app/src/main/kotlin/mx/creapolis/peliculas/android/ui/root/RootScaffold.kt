@@ -26,6 +26,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -70,7 +71,8 @@ fun RootScaffold() {
   val navController = rememberNavController()
   val backStack by navController.currentBackStackEntryAsState()
   val current = AppTab.entries.firstOrNull { it.route == backStack?.destination?.route } ?: AppTab.HOME
-  val container = (LocalContext.current.applicationContext as PeliculasApp).container
+  val context = LocalContext.current
+  val container = (context.applicationContext as PeliculasApp).container
   val library = container.library
   val session = container.session
   val sessionState by session.state.collectAsState()
@@ -78,6 +80,13 @@ fun RootScaffold() {
   val libraryState by library.state.collectAsState()
   val proStore = container.proStore
   val proState by proStore.state.collectAsState()
+
+  val appPrefs = androidx.compose.runtime.remember {
+    context.getSharedPreferences("peliculas.app.v1", android.content.Context.MODE_PRIVATE)
+  }
+  var onboarded by androidx.compose.runtime.remember {
+    androidx.compose.runtime.mutableStateOf(appPrefs.getBoolean("onboarded.v2", false))
+  }
 
   // Evalúa logros en cada cambio relevante de la biblioteca (como iOS).
   androidx.compose.runtime.LaunchedEffect(
@@ -370,6 +379,25 @@ fun RootScaffold() {
         achievement = toastState.toast,
         onDismiss = achievements::dismissToast,
       )
+
+      if (!onboarded) {
+        androidx.compose.ui.window.Dialog(
+          onDismissRequest = {},
+          properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+          mx.creapolis.peliculas.android.features.onboarding.OnboardingScreen(
+            onDone = {
+              appPrefs.edit().putBoolean("onboarded.v2", true).apply()
+              onboarded = true
+            },
+            onSignIn = {
+              appPrefs.edit().putBoolean("onboarded.v2", true).apply()
+              onboarded = true
+              navController.navigate("signin")
+            },
+          )
+        }
+      }
 
       if (proState.showingPaywall) {
         androidx.compose.ui.window.Dialog(

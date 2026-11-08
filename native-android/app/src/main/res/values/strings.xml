@@ -212,4 +212,15 @@
   <string name="widget_desc">Las películas más vistas de hoy.</string>
   <string name="widget_trending_today">Tendencia hoy</string>
   <string name="widget_tap_to_open">Toca para abrir la app</string>
+  <string name="onboarding_welcome">Bienvenido a\nPelículas</string>
+  <string name="onboarding_f1_title">Sigue tus series</string>
+  <string name="onboarding_f1_desc">Marca episodios y mira en Siguiente qué toca ver hoy.</string>
+  <string name="onboarding_f2_title">Descubre qué ver</string>
+  <string name="onboarding_f2_desc">Tendencias, estrenos y recomendaciones según lo que te gusta.</string>
+  <string name="onboarding_f3_title">Dónde verla</string>
+  <string name="onboarding_f3_desc">Netflix, Prime Video, Disney+ y más: abre la app correcta con un toque.</string>
+  <string name="onboarding_f4_title">En todos tus dispositivos</string>
+  <string name="onboarding_f4_desc">Con tu cuenta, tu biblioteca se sincroniza sola.</string>
+  <string name="onboarding_continue">Continuar</string>
+  <string name="onboarding_already_have_account">Ya tengo cuenta</string>
 </resources>

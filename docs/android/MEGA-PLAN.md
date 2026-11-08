@@ -5,10 +5,18 @@
 > Código nuevo en `native-android/`. Producto: [`PRODUCT.md`](../../PRODUCT.md) ·
 > Plan iOS que cierra: [audits/2026-11-ios-app-review.md](../audits/2026-11-ios-app-review.md)
 >
-> Redactado: 2026-11-08 · Estado: 🚧 ejecución — **F0 ✅** (#166) · **F1 ✅** (#167) · **F2 ✅** (géneros con orden/año, 8 moods, búsqueda con personas e historial — verificado en emulador)
-> F1 incluye: Kotlin 2.4.10 + KGP clásico (`android.builtInKotlin=false` + `android.newDsl=false`,
-> necesario para Coil 3.6 que requiere Kotlin 2.4) y material3 1.5.0-rc01 (en 1.4.0 stable las
-> APIs de theming Expressive aún son `internal`).
+> Redactado: 2026-11-08 · Estado: ✅ **IMPLEMENTACIÓN COMPLETA (F0 - F9)**
+> 
+> • **F0 ✅** (#166): Proyecto Gradle, M3 Expressive, navegación y puertos del core
+> • **F1 ✅** (#167): Home carrusel, rails, Ver todo con infinite scroll y Coil 3
+> • **F2 ✅** (#168): Géneros con filtros orden/año, 8 moods, búsqueda con personas
+> • **F3 ✅** (#169): Detalle completo, reseñas, dirección/creador, temporadas, tráiler, providers
+> • **F4 ✅** (#170): Biblioteca sincronizada, persistencia, e2e real contra backend
+> • **F5 ✅** (#171): Pestaña Siguiente (UpNext), episodios al aire y progreso
+> • **F6 ✅** (#172): 14 logros con niveles, estadísticas con Canvas e historial por mes
+> • **F7 ✅** (#173): Google Play Billing 7, PaywallScreen M3E y banners AdMob
+> • **F8 ✅** (#174): App Links (`assetlinks.json` en prod), Widget Glance y WorkManager
+> • **F9 ✅**: Localización completa (ES/EN/PT), Onboarding de bienvenida y guía Play Store (`PLAYSTORE.md`)
 
 ---
 
