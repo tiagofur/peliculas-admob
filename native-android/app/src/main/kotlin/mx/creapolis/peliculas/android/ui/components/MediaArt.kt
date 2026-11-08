@@ -1,6 +1,7 @@
 package mx.creapolis.peliculas.android.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -26,8 +27,8 @@ import mx.creapolis.peliculas.android.core.network.TmdbImage
 
 /** Póster con título y pie (año · nota). Gemelo de `PosterCard` en iOS. */
 @Composable
-fun PosterCard(item: MediaItem, modifier: Modifier = Modifier, badge: String? = null) {
-  Column(modifier = modifier.width(104.dp)) {
+fun PosterCard(item: MediaItem, modifier: Modifier = Modifier, badge: String? = null, onClick: () -> Unit = {}) {
+  Column(modifier = modifier.width(104.dp).clickable(onClick = onClick)) {
     Box(
       Modifier
         .fillMaxWidth()

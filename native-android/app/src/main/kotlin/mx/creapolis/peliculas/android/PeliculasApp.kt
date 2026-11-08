@@ -8,8 +8,8 @@ import android.app.Application
  * F0 aún no tiene stores — se irán añadiendo por fase.
  */
 class AppContainer {
-  // F1: HomeLoader / PagedListLoader
-  // F4: SessionStore / LibraryStore / AppDatabase de prefs
+  /** Biblioteca compartida; en F3 vive en memoria, F4 la persiste y sincroniza. */
+  val library = mx.creapolis.peliculas.android.core.library.LibraryStore()
 }
 
 class PeliculasApp : Application() {

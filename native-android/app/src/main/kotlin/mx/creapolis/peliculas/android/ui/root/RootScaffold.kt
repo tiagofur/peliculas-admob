@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LibraryBooks
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
@@ -24,15 +25,23 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import mx.creapolis.peliculas.android.PeliculasApp
 import mx.creapolis.peliculas.android.R
+import mx.creapolis.peliculas.android.core.model.MediaItem
+import mx.creapolis.peliculas.android.core.model.MediaKind
+import mx.creapolis.peliculas.android.core.network.MediaListSource
+import mx.creapolis.peliculas.android.features.detail.DetailScreen
 import mx.creapolis.peliculas.android.features.home.HomeScreen
 import mx.creapolis.peliculas.android.features.home.SeeAllScreen
+import mx.creapolis.peliculas.android.features.search.SearchScreen
+import mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
 import mx.creapolis.peliculas.android.ui.screens.PlaceholderScreen
 
 /** Destinos raíz (espejo de `AppTab` en iOS). */
@@ -43,11 +52,15 @@ enum class AppTab(val route: String) {
   SEARCH("search"),
 }
 
+/** Ruta de detalle para un título. */
+private fun detailRoute(item: MediaItem): String = "detail/${item.kind.rawValue}/${item.id}"
+
 @Composable
 fun RootScaffold() {
   val navController = rememberNavController()
   val backStack by navController.currentBackStackEntryAsState()
   val current = AppTab.entries.firstOrNull { it.route == backStack?.destination?.route } ?: AppTab.HOME
+  val library = (LocalContext.current.applicationContext as PeliculasApp).container.library
 
   Scaffold(
     bottomBar = {
@@ -78,29 +91,66 @@ fun RootScaffold() {
     Box(Modifier.fillMaxSize().padding(padding)) {
       NavHost(navController = navController, startDestination = AppTab.HOME.route) {
         composable(AppTab.HOME.route) {
-          HomeScreen(onSeeAll = { route -> navController.navigate("seeall/${route.key}") })
+          HomeScreen(
+            onSeeAll = { route -> navController.navigate("seeall/${route.key}") },
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+          )
         }
         composable(AppTab.UP_NEXT.route) { PlaceholderScreen(AppTab.UP_NEXT) }
         composable(AppTab.LIBRARY.route) { PlaceholderScreen(AppTab.LIBRARY) }
         composable(AppTab.SEARCH.route) {
-          val searchNav = mx.creapolis.peliculas.android.features.search.SearchNav(
-            openGenre = { kind, genre -> navController.navigate("results/genre/${kind.rawValue}/${genre.id}/${android.net.Uri.encode(genre.name)}") },
-            openMood = { mood -> navController.navigate("results/mood/${mood.name}") },
-            openPerson = { id, name -> navController.navigate("person/$id/${android.net.Uri.encode(name)}") },
+          SearchScreen(
+            nav = mx.creapolis.peliculas.android.features.search.SearchNav(
+              openGenre = { kind, genre ->
+                navController.navigate("results/genre/${kind.rawValue}/${genre.id}/${android.net.Uri.encode(genre.name)}")
+              },
+              openMood = { mood -> navController.navigate("results/mood/${mood.name}") },
+              openPerson = { id, name -> navController.navigate("person/$id/${android.net.Uri.encode(name)}") },
+            ),
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
           )
-          mx.creapolis.peliculas.android.features.search.SearchScreen(nav = searchNav)
         }
 
+        // ---- Detalle ----
+        composable("detail/{kind}/{id}") { entry ->
+          val kind = runCatching {
+            MediaKind.valueOf((entry.arguments?.getString("kind") ?: "movie").uppercase())
+          }.getOrDefault(MediaKind.MOVIE)
+          val id = entry.arguments?.getString("id")?.toIntOrNull() ?: 0
+          DetailWithBar(
+            item = MediaItem(id = id, title = "", posterPath = "", backdropPath = "", rating = 0.0, kind = kind),
+            library = library,
+            onBack = { navController.popBackStack() },
+            onOpenPerson = { pid, name -> navController.navigate("person/$pid/${android.net.Uri.encode(name)}") },
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+          )
+        }
+
+        // ---- Ver todo ----
+        composable("seeall/{key}") { entry ->
+          val route = SeeAllRoute.fromKey(entry.arguments?.getString("key").orEmpty())
+          if (route != null) {
+            SeeAllWithBar(
+              route = route,
+              onBack = { navController.popBackStack() },
+              onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+            )
+          }
+        }
+
+        // ---- Género / mood ----
         composable("results/genre/{kind}/{genreId}/{name}") { entry ->
-          val kind = mx.creapolis.peliculas.android.core.model.MediaKind.valueOf(
-            (entry.arguments?.getString("kind") ?: "movie").uppercase())
+          val kind = runCatching {
+            MediaKind.valueOf((entry.arguments?.getString("kind") ?: "movie").uppercase())
+          }.getOrDefault(MediaKind.MOVIE)
           val genreId = entry.arguments?.getString("genreId")?.toIntOrNull() ?: 0
           val name = entry.arguments?.getString("name").orEmpty()
           ResultsWithBar(
             title = name,
-            baseSource = mx.creapolis.peliculas.android.core.network.MediaListSource.Genre(kind, genreId),
+            baseSource = MediaListSource.Genre(kind, genreId),
             filtersEnabled = true,
             onBack = { navController.popBackStack() },
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
           )
         }
 
@@ -108,40 +158,124 @@ fun RootScaffold() {
           val mood = entry.arguments?.getString("mood")
             ?.let { runCatching { mx.creapolis.peliculas.android.features.search.Mood.valueOf(it) }.getOrNull() }
           if (mood != null) {
-            val title = androidx.compose.ui.res.stringResource(mood.titleRes)
             ResultsWithBar(
-              title = title,
+              title = stringResource(mood.titleRes),
               baseSource = mood.source,
-              emptyMessage = androidx.compose.ui.res.stringResource(R.string.seeall_empty),
               onBack = { navController.popBackStack() },
+              onOpenItem = { item -> navController.navigate(detailRoute(item)) },
             )
           }
         }
 
+        // ---- Persona ----
         composable("person/{id}/{name}") { entry ->
           val id = entry.arguments?.getString("id")?.toIntOrNull() ?: 0
           val name = entry.arguments?.getString("name").orEmpty()
-          Column(Modifier.fillMaxSize()) {
-            TopAppBar(
-              title = { Text(name) },
-              navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                  Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                }
-              },
-            )
-            mx.creapolis.peliculas.android.features.people.ActorScreen(personId = id, fallbackName = name)
-          }
-        }
-        composable("seeall/{key}") { entry ->
-          val key = entry.arguments?.getString("key").orEmpty()
-          val route = mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute.fromKey(key)
-          if (route != null) {
-            SeeAllWithBar(route = route, onBack = { navController.popBackStack() })
-          }
+          PersonWithBar(
+            personId = id,
+            name = name,
+            onBack = { navController.popBackStack() },
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+          )
         }
       }
     }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DetailWithBar(
+  item: MediaItem,
+  library: mx.creapolis.peliculas.android.core.library.LibraryStore,
+  onBack: () -> Unit,
+  onOpenPerson: (Int, String) -> Unit,
+  onOpenItem: (MediaItem) -> Unit,
+) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text("") },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    DetailScreen(item = item, library = library, onOpenPerson = onOpenPerson, onOpenItem = onOpenItem)
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SeeAllWithBar(
+  route: SeeAllRoute,
+  onBack: () -> Unit,
+  onOpenItem: (MediaItem) -> Unit,
+) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(stringResource(route.titleRes)) },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    SeeAllScreen(route, onOpenItem)
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ResultsWithBar(
+  title: String,
+  baseSource: MediaListSource,
+  filtersEnabled: Boolean = false,
+  emptyMessage: String? = null,
+  onBack: () -> Unit,
+  onOpenItem: (MediaItem) -> Unit,
+) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(title) },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    mx.creapolis.peliculas.android.features.search.ResultsScreen(
+      title = title,
+      baseSource = baseSource,
+      filtersEnabled = filtersEnabled,
+      emptyMessage = emptyMessage,
+      onOpenItem = onOpenItem,
+    )
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PersonWithBar(
+  personId: Int,
+  name: String,
+  onBack: () -> Unit,
+  onOpenItem: (MediaItem) -> Unit,
+) {
+  Column(Modifier.fillMaxSize()) {
+    TopAppBar(
+      title = { Text(name) },
+      navigationIcon = {
+        IconButton(onClick = onBack) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+        }
+      },
+    )
+    mx.creapolis.peliculas.android.features.people.ActorScreen(
+      personId = personId,
+      fallbackName = name,
+      onOpenItem = onOpenItem,
+    )
   }
 }
 
@@ -169,51 +303,3 @@ private val AppTab.outlinedIcon
     AppTab.LIBRARY -> Icons.Outlined.LibraryBooks
     AppTab.SEARCH -> Icons.Outlined.Search
   }
-
-/** Resultados de género/mood con barra superior. */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-private fun ResultsWithBar(
-  title: String,
-  baseSource: mx.creapolis.peliculas.android.core.network.MediaListSource,
-  filtersEnabled: Boolean = false,
-  emptyMessage: String? = null,
-  onBack: () -> Unit,
-) {
-  Column(Modifier.fillMaxSize()) {
-    TopAppBar(
-      title = { Text(title) },
-      navigationIcon = {
-        IconButton(onClick = onBack) {
-          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-        }
-      },
-    )
-    mx.creapolis.peliculas.android.features.search.ResultsScreen(
-      title = title,
-      baseSource = baseSource,
-      filtersEnabled = filtersEnabled,
-      emptyMessage = emptyMessage,
-    )
-  }
-}
-
-/** "Ver todo" con barra superior (título + atrás), sin Scaffold anidado. */
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-@Composable
-private fun SeeAllWithBar(
-  route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute,
-  onBack: () -> Unit,
-) {
-  Column(Modifier.fillMaxSize()) {
-    TopAppBar(
-      title = { Text(stringResource(route.titleRes)) },
-      navigationIcon = {
-        IconButton(onClick = onBack) {
-          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-        }
-      },
-    )
-    SeeAllScreen(route)
-  }
-}

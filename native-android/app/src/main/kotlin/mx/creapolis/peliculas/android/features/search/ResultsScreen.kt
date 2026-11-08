@@ -56,6 +56,7 @@ fun ResultsScreen(
   baseSource: MediaListSource,
   filtersEnabled: Boolean = false,
   emptyMessage: String? = null,
+  onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
 ) {
   var sort by remember { mutableStateOf(DiscoverSort.POPULARITY) }
   var year by remember { mutableStateOf<Int?>(null) }
@@ -92,7 +93,7 @@ fun ResultsScreen(
         verticalArrangement = Arrangement.spacedBy(20.dp),
         modifier = Modifier.fillMaxSize(),
       ) {
-        items(state.items, key = { it.key.description }) { PosterCard(it, Modifier.fillMaxWidth()) }
+        items(state.items, key = { it.key.description }) { PosterCard(it, Modifier.fillMaxWidth()) { onOpenItem(it) } }
         if (!state.done) {
           item(span = { GridItemSpan(maxLineSpan) }) {
             Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {

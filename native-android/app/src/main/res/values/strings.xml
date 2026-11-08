@@ -54,4 +54,26 @@
   <string name="sort_newest">Más recientes</string>
   <string name="person_acting">Interpretación</string>
   <string name="person_filmography">Filmografía</string>
+  <string name="detail_error">No pudimos cargar la información. Revisa tu conexión e inténtalo de nuevo.</string>
+  <string name="add_watchlist">Watchlist</string>
+  <string name="in_watchlist">En tu Watchlist</string>
+  <string name="favorite">Favorito</string>
+  <string name="watched">Vista</string>
+  <string name="trailer">Tráiler</string>
+  <string name="your_rating">Tu nota</string>
+  <string name="review_prompt">¿Qué te pareció?</string>
+  <string name="cancel">Cancelar</string>
+  <string name="save">Guardar</string>
+  <string name="review_write">Escribir reseña</string>
+  <string name="review_edit">Editar reseña</string>
+  <string name="one_season">1 temporada</string>
+  <string name="n_seasons_fmt">%1$d temporadas</string>
+  <string name="season_n">Temporada %1$d</string>
+  <string name="episodes">Episodios</string>
+  <string name="mark_all">Marcar todo</string>
+  <string name="unmark_all">Desmarcar</string>
+  <string name="mark_watched">Marcar visto</string>
+  <string name="where_to_watch">¿Dónde verla?</string>
+  <string name="cast">Reparto</string>
+  <string name="similar">Te puede gustar</string>
 </resources>

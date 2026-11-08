@@ -1,6 +1,7 @@
 package mx.creapolis.peliculas.android.features.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +57,7 @@ import mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
 @Composable
 fun HomeScreen(
   onSeeAll: (SeeAllRoute) -> Unit,
+  onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
   vm: HomeViewModel = viewModel(),
 ) {
   val state by vm.state.collectAsState()
@@ -73,7 +75,7 @@ fun HomeScreen(
       // Héroe
       item {
         if (state.featured.isNotEmpty()) {
-          HeroCarousel(items = state.featured)
+          HeroCarousel(items = state.featured, onOpenItem = onOpenItem)
         } else {
           HeroPlaceholder(
             loading = state.loading,
@@ -97,15 +99,15 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
           ) {
-            itemsIndexed(state.trending.take(10)) { i, item -> Top10Card(rank = i + 1, item = item) }
+            itemsIndexed(state.trending.take(10)) { i, item -> Top10Card(rank = i + 1, item = item) { onOpenItem(item) } }
           }
         }
       }
 
-      rail(railShowsTitle, state.trendingShows, SeeAllRoute.TRENDING_TV, onSeeAll)
-      rail(railNowPlayingTitle, state.nowPlaying, SeeAllRoute.NOW_PLAYING, onSeeAll)
-      rail(railUpcomingTitle, state.upcoming, SeeAllRoute.UPCOMING, onSeeAll)
-      rail(railTopRatedTitle, state.topRated, SeeAllRoute.TOP_RATED, onSeeAll)
+      rail(railShowsTitle, state.trendingShows, SeeAllRoute.TRENDING_TV, onSeeAll, onOpenItem)
+      rail(railNowPlayingTitle, state.nowPlaying, SeeAllRoute.NOW_PLAYING, onSeeAll, onOpenItem)
+      rail(railUpcomingTitle, state.upcoming, SeeAllRoute.UPCOMING, onSeeAll, onOpenItem)
+      rail(railTopRatedTitle, state.topRated, SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
 
       item { TmdbAttribution() }
     }
@@ -117,6 +119,7 @@ private fun LazyListScope.rail(
   items: List<MediaItem>,
   route: SeeAllRoute,
   onSeeAll: (SeeAllRoute) -> Unit,
+  onOpenItem: (MediaItem) -> Unit,
 ) {
   if (items.isEmpty()) return
   item { SectionHeader(title = title, onSeeAll = { onSeeAll(route) }) }
@@ -125,7 +128,7 @@ private fun LazyListScope.rail(
       contentPadding = PaddingValues(horizontal = 20.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      items(items) { PosterCard(it) }
+      items(items) { item -> PosterCard(item) { onOpenItem(item) } }
     }
   }
 }
@@ -155,7 +158,7 @@ fun SectionHeader(title: String, subtitle: String? = null, onSeeAll: (() -> Unit
 }
 
 @Composable
-private fun HeroCarousel(items: List<MediaItem>) {
+private fun HeroCarousel(items: List<MediaItem>, onOpenItem: (MediaItem) -> Unit) {
   val context = LocalContext.current
   val pagerState = rememberPagerState(pageCount = { items.size })
   val reduceMotion = remember { isAnimatorDisabled(context) }
@@ -174,7 +177,7 @@ private fun HeroCarousel(items: List<MediaItem>) {
       .height(460.dp),
   ) {
     HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-      HeroPage(item = items[page])
+      HeroPage(item = items[page]) { onOpenItem(items[page]) }
     }
     Row(
       Modifier
@@ -199,8 +202,8 @@ private fun HeroCarousel(items: List<MediaItem>) {
 }
 
 @Composable
-private fun HeroPage(item: MediaItem) {
-  Box(Modifier.fillMaxSize()) {
+private fun HeroPage(item: MediaItem, onOpen: () -> Unit) {
+  Box(Modifier.fillMaxSize().clickable(onClick = onOpen)) {
     BackdropImage(path = item.backdropPath, modifier = Modifier.fillMaxSize(), size = "w1280")
     Box(Modifier.fillMaxSize().background(BottomScrim(0.75f)))
     Column(
@@ -247,8 +250,11 @@ private fun HeroPage(item: MediaItem) {
 
 /** Tarjeta del Top 10 con el número gigante (como `Top10Rail` en iOS). */
 @Composable
-private fun Top10Card(rank: Int, item: MediaItem) {
-  Row(verticalAlignment = Alignment.Bottom) {
+private fun Top10Card(rank: Int, item: MediaItem, onOpen: () -> Unit) {
+  Row(
+    verticalAlignment = Alignment.Bottom,
+    modifier = Modifier.clickable(onClick = onOpen),
+  ) {
     Text(
       "$rank",
       style = MaterialTheme.typography.displayLarge,

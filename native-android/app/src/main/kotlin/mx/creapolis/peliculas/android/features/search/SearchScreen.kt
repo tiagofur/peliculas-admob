@@ -60,7 +60,11 @@ data class SearchNav(
 /** Buscar (port de `SearchView`): búsqueda, moods, géneros, personas, historial. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(nav: SearchNav, vm: SearchViewModel = viewModel(factory = SearchViewModel.factory(LocalContext.current))) {
+fun SearchScreen(
+  nav: SearchNav,
+  onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
+  vm: SearchViewModel = viewModel(factory = SearchViewModel.factory(LocalContext.current)),
+) {
   val state by vm.state.collectAsState()
   val scopeTitles = listOf(
     SearchScope.ALL to stringResource(R.string.search_scope_all),
@@ -108,13 +112,13 @@ fun SearchScreen(nav: SearchNav, vm: SearchViewModel = viewModel(factory = Searc
       state.results.isEmpty() -> EmptyStateItem(
         icon = "search", title = stringResource(R.string.search_no_results), message = stringResource(R.string.search_no_results_hint),
       )
-      else -> Results(state, vm, nav)
+      else -> Results(state, vm, nav, onOpenItem)
     }
   }
 }
 
 @Composable
-private fun Results(state: SearchViewModel.UiState, vm: SearchViewModel, nav: SearchNav) {
+private fun Results(state: SearchViewModel.UiState, vm: SearchViewModel, nav: SearchNav, onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit) {
   LazyVerticalGrid(
     columns = GridCells.Adaptive(minSize = 104.dp),
     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
@@ -165,9 +169,11 @@ private fun Results(state: SearchViewModel.UiState, vm: SearchViewModel, nav: Se
       }
     }
     items(state.results, key = { it.key.description }) { item ->
-      PosterCard(item, Modifier.fillMaxWidth(), badge = if (item.kind == MediaKind.TV && state.scope == SearchScope.ALL) {
-        stringResource(R.string.badge_show)
-      } else null)
+      PosterCard(
+        item,
+        Modifier.fillMaxWidth(),
+        badge = if (item.kind == MediaKind.TV && state.scope == SearchScope.ALL) stringResource(R.string.badge_show) else null,
+      ) { onOpenItem(item) }
     }
     if (!state.done) {
       item(span = { GridItemSpan(maxLineSpan) }) {

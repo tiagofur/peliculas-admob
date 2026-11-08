@@ -38,7 +38,7 @@ fun pagedListFactory(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllR
 
 /** "Ver todo" con infinite scroll (port de `SeeAllView` en iOS). */
 @Composable
-fun SeeAllScreen(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute) {
+fun SeeAllScreen(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute, onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {}) {
   val vm: PagedListViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
     key = route.key,
     factory = pagedListFactory(route),
@@ -64,7 +64,7 @@ fun SeeAllScreen(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
       verticalArrangement = Arrangement.spacedBy(20.dp),
       modifier = Modifier.fillMaxSize(),
     ) {
-      items(state.items, key = { it.key.description }) { PosterCard(it, Modifier.fillMaxWidth()) }
+      items(state.items, key = { it.key.description }) { PosterCard(it, Modifier.fillMaxWidth()) { onOpenItem(it) } }
       if (!state.done) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
