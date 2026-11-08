@@ -170,6 +170,23 @@ class LibraryStore(
       .entries.sortedByDescending { it.value.updatedAt }
       .mapNotNull { e -> _state.value.items[e.key]?.let { it to e.value.updatedAt } }
 
+  /** Series que sigues: en watchlist/favoritos o con episodios vistos (como iOS). */
+  fun followedShows(): List<MediaItem> {
+    val st = _state.value
+    val keys = mutableSetOf<MediaKey>()
+    for (kind in listOf(Kind.WATCHLIST, Kind.FAVORITE)) {
+      st.marks[kind].orEmpty().forEach { (key, stamp) ->
+        if (key.kind == MediaKind.TV && !stamp.deleted) keys.add(key)
+      }
+    }
+    st.episodes.values.filter { !it.deleted }.forEach { keys.add(MediaKey(MediaKind.TV, it.tvId)) }
+    return keys.map { key -> st.items[key] ?: MediaItem.minimal(key, "", "", "") }
+  }
+
+  /** Episodios vistos de una serie. */
+  fun watchedEpisodes(tvId: Int): List<EpisodeStamp> =
+    _state.value.episodes.values.filter { it.tvId == tvId && !it.deleted }
+
   /** Lo añadido recientemente (todas las secciones), más reciente primero. */
   fun recentlyAddedItems(): List<MediaItem> {
     val st = _state.value

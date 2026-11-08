@@ -113,6 +113,9 @@ object TmdbClient {
   suspend fun season(tvId: Int, season: Int): List<TmdbEpisode> =
     fetch<TmdbSeason>("/tv/$tvId/season/$season").episodes
 
+  /** Detalle ligero de serie (temporadas + episodios al aire) para "Siguiente". */
+  suspend fun show(id: Int): TmdbFullDetail = fetch("/tv/$id")
+
   /** Ficha de persona (bio, cumpleaños, oficio). */
   suspend fun person(id: Int): TmdbPersonDetail =
     fetch("/person/$id")

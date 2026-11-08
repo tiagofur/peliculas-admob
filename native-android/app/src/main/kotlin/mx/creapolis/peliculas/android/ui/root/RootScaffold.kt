@@ -108,7 +108,12 @@ fun RootScaffold() {
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
           )
         }
-        composable(AppTab.UP_NEXT.route) { PlaceholderScreen(AppTab.UP_NEXT) }
+        composable(AppTab.UP_NEXT.route) {
+          mx.creapolis.peliculas.android.features.upnext.UpNextScreen(
+            library = library,
+            onOpenItem = { item -> navController.navigate(detailRoute(item)) },
+          )
+        }
         composable(AppTab.LIBRARY.route) {
           LibraryScreen(
             library = library,
