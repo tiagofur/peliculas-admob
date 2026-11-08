@@ -47,6 +47,12 @@ data class MediaItem(
 ) {
   val key: MediaKey get() = MediaKey(kind, id)
 
+  val shareUrl: String
+    get() = "https://peliculas.creapolis.dev/${if (kind == MediaKind.MOVIE) "movie" else "serie"}/$id"
+
+  val shareText: String
+    get() = "Mira «$title» — la encontré en Películas $shareUrl"
+
   /** Une dos fotos del mismo título quedándose con los campos más ricos. */
   fun mergedWith(other: MediaItem): MediaItem = MediaItem(
     id = id,

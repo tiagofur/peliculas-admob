@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.StarHalf
@@ -92,19 +93,25 @@ fun DetailScreen(
   var editingReview by remember { mutableStateOf(false) }
   var reviewDraft by remember { mutableStateOf("") }
 
-  if (state.failed && state.detail == null) {
-    Column(
-      Modifier.fillMaxSize().padding(24.dp),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-    ) {
-      Text(
-        stringResource(R.string.detail_error),
-        style = MaterialTheme.typography.titleSmall,
-        textAlign = TextAlign.Center,
-      )
-      Button(onClick = vm::reload, modifier = Modifier.padding(top = 12.dp)) {
-        Text(stringResource(R.string.retry))
+  if (state.detail == null) {
+    if (state.failed) {
+      Column(
+        Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+      ) {
+        Text(
+          stringResource(R.string.detail_error),
+          style = MaterialTheme.typography.titleSmall,
+          textAlign = TextAlign.Center,
+        )
+        Button(onClick = vm::reload, modifier = Modifier.padding(top = 12.dp)) {
+          Text(stringResource(R.string.retry))
+        }
+      }
+    } else {
+      Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
       }
     }
     return
@@ -187,6 +194,19 @@ fun DetailScreen(
             onClick = { showTrailer = true },
           )
         }
+        ActionIcon(
+          icon = Icons.Filled.Share,
+          tint = MaterialTheme.colorScheme.onSurface,
+          label = stringResource(R.string.share),
+          onClick = {
+            val sendIntent = android.content.Intent().apply {
+              action = android.content.Intent.ACTION_SEND
+              putExtra(android.content.Intent.EXTRA_TEXT, item.shareText)
+              type = "text/plain"
+            }
+            context.startActivity(android.content.Intent.createChooser(sendIntent, null))
+          },
+        )
       }
     }
 

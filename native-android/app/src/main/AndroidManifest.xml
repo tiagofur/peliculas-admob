@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
   <application
     android:name=".PeliculasApp"
@@ -13,11 +14,32 @@
     <activity
       android:name=".MainActivity"
       android:exported="true"
+      android:launchMode="singleTask"
       android:windowSoftInputMode="adjustResize"
       android:theme="@style/Theme.Peliculas">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+
+      <!-- App Links con autoVerify (https://peliculas.creapolis.dev) -->
+      <intent-filter android:autoVerify="true">
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="https" android:host="peliculas.creapolis.dev" android:pathPrefix="/movie" />
+        <data android:scheme="https" android:host="peliculas.creapolis.dev" android:pathPrefix="/pelicula" />
+        <data android:scheme="https" android:host="peliculas.creapolis.dev" android:pathPrefix="/serie" />
+        <data android:scheme="https" android:host="peliculas.creapolis.dev" android:pathPrefix="/tv" />
+        <data android:scheme="https" android:host="peliculas.creapolis.dev" android:pathPrefix="/trending" />
+      </intent-filter>
+
+      <!-- Deep Links de esquema custom (peliculas://) -->
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data android:scheme="peliculas" />
       </intent-filter>
     </activity>
 
@@ -25,5 +47,18 @@
     <meta-data
       android:name="com.google.android.gms.ads.APPLICATION_ID"
       android:value="ca-app-pub-3940256099942544~3347511713" />
+
+    <!-- Widget Glance de Tendencias -->
+    <receiver
+      android:name=".features.widget.TrendingWidgetReceiver"
+      android:label="@string/widget_name"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/trending_widget_info" />
+    </receiver>
   </application>
 </manifest>

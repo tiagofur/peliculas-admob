@@ -84,35 +84,32 @@ class DetailViewModel(
     library.remember(base)
     viewModelScope.launch {
       try {
-        coroutineScope {
-          val d = async { TmdbClient.detail(base.kind, base.id) }
-          val trailer = async { runCatching { TmdbClient.trailerOf(base.kind, base.id, d) }.getOrNull() }
-          val detail = d.await()
-          val recs = detail.recommendations?.results.orEmpty()
-          val similar = (if (recs.isEmpty()) detail.similar?.results.orEmpty() else recs)
-            .filter { !it.posterPath.isNullOrEmpty() }
-            .take(15)
-            .map { it.toMediaItem(base.kind) }
-          val providers = providersFrom(detail.watchProviders)
-          val seasons = detail.seasons.orEmpty().filter { it.seasonNumber > 0 && (it.episodeCount ?: 0) > 0 }
-          val headline = creditHeadline(detail, base.kind)
-          _state.update { st ->
-            st.copy(
-              item = base.mergedWith(detail.toMediaItem(base.kind)),
-              detail = detail,
-              trailerKey = trailer.await(),
-              cast = detail.credits?.cast.orEmpty().take(15),
-              similar = similar,
-              providers = providers.second.take(10),
-              providerLink = providers.first,
-              seasons = seasons,
-              selectedSeason = seasons.firstOrNull()?.seasonNumber ?: 1,
-              creditLabel = headline?.first,
-              creditNames = headline?.second,
-            )
-          }
-          if (base.kind == MediaKind.TV) loadEpisodes(seasons.firstOrNull()?.seasonNumber ?: 1)
+        val detail = TmdbClient.detail(base.kind, base.id)
+        val trailerKey = runCatching { TmdbClient.trailerOf(base.kind, base.id, detail) }.getOrNull()
+        val recs = detail.recommendations?.results.orEmpty()
+        val similar = (if (recs.isEmpty()) detail.similar?.results.orEmpty() else recs)
+          .filter { !it.posterPath.isNullOrEmpty() }
+          .take(15)
+          .map { it.toMediaItem(base.kind) }
+        val providers = providersFrom(detail.watchProviders)
+        val seasons = detail.seasons.orEmpty().filter { it.seasonNumber > 0 && (it.episodeCount ?: 0) > 0 }
+        val headline = creditHeadline(detail, base.kind)
+        _state.update { st ->
+          st.copy(
+            item = base.mergedWith(detail.toMediaItem(base.kind)),
+            detail = detail,
+            trailerKey = trailerKey,
+            cast = detail.credits?.cast.orEmpty().take(15),
+            similar = similar,
+            providers = providers.second.take(10),
+            providerLink = providers.first,
+            seasons = seasons,
+            selectedSeason = seasons.firstOrNull()?.seasonNumber ?: 1,
+            creditLabel = headline?.first,
+            creditNames = headline?.second,
+          )
         }
+        if (base.kind == MediaKind.TV) loadEpisodes(seasons.firstOrNull()?.seasonNumber ?: 1)
       } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
       } catch (_: Exception) {
@@ -166,9 +163,9 @@ private val TODAY_ISO: String
 private suspend fun TmdbClient.trailerOf(
   kind: MediaKind,
   id: Int,
-  detail: kotlinx.coroutines.Deferred<TmdbFullDetail>,
+  detail: TmdbFullDetail,
 ): String? {
-  val fromDetail = bestTrailer(detail.await().videos?.results.orEmpty())
+  val fromDetail = bestTrailer(detail.videos?.results.orEmpty())
   if (fromDetail != null) return fromDetail
   val all = fetch<mx.creapolis.peliculas.android.core.network.TmdbVideos>(
     "/${kind.rawValue}/$id/videos",
