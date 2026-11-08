@@ -16,7 +16,7 @@ cd "$(dirname "$0")/../.."   # backend/
 echo "→ Subiendo código a $target:$dir"
 ssh -p "$port" "$target" "mkdir -p '$dir/backups'"
 rsync -az --delete -e "ssh -p $port" \
-  --exclude '.env' --exclude 'backups/' --exclude '.git' --exclude '*.test' \
+  --exclude '.env*' --exclude 'backups/' --exclude '.git' --exclude '*.test' \
   ./ "$target:$dir/"
 
 echo "→ Construyendo y arrancando (api + db + backup; sin Caddy: Plesk hace de proxy)"
