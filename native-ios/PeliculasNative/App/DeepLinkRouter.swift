@@ -20,6 +20,7 @@ final class DeepLinkRouter: ObservableObject {
     guard url.scheme == "peliculas" else { return }
     let parts = url.pathComponents.filter { $0 != "/" }
     switch url.host {
+    case "trending", "home": tab = .home
     case "search": tab = .search
     case "library": tab = .library
     case "upnext", "siguiente": tab = .upNext

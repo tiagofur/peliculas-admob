@@ -49,8 +49,15 @@ final class DetailLoader: ObservableObject {
     loadingEpisodes = true
     defer { loadingEpisodes = false }
     let season = selectedSeason
-    guard let eps = try? await TMDBClient.season(tvId: item.id, season: season), season == selectedSeason else { return }
-    episodes = eps.map(EpisodeItem.init(tmdb:))
+    do {
+      let eps = try await TMDBClient.season(tvId: item.id, season: season)
+      guard season == selectedSeason else { return }
+      episodes = eps.map(EpisodeItem.init(tmdb:))
+    } catch {
+      // Falló la carga: no dejar colgados los episodios de la temporada anterior.
+      guard season == selectedSeason else { return }
+      episodes = []
+    }
   }
 
   /// Abre en la última temporada emitida que tenga algo.

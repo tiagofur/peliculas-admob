@@ -176,11 +176,33 @@ El "Pro" de Flutter es un purchases service local (sin IAP real); el de iOS ya u
 | Fase | Alcance | Estado |
 |---|---|---|
 | 1. Paginación | `TMDBClient` pages → `PagedListLoader` → SeeAll + búsqueda infinitos | ✅ **hecha** (rama `feat/ios-infinite-scroll`) |
-| 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ⏳ pendiente |
+| 2. Bugs críticos | Mezcla de cuentas 401, `.refreshable` en Detail, widget datos falsos, deep link trending, héroe fantasma | ✅ **hecha** (misma rama) |
 | 3. Quick wins | UI de reseñas, filtro año, orden, director en Detail | ⏳ pendiente |
 | 4. Features nuevas | Estadísticas/Wrapped → Mood discovery → búsqueda de personas → historial → universal links | ⏳ pendiente |
 
 Cada fase sale en PR separado sobre `native-ios/`.
+
+### Notas de la fase 2 (2026-11-08)
+
+- **401 mezcla de cuentas**: `SessionStore.forceSignOut()` corre los hooks `willSignOut`
+  (incluido `library.resetForSignOut()`) antes de limpiar tokens. El login siguiente parte
+  de biblioteca vacía; la del usuario se recupera del servidor al volver a entrar.
+- **Detalle con retry real**: `.refreshable` en el ScrollView + botón "Reintentar" en el
+  bloque de error (el texto ya no promete un gesto que no existía).
+- **Episodios obsoletos** (bonus, bug menor §2.6): `loadEpisodes` limpia `episodes` si el
+  fetch de la temporada falla — ya no se muestran episodios de la temporada anterior.
+- **Widget honesto**: sin datos muestra "Sin conexión" (nada de sample data que parezca
+  real; `sample` queda solo para placeholder/galería). Fetch con timeout 10 s (API) y 8 s
+  (pósters) vía semáforo; reintento en 1 h. Además elimina el force-unwrap de URLs del
+  medium widget.
+- **Deep link `peliculas://trending`**: ahora selecciona la pestaña Inicio
+  (el widget y la notificación semanal lo usan). Tests: `DeepLinkTests` (4).
+- **Héroe fantasma**: `HomeLoader.featuredFailed` distingue el fallo del carrusel aunque
+  el resto de filas cargue; `HeroPlaceholder` muestra error + Reintentar.
+- No automatizable en este entorno (sin mocks de red estáticos en el proyecto): el camino
+  del 401 comparte el mismo código que `signOut()` (testado vía integración); el widget se
+  verifica añadiéndolo a la pantalla de inicio en un device/simulador con la app instalada.
+- Batería completa: **45/45 tests** (41 previos + 4 de deep links).
 
 ### Notas de la fase 1 (2026-11-08)
 

@@ -34,8 +34,12 @@ struct DetailView: View {
             .padding(.horizontal, -20)
           }
           if loader.failed {
-            Label("No se pudo cargar toda la información. Desliza para reintentar.", systemImage: "wifi.exclamationmark")
-              .font(.footnote).foregroundStyle(.secondary)
+            VStack(spacing: 10) {
+              Label("No se pudo cargar toda la información.", systemImage: "wifi.exclamationmark")
+                .font(.footnote).foregroundStyle(.secondary)
+              Button("Reintentar") { Task { await loader.load(item) } }
+                .font(.footnote.weight(.semibold))
+            }
           }
           AdBannerView().padding(.horizontal, -20)
         }
@@ -46,6 +50,7 @@ struct DetailView: View {
     }
     .coordinateSpace(name: "detailScroll")
     .ignoresSafeArea(edges: .top)
+    .refreshable { await loader.load(item) }
     .background(Color(.systemBackground))
     .navigationTitle(current.title)
     .navigationBarTitleDisplayMode(.inline)

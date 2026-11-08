@@ -10,6 +10,7 @@
 		049F1B69CBC43F4EE6345D56 /* AchievementsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA189F8A033716DF68AC985 /* AchievementsView.swift */; };
 		4C8D1E7F2A9B3C6D5E0F1A2B /* PagedListLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3F5A7C1B8D2E4F6A0C3B5D /* PagedListLoader.swift */; };
 		7D2A9E4C1F6B3E8D5A0C2F4E /* PaginationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E8D1C4A7F2E9B6D3C0A8F5 /* PaginationTests.swift */; };
+		3A7C5E9B2D4F6A8C0E1B3D5F /* DeepLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0E2A4B6D8F0A2C4E6B8D0F /* DeepLinkTests.swift */; };
 		1015B06EACFB1C49F06E1EB6 /* ProStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3952FE76712F9B9810AF60F /* ProStoreTests.swift */; };
 		142154C8DC70578F60872E33 /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42C43740D2846FACCFAF5C4D /* AccountView.swift */; };
 		15CC6F565AD418D175D97536 /* ReminderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F0E1655A93DE389EF5A8077 /* ReminderManager.swift */; };
@@ -157,6 +158,7 @@
 		F6795CEEA7C40AB478665769 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		9E3F5A7C1B8D2E4F6A0C3B5D /* PagedListLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PagedListLoader.swift; sourceTree = "<group>"; };
 		B5E8D1C4A7F2E9B6D3C0A8F5 /* PaginationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaginationTests.swift; sourceTree = "<group>"; };
+		8C0E2A4B6D8F0A2C4E6B8D0F /* DeepLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -310,6 +312,7 @@
 			isa = PBXGroup;
 			children = (
 				0E8A4591417DE1A8E914BEF2 /* BackendIntegrationTests.swift */,
+				8C0E2A4B6D8F0A2C4E6B8D0F /* DeepLinkTests.swift */,
 				F2433A927E343C75666E7116 /* LevelTests.swift */,
 				B724979FD46847A402B0A461 /* ModelTests.swift */,
 				B5E8D1C4A7F2E9B6D3C0A8F5 /* PaginationTests.swift */,
@@ -597,6 +600,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7903C5841E18208754E9F38E /* BackendIntegrationTests.swift in Sources */,
+				3A7C5E9B2D4F6A8C0E1B3D5F /* DeepLinkTests.swift in Sources */,
 				89310B3385CC310F645D67DC /* LevelTests.swift in Sources */,
 				87A219177F7013AD9E46517F /* ModelTests.swift in Sources */,
 				7D2A9E4C1F6B3E8D5A0C2F4E /* PaginationTests.swift in Sources */,

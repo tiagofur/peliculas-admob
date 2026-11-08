@@ -12,7 +12,7 @@ struct HomeView: View {
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 32) {
           if loader.featured.isEmpty {
-            HeroPlaceholder(loading: loader.loading, failed: loader.failed) {
+            HeroPlaceholder(loading: loader.loading, failed: loader.featuredFailed) {
               Task { await loader.load() }
             }
           } else {
