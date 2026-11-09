@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Flecha de reproducción sobre película (marca F0; el definitivo llega en F9). -->
+<!-- Icono pequeño de notificaciones (Android solo usa su silueta). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
   android:width="108dp"
   android:height="108dp"
