@@ -1,5 +1,5 @@
-// Package push registers devices and sends APNs alerts, including the hourly
-// "new episode" job.
+// Package push registers devices and sends APNs (iOS) and FCM (Android)
+// alerts, including the hourly "new episode" job.
 package push
 
 import (
@@ -21,7 +21,7 @@ import (
 var (
 	// ErrUnregistered means the token is dead: stop sending to it.
 	ErrUnregistered  = errors.New("push: device token is no longer valid")
-	ErrNotConfigured = errors.New("push: APNs not configured")
+	ErrNotConfigured = errors.New("push: no push sender configured")
 )
 
 // Alert is one visible notification.

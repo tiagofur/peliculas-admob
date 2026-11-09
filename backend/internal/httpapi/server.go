@@ -16,6 +16,7 @@ import (
 
 	"github.com/tiagofur/peliculas-admob/backend/internal/auth"
 	"github.com/tiagofur/peliculas-admob/backend/internal/library"
+	"github.com/tiagofur/peliculas-admob/backend/internal/play"
 	"github.com/tiagofur/peliculas-admob/backend/internal/push"
 	"github.com/tiagofur/peliculas-admob/backend/internal/storekit"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
@@ -26,6 +27,8 @@ type Server struct {
 	Auth       *auth.Service     // nil when there is no database
 	Library    *library.Service  // nil when there is no database
 	StoreKit   *storekit.Service // nil until STOREKIT_* is configured
+	Play       *play.Service     // nil until PLAY_* is configured
+	RTDNAuth   RTDNAuth          // checks on the Play notification push
 	Push       *push.Service     // nil when there is no database
 	Log        *slog.Logger
 	TrustProxy bool
@@ -44,6 +47,7 @@ func (s *Server) Handler() http.Handler {
 	s.authRoutes(mux)
 	s.syncRoutes(mux)
 	s.storekitRoutes(mux)
+	s.playRoutes(mux)
 	s.pushRoutes(mux)
 
 	limiter := newIPLimiter(20, 40)

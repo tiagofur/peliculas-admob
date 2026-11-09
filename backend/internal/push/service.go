@@ -14,35 +14,63 @@ import (
 
 var ErrBadDevice = errors.New("push: invalid device")
 
-// Sender is what the service needs from APNs (tests use a fake).
+// Sender is what the service needs from APNs or FCM (tests use a fake).
 type Sender interface {
 	Send(ctx context.Context, environment, deviceToken string, al Alert) error
 }
 
 type Service struct {
 	DB     *pgxpool.Pool
-	Sender Sender // nil when APNs is not configured
+	Sender Sender // APNs (ios, tvos); nil when not configured
+	FCM    Sender // Firebase (android); nil when not configured
 	Log    *slog.Logger
+}
+
+// senderFor picks the sender for a device platform.
+func (s *Service) senderFor(platform string) Sender {
+	if platform == "android" {
+		return s.FCM
+	}
+	return s.Sender
+}
+
+// Configured reports whether any sender can deliver alerts.
+func (s *Service) Configured() bool {
+	return s.Sender != nil || s.FCM != nil
 }
 
 type Device struct {
 	Token       string `json:"token"`
-	Platform    string `json:"platform"`    // ios | tvos
-	Environment string `json:"environment"` // sandbox | production
+	Platform    string `json:"platform"`    // ios | tvos | android
+	Environment string `json:"environment"` // sandbox | production (android: always production)
 	Locale      string `json:"locale"`
 	Timezone    string `json:"timezone"` // IANA, e.g. America/Mexico_City
 	AppVersion  string `json:"app_version"`
 }
 
+// fcmTokenChars is what FCM registration tokens are made of.
+const fcmTokenChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_:"
+
 func (d *Device) normalize() error {
-	d.Token = strings.ToLower(strings.TrimSpace(d.Token))
-	if len(d.Token) < 32 || len(d.Token) > 200 || strings.Trim(d.Token, "0123456789abcdef") != "" {
-		return fmt.Errorf("%w: token must be hex", ErrBadDevice)
-	}
+	d.Token = strings.TrimSpace(d.Token)
 	if d.Platform == "" {
 		d.Platform = "ios"
 	}
-	if d.Platform != "ios" && d.Platform != "tvos" {
+	switch d.Platform {
+	case "ios", "tvos":
+		d.Token = strings.ToLower(d.Token)
+		if len(d.Token) < 32 || len(d.Token) > 200 || strings.Trim(d.Token, "0123456789abcdef") != "" {
+			return fmt.Errorf("%w: token must be hex", ErrBadDevice)
+		}
+	case "android":
+		// FCM tokens are case-sensitive: keep them as they are.
+		if len(d.Token) < 32 || len(d.Token) > 4096 || strings.Trim(d.Token, fcmTokenChars) != "" {
+			return fmt.Errorf("%w: invalid FCM token", ErrBadDevice)
+		}
+		if d.Environment == "" {
+			d.Environment = "production" // FCM has no sandbox
+		}
+	default:
 		return fmt.Errorf("%w: platform", ErrBadDevice)
 	}
 	if d.Environment != "sandbox" && d.Environment != "production" {
@@ -78,23 +106,24 @@ func (s *Service) Register(ctx context.Context, userID string, d Device) error {
 
 // Unregister removes a token (on logout or when the user turns alerts off).
 func (s *Service) Unregister(ctx context.Context, userID, token string) error {
-	_, err := s.DB.Exec(ctx, `DELETE FROM devices WHERE token = $1 AND user_id = $2`, strings.ToLower(token), userID)
+	// APNs tokens are stored lowercase; FCM tokens exactly as sent.
+	_, err := s.DB.Exec(ctx, `DELETE FROM devices WHERE token IN ($1, lower($1)) AND user_id = $2`, token, userID)
 	return err
 }
 
 type target struct {
-	token, environment, locale string
+	token, platform, environment, locale string
 }
 
 func (s *Service) devicesOf(ctx context.Context, userID string) ([]target, error) {
-	rows, err := s.DB.Query(ctx, `SELECT token, environment, locale FROM devices
+	rows, err := s.DB.Query(ctx, `SELECT token, platform, environment, locale FROM devices
 		WHERE user_id = $1 AND disabled_at IS NULL`, userID)
 	if err != nil {
 		return nil, err
 	}
 	return pgx.CollectRows(rows, func(r pgx.CollectableRow) (target, error) {
 		var t target
-		return t, r.Scan(&t.token, &t.environment, &t.locale)
+		return t, r.Scan(&t.token, &t.platform, &t.environment, &t.locale)
 	})
 }
 
@@ -103,7 +132,11 @@ func (s *Service) devicesOf(ctx context.Context, userID string) ([]target, error
 func (s *Service) deliver(ctx context.Context, devices []target, build func(lang string) Alert) int {
 	sent := 0
 	for _, d := range devices {
-		err := s.Sender.Send(ctx, d.environment, d.token, build(lang(d.locale)))
+		sender := s.senderFor(d.platform)
+		if sender == nil {
+			continue // e.g. FCM not configured yet
+		}
+		err := sender.Send(ctx, d.environment, d.token, build(lang(d.locale)))
 		switch {
 		case err == nil:
 			sent++
@@ -121,7 +154,7 @@ func (s *Service) deliver(ctx context.Context, devices []target, build func(lang
 
 // SendTest sends a confirmation alert to all the user's devices.
 func (s *Service) SendTest(ctx context.Context, userID string) (int, error) {
-	if s.Sender == nil {
+	if !s.Configured() {
 		return 0, ErrNotConfigured
 	}
 	devices, err := s.devicesOf(ctx, userID)

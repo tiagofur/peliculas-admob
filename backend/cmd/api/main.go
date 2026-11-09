@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -12,12 +13,16 @@ import (
 	"time"
 	_ "time/tzdata" // the distroless image has no zoneinfo; device timezones need it
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/tiagofur/peliculas-admob/backend/internal/auth"
 	"github.com/tiagofur/peliculas-admob/backend/internal/cache"
 	"github.com/tiagofur/peliculas-admob/backend/internal/config"
 	"github.com/tiagofur/peliculas-admob/backend/internal/db"
+	"github.com/tiagofur/peliculas-admob/backend/internal/google"
 	"github.com/tiagofur/peliculas-admob/backend/internal/httpapi"
 	"github.com/tiagofur/peliculas-admob/backend/internal/library"
+	"github.com/tiagofur/peliculas-admob/backend/internal/play"
 	"github.com/tiagofur/peliculas-admob/backend/internal/push"
 	"github.com/tiagofur/peliculas-admob/backend/internal/storekit"
 	"github.com/tiagofur/peliculas-admob/backend/internal/tmdb"
@@ -102,6 +107,10 @@ func run(log *slog.Logger) error {
 			log.Warn("STOREKIT_BUNDLE_ID or PRO_PRODUCT_IDS not set: Pro is disabled")
 		}
 
+		if err := setupPlay(cfg, srv, pool, log); err != nil {
+			return err
+		}
+
 		apns, err := push.NewAPNs(cfg.APNsKeyID, cfg.APNsTeamID, cfg.APNsTopic, cfg.APNsPrivateKey)
 		if err != nil {
 			return err
@@ -109,10 +118,28 @@ func run(log *slog.Logger) error {
 		srv.Push = &push.Service{DB: pool, Log: log}
 		if apns != nil {
 			srv.Push.Sender = apns
+		} else {
+			log.Warn("APNS_KEY_ID / APNS_PRIVATE_KEY not set: iOS devices are stored but get no alerts")
+		}
+		fcmAccount, err := google.ParseServiceAccount(cfg.FCMCredentials, push.FCMScope)
+		if err != nil {
+			return fmt.Errorf("FCM_CREDENTIALS_JSON: %w", err)
+		}
+		if fcmAccount != nil {
+			project := cfg.FCMProjectID
+			if project == "" {
+				project = fcmAccount.ProjectID
+			}
+			if project == "" {
+				return errors.New("FCM_PROJECT_ID not set and the service account has no project_id")
+			}
+			srv.Push.FCM = push.NewFCM(project, fcmAccount)
+		} else {
+			log.Warn("FCM_CREDENTIALS_JSON not set: Android devices are stored but get no alerts")
+		}
+		if srv.Push.Configured() {
 			job := &push.EpisodeJob{Push: srv.Push, Shows: proxy, ProOnly: cfg.PushProOnly, AlertHour: cfg.PushAlertHour}
 			go job.Loop(ctx, cfg.PushInterval)
-		} else {
-			log.Warn("APNS_KEY_ID / APNS_PRIVATE_KEY not set: devices are stored but no alerts are sent")
 		}
 	} else {
 		log.Warn("DATABASE_URL not set: cache is memory-only; auth and sync are disabled")
@@ -139,6 +166,32 @@ func run(log *slog.Logger) error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return httpSrv.Shutdown(shutdownCtx)
+}
+
+// setupPlay enables Google Play purchases when a service account is set.
+func setupPlay(cfg config.Config, srv *httpapi.Server, pool *pgxpool.Pool, log *slog.Logger) error {
+	account, err := google.ParseServiceAccount(cfg.PlayCredentials, play.Scope)
+	if err != nil {
+		return fmt.Errorf("PLAY_CREDENTIALS_JSON: %w", err)
+	}
+	if account == nil || len(cfg.PlayProductIDs) == 0 {
+		log.Warn("PLAY_CREDENTIALS_JSON or PLAY_PRODUCT_IDS/PRO_PRODUCT_IDS not set: Pro on Android is disabled")
+		return nil
+	}
+	oneTime := cfg.PlayOneTimeIDs
+	if len(oneTime) == 0 {
+		oneTime = play.OneTimeDefaults(cfg.PlayProductIDs)
+	}
+	srv.Play = &play.Service{DB: pool, API: play.NewAPI(account), Log: log,
+		PackageName: cfg.PlayPackageName, ProductIDs: cfg.PlayProductIDs, OneTimeIDs: oneTime}
+	srv.RTDNAuth = httpapi.RTDNAuth{Token: cfg.PlayRTDNToken, Email: cfg.PlayRTDNEmail}
+	if cfg.PlayRTDNAudience != "" {
+		srv.RTDNAuth.OIDC = auth.NewGoogleVerifier([]string{cfg.PlayRTDNAudience})
+	}
+	if cfg.PlayRTDNToken == "" && cfg.PlayRTDNAudience == "" {
+		log.Warn("PLAY_RTDN_TOKEN / PLAY_RTDN_AUDIENCE not set: Play notifications are not authenticated")
+	}
+	return nil
 }
 
 // pruneLoop deletes cache rows too old to serve, once an hour.

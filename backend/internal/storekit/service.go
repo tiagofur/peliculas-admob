@@ -219,24 +219,35 @@ type Status struct {
 	AutoRenew   *bool      `json:"auto_renew,omitempty"`
 	InGrace     bool       `json:"in_grace_period"`
 	Environment string     `json:"environment,omitempty"`
+	Store       string     `json:"store,omitempty"` // app_store | play
 }
 
 // Status picks the best active entitlement: lifetime first, then the one that
 // lasts longest.
 func (s *Service) Status(ctx context.Context, userID string) (Status, error) {
-	rows, err := s.DB.Query(ctx, `SELECT product_id, environment, expires_at, grace_until, auto_renew
+	return UserStatus(ctx, s.DB, userID, s.now())
+}
+
+// Querier is the part of pgxpool.Pool that UserStatus needs.
+type Querier interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+// UserStatus reads every store's entitlements (App Store and Google Play
+// share the table) and picks the best active one.
+func UserStatus(ctx context.Context, db Querier, userID string, now time.Time) (Status, error) {
+	rows, err := db.Query(ctx, `SELECT product_id, environment, store, expires_at, grace_until, auto_renew
 		FROM entitlements WHERE user_id = $1 AND revoked_at IS NULL`, userID)
 	if err != nil {
 		return Status{}, err
 	}
 	defer rows.Close()
-	now := s.now()
 	best := Status{}
 	var bestEnd time.Time
 	for rows.Next() {
 		var st Status
 		var expires, grace *time.Time
-		if err := rows.Scan(&st.ProductID, &st.Environment, &expires, &grace, &st.AutoRenew); err != nil {
+		if err := rows.Scan(&st.ProductID, &st.Environment, &st.Store, &expires, &grace, &st.AutoRenew); err != nil {
 			return Status{}, err
 		}
 		if expires == nil { // lifetime wins outright

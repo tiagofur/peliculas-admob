@@ -66,11 +66,19 @@ func (s *Server) storekitNotification(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// entitlements reads Pro from either store: both write the same table.
 func (s *Server) entitlements(w http.ResponseWriter, r *http.Request) {
-	if !s.storekitReady(w) {
+	var st storekit.Status
+	var err error
+	switch {
+	case s.StoreKit != nil:
+		st, err = s.StoreKit.Status(r.Context(), UserID(r.Context()))
+	case s.Play != nil:
+		st, err = s.Play.Status(r.Context(), UserID(r.Context()))
+	default:
+		writeError(w, http.StatusServiceUnavailable, "storekit_disabled")
 		return
 	}
-	st, err := s.StoreKit.Status(r.Context(), UserID(r.Context()))
 	s.respond(w, http.StatusOK, st, err)
 }
 

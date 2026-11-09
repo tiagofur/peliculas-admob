@@ -57,8 +57,10 @@ TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:55432/test?sslmode=disable
 | POST | `/v1/sync` | `{ops: [...]}` sube hasta 500 cambios → `{results: [...]}` |
 | POST | `/v1/storekit/transactions` | `{signed_transaction}` tras comprar o restaurar → estado Pro |
 | POST | `/v1/storekit/notifications` | Webhook de Apple (App Store Server Notifications V2) |
-| GET | `/v1/me/entitlements` | `{pro, product_id, expires_at, auto_renew, in_grace_period}` |
-| POST | `/v1/devices` | `{token, environment, platform?, locale?, timezone?, app_version?}` registra el token APNs (204) |
+| POST | `/v1/play/transactions` | `{purchase_token, product_id, package_name?}` tras comprar o restaurar en Android → estado Pro |
+| POST | `/v1/play/notifications` | Push de Pub/Sub con las notificaciones de Google Play (RTDN) |
+| GET | `/v1/me/entitlements` | `{pro, product_id, expires_at, auto_renew, in_grace_period, store}` (App Store y Play) |
+| POST | `/v1/devices` | `{token, platform?, environment?, locale?, timezone?, app_version?}` registra el token APNs o FCM (204) |
 | DELETE | `/v1/devices/{token}` | Quita el dispositivo (al cerrar sesión o desactivar avisos) |
 | POST | `/v1/devices/test` | Envía un aviso de prueba a tus dispositivos → `{sent}` |
 
@@ -114,16 +116,37 @@ Cómo funciona:
 - Una compra pertenece a la primera cuenta que la reclama. Si otra cuenta intenta usar la misma compra: `409 purchase_owned_by_other_account`.
 - Si el aviso de Apple llega antes que la app, la compra se guarda sin dueño (o con el del `appAccountToken`) y se asigna cuando la app la reclama.
 
-### Avisos de episodios nuevos (APNs)
+### Pro en Android (Google Play Billing)
 
-**En la app:** al tener permiso de notificaciones, envía el token a `POST /v1/devices` con `environment: "sandbox"` en builds de Xcode y `"production"` en TestFlight/App Store, más `locale` y `timezone` (`TimeZone.current.identifier`). Al cerrar sesión, `DELETE /v1/devices/{token}`. El aviso trae `tv_id`, `season`, `episode` y `url: peliculas://serie/{id}` para abrir la serie.
+**En la app:** tras comprar o restaurar, envía `{purchase_token, product_id}` a `POST /v1/play/transactions` (`package_name` es opcional; si va, tiene que ser `PLAY_PACKAGE_NAME`). El estado Pro sale del mismo `GET /v1/me/entitlements` que en iOS, con `store: "play"`. No hace falta reconocer (acknowledge) la compra en la app: lo hace el backend.
+
+Respuestas de error: `400 invalid_purchase` (Google no conoce el token), `400 unknown_product`, `400 wrong_app`, `409 purchase_pending` (pago pendiente, se activa cuando llegue el aviso de Play) y `409 purchase_owned_by_other_account`.
+
+**En Google Cloud y Play Console:**
+1. Crea una service account en el proyecto de Google Cloud vinculado a Play Console y activa la *Google Play Android Developer API*. Descarga su clave JSON y ponla en `PLAY_CREDENTIALS_JSON` (el JSON entero o la ruta al archivo).
+2. En Play Console → Usuarios y permisos, invita el email de la service account con permiso para *ver datos financieros* y *gestionar pedidos y suscripciones*.
+3. Crea un tema de Pub/Sub, da a `google-play-developer-notifications@system.gserviceaccount.com` el rol *Publicador* y ponlo en Play Console → Monetización → Configuración de monetización → Notificaciones en tiempo real.
+4. Crea una suscripción **push** a ese tema con URL `https://<tu-dominio>/v1/play/notifications?token=<PLAY_RTDN_TOKEN>`. Mejor aún, activa también la autenticación OIDC de la suscripción y pon su audiencia y service account en `PLAY_RTDN_AUDIENCE` / `PLAY_RTDN_EMAIL`.
+
+Cómo funciona:
+- El backend nunca se fía del cliente ni del aviso: siempre vuelve a leer la compra de la Google Play Developer API (`purchases.subscriptionsv2` para suscripciones, `purchases.products` para el de por vida) y guarda lo que dice Google.
+- Mismos productos y misma tabla que StoreKit (`entitlements`, con `store = 'play'`): `PLAY_PRODUCT_IDS` (por defecto `PRO_PRODUCT_IDS`). Los que contienen `lifetime` son compras únicas, salvo que digas otros en `PLAY_ONE_TIME_PRODUCT_IDS`.
+- Estados: activa o cancelada (sin renovación) → Pro hasta `expiryTime`; periodo de gracia → Pro con `in_grace_period: true`; en espera, pausada o vencida → sin Pro; reembolso → revocada.
+- Las compras nuevas se reconocen en el servidor (Google reembolsa las que no se reconocen en 3 días). Si falla, se reintenta en el siguiente claim o aviso.
+- Una compra pertenece a la primera cuenta que la reclama. Si llega el aviso de Play antes que la app, se guarda sin dueño y se asigna al reclamarla. Un cambio de plan (`linkedPurchaseToken`) hereda el dueño de la compra anterior.
+
+### Avisos de episodios nuevos (APNs y FCM)
+
+**En iOS:** al tener permiso de notificaciones, envía el token a `POST /v1/devices` con `environment: "sandbox"` en builds de Xcode y `"production"` en TestFlight/App Store, más `locale` y `timezone` (`TimeZone.current.identifier`). Al cerrar sesión, `DELETE /v1/devices/{token}`. El aviso trae `tv_id`, `season`, `episode` y `url: peliculas://serie/{id}` para abrir la serie.
+
+**En Android:** lo mismo con `platform: "android"` y el token de FCM tal cual (distingue mayúsculas). `environment` no hace falta. El aviso va como notificación (título y texto) al canal `peliculas_episodes`, con los mismos datos (`tv_id`, `season`, `episode`, `url`) como strings. Para enviarlos, pon la clave JSON de una service account con el rol *Firebase Cloud Messaging API Admin* en `FCM_CREDENTIALS_JSON`.
 
 Cómo funciona:
 - Cada hora, el backend mira las series que sigue cada usuario: las que tiene en su biblioteca o de las que ha visto algún episodio.
 - Para cada serie lee `last_episode_to_air` de TMDB a través de la caché, así que no hay llamadas extra.
 - Avisa una sola vez por episodio y usuario: el día del estreno a partir de las 18:00 en su zona horaria, o al día siguiente si se pasó. No avisa si ya lo marcó como visto.
 - Título y texto en el idioma de cada dispositivo (es / en / pt), con los nombres de TMDB en ese idioma.
-- Si APNs dice que un token ya no vale, se desactiva. Si ningún dispositivo recibió el aviso, se reintenta en la siguiente pasada.
+- Si APNs o FCM dicen que un token ya no vale, se desactiva. Si ningún dispositivo recibió el aviso, se reintenta en la siguiente pasada.
 - Con varias instancias de la API, solo una ejecuta la tarea (lock en Postgres).
 - Por defecto es una función Pro (`PUSH_PRO_ONLY=true`).
 
@@ -158,6 +181,14 @@ Las imágenes siguen saliendo de `https://image.tmdb.org`.
 | `PRO_PRODUCT_IDS` | vacío | Productos que dan Pro. Vacío = Pro desactivado |
 | `APNS_KEY_ID` / `APNS_PRIVATE_KEY` | vacío | Clave `.p8` de APNs. Vacío = se guardan dispositivos pero no se envía nada |
 | `APNS_TEAM_ID` / `APNS_TOPIC` | `APPLE_TEAM_ID` / `STOREKIT_BUNDLE_ID` | Equipo y bundle de la app |
+| `FCM_CREDENTIALS_JSON` | vacío | Service account de Firebase (JSON o ruta). Vacío = se guardan dispositivos Android pero no se envía nada |
+| `FCM_PROJECT_ID` | `project_id` de la clave | Proyecto de Firebase |
+| `PLAY_CREDENTIALS_JSON` | vacío | Service account con acceso a la Play Developer API (JSON o ruta). Vacío = Pro en Android desactivado |
+| `PLAY_PACKAGE_NAME` | `mx.creapolis.peliculas.android` | `applicationId` de la app Android |
+| `PLAY_PRODUCT_IDS` | `PRO_PRODUCT_IDS` | Productos de Play que dan Pro |
+| `PLAY_ONE_TIME_PRODUCT_IDS` | los que contienen `lifetime` | Productos de compra única (el resto son suscripciones) |
+| `PLAY_RTDN_TOKEN` | vacío | Secreto en la URL de push (`?token=`) |
+| `PLAY_RTDN_AUDIENCE` / `PLAY_RTDN_EMAIL` | vacío | Audiencia y service account del token OIDC de la suscripción push |
 | `PUSH_PRO_ONLY` | `true` | Avisos de episodios solo para Pro |
 | `PUSH_ALERT_HOUR` | `18` | Hora local desde la que se avisa de lo que se estrena hoy |
 | `PUSH_INTERVAL` | `1h` | Cada cuánto corre la tarea |
@@ -185,6 +216,8 @@ internal/tmdb/      lista de rutas, TTL, cliente TMDB y proxy con caché
 internal/auth/      email + bcrypt, Apple/Google (JWKS), JWT, refresh rotativo, cuenta
 internal/library/   biblioteca, listas, notas, episodios y sync por cursor
 internal/storekit/  verificación JWS de Apple, compras y webhook, estado Pro
-internal/push/      cliente APNs, dispositivos y tarea horaria de episodios nuevos
+internal/play/      Google Play: verificación de compras, acknowledge y RTDN
+internal/google/    tokens OAuth de service accounts (Play, FCM) sin SDKs
+internal/push/      clientes APNs y FCM, dispositivos y tarea horaria de episodios nuevos
 internal/httpapi/   rutas, logs, límite por IP
 ```

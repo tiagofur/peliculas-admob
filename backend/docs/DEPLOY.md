@@ -50,7 +50,10 @@ En `.env` de producción:
 | `APPLE_CLIENT_IDS`, `STOREKIT_BUNDLE_ID` | `mx.creapolis.peliculas.native` |
 | `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` | clave `.p8` de Sign in with Apple |
 | `APNS_KEY_ID`, `APNS_PRIVATE_KEY` | clave `.p8` de APNs (puede ser la misma) |
-| `PRO_PRODUCT_IDS` | IDs de App Store Connect |
+| `PRO_PRODUCT_IDS` | IDs de App Store Connect (y de Play: son los mismos) |
+| `PLAY_CREDENTIALS_JSON` | clave JSON de la service account de Play en una línea, entre comillas simples: `'{"type":"service_account",...}'` (`jq -c . clave.json`) |
+| `PLAY_RTDN_TOKEN` | `openssl rand -hex 24` (va en la URL de push de Pub/Sub) |
+| `FCM_CREDENTIALS_JSON` | clave JSON de la service account de Firebase, igual que la de Play |
 
 Después: `chmod 600 .env`.
 
