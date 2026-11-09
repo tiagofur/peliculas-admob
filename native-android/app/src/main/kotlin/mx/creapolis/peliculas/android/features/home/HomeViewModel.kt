@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import mx.creapolis.peliculas.android.core.lists.PagedList
+import mx.creapolis.peliculas.android.core.lists.PagedListState
 import mx.creapolis.peliculas.android.core.model.MediaItem
 import mx.creapolis.peliculas.android.core.model.MediaKey
 import mx.creapolis.peliculas.android.core.model.MediaKind
@@ -16,6 +18,7 @@ import mx.creapolis.peliculas.android.core.model.toMediaItem
 import mx.creapolis.peliculas.android.core.network.MediaListSource
 import mx.creapolis.peliculas.android.core.network.TmdbClient
 import mx.creapolis.peliculas.android.core.network.TmdbMovie
+import mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
 
 /** Sources fijos del Inicio (mismos endpoints que iOS). */
 object HomeSources {
@@ -49,6 +52,9 @@ class HomeViewModel : ViewModel() {
     /** El héroe (`/trending/day`) falló o vino vacío aunque el resto cargó.
      *  Espejo de `featuredFailed` en iOS: el placeholder ofrece reintentar. */
     val featuredFailed: Boolean = false,
+    /** Filas paginadas (sembradas con la página 1 de arriba): piden la siguiente
+     *  al acercarse al final, y "Ver todo" sigue desde lo ya cargado. */
+    val rails: Map<SeeAllRoute, PagedList> = emptyMap(),
   ) {
     val isEmpty: Boolean get() = featured.isEmpty() && trending.isEmpty()
   }
@@ -100,6 +106,13 @@ class HomeViewModel : ViewModel() {
     val topRatedMovies = rated.await().getOrDefault(emptyList()).map { it.toMediaItem(MediaKind.MOVIE) }
 
     val heroes = buildHeroes(dayMovies, weekShows)
+    val today = TodayIso()
+    val fresh = mapOf(
+      SeeAllRoute.TRENDING_TV to (weekShows to { _: TmdbMovie -> true }),
+      SeeAllRoute.NOW_PLAYING to (cinemaMovies to { _: TmdbMovie -> true }),
+      SeeAllRoute.UPCOMING to (upcomingMovies to { m: TmdbMovie -> filterUpcoming(listOf(m), today).isNotEmpty() }),
+      SeeAllRoute.TOP_RATED to (topRatedMovies to { _: TmdbMovie -> true }),
+    )
     _state.update { st ->
       st.copy(
         // Si una fila falla al refrescar, se queda lo que ya había (como iOS).
@@ -109,6 +122,9 @@ class HomeViewModel : ViewModel() {
         nowPlaying = cinemaMovies.ifEmpty { st.nowPlaying },
         upcoming = upcomingMovies.ifEmpty { st.upcoming },
         topRated = topRatedMovies.ifEmpty { st.topRated },
+        // Página 1 nueva = fila nueva desde la 2; si falló, se queda la anterior.
+        rails = st.rails + fresh.filterValues { (seed, _) -> seed.isNotEmpty() }
+          .mapValues { (route, v) -> PagedList(PagedListState(route.source, v.first, keep = v.second), viewModelScope) },
         loading = false,
         featuredFailed = heroes.isEmpty() && st.featured.isEmpty(),
         failed = weekMovies.isEmpty() && cinemaMovies.isEmpty() && topRatedMovies.isEmpty() && heroes.isEmpty() &&

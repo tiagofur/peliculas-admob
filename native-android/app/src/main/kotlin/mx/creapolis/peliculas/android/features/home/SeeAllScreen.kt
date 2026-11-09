@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.InitializerViewModelFactoryBuilder
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import mx.creapolis.peliculas.android.R
+import mx.creapolis.peliculas.android.core.lists.PagedList
 import mx.creapolis.peliculas.android.core.lists.PagedListViewModel
 import mx.creapolis.peliculas.android.ui.components.PosterCard
 
@@ -36,14 +37,23 @@ fun pagedListFactory(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllR
     initializer { PagedListViewModel(route.source) }
   }
 
-/** "Ver todo" con infinite scroll (port de `SeeAllView` en iOS). */
+/**
+ * "Ver todo" con infinite scroll (port de `SeeAllView` en iOS). Si llega
+ * `shared` (la lista de la fila del Inicio) sigue desde lo ya cargado;
+ * si no, crea su propia lista desde la página 1.
+ */
 @Composable
-fun SeeAllScreen(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute, onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {}) {
-  val vm: PagedListViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+fun SeeAllScreen(
+  route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute,
+  onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
+  shared: PagedList? = null,
+) {
+  val list = shared ?: androidx.lifecycle.viewmodel.compose.viewModel<PagedListViewModel>(
     key = route.key,
     factory = pagedListFactory(route),
-  )
-  val state by vm.state.collectAsState()
+  ).list
+  val state by list.state.collectAsState()
+  val vm = list
 
   when {
     state.items.isEmpty() && state.failed -> FullError { vm.loadMore() }
