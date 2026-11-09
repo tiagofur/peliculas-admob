@@ -6,6 +6,8 @@ struct RootView: View {
   @EnvironmentObject private var router: DeepLinkRouter
   @EnvironmentObject private var pro: ProStore
   @AppStorage("peliculas.onboarded.v2") private var onboarded = false
+  /// El splash cubre la primera pantalla; el onboarding (un cover) espera a que termine.
+  @State private var splashDone = false
 
   var body: some View {
     tabs
@@ -24,8 +26,17 @@ struct RootView: View {
         }
         .modalHost(.detail)
       }
-      .fullScreenCover(isPresented: Binding(get: { !onboarded }, set: { onboarded = !$0 })) {
+      .fullScreenCover(isPresented: Binding(get: { !onboarded && splashDone }, set: { onboarded = !$0 })) {
         OnboardingView { onboarded = true }
+      }
+      .overlay {
+        if !splashDone {
+          SplashOverlay().transition(.opacity)
+        }
+      }
+      .task {
+        try? await Task.sleep(for: .milliseconds(900))
+        withAnimation(.easeOut(duration: 0.35)) { splashDone = true }
       }
   }
 
