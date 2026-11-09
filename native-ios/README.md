@@ -3,7 +3,7 @@
 SwiftUI, mínimo iOS 15. Liquid Glass real en iOS 26+ y materiales clásicos en iOS 15–25.
 Habla solo con el **backend Go** (`backend/`): TMDB por su caché, cuentas, sync, Pro y avisos. Ya no usa Supabase ni lleva la key de TMDB dentro.
 
-> Qué falta configurar fuera del código (Apple, App Store Connect, AdMob, servidor): [`docs/ios/configuracion-produccion.html`](../docs/ios/configuracion-produccion.html).
+> Qué falta configurar fuera del código (Apple, App Store Connect, servidor). Sin anuncios y con Pro apagado: ver [`docs/PRO.md`](../docs/PRO.md): [`docs/ios/configuracion-produccion.html`](../docs/ios/configuracion-produccion.html).
 
 ## Correr en el simulador
 
@@ -34,14 +34,14 @@ xcodebuild test -scheme PeliculasNative -destination 'platform=iOS Simulator,nam
 
 | Archivo | Qué hay |
 |---|---|
-| `Config/Shared.xcconfig` | Bundle ID, versión, URLs por defecto, IDs de AdMob de prueba, páginas legales |
-| `Config/Debug.xcconfig` / `Release.xcconfig` | URL del backend y bloque de anuncios por entorno, APNs sandbox/producción |
+| `Config/Shared.xcconfig` | Bundle ID, versión, URLs por defecto, páginas legales |
+| `Config/Debug.xcconfig` / `Release.xcconfig` | URL del backend por entorno, APNs sandbox/producción |
 | `Config/Secrets.generated.xcconfig` | Lo tuyo, generado desde el `.env` (no se commitea) |
-| `project.yml` | Proyecto XcodeGen: targets, entitlements, Info.plist, paquete de AdMob |
+| `project.yml` | Proyecto XcodeGen: targets, entitlements, Info.plist. Ojo: el `.pbxproj` ya tiene ajustes a mano; no lo regeneres sin revisar el diff |
 | `Products.storekit` | Productos Pro para probar compras en el simulador |
 | `PeliculasNative/PrivacyInfo.xcprivacy` | Privacy Manifest |
 
-Variables del `.env` que lee `sync-env.sh`: `IOS_API_BASE_URL`, `IOS_API_BASE_URL_DEV`, `ADMOB_IOS_BANNER`, `ADMOB_IOS_APP_ID`, `APPLE_TEAM_ID`, `IOS_BUNDLE_ID`, `IOS_PRIVACY_URL`, `IOS_TERMS_URL`, `IOS_SUPPORT_URL`.
+Variables del `.env` que lee `sync-env.sh`: `IOS_API_BASE_URL`, `IOS_API_BASE_URL_DEV`, `APPLE_TEAM_ID`, `IOS_BUNDLE_ID`, `IOS_PRIVACY_URL`, `IOS_TERMS_URL`, `IOS_SUPPORT_URL`.
 
 ## Arquitectura
 
@@ -56,7 +56,6 @@ Features/
   UpNext/     "Siguiente": próximo episodio por serie y estrenos
   Pro/        ProStore (StoreKit 2) y paywall
   Home/ Detail/ Search/ Actors/ Gamification/ Onboarding/
-Ads/          AdMob (banner adaptativo) + consentimiento UMP
 PeliculasWidget/  widget "Tendencias" con pósters
 ```
 
