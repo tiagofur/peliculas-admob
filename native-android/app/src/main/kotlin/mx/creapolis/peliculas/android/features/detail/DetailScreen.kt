@@ -17,11 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -30,11 +33,15 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.StarBorder
 import androidx.compose.material.icons.filled.StarHalf
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -50,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
@@ -82,6 +91,7 @@ fun DetailScreen(
   library: LibraryStore,
   onOpenPerson: (id: Int, name: String) -> Unit,
   onOpenItem: (MediaItem) -> Unit,
+  onBack: (() -> Unit)? = null,
   proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
   vm: DetailViewModel = viewModel(key = item.key.description, factory = DetailViewModelFactory(item, library)),
 ) {
@@ -117,29 +127,67 @@ fun DetailScreen(
     return
   }
 
+  val backgroundColor = MaterialTheme.colorScheme.background
+  val detailGradient = remember(backgroundColor) {
+    Brush.verticalGradient(
+      0.00f to Color.Black.copy(alpha = 0.45f),
+      0.25f to Color.Transparent,
+      0.45f to Color.Transparent,
+      0.80f to backgroundColor.copy(alpha = 0.88f),
+      1.00f to backgroundColor,
+    )
+  }
+
   LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 32.dp)) {
-    // ---- Header ----
+    // ---- Header a sangre con botón flotante ----
     item {
-      Box(Modifier.fillMaxWidth().height(300.dp)) {
+      Box(Modifier.fillMaxWidth().height(380.dp)) {
         BackdropImage(
           path = state.item.backdropPath.ifEmpty { state.item.posterPath },
           modifier = Modifier.fillMaxSize(),
         )
-        Box(Modifier.fillMaxSize().background(BottomScrim(0.6f)))
+        Box(Modifier.fillMaxSize().background(detailGradient))
+        if (onBack != null) {
+          IconButton(
+            onClick = onBack,
+            modifier = Modifier
+              .statusBarsPadding()
+              .padding(start = 16.dp, top = 8.dp)
+              .size(40.dp)
+              .clip(CircleShape)
+              .background(Color.Black.copy(alpha = 0.45f)),
+          ) {
+            Icon(
+              Icons.AutoMirrored.Filled.ArrowBack,
+              contentDescription = stringResource(R.string.back),
+              tint = Color.White,
+            )
+          }
+        }
         Column(
-          Modifier.align(Alignment.BottomStart).padding(20.dp),
-          verticalArrangement = Arrangement.spacedBy(4.dp),
+          Modifier
+            .align(Alignment.BottomStart)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+          verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-          Text(
-            if (item.kind == MediaKind.TV) stringResource(R.string.badge_show) else stringResource(R.string.badge_movie),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
+          Box(
+            modifier = Modifier
+              .clip(RoundedCornerShape(12.dp))
+              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+              .padding(horizontal = 8.dp, vertical = 3.dp),
+          ) {
+            Text(
+              if (item.kind == MediaKind.TV) stringResource(R.string.badge_show).uppercase() else stringResource(R.string.badge_movie).uppercase(),
+              style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
           Text(
             state.item.title,
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Black),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+            color = MaterialTheme.colorScheme.onBackground,
           )
           val meta = buildList {
             state.item.year.takeIf { it.isNotEmpty() }?.let { add(it) }
@@ -154,7 +202,7 @@ fun DetailScreen(
           if (meta.isNotEmpty()) {
             Text(
               meta.joinToString(" · "),
-              style = MaterialTheme.typography.bodyMedium,
+              style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
           }
@@ -162,41 +210,67 @@ fun DetailScreen(
       }
     }
 
-    // ---- Acciones ----
+    // ---- Acciones estilo iOS (Píldora Watchlist + Botones circulares con icono) ----
     item {
       Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
         val inWatchlist = lib.contains(item.key, LibraryStore.Kind.WATCHLIST)
-        Button(onClick = { library.toggle(item, LibraryStore.Kind.WATCHLIST) }, modifier = Modifier.weight(1f)) {
-          Text(if (inWatchlist) stringResource(R.string.in_watchlist) else stringResource(R.string.add_watchlist))
+        Button(
+          onClick = { library.toggle(item, LibraryStore.Kind.WATCHLIST) },
+          shape = RoundedCornerShape(24.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = if (inWatchlist) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primary,
+            contentColor = if (inWatchlist) MaterialTheme.colorScheme.primary else Color.White,
+          ),
+          modifier = Modifier.weight(1f),
+          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+        ) {
+          Icon(
+            if (inWatchlist) Icons.Filled.Check else Icons.Filled.Add,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+          )
+          Spacer(Modifier.width(6.dp))
+          Text(
+            if (inWatchlist) stringResource(R.string.in_watchlist) else stringResource(R.string.add_watchlist),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            maxLines = 1,
+          )
         }
-        ActionIcon(
-          icon = if (lib.contains(item.key, LibraryStore.Kind.FAVORITE)) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-          tint = if (lib.contains(item.key, LibraryStore.Kind.FAVORITE)) Color(0xFFEC407A) else MaterialTheme.colorScheme.onSurface,
+
+        val isFav = lib.contains(item.key, LibraryStore.Kind.FAVORITE)
+        CircularAction(
+          icon = if (isFav) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+          tint = if (isFav) Color(0xFFFF2D55) else MaterialTheme.colorScheme.onSurfaceVariant,
           label = stringResource(R.string.favorite),
           onClick = { library.toggle(item, LibraryStore.Kind.FAVORITE) },
         )
+
         val watched = lib.contains(item.key, LibraryStore.Kind.WATCHED)
-        ActionIcon(
-          icon = Icons.Filled.PlayArrow,
-          tint = if (watched) Color(0xFF66BB6A) else MaterialTheme.colorScheme.onSurface,
+        CircularAction(
+          icon = if (watched) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+          tint = if (watched) Color(0xFF34C759) else MaterialTheme.colorScheme.onSurfaceVariant,
           label = stringResource(R.string.watched),
           onClick = { library.toggle(item, LibraryStore.Kind.WATCHED) },
         )
+
         if (state.trailerKey != null) {
-          ActionIcon(
+          CircularAction(
             icon = Icons.Filled.PlayArrow,
             tint = MaterialTheme.colorScheme.primary,
             label = stringResource(R.string.trailer),
             onClick = { showTrailer = true },
           )
         }
-        ActionIcon(
+
+        CircularAction(
           icon = Icons.Filled.Share,
-          tint = MaterialTheme.colorScheme.onSurface,
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
           label = stringResource(R.string.share),
           onClick = {
             val sendIntent = android.content.Intent().apply {
@@ -210,13 +284,26 @@ fun DetailScreen(
       }
     }
 
-    // ---- Nota + reseña ----
+    // ---- Nota + reseña en tarjeta redondeada ----
     item {
-      Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+      Column(
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
           Text(
             stringResource(R.string.your_rating),
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
           )
           RatingStars(
@@ -430,18 +517,20 @@ fun DetailScreen(
 }
 
 @Composable
-private fun ActionIcon(
+private fun CircularAction(
   icon: androidx.compose.ui.graphics.vector.ImageVector,
   tint: Color,
   label: String,
   onClick: () -> Unit,
 ) {
-  Column(
-    horizontalAlignment = Alignment.CenterHorizontally,
-    modifier = Modifier.clickable(onClick = onClick),
+  IconButton(
+    onClick = onClick,
+    modifier = Modifier
+      .size(44.dp)
+      .clip(CircleShape)
+      .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)),
   ) {
-    Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(26.dp))
-    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(22.dp))
   }
 }
 

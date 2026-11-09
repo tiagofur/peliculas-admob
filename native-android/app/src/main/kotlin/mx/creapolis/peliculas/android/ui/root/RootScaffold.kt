@@ -17,8 +17,10 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -28,8 +30,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -149,7 +153,10 @@ fun RootScaffold() {
 
   Scaffold(
     bottomBar = {
-      NavigationBar {
+      NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        tonalElevation = 0.dp,
+      ) {
         AppTab.entries.forEach { tab ->
           val selected = tab == current
           NavigationBarItem(
@@ -168,6 +175,13 @@ fun RootScaffold() {
               )
             },
             label = { Text(stringResource(tab.labelRes)) },
+            colors = NavigationBarItemDefaults.colors(
+              selectedIconColor = MaterialTheme.colorScheme.primary,
+              selectedTextColor = MaterialTheme.colorScheme.primary,
+              unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+              unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+              indicatorColor = Color.Transparent,
+            ),
           )
         }
       }
@@ -180,6 +194,7 @@ fun RootScaffold() {
             onSeeAll = { route -> navController.navigate("seeall/${route.key}") },
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
             proStore = proStore,
+            library = library,
           )
         }
         composable(AppTab.UP_NEXT.route) {
@@ -187,6 +202,14 @@ fun RootScaffold() {
             library = library,
             onOpenItem = { item -> navController.navigate(detailRoute(item)) },
             proStore = proStore,
+            onSearchSeries = {
+              navController.navigate(AppTab.SEARCH.route) {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+              }
+            },
+            onOpenAccount = { navController.navigate("account") },
           )
         }
         composable(AppTab.LIBRARY.route) {
@@ -443,7 +466,6 @@ private fun BarScreen(title: String, onBack: () -> Unit, content: @Composable ()
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DetailWithBar(
   item: MediaItem,
@@ -453,23 +475,14 @@ private fun DetailWithBar(
   onOpenPerson: (Int, String) -> Unit,
   onOpenItem: (MediaItem) -> Unit,
 ) {
-  Column(Modifier.fillMaxSize()) {
-    TopAppBar(
-      title = { Text("") },
-      navigationIcon = {
-        IconButton(onClick = onBack) {
-          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-        }
-      },
-    )
-    DetailScreen(
-      item = item,
-      library = library,
-      onOpenPerson = onOpenPerson,
-      onOpenItem = onOpenItem,
-      proStore = proStore,
-    )
-  }
+  DetailScreen(
+    item = item,
+    library = library,
+    onOpenPerson = onOpenPerson,
+    onOpenItem = onOpenItem,
+    onBack = onBack,
+    proStore = proStore,
+  )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

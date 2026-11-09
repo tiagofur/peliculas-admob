@@ -17,12 +17,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.VideoLibrary
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -39,6 +45,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,6 +63,8 @@ fun UpNextScreen(
   library: LibraryStore,
   onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit,
   proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
+  onSearchSeries: () -> Unit = {},
+  onOpenAccount: () -> Unit = {},
   vm: UpNextViewModel = viewModel(factory = UpNextViewModel.factory(library)),
 ) {
   val context = LocalContext.current
@@ -64,40 +74,69 @@ fun UpNextScreen(
 
   LaunchedEffect(lib) { vm.load() }
 
-  when {
-    state.entries.isEmpty() && state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      CircularProgressIndicator()
+  Column(Modifier.fillMaxSize()) {
+    // Barra superior con título y acceso a cuenta (espejo de iOS)
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 20.dp, vertical = 12.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(
+        stringResource(R.string.tab_up_next),
+        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        color = MaterialTheme.colorScheme.onBackground,
+      )
+      IconButton(
+        onClick = onOpenAccount,
+        modifier = Modifier
+          .size(38.dp)
+          .clip(CircleShape)
+          .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+      ) {
+        Icon(
+          Icons.Filled.Person,
+          contentDescription = stringResource(R.string.account),
+          tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+      }
     }
-    state.entries.isEmpty() && state.upcoming.isEmpty() -> EmptyUpNext { vm.load() }
-    else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-      if (state.entries.isNotEmpty()) {
-        item {
-          Text(
-            stringResource(R.string.upnext_continue),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-          )
-        }
-        item {
-          LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-          ) {
-            items(state.entries, key = { it.id }) { entry ->
-              UpNextCard(entry = entry, onOpen = { onOpenItem(entry.show) }, onWatched = { vm.markWatched(entry) })
+
+    when {
+      state.entries.isEmpty() && state.loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+      }
+      state.entries.isEmpty() && state.upcoming.isEmpty() -> EmptyUpNext(onSearchSeries = onSearchSeries)
+      else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
+        if (state.entries.isNotEmpty()) {
+          item {
+            Text(
+              stringResource(R.string.upnext_continue),
+              style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+              modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            )
+          }
+          item {
+            LazyRow(
+              contentPadding = PaddingValues(horizontal = 20.dp),
+              horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+              items(state.entries, key = { it.id }) { entry ->
+                UpNextCard(entry = entry, onOpen = { onOpenItem(entry.show) }, onWatched = { vm.markWatched(entry) })
+              }
             }
           }
         }
-      }
-      if (state.upcoming.isNotEmpty()) {
-        item {
-          Text(
-            stringResource(R.string.upnext_upcoming),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-          )
-        }
-        items(state.upcoming, key = { "up-${it.id}" }) { entry ->
+        if (state.upcoming.isNotEmpty()) {
+          item {
+            Text(
+              stringResource(R.string.upnext_upcoming),
+              style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+              modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            )
+          }
+          items(state.upcoming, key = { "up-${it.id}" }) { entry ->
           Row(
             Modifier
               .fillMaxWidth()
@@ -123,6 +162,7 @@ fun UpNextScreen(
             }
           }
         }
+        }
         val isPro = activeProStore?.isPro ?: false
         if (!isPro) {
           item {
@@ -147,21 +187,56 @@ fun UpNextScreen(
 }
 
 @Composable
-private fun EmptyUpNext(retry: () -> Unit) {
+private fun EmptyUpNext(onSearchSeries: () -> Unit) {
   Column(
-    Modifier.fillMaxSize().padding(24.dp),
+    Modifier
+      .fillMaxSize()
+      .padding(horizontal = 32.dp, vertical = 24.dp),
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.Center,
   ) {
-    Text(stringResource(R.string.upnext_empty), style = MaterialTheme.typography.titleSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+    Box(
+      modifier = Modifier
+        .size(72.dp)
+        .clip(RoundedCornerShape(18.dp))
+        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+      contentAlignment = Alignment.Center,
+    ) {
+      Icon(
+        Icons.Filled.VideoLibrary,
+        contentDescription = null,
+        modifier = Modifier.size(36.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+      )
+    }
+    Spacer(Modifier.height(18.dp))
+    Text(
+      stringResource(R.string.upnext_empty_title),
+      style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+      textAlign = TextAlign.Center,
+      color = MaterialTheme.colorScheme.onBackground,
+    )
+    Spacer(Modifier.height(8.dp))
     Text(
       stringResource(R.string.upnext_empty_hint),
       style = MaterialTheme.typography.bodyMedium,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
-      textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+      textAlign = TextAlign.Center,
     )
-    androidx.compose.material3.Button(onClick = retry, modifier = Modifier.padding(top = 12.dp)) {
-      Text(stringResource(R.string.retry))
+    Spacer(Modifier.height(20.dp))
+    Button(
+      onClick = onSearchSeries,
+      shape = RoundedCornerShape(24.dp),
+      colors = ButtonDefaults.buttonColors(
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = Color.White,
+      ),
+      contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+    ) {
+      Text(
+        stringResource(R.string.search_series),
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+      )
     }
   }
 }

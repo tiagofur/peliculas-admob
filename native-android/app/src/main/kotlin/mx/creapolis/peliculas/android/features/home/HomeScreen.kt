@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyListScope
@@ -21,10 +22,18 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.Text
@@ -33,18 +42,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import mx.creapolis.peliculas.android.R
+import mx.creapolis.peliculas.android.core.library.LibraryStore
 import mx.creapolis.peliculas.android.core.model.MediaItem
 import mx.creapolis.peliculas.android.core.model.MediaKind
 import mx.creapolis.peliculas.android.ui.components.BackdropImage
@@ -59,10 +74,12 @@ fun HomeScreen(
   onSeeAll: (SeeAllRoute) -> Unit,
   onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
   proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
+  library: mx.creapolis.peliculas.android.core.library.LibraryStore? = null,
   vm: HomeViewModel = viewModel(),
 ) {
   val context = LocalContext.current
   val activeProStore = proStore ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.proStore
+  val activeLibrary = library ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.library
   val state by vm.state.collectAsState()
   // Fuera del LazyColumn: su lambda de contenido no es composable.
   val railShowsTitle = stringResource(R.string.rail_trending_shows)
@@ -78,7 +95,7 @@ fun HomeScreen(
       // Héroe
       item {
         if (state.featured.isNotEmpty()) {
-          HeroCarousel(items = state.featured, onOpenItem = onOpenItem)
+          HeroCarousel(items = state.featured, onOpenItem = onOpenItem, library = activeLibrary)
         } else {
           HeroPlaceholder(
             loading = state.loading,
@@ -167,31 +184,53 @@ fun SectionHeader(title: String, subtitle: String? = null, onSeeAll: (() -> Unit
 }
 
 @Composable
-private fun HeroCarousel(items: List<MediaItem>, onOpenItem: (MediaItem) -> Unit) {
+private fun HeroCarousel(
+  items: List<MediaItem>,
+  onOpenItem: (MediaItem) -> Unit,
+  library: LibraryStore? = null,
+) {
   val context = LocalContext.current
   val pagerState = rememberPagerState(pageCount = { items.size })
   val reduceMotion = remember { isAnimatorDisabled(context) }
 
-  // Avance automático cada 7 s (como iOS), salvo con animaciones desactivadas.
-  LaunchedEffect(pagerState.currentPage, reduceMotion) {
-    if (!reduceMotion && items.size > 1) {
-      delay(7_000)
-      pagerState.animateScrollToPage((pagerState.currentPage + 1) % items.size)
+  // Avance automático cada 7 s (como iOS). Se dispara sobre settledPage para que:
+  // 1. Cada deslizamiento manual reinicie limpiamente los 7 s.
+  // 2. La animación nunca se cancele a medio camino (settledPage sólo cambia cuando la animación termina).
+  LaunchedEffect(pagerState.settledPage, reduceMotion, items.size) {
+    if (reduceMotion || items.size <= 1) return@LaunchedEffect
+    delay(7_000)
+    if (!pagerState.isScrollInProgress) {
+      val next = (pagerState.settledPage + 1) % items.size
+      pagerState.animateScrollToPage(
+        page = next,
+        animationSpec = androidx.compose.animation.core.tween(
+          durationMillis = 450,
+          easing = androidx.compose.animation.core.FastOutSlowInEasing,
+        ),
+      )
     }
   }
 
   Box(
     Modifier
       .fillMaxWidth()
-      .height(460.dp),
+      .height(560.dp),
   ) {
-    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-      HeroPage(item = items[page]) { onOpenItem(items[page]) }
+    HorizontalPager(
+      state = pagerState,
+      key = { page -> items.getOrNull(page)?.id ?: page },
+      modifier = Modifier.fillMaxSize(),
+    ) { page ->
+      HeroPage(
+        item = items[page],
+        onOpen = { onOpenItem(items[page]) },
+        library = library,
+      )
     }
     Row(
       Modifier
         .align(Alignment.BottomCenter)
-        .padding(bottom = 14.dp),
+        .padding(bottom = 12.dp),
       horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
       repeat(items.size) { i ->
@@ -202,7 +241,7 @@ private fun HeroCarousel(items: List<MediaItem>, onOpenItem: (MediaItem) -> Unit
             .clip(CircleShape)
             .background(
               if (selected) MaterialTheme.colorScheme.primary
-              else MaterialTheme.colorScheme.outlineVariant,
+              else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
             ),
         )
       }
@@ -211,37 +250,86 @@ private fun HeroCarousel(items: List<MediaItem>, onOpenItem: (MediaItem) -> Unit
 }
 
 @Composable
-private fun HeroPage(item: MediaItem, onOpen: () -> Unit) {
-  Box(Modifier.fillMaxSize().clickable(onClick = onOpen)) {
-    BackdropImage(path = item.backdropPath, modifier = Modifier.fillMaxSize(), size = "w1280")
-    Box(Modifier.fillMaxSize().background(BottomScrim(0.75f)))
+private fun HeroPage(
+  item: MediaItem,
+  onOpen: () -> Unit,
+  library: LibraryStore? = null,
+) {
+  val backgroundColor = MaterialTheme.colorScheme.background
+  val heroGradient = remember(backgroundColor) {
+    Brush.verticalGradient(
+      0.00f to Color.Black.copy(alpha = 0.35f),
+      0.22f to Color.Transparent,
+      0.45f to Color.Transparent,
+      0.78f to backgroundColor.copy(alpha = 0.85f),
+      1.00f to backgroundColor,
+    )
+  }
+  val libraryState by library?.state?.collectAsState() ?: remember { mutableStateOf(null) }
+
+  Box(
+    Modifier
+      .fillMaxSize()
+      .clickable(onClick = onOpen),
+  ) {
+    BackdropImage(
+      path = item.backdropPath.ifEmpty { item.posterPath },
+      modifier = Modifier.fillMaxSize(),
+      size = "w1280",
+    )
+    Box(Modifier.fillMaxSize().background(heroGradient))
     Column(
       Modifier
         .align(Alignment.BottomStart)
-        .padding(20.dp)
+        .padding(horizontal = 20.dp)
         .padding(bottom = 28.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       Text(
-        if (item.kind == MediaKind.TV) stringResource(R.string.badge_show) else stringResource(R.string.badge_movie),
-        style = MaterialTheme.typography.labelSmall,
+        if (item.kind == MediaKind.TV) stringResource(R.string.badge_show).uppercase() else stringResource(R.string.badge_movie).uppercase(),
+        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
       Text(
         item.title,
-        style = MaterialTheme.typography.headlineMedium,
+        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Black),
         maxLines = 2,
         overflow = TextOverflow.Ellipsis,
+        color = MaterialTheme.colorScheme.onBackground,
       )
       val meta = listOfNotNull(
         item.year.takeIf { it.isNotEmpty() },
         item.rating.takeIf { it > 0 }?.let { "%.1f".format(it) },
       )
       if (meta.isNotEmpty()) {
-        Text(
-          meta.joinToString(" · "),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+          if (item.year.isNotEmpty()) {
+            Text(
+              item.year,
+              style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+          if (item.rating > 0) {
+            if (item.year.isNotEmpty()) {
+              Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(
+              Icons.Filled.Star,
+              contentDescription = null,
+              tint = Color(0xFFFFC94D),
+              modifier = Modifier.size(15.dp),
+            )
+            Text(
+              "%.1f".format(item.rating),
+              style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
       }
       if (item.overview.isNotEmpty()) {
         Text(
@@ -252,7 +340,46 @@ private fun HeroPage(item: MediaItem, onOpen: () -> Unit) {
           overflow = TextOverflow.Ellipsis,
         )
       }
-      // Los botones (Ver ficha / Watchlist) llegan con Detalle (F3) y Biblioteca (F4).
+
+      // Botones de acción rápida: "Ver ficha" y "+" Watchlist (como iOS)
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp),
+      ) {
+        Button(
+          onClick = onOpen,
+          shape = RoundedCornerShape(24.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = Color.White,
+          ),
+          contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
+        ) {
+          Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+          Spacer(Modifier.width(6.dp))
+          Text(
+            stringResource(R.string.hero_view_detail),
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+          )
+        }
+        if (library != null && libraryState != null) {
+          val inWatchlist = libraryState!!.contains(item.key, LibraryStore.Kind.WATCHLIST)
+          IconButton(
+            onClick = { library.toggle(item, LibraryStore.Kind.WATCHLIST) },
+            modifier = Modifier
+              .size(44.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)),
+          ) {
+            Icon(
+              imageVector = if (inWatchlist) Icons.Filled.Check else Icons.Filled.Add,
+              contentDescription = stringResource(if (inWatchlist) R.string.remove_from_watchlist else R.string.add_to_watchlist),
+              tint = if (inWatchlist) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
     }
   }
 }

@@ -27,9 +27,11 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,7 +76,7 @@ fun SearchScreen(
 
   Column(Modifier.fillMaxSize()) {
     // Caja de búsqueda (OutlinedTextField + chips de ámbito, como iOS searchable+scopes).
-    androidx.compose.material3.OutlinedTextField(
+    OutlinedTextField(
       value = state.query,
       onValueChange = vm::onQueryChange,
       modifier = Modifier
@@ -84,6 +86,10 @@ fun SearchScreen(
       leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
       singleLine = true,
       shape = RoundedCornerShape(18.dp),
+      colors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+      ),
     )
     Row(
       Modifier
@@ -96,6 +102,11 @@ fun SearchScreen(
           selected = state.scope == scope,
           onClick = { vm.onScopeChange(scope) },
           label = { Text(title) },
+          shape = RoundedCornerShape(20.dp),
+          colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primary,
+            selectedLabelColor = Color.White,
+          ),
         )
       }
     }
