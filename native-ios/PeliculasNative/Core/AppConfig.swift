@@ -38,5 +38,10 @@ enum AppConfig {
     static let lifetime = "peliculas_pro_lifetime"
     static let all = [yearly, monthly, lifetime]
     static let freeListLimit = 3
+    /// Venta de Pro. Mientras sea `false` no se vende nada (uso no comercial de
+    /// TMDB) y Pro no existe para el usuario: sin paywall, sin sección Pro en
+    /// Cuenta y sin funciones Pro visibles; el límite de listas avisa sin
+    /// mencionar Pro. Cómo reactivarlo: `docs/PRO.md`.
+    static let salesEnabled = false
   }
 }

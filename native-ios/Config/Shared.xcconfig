@@ -1,5 +1,5 @@
 // Valores comunes a Debug y Release.
-// Lo que es tuyo (URL de producción, IDs reales de AdMob, Team ID) va en
+// Lo que es tuyo (URL de producción, Team ID) va en
 // Secrets.generated.xcconfig, que genera scripts/sync-env.sh (gitignored).
 //
 // Ojo: en un .xcconfig "//" empieza un comentario. Por eso las URLs se
@@ -15,12 +15,6 @@ CURRENT_PROJECT_VERSION = 1
 // Backend Go. DEV = simulador contra `docker compose` local (API_PORT=8787).
 API_BASE_URL_DEV = http:/$()/127.0.0.1:8787
 API_BASE_URL_PROD = https:/$()/api-peliculas.creapolis.dev
-
-// AdMob. El App ID es el mismo de la app Flutter. En Debug siempre se usa
-// el banner de prueba oficial de Google.
-GAD_APPLICATION_ID = ca-app-pub-3460220325831299~7925363454
-GAD_AD_UNIT_ID_TEST = ca-app-pub-3940256099942544/2934735716
-GAD_AD_UNIT_ID_PROD = ca-app-pub-3940256099942544/2934735716
 
 // Páginas legales (obligatorias en App Store Connect y dentro de la app).
 PRIVACY_URL = https:/$()/creapolis.dev/privacidad/

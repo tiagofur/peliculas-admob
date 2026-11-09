@@ -73,7 +73,7 @@ fun ListsScreen(
     if (pro.isPro || state.visibleLists.size < AppConfig.Pro.FREE_LIST_LIMIT) {
       showCreate = true
     } else {
-      proStore.presentPaywall(limitReason)
+      proStore.presentListLimit(limitReason)
     }
   }
 

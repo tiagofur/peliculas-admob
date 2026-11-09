@@ -68,7 +68,7 @@ struct PaywallView: View {
         .font(.system(size: 36, weight: .heavy))
         .foregroundStyle(.white)
       Group {
-        if let reason = pro.paywallReason { Text(reason) } else { Text("Lo mejor de la app, sin anuncios y con avisos de tus series.") }
+        if let reason = pro.paywallReason { Text(reason) } else { Text("Lo mejor de la app, con listas ilimitadas y avisos de tus series.") }
       }
         .font(.body)
         .foregroundStyle(.white.opacity(0.75))
@@ -79,7 +79,6 @@ struct PaywallView: View {
   private var features: some View {
     VStack(alignment: .leading, spacing: 14) {
       feature("bell.badge.fill", .orange, "Avisos de episodios nuevos", "El día del estreno, a las 18:00 de tu hora.")
-      feature("nosign", .pink, "Sin anuncios", "Ni banners ni interrupciones.")
       feature("list.star", .purple, "Listas ilimitadas", "La versión gratis incluye \(AppConfig.Pro.freeListLimit).")
       feature("heart.text.square.fill", .red, "Apoyas a un desarrollador independiente", "Cada suscripción mantiene la app viva.")
     }

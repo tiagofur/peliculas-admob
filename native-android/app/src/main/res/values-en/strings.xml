@@ -97,6 +97,7 @@
   <string name="list_count_fmt">%1$d titles</string>
   <string name="list_limit_title">List limit</string>
   <string name="list_limit_message">The free version includes %1$d lists. With Pro, unlimited.</string>
+  <string name="list_limit_reached">You\'ve reached the maximum of %1$d lists. Delete one to create another.</string>
   <string name="list_delete_confirm_title">Delete list?</string>
   <string name="list_delete_confirm_message">Titles inside will not be deleted from your library.</string>
   <string name="dialog_ok">Got it</string>
@@ -185,11 +186,9 @@
   <string name="list_limit_pro_reason">With Pro you can create as many lists as you want.</string>
   <string name="upnext_pro_reason">With Pro we’ll notify you the day each episode comes out.</string>
   <string name="paywall_title">Películas Pro</string>
-  <string name="paywall_subtitle_default">The best of the app, ad-free and with unlimited lists.</string>
+  <string name="paywall_subtitle_default">The best of the app, with unlimited lists and alerts for your shows.</string>
   <string name="paywall_feature_episodes_title">New episode alerts</string>
   <string name="paywall_feature_episodes_desc">On release day, at 6 PM your time.</string>
-  <string name="paywall_feature_noads_title">No ads</string>
-  <string name="paywall_feature_noads_desc">No banners, no interruptions.</string>
   <string name="paywall_feature_lists_title">Unlimited lists</string>
   <string name="paywall_feature_lists_desc">The free version includes %1$d.</string>
   <string name="paywall_feature_support_title">Support an indie developer</string>
@@ -241,7 +240,6 @@ Películas</string>
   <string name="account_signin_pitch">Sync your library and shows across all your devices.</string>
   <string name="account_sync">Sync</string>
   <string name="add_to_list">Add to list</string>
-  <string name="ads_privacy">Ad privacy</string>
   <string name="auth_error_email_taken">An account with that email already exists. Sign in.</string>
   <string name="auth_error_generic">Couldn\'t sign in. Try again later.</string>
   <string name="auth_error_invalid_credentials">Wrong email or password.</string>
@@ -300,8 +298,8 @@ Películas</string>
   <string name="privacy_policy">Privacy policy</string>
   <string name="pro_manage">Manage subscription</string>
   <string name="pro_owned_by_other">This purchase belongs to another account.</string>
-  <string name="pro_pitch_short">Episode alerts, no ads and unlimited lists.</string>
-  <string name="pro_pitch_short_no_push">No ads and unlimited lists.</string>
+  <string name="pro_pitch_short">Episode alerts and unlimited lists.</string>
+  <string name="pro_pitch_short_no_push">Unlimited lists and you support the app.</string>
   <string name="pro_plan_generic">Pro</string>
   <string name="pro_plan_lifetime">Pro lifetime</string>
   <string name="pro_plan_monthly">Pro monthly</string>

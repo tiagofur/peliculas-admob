@@ -10,7 +10,6 @@ struct AccountView: View {
   @EnvironmentObject private var reminders: ReminderManager
   @EnvironmentObject private var router: DeepLinkRouter
   @ObservedObject private var push = PushManager.shared
-  @ObservedObject private var ads = AdsManager.shared
   @Environment(\.dismiss) private var dismiss
 
   @State private var confirmSignOut = false
@@ -22,7 +21,8 @@ struct AccountView: View {
     AppNavigation {
       List {
         profileSection
-        proSection
+        // Oculto mientras Pro no se vende, salvo para quien ya lo compró (docs/PRO.md).
+        if AppConfig.Pro.salesEnabled || pro.isPro { proSection }
         activitySection
         notificationsSection
         if session.isSignedIn { syncSection }
@@ -116,7 +116,7 @@ struct AccountView: View {
               .foregroundStyle(LinearGradient(colors: [.yellow, .orange, .pink], startPoint: .topLeading, endPoint: .bottomTrailing))
             VStack(alignment: .leading, spacing: 2) {
               Text("Películas Pro").font(.headline).foregroundStyle(.primary)
-              Text("Avisos de episodios, sin anuncios y listas ilimitadas.").font(.caption).foregroundStyle(.secondary)
+              Text("Avisos de episodios y listas ilimitadas.").font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
             Image(systemName: "chevron.forward").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
@@ -159,14 +159,17 @@ struct AccountView: View {
 
   private var notificationsSection: some View {
     Section {
-      Toggle(isOn: Binding(get: { push.status == .authorized && push.registered },
-                           set: { on in Task { await setEpisodeAlerts(on) } })) {
-        VStack(alignment: .leading, spacing: 2) {
-          HStack(spacing: 6) {
-            Text("Episodios nuevos")
-            if !pro.isPro { ProBadge() }
+      // Avisos de episodios: función Pro, oculta mientras Pro no se vende (docs/PRO.md).
+      if showsEpisodeAlerts {
+        Toggle(isOn: Binding(get: { push.status == .authorized && push.registered },
+                             set: { on in Task { await setEpisodeAlerts(on) } })) {
+          VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+              Text("Episodios nuevos")
+              if !pro.isPro { ProBadge() }
+            }
+            Text("Te avisamos el día del estreno de tus series.").font(.caption).foregroundStyle(.secondary)
           }
-          Text("Te avisamos el día del estreno de tus series.").font(.caption).foregroundStyle(.secondary)
         }
       }
       Toggle(isOn: Binding(get: { reminders.enabled },
@@ -190,9 +193,11 @@ struct AccountView: View {
     } header: {
       Text("Avisos")
     } footer: {
-      if !session.isSignedIn { Text("Los avisos de episodios necesitan una cuenta.") }
+      if showsEpisodeAlerts && !session.isSignedIn { Text("Los avisos de episodios necesitan una cuenta.") }
     }
   }
+
+  private var showsEpisodeAlerts: Bool { AppConfig.Pro.salesEnabled || pro.isPro }
 
   private func setEpisodeAlerts(_ on: Bool) async {
     guard session.isSignedIn else { router.showingSignIn = true; return }
@@ -228,9 +233,6 @@ struct AccountView: View {
 
   private var privacySection: some View {
     Section("Privacidad y ayuda") {
-      if ads.privacyOptionsRequired && !pro.isPro {
-        Button("Privacidad de anuncios") { ads.presentPrivacyOptions() }
-      }
       if let url = AppConfig.privacyURL { Link(destination: url) { Label("Política de privacidad", systemImage: "hand.raised") } }
       if let url = AppConfig.termsURL { Link(destination: url) { Label("Términos de uso", systemImage: "doc.text") } }
       if let url = AppConfig.supportURL { Link(destination: url) { Label("Ayuda y contacto", systemImage: "questionmark.circle") } }

@@ -1,6 +1,102 @@
 {
   "sourceLanguage" : "es",
   "strings" : {
+    "¡Listo! Tu Pro está activo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All set! Your Pro is active."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pronto! Seu Pro está ativo."
+          }
+        }
+      }
+    },
+    "¿Borrar tu cuenta?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete your account?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar sua conta?"
+          }
+        }
+      }
+    },
+    "¿Cerrar sesión?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign out?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair da conta?"
+          }
+        }
+      }
+    },
+    "¿No tienes cuenta? Crear una" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don’t have an account? Create one"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não tem conta? Crie uma"
+          }
+        }
+      }
+    },
+    "¿Olvidaste tu contraseña?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forgot your password?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esqueceu sua senha?"
+          }
+        }
+      }
+    },
+    "¿Qué te pareció?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What did you think?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que você achou?"
+          }
+        }
+      }
+    },
     "%@ al año." : {
       "localizations" : {
         "en" : {
@@ -714,6 +810,22 @@
         }
       }
     },
+    "Agrega 50 favoritos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add 50 favorites"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione 50 favoritos"
+          }
+        }
+      }
+    },
     "Agrega 100 favoritos" : {
       "localizations" : {
         "en" : {
@@ -742,22 +854,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adicione 200 favoritos"
-          }
-        }
-      }
-    },
-    "Agrega 50 favoritos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add 50 favorites"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione 50 favoritos"
           }
         }
       }
@@ -842,18 +938,98 @@
         }
       }
     },
-    "Anuncio" : {
+    "Añade títulos desde su ficha (botón ⋯) o manteniendo pulsado un póster." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ad"
+            "value" : "Add titles from their details page (⋯ button) or by touching and holding a poster."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Anúncio"
+            "value" : "Adicione títulos pela página de detalhes (botão ⋯) ou tocando e segurando um pôster."
+          }
+        }
+      }
+    },
+    "Añade una serie a tu Watchlist o marca un episodio visto y aquí verás qué toca después." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add a series to your Watchlist or mark an episode as watched, and you’ll see what’s next here."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicione uma série à sua Watchlist ou marque um episódio como visto e aqui você verá o que vem a seguir."
+          }
+        }
+      }
+    },
+    "Añadido recientemente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recently Added"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionados recentemente"
+          }
+        }
+      }
+    },
+    "Añadir a lista" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to List"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à lista"
+          }
+        }
+      }
+    },
+    "Añadir a Watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Watchlist"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à Watchlist"
+          }
+        }
+      }
+    },
+    "Año" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Year"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ano"
           }
         }
       }
@@ -870,6 +1046,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Apoie um desenvolvedor independente"
+          }
+        }
+      }
+    },
+    "Aún no calificas nada" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing Rated Yet"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada avaliado ainda"
+          }
+        }
+      }
+    },
+    "Avísame cuando se estrenen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notify Me When They Air"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avise-me quando estrearem"
           }
         }
       }
@@ -922,34 +1130,18 @@
         }
       }
     },
-    "Avisos de episodios, sin anuncios y listas ilimitadas." : {
+    "Avisos de episodios y listas ilimitadas." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Episode alerts, no ads and unlimited lists."
+            "value" : "Episode alerts and unlimited lists."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avisos de episódios, sem anúncios e listas ilimitadas."
-          }
-        }
-      }
-    },
-    "Avísame cuando se estrenen" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notify Me When They Air"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avise-me quando estrearem"
+            "value" : "Avisos de episódios e listas ilimitadas."
           }
         }
       }
@@ -966,118 +1158,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ajuda e contato"
-          }
-        }
-      }
-    },
-    "Añade títulos desde su ficha (botón ⋯) o manteniendo pulsado un póster." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add titles from their details page (⋯ button) or by touching and holding a poster."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione títulos pela página de detalhes (botão ⋯) ou tocando e segurando um pôster."
-          }
-        }
-      }
-    },
-    "Añade una serie a tu Watchlist o marca un episodio visto y aquí verás qué toca después." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add a series to your Watchlist or mark an episode as watched, and you’ll see what’s next here."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicione uma série à sua Watchlist ou marque um episódio como visto e aqui você verá o que vem a seguir."
-          }
-        }
-      }
-    },
-    "Añadido recientemente" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recently Added"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionados recentemente"
-          }
-        }
-      }
-    },
-    "Añadir a Watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to Watchlist"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar à Watchlist"
-          }
-        }
-      }
-    },
-    "Añadir a lista" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add to List"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar à lista"
-          }
-        }
-      }
-    },
-    "Año" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Year"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ano"
-          }
-        }
-      }
-    },
-    "Aún no calificas nada" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing Rated Yet"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nada avaliado ainda"
           }
         }
       }
@@ -1382,6 +1462,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cinéfilo"
+          }
+        }
+      }
+    },
+    "Código de 6 dígitos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6-digit code"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de 6 dígitos"
           }
         }
       }
@@ -1818,22 +1914,6 @@
         }
       }
     },
-    "Código de 6 dígitos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6-digit code"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Código de 6 dígitos"
-          }
-        }
-      }
-    },
     "Datos e imágenes de The Movie Database (TMDB). Esta app usa la API de TMDB pero no está respaldada ni certificada por TMDB." : {
       "localizations" : {
         "en" : {
@@ -1862,6 +1942,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Das séries que você segue"
+          }
+        }
+      }
+    },
+    "Década" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Decade"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Década"
+          }
+        }
+      }
+    },
+    "Década de estreno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Release decade"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Década de lançamento"
           }
         }
       }
@@ -1994,38 +2106,6 @@
         }
       }
     },
-    "Década" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Decade"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Década"
-          }
-        }
-      }
-    },
-    "Década de estreno" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Release decade"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Década de lançamento"
-          }
-        }
-      }
-    },
     "Dónde verla" : {
       "localizations" : {
         "en" : {
@@ -2041,9 +2121,6 @@
           }
         }
       }
-    },
-    "EULA" : {
-      "shouldTranslate" : false
     },
     "Editar" : {
       "localizations" : {
@@ -2541,6 +2618,9 @@
           }
         }
       }
+    },
+    "EULA" : {
+      "shouldTranslate" : false
     },
     "Explorador" : {
       "localizations" : {
@@ -3166,6 +3246,22 @@
         }
       }
     },
+    "Llegaste al máximo de %lld listas. Borra una para crear otra." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You've reached the maximum of %lld lists. Delete one to create another."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você atingiu o máximo de %lld listas. Apague uma para criar outra."
+          }
+        }
+      }
+    },
     "Lleva tu biblioteca contigo" : {
       "localizations" : {
         "en" : {
@@ -3182,18 +3278,18 @@
         }
       }
     },
-    "Lo mejor de la app, sin anuncios y con avisos de tus series." : {
+    "Lo mejor de la app, con listas ilimitadas y avisos de tus series." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The best of the app, ad-free and with alerts for your series."
+            "value" : "The best of the app, with unlimited lists and alerts for your series."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O melhor do app, sem anúncios e com avisos das suas séries."
+            "value" : "O melhor do app, com listas ilimitadas e avisos das suas séries."
           }
         }
       }
@@ -3342,6 +3438,22 @@
         }
       }
     },
+    "Mañana" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amanhã"
+          }
+        }
+      }
+    },
     "Mantén pulsado cualquier póster o usa los botones de la ficha para guardar títulos aquí." : {
       "localizations" : {
         "en" : {
@@ -3390,22 +3502,6 @@
         }
       }
     },
-    "Marca 250 episodios vistos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark 250 episodes as watched"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marque 250 episódios como vistos"
-          }
-        }
-      }
-    },
     "Marca 50 episodios vistos" : {
       "localizations" : {
         "en" : {
@@ -3418,6 +3514,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marque 50 episódios como vistos"
+          }
+        }
+      }
+    },
+    "Marca 250 episodios vistos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark 250 episodes as watched"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque 250 episódios como vistos"
           }
         }
       }
@@ -3454,6 +3566,22 @@
         }
       }
     },
+    "Marca títulos como vistos y aquí verás tu actividad, tus épocas favoritas y tu nota media." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mark titles as watched and you'll see your activity, favorite decades and average score here."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marque títulos como vistos e aqui você verá sua atividade, suas décadas favoritas e sua nota média."
+          }
+        }
+      }
+    },
     "Marca tu primer episodio visto" : {
       "localizations" : {
         "en" : {
@@ -3482,22 +3610,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marque seu primeiro título como visto"
-          }
-        }
-      }
-    },
-    "Marca títulos como vistos y aquí verás tu actividad, tus épocas favoritas y tu nota media." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mark titles as watched and you'll see your activity, favorite decades and average score here."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Marque títulos como vistos e aqui você verá sua atividade, suas décadas favoritas e sua nota média."
           }
         }
       }
@@ -3582,18 +3694,50 @@
         }
       }
     },
-    "Mañana" : {
+    "Más" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tomorrow"
+            "value" : "More"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Amanhã"
+            "value" : "Mais"
+          }
+        }
+      }
+    },
+    "Más opciones" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Options"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais opções"
+          }
+        }
+      }
+    },
+    "Más recientes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Newest"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais recentes"
           }
         }
       }
@@ -3678,22 +3822,6 @@
         }
       }
     },
-    "Mira lo que todos están viendo este fin de semana." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See what everyone is watching this weekend."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veja o que todo mundo está assistindo neste fim de semana."
-          }
-        }
-      }
-    },
     "Mira «%@» — la encontré en Películas" : {
       "localizations" : {
         "en" : {
@@ -3710,6 +3838,22 @@
         }
       }
     },
+    "Mira lo que todos están viendo este fin de semana." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See what everyone is watching this weekend."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veja o que todo mundo está assistindo neste fim de semana."
+          }
+        }
+      }
+    },
     "Montaje" : {
       "localizations" : {
         "en" : {
@@ -3722,54 +3866,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Montagem"
-          }
-        }
-      }
-    },
-    "Más" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mais"
-          }
-        }
-      }
-    },
-    "Más opciones" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More Options"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mais opções"
-          }
-        }
-      }
-    },
-    "Más recientes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Newest"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mais recentes"
           }
         }
       }
@@ -3834,22 +3930,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Netflix, Prime Video, Disney+ e mais: abra o app certo com um toque."
-          }
-        }
-      }
-    },
-    "Ni banners ni interrupciones." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No banners, no interruptions."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sem banners nem interrupções."
           }
         }
       }
@@ -4014,7 +4094,9 @@
         }
       }
     },
-    "No se pudo cargar toda la información." : {},
+    "No se pudo cargar toda la información." : {
+
+    },
     "No se pudo cargar toda la información. Desliza para reintentar." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4256,6 +4338,22 @@
         }
       }
     },
+    "o con tu correo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "or with your email"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ou com seu e-mail"
+          }
+        }
+      }
+    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -4287,25 +4385,6 @@
           }
         }
       }
-    },
-    "PELÍCULA" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "MOVIE"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "FILME"
-          }
-        }
-      }
-    },
-    "PRO" : {
-      "shouldTranslate" : false
     },
     "Pago único. Tuyo para siempre, compartible con En Familia." : {
       "localizations" : {
@@ -4367,6 +4446,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filme"
+          }
+        }
+      }
+    },
+    "PELÍCULA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "MOVIE"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "FILME"
           }
         }
       }
@@ -4611,22 +4706,6 @@
         }
       }
     },
-    "Privacidad de anuncios" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ad Privacy"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacidade de anúncios"
-          }
-        }
-      }
-    },
     "Privacidad y ayuda" : {
       "localizations" : {
         "en" : {
@@ -4642,6 +4721,9 @@
           }
         }
       }
+    },
+    "PRO" : {
+      "shouldTranslate" : false
     },
     "Pro anual" : {
       "localizations" : {
@@ -4723,37 +4805,8 @@
         }
       }
     },
-    "Prueba con otro título o revisa la ortografía." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try another title or check the spelling."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tente outro título ou verifique a ortografia."
-          }
-        }
-      }
-    },
     "Próximamente" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coming Soon"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Em breve"
-          }
-        }
-      }
+
     },
     "Próximos episodios" : {
       "localizations" : {
@@ -4787,6 +4840,38 @@
         }
       }
     },
+    "Prueba con otro título o revisa la ortografía." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try another title or check the spelling."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tente outro título ou verifique a ortografia."
+          }
+        }
+      }
+    },
+    "puntos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "points"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "pontos"
+          }
+        }
+      }
+    },
     "Puntos" : {
       "localizations" : {
         "en" : {
@@ -4803,22 +4888,6 @@
         }
       }
     },
-    "Quitar de Watchlist" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove from Watchlist"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remover da Watchlist"
-          }
-        }
-      }
-    },
     "Quitar de favoritos" : {
       "localizations" : {
         "en" : {
@@ -4831,6 +4900,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remover dos favoritos"
+          }
+        }
+      }
+    },
+    "Quitar de Watchlist" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Watchlist"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover da Watchlist"
           }
         }
       }
@@ -5011,22 +5096,6 @@
         }
       }
     },
-    "SERIE" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SERIES"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "SÉRIE"
-          }
-        }
-      }
-    },
     "Se borran para siempre tu cuenta, biblioteca, listas, notas y progreso. Las suscripciones se cancelan aparte en Ajustes › Apple ID." : {
       "localizations" : {
         "en" : {
@@ -5087,6 +5156,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Série"
+          }
+        }
+      }
+    },
+    "SERIE" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SERIES"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SÉRIE"
           }
         }
       }
@@ -5183,22 +5268,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Próximo episódio"
-          }
-        }
-      }
-    },
-    "Sin anuncios" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No ads"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sem anúncios"
           }
         }
       }
@@ -5395,9 +5464,6 @@
         }
       }
     },
-    "TMDB" : {
-      "shouldTranslate" : false
-    },
     "Te avisamos el día del estreno de tus series." : {
       "localizations" : {
         "en" : {
@@ -5552,6 +5618,38 @@
         }
       }
     },
+    "Términos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos"
+          }
+        }
+      }
+    },
+    "Términos de uso" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Termos de Uso"
+          }
+        }
+      }
+    },
     "Tienes %lld títulos guardados para ver." : {
       "localizations" : {
         "en" : {
@@ -5625,6 +5723,9 @@
           }
         }
       }
+    },
+    "TMDB" : {
+      "shouldTranslate" : false
     },
     "Toca el corazón en la ficha de lo que más te guste." : {
       "localizations" : {
@@ -5718,6 +5819,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trailer"
+          }
+        }
+      }
+    },
+    "Tú" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Você"
           }
         }
       }
@@ -5894,54 +6011,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Suas épocas"
-          }
-        }
-      }
-    },
-    "Términos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terms"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Termos"
-          }
-        }
-      }
-    },
-    "Términos de uso" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terms of Use"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Termos de Uso"
-          }
-        }
-      }
-    },
-    "Tú" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Você"
           }
         }
       }
@@ -6262,134 +6331,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Já tenho conta"
-          }
-        }
-      }
-    },
-    "o con tu correo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "or with your email"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ou com seu e-mail"
-          }
-        }
-      }
-    },
-    "puntos" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "points"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "pontos"
-          }
-        }
-      }
-    },
-    "¡Listo! Tu Pro está activo." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "All set! Your Pro is active."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pronto! Seu Pro está ativo."
-          }
-        }
-      }
-    },
-    "¿Borrar tu cuenta?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete your account?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apagar sua conta?"
-          }
-        }
-      }
-    },
-    "¿Cerrar sesión?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign out?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sair da conta?"
-          }
-        }
-      }
-    },
-    "¿No tienes cuenta? Crear una" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Don’t have an account? Create one"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não tem conta? Crie uma"
-          }
-        }
-      }
-    },
-    "¿Olvidaste tu contraseña?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forgot your password?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esqueceu sua senha?"
-          }
-        }
-      }
-    },
-    "¿Qué te pareció?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What did you think?"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O que você achou?"
           }
         }
       }

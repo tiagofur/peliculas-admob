@@ -40,7 +40,6 @@ object AppConfig {
   const val TERMS_URL = BuildConfig.TERMS_URL
   const val SUPPORT_URL = BuildConfig.SUPPORT_URL
   const val GOOGLE_WEB_CLIENT_ID = BuildConfig.GOOGLE_WEB_CLIENT_ID
-  const val ADMOB_BANNER_ID = BuildConfig.ADMOB_BANNER_ID
 
   /** "1.0 (1)" como en Ajustes de iOS. */
   const val APP_VERSION = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
@@ -62,6 +61,14 @@ object AppConfig {
     const val LIFETIME = "peliculas_pro_lifetime"
     val ALL = listOf(YEARLY, MONTHLY, LIFETIME)
     const val FREE_LIST_LIMIT = 3
+
+    /**
+     * Venta de Pro. Mientras sea `false` no se vende nada (uso no comercial de
+     * TMDB) y Pro no existe para el usuario: sin paywall, sin sección Pro en
+     * Cuenta y sin funciones Pro visibles; el límite de listas avisa sin
+     * mencionar Pro. Cómo reactivarlo: `docs/PRO.md`.
+     */
+    const val SALES_ENABLED = false
   }
 }
 

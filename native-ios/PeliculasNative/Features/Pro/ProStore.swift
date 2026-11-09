@@ -20,6 +20,8 @@ final class ProStore: ObservableObject {
   @Published var showingPaywall = false
   /// Por qué se abrió el paywall (texto del encabezado).
   @Published var paywallReason: String?
+  /// Aviso de límite sin mencionar Pro (mientras Pro no se vende).
+  @Published var limitNotice: String?
 
   private var updates: Task<Void, Never>?
 
@@ -33,8 +35,18 @@ final class ProStore: ObservableObject {
   }
 
   func presentPaywall(reason: String? = nil) {
+    guard AppConfig.Pro.salesEnabled else { return }
     paywallReason = reason
     showingPaywall = true
+  }
+
+  /// Límite de listas: paywall si Pro se vende; si no, un aviso que no menciona Pro.
+  func presentListLimit(reason: String) {
+    if AppConfig.Pro.salesEnabled {
+      presentPaywall(reason: reason)
+    } else {
+      limitNotice = String(localized: "Llegaste al máximo de \(AppConfig.Pro.freeListLimit) listas. Borra una para crear otra.")
+    }
   }
 
   func loadProducts() async {

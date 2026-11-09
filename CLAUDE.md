@@ -12,4 +12,7 @@ Monorepo de Películas. Cada carpeta es un proyecto independiente; trabaja dentr
 Las dos apps nativas hablan el mismo protocolo `/v1/sync` del backend: un cambio de modelo
 de sync se hace en ambas a la vez.
 
+Sin anuncios y con Pro apagado (`SALES_ENABLED`/`salesEnabled = false`) por la licencia comercial de TMDB:
+no reactives ni añadas monetización sin leer `docs/PRO.md`.
+
 Nunca subas secretos: `.env`, `*.jks`, `keystore.properties` y `key.properties` están ignorados.

@@ -75,7 +75,6 @@ struct PeliculasNativeApp: App {
       { await PushManager.shared.unregister() },
       { library.resetForSignOut() },
     ]
-    AdsManager.shared.start()
     achievements.check(LibraryCounts(library))
   }
 }

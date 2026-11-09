@@ -38,7 +38,6 @@ struct HomeView: View {
 
           TMDBAttribution()
             .padding(.horizontal, 20)
-          AdBannerView()
         }
         .padding(.bottom, 24)
       }

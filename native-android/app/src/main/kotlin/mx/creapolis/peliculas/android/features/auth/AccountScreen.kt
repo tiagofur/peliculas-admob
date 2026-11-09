@@ -1,9 +1,7 @@
 package mx.creapolis.peliculas.android.features.auth
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -33,7 +31,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.PanTool
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
@@ -68,7 +65,6 @@ import mx.creapolis.peliculas.android.R
 import mx.creapolis.peliculas.android.core.library.LibraryStore
 import mx.creapolis.peliculas.android.core.network.ApiError
 import mx.creapolis.peliculas.android.core.network.AppConfig
-import mx.creapolis.peliculas.android.features.ads.AdsManager
 import mx.creapolis.peliculas.android.features.library.NameDialog
 import mx.creapolis.peliculas.android.ui.components.InitialsAvatar
 import mx.creapolis.peliculas.android.ui.components.ProBadge
@@ -98,7 +94,6 @@ fun AccountScreen(
   val pro by proStore.state.collectAsState()
   val achievements by container.achievements.state.collectAsState()
   val remindersOn by container.reminders.enabled.collectAsState()
-  val ads by AdsManager.state.collectAsState()
 
   var confirmSignOut by remember { mutableStateOf(false) }
   var confirmDelete by remember { mutableStateOf(false) }
@@ -173,8 +168,8 @@ fun AccountScreen(
       }
     }
 
-    // ---- Pro ----
-    item {
+    // ---- Pro (oculto mientras Pro no se vende, salvo para quien ya lo compró; ver docs/PRO.md) ----
+    if (AppConfig.Pro.SALES_ENABLED || pro.isPro) item {
       Card {
         if (pro.isPro) {
           Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -297,12 +292,6 @@ fun AccountScreen(
     // ---- Privacidad y ayuda ----
     item {
       Section(stringResource(R.string.account_privacy_help)) {
-        if (ads.privacyOptionsRequired && !pro.isPro) {
-          LinkRow(Icons.Filled.PanTool, stringResource(R.string.ads_privacy)) {
-            context.findActivity()?.let { AdsManager.presentPrivacyOptions(it) }
-          }
-          Divider()
-        }
         LinkRow(Icons.Filled.PrivacyTip, stringResource(R.string.privacy_policy)) { openUrl(context, AppConfig.PRIVACY_URL) }
         Divider()
         LinkRow(Icons.Filled.Description, stringResource(R.string.terms_of_use)) { openUrl(context, AppConfig.TERMS_URL) }
@@ -490,13 +479,4 @@ private fun androidx.compose.foundation.layout.RowScope.Stat(value: Int, label: 
     Text("$value", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
     Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
   }
-}
-
-private fun Context.findActivity(): Activity? {
-  var ctx: Context? = this
-  while (ctx is ContextWrapper) {
-    if (ctx is Activity) return ctx
-    ctx = ctx.baseContext
-  }
-  return null
 }

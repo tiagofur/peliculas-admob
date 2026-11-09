@@ -158,7 +158,19 @@ class ProStore(
   }
 
   fun presentPaywall(reason: String? = null) {
+    if (!AppConfig.Pro.SALES_ENABLED) return
     _state.update { it.copy(showingPaywall = true, paywallReason = reason) }
+  }
+
+  /** Límite de listas: paywall si Pro se vende; si no, un aviso que no menciona Pro. */
+  fun presentListLimit(reason: String) {
+    if (AppConfig.Pro.SALES_ENABLED) {
+      presentPaywall(reason)
+    } else {
+      val fallback = "Llegaste al máximo de ${AppConfig.Pro.FREE_LIST_LIMIT} listas. Borra una para crear otra."
+      val msg = context?.getString(R.string.list_limit_reached, AppConfig.Pro.FREE_LIST_LIMIT) ?: fallback
+      _state.update { it.copy(message = msg) }
+    }
   }
 
   fun dismissPaywall() {

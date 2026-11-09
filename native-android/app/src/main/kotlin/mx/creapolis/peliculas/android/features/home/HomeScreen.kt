@@ -13,7 +13,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import kotlinx.coroutines.launch
 import mx.creapolis.peliculas.android.LocalAppContainer
-import mx.creapolis.peliculas.android.features.ads.AdBannerView
 import mx.creapolis.peliculas.android.features.upnext.UpNextCard
 import mx.creapolis.peliculas.android.ui.components.AccountButton
 import mx.creapolis.peliculas.android.ui.components.MediaContextMenu
@@ -193,7 +192,6 @@ fun HomeScreen(
         pagedRail(railTopRatedTitle, state.rails[SeeAllRoute.TOP_RATED], SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
 
         item { TmdbAttribution(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) }
-        item { AdBannerView(proStore = container.proStore) }
       }
     }
     // Botón de cuenta flotando sobre el héroe (toolbar de iOS).

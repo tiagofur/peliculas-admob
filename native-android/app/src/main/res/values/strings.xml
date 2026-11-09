@@ -97,6 +97,7 @@
   <string name="list_count_fmt">%1$d títulos</string>
   <string name="list_limit_title">Límite de listas</string>
   <string name="list_limit_message">La versión gratis incluye %1$d listas. Con Pro, ilimitadas.</string>
+  <string name="list_limit_reached">Llegaste al máximo de %1$d listas. Borra una para crear otra.</string>
   <string name="list_delete_confirm_title">¿Eliminar la lista?</string>
   <string name="list_delete_confirm_message">Los títulos que contiene no se borran de tu biblioteca.</string>
   <string name="dialog_ok">Entendido</string>
@@ -185,11 +186,9 @@
   <string name="list_limit_pro_reason">Con Pro creas todas las listas que quieras.</string>
   <string name="upnext_pro_reason">Con Pro te avisamos el día que sale cada episodio.</string>
   <string name="paywall_title">Películas Pro</string>
-  <string name="paywall_subtitle_default">Lo mejor de la app, sin anuncios y con listas ilimitadas.</string>
+  <string name="paywall_subtitle_default">Lo mejor de la app, con listas ilimitadas y avisos de tus series.</string>
   <string name="paywall_feature_episodes_title">Avisos de episodios nuevos</string>
   <string name="paywall_feature_episodes_desc">El día del estreno, a las 18:00 de tu hora.</string>
-  <string name="paywall_feature_noads_title">Sin anuncios</string>
-  <string name="paywall_feature_noads_desc">Ni banners ni interrupciones.</string>
   <string name="paywall_feature_lists_title">Listas ilimitadas</string>
   <string name="paywall_feature_lists_desc">La versión gratis incluye %1$d.</string>
   <string name="paywall_feature_support_title">Apoyas a un desarrollador independiente</string>
@@ -240,7 +239,6 @@
   <string name="account_signin_pitch">Sincroniza tu biblioteca y tus series en todos tus dispositivos.</string>
   <string name="account_sync">Sincronización</string>
   <string name="add_to_list">Añadir a lista</string>
-  <string name="ads_privacy">Privacidad de anuncios</string>
   <string name="auth_error_email_taken">Ya existe una cuenta con ese correo. Inicia sesión.</string>
   <string name="auth_error_generic">No se pudo iniciar sesión. Inténtalo más tarde.</string>
   <string name="auth_error_invalid_credentials">Correo o contraseña incorrectos.</string>
@@ -299,8 +297,8 @@
   <string name="privacy_policy">Política de privacidad</string>
   <string name="pro_manage">Gestionar suscripción</string>
   <string name="pro_owned_by_other">Esta compra pertenece a otra cuenta.</string>
-  <string name="pro_pitch_short">Avisos de episodios, sin anuncios y listas ilimitadas.</string>
-  <string name="pro_pitch_short_no_push">Sin anuncios y con listas ilimitadas.</string>
+  <string name="pro_pitch_short">Avisos de episodios y listas ilimitadas.</string>
+  <string name="pro_pitch_short_no_push">Listas ilimitadas y apoyas la app.</string>
   <string name="pro_plan_generic">Pro</string>
   <string name="pro_plan_lifetime">Pro de por vida</string>
   <string name="pro_plan_monthly">Pro mensual</string>

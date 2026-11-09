@@ -5,6 +5,9 @@
 ## 🚀 Quick Start
 
 - **New to the project?** Start with [Project Overview](../README.md)
+- **Pro y anuncios:** [Pro desactivado y cómo reactivarlo](PRO.md) — la app no tiene anuncios ni Pro visible (licencia de TMDB)
+- **Social (propuesta):** [Fase social mínima](SOCIAL.md) — perfiles, seguir, feed y reacciones
+- **IA local (propuesta):** [IA en el dispositivo](IA-LOCAL.md) — informes y búsqueda con Apple Foundation Models y Gemini Nano
 - **Setting up auth?** Check [Google Authentication Guide](guides/google-auth.md)
 - **Need Supabase?** See [Supabase Realtime Setup](guides/supabase-realtime.md)
 

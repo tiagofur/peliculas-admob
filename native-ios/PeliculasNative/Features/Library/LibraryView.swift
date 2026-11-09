@@ -248,7 +248,7 @@ struct ListsView: View {
             name = ""
             creating = true
           } else {
-            pro.presentPaywall(reason: String(localized: "La versión gratis incluye \(AppConfig.Pro.freeListLimit) listas. Con Pro, ilimitadas."))
+            pro.presentListLimit(reason: String(localized: "La versión gratis incluye \(AppConfig.Pro.freeListLimit) listas. Con Pro, ilimitadas."))
           }
         } label: {
           Image(systemName: "plus")

@@ -14,7 +14,7 @@
 | **Package name** | `mx.creapolis.peliculas.android` |
 | **Nombre de la app** | Películas |
 | **Categoría principal** | Entretenimiento |
-| **Monetización** | Freemium (gratuita con banners AdMob discretos + suscripción Pro) |
+| **Monetización** | Gratis y sin anuncios. Pro anunciado como "Próximamente" sin compras (`AppConfig.Pro.SALES_ENABLED = false`) hasta activarlo |
 | **Público objetivo** | Mayores de 13 años (sin contenido dirigido específicamente a niños) |
 | **Idiomas principales** | Español (base), Portugués (Brasil), Inglés |
 
@@ -39,8 +39,7 @@ FUNCIONES PRINCIPALES:
 • En todos tus dispositivos: Sincronización automática de tu biblioteca con tu cuenta.
 • Widget de inicio: Consulta las tendencias del día directamente desde tu pantalla de inicio.
 
-Versión Pro:
-Disfruta de la app sin anuncios, listas ilimitadas y avisos inmediatos cuando salgan nuevos episodios de tus series favoritas.
+Gratis y sin anuncios.
 ```
 
 ### Português (Brasil)
@@ -110,7 +109,7 @@ En Google Play Console › **Monetización** › **Productos integrados en la ap
 - **Datos recopilados**:
   - Información de la cuenta: Nombre, correo electrónico (para autenticación y sync).
   - Actividad de la app: Títulos guardados, vistas y notas (para la biblioteca personal).
-  - Identificadores de dispositivo: Para notificaciones push y publicidad AdMob.
+  - Identificadores de dispositivo: Para notificaciones push (sin publicidad ni seguimiento).
 - **Seguridad**:
   - Cifrado en tránsito (HTTPS / TLS 1.3).
   - Opción de eliminación de cuenta disponible dentro de la app (Ajustes › Cuenta › Borrar cuenta y datos) y vía soporte.
