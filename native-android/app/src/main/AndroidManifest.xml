@@ -43,10 +43,10 @@
       </intent-filter>
     </activity>
 
-    <!-- AdMob App ID (ID de prueba oficial de Google para debug/desarrollo) -->
+    <!-- AdMob App ID: debug usa el de prueba; release lo toma de ADMOB_APP_ID (build.gradle.kts). -->
     <meta-data
       android:name="com.google.android.gms.ads.APPLICATION_ID"
-      android:value="ca-app-pub-3940256099942544~3347511713" />
+      android:value="${admobAppId}" />
 
     <!-- Widget Glance de Tendencias -->
     <receiver

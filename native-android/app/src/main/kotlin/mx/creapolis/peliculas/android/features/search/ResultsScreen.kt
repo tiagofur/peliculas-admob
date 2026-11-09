@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.FilterAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
@@ -132,31 +133,49 @@ private fun FilterBar(sort: DiscoverSort, year: Int?, onSort: (DiscoverSort) -> 
     horizontalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     Box {
-      IconButton(onClick = { sortOpen = true }) {
-        Icon(Icons.Filled.FilterAlt, contentDescription = stringResource(R.string.filter))
-      }
+      androidx.compose.material3.FilterChip(
+        selected = sort != DiscoverSort.POPULARITY,
+        onClick = { sortOpen = true },
+        leadingIcon = { Icon(Icons.Filled.FilterAlt, contentDescription = null) },
+        label = {
+          Text(
+            stringResource(
+              when (sort) {
+                DiscoverSort.POPULARITY -> R.string.sort_popular
+                DiscoverSort.RATING -> R.string.sort_rating
+                DiscoverSort.NEWEST -> R.string.sort_newest
+              },
+            ),
+          )
+        },
+      )
       DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
         DropdownMenuItem(
           text = { Text(stringResource(R.string.sort_popular)) },
+          trailingIcon = { if (sort == DiscoverSort.POPULARITY) Icon(Icons.Filled.Check, contentDescription = null) },
           leadingIcon = { Icon(Icons.Filled.LocalFireDepartment, contentDescription = null) },
           onClick = { onSort(DiscoverSort.POPULARITY); sortOpen = false },
         )
         DropdownMenuItem(
           text = { Text(stringResource(R.string.sort_rating)) },
+          trailingIcon = { if (sort == DiscoverSort.RATING) Icon(Icons.Filled.Check, contentDescription = null) },
           leadingIcon = { Icon(Icons.Filled.Star, contentDescription = null) },
           onClick = { onSort(DiscoverSort.RATING); sortOpen = false },
         )
         DropdownMenuItem(
           text = { Text(stringResource(R.string.sort_newest)) },
+          trailingIcon = { if (sort == DiscoverSort.NEWEST) Icon(Icons.Filled.Check, contentDescription = null) },
           leadingIcon = { Icon(Icons.Filled.DateRange, contentDescription = null) },
           onClick = { onSort(DiscoverSort.NEWEST); sortOpen = false },
         )
       }
     }
     Box {
-      TextButton(onClick = { yearOpen = true }) {
-        Text(year?.toString() ?: stringResource(R.string.filter_year_all))
-      }
+      androidx.compose.material3.FilterChip(
+        selected = year != null,
+        onClick = { yearOpen = true },
+        label = { Text(year?.toString() ?: stringResource(R.string.filter_year_all)) },
+      )
       DropdownMenu(expanded = yearOpen, onDismissRequest = { yearOpen = false }) {
         DropdownMenuItem(
           text = { Text(stringResource(R.string.filter_year_all)) },

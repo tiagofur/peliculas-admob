@@ -70,7 +70,9 @@ fun PaywallScreen(
   val state by proStore.state.collectAsState()
   var selectedPlanId by remember { mutableStateOf(AppConfig.Pro.YEARLY) }
   val context = LocalContext.current
-  val activity = context as? Activity
+  // Dentro de un Dialog el contexto es un wrapper: hay que llegar a la Activity
+  // o Play Billing no puede abrir su hoja de compra.
+  val activity = remember(context) { context.findActivity() }
 
   LaunchedEffect(Unit) {
     proStore.loadProducts()
@@ -150,12 +152,15 @@ fun PaywallScreen(
             .padding(18.dp),
           verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-          FeatureItem(
-            icon = Icons.Filled.NotificationsActive,
-            iconTint = Color(0xFFFF9800),
-            title = stringResource(R.string.paywall_feature_episodes_title),
-            subtitle = stringResource(R.string.paywall_feature_episodes_desc),
-          )
+          // Solo se promete lo que funciona en Android (sin FCM aún: ver AppConfig).
+          if (AppConfig.EPISODE_PUSH_AVAILABLE) {
+            FeatureItem(
+              icon = Icons.Filled.NotificationsActive,
+              iconTint = Color(0xFFFF9800),
+              title = stringResource(R.string.paywall_feature_episodes_title),
+              subtitle = stringResource(R.string.paywall_feature_episodes_desc),
+            )
+          }
           FeatureItem(
             icon = Icons.Filled.Block,
             iconTint = Color(0xFFE91E63),
@@ -182,6 +187,23 @@ fun PaywallScreen(
         if (state.loadingProducts) {
           Box(modifier = Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+          }
+        } else if (state.products.isEmpty()) {
+          // Sin Play Store o sin red: nada de precios inventados (como iOS).
+          Column(
+            Modifier.fillMaxWidth().height(120.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+          ) {
+            Text(
+              stringResource(R.string.pro_plans_not_available),
+              style = MaterialTheme.typography.bodySmall,
+              color = Color.White.copy(alpha = 0.7f),
+              textAlign = TextAlign.Center,
+            )
+            TextButton(onClick = { proStore.loadProducts() }) {
+              Text(stringResource(R.string.retry), color = Color.White, fontWeight = FontWeight.SemiBold)
+            }
           }
         } else {
           Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -241,7 +263,7 @@ fun PaywallScreen(
 
         Spacer(Modifier.height(20.dp))
 
-        // Restaurar compras
+        // Restaurar compras + legal (términos y privacidad, como el footer de iOS)
         TextButton(
           onClick = { proStore.restore() },
         ) {
@@ -251,6 +273,14 @@ fun PaywallScreen(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
           )
+        }
+        androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          TextButton(onClick = { mx.creapolis.peliculas.android.features.auth.openUrl(context, AppConfig.TERMS_URL) }) {
+            Text(stringResource(R.string.terms), color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)
+          }
+          TextButton(onClick = { mx.creapolis.peliculas.android.features.auth.openUrl(context, AppConfig.PRIVACY_URL) }) {
+            Text(stringResource(R.string.privacy), color = Color.White.copy(alpha = 0.6f), style = MaterialTheme.typography.labelMedium)
+          }
         }
       }
 
@@ -355,4 +385,13 @@ private fun PlanCard(
       color = Color.White,
     )
   }
+}
+
+private fun android.content.Context.findActivity(): Activity? {
+  var ctx: android.content.Context? = this
+  while (ctx is android.content.ContextWrapper) {
+    if (ctx is Activity) return ctx
+    ctx = ctx.baseContext
+  }
+  return null
 }

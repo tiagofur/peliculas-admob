@@ -132,26 +132,12 @@ class SessionStore(
   suspend fun signUp(email: String, password: String, name: String) =
     authenticate("/v1/auth/email/signup", ApiClient.encodeToString(Credentials(email, password, name.ifEmpty { null }, deviceName())))
 
-  /** Login con Google (endpoint ya existe en el backend); UI en F8/F9 con Play Services. */
-  suspend fun signInWithGoogle(idToken: String, name: String?) {
-    val body = ApiClient.encodeToString(
-      mapOf(
-        "id_token" to idToken,
-        "nonce" to null,
-        "authorization_code" to null,
-        "name" to name,
-        "device" to deviceName(),
-      ).filterValues { it != null },
-    )
-    _state.value = _state.value.copy(busy = true)
-    try {
-      val data = ApiClient.send("POST", "/v1/auth/google", body = body)
-      save(decodeSession(data))
-      for (hook in didSignIn) hook()
-    } finally {
-      _state.value = _state.value.copy(busy = false)
-    }
-  }
+  /**
+   * Login con Google (Credential Manager → ID token). El backend valida el
+   * token contra GOOGLE_CLIENT_IDS y el nonce crudo (Google no lo hashea).
+   */
+  suspend fun signInWithGoogle(idToken: String, nonce: String?, name: String?) =
+    authenticate("/v1/auth/google", ApiClient.encodeToString(GoogleBody(idToken, nonce, name, deviceName())))
 
   // MARK: Sesión
 

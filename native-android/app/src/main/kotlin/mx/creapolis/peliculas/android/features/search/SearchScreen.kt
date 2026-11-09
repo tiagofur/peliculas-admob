@@ -65,6 +65,7 @@ data class SearchNav(
 fun SearchScreen(
   nav: SearchNav,
   onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
+  onOpenAccount: () -> Unit = {},
   vm: SearchViewModel = viewModel(factory = SearchViewModel.factory(LocalContext.current)),
 ) {
   val state by vm.state.collectAsState()
@@ -75,6 +76,9 @@ fun SearchScreen(
   )
 
   Column(Modifier.fillMaxSize()) {
+    mx.creapolis.peliculas.android.ui.components.RootTitleBar(stringResource(R.string.tab_search)) {
+      mx.creapolis.peliculas.android.ui.components.AccountButton(onClick = onOpenAccount)
+    }
     // Caja de búsqueda (OutlinedTextField + chips de ámbito, como iOS searchable+scopes).
     OutlinedTextField(
       value = state.query,
@@ -321,11 +325,18 @@ private fun MoodTile(mood: Mood, onClick: () -> Unit) {
 /** Mosaico de género (port de `GenreTile` en iOS, paleta propia). */
 @Composable
 private fun GenreTile(genre: TmdbGenre, onClick: () -> Unit) {
+  // Misma paleta de 10 pares que `GenreTile` en iOS.
   val palette = listOf(
-    Color(0xFFFF7043) to Color(0xFFE53935),
-    Color(0xFFEC407A) to Color(0xFF8E24AA),
-    Color(0xFF5C6BC0) to Color(0xFF42A5F5),
-    Color(0xFF26A69A) to Color(0xFF66BB6A),
+    Color(0xFFFF9500) to Color(0xFFFF3B30),
+    Color(0xFFFF2D55) to Color(0xFFAF52DE),
+    Color(0xFF5856D6) to Color(0xFF007AFF),
+    Color(0xFF30B0C7) to Color(0xFF34C759),
+    Color(0xFFAF52DE) to Color(0xFF5856D6),
+    Color(0xFFFF3B30) to Color(0xFFFF2D55),
+    Color(0xFF007AFF) to Color(0xFF32ADE6),
+    Color(0xFF34C759) to Color(0xFF00C7BE),
+    Color(0xFFFFCC00) to Color(0xFFFF9500),
+    Color(0xFFA2845E) to Color(0xFFFF9500),
   )
   val colors = palette[kotlin.math.abs(genre.id) % palette.size]
   Box(

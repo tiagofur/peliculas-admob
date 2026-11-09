@@ -2,6 +2,9 @@ package mx.creapolis.peliculas.android.features.pro
 
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
@@ -18,8 +21,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import mx.creapolis.peliculas.android.R
 import mx.creapolis.peliculas.android.core.network.ApiClient
+import mx.creapolis.peliculas.android.core.network.ApiError
 import mx.creapolis.peliculas.android.core.network.AppConfig
 import java.util.Date
 
@@ -34,15 +40,23 @@ data class ProProduct(
 )
 
 /**
- * ProStore: gestiona las compras in-app y suscripciones con Google Play Billing 7
- * (port de `ProStore` en iOS StoreKit 2).
+ * Pro con Google Play Billing 7 (port de `ProStore` en iOS con StoreKit 2).
  *
- * - Funciona offline persistiendo el entitlement en SharedPreferences.
- * - Soporta fallback para emulador/tests sin Play Services.
+ * - El estado Pro sale de las compras que Play tiene en el dispositivo
+ *   (`queryPurchasesAsync`); se cachea para arrancar sin red y se **revoca**
+ *   cuando Play ya no devuelve ninguna compra activa (suscripción vencida o
+ *   reembolsada), como `Transaction.currentEntitlements` en iOS.
+ * - Cada compra se **reconoce** (acknowledge): si no, Google la reembolsa sola
+ *   a los 3 días.
+ * - Con sesión, cada compra se reclama en el backend (`POST /v1/play/transactions`)
+ *   para que el servidor sepa quién es Pro.
+ * - Solo en debug (emulador sin Play Store) las compras se simulan.
  */
 class ProStore(
   private val context: Context? = null,
   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+  /** ¿Hay sesión? Lo cablea AppContainer (reclamar compras solo con cuenta). */
+  var signedInCheck: () -> Boolean = { false },
 ) : PurchasesUpdatedListener {
 
   data class UiState(
@@ -55,6 +69,22 @@ class ProStore(
     val message: String? = null,
     val showingPaywall: Boolean = false,
     val paywallReason: String? = null,
+  ) {
+    /** Nombre del plan activo para Cuenta (como `planName` en iOS). */
+    val planNameRes: Int
+      get() = when (activeProductId) {
+        AppConfig.Pro.LIFETIME -> R.string.pro_plan_lifetime
+        AppConfig.Pro.YEARLY -> R.string.pro_plan_yearly
+        AppConfig.Pro.MONTHLY -> R.string.pro_plan_monthly
+        else -> R.string.pro_plan_generic
+      }
+  }
+
+  @Serializable
+  private data class ClaimBody(
+    @SerialName("purchase_token") val purchaseToken: String,
+    @SerialName("product_id") val productId: String,
+    @SerialName("package_name") val packageName: String,
   )
 
   private val _state = MutableStateFlow(UiState())
@@ -64,12 +94,20 @@ class ProStore(
 
   private val prefs = context?.getSharedPreferences("peliculas.pro.v1", Context.MODE_PRIVATE)
   private var billingClient: BillingClient? = null
+
+  @Volatile
   private var billingConnected = false
+
+  /** Compras activas vistas en el último `queryPurchases` (para reclamar al iniciar sesión). */
+  @Volatile
+  private var ownedPurchases: List<Purchase> = emptyList()
 
   init {
     loadCachedEntitlement()
     initBillingClient()
   }
+
+  private fun str(res: Int, fallback: String): String = context?.getString(res) ?: fallback
 
   private fun loadCachedEntitlement() {
     val cachedPro = prefs?.getBoolean(KEY_IS_PRO, false) ?: false
@@ -89,16 +127,27 @@ class ProStore(
 
   private fun initBillingClient() {
     val ctx = context ?: return
-    billingClient = BillingClient.newBuilder(ctx)
+    val client = BillingClient.newBuilder(ctx)
       .setListener(this)
       .enablePendingPurchases()
       .build()
+    billingClient = client
+    connect()
+  }
 
-    billingClient?.startConnection(object : BillingClientStateListener {
+  private fun connect(onReady: (() -> Unit)? = null) {
+    val client = billingClient ?: return
+    if (billingConnected) {
+      onReady?.invoke()
+      return
+    }
+    client.startConnection(object : BillingClientStateListener {
       override fun onBillingSetupFinished(billingResult: BillingResult) {
         if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
           billingConnected = true
-          queryPurchases()
+          queryPurchases { onReady?.invoke() }
+        } else {
+          onReady?.invoke()
         }
       }
 
@@ -120,18 +169,24 @@ class ProStore(
     _state.update { it.copy(message = null) }
   }
 
+  /** Al volver a primer plano: Play puede haber renovado, vencido o reembolsado algo. */
+  fun refresh() {
+    if (billingConnected) queryPurchases() else connect()
+  }
+
   fun loadProducts() {
     if (_state.value.products.isNotEmpty()) return
     _state.update { it.copy(loadingProducts = true) }
 
     val client = billingClient
     if (client == null || !billingConnected) {
-      // Fallback predeterminado con precios orientativos (cuando no hay Play Store conectado)
-      _state.update {
-        it.copy(
-          loadingProducts = false,
-          products = defaultProducts(),
-        )
+      if (AppConfig.SIMULATE_PURCHASES) {
+        // Debug sin Play Store: precios orientativos para poder probar el flujo.
+        _state.update { it.copy(loadingProducts = false, products = defaultProducts()) }
+      } else {
+        // Release: nunca precios inventados. El paywall ofrece reintentar (como iOS).
+        _state.update { it.copy(loadingProducts = false) }
+        connect()
       }
       return
     }
@@ -153,37 +208,39 @@ class ProStore(
 
     val params = QueryProductDetailsParams.newBuilder().setProductList(productList).build()
 
-    client.queryProductDetailsAsync(params) { billingResult, queryProductDetailsResult ->
+    client.queryProductDetailsAsync(params) { billingResult, details ->
       if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-        val detailsMap = queryProductDetailsResult.associateBy { it.productId }
+        val detailsMap = details.associateBy { it.productId }
         val mapped = AppConfig.Pro.ALL.mapNotNull { id ->
-          val details = detailsMap[id] ?: return@mapNotNull null
-          val isSub = details.productType == BillingClient.ProductType.SUBS
+          val d = detailsMap[id] ?: return@mapNotNull null
+          val isSub = d.productType == BillingClient.ProductType.SUBS
           val price = if (isSub) {
-            details.subscriptionOfferDetails?.firstOrNull()?.pricingPhases?.pricingPhaseList?.firstOrNull()?.formattedPrice ?: "$1.99"
+            // La última fase es el precio recurrente (la primera puede ser la prueba gratis).
+            d.subscriptionOfferDetails?.firstOrNull()?.pricingPhases?.pricingPhaseList?.lastOrNull()?.formattedPrice
           } else {
-            details.oneTimePurchaseOfferDetails?.formattedPrice ?: "$29.99"
-          }
+            d.oneTimePurchaseOfferDetails?.formattedPrice
+          } ?: return@mapNotNull null
           ProProduct(
             id = id,
-            title = details.name,
-            description = details.description,
+            title = d.name,
+            description = d.description,
             displayPrice = price,
             isSubscription = isSub,
-            productDetails = details,
+            productDetails = d,
           )
         }
         _state.update {
           it.copy(
             loadingProducts = false,
-            products = mapped.ifEmpty { defaultProducts() },
+            products = mapped.ifEmpty { if (AppConfig.SIMULATE_PURCHASES) defaultProducts() else emptyList() },
           )
         }
       } else {
         _state.update {
           it.copy(
             loadingProducts = false,
-            products = defaultProducts(),
+            products = if (AppConfig.SIMULATE_PURCHASES) defaultProducts() else emptyList(),
+            message = if (AppConfig.SIMULATE_PURCHASES) null else str(R.string.pro_plans_unavailable, "No se pudieron cargar los planes. Revisa tu conexión."),
           )
         }
       }
@@ -215,132 +272,165 @@ class ProStore(
   )
 
   fun purchase(product: ProProduct, activity: Activity?) {
-    _state.update { it.copy(purchasing = product.id) }
     val details = product.productDetails
+    val client = billingClient
 
-    if (details == null || activity == null || billingClient == null || !billingConnected) {
-      // Simulación en entorno de desarrollo / tests sin Play Store
-      scope.launch {
-        kotlinx.coroutines.delay(600)
-        saveEntitlement(true, product.id)
-        _state.update { it.copy(purchasing = null, showingPaywall = false) }
+    if (details == null || activity == null || client == null || !billingConnected) {
+      if (AppConfig.SIMULATE_PURCHASES) {
+        _state.update { it.copy(purchasing = product.id) }
+        scope.launch {
+          kotlinx.coroutines.delay(600)
+          saveEntitlement(true, product.id)
+          _state.update { it.copy(purchasing = null, showingPaywall = false) }
+        }
+      } else {
+        _state.update { it.copy(message = str(R.string.pro_purchase_failed, "No se pudo completar la compra.")) }
       }
       return
     }
 
-    val productDetailsParamsList = if (product.isSubscription) {
-      val offerToken = details.subscriptionOfferDetails?.firstOrNull()?.offerToken ?: ""
-      listOf(
-        BillingFlowParams.ProductDetailsParams.newBuilder()
-          .setProductDetails(details)
-          .setOfferToken(offerToken)
-          .build(),
-      )
-    } else {
-      listOf(
-        BillingFlowParams.ProductDetailsParams.newBuilder()
-          .setProductDetails(details)
-          .build(),
-      )
+    _state.update { it.copy(purchasing = product.id) }
+    val productParams = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(details)
+    if (product.isSubscription) {
+      val offerToken = details.subscriptionOfferDetails?.firstOrNull()?.offerToken
+      if (offerToken == null) {
+        _state.update { it.copy(purchasing = null, message = str(R.string.pro_purchase_failed, "No se pudo completar la compra.")) }
+        return
+      }
+      productParams.setOfferToken(offerToken)
     }
-
-    val billingFlowParams = BillingFlowParams.newBuilder()
-      .setProductDetailsParamsList(productDetailsParamsList)
-      .build()
-
-    billingClient?.launchBillingFlow(activity, billingFlowParams)
+    val flow = BillingFlowParams.newBuilder()
+      .setProductDetailsParamsList(listOf(productParams.build()))
+    // Igual que `appAccountToken` en iOS: liga la compra a la cuenta del backend.
+    accountId?.let { flow.setObfuscatedAccountId(it) }
+    val result = client.launchBillingFlow(activity, flow.build())
+    if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+      _state.update { it.copy(purchasing = null) }
+    }
   }
+
+  /** Id de usuario del backend (lo cablea AppContainer). */
+  @Volatile
+  var accountId: String? = null
 
   override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
     _state.update { it.copy(purchasing = null) }
-    if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-      for (purchase in purchases) {
-        handlePurchase(purchase)
+    when (billingResult.responseCode) {
+      BillingClient.BillingResponseCode.OK -> purchases.orEmpty().forEach { handlePurchase(it, fromFlow = true) }
+      BillingClient.BillingResponseCode.USER_CANCELED -> Unit
+      BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> queryPurchases()
+      else -> _state.update { it.copy(message = str(R.string.pro_purchase_failed, "No se pudo completar la compra.")) }
+    }
+  }
+
+  private fun handlePurchase(purchase: Purchase, fromFlow: Boolean) {
+    when (purchase.purchaseState) {
+      Purchase.PurchaseState.PURCHASED -> {
+        val productId = purchase.products.firstOrNull { it in AppConfig.Pro.ALL } ?: return
+        saveEntitlement(true, productId)
+        acknowledge(purchase)
+        claim(purchase, productId)
+        if (fromFlow) dismissPaywall()
       }
-    } else if (billingResult.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
-      // Cancelado por el usuario
-    } else {
-      _state.update { it.copy(message = "No se pudo completar la compra.") }
+      Purchase.PurchaseState.PENDING -> if (fromFlow) {
+        _state.update { it.copy(message = str(R.string.pro_purchase_pending, "Tu compra está pendiente de aprobación.")) }
+      }
+      else -> Unit
     }
   }
 
-  private fun handlePurchase(purchase: Purchase) {
-    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-      val productId = purchase.products.firstOrNull() ?: AppConfig.Pro.MONTHLY
-      saveEntitlement(true, productId)
-      dismissPaywall()
-
-      // Claim al backend si hay sesión
-      claimPurchase(purchase.purchaseToken, productId)
-    }
-  }
-
-  private fun queryPurchases() {
+  /** Reconoce la compra (obligatorio en Play; si no, se reembolsa a los 3 días). */
+  private fun acknowledge(purchase: Purchase) {
+    if (purchase.isAcknowledged) return
     val client = billingClient ?: return
-    client.queryPurchasesAsync(
-      QueryPurchasesParams.newBuilder()
-        .setProductType(BillingClient.ProductType.SUBS)
-        .build(),
-    ) { result, subPurchases ->
-      if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-        val activeSub = subPurchases.firstOrNull { it.purchaseState == Purchase.PurchaseState.PURCHASED }
-        if (activeSub != null) {
-          val pid = activeSub.products.firstOrNull() ?: AppConfig.Pro.MONTHLY
-          saveEntitlement(true, pid)
-          return@queryPurchasesAsync
-        }
-      }
+    val params = AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchase.purchaseToken).build()
+    client.acknowledgePurchase(params) { }
+  }
 
-      // Chequear compras únicas (lifetime)
+  /**
+   * Recalcula Pro con lo que Play tiene activo (suscripciones + de por vida).
+   * Solo revoca si ambas consultas respondieron OK: sin Play no se quita nada.
+   */
+  private fun queryPurchases(onDone: (() -> Unit)? = null) {
+    val client = billingClient
+    if (client == null) {
+      onDone?.invoke()
+      return
+    }
+    client.queryPurchasesAsync(
+      QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build(),
+    ) { subResult, subs ->
       client.queryPurchasesAsync(
-        QueryPurchasesParams.newBuilder()
-          .setProductType(BillingClient.ProductType.INAPP)
-          .build(),
-      ) { inAppResult, inAppPurchases ->
-        if (inAppResult.responseCode == BillingClient.BillingResponseCode.OK) {
-          val activeInApp = inAppPurchases.firstOrNull { it.purchaseState == Purchase.PurchaseState.PURCHASED }
-          if (activeInApp != null) {
-            val pid = activeInApp.products.firstOrNull() ?: AppConfig.Pro.LIFETIME
-            saveEntitlement(true, pid)
+        QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build(),
+      ) { inAppResult, inApps ->
+        val ok = subResult.responseCode == BillingClient.BillingResponseCode.OK &&
+          inAppResult.responseCode == BillingClient.BillingResponseCode.OK
+        if (ok) {
+          val active = (subs + inApps).filter {
+            it.purchaseState == Purchase.PurchaseState.PURCHASED && it.products.any { p -> p in AppConfig.Pro.ALL }
           }
+          ownedPurchases = active
+          active.forEach(::acknowledge)
+          // De por vida manda sobre una suscripción (como `planName` en iOS).
+          val product = active.flatMap { it.products }.let { ids ->
+            ids.firstOrNull { it == AppConfig.Pro.LIFETIME } ?: ids.firstOrNull { it in AppConfig.Pro.ALL }
+          }
+          saveEntitlement(product != null, product)
         }
+        onDone?.invoke()
       }
     }
   }
 
+  /** "Restaurar compras": vuelve a preguntar a Play y avisa del resultado. */
   fun restore() {
     _state.update { it.copy(loadingProducts = true) }
-    val client = billingClient
-    if (client == null || !billingConnected) {
+    val done = {
+      claimAll()
       _state.update {
         it.copy(
           loadingProducts = false,
-          message = if (it.isPro) "¡Listo! Tu Pro está activo." else "No encontramos compras de Pro asociadas a tu cuenta de Google.",
+          message = if (it.isPro) {
+            str(R.string.pro_restore_ok, "¡Listo! Tu Pro está activo.")
+          } else {
+            str(R.string.pro_restore_none, "No encontramos compras de Pro asociadas a tu cuenta de Google.")
+          },
         )
       }
-      return
     }
+    if (billingClient == null) done() else connect { queryPurchases { done() } }
+  }
 
-    queryPurchases()
-    _state.update {
-      it.copy(
-        loadingProducts = false,
-        message = if (it.isPro) "¡Listo! Tu Pro está activo." else "No encontramos compras de Pro asociadas a tu cuenta de Google.",
-      )
+  /** Envía al backend todas las compras activas (al iniciar sesión, como iOS). */
+  fun claimAll() {
+    ownedPurchases.forEach { p -> p.products.firstOrNull { it in AppConfig.Pro.ALL }?.let { claim(p, it) } }
+  }
+
+  private fun claim(purchase: Purchase, productId: String) {
+    if (!signedInCheck()) return
+    val pkg = context?.packageName ?: return
+    scope.launch {
+      try {
+        ApiClient.authed(
+          "POST", "/v1/play/transactions",
+          body = ApiClient.encodeToString(ClaimBody(purchase.purchaseToken, productId, pkg)),
+        )
+      } catch (e: ApiError) {
+        if (e.code == "purchase_owned_by_other_account") {
+          _state.update { it.copy(message = str(R.string.pro_owned_by_other, "Esta compra pertenece a otra cuenta.")) }
+        }
+        // Sin red o backend sin Play aún: la notificación RTDN lo completará.
+      } catch (_: Exception) {
+      }
     }
   }
 
-  private fun claimPurchase(purchaseToken: String, productId: String) {
-    scope.launch {
-      runCatching {
-        ApiClient.authed(
-          "POST", "/v1/play/transactions",
-          body = ApiClient.encodeToString(
-            mapOf("purchase_token" to purchaseToken, "product_id" to productId),
-          ),
-        )
-      }
-    }
+  /** Gestionar la suscripción en Play Store (equivalente a `manageSubscriptionsSheet`). */
+  fun manageSubscriptionIntent(): Intent? {
+    val pkg = context?.packageName ?: return null
+    val sku = _state.value.activeProductId?.takeIf { it != AppConfig.Pro.LIFETIME }
+    val url = "https://play.google.com/store/account/subscriptions?package=$pkg" + (sku?.let { "&sku=$it" } ?: "")
+    return Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
   }
 
   /** Método auxiliar para pruebas unitarias. */

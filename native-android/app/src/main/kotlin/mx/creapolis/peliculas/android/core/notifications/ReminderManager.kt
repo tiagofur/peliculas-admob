@@ -30,8 +30,28 @@ import java.util.concurrent.TimeUnit
  */
 class ReminderManager(private val context: Context) {
 
+  private val prefs = context.getSharedPreferences("peliculas.reminders.v1", Context.MODE_PRIVATE)
+
+  private val _enabled = kotlinx.coroutines.flow.MutableStateFlow(prefs.getBoolean(KEY_ENABLED, false))
+  /** Desactivados por defecto (como iOS): se piden en contexto desde Cuenta. */
+  val enabled: kotlinx.coroutines.flow.StateFlow<Boolean> = _enabled
+
   init {
     createChannels()
+  }
+
+  /** Activa/desactiva. El permiso POST_NOTIFICATIONS lo pide la UI antes de activar. */
+  fun setEnabled(on: Boolean, watchlistCount: Int) {
+    prefs.edit().putBoolean(KEY_ENABLED, on).apply()
+    _enabled.value = on
+    if (on) {
+      reschedule(watchlistCount)
+    } else {
+      WorkManager.getInstance(context).apply {
+        cancelUniqueWork(WORK_FRIDAY_TRENDS)
+        cancelUniqueWork(WORK_SUNDAY_WATCHLIST)
+      }
+    }
   }
 
   fun createChannels() {
@@ -62,6 +82,7 @@ class ReminderManager(private val context: Context) {
    * Programa o actualiza los recordatorios semanales (igual que iOS ReminderManager.reschedule).
    */
   fun reschedule(watchlistCount: Int) {
+    if (!_enabled.value) return
     val workManager = WorkManager.getInstance(context)
 
     // Viernes 19:00: Tendencias
@@ -101,6 +122,7 @@ class ReminderManager(private val context: Context) {
     const val WORK_FRIDAY_TRENDS = "work_friday_trends"
     const val WORK_SUNDAY_WATCHLIST = "work_sunday_watchlist"
     const val KEY_WATCHLIST_COUNT = "watchlist_count"
+    private const val KEY_ENABLED = "enabled"
 
     fun calculateDelayToNext(dayOfWeek: DayOfWeek, hour: Int, minute: Int, now: LocalDateTime = LocalDateTime.now()): Duration {
       var target = now.with(TemporalAdjusters.nextOrSame(dayOfWeek))

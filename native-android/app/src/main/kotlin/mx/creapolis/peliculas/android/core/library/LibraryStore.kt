@@ -126,14 +126,25 @@ class LibraryStore(
     fun seasonWatchedCount(tvId: Int, season: Int): Int =
       episodes.values.count { it.tvId == tvId && it.season == season && !it.deleted }
     fun count(kind: Kind): Int = marks[kind].orEmpty().count { !it.value.deleted }
-    val ratedCount: Int get() = ratings.values.count { !it.deleted && it.score > 0 }
+    val ratedCount: Int get() = ratings.values.count { !it.deleted }
     fun isInList(id: String, key: MediaKey): Boolean = listItems["$id|${key.kind.rawValue}:${key.id}"]?.deleted == false
     fun itemsOfList(id: String): List<MediaItem> =
       listItems.values.filter { it.listId == id && !it.deleted }
         .sortedBy { it.position }
         .mapNotNull { items[it.key] }
     val visibleLists: List<ListStamp>
-      get() = lists.values.filter { !it.deleted }.sortedBy { it.position }
+      get() = lists.values.filter { !it.deleted }.sortedWith(compareBy({ it.position }, { it.updatedAt }))
+    val watchedEpisodeCount: Int get() = episodes.values.count { !it.deleted }
+    /** Vistos hace poco en este dispositivo (fichas abiertas), más reciente primero. */
+    val recentItems: List<MediaItem> get() = recent.mapNotNull { items[it] }
+    /** Títulos calificados (nota o reseña), lo último primero. */
+    val ratedItems: List<MediaItem>
+      get() = ratings.filter { !it.value.deleted }.entries
+        .sortedByDescending { it.value.updatedAt }.mapNotNull { items[it.key] }
+    /** Títulos de una sección, lo último añadido primero. */
+    fun items(kind: Kind): List<MediaItem> =
+      marks[kind].orEmpty().filter { !it.value.deleted }.entries
+        .sortedByDescending { it.value.updatedAt }.mapNotNull { items[it.key] }
   }
 
   private val fileURL: File? = filesDir?.let { File(it, "library.v2.json") }
@@ -146,7 +157,9 @@ class LibraryStore(
   @Volatile
   var signedInCheck: () -> Boolean = { false }
 
+  /** Cola de cambios pendientes. Se toca desde la UI y desde el sync en IO: siempre bajo [outboxLock]. */
   private var outbox: MutableList<SyncOp> = mutableListOf()
+  private val outboxLock = Any()
   private var cursor: String? = null
   private val syncMutex = Mutex()
   private var saveJob: Job? = null
@@ -201,16 +214,25 @@ class LibraryStore(
 
   // MARK: Cambios (superficie F3 + outbox)
 
-  fun remember(item: MediaItem) {
+  /** Guarda la foto más rica del título y la devuelve (para que el sync suba título y póster). */
+  fun remember(item: MediaItem): MediaItem {
     _state.update { st ->
       val merged = st.items[item.key]?.mergedWith(item) ?: item
-      st.copy(items = st.items + (item.key to merged))
+      if (st.items[item.key] == merged) st else st.copy(items = st.items + (item.key to merged))
     }
+    scheduleSave()
+    return _state.value.items[item.key] ?: item
+  }
+
+  /** Ficha abierta: entra la primera en "Visto recientemente" (máx. 15, solo este dispositivo). */
+  fun touchRecent(item: MediaItem) {
+    remember(item)
+    _state.update { st -> st.copy(recent = (listOf(item.key) + st.recent.filter { it != item.key }).take(15)) }
     scheduleSave()
   }
 
   fun set(item: MediaItem, kind: Kind, on: Boolean) {
-    remember(item)
+    @Suppress("NAME_SHADOWING") val item = remember(item)
     val now = Date()
     val wireKind = kind.wire()
     _state.update { st ->
@@ -234,7 +256,7 @@ class LibraryStore(
 
   /** Nota 1–10 en pasos de 0.5. `null` la borra (la reseña se conserva). */
   fun rate(item: MediaItem, score: Double?) {
-    remember(item)
+    @Suppress("NAME_SHADOWING") val item = remember(item)
     val now = Date()
     val value = score?.let { (kotlin.math.round(it * 2) / 2.0).coerceIn(1.0, 10.0) }
     val previous = _state.value.ratings[item.key]
@@ -255,7 +277,7 @@ class LibraryStore(
 
   /** Reseña personal (viaja en el sync junto a la nota). Vacía la borra sin nota. */
   fun setReview(item: MediaItem, text: String) {
-    remember(item)
+    @Suppress("NAME_SHADOWING") val item = remember(item)
     val now = Date()
     val review = text.trim()
     val score = _state.value.ratings[item.key]?.score ?: 0.0
@@ -273,8 +295,8 @@ class LibraryStore(
     )
   }
 
-  fun setEpisode(tvId: Int, season: Int, episode: Int, watched: Boolean) {
-    val now = Date()
+  fun setEpisode(tvId: Int, season: Int, episode: Int, watched: Boolean, now: Date = Date()) {
+    if (_state.value.isEpisodeWatched(tvId, season, episode) == watched) return
     _state.update { st ->
       st.copy(
         episodes = st.episodes + (episodeKey(tvId, season, episode) to EpisodeStamp(tvId, season, episode, now, !watched)),
@@ -294,8 +316,10 @@ class LibraryStore(
     setEpisode(tvId, season, episode, !_state.value.isEpisodeWatched(tvId, season, episode))
 
   fun toggleSeason(tvId: Int, season: Int, episodeNumbers: List<Int>) {
+    if (episodeNumbers.isEmpty()) return
     val allWatched = episodeNumbers.all { _state.value.isEpisodeWatched(tvId, season, it) }
-    episodeNumbers.forEach { setEpisode(tvId, season, it, watched = !allWatched) }
+    val now = Date()
+    episodeNumbers.forEach { setEpisode(tvId, season, it, watched = !allWatched, now = now) }
   }
 
   // MARK: Listas propias
@@ -325,11 +349,16 @@ class LibraryStore(
   }
 
   fun toggleInList(item: MediaItem, listId: String) {
-    remember(item)
+    @Suppress("NAME_SHADOWING") val item = remember(item)
     val k = listItemKey(listId, item.key)
-    val on = _state.value.listItems[k]?.deleted != false
+    val current = _state.value.listItems[k]
+    val on = current?.deleted != false
     val now = Date()
-    val position = _state.value.listItems.values.count { it.listId == listId }
+    val position = if (on) {
+      (_state.value.listItems.values.filter { it.listId == listId }.maxOfOrNull { it.position } ?: -1) + 1
+    } else {
+      current?.position ?: 0
+    }
     _state.update { st ->
       st.copy(listItems = st.listItems + (k to ListItemStamp(listId, item.key, position, now, !on)))
     }
@@ -384,16 +413,19 @@ class LibraryStore(
   }
 
   private suspend fun pushOutbox() {
-    while (outbox.isNotEmpty()) {
-      val batch = outbox.sortedBy { it.order }.take(500)
+    while (true) {
+      val batch = synchronized(outboxLock) { outbox.sortedBy { it.order }.take(500) }
+      if (batch.isEmpty()) break
       val data = ApiClient.authed(
         "POST", "/v1/sync",
         body = ApiClient.encodeToString(SyncPushBody(batch.map { it.toEnvelope(ApiClient.json) })),
       )
       val result = ApiClient.decodeFromString<SyncPushResult>(data.decodeToString())
       // applied / stale / invalid: la op ya no debe reintentarse en los tres casos.
-      val sent = result.results.mapNotNull { batch.getOrNull(it.index) }.map { it.key }.toSet()
-      outbox.removeAll { op -> op.key in sent }
+      // Solo se quita la op exacta enviada: si mientras tanto llegó un cambio
+      // nuevo del mismo título (otra op con la misma clave), ese se queda en cola.
+      val sent = result.results.mapNotNull { batch.getOrNull(it.index) }.toSet()
+      synchronized(outboxLock) { outbox.removeAll { op -> op in sent } }
       scheduleSave()
       if (result.results.size < batch.size) break
     }
@@ -463,7 +495,8 @@ class LibraryStore(
   /** Primera vez con cuenta: sube todo lo local y baja todo lo del servidor. */
   suspend fun mergeAfterSignIn() {
     cursor = null
-    outbox = fullSnapshotOps().toMutableList()
+    val snapshot = fullSnapshotOps()
+    synchronized(outboxLock) { outbox = snapshot.toMutableList() }
     scheduleSave()
     sync()
   }
@@ -473,18 +506,20 @@ class LibraryStore(
     _state.update { st ->
       st.copy(
         marks = emptyMap(), ratings = emptyMap(), lists = emptyMap(),
-        listItems = emptyMap(), episodes = emptyMap(), recent = emptyList(),
+        listItems = emptyMap(), episodes = emptyMap(),
         lastSync = null, lastSyncError = null,
       )
     }
-    outbox.clear()
+    synchronized(outboxLock) { outbox.clear() }
     cursor = null
     scheduleSave()
   }
 
   private fun enqueue(op: SyncOp) {
-    outbox.removeAll { it.key == op.key }
-    outbox.add(op)
+    synchronized(outboxLock) {
+      outbox.removeAll { it.key == op.key }
+      outbox.add(op)
+    }
     scheduleSave()
     scheduleSync()
   }
@@ -552,7 +587,7 @@ class LibraryStore(
     return ops
   }
 
-  val pendingChanges: Int get() = outbox.size
+  val pendingChanges: Int get() = synchronized(outboxLock) { outbox.size }
 
   // MARK: Disco
 
@@ -577,12 +612,19 @@ class LibraryStore(
       episodes = st.episodes,
       recent = st.recent.map { it.description },
       items = st.items.mapKeys { e -> e.key.description },
-      outbox = encodeEnvelopes(ApiClient.json, outbox),
+      outbox = encodeEnvelopes(ApiClient.json, synchronized(outboxLock) { outbox.toList() }),
       cursor = cursor,
       lastSync = st.lastSync,
     )
+    // Escritura atómica (como `.atomic` en iOS): un cierre a medias nunca deja el JSON roto.
     runCatching {
-      fileURL?.writeText(ApiClient.encodeToString(snapshot))
+      val target = fileURL ?: return
+      val tmp = File(target.parentFile, target.name + ".tmp")
+      tmp.writeText(ApiClient.encodeToString(snapshot))
+      if (!tmp.renameTo(target)) {
+        target.delete()
+        tmp.renameTo(target)
+      }
     }
   }
 
@@ -611,7 +653,8 @@ class LibraryStore(
         lastSync = snapshot.lastSync,
       )
     }
-    outbox = (snapshot.outbox?.let { decodeEnvelopes(ApiClient.json, it) } ?: emptyList()).toMutableList()
+    val pending = snapshot.outbox?.let { decodeEnvelopes(ApiClient.json, it) } ?: emptyList()
+    synchronized(outboxLock) { outbox = pending.toMutableList() }
     cursor = snapshot.cursor
   }
 
