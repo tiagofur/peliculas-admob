@@ -14,32 +14,40 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val LightColors = lightColorScheme(
-  primary = Orange700,
+  primary = BrandCoralLight,
   onPrimary = Color.White,
-  primaryContainer = Orange500.copy(alpha = 0.18f),
+  primaryContainer = BrandCoralLight.copy(alpha = 0.15f),
+  onPrimaryContainer = BrandCoralLight,
   secondary = Teal400,
   tertiary = Pink400,
   background = LightBackground,
   surface = LightSurface,
+  surfaceVariant = Color(0xFFE5E5EA),
+  onSurfaceVariant = Color(0xFF6C6C70),
 )
 
 private val DarkColors = darkColorScheme(
-  primary = Orange500,
+  primary = BrandCoralDark,
+  onPrimary = Color.White,
+  primaryContainer = BrandCoralDark.copy(alpha = 0.20f),
+  onPrimaryContainer = BrandCoralDark,
   secondary = Teal400,
   tertiary = Pink400,
   background = DarkBackground,
   surface = DarkSurface,
+  surfaceVariant = Color(0xFF2C2C2E),
+  onSurfaceVariant = Color(0xFF8E8E93),
 )
 
 /**
- * Tema Material 3 Expressive: dynamic color en Android 12+ con fallback a la
- * paleta de marca, y el esquema de movimiento expresive (springs).
+ * Tema Material 3 Expressive con la paleta de marca oficial (coral-rojizo iOS).
+ * dynamicColor se desactiva por defecto para mantener la identidad visual consistente.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PeliculasTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
-  dynamicColor: Boolean = true,
+  dynamicColor: Boolean = false,
   content: @Composable () -> Unit,
 ) {
   val context = LocalContext.current

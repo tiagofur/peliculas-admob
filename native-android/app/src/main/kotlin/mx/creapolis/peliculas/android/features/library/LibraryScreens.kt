@@ -13,23 +13,29 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -46,6 +52,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -86,24 +93,47 @@ fun LibraryScreen(
   ) {
     item {
       Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
       ) {
         Text(
           stringResource(R.string.tab_library),
-          style = MaterialTheme.typography.headlineSmall,
-          modifier = Modifier.weight(1f),
+          style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+          color = MaterialTheme.colorScheme.onBackground,
         )
-        IconButton(onClick = nav.openHistory) {
-          Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.history_title))
-        }
-        IconButton(onClick = nav.openAccount) {
-          Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.account))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+          IconButton(
+            onClick = nav.openHistory,
+            modifier = Modifier
+              .size(38.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+          ) {
+            Icon(Icons.Filled.History, contentDescription = stringResource(R.string.history_title), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+          }
+          IconButton(
+            onClick = nav.openAccount,
+            modifier = Modifier
+              .size(38.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+          ) {
+            Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.account), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+          }
         }
       }
     }
     item {
-      Column(Modifier.padding(horizontal = 20.dp)) {
+      Column(
+        Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 20.dp, vertical = 6.dp)
+          .clip(RoundedCornerShape(18.dp))
+          .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+      ) {
         CategoryRow(
           title = stringResource(R.string.cat_watchlist),
           icon = { Icon(Icons.Filled.Bookmark, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
@@ -111,6 +141,7 @@ fun LibraryScreen(
           count = state.count(LibraryStore.Kind.WATCHLIST),
           onClick = { nav.openGrid(LibraryStore.Kind.WATCHLIST) },
         )
+        HorizontalDivider(modifier = Modifier.padding(start = 58.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         CategoryRow(
           title = stringResource(R.string.cat_favorites),
           icon = { Icon(Icons.Filled.Favorite, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
@@ -118,6 +149,7 @@ fun LibraryScreen(
           count = state.count(LibraryStore.Kind.FAVORITE),
           onClick = { nav.openGrid(LibraryStore.Kind.FAVORITE) },
         )
+        HorizontalDivider(modifier = Modifier.padding(start = 58.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         CategoryRow(
           title = stringResource(R.string.cat_watched),
           icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
@@ -125,6 +157,7 @@ fun LibraryScreen(
           count = state.count(LibraryStore.Kind.WATCHED),
           onClick = { nav.openGrid(LibraryStore.Kind.WATCHED) },
         )
+        HorizontalDivider(modifier = Modifier.padding(start = 58.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         CategoryRow(
           title = stringResource(R.string.cat_rated),
           icon = { Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
@@ -132,13 +165,15 @@ fun LibraryScreen(
           count = state.ratedCount,
           onClick = nav.openRated,
         )
+        HorizontalDivider(modifier = Modifier.padding(start = 58.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         CategoryRow(
           title = stringResource(R.string.cat_lists),
-          icon = { Icon(Icons.Filled.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
+          icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
           color = Color(0xFF5C6BC0),
           count = state.visibleLists.size,
           onClick = nav.openLists,
         )
+        HorizontalDivider(modifier = Modifier.padding(start = 58.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         CategoryRow(
           title = stringResource(R.string.achievements_title),
           icon = { Icon(Icons.Filled.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
@@ -146,6 +181,7 @@ fun LibraryScreen(
           count = 0,
           onClick = nav.openAchievements,
         )
+        HorizontalDivider(modifier = Modifier.padding(start = 58.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
         CategoryRow(
           title = stringResource(R.string.stats_title),
           icon = { Icon(Icons.Filled.BarChart, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp)) },
@@ -180,18 +216,51 @@ fun LibraryScreen(
     if (recent.isEmpty()) {
       item {
         Column(
-          Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 32.dp),
+          Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 28.dp),
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-          Text(stringResource(R.string.library_empty), style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+          Box(
+            modifier = Modifier
+              .size(64.dp)
+              .clip(RoundedCornerShape(16.dp))
+              .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center,
+          ) {
+            Icon(
+              Icons.AutoMirrored.Filled.LibraryBooks,
+              contentDescription = null,
+              modifier = Modifier.size(32.dp),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            )
+          }
+          Spacer(Modifier.height(14.dp))
+          Text(
+            stringResource(R.string.library_empty),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground,
+          )
+          Spacer(Modifier.height(4.dp))
           Text(
             stringResource(R.string.library_empty_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
           )
-          Button(onClick = nav.explore, modifier = Modifier.padding(top = 12.dp)) {
-            Text(stringResource(R.string.explore_cta))
+          Spacer(Modifier.height(16.dp))
+          Button(
+            onClick = nav.explore,
+            shape = RoundedCornerShape(24.dp),
+            colors = ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.primary,
+              contentColor = Color.White,
+            ),
+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+          ) {
+            Text(
+              stringResource(R.string.explore_cta),
+              style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+            )
           }
         }
       }
@@ -225,20 +294,36 @@ private fun CategoryRow(
     Modifier
       .fillMaxWidth()
       .clickable(onClick = onClick)
-      .padding(vertical = 10.dp),
+      .padding(horizontal = 14.dp, vertical = 11.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Box(
       Modifier
-        .size(34.dp)
-        .clip(RoundedCornerShape(9.dp))
+        .size(32.dp)
+        .clip(RoundedCornerShape(8.dp))
         .background(color),
       contentAlignment = Alignment.Center,
     ) { icon() }
-    Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f).padding(start = 14.dp))
+    Text(
+      title,
+      style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+      color = MaterialTheme.colorScheme.onSurface,
+      modifier = Modifier.weight(1f).padding(start = 14.dp),
+    )
     if (count > 0) {
-      Text("$count", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+      Text(
+        "$count",
+        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(end = 4.dp),
+      )
     }
+    Icon(
+      Icons.AutoMirrored.Filled.KeyboardArrowRight,
+      contentDescription = null,
+      tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+      modifier = Modifier.size(18.dp),
+    )
   }
 }
 

@@ -223,4 +223,9 @@
   <string name="onboarding_f4_desc">Con tu cuenta, tu biblioteca se sincroniza sola.</string>
   <string name="onboarding_continue">Continuar</string>
   <string name="onboarding_already_have_account">Ya tengo cuenta</string>
+  <string name="hero_view_detail">Ver ficha</string>
+  <string name="search_series">Buscar series</string>
+  <string name="add_to_watchlist">Añadir a Watchlist</string>
+  <string name="remove_from_watchlist">Quitar de Watchlist</string>
+  <string name="upnext_empty_title">Sigue tus series</string>
 </resources>

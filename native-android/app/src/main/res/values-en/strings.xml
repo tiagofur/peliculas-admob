@@ -224,4 +224,9 @@ Películas</string>
   <string name="onboarding_f4_desc">With an account, your library syncs automatically.</string>
   <string name="onboarding_continue">Continue</string>
   <string name="onboarding_already_have_account">I Already Have an Account</string>
+  <string name="hero_view_detail">View Details</string>
+  <string name="search_series">Search series</string>
+  <string name="add_to_watchlist">Add to Watchlist</string>
+  <string name="remove_from_watchlist">Remove from Watchlist</string>
+  <string name="upnext_empty_title">Follow your shows</string>
 </resources>
