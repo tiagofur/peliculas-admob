@@ -22,6 +22,8 @@ type Config struct {
 	JWTSecret       string
 	AppleClientIDs  []string // iOS bundle ID (+ Services ID for web)
 	GoogleClientIDs []string // iOS / Android / web OAuth client IDs
+	ResendAPIKey    string   // password reset emails; empty disables them
+	MailFrom        string   // sender on a domain verified in Resend
 	AppleTeamID     string   // these three enable Apple token revoke
 	AppleKeyID      string
 	ApplePrivateKey string // .p8 contents, \n allowed
@@ -66,6 +68,8 @@ func Load() (Config, error) {
 		JWTSecret:       os.Getenv("JWT_SECRET"),
 		AppleClientIDs:  list(os.Getenv("APPLE_CLIENT_IDS")),
 		GoogleClientIDs: list(os.Getenv("GOOGLE_CLIENT_IDS")),
+		ResendAPIKey:    os.Getenv("RESEND_API_KEY"),
+		MailFrom:        env("MAIL_FROM", "Películas <no-reply@creapolis.dev>"),
 		AppleTeamID:     os.Getenv("APPLE_TEAM_ID"),
 		AppleKeyID:      os.Getenv("APPLE_KEY_ID"),
 		ApplePrivateKey: os.Getenv("APPLE_PRIVATE_KEY"),
@@ -84,7 +88,7 @@ func Load() (Config, error) {
 	c.FCMCredentials = os.Getenv("FCM_CREDENTIALS_JSON")
 	c.FCMProjectID = os.Getenv("FCM_PROJECT_ID")
 	c.PlayCredentials = os.Getenv("PLAY_CREDENTIALS_JSON")
-	c.PlayPackageName = env("PLAY_PACKAGE_NAME", "mx.creapolis.peliculas.android")
+	c.PlayPackageName = env("PLAY_PACKAGE_NAME", "mx.creapolis.peliculas")
 	c.PlayProductIDs = list(os.Getenv("PLAY_PRODUCT_IDS"))
 	if len(c.PlayProductIDs) == 0 {
 		c.PlayProductIDs = c.ProProductIDs

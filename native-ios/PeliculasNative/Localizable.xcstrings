@@ -1818,6 +1818,22 @@
         }
       }
     },
+    "Código de 6 dígitos" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "6-digit code"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Código de 6 dígitos"
+          }
+        }
+      }
+    },
     "Datos e imágenes de The Movie Database (TMDB). Esta app usa la API de TMDB pero no está respaldada ni certificada por TMDB." : {
       "localizations" : {
         "en" : {
@@ -2061,6 +2077,22 @@
         }
       }
     },
+    "El código no es válido o caducó. Pide uno nuevo." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That code is invalid or expired. Ask for a new one."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O código é inválido ou expirou. Peça um novo."
+          }
+        }
+      }
+    },
     "El día del estreno, a las 18:00 de tu hora." : {
       "localizations" : {
         "en" : {
@@ -2286,6 +2318,22 @@
         }
       }
     },
+    "Enviar código" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send code"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar código"
+          }
+        }
+      }
+    },
     "Episodio %lld" : {
       "localizations" : {
         "en" : {
@@ -2394,6 +2442,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Erro: %@"
+          }
+        }
+      }
+    },
+    "Escribe el correo de tu cuenta y te enviaremos un código de 6 dígitos." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter your account email and we'll send you a 6-digit code."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digite o e-mail da sua conta e enviaremos um código de 6 dígitos."
           }
         }
       }
@@ -2778,6 +2842,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Salvar"
+          }
+        }
+      }
+    },
+    "Guardar y entrar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save and sign in"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar e entrar"
           }
         }
       }
@@ -3870,6 +3950,22 @@
         }
       }
     },
+    "No podemos enviar correos ahora mismo. Inténtalo más tarde." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We can't send emails right now. Try again later."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não conseguimos enviar e-mails agora. Tente mais tarde."
+          }
+        }
+      }
+    },
     "No pudimos cargar el contenido" : {
       "localizations" : {
         "en" : {
@@ -3918,7 +4014,9 @@
         }
       }
     },
+    "No se pudo cargar toda la información." : {},
     "No se pudo cargar toda la información. Desliza para reintentar." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4769,6 +4867,22 @@
         }
       }
     },
+    "Reenviar código" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resend code"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reenviar código"
+          }
+        }
+      }
+    },
     "Reintentar" : {
       "localizations" : {
         "en" : {
@@ -4829,6 +4943,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Elenco"
+          }
+        }
+      }
+    },
+    "Restablecer contraseña" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset password"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir senha"
           }
         }
       }
@@ -4989,6 +5119,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Séries em alta"
+          }
+        }
+      }
+    },
+    "Si %@ tiene una cuenta con contraseña, te llegará un código en unos segundos. Revisa también el spam." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If %@ has an account with a password, a code will arrive in a few seconds. Check your spam too."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se %@ tiver uma conta com senha, um código chegará em alguns segundos. Confira também o spam."
           }
         }
       }
@@ -5816,6 +5962,22 @@
         }
       }
     },
+    "Usar otro correo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use another email"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar outro e-mail"
+          }
+        }
+      }
+    },
     "Usuario de Apple" : {
       "localizations" : {
         "en" : {
@@ -6196,6 +6358,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Não tem conta? Crie uma"
+          }
+        }
+      }
+    },
+    "¿Olvidaste tu contraseña?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forgot your password?"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esqueceu sua senha?"
           }
         }
       }

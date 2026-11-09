@@ -57,6 +57,15 @@ struct SignInView: View {
             }
           }
 
+          if mode == .signIn {
+            NavigationLink {
+              ForgotPasswordView(initialEmail: email.trimmingCharacters(in: .whitespacesAndNewlines))
+            } label: {
+              Text("¿Olvidaste tu contraseña?").font(.subheadline)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+          }
+
           if let error {
             Label(error, systemImage: "exclamationmark.triangle.fill")
               .font(.footnote)

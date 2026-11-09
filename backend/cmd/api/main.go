@@ -22,6 +22,7 @@ import (
 	"github.com/tiagofur/peliculas-admob/backend/internal/google"
 	"github.com/tiagofur/peliculas-admob/backend/internal/httpapi"
 	"github.com/tiagofur/peliculas-admob/backend/internal/library"
+	"github.com/tiagofur/peliculas-admob/backend/internal/mail"
 	"github.com/tiagofur/peliculas-admob/backend/internal/play"
 	"github.com/tiagofur/peliculas-admob/backend/internal/push"
 	"github.com/tiagofur/peliculas-admob/backend/internal/storekit"
@@ -93,6 +94,11 @@ func run(log *slog.Logger) error {
 			DB: pool, Tokens: issuer, Log: log, AppleAPI: appleAPI,
 			Apple:  auth.NewAppleVerifier(cfg.AppleClientIDs),
 			Google: auth.NewGoogleVerifier(cfg.GoogleClientIDs),
+		}
+		if cfg.ResendAPIKey != "" {
+			srv.Auth.Mail = &mail.Resend{APIKey: cfg.ResendAPIKey, From: cfg.MailFrom}
+		} else {
+			log.Warn("RESEND_API_KEY not set: password reset emails disabled")
 		}
 		srv.Library = &library.Service{DB: pool}
 

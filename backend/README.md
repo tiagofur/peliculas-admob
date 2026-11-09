@@ -47,6 +47,8 @@ TEST_DATABASE_URL="postgres://postgres:test@127.0.0.1:55432/test?sslmode=disable
 | POST | `/v1/auth/email/login` | `{email, password, device?}` → sesión |
 | POST | `/v1/auth/apple` | `{id_token, nonce?, authorization_code?, name?, device?}` → sesión |
 | POST | `/v1/auth/google` | `{id_token, nonce?, device?}` → sesión |
+| POST | `/v1/auth/password/forgot` | `{email, lang?}` → `204` siempre (exista o no la cuenta); envía un código de 6 dígitos válido 15 min |
+| POST | `/v1/auth/password/reset` | `{email, code, password, device?}` → sesión; cierra las demás sesiones. Error `invalid_reset_code` (5 intentos máx.) |
 | POST | `/v1/auth/refresh` | `{refresh_token}` → sesión nueva (el refresh token cambia cada vez) |
 | POST | `/v1/auth/logout` | `{refresh_token}` → cierra la sesión de ese dispositivo (204) |
 | GET | `/v1/me` | Perfil (requiere `Authorization: Bearer <access_token>`) |
@@ -177,6 +179,8 @@ Las imágenes siguen saliendo de `https://image.tmdb.org`.
 | `APPLE_CLIENT_IDS` | vacío | Bundle ID de iOS primero. Vacío = Apple desactivado |
 | `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | vacío | Clave `.p8` para revocar tokens de Apple al borrar cuenta |
 | `GOOGLE_CLIENT_IDS` | vacío | Client IDs de Google. Vacío = Google desactivado |
+| `RESEND_API_KEY` | vacío | Correos de "olvidé mi contraseña" vía Resend. Vacío = `/v1/auth/password/forgot` responde `503 mail_not_configured` |
+| `MAIL_FROM` | `Películas <no-reply@creapolis.dev>` | Remitente; su dominio debe estar verificado en Resend |
 | `STOREKIT_BUNDLE_ID` | primer `APPLE_CLIENT_IDS` | Bundle de la app que vende Pro |
 | `PRO_PRODUCT_IDS` | vacío | Productos que dan Pro. Vacío = Pro desactivado |
 | `APNS_KEY_ID` / `APNS_PRIVATE_KEY` | vacío | Clave `.p8` de APNs. Vacío = se guardan dispositivos pero no se envía nada |
@@ -184,7 +188,7 @@ Las imágenes siguen saliendo de `https://image.tmdb.org`.
 | `FCM_CREDENTIALS_JSON` | vacío | Service account de Firebase (JSON o ruta). Vacío = se guardan dispositivos Android pero no se envía nada |
 | `FCM_PROJECT_ID` | `project_id` de la clave | Proyecto de Firebase |
 | `PLAY_CREDENTIALS_JSON` | vacío | Service account con acceso a la Play Developer API (JSON o ruta). Vacío = Pro en Android desactivado |
-| `PLAY_PACKAGE_NAME` | `mx.creapolis.peliculas.android` | `applicationId` de la app Android |
+| `PLAY_PACKAGE_NAME` | `mx.creapolis.peliculas` | `applicationId` de la app Android |
 | `PLAY_PRODUCT_IDS` | `PRO_PRODUCT_IDS` | Productos de Play que dan Pro |
 | `PLAY_ONE_TIME_PRODUCT_IDS` | los que contienen `lifetime` | Productos de compra única (el resto son suscripciones) |
 | `PLAY_RTDN_TOKEN` | vacío | Secreto en la URL de push (`?token=`) |

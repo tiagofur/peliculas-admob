@@ -139,6 +139,31 @@ class SessionStore(
   suspend fun signInWithGoogle(idToken: String, nonce: String?, name: String?) =
     authenticate("/v1/auth/google", ApiClient.encodeToString(GoogleBody(idToken, nonce, name, deviceName())))
 
+  // MARK: Olvidé mi contraseña
+
+  @Serializable
+  private data class ForgotBody(val email: String, val lang: String)
+
+  @Serializable
+  private data class ResetBody(val email: String, val code: String, val password: String, val device: String)
+
+  /** Pide el código de 6 dígitos por correo. El servidor responde igual exista o no la cuenta. */
+  suspend fun requestPasswordReset(email: String) {
+    _state.value = _state.value.copy(busy = true)
+    try {
+      ApiClient.send(
+        "POST", "/v1/auth/password/forgot",
+        body = ApiClient.encodeToString(ForgotBody(email, java.util.Locale.getDefault().toLanguageTag())),
+      )
+    } finally {
+      _state.value = _state.value.copy(busy = false)
+    }
+  }
+
+  /** Código + contraseña nueva: el backend cierra las demás sesiones y devuelve una nueva. */
+  suspend fun resetPassword(email: String, code: String, password: String) =
+    authenticate("/v1/auth/password/reset", ApiClient.encodeToString(ResetBody(email, code, password, deviceName())))
+
   // MARK: Sesión
 
   /** Token válido; renueva si le queda < 1 min. Single-flight como iOS. */

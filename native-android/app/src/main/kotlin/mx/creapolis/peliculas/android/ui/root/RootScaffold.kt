@@ -54,6 +54,7 @@ import mx.creapolis.peliculas.android.core.model.MediaItem
 import mx.creapolis.peliculas.android.core.model.MediaKind
 import mx.creapolis.peliculas.android.core.network.MediaListSource
 import mx.creapolis.peliculas.android.features.auth.AccountScreen
+import mx.creapolis.peliculas.android.features.auth.ForgotPasswordScreen
 import mx.creapolis.peliculas.android.features.auth.SignInScreen
 import mx.creapolis.peliculas.android.features.detail.DetailScreen
 import mx.creapolis.peliculas.android.features.gamification.AchievementToast
@@ -277,7 +278,21 @@ fun RootScaffold() {
         }
         composable("signin") {
           BarScreen("", navController) {
-            SignInScreen(session = session, onDone = { navController.popBackStack() })
+            SignInScreen(
+              session = session,
+              onDone = { navController.popBackStack() },
+              onForgotPassword = { email -> navController.navigate("forgot?email=${android.net.Uri.encode(email)}") },
+            )
+          }
+        }
+        composable("forgot?email={email}") { entry ->
+          BarScreen("", navController) {
+            ForgotPasswordScreen(
+              session = session,
+              initialEmail = entry.arguments?.getString("email").orEmpty(),
+              // Al terminar ya hay sesión: se cierran recuperar y login de una vez.
+              onDone = { navController.popBackStack("signin", inclusive = true) },
+            )
           }
         }
         composable("account") {

@@ -60,6 +60,7 @@
 		B7BE31006F3F4C1BE5067DC3 /* PeliculasNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C59E35D6B4EFDC711A41972 /* PeliculasNativeApp.swift */; };
 		C0BFC4571B8EA8E5DC6EEC2D /* UpNextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CED1740DF65B413263499D6 /* UpNextStore.swift */; };
 		C36B6A004BD41CEE727A5680 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE14B99B9DCA314266F1C8E /* SignInView.swift */; };
+		C59C228C982794CDEB39998E /* ForgotPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A7F35A0364D5B5E21553C1 /* ForgotPasswordView.swift */; };
 		D816B829E9DB6B5BCE737C3B /* TMDBClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 806AC878A176D36ADA8F2E41 /* TMDBClient.swift */; };
 		EFDA5745B5DA7F3E57C33529 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5182EC937A21BA6644ACFFB /* OnboardingView.swift */; };
 		F50347BBB77B1650740427C3 /* AdBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C06DF2AEA3964CC2E9BF46A5 /* AdBannerView.swift */; };
@@ -145,6 +146,7 @@
 		B918909BD84818113DEF9502 /* TrendingWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrendingWidget.swift; sourceTree = "<group>"; };
 		B91F3E46EB25D0CE3595E1D4 /* DetailLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailLoader.swift; sourceTree = "<group>"; };
 		BBE14B99B9DCA314266F1C8E /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		69A7F35A0364D5B5E21553C1 /* ForgotPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgotPasswordView.swift; sourceTree = "<group>"; };
 		BFC355F39549542CBB7EB405 /* DeepLinkRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkRouter.swift; sourceTree = "<group>"; };
 		C06DF2AEA3964CC2E9BF46A5 /* AdBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdBannerView.swift; sourceTree = "<group>"; };
 		C350992B37FA256561862A09 /* ProviderLinks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderLinks.swift; sourceTree = "<group>"; };
@@ -427,6 +429,7 @@
 			children = (
 				42C43740D2846FACCFAF5C4D /* AccountView.swift */,
 				D9A401F46F4CBE4632FC73F2 /* SessionStore.swift */,
+				69A7F35A0364D5B5E21553C1 /* ForgotPasswordView.swift */,
 				BBE14B99B9DCA314266F1C8E /* SignInView.swift */,
 			);
 			path = Auth;
@@ -611,6 +614,7 @@
 				4C8D1E7F2A9B3C6D5E0F1A2B /* PagedListLoader.swift in Sources */,
 				7E582ECFC7471A6051FAE072 /* SessionStore.swift in Sources */,
 				C36B6A004BD41CEE727A5680 /* SignInView.swift in Sources */,
+				C59C228C982794CDEB39998E /* ForgotPasswordView.swift in Sources */,
 				F587D9287F868E4DBC5DB953 /* SyncModels.swift in Sources */,
 				D816B829E9DB6B5BCE737C3B /* TMDBClient.swift in Sources */,
 				757DACA4181A2A9DE1E1A5BA /* TrailerView.swift in Sources */,
