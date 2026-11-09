@@ -3,7 +3,7 @@ options:
   bundleIdPrefix: mx.creapolis.peliculas
   developmentLanguage: es
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "17.0"
   xcodeVersion: "27.0"
 configFiles:
   Debug: Config/Debug.xcconfig
@@ -11,7 +11,7 @@ configFiles:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "17.0"
     TARGETED_DEVICE_FAMILY: "1"
     MARKETING_VERSION: $(MARKETING_VERSION)
     CURRENT_PROJECT_VERSION: $(CURRENT_PROJECT_VERSION)
@@ -82,6 +82,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         UILaunchScreen:
           UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIApplicationSupportsIndirectInputEvents: true

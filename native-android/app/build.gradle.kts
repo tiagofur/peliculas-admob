@@ -102,6 +102,7 @@ dependencies {
   implementation(libs.androidx.credentials.play)
   implementation(libs.google.id)
   implementation(libs.androidx.lifecycle.process)
+  implementation(libs.androidx.core.splashscreen)
 
   implementation(libs.androidx.activity.compose)
   implementation(libs.androidx.compose.ui)

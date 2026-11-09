@@ -4,4 +4,11 @@
   <style name="Theme.Peliculas" parent="android:Theme.Material.Light.NoActionBar">
     <item name="android:statusBarColor">@android:color/transparent</item>
   </style>
+
+  <!-- Splash: fondo oscuro de la marca + claqueta (mismo diseño que el icono). -->
+  <style name="Theme.Peliculas.Splash" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenBackground">#120E20</item>
+    <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+    <item name="postSplashScreenTheme">@style/Theme.Peliculas</item>
+  </style>
 </resources>
