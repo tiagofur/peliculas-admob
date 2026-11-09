@@ -5,9 +5,10 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "mx.creapolis.peliculas.android",
+      "package_name": "mx.creapolis.peliculas",
       "sha256_cert_fingerprints": [
-        "FB:E4:EE:D6:7F:FF:EA:8A:C6:11:56:9D:FA:55:EE:EA:A9:FE:58:BE:9E:23:66:1F:DA:A2:EE:F8:A1:9D:17:9C"
+        "41:80:99:6B:01:CE:AC:DD:F5:8A:FA:08:05:4F:AF:AA:74:DF:BF:F2:B8:DB:55:ED:F7:FF:08:C4:A5:98:46:6C",
+        "F6:AC:F5:C2:C6:FE:2B:A7:4E:70:46:1C:7C:9C:7B:83:B1:34:66:2E:BA:AA:DF:0F:F0:D2:8D:24:B2:64:ED:52"
       ]
     }
   }
