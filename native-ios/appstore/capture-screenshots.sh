@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Capturas 6.9" para App Store con datos reales (cuenta demo), hora 9:41 y sin anuncios.
+# Capturas 6.9" para App Store con datos reales (cuenta demo) y hora 9:41.
 #
 #   1) appstore/capture-screenshots.sh setup   → compila Release (API de producción), abre el
 #      simulador e instala la app. Ahí: pasa el onboarding y entra con la cuenta demo
 #      (Cuenta → correo y contraseña). Comprueba que Biblioteca y Siguiente tengan series.
-#   2) appstore/capture-screenshots.sh shoot   → toma las 7 capturas en appstore/screenshots/
+#   2) appstore/capture-screenshots.sh shoot   → toma las 6 capturas en appstore/screenshots/
 #
 # Variables opcionales: SIM_NAME (por defecto el "Pro Max" más nuevo), DETAIL_URL.
 set -euo pipefail
@@ -60,7 +60,6 @@ shoot)
     "04-biblioteca|peliculas://library|5"
     "05-buscar|peliculas://search|5"
     "06-cuenta|peliculas://account|5"
-    "07-pro|peliculas://pro|5"
   )
   for s in "${shots[@]}"; do
     IFS='|' read -r name url wait <<<"$s"
