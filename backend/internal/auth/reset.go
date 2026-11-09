@@ -29,9 +29,11 @@ const (
 	resetCooldown    = time.Minute // between two codes for the same account
 )
 
-// RequestPasswordReset emails a 6-digit code to an email account. It answers the
-// same whether or not the account exists, so it can't be used to probe emails.
-// Accounts that only sign in with Apple/Google have no password and get nothing.
+// RequestPasswordReset emails a 6-digit code to the account with that email. It
+// answers the same whether or not the account exists, so it can't be used to probe
+// emails. Accounts that only sign in with Apple/Google get a code too: using it
+// adds a password (the code proves they own the inbox), so they can also sign in
+// with email — e.g. on Android, which has no Sign in with Apple.
 func (s *Service) RequestPasswordReset(ctx context.Context, email, lang string) error {
 	if s.Mail == nil {
 		return ErrMailNotConfigured
@@ -40,9 +42,7 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email, lang string) 
 	if err != nil {
 		return err
 	}
-	var userID string
-	err = s.DB.QueryRow(ctx, `SELECT user_id FROM identities
-		WHERE provider = 'email' AND subject = $1 AND password_hash IS NOT NULL`, email).Scan(&userID)
+	userID, err := userByEmail(ctx, s.DB, email)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}
@@ -110,14 +110,19 @@ func (s *Service) ResetPassword(ctx context.Context, email, code, password, devi
 	defer tx.Rollback(ctx)
 
 	now := s.now()
-	var userID, resetID string
+	userID, err := userByEmail(ctx, tx, email)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return Session{}, ErrBadResetCode
+	}
+	if err != nil {
+		return Session{}, err
+	}
+	var resetID string
 	var hash []byte
-	err = tx.QueryRow(ctx, `SELECT r.id, r.user_id, r.code_hash
-		FROM password_resets r JOIN identities i ON i.user_id = r.user_id
-		WHERE i.provider = 'email' AND i.subject = $1
-		  AND r.used_at IS NULL AND r.expires_at > $2 AND r.attempts < $3
-		ORDER BY r.created_at DESC LIMIT 1 FOR UPDATE OF r`, email, now, resetMaxAttempts).
-		Scan(&resetID, &userID, &hash)
+	err = tx.QueryRow(ctx, `SELECT id, code_hash FROM password_resets
+		WHERE user_id = $1 AND used_at IS NULL AND expires_at > $2 AND attempts < $3
+		ORDER BY created_at DESC LIMIT 1 FOR UPDATE`, userID, now, resetMaxAttempts).
+		Scan(&resetID, &hash)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Session{}, ErrBadResetCode
 	}
@@ -144,7 +149,6 @@ func (s *Service) ResetPassword(ctx context.Context, email, code, password, devi
 		args []any
 	}{
 		{`UPDATE password_resets SET used_at = $2 WHERE id = $1`, []any{resetID, now}},
-		{`UPDATE identities SET password_hash = $2 WHERE user_id = $1 AND provider = 'email'`, []any{userID, string(newHash)}},
 		// They proved they own the inbox.
 		{`UPDATE users SET email_verified = true, updated_at = $2 WHERE id = $1`, []any{userID, now}},
 		{`UPDATE refresh_tokens SET revoked_at = $2 WHERE user_id = $1 AND revoked_at IS NULL`, []any{userID, now}},
@@ -153,11 +157,35 @@ func (s *Service) ResetPassword(ctx context.Context, email, code, password, devi
 			return Session{}, err
 		}
 	}
+	// Change the password, or create the email identity for an Apple/Google-only
+	// account. If that email identity somehow belongs to another user, refuse.
+	tag, err := tx.Exec(ctx, `INSERT INTO identities (user_id, provider, subject, email, password_hash)
+		VALUES ($1, 'email', $2, $2, $3)
+		ON CONFLICT (provider, subject) DO UPDATE SET password_hash = EXCLUDED.password_hash
+		WHERE identities.user_id = EXCLUDED.user_id`, userID, email, string(newHash))
+	if err != nil {
+		return Session{}, err
+	}
+	if tag.RowsAffected() != 1 {
+		return Session{}, ErrBadResetCode
+	}
 	sess, err := s.newSession(ctx, tx, userID, device)
 	if err != nil {
 		return Session{}, err
 	}
 	return sess, tx.Commit(ctx)
+}
+
+// userByEmail finds the account for an email: its email-and-password identity
+// first, else the account email (Apple/Google sign-ups).
+func userByEmail(ctx context.Context, q querier, email string) (string, error) {
+	var userID string
+	err := q.QueryRow(ctx, `SELECT user_id FROM (
+		SELECT user_id, 0 AS rank FROM identities WHERE provider = 'email' AND subject = $1
+		UNION ALL
+		SELECT id, 1 FROM users WHERE email = $1
+	) m ORDER BY rank LIMIT 1`, email).Scan(&userID)
+	return userID, err
 }
 
 func resetCode() (string, error) {
@@ -176,9 +204,9 @@ func resetHash(userID, code string) []byte {
 func resetEmail(to, code, lang string) mail.Message {
 	type copy struct{ subject, intro, expiry, ignore string }
 	texts := map[string]copy{
-		"es": {"Tu código para restablecer la contraseña", "Usa este código en la app Películas para crear una contraseña nueva:", "Caduca en 15 minutos.", "Si no lo pediste, ignora este correo: tu contraseña no cambia."},
-		"en": {"Your password reset code", "Use this code in the Películas app to set a new password:", "It expires in 15 minutes.", "If you didn't ask for it, ignore this email: your password stays the same."},
-		"pt": {"Seu código para redefinir a senha", "Use este código no app Películas para criar uma senha nova:", "Expira em 15 minutos.", "Se você não pediu, ignore este e-mail: sua senha não muda."},
+		"es": {"Tu código para restablecer la contraseña", "Usa este código en la app Películas para crear o cambiar tu contraseña:", "Caduca en 15 minutos.", "Si no lo pediste, ignora este correo: tu contraseña no cambia."},
+		"en": {"Your password reset code", "Use this code in the Películas app to create or change your password:", "It expires in 15 minutes.", "If you didn't ask for it, ignore this email: your password stays the same."},
+		"pt": {"Seu código para redefinir a senha", "Use este código no app Películas para criar ou trocar sua senha:", "Expira em 15 minutos.", "Se você não pediu, ignore este e-mail: sua senha não muda."},
 	}
 	lang = strings.ToLower(lang)
 	if len(lang) > 2 {

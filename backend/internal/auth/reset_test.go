@@ -143,3 +143,45 @@ func TestResetEmailLanguages(t *testing.T) {
 		}
 	}
 }
+
+func TestPasswordResetCreatesPasswordForAppleAccount(t *testing.T) {
+	s, idp := testService(t)
+	ctx := context.Background()
+	box := &fakeMail{}
+	s.Mail = box
+
+	apple, err := s.SignInApple(ctx, SocialInput{IDToken: idp.token(t, "k1", appleClaims("apple-tiago", "Tiago@Example.com"))})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.RequestPasswordReset(ctx, "tiago@example.com", "es"); err != nil {
+		t.Fatal(err)
+	}
+	if len(box.sent) != 1 {
+		t.Fatalf("an Apple-only account should get a code, sent=%d", len(box.sent))
+	}
+	code := codeRe.FindString(box.sent[0].Text)
+
+	sess, err := s.ResetPassword(ctx, "tiago@example.com", code, "mi-clave-nueva", "Pixel")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sess.User.ID != apple.User.ID {
+		t.Fatalf("reset signed into another account: %s vs %s", sess.User.ID, apple.User.ID)
+	}
+	login, err := s.LoginEmail(ctx, "tiago@example.com", "mi-clave-nueva", "Pixel")
+	if err != nil || login.User.ID != apple.User.ID {
+		t.Fatalf("email login after creating password: %v", err)
+	}
+	providers := map[string]bool{}
+	for _, p := range login.User.Providers {
+		providers[p] = true
+	}
+	if !providers["apple"] || !providers["email"] {
+		t.Fatalf("providers: %v", login.User.Providers)
+	}
+	again, err := s.SignInApple(ctx, SocialInput{IDToken: idp.token(t, "k1", appleClaims("apple-tiago", ""))})
+	if err != nil || again.User.ID != apple.User.ID {
+		t.Fatalf("Apple sign-in still works on the same account: %v", err)
+	}
+}
