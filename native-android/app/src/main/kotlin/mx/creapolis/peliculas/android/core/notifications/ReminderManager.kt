@@ -151,7 +151,7 @@ class TrendingReminderWorker(
     )
 
     val notification = NotificationCompat.Builder(context, ReminderManager.CHANNEL_REMINDERS)
-      .setSmallIcon(R.drawable.ic_launcher_foreground)
+      .setSmallIcon(R.drawable.ic_stat_notification)
       .setContentTitle(context.getString(R.string.reminder_trends_title))
       .setContentText(context.getString(R.string.reminder_trends_body))
       .setAutoCancel(true)
@@ -186,7 +186,7 @@ class WatchlistReminderWorker(
     )
 
     val notification = NotificationCompat.Builder(context, ReminderManager.CHANNEL_REMINDERS)
-      .setSmallIcon(R.drawable.ic_launcher_foreground)
+      .setSmallIcon(R.drawable.ic_stat_notification)
       .setContentTitle(context.getString(R.string.reminder_watchlist_title))
       .setContentText(context.getString(R.string.reminder_watchlist_body, count))
       .setAutoCancel(true)
