@@ -33,6 +33,36 @@ final class PaginationTests: XCTestCase {
   }
 
   @MainActor
+  func testLoaderSkipsPageWithoutNewTitles() async {
+    var requestedPages: [Int] = []
+    let loader = PagedListLoader(source: .nowPlaying, seed: [item(1)]) { _, page in
+      requestedPages.append(page)
+      return try TMDBClient.decoder.decode(TMDBPagedMovies.self,
+        from: self.pagedJSON(page: page, totalPages: 9, ids: page == 2 ? [1] : [100 + page]))
+    }
+    await loader.loadMore()
+    XCTAssertEqual(requestedPages, [2, 3])
+    XCTAssertEqual(loader.items.map(\.id), [1, 103])
+    XCTAssertFalse(loader.loading)
+  }
+
+  @MainActor
+  func testLoaderKeepFiltersAndNeverRepeatsPage() async {
+    var requestedPages: [Int] = []
+    let loader = PagedListLoader(source: .upcoming, seed: [item(1)], fetch: { _, page in
+      requestedPages.append(page)
+      return try TMDBClient.decoder.decode(TMDBPagedMovies.self,
+        from: self.pagedJSON(page: page, totalPages: 3, ids: [10 * page, 10 * page + 1]))
+    }, keep: { $0.id % 2 == 0 })
+    await loader.loadMore()
+    await loader.loadMore()
+    await loader.loadMore()
+    XCTAssertEqual(requestedPages, [2, 3])
+    XCTAssertEqual(loader.items.map(\.id), [1, 20, 30])
+    XCTAssertTrue(loader.done)
+  }
+
+  @MainActor
   func testLoaderSeedsFirstPageAndContinuesFromSecond() async {
     var requestedPages: [Int] = []
     let loader = PagedListLoader(source: .trending(kind: .movie, window: "week"), seed: [item(1)]) { _, page in

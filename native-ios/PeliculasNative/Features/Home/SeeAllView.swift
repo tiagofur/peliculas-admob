@@ -13,6 +13,13 @@ struct SeeAllView: View {
     _loader = StateObject(wrappedValue: PagedListLoader(source: source, seed: seed))
   }
 
+  /// Desde una fila del Inicio: la misma lista paginada, sigue donde va la fila.
+  init(title: String, loader: PagedListLoader) {
+    self.title = title
+    self.seed = loader.items
+    _loader = StateObject(wrappedValue: loader)
+  }
+
   var body: some View {
     Group {
       if loader.items.isEmpty && loader.failed {

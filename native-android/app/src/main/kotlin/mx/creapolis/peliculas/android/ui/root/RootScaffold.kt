@@ -324,7 +324,13 @@ fun RootScaffold() {
         }
         composable("seeall/{key}") { entry ->
           SeeAllRoute.fromKey(entry.arguments?.getString("key").orEmpty())?.let { route ->
-            BarScreen(stringResource(route.titleRes), navController) { SeeAllScreen(route, openItem) }
+            // Desde una fila del Inicio: misma lista paginada, sigue donde va la fila.
+            val homeEntry = remember(entry) { runCatching { navController.getBackStackEntry(AppTab.HOME.route) }.getOrNull() }
+            val shared = homeEntry?.let { home ->
+              val homeVm: mx.creapolis.peliculas.android.features.home.HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(home)
+              homeVm.state.collectAsState().value.rails[route]
+            }
+            BarScreen(stringResource(route.titleRes), navController) { SeeAllScreen(route, openItem, shared) }
           }
         }
         composable("results/genre/{kind}/{genreId}/{name}") { entry ->

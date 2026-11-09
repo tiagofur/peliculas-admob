@@ -17,6 +17,9 @@ final class HomeLoader: ObservableObject {
   /// El héroe (`/trending/day`) falló o vino vacío aunque el resto cargó:
   /// el placeholder debe ofrecer reintento en vez de quedarse en un gradiente mudo.
   @Published private(set) var featuredFailed = false
+  /// Filas paginadas (sembradas con la página 1): piden la siguiente al
+  /// acercarse al final, y su "Ver todo" sigue desde lo ya cargado.
+  @Published private(set) var rails: [MediaListSource: PagedListLoader] = [:]
 
   var isEmpty: Bool { featured.isEmpty && trending.isEmpty }
 
@@ -46,6 +49,19 @@ final class HomeLoader: ObservableObject {
       upcoming = u.filter { ($0.releaseDate ?? "") >= today }.map { MediaItem(tmdb: $0, kind: .movie) }
     }
     if let r, !r.isEmpty { topRated = r.map { MediaItem(tmdb: $0, kind: .movie) } }
+    // Página 1 nueva = fila nueva desde la 2; si una falló, se queda la anterior.
+    let today = ISO8601DateFormatter.string(from: Date(), timeZone: .current, formatOptions: [.withFullDate])
+    var next = rails
+    func rail(_ source: MediaListSource, _ fresh: [TMDBMovie]?, _ seed: [MediaItem],
+              keep: @escaping (TMDBMovie) -> Bool = { _ in true }) {
+      guard let fresh, !fresh.isEmpty, !seed.isEmpty else { return }
+      next[source] = PagedListLoader(source: source, seed: seed, keep: keep)
+    }
+    rail(.trending(kind: .tv, window: "week"), s, trendingShows)
+    rail(.nowPlaying, c, nowPlaying)
+    rail(.upcoming, u, upcoming, keep: { ($0.releaseDate ?? "") >= today })
+    rail(.topRated(kind: .movie), r, topRated)
+    rails = next
     failed = isEmpty
   }
 

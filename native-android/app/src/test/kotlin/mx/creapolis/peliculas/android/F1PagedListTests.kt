@@ -55,6 +55,38 @@ class F1PagedListTests {
   }
 
   @Test
+  fun `una pagina sin titulos nuevos pide la siguiente en la misma carga`() = runTest {
+    val requested = mutableListOf<Int>()
+    val state = PagedListState(MediaListSource.NowPlaying, seed = listOf(seedItem(1))) { _, p ->
+      requested += p
+      page(p, totalPages = 9, ids = if (p == 2) listOf(1) else listOf(100 + p))
+    }
+    state.loadMore()
+    assertEquals(listOf(2, 3), requested)
+    assertEquals(listOf(1, 103), state.state.value.items.map { it.id })
+    assertFalse(state.state.value.loading)
+  }
+
+  @Test
+  fun `keep filtra resultados y la fila no repite pagina`() = runTest {
+    val requested = mutableListOf<Int>()
+    val state = PagedListState(
+      MediaListSource.Upcoming,
+      seed = listOf(seedItem(1)),
+      keep = { it.id % 2 == 0 },
+    ) { _, p ->
+      requested += p
+      page(p, totalPages = 3, ids = listOf(10 * p, 10 * p + 1))
+    }
+    state.loadMore()
+    state.loadMore()
+    state.loadMore()
+    assertEquals(listOf(2, 3), requested)
+    assertEquals(listOf(1, 20, 30), state.state.value.items.map { it.id })
+    assertTrue(state.state.value.done)
+  }
+
+  @Test
   fun `para en el tope defensivo de paginas`() = runTest {
     var calls = 0
     val state = PagedListState(MediaListSource.TopRated(MediaKind.MOVIE), maxPages = 3) { _, _ ->

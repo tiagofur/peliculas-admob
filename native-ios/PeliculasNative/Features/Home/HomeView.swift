@@ -65,9 +65,37 @@ struct HomeView: View {
 
   @ViewBuilder
   private func rail(_ title: String, _ items: [MediaItem], source: MediaListSource) -> some View {
-    if !items.isEmpty {
+    if let paged = loader.rails[source] {
+      PagedPosterRail(title: title, loader: paged)
+    } else if !items.isEmpty {
       PosterRail(items: items) {
         SectionHeader(title) { SeeAllView(title: title, source: source, seed: items) }
+      }
+    }
+  }
+}
+
+/// Fila con infinite scroll horizontal: misma lista paginada que su "Ver todo".
+private struct PagedPosterRail: View {
+  let title: String
+  @ObservedObject var loader: PagedListLoader
+  private let width: CGFloat = 120
+
+  var body: some View {
+    if !loader.items.isEmpty {
+      VStack(alignment: .leading, spacing: 10) {
+        SectionHeader(title) { SeeAllView(title: title, loader: loader) }
+        ScrollView(.horizontal, showsIndicators: false) {
+          LazyHStack(alignment: .top, spacing: 14) {
+            ForEach(loader.items) { PosterCard(item: $0, width: width) }
+            if !loader.done {
+              // Alto del póster (2:3) para centrar el pie en la imagen.
+              LoadMoreFooter(loader: loader, compact: true)
+                .frame(width: 44, height: width * 1.5)
+            }
+          }
+          .padding(.horizontal, 20)
+        }
       }
     }
   }

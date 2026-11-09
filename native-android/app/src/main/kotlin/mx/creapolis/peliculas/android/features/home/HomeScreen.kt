@@ -45,6 +45,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -78,6 +79,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import mx.creapolis.peliculas.android.R
 import mx.creapolis.peliculas.android.core.library.LibraryStore
+import mx.creapolis.peliculas.android.core.lists.PagedList
+import mx.creapolis.peliculas.android.core.lists.PagedListState
 import mx.creapolis.peliculas.android.core.model.MediaItem
 import mx.creapolis.peliculas.android.core.model.MediaKind
 import mx.creapolis.peliculas.android.ui.components.BackdropImage
@@ -184,10 +187,10 @@ fun HomeScreen(
           }
         }
 
-        rail(railShowsTitle, state.trendingShows, SeeAllRoute.TRENDING_TV, onSeeAll, onOpenItem)
-        rail(railNowPlayingTitle, state.nowPlaying, SeeAllRoute.NOW_PLAYING, onSeeAll, onOpenItem)
-        rail(railUpcomingTitle, state.upcoming, SeeAllRoute.UPCOMING, onSeeAll, onOpenItem)
-        rail(railTopRatedTitle, state.topRated, SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
+        pagedRail(railShowsTitle, state.rails[SeeAllRoute.TRENDING_TV], SeeAllRoute.TRENDING_TV, onSeeAll, onOpenItem)
+        pagedRail(railNowPlayingTitle, state.rails[SeeAllRoute.NOW_PLAYING], SeeAllRoute.NOW_PLAYING, onSeeAll, onOpenItem)
+        pagedRail(railUpcomingTitle, state.rails[SeeAllRoute.UPCOMING], SeeAllRoute.UPCOMING, onSeeAll, onOpenItem)
+        pagedRail(railTopRatedTitle, state.rails[SeeAllRoute.TOP_RATED], SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
 
         item { TmdbAttribution(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) }
         item { AdBannerView(proStore = container.proStore) }
@@ -223,6 +226,45 @@ private fun LazyListScope.rail(
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       items(items, key = { it.key.description }) { item -> PosterCard(item) { onOpenItem(item) } }
+    }
+  }
+}
+
+/** Fila con infinite scroll horizontal: misma lista paginada que "Ver todo". */
+private fun LazyListScope.pagedRail(
+  title: String,
+  list: PagedList?,
+  route: SeeAllRoute,
+  onSeeAll: (SeeAllRoute) -> Unit,
+  onOpenItem: (MediaItem) -> Unit,
+) {
+  if (list == null) return
+  item(key = "h-$title") { SectionHeader(title = title, onSeeAll = { onSeeAll(route) }) }
+  item(key = "r-$title") {
+    val st by list.state.collectAsState()
+    LazyRow(
+      contentPadding = PaddingValues(horizontal = 20.dp),
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+      items(st.items, key = { it.key.description }) { item -> PosterCard(item) { onOpenItem(item) } }
+      if (!st.done) item(key = "load-more") { RailLoadMore(st, list::loadMore) }
+    }
+  }
+}
+
+/** Pie de la fila (como `LoadMoreFooter` compacto en iOS): pide la siguiente
+ *  página al aparecer, spinner mientras llega, reintentar si falló. */
+@Composable
+private fun RailLoadMore(st: PagedListState.UiState, loadMore: () -> Unit) {
+  // Alto del póster (104 dp a 2:3) para centrarlo en la imagen.
+  Box(Modifier.width(48.dp).height(156.dp), contentAlignment = Alignment.Center) {
+    if (st.loadMoreFailed) {
+      IconButton(onClick = loadMore) {
+        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.retry))
+      }
+    } else {
+      LaunchedEffect(st.items.size) { loadMore() }
+      if (st.loading) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.5.dp)
     }
   }
 }
