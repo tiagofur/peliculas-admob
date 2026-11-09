@@ -151,6 +151,9 @@ private struct ModalHost: ViewModifier {
       .sheet(isPresented: Binding(get: { active && router.showingSignIn }, set: { if !$0 { router.showingSignIn = false } })) {
         SignInView()
       }
+      .alert(pro.limitNotice ?? "", isPresented: Binding(get: { active && pro.limitNotice != nil }, set: { if !$0 { pro.limitNotice = nil } })) {
+        Button("OK", role: .cancel) {}
+      }
   }
 }
 

@@ -6,8 +6,6 @@
 # Variables que lee (todas opcionales; si faltan se usan las de Shared.xcconfig):
 #   IOS_API_BASE_URL       URL pública del backend Go, p. ej. https://api.tudominio.com
 #   IOS_API_BASE_URL_DEV   URL del backend para Debug (por defecto http://127.0.0.1:8787)
-#   ADMOB_IOS_BANNER       ID del bloque de anuncios banner de iOS (Release)
-#   ADMOB_IOS_APP_ID       App ID de AdMob para iOS (ca-app-pub-...~...)
 #   APPLE_TEAM_ID          Team ID de developer.apple.com (10 caracteres)
 #   IOS_BUNDLE_ID          Bundle ID si no usas mx.creapolis.peliculas.native
 #   IOS_PRIVACY_URL / IOS_TERMS_URL / IOS_SUPPORT_URL
@@ -33,8 +31,6 @@ put() { [ -n "$2" ] && echo "$1 = $2" >> "$OUT_FILE" || true; }
 
 put API_BASE_URL_PROD "$(url "$(get IOS_API_BASE_URL)")"
 put API_BASE_URL_DEV "$(url "$(get IOS_API_BASE_URL_DEV)")"
-put GAD_AD_UNIT_ID_PROD "$(get ADMOB_IOS_BANNER)"
-put GAD_APPLICATION_ID "$(get ADMOB_IOS_APP_ID)"
 put DEVELOPMENT_TEAM "$(get APPLE_TEAM_ID)"
 put APP_BUNDLE_ID "$(get IOS_BUNDLE_ID)"
 put PRIVACY_URL "$(url "$(get IOS_PRIVACY_URL)")"

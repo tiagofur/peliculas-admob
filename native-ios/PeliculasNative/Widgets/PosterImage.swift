@@ -191,7 +191,15 @@ struct ShareLinkButton: View {
 enum ShareSheet {
   @MainActor static func present(items: [Any]) {
     let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
-    AdsManager.rootViewController()?.present(vc, animated: true)
+    topViewController()?.present(vc, animated: true)
+  }
+
+  @MainActor private static func topViewController() -> UIViewController? {
+    let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+    let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+    var top = scene?.windows.first { $0.isKeyWindow }?.rootViewController
+    while let presented = top?.presentedViewController { top = presented }
+    return top
   }
 }
 

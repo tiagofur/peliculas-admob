@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
@@ -161,12 +160,6 @@ fun PaywallScreen(
               subtitle = stringResource(R.string.paywall_feature_episodes_desc),
             )
           }
-          FeatureItem(
-            icon = Icons.Filled.Block,
-            iconTint = Color(0xFFE91E63),
-            title = stringResource(R.string.paywall_feature_noads_title),
-            subtitle = stringResource(R.string.paywall_feature_noads_desc),
-          )
           FeatureItem(
             icon = Icons.Filled.FormatListBulleted,
             iconTint = Color(0xFF9C27B0),

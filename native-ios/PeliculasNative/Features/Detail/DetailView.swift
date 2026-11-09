@@ -51,7 +51,6 @@ struct DetailView: View {
                 .font(.footnote.weight(.semibold))
             }
           }
-          AdBannerView().padding(.horizontal, -20)
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
@@ -177,7 +176,7 @@ struct DetailView: View {
             if pro.isPro || library.visibleLists.count < AppConfig.Pro.freeListLimit {
               showingNewList = true
             } else {
-              pro.presentPaywall(reason: String(localized: "Con Pro creas todas las listas que quieras."))
+              pro.presentListLimit(reason: String(localized: "Con Pro creas todas las listas que quieras."))
             }
           } label: {
             Label("Nueva lista…", systemImage: "plus")

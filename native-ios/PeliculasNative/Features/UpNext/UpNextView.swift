@@ -45,7 +45,7 @@ struct UpNextView: View {
           VStack(alignment: .leading, spacing: 12) {
             SectionHeader(String(localized: "Próximos episodios"))
             ForEach(upNext.upcoming) { UpcomingRow(entry: $0) }
-            if !pro.isPro {
+            if AppConfig.Pro.salesEnabled && !pro.isPro {
               Button {
                 pro.presentPaywall(reason: String(localized: "Con Pro te avisamos el día que sale cada episodio."))
               } label: {

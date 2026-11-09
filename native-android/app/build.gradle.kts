@@ -1,12 +1,8 @@
 import java.util.Properties
 
 // Valores por entorno sin secretos en git: `~/.gradle/gradle.properties` o `-P` en CI.
-// Sin definir, se usan los IDs de prueba oficiales de Google (igual que el xcconfig de iOS).
 fun prop(name: String, fallback: String = ""): String =
   (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: fallback
-
-val admobTestAppId = "ca-app-pub-3940256099942544~3347511713"
-val admobTestBannerId = "ca-app-pub-3940256099942544/9214589741"
 
 // Firma de release: `native-android/keystore.properties` (ignorado por git) o las
 // mismas claves en `~/.gradle/gradle.properties` / `-P`. Sin ellas el release sale sin firmar.
@@ -63,8 +59,6 @@ android {
       applicationIdSuffix = ".debug"
       // El emulador alcanza el host por 10.0.2.2 (backend Go local en 8787).
       buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8787\"")
-      manifestPlaceholders["admobAppId"] = admobTestAppId
-      buildConfigField("String", "ADMOB_BANNER_ID", "\"$admobTestBannerId\"")
     }
     release {
       if (signing("PELIS_STORE_FILE") != null) signingConfig = signingConfigs.getByName("release")
@@ -72,8 +66,6 @@ android {
       isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       buildConfigField("String", "API_BASE_URL", "\"https://api-peliculas.creapolis.dev\"")
-      manifestPlaceholders["admobAppId"] = prop("ADMOB_APP_ID", admobTestAppId)
-      buildConfigField("String", "ADMOB_BANNER_ID", "\"${prop("ADMOB_BANNER_ID", admobTestBannerId)}\"")
     }
   }
 
@@ -103,11 +95,9 @@ dependencies {
   implementation(libs.coil.network.okhttp)
   implementation(libs.androidx.security.crypto)
   implementation(libs.play.billing)
-  implementation(libs.play.services.ads)
   implementation(libs.androidx.glance.appwidget)
   implementation(libs.androidx.glance.material3)
   implementation(libs.androidx.work.runtime.ktx)
-  implementation(libs.google.ump)
   implementation(libs.androidx.credentials)
   implementation(libs.androidx.credentials.play)
   implementation(libs.google.id)

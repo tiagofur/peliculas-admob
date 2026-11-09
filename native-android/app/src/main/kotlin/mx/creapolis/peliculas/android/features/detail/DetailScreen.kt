@@ -115,7 +115,6 @@ import mx.creapolis.peliculas.android.core.network.AppConfig
 import mx.creapolis.peliculas.android.core.network.TmdbClient
 import mx.creapolis.peliculas.android.core.network.TmdbPerson
 import mx.creapolis.peliculas.android.core.network.TmdbProvider
-import mx.creapolis.peliculas.android.features.ads.AdBannerView
 import mx.creapolis.peliculas.android.features.home.SectionHeader
 import mx.creapolis.peliculas.android.features.upnext.UpNextStore
 import mx.creapolis.peliculas.android.ui.components.PosterCard
@@ -286,7 +285,7 @@ fun DetailScreen(
                     if (pro.isPro || lib.visibleLists.size < AppConfig.Pro.FREE_LIST_LIMIT) {
                       creatingList = true
                     } else {
-                      proStore.presentPaywall(limitReason)
+                      proStore.presentListLimit(limitReason)
                     }
                   },
                 )
@@ -529,8 +528,6 @@ fun DetailScreen(
             }
           }
         }
-
-        item(key = "ad") { AdBannerView(proStore = proStore) }
       }
     }
     // Velo bajo la barra de estado al pasar la cabecera (en iOS ahí aparece la barra de navegación).

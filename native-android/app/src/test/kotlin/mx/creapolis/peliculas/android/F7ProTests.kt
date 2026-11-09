@@ -21,7 +21,21 @@ class F7ProTests {
   }
 
   @Test
+  fun `sin venta de Pro no hay paywall y el limite de listas no menciona Pro`() {
+    if (AppConfig.Pro.SALES_ENABLED) return
+    val store = ProStore()
+    store.presentPaywall("x")
+    assertFalse(store.state.value.showingPaywall)
+    store.presentListLimit("Con Pro creas todas las listas que quieras.")
+    assertFalse(store.state.value.showingPaywall)
+    val msg = store.state.value.message
+    assertNotNull(msg)
+    assertFalse(msg!!.contains("Pro"))
+  }
+
+  @Test
   fun `presentPaywall y dismissPaywall actualizan estado`() {
+    if (!AppConfig.Pro.SALES_ENABLED) return
     val store = ProStore()
     store.presentPaywall("Con Pro creas todas las listas que quieras.")
     assertTrue(store.state.value.showingPaywall)

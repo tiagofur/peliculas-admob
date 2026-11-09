@@ -131,7 +131,7 @@ fun UpNextScreen(
           if (state.upcoming.isNotEmpty()) {
             item { SectionHeader(stringResource(R.string.upnext_upcoming)) }
             items(state.upcoming, key = { "u-${it.id}" }) { entry -> UpcomingRow(entry) { onOpenItem(entry.show) } }
-            if (AppConfig.EPISODE_PUSH_AVAILABLE && !pro.isPro) {
+            if (AppConfig.EPISODE_PUSH_AVAILABLE && AppConfig.Pro.SALES_ENABLED && !pro.isPro) {
               item {
                 val reason = stringResource(R.string.upnext_pro_reason)
                 TextButton(

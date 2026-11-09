@@ -24,29 +24,6 @@
           }
         }
       }
-    },
-    "NSUserTrackingUsageDescription" : {
-      "comment" : "Texto del permiso de App Tracking Transparency",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We use this permission only to make ads in the free version more relevant. Pro has no ads."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usamos este permiso solo para que los anuncios de la versión gratis sean más relevantes. Con Pro no hay anuncios."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usamos esta permissão só para deixar os anúncios da versão grátis mais relevantes. Com o Pro não há anúncios."
-          }
-        }
-      }
     }
   },
   "version" : "1.0"
