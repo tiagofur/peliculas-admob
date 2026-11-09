@@ -36,6 +36,26 @@ object AppConfig {
 
   val apiBaseUrl: String get() = baseUrlOverride ?: BuildConfig.API_BASE_URL
 
+  const val PRIVACY_URL = BuildConfig.PRIVACY_URL
+  const val TERMS_URL = BuildConfig.TERMS_URL
+  const val SUPPORT_URL = BuildConfig.SUPPORT_URL
+  const val GOOGLE_WEB_CLIENT_ID = BuildConfig.GOOGLE_WEB_CLIENT_ID
+  const val ADMOB_BANNER_ID = BuildConfig.ADMOB_BANNER_ID
+
+  /** "1.0 (1)" como en Ajustes de iOS. */
+  const val APP_VERSION = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+
+  /**
+   * Avisos push de episodios nuevos. En iOS van por APNs; en Android necesitan
+   * FCM en la app y `platform: "android"` + sender FCM en el backend, que aún
+   * no existen. Mientras sea `false` no se promete en la UI (paywall, Siguiente,
+   * Cuenta): Play prohíbe anunciar funciones que no funcionan.
+   */
+  const val EPISODE_PUSH_AVAILABLE = false
+
+  /** Compras simuladas solo en debug (emulador sin Play Store). Nunca en release. */
+  val SIMULATE_PURCHASES: Boolean get() = BuildConfig.DEBUG
+
   object Pro {
     const val MONTHLY = "peliculas_pro_monthly"
     const val YEARLY = "peliculas_pro_yearly"

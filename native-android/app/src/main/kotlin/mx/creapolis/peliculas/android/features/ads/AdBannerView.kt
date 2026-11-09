@@ -1,7 +1,9 @@
 package mx.creapolis.peliculas.android.features.ads
 
+import android.app.Activity
 import android.content.Context
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -16,54 +18,103 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.UserMessagingPlatform
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import mx.creapolis.peliculas.android.core.network.AppConfig
 import mx.creapolis.peliculas.android.features.pro.ProStore
 
 /**
- * Gestor del SDK de Google Mobile Ads (AdMob).
- * Inicializa el SDK en segundo plano al arrancar la app.
+ * AdMob solo como apoyo en la versión gratis: un banner discreto, nunca
+ * intersticiales (port de `AdsManager` en iOS). Primero el consentimiento
+ * (UMP: RGPD en la UE/RU), luego el SDK. Sin consentimiento no hay anuncios.
  */
 object AdsManager {
-  private var initialized = false
 
-  fun initialize(context: Context) {
-    if (initialized) return
-    initialized = true
+  data class State(
+    val canShowAds: Boolean = false,
+    /** "Privacidad de anuncios" en Cuenta (obligatorio con UMP en la UE). */
+    val privacyOptionsRequired: Boolean = false,
+  )
+
+  private val _state = MutableStateFlow(State())
+  val state: StateFlow<State> = _state.asStateFlow()
+
+  private var started = false
+  private var sdkStarted = false
+
+  /** Se llama desde la Activity (el formulario de consentimiento necesita una). */
+  fun start(activity: Activity) {
+    if (started) return
+    started = true
+    val consent = UserMessagingPlatform.getConsentInformation(activity)
+    consent.requestConsentInfoUpdate(
+      activity,
+      ConsentRequestParameters.Builder().build(),
+      {
+        UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { _ ->
+          startSdkIfAllowed(activity.applicationContext, consent)
+        }
+      },
+      { _ -> startSdkIfAllowed(activity.applicationContext, consent) },
+    )
+    // Si ya había consentimiento de otra sesión, no hace falta esperar.
+    startSdkIfAllowed(activity.applicationContext, consent)
+  }
+
+  private fun startSdkIfAllowed(context: Context, consent: ConsentInformation) {
+    val privacyRequired = consent.privacyOptionsRequirementStatus ==
+      ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+    _state.value = _state.value.copy(privacyOptionsRequired = privacyRequired)
+    if (!consent.canRequestAds() || sdkStarted) return
+    sdkStarted = true
     MobileAds.initialize(context) {}
+    _state.value = _state.value.copy(canShowAds = true)
+  }
+
+  fun presentPrivacyOptions(activity: Activity) {
+    UserMessagingPlatform.showPrivacyOptionsForm(activity) { _ ->
+      startSdkIfAllowed(activity.applicationContext, UserMessagingPlatform.getConsentInformation(activity))
+    }
   }
 }
 
 /**
- * Banner publicitario adaptativo de AdMob (port de `AdBannerView` en iOS).
- * - Invisible y no solicita anuncios si el usuario es Pro (`isPro = true`).
- * - Usa el Ad Unit ID de prueba oficial de Google para banners en desarrollo.
+ * Banner adaptativo anclado (port de `AdBannerView` en iOS).
+ * Invisible para Pro y mientras no haya consentimiento.
  */
 @Composable
 fun AdBannerView(
   proStore: ProStore,
   modifier: Modifier = Modifier,
-  adUnitId: String = "ca-app-pub-3940256099942544/6300978111", // ID oficial de prueba de Google
+  adUnitId: String = AppConfig.ADMOB_BANNER_ID,
 ) {
   val proState by proStore.state.collectAsState()
+  val ads by AdsManager.state.collectAsState()
+  if (proState.isPro || !ads.canShowAds || adUnitId.isBlank()) return
 
-  // Si el usuario es Pro, nunca mostramos anuncios ni consumimos datos de red
-  if (proState.isPro) return
-
-  Box(
+  BoxWithConstraints(
     modifier = modifier
       .fillMaxWidth()
-      .height(60.dp)
-      .padding(vertical = 4.dp),
+      .padding(vertical = 8.dp),
     contentAlignment = Alignment.Center,
   ) {
-    AndroidView(
-      modifier = Modifier.fillMaxWidth(),
-      factory = { ctx ->
-        AdView(ctx).apply {
-          setAdSize(AdSize.BANNER)
-          this.adUnitId = adUnitId
-          loadAd(AdRequest.Builder().build())
-        }
-      },
-    )
+    val widthDp = maxWidth.value.toInt().coerceAtLeast(320)
+    Box(Modifier.fillMaxWidth().height(60.dp), contentAlignment = Alignment.Center) {
+      AndroidView(
+        modifier = Modifier.fillMaxWidth(),
+        factory = { ctx ->
+          AdView(ctx).apply {
+            setAdSize(AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(ctx, widthDp))
+            this.adUnitId = adUnitId
+            loadAd(AdRequest.Builder().build())
+          }
+        },
+        onRelease = { it.destroy() },
+      )
+    }
   }
 }

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import mx.creapolis.peliculas.android.core.model.MediaItem
+import mx.creapolis.peliculas.android.core.model.MediaKey
 import mx.creapolis.peliculas.android.core.model.MediaKind
 import mx.creapolis.peliculas.android.core.model.toMediaItem
 import mx.creapolis.peliculas.android.core.network.MediaListSource
@@ -39,6 +40,9 @@ class HomeViewModel : ViewModel() {
     val nowPlaying: List<MediaItem> = emptyList(),
     val upcoming: List<MediaItem> = emptyList(),
     val topRated: List<MediaItem> = emptyList(),
+    /** "Porque te gustó X": recomendaciones del favorito más reciente. */
+    val personal: List<MediaItem> = emptyList(),
+    val personalSeedTitle: String? = null,
     val loading: Boolean = false,
     /** Todo el Inicio falló (sin red al arrancar). */
     val failed: Boolean = false,
@@ -51,6 +55,24 @@ class HomeViewModel : ViewModel() {
 
   private val _state = MutableStateFlow(UiState())
   val state: StateFlow<UiState> = _state.asStateFlow()
+
+  private var personalSeed: MediaKey? = null
+
+  /** "Porque te gustó X": recomendaciones de tu favorito más reciente. */
+  suspend fun loadPersonal(seed: MediaItem?) {
+    if (seed == null || seed.title.isEmpty()) {
+      personalSeed = null
+      _state.update { it.copy(personal = emptyList(), personalSeedTitle = null) }
+      return
+    }
+    if (personalSeed == seed.key && _state.value.personal.isNotEmpty()) return
+    val recs = runCatching { TmdbClient.recommendations(seed.kind, seed.id) }.getOrNull().orEmpty()
+    if (recs.isEmpty()) return
+    personalSeed = seed.key
+    _state.update { st ->
+      st.copy(personal = recs.take(15).map { it.toMediaItem(seed.kind) }, personalSeedTitle = seed.title)
+    }
+  }
 
   fun refresh() {
     viewModelScope.launch { load() }
@@ -80,15 +102,17 @@ class HomeViewModel : ViewModel() {
     val heroes = buildHeroes(dayMovies, weekShows)
     _state.update { st ->
       st.copy(
-        featured = if (heroes.isEmpty()) st.featured else heroes,
-        trending = weekMovies,
-        trendingShows = weekShows,
-        nowPlaying = cinemaMovies,
-        upcoming = upcomingMovies,
-        topRated = topRatedMovies,
+        // Si una fila falla al refrescar, se queda lo que ya había (como iOS).
+        featured = heroes.ifEmpty { st.featured },
+        trending = weekMovies.ifEmpty { st.trending },
+        trendingShows = weekShows.ifEmpty { st.trendingShows },
+        nowPlaying = cinemaMovies.ifEmpty { st.nowPlaying },
+        upcoming = upcomingMovies.ifEmpty { st.upcoming },
+        topRated = topRatedMovies.ifEmpty { st.topRated },
         loading = false,
-        featuredFailed = heroes.isEmpty(),
-        failed = weekMovies.isEmpty() && cinemaMovies.isEmpty() && topRatedMovies.isEmpty() && heroes.isEmpty(),
+        featuredFailed = heroes.isEmpty() && st.featured.isEmpty(),
+        failed = weekMovies.isEmpty() && cinemaMovies.isEmpty() && topRatedMovies.isEmpty() && heroes.isEmpty() &&
+          st.trending.isEmpty(),
       )
     }
   }

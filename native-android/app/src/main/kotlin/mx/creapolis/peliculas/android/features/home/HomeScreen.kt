@@ -1,6 +1,24 @@
 package mx.creapolis.peliculas.android.features.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import kotlinx.coroutines.launch
+import mx.creapolis.peliculas.android.LocalAppContainer
+import mx.creapolis.peliculas.android.features.ads.AdBannerView
+import mx.creapolis.peliculas.android.features.upnext.UpNextCard
+import mx.creapolis.peliculas.android.ui.components.AccountButton
+import mx.creapolis.peliculas.android.ui.components.MediaContextMenu
+import mx.creapolis.peliculas.android.ui.components.PosterImage
+import mx.creapolis.peliculas.android.ui.components.TmdbAttribution
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -72,70 +90,119 @@ import mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
 @Composable
 fun HomeScreen(
   onSeeAll: (SeeAllRoute) -> Unit,
-  onOpenItem: (mx.creapolis.peliculas.android.core.model.MediaItem) -> Unit = {},
-  proStore: mx.creapolis.peliculas.android.features.pro.ProStore? = null,
-  library: mx.creapolis.peliculas.android.core.library.LibraryStore? = null,
+  onOpenItem: (MediaItem) -> Unit = {},
+  onOpenAccount: () -> Unit = {},
   vm: HomeViewModel = viewModel(),
 ) {
-  val context = LocalContext.current
-  val activeProStore = proStore ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.proStore
-  val activeLibrary = library ?: (context.applicationContext as? mx.creapolis.peliculas.android.PeliculasApp)?.container?.library
+  val container = LocalAppContainer.current
+  val library = container.library
   val state by vm.state.collectAsState()
+  val lib by library.state.collectAsState()
+  val upNext by container.upNext.state.collectAsState()
+  val scope = rememberCoroutineScope()
   // Fuera del LazyColumn: su lambda de contenido no es composable.
   val railShowsTitle = stringResource(R.string.rail_trending_shows)
   val railNowPlayingTitle = stringResource(R.string.rail_now_playing)
   val railUpcomingTitle = stringResource(R.string.rail_upcoming)
   val railTopRatedTitle = stringResource(R.string.rail_top_rated)
+  val recentTitle = stringResource(R.string.recently_viewed)
+  val personalTitle = state.personalSeedTitle?.let { stringResource(R.string.because_you_liked, it) }
+  val personalSubtitle = stringResource(R.string.recommended_for_you)
 
-  PullToRefreshBox(isRefreshing = state.loading, onRefresh = vm::refresh) {
-    LazyColumn(
-      modifier = Modifier.fillMaxSize(),
-      contentPadding = PaddingValues(bottom = 24.dp),
+  // "Porque te gustó X" sigue a tu favorito más reciente (como iOS).
+  val latestFavorite = lib.items(LibraryStore.Kind.FAVORITE).firstOrNull { it.title.isNotEmpty() }
+  LaunchedEffect(latestFavorite?.key) { vm.loadPersonal(latestFavorite) }
+  LaunchedEffect(Unit) { if (!upNext.loadedOnce) container.upNext.load() }
+
+  Box(Modifier.fillMaxSize()) {
+    PullToRefreshBox(
+      isRefreshing = state.loading && state.featured.isNotEmpty(),
+      onRefresh = {
+        vm.refresh()
+        scope.launch { library.sync() }
+      },
     ) {
-      // Héroe
-      item {
-        if (state.featured.isNotEmpty()) {
-          HeroCarousel(items = state.featured, onOpenItem = onOpenItem, library = activeLibrary)
-        } else {
-          HeroPlaceholder(
-            loading = state.loading,
-            failed = state.failed || state.featuredFailed,
-            retry = vm::refresh,
-          )
-        }
-      }
-
-      // Top 10 de la semana
-      if (state.trending.isNotEmpty()) {
+      LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+      ) {
+        // Héroe
         item {
-          SectionHeader(
-            title = stringResource(R.string.top10_title),
-            subtitle = stringResource(R.string.top10_subtitle),
-            onSeeAll = { onSeeAll(SeeAllRoute.TRENDING_WEEK) },
-          )
-        }
-        item {
-          LazyRow(
-            contentPadding = PaddingValues(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-          ) {
-            itemsIndexed(state.trending.take(10)) { i, item -> Top10Card(rank = i + 1, item = item) { onOpenItem(item) } }
+          if (state.featured.isNotEmpty()) {
+            HeroCarousel(items = state.featured, onOpenItem = onOpenItem, library = library)
+          } else {
+            HeroPlaceholder(
+              loading = state.loading,
+              failed = state.failed || state.featuredFailed,
+              retry = vm::refresh,
+            )
           }
         }
-      }
 
-      rail(railShowsTitle, state.trendingShows, SeeAllRoute.TRENDING_TV, onSeeAll, onOpenItem)
-      rail(railNowPlayingTitle, state.nowPlaying, SeeAllRoute.NOW_PLAYING, onSeeAll, onOpenItem)
-      rail(railUpcomingTitle, state.upcoming, SeeAllRoute.UPCOMING, onSeeAll, onOpenItem)
-      rail(railTopRatedTitle, state.topRated, SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
-
-      if (activeProStore != null) {
-        item {
-          mx.creapolis.peliculas.android.features.ads.AdBannerView(proStore = activeProStore)
+        // Continuar viendo (siguiente episodio de tus series)
+        if (upNext.entries.isNotEmpty()) {
+          item { SectionHeader(title = stringResource(R.string.upnext_continue)) }
+          item {
+            LazyRow(
+              contentPadding = PaddingValues(horizontal = 20.dp),
+              horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+              items(upNext.entries.take(10), key = { it.id }) { entry ->
+                UpNextCard(
+                  entry = entry,
+                  onOpen = { onOpenItem(entry.show) },
+                  onWatched = { container.upNext.markWatched(entry) },
+                )
+              }
+            }
+          }
         }
-      }
 
-      item { TmdbAttribution() }
+        rail(recentTitle, lib.recentItems, null, onSeeAll, onOpenItem)
+        if (personalTitle != null) {
+          rail(personalTitle, state.personal, null, onSeeAll, onOpenItem, subtitle = personalSubtitle)
+        }
+
+        // Top 10 de la semana
+        if (state.trending.isNotEmpty()) {
+          item {
+            SectionHeader(
+              title = stringResource(R.string.top10_title),
+              subtitle = stringResource(R.string.top10_subtitle),
+              onSeeAll = { onSeeAll(SeeAllRoute.TRENDING_WEEK) },
+            )
+          }
+          item {
+            LazyRow(
+              contentPadding = PaddingValues(horizontal = 20.dp),
+              horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+              itemsIndexed(state.trending.take(10), key = { _, it -> it.key.description }) { i, item ->
+                Top10Card(rank = i + 1, item = item) { onOpenItem(item) }
+              }
+            }
+          }
+        }
+
+        rail(railShowsTitle, state.trendingShows, SeeAllRoute.TRENDING_TV, onSeeAll, onOpenItem)
+        rail(railNowPlayingTitle, state.nowPlaying, SeeAllRoute.NOW_PLAYING, onSeeAll, onOpenItem)
+        rail(railUpcomingTitle, state.upcoming, SeeAllRoute.UPCOMING, onSeeAll, onOpenItem)
+        rail(railTopRatedTitle, state.topRated, SeeAllRoute.TOP_RATED, onSeeAll, onOpenItem)
+
+        item { TmdbAttribution(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) }
+        item { AdBannerView(proStore = container.proStore) }
+      }
+    }
+    // Botón de cuenta flotando sobre el héroe (toolbar de iOS).
+    Box(
+      Modifier
+        .align(Alignment.TopEnd)
+        .statusBarsPadding()
+        .padding(end = 8.dp, top = 4.dp)
+        .clip(CircleShape)
+        .background(Color.Black.copy(alpha = 0.25f)),
+    ) {
+      AccountButton(onClick = onOpenAccount)
     }
   }
 }
@@ -143,18 +210,19 @@ fun HomeScreen(
 private fun LazyListScope.rail(
   title: String,
   items: List<MediaItem>,
-  route: SeeAllRoute,
+  route: SeeAllRoute?,
   onSeeAll: (SeeAllRoute) -> Unit,
   onOpenItem: (MediaItem) -> Unit,
+  subtitle: String? = null,
 ) {
   if (items.isEmpty()) return
-  item { SectionHeader(title = title, onSeeAll = { onSeeAll(route) }) }
-  item {
+  item(key = "h-$title") { SectionHeader(title = title, subtitle = subtitle, onSeeAll = route?.let { r -> { onSeeAll(r) } }) }
+  item(key = "r-$title") {
     LazyRow(
       contentPadding = PaddingValues(horizontal = 20.dp),
       horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-      items(items) { item -> PosterCard(item) { onOpenItem(item) } }
+      items(items, key = { it.key.description }) { item -> PosterCard(item) { onOpenItem(item) } }
     }
   }
 }
@@ -168,7 +236,13 @@ fun SectionHeader(title: String, subtitle: String? = null, onSeeAll: (() -> Unit
     verticalAlignment = Alignment.CenterVertically,
   ) {
     Column(Modifier.weight(1f)) {
-      Text(title, style = MaterialTheme.typography.titleMedium)
+      Text(
+        title,
+        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.semantics { heading() },
+      )
       if (subtitle != null) {
         Text(
           subtitle,
@@ -385,21 +459,29 @@ private fun HeroPage(
 }
 
 /** Tarjeta del Top 10 con el número gigante (como `Top10Rail` en iOS). */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun Top10Card(rank: Int, item: MediaItem, onOpen: () -> Unit) {
-  Row(
-    verticalAlignment = Alignment.Bottom,
-    modifier = Modifier.clickable(onClick = onOpen),
-  ) {
-    Text(
-      "$rank",
-      style = MaterialTheme.typography.displayLarge,
-      fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
-      color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-      modifier = Modifier.padding(end = 0.dp),
-    )
-    Spacer(Modifier.size(0.dp))
-    PosterCard(item)
+  var menuOpen by remember { mutableStateOf(false) }
+  val onSurface = MaterialTheme.colorScheme.onSurface
+  Box {
+    // Número detrás y póster encima, solapados como el HStack(spacing: -18) de iOS.
+    Box(Modifier.combinedClickable(onClick = onOpen, onLongClick = { menuOpen = true })) {
+      Text(
+        "$rank",
+        style = TextStyle(
+          brush = Brush.verticalGradient(listOf(onSurface.copy(alpha = 0.9f), onSurface.copy(alpha = 0.25f))),
+          fontSize = 96.sp,
+          fontWeight = FontWeight.Black,
+        ),
+        modifier = Modifier
+          .align(Alignment.BottomStart)
+          .offset(y = 22.dp)
+          .clearAndSetSemantics { },
+      )
+      PosterImage(item.posterPath, modifier = Modifier.padding(start = if (rank >= 10) 76.dp else 42.dp), width = 112.dp)
+    }
+    MediaContextMenu(item = item, expanded = menuOpen, onDismiss = { menuOpen = false })
   }
 }
 
@@ -428,16 +510,6 @@ private fun HeroPlaceholder(loading: Boolean, failed: Boolean, retry: () -> Unit
       else -> Spacer(Modifier.height(1.dp))
     }
   }
-}
-
-@Composable
-private fun TmdbAttribution() {
-  Text(
-    stringResource(R.string.tmdb_attribution),
-    style = MaterialTheme.typography.labelSmall,
-    color = MaterialTheme.colorScheme.onSurfaceVariant,
-    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-  )
 }
 
 /** "Reducir movimiento" aproximado en Android: escala de animación a 0. */

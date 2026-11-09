@@ -52,7 +52,6 @@ class DetailViewModel(
     val cast: List<TmdbPerson> = emptyList(),
     val similar: List<MediaItem> = emptyList(),
     val providers: List<TmdbProvider> = emptyList(),
-    val providerLink: String? = null,
     val seasons: List<mx.creapolis.peliculas.android.core.network.TmdbSeasonSummary> = emptyList(),
     val episodes: List<EpisodeRow> = emptyList(),
     val loadingEpisodes: Boolean = false,
@@ -61,7 +60,20 @@ class DetailViewModel(
     /** "Dirección"/"Creado por": etiqueta y nombres. */
     val creditLabel: String? = null,
     val creditNames: String? = null,
-  )
+    /** Pull-to-refresh en curso (la ficha sigue visible). */
+    val refreshing: Boolean = false,
+  ) {
+    /** "En emisión", "Finalizada"… (port de `statusText`); `null` = no se muestra. */
+    val statusRes: Int?
+      get() = when (detail?.status) {
+        "Returning Series" -> mx.creapolis.peliculas.android.R.string.status_returning
+        "Ended" -> mx.creapolis.peliculas.android.R.string.status_ended
+        "Canceled" -> mx.creapolis.peliculas.android.R.string.status_canceled
+        "In Production" -> mx.creapolis.peliculas.android.R.string.status_in_production
+        "Post Production", "Planned" -> mx.creapolis.peliculas.android.R.string.status_soon
+        else -> null
+      }
+  }
 
   private val _state = MutableStateFlow(UiState(item = base))
   val state: StateFlow<UiState> = _state.asStateFlow()
@@ -74,14 +86,14 @@ class DetailViewModel(
 
   fun reload() {
     loadedFor = null
+    _state.update { it.copy(refreshing = it.detail != null) }
     load()
   }
 
   fun load() {
     if (loadedFor == base.key) return
     loadedFor = base.key
-    _state.update { it.copy(failed = false, item = base) }
-    library.remember(base)
+    _state.update { it.copy(failed = false, item = if (it.detail == null) base else it.item) }
     viewModelScope.launch {
       try {
         val detail = TmdbClient.detail(base.kind, base.id)
@@ -89,32 +101,43 @@ class DetailViewModel(
         val recs = detail.recommendations?.results.orEmpty()
         val similar = (if (recs.isEmpty()) detail.similar?.results.orEmpty() else recs)
           .filter { !it.posterPath.isNullOrEmpty() }
+          .distinctBy { it.id }
           .take(15)
           .map { it.toMediaItem(base.kind) }
-        val providers = providersFrom(detail.watchProviders)
+        val providers = providersFrom(detail.watchProviders).second
         val seasons = detail.seasons.orEmpty().filter { it.seasonNumber > 0 && (it.episodeCount ?: 0) > 0 }
         val headline = creditHeadline(detail, base.kind)
+        val keepSeason = _state.value.selectedSeason.takeIf { sel ->
+          _state.value.detail != null && seasons.any { it.seasonNumber == sel }
+        }
+        val season = keepSeason ?: seasons.firstOrNull()?.seasonNumber ?: 1
+        val full = base.mergedWith(detail.toMediaItem(base.kind))
+        // Foto rica en la biblioteca (lo que guardes desde aquí sube con título y póster)
+        // y entra en "Visto recientemente" ya con datos.
+        library.touchRecent(full)
         _state.update { st ->
           st.copy(
-            item = base.mergedWith(detail.toMediaItem(base.kind)),
+            item = full,
             detail = detail,
             trailerKey = trailerKey,
             cast = detail.credits?.cast.orEmpty().take(15),
             similar = similar,
-            providers = providers.second.take(10),
-            providerLink = providers.first,
+            providers = providers.take(10),
             seasons = seasons,
-            selectedSeason = seasons.firstOrNull()?.seasonNumber ?: 1,
+            selectedSeason = season,
             creditLabel = headline?.first,
             creditNames = headline?.second,
+            refreshing = false,
+            failed = false,
           )
         }
-        if (base.kind == MediaKind.TV) loadEpisodes(seasons.firstOrNull()?.seasonNumber ?: 1)
+        if (base.kind == MediaKind.TV) loadEpisodes(season)
       } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
       } catch (_: Exception) {
-        _state.update { st -> st.copy(failed = st.detail == null) }
-        if (_state.value.failed) loadedFor = null
+        // Con la ficha ya pintada, un fallo de refresco solo avisa (como iOS).
+        _state.update { st -> st.copy(failed = true, refreshing = false) }
+        loadedFor = null
       }
     }
   }

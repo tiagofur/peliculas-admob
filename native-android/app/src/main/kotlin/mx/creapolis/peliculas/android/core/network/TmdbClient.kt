@@ -109,6 +109,10 @@ object TmdbClient {
   suspend fun detail(kind: MediaKind, id: Int): TmdbFullDetail =
     fetch("/${kind.rawValue}/$id", mapOf("append_to_response" to "videos,credits,recommendations,similar,watch/providers"))
 
+  /** "Porque te gustó X": recomendaciones de un título (como iOS). */
+  suspend fun recommendations(kind: MediaKind, id: Int): List<TmdbMovie> =
+    fetch<TmdbPagedMovies>("/${kind.rawValue}/$id/recommendations").results
+
   /** Episodios de una temporada. */
   suspend fun season(tvId: Int, season: Int): List<TmdbEpisode> =
     fetch<TmdbSeason>("/tv/$tvId/season/$season").episodes

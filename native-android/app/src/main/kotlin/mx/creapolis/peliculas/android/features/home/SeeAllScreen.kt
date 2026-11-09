@@ -70,12 +70,11 @@ fun SeeAllScreen(route: mx.creapolis.peliculas.android.ui.navigation.SeeAllRoute
             Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
               when {
                 state.loadMoreFailed -> Button(onClick = vm::loadMore) { Text(stringResource(R.string.retry)) }
-                else -> CircularProgressIndicator(
-                  Modifier.padding(8.dp),
-                  strokeWidth = 3.dp,
-                  color = if (state.loading) MaterialTheme.colorScheme.primary
-                  else MaterialTheme.colorScheme.primary.copy(alpha = 0f),
-                )
+                else -> {
+                  // El pie pide la siguiente página al aparecer (como `LoadMoreFooter` en iOS).
+                  androidx.compose.runtime.LaunchedEffect(state.items.size) { vm.loadMore() }
+                  CircularProgressIndicator(Modifier.padding(8.dp), strokeWidth = 3.dp)
+                }
               }
             }
         }
