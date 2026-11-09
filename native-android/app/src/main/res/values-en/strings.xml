@@ -347,4 +347,18 @@ Películas</string>
   <string name="watch_on">Watch on %1$s</string>
   <string name="watch_trailer">Watch trailer</string>
   <string name="your_review">Your review</string>
+  <!-- Olvidé mi contraseña / Google -->
+  <string name="forgot_password">Forgot your password?</string>
+  <string name="reset_title">Reset password</string>
+  <string name="reset_subtitle">Enter your account email and we\'ll send you a 6-digit code.</string>
+  <string name="reset_code_sent">If %1$s has an account with a password, a code will arrive in a few seconds. Check your spam too.</string>
+  <string name="reset_code_label">6-digit code</string>
+  <string name="reset_cta_send">Send code</string>
+  <string name="reset_cta_save">Save and sign in</string>
+  <string name="reset_resend">Resend code</string>
+  <string name="reset_change_email">Use another email</string>
+  <string name="auth_error_reset_code">That code is invalid or expired. Ask for a new one.</string>
+  <string name="auth_error_mail_unavailable">We can\'t send emails right now. Try again later.</string>
+  <string name="auth_error_google">Couldn\'t sign in with Google. Try again or use your email.</string>
+  <string name="auth_error_google_no_account">There\'s no Google account on this phone. Add one in Settings or use your email.</string>
 </resources>

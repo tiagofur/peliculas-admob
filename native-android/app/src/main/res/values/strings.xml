@@ -346,4 +346,18 @@
   <string name="watch_on">Ver en %1$s</string>
   <string name="watch_trailer">Ver tráiler</string>
   <string name="your_review">Tu reseña</string>
+  <!-- Olvidé mi contraseña / Google -->
+  <string name="forgot_password">¿Olvidaste tu contraseña?</string>
+  <string name="reset_title">Restablecer contraseña</string>
+  <string name="reset_subtitle">Escribe el correo de tu cuenta y te enviaremos un código de 6 dígitos.</string>
+  <string name="reset_code_sent">Si %1$s tiene una cuenta con contraseña, te llegará un código en unos segundos. Revisa también el spam.</string>
+  <string name="reset_code_label">Código de 6 dígitos</string>
+  <string name="reset_cta_send">Enviar código</string>
+  <string name="reset_cta_save">Guardar y entrar</string>
+  <string name="reset_resend">Reenviar código</string>
+  <string name="reset_change_email">Usar otro correo</string>
+  <string name="auth_error_reset_code">El código no es válido o caducó. Pide uno nuevo.</string>
+  <string name="auth_error_mail_unavailable">No podemos enviar correos ahora mismo. Inténtalo más tarde.</string>
+  <string name="auth_error_google">No se pudo entrar con Google. Inténtalo de nuevo o usa tu correo.</string>
+  <string name="auth_error_google_no_account">No hay una cuenta de Google en este teléfono. Añádela en Ajustes o entra con tu correo.</string>
 </resources>

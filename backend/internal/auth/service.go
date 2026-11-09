@@ -14,6 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
+
+	appmail "github.com/tiagofur/peliculas-admob/backend/internal/mail"
 )
 
 var (
@@ -56,7 +58,8 @@ type Service struct {
 	Tokens   *Issuer
 	Apple    *Verifier
 	Google   *Verifier
-	AppleAPI *AppleClient // optional: code exchange + revoke
+	AppleAPI *AppleClient   // optional: code exchange + revoke
+	Mail     appmail.Sender // optional: password reset codes (Resend)
 	Log      *slog.Logger
 	Now      func() time.Time
 }

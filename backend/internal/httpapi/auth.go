@@ -31,6 +31,10 @@ func (s *Server) authRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /v1/auth/google", limited(s.social(false)))
 	mux.Handle("POST /v1/auth/refresh", limited(s.refresh))
 	mux.Handle("POST /v1/auth/logout", limited(s.logout))
+	// "Olvidé mi contraseña": aún más estricto (manda correos y prueba códigos).
+	resetLim := newIPLimiter(0.2, 5)
+	mux.Handle("POST /v1/auth/password/forgot", resetLim.middleware(s.clientIP, http.HandlerFunc(s.forgotPassword)))
+	mux.Handle("POST /v1/auth/password/reset", resetLim.middleware(s.clientIP, http.HandlerFunc(s.resetPassword)))
 	mux.Handle("GET /v1/me", s.requireAuth(s.getMe))
 	mux.Handle("PATCH /v1/me", s.requireAuth(s.patchMe))
 	mux.Handle("DELETE /v1/me", s.requireAuth(s.deleteMe))
@@ -103,6 +107,39 @@ func (s *Server) social(apple bool) http.HandlerFunc {
 		}
 		s.respond(w, http.StatusOK, sess, err)
 	}
+}
+
+func (s *Server) forgotPassword(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Email string `json:"email"`
+		Lang  string `json:"lang"`
+	}
+	if !s.decode(w, r, &in) {
+		return
+	}
+	if in.Lang == "" {
+		in.Lang = r.Header.Get("Accept-Language")
+	}
+	if err := s.Auth.RequestPasswordReset(r.Context(), in.Email, in.Lang); err != nil {
+		s.respond(w, 0, nil, err)
+		return
+	}
+	// Mismo 204 exista o no la cuenta.
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) resetPassword(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Email    string `json:"email"`
+		Code     string `json:"code"`
+		Password string `json:"password"`
+		Device   string `json:"device"`
+	}
+	if !s.decode(w, r, &in) {
+		return
+	}
+	sess, err := s.Auth.ResetPassword(r.Context(), in.Email, in.Code, in.Password, in.Device)
+	s.respond(w, http.StatusOK, sess, err)
 }
 
 type refreshBody struct {
@@ -180,6 +217,8 @@ var authErrors = []struct {
 	{auth.ErrNonce, http.StatusUnauthorized, "invalid_nonce"},
 	{auth.ErrNotFound, http.StatusNotFound, "not_found"},
 	{auth.ErrNotConfigured, http.StatusServiceUnavailable, "provider_not_configured"},
+	{auth.ErrBadResetCode, http.StatusBadRequest, "invalid_reset_code"},
+	{auth.ErrMailNotConfigured, http.StatusServiceUnavailable, "mail_not_configured"},
 }
 
 func (s *Server) respond(w http.ResponseWriter, status int, body any, err error) {

@@ -41,9 +41,11 @@ android {
     buildConfigField("String", "PRIVACY_URL", "\"https://creapolis.dev/privacidad/\"")
     buildConfigField("String", "TERMS_URL", "\"https://creapolis.dev/terminos/\"")
     buildConfigField("String", "SUPPORT_URL", "\"https://creapolis.dev/es/contacto/\"")
-    // Client ID *web* de OAuth (Credential Manager lo pide para emitir el ID token que valida
-    // el backend en GOOGLE_CLIENT_IDS). Vacío ⇒ el botón de Google no aparece.
-    buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${prop("GOOGLE_WEB_CLIENT_ID")}\"")
+    // Client ID *web* de OAuth (no es secreto: va dentro de cualquier app). Credential Manager
+    // lo pide para emitir el ID token que el backend valida contra GOOGLE_CLIENT_IDS.
+    // Tiene que vivir en el mismo proyecto de Google Cloud que el cliente Android
+    // (paquete + SHA-1). Se sobrescribe con -PGOOGLE_WEB_CLIENT_ID=….
+    buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${prop("GOOGLE_WEB_CLIENT_ID", "555605887021-fafk3kj39jv02onor43is8q3cn2q9r5s.apps.googleusercontent.com")}\"")
   }
 
   signingConfigs {

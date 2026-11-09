@@ -347,4 +347,18 @@ Películas</string>
   <string name="watch_on">Assistir no %1$s</string>
   <string name="watch_trailer">Ver trailer</string>
   <string name="your_review">Sua resenha</string>
+  <!-- Olvidé mi contraseña / Google -->
+  <string name="forgot_password">Esqueceu sua senha?</string>
+  <string name="reset_title">Redefinir senha</string>
+  <string name="reset_subtitle">Digite o e-mail da sua conta e enviaremos um código de 6 dígitos.</string>
+  <string name="reset_code_sent">Se %1$s tiver uma conta com senha, um código chegará em alguns segundos. Confira também o spam.</string>
+  <string name="reset_code_label">Código de 6 dígitos</string>
+  <string name="reset_cta_send">Enviar código</string>
+  <string name="reset_cta_save">Salvar e entrar</string>
+  <string name="reset_resend">Reenviar código</string>
+  <string name="reset_change_email">Usar outro e-mail</string>
+  <string name="auth_error_reset_code">O código é inválido ou expirou. Peça um novo.</string>
+  <string name="auth_error_mail_unavailable">Não conseguimos enviar e-mails agora. Tente mais tarde.</string>
+  <string name="auth_error_google">Não foi possível entrar com o Google. Tente de novo ou use seu e-mail.</string>
+  <string name="auth_error_google_no_account">Não há conta Google neste celular. Adicione nos Ajustes ou use seu e-mail.</string>
 </resources>

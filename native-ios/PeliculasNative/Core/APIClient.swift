@@ -19,6 +19,8 @@ struct APIError: LocalizedError, Equatable {
     case "invalid_nonce": return String(localized: "No se pudo verificar el inicio de sesión. Inténtalo de nuevo.")
     case "provider_not_configured": return String(localized: "Este método de acceso aún no está disponible.")
     case "rate_limited": return String(localized: "Demasiados intentos. Espera unos segundos.")
+    case "invalid_reset_code": return String(localized: "El código no es válido o caducó. Pide uno nuevo.")
+    case "mail_not_configured": return String(localized: "No podemos enviar correos ahora mismo. Inténtalo más tarde.")
     case "purchase_owned_by_other_account": return String(localized: "Esta compra ya está vinculada a otra cuenta.")
     case "storekit_disabled": return String(localized: "Las compras no están disponibles ahora mismo.")
     case "auth_disabled": return String(localized: "El servidor no tiene cuentas activadas.")

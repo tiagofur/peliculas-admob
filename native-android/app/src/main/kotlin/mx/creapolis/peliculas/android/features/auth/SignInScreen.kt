@@ -75,7 +75,7 @@ import java.security.SecureRandom
  * Android de Sign in with Apple —, correo como alternativa.
  */
 @Composable
-fun SignInScreen(session: SessionStore, onDone: () -> Unit) {
+fun SignInScreen(session: SessionStore, onDone: () -> Unit, onForgotPassword: (email: String) -> Unit = {}) {
   val state by session.state.collectAsState()
   val context = LocalContext.current
   val haptics = LocalHapticFeedback.current
@@ -96,6 +96,15 @@ fun SignInScreen(session: SessionStore, onDone: () -> Unit) {
       haptics.performHapticFeedback(HapticFeedbackType.Confirm)
     } catch (e: GetCredentialCancellationException) {
       // El usuario cerró la hoja de Google: nada que decir.
+    } catch (e: androidx.credentials.exceptions.NoCredentialException) {
+      // No hay cuenta de Google en el teléfono (o ninguna disponible para esta app).
+      haptics.performHapticFeedback(HapticFeedbackType.Reject)
+      error = context.getString(R.string.auth_error_google_no_account)
+    } catch (e: androidx.credentials.exceptions.GetCredentialException) {
+      // Suele ser configuración: cliente Android (paquete + SHA-1) no registrado en Google Cloud.
+      android.util.Log.w("SignIn", "Google: ${e.type} ${e.message}")
+      haptics.performHapticFeedback(HapticFeedbackType.Reject)
+      error = context.getString(R.string.auth_error_google)
     } catch (e: ApiError) {
       haptics.performHapticFeedback(HapticFeedbackType.Reject)
       error = context.getString(authErrorRes(e.code))
@@ -198,6 +207,14 @@ fun SignInScreen(session: SessionStore, onDone: () -> Unit) {
         .semantics { contentType = if (isSignUp) ContentType.NewPassword else ContentType.Password },
     )
 
+    if (!isSignUp) {
+      TextButton(
+        onClick = { onForgotPassword(email.trim()) },
+        modifier = Modifier.align(Alignment.End),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp),
+      ) { Text(stringResource(R.string.forgot_password)) }
+    }
+
     error?.let {
       Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
@@ -258,6 +275,9 @@ fun authErrorRes(code: String): Int = when (code) {
   "invalid_credentials" -> R.string.auth_error_invalid_credentials
   "rate_limited" -> R.string.auth_error_rate_limited
   "offline" -> R.string.auth_error_offline
+  "invalid_reset_code" -> R.string.auth_error_reset_code
+  "mail_not_configured" -> R.string.auth_error_mail_unavailable
+  "google_no_token" -> R.string.auth_error_google
   else -> R.string.auth_error_generic
 }
 

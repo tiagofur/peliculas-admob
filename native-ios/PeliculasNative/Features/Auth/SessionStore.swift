@@ -63,6 +63,22 @@ final class SessionStore: ObservableObject {
     try await authenticate("/v1/auth/email/signup", Credentials(email: email, password: password, name: name.isEmpty ? nil : name, device: Self.deviceName))
   }
 
+  // MARK: Olvidé mi contraseña
+
+  /// Pide el código de 6 dígitos por correo. El servidor responde igual exista o no la cuenta.
+  func requestPasswordReset(email: String) async throws {
+    busy = true
+    defer { busy = false }
+    _ = try await APIClient.send("POST", "/v1/auth/password/forgot",
+                                 body: ["email": email, "lang": Locale.preferredLanguages.first ?? "es"])
+  }
+
+  /// Código + contraseña nueva: el backend cierra las demás sesiones y devuelve una nueva.
+  func resetPassword(email: String, code: String, password: String) async throws {
+    try await authenticate("/v1/auth/password/reset",
+                           ResetBody(email: email, code: code, password: password, device: Self.deviceName))
+  }
+
   // MARK: Sign in with Apple
 
   /// Configura la petición de Apple con un nonce nuevo (Apple recibe su SHA-256).
@@ -228,6 +244,13 @@ private struct Credentials: Encodable {
   let email: String
   let password: String
   let name: String?
+  let device: String
+}
+
+private struct ResetBody: Encodable {
+  let email: String
+  let code: String
+  let password: String
   let device: String
 }
 
