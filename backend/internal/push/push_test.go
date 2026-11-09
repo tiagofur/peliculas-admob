@@ -27,6 +27,9 @@ import (
 
 const tok = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
 
+// fcmTok looks like a real FCM registration token: mixed case, ':' and '-'.
+const fcmTok = "dQw4w9WgXcQ:APA91bHun4MxP5egoKMwt2KZFBaFUH-1RYqx_KlZ1Bc3pT7Lk9Xw0aB_CdEfGhIjKlMnOpQrStUvWxYz"
+
 // ---- APNs client against a fake HTTP/2 server ----
 
 func TestAPNsClient(t *testing.T) {
@@ -109,13 +112,30 @@ func TestDeviceValidation(t *testing.T) {
 	bad := []Device{
 		{Token: "../../etc", Environment: "sandbox"},
 		{Token: tok, Environment: "dev"},
-		{Token: tok, Environment: "sandbox", Platform: "android"},
+		{Token: tok, Environment: "sandbox", Platform: "watchos"},
+		{Token: fcmTok + " /../", Platform: "android"},
+		{Token: "short:token", Platform: "android"},
+		{Token: fcmTok, Platform: "android", Environment: "dev"},
+		{Token: fcmTok, Platform: "ios", Environment: "production"}, // FCM token is not hex
 		{Token: tok, Environment: "sandbox", Timezone: "Mars/Olympus"},
 	}
 	for i, d := range bad {
 		if err := d.normalize(); !errors.Is(err, ErrBadDevice) {
 			t.Errorf("bad %d accepted", i)
 		}
+	}
+}
+
+func TestAndroidDeviceValidation(t *testing.T) {
+	d := Device{Token: "  " + fcmTok + "\n", Platform: "android", Locale: "pt-BR"}
+	if err := d.normalize(); err != nil {
+		t.Fatal(err)
+	}
+	if d.Token != fcmTok { // case kept: FCM tokens are case-sensitive
+		t.Fatalf("token changed: %q", d.Token)
+	}
+	if d.Environment != "production" || d.Timezone != "UTC" {
+		t.Fatalf("defaults: %+v", d)
 	}
 }
 

@@ -50,7 +50,7 @@ const jobLock = 727275
 // Run does one pass and returns how many users were alerted. Only one API
 // instance runs it at a time.
 func (j *EpisodeJob) Run(ctx context.Context) (int, error) {
-	if j.Push.Sender == nil {
+	if !j.Push.Configured() {
 		return 0, ErrNotConfigured
 	}
 	conn, err := j.Push.DB.Acquire(ctx)

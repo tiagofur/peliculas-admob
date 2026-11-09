@@ -36,8 +36,21 @@ type Config struct {
 	APNsPrivateKey string
 	APNsTopic      string
 	PushProOnly    bool
-	PushAlertHour  int
-	PushInterval   time.Duration
+
+	// Push (FCM, Android). Project ID defaults to the service account's.
+	FCMCredentials string // service account JSON, or a path to it
+	FCMProjectID   string
+
+	// Google Play (Pro on Android)
+	PlayCredentials  string   // service account JSON, or a path to it
+	PlayPackageName  string   // Android applicationId
+	PlayProductIDs   []string // defaults to PRO_PRODUCT_IDS
+	PlayOneTimeIDs   []string // one-time products; defaults to *lifetime* IDs
+	PlayRTDNToken    string   // shared secret on the Pub/Sub push URL (?token=)
+	PlayRTDNAudience string   // OIDC audience set on the push subscription
+	PlayRTDNEmail    string   // service account the push subscription signs as
+	PushAlertHour    int
+	PushInterval     time.Duration
 }
 
 func Load() (Config, error) {
@@ -68,6 +81,18 @@ func Load() (Config, error) {
 	c.APNsPrivateKey = os.Getenv("APNS_PRIVATE_KEY")
 	c.APNsTopic = env("APNS_TOPIC", c.StoreKitBundleID)
 	c.PushProOnly = os.Getenv("PUSH_PRO_ONLY") != "false"
+	c.FCMCredentials = os.Getenv("FCM_CREDENTIALS_JSON")
+	c.FCMProjectID = os.Getenv("FCM_PROJECT_ID")
+	c.PlayCredentials = os.Getenv("PLAY_CREDENTIALS_JSON")
+	c.PlayPackageName = env("PLAY_PACKAGE_NAME", "mx.creapolis.peliculas.android")
+	c.PlayProductIDs = list(os.Getenv("PLAY_PRODUCT_IDS"))
+	if len(c.PlayProductIDs) == 0 {
+		c.PlayProductIDs = c.ProProductIDs
+	}
+	c.PlayOneTimeIDs = list(os.Getenv("PLAY_ONE_TIME_PRODUCT_IDS"))
+	c.PlayRTDNToken = os.Getenv("PLAY_RTDN_TOKEN")
+	c.PlayRTDNAudience = os.Getenv("PLAY_RTDN_AUDIENCE")
+	c.PlayRTDNEmail = os.Getenv("PLAY_RTDN_EMAIL")
 	c.PushAlertHour = 18
 	if v := os.Getenv("PUSH_ALERT_HOUR"); v != "" {
 		h, err := strconv.Atoi(v)
