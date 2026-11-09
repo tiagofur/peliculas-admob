@@ -79,7 +79,9 @@ fun ForgotPasswordScreen(session: SessionStore, initialEmail: String, onDone: ()
 
   fun fail(e: Exception) {
     haptics.performHapticFeedback(HapticFeedbackType.Reject)
-    error = context.getString(if (e is ApiError) authErrorRes(e.code) else R.string.auth_error_generic)
+    // Un error no previsto aquí no es "no se pudo iniciar sesión": es que no salió el código.
+    val res = if (e is ApiError) authErrorRes(e.code) else R.string.auth_error_generic
+    error = context.getString(if (res == R.string.auth_error_generic) R.string.reset_error_generic else res)
   }
 
   fun sendCode() {

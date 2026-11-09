@@ -360,4 +360,5 @@
   <string name="auth_error_mail_unavailable">No podemos enviar correos ahora mismo. Inténtalo más tarde.</string>
   <string name="auth_error_google">No se pudo entrar con Google. Inténtalo de nuevo o usa tu correo.</string>
   <string name="auth_error_google_no_account">No hay una cuenta de Google en este teléfono. Añádela en Ajustes o entra con tu correo.</string>
+  <string name="reset_error_generic">No pudimos completar la solicitud. Revisa tu conexión e inténtalo de nuevo.</string>
 </resources>

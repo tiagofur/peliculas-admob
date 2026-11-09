@@ -361,4 +361,5 @@ Películas</string>
   <string name="auth_error_mail_unavailable">We can\'t send emails right now. Try again later.</string>
   <string name="auth_error_google">Couldn\'t sign in with Google. Try again or use your email.</string>
   <string name="auth_error_google_no_account">There\'s no Google account on this phone. Add one in Settings or use your email.</string>
+  <string name="reset_error_generic">We couldn\'t complete the request. Check your connection and try again.</string>
 </resources>
