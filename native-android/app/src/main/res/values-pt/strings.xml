@@ -208,8 +208,9 @@
   <string name="reminder_watchlist_title">Sua watchlist está esperando</string>
   <string name="reminder_watchlist_body">Você tem %1$d títulos salvos para assistir.</string>
   <string name="widget_name">Tendências</string>
-  <string name="widget_desc">Os filmes mais vistos de hoje.</string>
+  <string name="widget_desc">Os pôsteres dos filmes mais vistos de hoje.</string>
   <string name="widget_trending_today">Tendência hoje</string>
+  <string name="widget_trending_today_plural">Tendências de hoje</string>
   <string name="widget_tap_to_open">Toque para abrir o app</string>
   <string name="onboarding_welcome">Bem-vindo ao
 Películas</string>

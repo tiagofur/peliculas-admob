@@ -67,5 +67,4 @@ contenido; cada plataforma con sus patrones (M3 en Android, Liquid Glass en iOS)
 
 ## 6. Lo que iOS sigue teniendo y Android no
 
-- Widget con pósters y tamaño mediano (Android: tarjeta de texto con la película del día).
 - Avisos push de episodios (bloqueado por backend, ver §3).
