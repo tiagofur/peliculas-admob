@@ -102,7 +102,10 @@ struct SignInView: View {
         ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
       }
     }
-    .onChange(of: session.isSignedIn) { _, isSignedIn in if isSignedIn { dismiss() } }
+    // El cierre NO va por onChange(isSignedIn): si el usuario ya tenía sesión
+    // (p. ej. entró con correo y luego usa Apple), el valor no cambia y el sheet
+    // se quedaría abierto — Apple lo vio como "devolución al login" (2.1(a)).
+    // El éxito de `run` es el único punto por el que pasa cualquier acceso.
   }
 
   private var header: some View {
@@ -168,6 +171,7 @@ struct SignInView: View {
     do {
       try await work()
       Haptics.success()
+      dismiss()  // Éxito siempre cierra el sheet, hubiera o no sesión previa.
     } catch {
       Haptics.warning()
       self.error = (error as? LocalizedError)?.errorDescription ?? String(localized: "No se pudo iniciar sesión.")
